@@ -4022,16 +4022,12 @@ public:
 					if (itemUnit.isValidBuilding() == true)
 					{
 						if (itemUnit.HPCastle <= 0)
-						{
 							itemUnit.IsBattleEnable = false;
-						}
 					}
 					else
 					{
 						if (itemUnit.Hp <= 0)
-						{
 							itemUnit.IsBattleEnable = false;
-						}
 					}
 				}
 			}
@@ -4080,9 +4076,7 @@ public:
 				for (auto& itemListClassUnit : item.ListClassUnit)
 				{
 					if (itemListClassUnit.IsBattleEnable == true)
-					{
 						countDefUnitGroup++;
-					}
 				}
 			}
 
@@ -5152,7 +5146,8 @@ public:
 
 			for (size_t i = 0; i < ttt.icon.size(); i++)
 			{
-				ttt.rectF(TextureAsset(ttt.icon[i])).draw();
+				String filename = U"/006_CardImage/" + ttt.icon[i];
+				ttt.rectF(TextureAsset(filename)).draw();
 			}
 		}
 	}
@@ -5259,6 +5254,35 @@ void Init(App& manager)
 			AudioAsset::Register(cp.tag, PATHBASE + PATH_DEFAULT_GAME + U"/045_BGM/" + cp.tag);
 
 			manager.get().get()->classGameStatus.arrayClassBGM.push_back(std::move(cp));
+		}
+	}
+	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoCard/"))
+	{
+		String filename = FileSystem::FileName(filePath);
+		const JSON jsonPower = JSON::Load(filePath);
+		if (not jsonPower) continue;
+
+		for (const auto& [key, value] : jsonPower[U"Card"])
+		{
+			ClassCard cc;
+			cc.nameTag = value[U"name_tag"].getString();
+			cc.sortKey = Parse<int32>(value[U"sortkey"].getString());
+			cc.func = value[U"func"].getString();
+			const Array<String> strArray = value[U"icon"].getString().split(U',');
+			for (auto& s : strArray)
+			{
+				cc.icon.push_back(s.replaced(U" ", U"").replaced(U"\t", U""));
+			}
+			cc.icon.reverse();
+
+			cc.name = value[U"name"].getString();
+			cc.help = value[U"help"].getString();
+			cc.attackMyUnit = Parse<int32>(value[U"attackMyUnit"].getString());
+			cc.defMyUnit = Parse<int32>(value[U"defMyUnit"].getString());
+			cc.moveMyUnit = Parse<int32>(value[U"moveMyUnit"].getString());
+			cc.costMyUnit = Parse<int32>(value[U"costMyUnit"].getString());
+			cc.hpMyUnit = Parse<int32>(value[U"hpMyUnit"].getString());
+			manager.get().get()->classGameStatus.arrayClassCard.push_back(std::move(cc));
 		}
 	}
 
@@ -5612,7 +5636,6 @@ void Main()
 	manager.add<Buy>(U"Buy");
 	manager.add<Card>(U"Card");
 	manager.add<Battle>(U"Battle");
-	manager.init(U"SelectLang");
 
 	// 関数を格納するArrayを定義する
 	Array<std::function<void()>> functions;
@@ -5621,6 +5644,7 @@ void Main()
 	m_gaussianClass = std::make_unique<GaussianClass>(Scene::Size(), functions);
 
 	Init(manager);
+	manager.init(U"SelectLang");
 
 	Optional<std::pair<Point, Point>> dragStart;
 
