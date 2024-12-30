@@ -690,7 +690,8 @@ public:
 		System::Update();
 	}
 	void update() override {
-		if (m_000Button.leftClicked() || m_001Button.leftClicked()) {
+		//if (m_000Button.leftClicked() || m_001Button.leftClicked()) {
+		if (m_000Button.leftClicked()) {
 			if (m_000Button.leftClicked())
 			{
 				ini->write(U"data", U"winSize", 1600);
@@ -710,11 +711,11 @@ public:
 	void draw() const override {
 		getData().fontNormal(U"Window Size").draw(12, 10, Palette::White);
 		m_000Button.draw(Palette::Skyblue).drawFrame(2, Palette::Black);
-		m_001Button.draw(Palette::Skyblue).drawFrame(2, Palette::Black);
+		//m_001Button.draw(Palette::Skyblue).drawFrame(2, Palette::Black);
 
 		//仮置き
 		getData().fontMini(U"1600*900").drawAt(m_000Button.center(), Palette::Black);
-		getData().fontMini(U"1200*600").drawAt(m_001Button.center(), Palette::Black);
+		//getData().fontMini(U"1200*600").drawAt(m_001Button.center(), Palette::Black);
 	}
 private:
 	Optional<INI> ini{ std::in_place, U"/data.ini" };
@@ -1336,7 +1337,7 @@ public:
 		{
 			if (getData().Wave >= getData().selectClassPower.Wave)
 			{
-				changeScene(U"Title", 0.9s);
+				changeScene(U"TitleScene", 0.9s);
 			}
 			else
 			{
@@ -1366,6 +1367,10 @@ public:
 	// 描画関数（オプション）
 	void draw() const override
 	{
+		if (csv.rows() == nowRow)
+		{
+			return;
+		}
 		if (csv[nowRow][4] == U"0")
 		{
 			Scene::SetBackground(ColorF{ U"#000000" });
