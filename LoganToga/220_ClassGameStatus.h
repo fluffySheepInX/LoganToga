@@ -52,7 +52,8 @@ public:
 	Array<String> arrayInfoProcessSelectCharaEnemyUnit;
 
 	inline static constexpr uint8 NumMenus = 10;
-	std::bitset<NumMenus> strategyMenus = std::bitset<NumMenus>("1111111111");;
+	std::bitset<NumMenus> strategyMenus =	std::bitset<NumMenus>("1000000001");;
+	//std::bitset<NumMenus> strategyMenus = std::bitset<NumMenus>("1111111111");;
 private:
 	long iDCount = 0;
 	long battleIDCount = 0;

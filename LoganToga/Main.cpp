@@ -543,6 +543,7 @@ public:
 		{
 			if (ttt.btnRectF.leftClicked())
 			{
+				AudioAsset(U"click").setLoop(false);
 				AudioAsset(U"click").play();
 
 				LangFunc(ttt.lang);
@@ -775,6 +776,7 @@ public:
 		for (auto&& e : getData().classGameStatus.arrayClassBGM | std::views::filter([&](auto&& e) { return e.op == true; }))
 		{
 			getData().audio = AudioAsset(e.tag);
+			getData().audio.setLoop(true);
 			getData().audio.play();
 		}
 	}
@@ -1437,6 +1439,7 @@ public:
 		for (auto&& e : getData().classGameStatus.arrayClassBGM | std::views::filter([&](auto&& e) { return e.prepare == true; }))
 		{
 			getData().audio = AudioAsset(e.tag);
+			getData().audio.setLoop(true);
 			getData().audio.play();
 			break;
 		}
@@ -1447,12 +1450,12 @@ public:
 		//中央上
 		arrayRectMenuBack.push_back(Rect{ 432,16,500,500 });
 
-		//メニューボタン
-		for (auto index : Range(0, getData().classGameStatus.NumMenus - 1)) {
-			if (getData().classGameStatus.strategyMenus[index]) {
-				htMenuBtn.push_back(std::make_tuple(index, Rect{ 16,16 + (index * 64),300,64 }));
-			}
-		}
+		////メニューボタン
+		//for (auto index : Range(0, getData().classGameStatus.NumMenus - 1)) {
+		//	if (getData().classGameStatus.strategyMenus[index]) {
+		//		htMenuBtn.push_back(std::make_tuple(index, Rect{ 16,16 + (index * 64),300,64 }));
+		//	}
+		//}
 
 		renderTextureRight = MSRenderTexture{ 400,800, ColorF{0.5, 0.0} };
 		renderTextureRight.clear(ColorF{ 0.5, 0.0 });
@@ -1469,10 +1472,14 @@ public:
 			{
 				getData().slice9.draw(Rect{ 0,0,400,800 });
 
-				for (auto&& [i, ttt] : Indexed(htMenuBtn))
-				{
-					getData().slice9.draw(std::get<1>(ttt));
-					getData().fontLine(systemString.strategyMenu[i]).draw(std::get<1>(ttt).stretched(-10));
+				for (auto index : Range(0, getData().classGameStatus.NumMenus - 1)) {
+					if (getData().classGameStatus.strategyMenus[index]) {
+						{
+							htMenuBtn.push_back(std::make_tuple(index, Rect{ 16,16 + (index * 64),300,64 }));
+							getData().slice9.draw(std::get<1>(htMenuBtn.back()));
+							getData().fontLine(systemString.strategyMenu[index]).draw(std::get<1>(htMenuBtn.back()).stretched(-10));
+						}
+					}
 				}
 			}
 
@@ -2245,6 +2252,7 @@ public:
 		for (auto&& e : getData().classGameStatus.arrayClassBGM | std::views::filter([&](auto&& e) { return e.battle == true; }))
 		{
 			getData().audio = AudioAsset(e.tag);
+			getData().audio.setLoop(true);
 			getData().audio.play();
 			break;
 		}
