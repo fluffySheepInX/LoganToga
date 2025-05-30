@@ -1,0 +1,16 @@
+[config]
+	DistanceBetweenUnit = 32
+	DistanceBetweenUnitTate = 32
+	TitleMenuX = 50
+	TitleMenuY = 40
+	TitleMenuSpace = 32
+	strategyMenu000 = true
+	strategyMenu001 = false
+	strategyMenu002 = false
+	strategyMenu003 = false
+	strategyMenu004 = false
+	strategyMenu005 = false
+	strategyMenu006 = false
+	strategyMenu007 = false
+	strategyMenu008 = false
+	strategyMenu009 = true
