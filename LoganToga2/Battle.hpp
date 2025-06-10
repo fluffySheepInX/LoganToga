@@ -5,6 +5,8 @@
 #include "ClassHorizontalUnit.h"
 #include "EnumSkill.h"
 #include "ClassBattle.h"
+#include "ClassMapBattle.h"
+#include "ClassAStar.h" 
 
 /*
 	インデックスとタイルの配置の関係 (N = 4)
@@ -33,6 +35,7 @@ private:
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
 	const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
 
+	bool PauseFlag = false;
 	Array<Texture> textures;
 	// マップの一辺のタイル数
 	int32 N;
@@ -80,6 +83,9 @@ private:
 	std::atomic<bool> abortMyUnits{ false };
 	std::atomic<bool> pauseTask{ false };
 	std::atomic<bool> pauseTaskMyUnits{ false };
+	HashTable<int64, Array<Point>> aiRoot;
+	Array<Array<Point>> debugRoot;
+	Array<ClassAStar*> debugAstar;
 
 	RenderTexture renderTextureSkill;
 	RenderTexture renderTextureSkillUP;

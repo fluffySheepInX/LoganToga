@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "EnumSkill.h" 
 #include "ClassHorizontalUnit.h"
+#include "ClassMapBattle.h"
 
 class ClassBattle
 {
@@ -21,7 +22,7 @@ public:
 
 	//中立ユニットのグループ
 	//Array<ClassHorizontalUnit> neutralUnitGroup;
-	//std::optional<ClassMapBattle> classMapBattle;
+	std::optional<ClassMapBattle> classMapBattle;
 	//生きている建築物
 	//std::vector<Rect> listBuildingAlive;
 private:

@@ -163,8 +163,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Battle.cpp" />
+    <ClCompile Include="ClassAStar.cpp" />
     <ClCompile Include="ClassBattle.cpp" />
     <ClCompile Include="ClassHorizontalUnit.cpp" />
+    <ClCompile Include="ClassMap.cpp" />
+    <ClCompile Include="ClassMapBattle.cpp" />
     <ClCompile Include="ClassSkill.cpp" />
     <ClCompile Include="ClassUnit.cpp" />
     <ClCompile Include="EnumSkill.cpp" />
@@ -382,8 +385,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Battle.hpp" />
+    <ClInclude Include="ClassAStar.h" />
     <ClInclude Include="ClassBattle.h" />
     <ClInclude Include="ClassHorizontalUnit.h" />
+    <ClInclude Include="ClassMap.h" />
+    <ClInclude Include="ClassMapBattle.h" />
     <ClInclude Include="ClassSkill.h" />
     <ClInclude Include="ClassUnit.h" />
     <ClInclude Include="Common.h" />

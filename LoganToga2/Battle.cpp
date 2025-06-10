@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include "Battle.hpp"
 #include "ClassBattle.h"
+#include <ranges>
+#include <vector>
+#include <iostream>
 
 /// @brief 指定した座標にあるタイルのインデックスを返します。
 /// @param pos 座標
@@ -39,14 +42,220 @@ Optional<Point> ToIndex(const Vec2& pos, const Array<Quad>& columnQuads, const A
 
 	return Point{ x, y };
 }
+Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
+	int minScore = std::numeric_limits<int>::max();
+	int minCost = std::numeric_limits<int>::max();
+	Optional<ClassAStar*> targetClassAStar;
+
+	for (const auto& itemClassAStar : ls) {
+		if (itemClassAStar->GetAStarStatus() != AStarStatus::Open)
+		{
+			continue;
+		}
+		int score = itemClassAStar->GetCost() + itemClassAStar->GetHCost();
+
+		if (score < minScore || (score == minScore && itemClassAStar->GetCost() < minCost)) {
+			minScore = score;
+			minCost = itemClassAStar->GetCost();
+			targetClassAStar = itemClassAStar;
+		}
+	}
+
+	return targetClassAStar;
+}
+int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
+						Array<ClassHorizontalUnit>& enemy,
+						Array<Array<MapDetail>> mapData,
+						HashTable<int64, Array<Point>>& aiRoot,
+						Array<Array<Point>>& debugRoot,
+						Array<ClassAStar*>& list,
+						Array<Quad>& columnQuads,
+						Array<Quad>& rowQuads,
+						const int32 N,
+						const std::atomic<bool>& abort,
+						const std::atomic<bool>& pause
+)
+{
+	for (auto& aaa : target)
+	{
+		if (abort == true)
+			break;
+
+		if (aaa.FlagBuilding == true)
+			continue;
+
+		for (auto& listClassUnit : aaa.ListClassUnit)
+		{
+			if (abort == true)
+				break;
+			if (listClassUnit.IsBuilding == true && listClassUnit.mapTipObjectType == MapTipObjectType::WALL2)
+				continue;
+			if (listClassUnit.IsBuilding == true && listClassUnit.mapTipObjectType == MapTipObjectType::GATE)
+				continue;
+			if (listClassUnit.IsBattleEnable == false)//戦闘不能はスキップ
+				continue;
+			if (listClassUnit.FlagMoving == true)
+				continue;
+			if (listClassUnit.FlagMovingEnd == false)
+				continue;
+			if (listClassUnit.FlagMoveAI == false)
+				continue;
+
+			Array<Point> listRoot;
+
+			//指定のマップチップを取得
+			s3d::Optional<Size> nowIndexEnemy = ToIndex(listClassUnit.orderPosiLeft, columnQuads, rowQuads);
+			if (nowIndexEnemy.has_value() == false)
+				continue;
+
+			////現在地を開く
+			ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
+
+			//現在のマップチップを取得
+			s3d::Optional<Size> nowIndex = ToIndex(listClassUnit.GetNowPosiCenter(), columnQuads, rowQuads);
+			if (nowIndex.has_value() == false)
+				continue;
+
+			Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+			MicrosecClock mc;
+			////移動経路取得
+			while (true)
+			{
+				try
+				{
+					if (abort == true)
+						break;
+
+					if (startAstar.has_value() == false)
+					{
+						listRoot.clear();
+						break;
+					}
+
+					//Print << U"AAAAAAAAAAAAAAAAA:" + Format(mc.us());
+					classAStarManager.OpenAround(startAstar.value(),
+													mapData,
+													enemy,
+													target,
+													N
+					);
+					//Print << U"BBBBBBBBBBBBBBBB:" + Format(mc.us());
+					startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+
+					classAStarManager.RemoveClassAStar(startAstar.value());
+
+					if (classAStarManager.GetListClassAStar().size() != 0)
+					{
+						startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+					}
+
+					if (startAstar.has_value() == false)
+						continue;
+
+					//敵まで到達したか
+					if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+					{
+						startAstar.value()->GetRoot(listRoot);
+						listRoot.reverse();
+						break;
+					}
+				}
+				catch (const std::exception&)
+				{
+					throw;
+				}
+			}
+
+			if (listRoot.size() != 0)
+			{
+				aiRoot[listClassUnit.ID] = listRoot;
+				debugRoot.push_back(listRoot);
+				listClassUnit.FlagMoveAI = false;
+			}
+		}
+	}
+	return -1;
+}
 
 Battle::Battle(GameData& saveData)
 	:FsScene(U"Battle"), m_saveData{ saveData }, N{ 64 }, visibilityMap{ Grid<Visibility>(Size{ N, N }, Visibility::Unseen) }, grid{ Grid<int32>(Size{ N, N }) }
 {
-	Vec2 TileOffset{ 48, 24 };
-	int32 TileThickness = 17;
+	const TOMLReader tomlMap{ PATHBASE + PATH_DEFAULT_GAME + U"/016_BattleMap/map001.toml" };
+	if (not tomlMap) // もし読み込みに失敗したら
+		throw Error{ U"Failed to load `tomlMap`" };
+
+	ClassMap sM;
+	for (const auto& table : tomlMap[U"Map"].tableArrayView()) {
+		const String name = table[U"name"].get<String>();
+
+		{
+			int32 counter = 0;
+			while (true)
+			{
+				String aaa = U"ele{}"_fmt(counter);
+				const String ele = table[aaa].get<String>();
+				sM.ele.emplace(aaa, ele);
+				counter++;
+				if (ele == U"")
+				{
+					break;
+				}
+			}
+		}
+		{
+			namespace views = std::views;
+			const String str = table[U"data"].get<String>();
+			for (const auto sv : str | views::split(U"$"_sv))
+			{
+				String re = ClassStaticCommonMethod::ReplaceNewLine(String(sv.begin(), sv.end()));
+				if (re != U"")
+				{
+					sM.data.push_back(ClassStaticCommonMethod::ReplaceNewLine(re));
+				}
+			}
+		}
+	}
+
+	classBattle.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
+
+	N = classBattle.classMapBattle.value().mapData.size();
+	//Vec2 TileOffset{ 48, 24 };
+	//int32 TileThickness = 17;
+	Vec2 TileOffset{ 50, 25 };
+	int32 TileThickness = 15;
 	Array<Quad> columnQuads = MakeColumnQuads(N);
 	Array<Quad> rowQuads = MakeRowQuads(N);
+}
+
+std::unique_ptr<TextureAssetData> MakeTextureAssetData1(const FilePath& path, const TextureDesc textureDesc)
+{
+	// 空のテクスチャアセットデータを作成する
+	std::unique_ptr<TextureAssetData> assetData = std::make_unique<TextureAssetData>();
+
+	// ファイルパスを代入する
+	assetData->path = path;
+
+	// テクスチャの設定を代入する
+	assetData->desc = textureDesc;
+
+	// ロード時の仕事を設定する
+	assetData->onLoad = [](TextureAssetData& asset, const String&)
+		{
+			Image image{ asset.path };
+			Color* p = image.data();
+			const Color* const pEnd = (p + image.num_pixels());
+			while (p != pEnd)
+			{
+				p->r = static_cast<uint8>((static_cast<uint16>(p->r) * p->a) / 255);
+				p->g = static_cast<uint8>((static_cast<uint16>(p->g) * p->a) / 255);
+				p->b = static_cast<uint8>((static_cast<uint16>(p->b) * p->a) / 255);
+				++p;
+			}
+			asset.texture = Texture{ image };
+			return static_cast<bool>(asset.texture);
+		};
+
+	return assetData;
 }
 
 Co::Task<void> Battle::start()
@@ -66,7 +275,7 @@ Co::Task<void> Battle::start()
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/040_ChipImage/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/015_BattleMapCellImage/"))
-		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
+		TextureAsset::Register(FileSystem::FileName(filePath), MakeTextureAssetData1(filePath, TextureDesc::Mipped));
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/043_ChipImageBuild/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
 
@@ -167,6 +376,7 @@ Co::Task<void> Battle::start()
 		uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
 		uu.vecMove = Vec2{ 0, 0 };
 		uu.Speed = 1.0;
+		uu.Move = 500.0;
 		uu.FlagMove = false;
 		uu.FlagMoving = false;
 		uu.Image = U"chip001.png";
@@ -204,7 +414,6 @@ Co::Task<void> Battle::start()
 	camera.jumpTo(viewPos, camera.getTargetScale());
 
 	//建物関係
-	//cb.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
 	ClassHorizontalUnit chuSor;
 	ClassHorizontalUnit chuDef;
 	ClassHorizontalUnit chuNa;
@@ -429,6 +638,7 @@ Co::Task<void> Battle::mainLoop()
 				// 建築物選択チェック
 				{
 					// いったん押された建築物の固有IDを走査する
+					// 対象以外のIsSelectを全てfalseにしたいが為
 					long id = -1;
 					for (auto& item : classBattle.listOfAllUnit)
 					{
@@ -437,7 +647,6 @@ Co::Task<void> Battle::mainLoop()
 						{
 							for (auto& itemUnit : item.ListClassUnit)
 							{
-								//TODO これ、うまくいってない？
 								if (ToTile(ToIndex(itemUnit.GetNowPosiCenter(), columnQuads, rowQuads).value(), N).leftClicked())
 								{
 									id = itemUnit.ID;
@@ -450,20 +659,53 @@ Co::Task<void> Battle::mainLoop()
 					{
 						for (auto& item : classBattle.listOfAllUnit)
 						{
-							if (item.FlagBuilding == true &&
-								!item.ListClassUnit.empty())
+							for (auto& itemUnit : item.ListClassUnit)
 							{
-								for (auto& itemUnit : item.ListClassUnit)
+								if (id == itemUnit.ID)
 								{
-									if (id == itemUnit.ID)
+									itemUnit.IsSelect = !itemUnit.IsSelect;
+									IsBuildMenuHome = itemUnit.IsSelect;
+								}
+								else
+								{
+									itemUnit.IsSelect = false;
+								}
+							}
+						}
+					}
+				}
+
+				{
+					//全ユニット走査、posからrectを生成し、クリックされたかチェック
+					for (auto& target : classBattle.listOfAllUnit)
+					{
+						for (auto& unit : target.ListClassUnit)
+						{
+							if (unit.IsBuilding == false && unit.IsBattleEnable == true)
+							{
+								RectF rect = RectF(unit.nowPosiLeft, unit.yokoUnit, unit.TakasaUnit);
+								if (rect.leftClicked())
+								{
+									//クリックされたユニットのIDを取得
+									//そのユニットのIsSelectを反転させる
+									//IsBuildMenuHomeを反転させる
+									//他のユニットのIsSelectはfalseにする
+									for (auto& item : classBattle.listOfAllUnit)
 									{
-										itemUnit.IsSelect = !itemUnit.IsSelect;
-										IsBuildMenuHome = itemUnit.IsSelect;
+										for (auto& itemUnit : item.ListClassUnit)
+										{
+											if (unit.ID == itemUnit.ID)
+											{
+
+											}
+											else
+											{
+												itemUnit.IsSelect = false;
+											}
+										}
 									}
-									else
-									{
-										itemUnit.IsSelect = false;
-									}
+									unit.IsSelect = !unit.IsSelect;
+									IsBuildMenuHome = unit.IsSelect;
 								}
 							}
 						}
@@ -528,7 +770,8 @@ Co::Task<void> Battle::mainLoop()
 							cuu.vecMove = Vec2(cu->orderPosiLeft - cu->nowPosiLeft).normalized();
 							cuu.orderPosiLeft = end;
 							cuu.FlagMove = false;
-							cuu.FlagMoving = true;
+							//cuu.FlagMoving = true;
+							cuu.FlagMoveAI = true;
 						}
 
 						if (arrayBattleZinkei[0] == true)
@@ -806,15 +1049,19 @@ Co::Task<void> Battle::mainLoop()
 
 						abortMyUnits = false;
 
-						////経路算出
-						//taskMyUnits = Async(BattleMoveAStarMyUnits,
-						//				std::ref(getData().classGameStatus.classBattle.sortieUnitGroup),
-						//				std::ref(getData().classGameStatus.classBattle.defUnitGroup),
-						//				std::ref(mapCreator),
-						//				std::ref(getData().classGameStatus.classBattle.classMapBattle.value().mapData),
-						//				std::ref(getData().classGameStatus),
-						//				std::ref(debugRoot), std::ref(debugAstar),
-						//				std::ref(abortMyUnits), std::ref(pauseTaskMyUnits));
+						//経路算出
+						taskMyUnits = Async(BattleMoveAStarMyUnits,
+										std::ref(classBattle.listOfAllUnit),
+										std::ref(classBattle.listOfAllEnemyUnit),
+										std::ref(classBattle.classMapBattle.value().mapData),
+										std::ref(aiRoot),
+										std::ref(debugRoot),
+										std::ref(debugAstar),
+										std::ref(columnQuads),
+										std::ref(rowQuads),
+										N,
+										std::ref(abortMyUnits),
+										std::ref(pauseTaskMyUnits));
 					}
 					else
 					{
@@ -890,6 +1137,200 @@ Co::Task<void> Battle::mainLoop()
 								}
 							}
 						}
+					}
+				}
+			}
+
+			//pause処理
+			{
+				if (KeySpace.down())
+				{
+					PauseFlag = !PauseFlag;
+					if (PauseFlag == false)
+					{
+						pauseTask = false;
+						pauseTaskMyUnits = false;
+					}
+					else
+					{
+						pauseTask = true;
+						pauseTaskMyUnits = true;
+						co_await Co::NextFrame();
+					}
+				}
+				if (PauseFlag == true)
+					co_await Co::NextFrame();
+			}
+
+			//移動処理
+			{
+				for (auto& item : classBattle.listOfAllUnit)
+				{
+					for (auto& itemUnit : item.ListClassUnit)
+					{
+						if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::WALL2)
+						{
+							continue;
+						}
+						if (itemUnit.IsBattleEnable == false)
+						{
+							continue;
+						}
+						if (itemUnit.FlagMoving == true)
+						{
+							itemUnit.nowPosiLeft = itemUnit.nowPosiLeft + (itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100));
+
+							Circle c = { itemUnit.nowPosiLeft ,itemUnit.yokoUnit };
+							Circle cc = { itemUnit.orderPosiLeft ,itemUnit.yokoUnit };
+
+							if (c.intersects(cc))
+							{
+								itemUnit.FlagMoving = false;
+							}
+							//if (itemUnit.nowPosiLeft.x <= itemUnit.orderPosiLeft.x + 10 && itemUnit.nowPosiLeft.x >= itemUnit.orderPosiLeft.x - 10
+							//	&& itemUnit.nowPosiLeft.y <= itemUnit.orderPosiLeft.y + 10 && itemUnit.nowPosiLeft.y >= itemUnit.orderPosiLeft.y - 10)
+							//{
+							//	itemUnit.FlagMoving = false;
+							//}
+							continue;
+						}
+						//auto rootPo = getData().classGameStatus.aiRoot;
+						//for (auto [key, value] : rootPo)
+						//{
+						//	Print << key << U": " << value;
+						//}
+						if (aiRoot[itemUnit.ID].isEmpty() == true)
+						{
+							continue;
+						}
+						if (aiRoot[itemUnit.ID].size() == 1)
+						{
+							itemUnit.FlagMovingEnd = true;
+							itemUnit.FlagMoving = false;
+							continue;
+						}
+
+						// タイルのインデックス
+						Point index;
+						try
+						{
+							aiRoot[itemUnit.ID].pop_front();
+							auto rthrthrt = aiRoot[itemUnit.ID];
+							if (rthrthrt.size() > 0)
+							{
+								index = rthrthrt[0];
+							}
+						}
+						catch (const std::exception&)
+						{
+							continue;
+						}
+
+						// そのタイルの底辺中央の座標
+						const int32 i = index.manhattanLength();
+						const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
+						const int32 yi = (i < (N - 1)) ? i : (N - 1);
+						const int32 k2 = (index.manhattanDistanceFrom(Point{ xi, yi }) / 2);
+						const double posX = ((i < (N - 1)) ? (i * -TileOffset.x) : ((i - 2 * N + 2) * TileOffset.x));
+						const double posY = (i * TileOffset.y) - TileThickness;
+						const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+
+						itemUnit.orderPosiLeft = pos;
+						Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+						if (hhh.x == 0 && hhh.y == 0)
+						{
+							itemUnit.vecMove = { 0,0 };
+						}
+						else
+						{
+							itemUnit.vecMove = hhh.normalized();
+						}
+						itemUnit.FlagMoving = true;
+						itemUnit.FlagMovingEnd = false;
+					}
+				}
+				for (auto& item : classBattle.listOfAllEnemyUnit)
+				{
+					for (auto& itemUnit : item.ListClassUnit)
+					{
+						if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::WALL2)
+							continue;
+						if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::GATE)
+							continue;
+						if (itemUnit.IsBattleEnable == false)
+							continue;
+
+						//実際に動く処理
+
+						if (itemUnit.FlagMoving == true)
+						{
+							itemUnit.nowPosiLeft = itemUnit.nowPosiLeft + (itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100));
+
+							double current_distanceX = itemUnit.orderPosiLeft.x - itemUnit.nowPosiLeft.x;
+							double current_distanceY = itemUnit.orderPosiLeft.y - itemUnit.nowPosiLeft.y;
+							double next_distanceX = current_distanceX - (itemUnit.vecMove.x * ((itemUnit.Move + itemUnit.cts.Speed) / 100));
+							double next_distanceY = current_distanceY - (itemUnit.vecMove.y * ((itemUnit.Move + itemUnit.cts.Speed) / 100));
+							if (next_distanceX * next_distanceX + next_distanceY * next_distanceY >= current_distanceX * current_distanceX + current_distanceY * current_distanceY)
+								itemUnit.FlagMoving = false;
+							continue;
+						}
+
+
+						if (aiRoot[itemUnit.ID].isEmpty() == true)
+							continue;
+
+
+						//潜在的バグ有り
+						if (aiRoot[itemUnit.ID].size() == 1)
+						{
+							itemUnit.FlagMovingEnd = true;
+							itemUnit.FlagMoving = false;
+							continue;
+						}
+
+						// タイルのインデックス
+						Point index;
+						try
+						{
+							aiRoot[itemUnit.ID].pop_front();
+							auto rthrthrt = aiRoot[itemUnit.ID];
+							index = aiRoot[itemUnit.ID][0];
+						}
+						catch (const std::exception&)
+						{
+							throw;
+							continue;
+						}
+
+						if (aiRoot[itemUnit.ID].size() == 1)
+						{
+							itemUnit.orderPosiLeft = itemUnit.orderPosiLeftLast;
+						}
+						else
+						{
+							// そのタイルの底辺中央の座標
+							const int32 i = index.manhattanLength();
+							const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
+							const int32 yi = (i < (N - 1)) ? i : (N - 1);
+							const int32 k2 = (index.manhattanDistanceFrom(Point{ xi, yi }) / 2);
+							const double posX = ((i < (N - 1)) ? (i * -TileOffset.x) : ((i - 2 * N + 2) * TileOffset.x));
+							const double posY = (i * TileOffset.y) - TileThickness;
+							const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+
+							itemUnit.orderPosiLeft = pos;
+						}
+
+						Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+						if (hhh.x == 0 && hhh.y == 0)
+						{
+							itemUnit.vecMove = { 0,0 };
+						}
+						else
+						{
+							itemUnit.vecMove = hhh.normalized();
+						}
+						itemUnit.FlagMoving = true;
+						itemUnit.FlagMovingEnd = false;
 					}
 				}
 			}
@@ -1012,6 +1453,19 @@ Co::Task<void> Battle::mainLoop()
 			break;
 		}
 
+		// 非同期タスクが完了したら
+		if (task.isReady())
+		{
+			//// 結果を取得する
+			//Print << task.get();
+		}
+		// 非同期タスクが完了したら
+		if (taskMyUnits.isReady())
+		{
+			//// 結果を取得する
+			//Print << task.get();
+		}
+
 		co_await Co::NextFrame();
 	}
 }
@@ -1072,7 +1526,10 @@ void Battle::draw() const
 					const Vec2 pos = ToTileBottomCenter(index, N);
 
 					// 底辺中央を基準にタイルを描く
-					textures[grid[index]].draw(Arg::bottomCenter = pos);
+					String tip = classBattle.classMapBattle.value().mapData[index.x][index.y].tip;
+					TextureAsset(tip + U".png").draw(Arg::bottomCenter = pos);
+
+					//textures[grid[index]].draw(Arg::bottomCenter = pos);
 
 					// 建物描写
 					for (auto& abc : bui)
@@ -1101,8 +1558,8 @@ void Battle::draw() const
 						ToTile(index, N).draw(ColorF{ 0.0, 0.6 }); // 半透明
 						//ToTile(index, N).draw(ColorF{ 0.0 }); // 完全に隠す
 						break;
-					//case Visibility::Seen://使わない
-					//	break;
+						//case Visibility::Seen://使わない
+						//	break;
 					case Visibility::Visible:
 						break;
 					}

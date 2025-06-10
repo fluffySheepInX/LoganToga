@@ -149,18 +149,22 @@ public:
 
 	ClassTempStatus cts = ClassTempStatus();
 
-	// Formation
 	BattleFormation Formation = BattleFormation::F;
 
-	// ID
 	long long ID = 0;
 
+	// 使用しているところがない　消していいか？
 	Rect rectExecuteBtnStrategyMenu;
 	Rect rectExecuteBtnStrategyMenuLeader;
 	Rect rectExecuteBtnStrategyMenuMember;
-
 	Rect rectDetailStrategyMenu;
 	bool pressedDetailStrategyMenu = false;
+
+	/// @brief 建築メニューなどを表示するかどうかのフラグ
+	bool pressedUnit = false;
+	/// @brief 工兵などでクリック時に建築メニューを表示する？？？
+	Rect rectBuildMenu;
+
 
 	int32 visionRadius = 3;
 	Point initTilePos = Point(0, 0); // ユニットのタイル上の位置
@@ -376,11 +380,11 @@ public:
 	Vec2 orderPosiLeft;
 	Vec2 orderPosiLeftLast;
 
-	//// OrderPosiCenter
-	//Vec2 GetOrderPosiCenter()
-	//{
-	//	return Vec2(orderPosiLeft.x + (yokoUnit / 2), orderPosiLeft.y + (TakasaUnit / 2));
-	//}
+	// OrderPosiCenter
+	Vec2 GetOrderPosiCenter()
+	{
+		return Vec2(orderPosiLeft.x + (yokoUnit / 2), orderPosiLeft.y + (TakasaUnit / 2));
+	}
 
 	// VecMove
 	Vec2 vecMove;
