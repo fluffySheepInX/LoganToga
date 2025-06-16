@@ -20,6 +20,47 @@
 			(3, 3)
 */
 
+
+enum class BuildMenu
+{
+	Home,
+	Kouhei,
+	Zirai
+};
+struct cBuildPrepareKindAndCount {
+	int32 sortId = 0;
+	String kind;
+	int32 count;
+};
+class cBuildPrepare
+{
+public:
+	HashTable<String, cBuildPrepareKindAndCount> htCountAndSyu;
+	int32 buiSyu = 0; // 建築の種類
+};
+
+class cRightMenu
+{
+public:
+	int sortId = 0;
+	String key;
+	String nameOfUnitOrBuildingOrSkill;
+	Rect rect;
+	int32 count = -1;
+	int32 buiSyu = 0; // 建築の種類
+	Texture texture;
+};
+class cRightMenuHomeYoyaku
+{
+public:
+	int sortId = 0;
+	String key;
+	String nameOfUnitOrBuildingOrSkill;
+	Texture texture;
+	int32 count = -1;
+	BuildMenu buildMenu = BuildMenu::Home;
+};
+
 class Battle : public FsScene
 {
 public:
@@ -30,6 +71,8 @@ private:
 	Co::Task<void> mainLoop();
 
 	void draw() const override;
+
+	void renB(RenderTexture&, cBuildPrepare&, Array<cRightMenu>&);
 
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
@@ -106,21 +149,27 @@ private:
 
 	RenderTexture renderTextureBuildMenuEmpty;
 	RenderTexture renderTextureBuildMenuHome;
-	Array<Rect> rectBuildMenuHome;
-	HashTable<String, Rect> htBuildMenuHome;
-	bool IsBuildMenuHome = false;
+	RenderTexture renderTextureBuildMenuKouhei;
+	//Array<Rect> rectBuildMenuHome;
 
-	long cBuildMenuHomeYoyakuIdCount = 0;
-	class cBuildMenuHomeYoyaku
-	{
-	public:
-		int sortId = 0;
-		String name;
-		Texture texture;
-	};
-	Array<cBuildMenuHomeYoyaku> arrBuildMenuHomeYoyaku;
+	/// @brief home
+	cBuildPrepare cbp;
+	/// @brief 工兵
+	cBuildPrepare cbpKouhei;
+	Array<cRightMenu> htBuildMenuHome;
+	Array<cRightMenu> htBuildMenuKouhei;
+	bool IsBuildMenuHome = false;
+	int32 buiSyu = 0; // 建築の種類
+
+	long longBuildMenuHomeYoyakuIdCount = 0;
+	//Array<Array<cRightMenu>>将来的にはこうして拡張性を持たせる
+	Array<cRightMenu> arrBuildMenuHomeYoyaku;
+	Array<cRightMenu> arrBuildMenuHouheiYoyaku;
 	Stopwatch stopwatch{ StartImmediately::No };
 	const double durationSec = 5.0;
+	//これArrayにしなきゃ駄目（並列して建築できないから）
 	double t = -1.0;
+	Array<double> arrT = { -1.0,-1.0 };
+	Stopwatch stopwatch001{ StartImmediately::No };
 
 };

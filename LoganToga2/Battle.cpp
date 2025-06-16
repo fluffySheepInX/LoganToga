@@ -258,6 +258,45 @@ std::unique_ptr<TextureAssetData> MakeTextureAssetData1(const FilePath& path, co
 	return assetData;
 }
 
+void Battle::renB(RenderTexture& ren, cBuildPrepare& cbp, Array<cRightMenu>& arr)
+{
+	ren = RenderTexture{ 328, 328 };
+	ren.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ ren.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		arr.clear();
+		for (auto&& [i, re] : IndexedRef(cbp.htCountAndSyu))
+		{
+			if (re.second.count == 0)
+			{
+				continue;
+			}
+
+			cRightMenu crh;
+			Rect rectBuildMenuHome;
+			rectBuildMenuHome.x = ((re.second.sortId % 6) * 64) + 4;
+			rectBuildMenuHome.y = ((re.second.sortId / 6) * 64) + 4;
+			rectBuildMenuHome.w = 64;
+			rectBuildMenuHome.h = 64;
+			crh.sortId = re.second.sortId;
+			crh.key = re.first;
+			crh.nameOfUnitOrBuildingOrSkill = re.second.kind;
+			crh.rect = rectBuildMenuHome;
+			crh.count = re.second.count;
+			crh.buiSyu = cbp.buiSyu; // 建築の種類
+			arr.push_back(crh);
+		}
+
+		for (auto& icons : arr)
+			TextureAsset(icons.key).resized(64).draw(icons.rect.x, icons.rect.y);
+
+		Rect df = Rect(328, 328);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+	}
+}
+
 Co::Task<void> Battle::start()
 {
 	// png フォルダ内のファイルを列挙する
@@ -341,29 +380,44 @@ Co::Task<void> Battle::start()
 		df.drawFrame(4, 0, ColorF{ 0.5 });
 	}
 
-	renderTextureBuildMenuHome = RenderTexture{ 328, 328 };
-	renderTextureBuildMenuHome.clear(ColorF{ 0.5, 0.0 });
 	{
-		const ScopedRenderTarget2D target{ renderTextureBuildMenuHome.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
-		const ScopedRenderStates2D blend{ MakeBlendState() };
-
-		//rectBuildMenuHome.clear();
-		htBuildMenuHome.clear();
-		Array<String> arrayHome = { U"kouhei.png",U"inhura-kaizen.png",U"kayaku.png" };
-		for (size_t i = 0; i < arrayHome.size(); i++)
+		cbp.htCountAndSyu.clear();
 		{
-			Rect rectBuildMenuHome;
-			rectBuildMenuHome.x = ((i % 6) * 64) + 4;
-			rectBuildMenuHome.y = ((i / 6) * 64) + 4;
-			rectBuildMenuHome.w = 64;
-			rectBuildMenuHome.h = 64;
-			htBuildMenuHome.emplace(arrayHome[i], rectBuildMenuHome);
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 0;
+			cbpHome.count = -1;
+			cbpHome.kind = U"Unit";
+			cbp.htCountAndSyu.emplace(U"kouhei.png", cbpHome);
 		}
-		for (auto& icons : htBuildMenuHome)
-			TextureAsset(icons.first).resized(64).draw(icons.second.x, icons.second.y);
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 1;
+			cbpHome.count = 5;
+			cbpHome.kind = U"bahu";
+			cbp.htCountAndSyu.emplace(U"inhura-kaizen.png", cbpHome);
+		}
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 2;
+			cbpHome.count = 1;
+			cbpHome.kind = U"skill";
+			cbp.htCountAndSyu.emplace(U"kayaku.png", cbpHome);
+		}
+		cbp.buiSyu = 0; // 建築の種類
+		renB(renderTextureBuildMenuHome, cbp, htBuildMenuHome);
+	}
+	{
+		cbpKouhei.htCountAndSyu.clear();
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 0;
+			cbpHome.count = -1;
+			cbpHome.kind = U"Unit";
+			cbpKouhei.htCountAndSyu.emplace(U"zirai.png", cbpHome);
+		}
 
-		Rect df = Rect(328, 328);
-		df.drawFrame(4, 0, ColorF{ 0.5 });
+		cbpKouhei.buiSyu = 1; // 建築の種類
+		renB(renderTextureBuildMenuKouhei, cbpKouhei, htBuildMenuKouhei);
 	}
 
 	{
@@ -379,6 +433,7 @@ Co::Task<void> Battle::start()
 		uu.Move = 500.0;
 		uu.FlagMove = false;
 		uu.FlagMoving = false;
+		uu.buiSyu = 1;
 		uu.Image = U"chip001.png";
 
 		ClassHorizontalUnit cuu;
@@ -535,11 +590,13 @@ Co::Task<void> Battle::start()
 			if (KeySpace.pressed())
 			{
 				stopwatch.pause();
+				stopwatch001.pause();
 				return true;
 			}
 			else
 			{
 				stopwatch.resume();
+				stopwatch001.resume();
 			}
 		});; // メインループ実行
 }
@@ -552,6 +609,12 @@ Co::Task<void> Battle::mainLoop()
 			co_return;
 
 		camera.update();
+
+		//毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
+		// 一度見たタイルは UnseenではなくSeenにしたい
+		for (auto&& ttt : visibilityMap)
+			ttt = Visibility::Unseen;
+
 		for (auto& units : classBattle.listOfAllUnit)
 			UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), N);
 
@@ -561,7 +624,9 @@ Co::Task<void> Battle::mainLoop()
 			if (t >= 1.0)
 			{
 				stopwatch.reset();
-				String key = arrBuildMenuHomeYoyaku.front().name;
+				String key = arrBuildMenuHomeYoyaku.front().key;
+				String syu = arrBuildMenuHomeYoyaku.front().nameOfUnitOrBuildingOrSkill;
+				int32 cou = arrBuildMenuHomeYoyaku.front().count;
 				arrBuildMenuHomeYoyaku.pop_front();
 				if (arrBuildMenuHomeYoyaku.size() > 0)
 				{
@@ -576,6 +641,7 @@ Co::Task<void> Battle::mainLoop()
 				// 実行
 				if (key == U"kouhei.png")
 				{
+					//keyがunitならば、ユニットを生成する
 					{
 						Unit uu;
 						uu.ID = classBattle.getIDCount();
@@ -601,8 +667,10 @@ Co::Task<void> Battle::mainLoop()
 						uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
 						uu.vecMove = Vec2{ 0, 0 };
 						uu.Speed = 1.0;
+						uu.Move = 500.0;
 						uu.FlagMove = false;
 						uu.FlagMoving = false;
+						uu.IsBattleEnable = true;
 						uu.Image = U"chip006.png";
 
 						ClassHorizontalUnit cuu;
@@ -617,11 +685,34 @@ Co::Task<void> Battle::mainLoop()
 				}
 				else if (key == U"kayaku.png")
 				{
-
 				}
 			}
 			t = Min(stopwatch.sF() / durationSec, 1.0);
 		}
+		if (arrBuildMenuHouheiYoyaku.size() > 0)
+		{
+			if (arrT[1] >= 1.0)
+			{
+				stopwatch001.reset();
+				String key = arrBuildMenuHouheiYoyaku.front().key;
+				String syu = arrBuildMenuHouheiYoyaku.front().nameOfUnitOrBuildingOrSkill;
+				int32 cou = arrBuildMenuHouheiYoyaku.front().count;
+				arrBuildMenuHouheiYoyaku.pop_front();
+				if (arrBuildMenuHouheiYoyaku.size() > 0)
+				{
+					arrT[1] = 0.0;
+					stopwatch001.start();
+				}
+				else
+				{
+					arrT[1] = -1.0;
+				}
+
+				// 実行
+			}
+			arrT[1] = Min(stopwatch001.sF() / durationSec, 1.0);
+		}
+
 
 		switch (battleStatus)
 		{
@@ -665,6 +756,7 @@ Co::Task<void> Battle::mainLoop()
 								{
 									itemUnit.IsSelect = !itemUnit.IsSelect;
 									IsBuildMenuHome = itemUnit.IsSelect;
+									buiSyu = itemUnit.buiSyu; // 建築の種類
 								}
 								else
 								{
@@ -706,6 +798,7 @@ Co::Task<void> Battle::mainLoop()
 									}
 									unit.IsSelect = !unit.IsSelect;
 									IsBuildMenuHome = unit.IsSelect;
+									buiSyu = unit.buiSyu; // 建築の種類
 								}
 							}
 						}
@@ -1420,25 +1513,69 @@ Co::Task<void> Battle::mainLoop()
 			{
 				const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
-				for (auto&& [i, re] : Indexed(htBuildMenuHome))
+				Array<cRightMenu> temp;
+				if (buiSyu == 0)
 				{
-					if (re.second.leftClicked())
+					temp = htBuildMenuHome;
+				}
+				else if (buiSyu == 1)
+				{
+					temp = htBuildMenuKouhei;
+				}
+
+				for (auto&& [i, re] : IndexedRef(temp))
+				{
+					if (re.rect.leftClicked())
 					{
-						cBuildMenuHomeYoyaku ccc;
-						ccc.sortId = cBuildMenuHomeYoyakuIdCount;
-						ccc.name = re.first;
-						ccc.texture = TextureAsset(re.first);
-						arrBuildMenuHomeYoyaku.push_back(ccc);
-						cBuildMenuHomeYoyakuIdCount++;
-						if (stopwatch.isRunning() == false)
+						cRightMenu ccc;
+						ccc.sortId = longBuildMenuHomeYoyakuIdCount;
+						ccc.key = re.key;
+						ccc.nameOfUnitOrBuildingOrSkill = re.nameOfUnitOrBuildingOrSkill;
+						ccc.texture = TextureAsset(re.key);
+						longBuildMenuHomeYoyakuIdCount++;
+
+						if (re.buiSyu == 0)
 						{
-							stopwatch.start();
-							t = 0.0;
+							if (stopwatch.isRunning() == false)
+							{
+								stopwatch.start();
+								t = 0.0;
+							}
+							arrBuildMenuHomeYoyaku.push_back(ccc);
 						}
+						else if (re.buiSyu == 1)
+						{
+							if (stopwatch001.isRunning() == false)
+							{
+								stopwatch001.start();
+								arrT[1] = 0.0;
+							}
+							arrBuildMenuHouheiYoyaku.push_back(ccc);
+						}
+
+						//回数制限のある建物を選択した場合
+						if (re.count > 0)
+						{
+							re.count--;
+							cbp.htCountAndSyu[re.key].count = re.count;
+							if (re.buiSyu == 0)
+							{
+								renB(renderTextureBuildMenuHome, cbp, htBuildMenuHome);
+							}
+							else if (re.buiSyu == 1)
+							{
+								renB(renderTextureBuildMenuKouhei, cbpKouhei, htBuildMenuKouhei);
+							}
+						}
+						break;
 					}
 				}
 
-				arrBuildMenuHomeYoyaku.sort_by([](const cBuildMenuHomeYoyaku& a, const cBuildMenuHomeYoyaku& b)
+				arrBuildMenuHomeYoyaku.sort_by([](const cRightMenu& a, const cRightMenu& b)
+					{
+						return a.sortId < b.sortId;
+					});
+				arrBuildMenuHouheiYoyaku.sort_by([](const cRightMenu& a, const cRightMenu& b)
 					{
 						return a.sortId < b.sortId;
 					});
@@ -1655,24 +1792,54 @@ void Battle::draw() const
 
 	if (IsBuildMenuHome)
 	{
-		renderTextureBuildMenuHome.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
-		// ゲージの高さ（画像下から上へ）
-		const double gaugeHeight = 64 * t;
-
-		for (auto&& [i, re] : Indexed(arrBuildMenuHomeYoyaku))
+		switch (buiSyu)
 		{
-			if (i == 0)
+		case 0:
+		{
+			// ゲージの高さ（画像下から上へ）
+			const double gaugeHeight = 64 * t;
+			renderTextureBuildMenuHome.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+			for (auto&& [i, re] : Indexed(arrBuildMenuHomeYoyaku))
 			{
-				// 明るくする矩形領域（ゲージ部分）
-				RectF gaugeRect{ Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4, 64, gaugeHeight };
-				re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
-				gaugeRect
-					.draw(ColorF{ 0.0, 0.5 }); // 上が透明、下が白
+				if (i == 0)
+				{
+					// 明るくする矩形領域（ゲージ部分）
+					RectF gaugeRect{ Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4, 64, gaugeHeight };
+					re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
+					gaugeRect
+						.draw(ColorF{ 0.0, 0.5 }); // 上が透明、下が白
+				}
+				else
+				{
+					re.texture.resized(32).draw(Scene::Size().x - 328 - 32, Scene::Size().y - 328 - 30 + 32 + (i * 32) + 4);
+				}
 			}
-			else
+			break;
+		}
+		case 1:
+		{
+			// ゲージの高さ（画像下から上へ）
+			const double gaugeHeight = 64 * arrT[1];
+			renderTextureBuildMenuKouhei.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+			for (auto&& [i, re] : Indexed(arrBuildMenuHouheiYoyaku))
 			{
-				re.texture.resized(32).draw(Scene::Size().x - 328 - 32, Scene::Size().y - 328 - 30 + 32 + (i * 32) + 4);
+				if (i == 0)
+				{
+					// 明るくする矩形領域（ゲージ部分）
+					RectF gaugeRect{ Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4, 64, gaugeHeight };
+					re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
+					gaugeRect
+						.draw(ColorF{ 0.0, 0.5 }); // 上が透明、下が白
+				}
+				else
+				{
+					re.texture.resized(32).draw(Scene::Size().x - 328 - 32, Scene::Size().y - 328 - 30 + 32 + (i * 32) + 4);
+				}
 			}
+			break;
+		}
+		default:
+			break;
 		}
 	}
 	else

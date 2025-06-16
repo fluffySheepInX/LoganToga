@@ -164,7 +164,7 @@ public:
 	bool pressedUnit = false;
 	/// @brief 工兵などでクリック時に建築メニューを表示する？？？
 	Rect rectBuildMenu;
-
+	int32 buiSyu = 0; // 建築の種類 //0 = home,1 = kouhei, 2 =大将
 
 	int32 visionRadius = 3;
 	Point initTilePos = Point(0, 0); // ユニットのタイル上の位置
