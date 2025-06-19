@@ -29,33 +29,46 @@ enum class BuildMenu
 };
 struct cBuildPrepareKindAndCount {
 	int32 sortId = 0;
-	String kind;
-	int32 count;
+	String kind = U"";
+	int32 count = 0;
+	/// @brief 建築にかかる時間
+	double time = 1.0;
 };
 class cBuildPrepare
 {
 public:
+	//第一引数は最終的にkeyという変数で扱われる
 	HashTable<String, cBuildPrepareKindAndCount> htCountAndSyu;
-	int32 buiSyu = 0; // 建築の種類
+	int32 buiSyu = 0; // 建築メニューの種類
+	//0=参謀本部,1=Thunderwalker(大将),2=軽装歩兵詰所,3=騎兵詰所
+	//,4=重装歩兵詰所,5=工兵詰所,6=砲兵詰所,7=弓兵詰所,8=魔法墨詰所,9=騎士団詰所
 };
 
+/// @brief 建築メニューの一つ一つの項目
 class cRightMenu
 {
 public:
 	int sortId = 0;
 	String key;
-	String nameOfUnitOrBuildingOrSkill;
-	Rect rect;
+	String kindForProcess;
+
+	Rect rect;//どれが選択されたかを判定するための矩形
+
 	int32 count = -1;
 	int32 buiSyu = 0; // 建築の種類
 	Texture texture;
+
+	double time = 1.0; // 建築にかかる時間
+
+	/// @brief 予約と一緒のクラスで良いか疑問……
+	bool isMoved = false;
 };
 class cRightMenuHomeYoyaku
 {
 public:
 	int sortId = 0;
 	String key;
-	String nameOfUnitOrBuildingOrSkill;
+	String kindForProcess;
 	Texture texture;
 	int32 count = -1;
 	BuildMenu buildMenu = BuildMenu::Home;
@@ -150,26 +163,43 @@ private:
 	RenderTexture renderTextureBuildMenuEmpty;
 	RenderTexture renderTextureBuildMenuHome;
 	RenderTexture renderTextureBuildMenuKouhei;
+	RenderTexture renderTextureBuildMenuThunderwalker;
 	//Array<Rect> rectBuildMenuHome;
 
 	/// @brief home
 	cBuildPrepare cbp;
+	Array<cRightMenu> htBuildMenuHome;
+	/// @brief 大将
+	cBuildPrepare cbpThunderwalker;
+	Array<cRightMenu> htBuildMenuThunderwalker;
 	/// @brief 工兵
 	cBuildPrepare cbpKouhei;
-	Array<cRightMenu> htBuildMenuHome;
 	Array<cRightMenu> htBuildMenuKouhei;
+
 	bool IsBuildMenuHome = false;
+	bool IsBuildSelectTraget = false;
+	long longBuildSelectTragetId = -1;
 	int32 buiSyu = 0; // 建築の種類
+	/// @brief 移動後に建築するムーヴが発動しているか
+	bool isMovedYoyaku = false;
+	/// @brief 移動後に建築するユニットはどれか
+	long longIsMovedYoyakuId = -1;
+	/// @brief 移動後に何を建築するか特定する為
+	int32 cRightMenuCount = 0;
+	int32 cRightMenuTargetCount = -1;
 
 	long longBuildMenuHomeYoyakuIdCount = 0;
 	//Array<Array<cRightMenu>>将来的にはこうして拡張性を持たせる
 	Array<cRightMenu> arrBuildMenuHomeYoyaku;
-	Array<cRightMenu> arrBuildMenuHouheiYoyaku;
+	Array<cRightMenu> arrBuildMenuThunderwalkerYoyaku;
+	Array<cRightMenu> arrBuildMenuKouheiYoyaku;
 	Stopwatch stopwatch{ StartImmediately::No };
+	/// @brief 建築にかかる時間、つまり後でtimeに置き換える必要あり
 	const double durationSec = 5.0;
 	//これArrayにしなきゃ駄目（並列して建築できないから）
 	double t = -1.0;
-	Array<double> arrT = { -1.0,-1.0 };
+	Array<double> arrT = { -1.0,-1.0,-1.0 };
 	Stopwatch stopwatch001{ StartImmediately::No };
+	Stopwatch stopwatch002{ StartImmediately::No };
 
 };

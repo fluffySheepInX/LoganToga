@@ -280,12 +280,14 @@ void Battle::renB(RenderTexture& ren, cBuildPrepare& cbp, Array<cRightMenu>& arr
 			rectBuildMenuHome.y = ((re.second.sortId / 6) * 64) + 4;
 			rectBuildMenuHome.w = 64;
 			rectBuildMenuHome.h = 64;
-			crh.sortId = re.second.sortId;
+			crh.sortId = cRightMenuCount;
+			cRightMenuCount++;
 			crh.key = re.first;
-			crh.nameOfUnitOrBuildingOrSkill = re.second.kind;
+			crh.kindForProcess = re.second.kind;
 			crh.rect = rectBuildMenuHome;
 			crh.count = re.second.count;
 			crh.buiSyu = cbp.buiSyu; // 建築の種類
+			crh.time = re.second.time;
 			arr.push_back(crh);
 		}
 
@@ -380,6 +382,7 @@ Co::Task<void> Battle::start()
 		df.drawFrame(4, 0, ColorF{ 0.5 });
 	}
 
+	//建築メニューの初期化
 	{
 		cbp.htCountAndSyu.clear();
 		{
@@ -407,16 +410,38 @@ Co::Task<void> Battle::start()
 		renB(renderTextureBuildMenuHome, cbp, htBuildMenuHome);
 	}
 	{
+		cbpThunderwalker.htCountAndSyu.clear();
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 0;
+			cbpHome.count = -1;
+			cbpHome.kind = U"Unit";
+			cbpThunderwalker.htCountAndSyu.emplace(U"david.png", cbpHome);//ゴリアテの反対
+		}
+
+		cbpThunderwalker.buiSyu = 1; // 建築の種類
+		renB(renderTextureBuildMenuThunderwalker, cbpThunderwalker, htBuildMenuThunderwalker);
+	}
+	{
 		cbpKouhei.htCountAndSyu.clear();
 		{
 			cBuildPrepareKindAndCount cbpHome;
 			cbpHome.sortId = 0;
 			cbpHome.count = -1;
 			cbpHome.kind = U"Unit";
+			cbpHome.time = 2.0;
 			cbpKouhei.htCountAndSyu.emplace(U"zirai.png", cbpHome);
 		}
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 1;
+			cbpHome.count = -1;
+			cbpHome.kind = U"UnitPro";
+			cbpHome.time = 10.0;
+			cbpKouhei.htCountAndSyu.emplace(U"keisou-hohei.png", cbpHome);
+		}
 
-		cbpKouhei.buiSyu = 1; // 建築の種類
+		cbpKouhei.buiSyu = 5; // 建築の種類
 		renB(renderTextureBuildMenuKouhei, cbpKouhei, htBuildMenuKouhei);
 	}
 
@@ -435,6 +460,29 @@ Co::Task<void> Battle::start()
 		uu.FlagMoving = false;
 		uu.buiSyu = 1;
 		uu.Image = U"chip001.png";
+
+		ClassHorizontalUnit cuu;
+		cuu.ListClassUnit.push_back(uu);
+
+		classBattle.listOfAllUnit.push_back(cuu);
+	}
+	{
+		Unit uu;
+		uu.ID = classBattle.getIDCount();
+		uu.IsBuilding = false;
+
+		uu.initTilePos = Point{ 2, 2 };//保険
+		uu.orderPosiLeft = Point{ 0, 0 };
+		uu.orderPosiLeftLast = Point{ 0, 0 };
+		uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
+		uu.vecMove = Vec2{ 0, 0 };
+		uu.Speed = 1.0;
+		uu.Move = 500.0;
+		uu.FlagMove = false;
+		uu.FlagMoving = false;
+		uu.IsBattleEnable = true;
+		uu.buiSyu = 5;
+		uu.Image = U"chip006.png";
 
 		ClassHorizontalUnit cuu;
 		cuu.ListClassUnit.push_back(uu);
@@ -618,6 +666,7 @@ Co::Task<void> Battle::mainLoop()
 		for (auto& units : classBattle.listOfAllUnit)
 			UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), N);
 
+		//後でbattle内に移動(ポーズ処理を考慮
 		// 進行度（0.0 ～ 1.0）
 		if (arrBuildMenuHomeYoyaku.size() > 0)
 		{
@@ -625,7 +674,7 @@ Co::Task<void> Battle::mainLoop()
 			{
 				stopwatch.reset();
 				String key = arrBuildMenuHomeYoyaku.front().key;
-				String syu = arrBuildMenuHomeYoyaku.front().nameOfUnitOrBuildingOrSkill;
+				String kindForProcess = arrBuildMenuHomeYoyaku.front().kindForProcess;
 				int32 cou = arrBuildMenuHomeYoyaku.front().count;
 				arrBuildMenuHomeYoyaku.pop_front();
 				if (arrBuildMenuHomeYoyaku.size() > 0)
@@ -671,6 +720,7 @@ Co::Task<void> Battle::mainLoop()
 						uu.FlagMove = false;
 						uu.FlagMoving = false;
 						uu.IsBattleEnable = true;
+						uu.buiSyu = 5;
 						uu.Image = U"chip006.png";
 
 						ClassHorizontalUnit cuu;
@@ -686,19 +736,31 @@ Co::Task<void> Battle::mainLoop()
 				else if (key == U"kayaku.png")
 				{
 				}
+				else if (key == U"")
+				{
+
+				}
+				else if (key == U"")
+				{
+
+				}
+				else if (key == U"")
+				{
+
+				}
 			}
 			t = Min(stopwatch.sF() / durationSec, 1.0);
 		}
-		if (arrBuildMenuHouheiYoyaku.size() > 0)
+		if (arrBuildMenuThunderwalkerYoyaku.size() > 0)
 		{
 			if (arrT[1] >= 1.0)
 			{
 				stopwatch001.reset();
-				String key = arrBuildMenuHouheiYoyaku.front().key;
-				String syu = arrBuildMenuHouheiYoyaku.front().nameOfUnitOrBuildingOrSkill;
-				int32 cou = arrBuildMenuHouheiYoyaku.front().count;
-				arrBuildMenuHouheiYoyaku.pop_front();
-				if (arrBuildMenuHouheiYoyaku.size() > 0)
+				String key = arrBuildMenuThunderwalkerYoyaku.front().key;
+				String syu = arrBuildMenuThunderwalkerYoyaku.front().kindForProcess;
+				int32 cou = arrBuildMenuThunderwalkerYoyaku.front().count;
+				arrBuildMenuThunderwalkerYoyaku.pop_front();
+				if (arrBuildMenuThunderwalkerYoyaku.size() > 0)
 				{
 					arrT[1] = 0.0;
 					stopwatch001.start();
@@ -712,7 +774,113 @@ Co::Task<void> Battle::mainLoop()
 			}
 			arrT[1] = Min(stopwatch001.sF() / durationSec, 1.0);
 		}
+		if (arrBuildMenuKouheiYoyaku.size() > 0)
+		{
+			double tempTime = arrBuildMenuKouheiYoyaku.front().time;
+			if (arrT[2] >= 1.0)
+			{
+				stopwatch002.reset();
+				String key = arrBuildMenuKouheiYoyaku.front().key;
+				String syu = arrBuildMenuKouheiYoyaku.front().kindForProcess;
+				int32 cou = arrBuildMenuKouheiYoyaku.front().count;
+				arrBuildMenuKouheiYoyaku.pop_front();
+				if (arrBuildMenuKouheiYoyaku.size() > 0)
+				{
+					arrT[2] = 0.0;
+					stopwatch002.start();
+				}
+				else
+				{
+					arrT[2] = -1.0;
+				}
 
+				// 実行
+			}
+			arrT[2] = Min(stopwatch002.sF() / tempTime, 1.0);
+		}
+
+		if (isMovedYoyaku == true)
+		{
+			if (aiRoot[longIsMovedYoyakuId].size() > 0)
+			{
+				//移動中
+			}
+			else
+			{
+				isMovedYoyaku = false;//移動が終わった為
+				longIsMovedYoyakuId = -1; // IDをリセット
+
+				Array<cRightMenu> temp;
+				if (buiSyu == 0)
+				{
+					temp = htBuildMenuHome;
+				}
+				else if (buiSyu == 1)
+				{
+					temp = htBuildMenuThunderwalker;
+				}
+				else if (buiSyu == 5)
+				{
+					temp = htBuildMenuKouhei;
+				}
+
+				for (auto&& [i, re] : IndexedRef(temp))
+				{
+					if (re.sortId == cRightMenuTargetCount)
+					{
+						cRightMenu ccc;
+						ccc.sortId = longBuildMenuHomeYoyakuIdCount;
+						ccc.key = re.key;
+						ccc.kindForProcess = re.kindForProcess;
+						ccc.texture = TextureAsset(re.key);
+						ccc.time = re.time;
+						longBuildMenuHomeYoyakuIdCount++;
+						if (re.buiSyu == 0)
+						{
+							if (stopwatch.isRunning() == false)
+							{
+								stopwatch.start();
+								t = 0.0;
+							}
+							arrBuildMenuHomeYoyaku.push_back(ccc);
+						}
+						else if (re.buiSyu == 1)
+						{
+							if (stopwatch001.isRunning() == false)
+							{
+								stopwatch001.start();
+								arrT[1] = 0.0;
+							}
+							arrBuildMenuThunderwalkerYoyaku.push_back(ccc);
+						}
+						else if (re.buiSyu == 5)
+						{
+							if (stopwatch002.isRunning() == false)
+							{
+								stopwatch002.start();
+								arrT[2] = 0.0;
+							}
+							arrBuildMenuKouheiYoyaku.push_back(ccc);
+						}
+
+						//回数制限のある建物を選択した場合
+						if (re.count > 0)
+						{
+							re.count--;
+							cbp.htCountAndSyu[re.key].count = re.count;
+							if (re.buiSyu == 0)
+							{
+								renB(renderTextureBuildMenuHome, cbp, htBuildMenuHome);
+							}
+							else if (re.buiSyu == 1)
+							{
+								renB(renderTextureBuildMenuKouhei, cbpKouhei, htBuildMenuKouhei);
+							}
+						}
+					}
+				}
+			}
+		}
 
 		switch (battleStatus)
 		{
@@ -799,6 +967,7 @@ Co::Task<void> Battle::mainLoop()
 									unit.IsSelect = !unit.IsSelect;
 									IsBuildMenuHome = unit.IsSelect;
 									buiSyu = unit.buiSyu; // 建築の種類
+									longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
 								}
 							}
 						}
@@ -1232,6 +1401,74 @@ Co::Task<void> Battle::mainLoop()
 						}
 					}
 				}
+
+				//建物の建築場所を選択する処理
+				//ここに存在するのは、MouseL.pressedで建築メニュー押下時に続けて処理されてしまう為
+				if (IsBuildSelectTraget == true)
+				{
+					if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+					{
+						if (ToTile(*index, N).leftClicked())
+						{
+							{
+								IsBuildSelectTraget = false;
+								IsBuildMenuHome = false;
+								Unit& cu = GetCU(longBuildSelectTragetId);
+								longBuildSelectTragetId = -1;
+
+								// 移動先の座標算出
+								Vec2 nor = Cursor::PosF();
+								// 移動先が有効かどうかチェック || 本来は経路探索で移動可能かどうか調べるべき
+								auto indexTarget = ToIndex(nor, columnQuads, rowQuads);
+								if (not indexTarget.has_value())
+								{
+									cu.FlagMove = false;
+									co_return;
+								}
+
+								//移動
+								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+								cu.orderPosiLeft = nor;
+								cu.FlagMove = false;
+								//cuu.FlagMoving = true;
+								cu.FlagMoveAI = true;
+								cu.IsSelect = false;
+
+								IsBattleMove = false;
+
+								// 実行途中のタスクがあれば完了まで待つ。
+								if (taskMyUnits.isValid())
+								{
+									// 中断指示を出す
+									abortMyUnits = true;
+
+									// 完全に処理が完了する前に制御を返してくれる
+									taskMyUnits.wait();
+								}
+
+								abortMyUnits = false;
+
+								//予約移動状態であることを示す
+								isMovedYoyaku = true;
+
+
+								taskMyUnits = Async(BattleMoveAStarMyUnits,
+						std::ref(classBattle.listOfAllUnit),
+						std::ref(classBattle.listOfAllEnemyUnit),
+						std::ref(classBattle.classMapBattle.value().mapData),
+						std::ref(aiRoot),
+						std::ref(debugRoot),
+						std::ref(debugAstar),
+						std::ref(columnQuads),
+						std::ref(rowQuads),
+						N,
+						std::ref(abortMyUnits),
+						std::ref(pauseTaskMyUnits));
+
+							}
+						}
+					}
+				}
 			}
 
 			//pause処理
@@ -1520,6 +1757,10 @@ Co::Task<void> Battle::mainLoop()
 				}
 				else if (buiSyu == 1)
 				{
+					temp = htBuildMenuThunderwalker;
+				}
+				else if (buiSyu == 5)
+				{
 					temp = htBuildMenuKouhei;
 				}
 
@@ -1527,11 +1768,24 @@ Co::Task<void> Battle::mainLoop()
 				{
 					if (re.rect.leftClicked())
 					{
+						if (re.kindForProcess == U"UnitPro")
+						{
+							IsBuildSelectTraget = true;
+							cRightMenuTargetCount = re.sortId;
+
+							break;
+						}
+						else
+						{
+							IsBuildSelectTraget = false;
+						}
+
 						cRightMenu ccc;
 						ccc.sortId = longBuildMenuHomeYoyakuIdCount;
 						ccc.key = re.key;
-						ccc.nameOfUnitOrBuildingOrSkill = re.nameOfUnitOrBuildingOrSkill;
+						ccc.kindForProcess = re.kindForProcess;
 						ccc.texture = TextureAsset(re.key);
+						ccc.time = re.time;
 						longBuildMenuHomeYoyakuIdCount++;
 
 						if (re.buiSyu == 0)
@@ -1550,7 +1804,16 @@ Co::Task<void> Battle::mainLoop()
 								stopwatch001.start();
 								arrT[1] = 0.0;
 							}
-							arrBuildMenuHouheiYoyaku.push_back(ccc);
+							arrBuildMenuThunderwalkerYoyaku.push_back(ccc);
+						}
+						else if (re.buiSyu == 5)
+						{
+							if (stopwatch002.isRunning() == false)
+							{
+								stopwatch002.start();
+								arrT[2] = 0.0;
+							}
+							arrBuildMenuKouheiYoyaku.push_back(ccc);
 						}
 
 						//回数制限のある建物を選択した場合
@@ -1575,7 +1838,11 @@ Co::Task<void> Battle::mainLoop()
 					{
 						return a.sortId < b.sortId;
 					});
-				arrBuildMenuHouheiYoyaku.sort_by([](const cRightMenu& a, const cRightMenu& b)
+				arrBuildMenuThunderwalkerYoyaku.sort_by([](const cRightMenu& a, const cRightMenu& b)
+					{
+						return a.sortId < b.sortId;
+					});
+				arrBuildMenuKouheiYoyaku.sort_by([](const cRightMenu& a, const cRightMenu& b)
 					{
 						return a.sortId < b.sortId;
 					});
@@ -1614,6 +1881,13 @@ void Battle::draw() const
 	{
 		// 2D カメラによる座標変換を適用する
 		const auto tr = camera.createTransformer();
+
+		// カメラの視界範囲（ワールド座標での視界矩形）
+		int32 testPadding = 0;
+		const RectF cameraView = RectF{
+			camera.getCenter() - (Scene::Size() / 2.0) / camera.getScale(),
+			Scene::Size() / camera.getScale()
+		}.stretched(-testPadding);
 
 		{
 			// 乗算済みアルファ用のブレンドステートを適用する
@@ -1662,11 +1936,11 @@ void Battle::draw() const
 					// そのタイルの底辺中央の座標
 					const Vec2 pos = ToTileBottomCenter(index, N);
 
-					// 底辺中央を基準にタイルを描く
-					String tip = classBattle.classMapBattle.value().mapData[index.x][index.y].tip;
-					TextureAsset(tip + U".png").draw(Arg::bottomCenter = pos);
-
-					//textures[grid[index]].draw(Arg::bottomCenter = pos);
+					if (cameraView.intersects(Vec2(pos)))
+					{
+						String tip = classBattle.classMapBattle.value().mapData[index.x][index.y].tip;
+						TextureAsset(tip + U".png").draw(Arg::bottomCenter = pos);
+					}
 
 					// 建物描写
 					for (auto& abc : bui)
@@ -1675,18 +1949,8 @@ void Battle::draw() const
 							continue;
 
 						if (abc.rowBuilding == (xi + k) && abc.colBuilding == (yi - k))
-						{
 							buiTex.push_back(abc);
-						}
 					}
-					//if (visibilityMap[index] == Visibility::Seen)
-					//{
-					//	texture.draw(Arg::bottomCenter = pos, ColorF{ 0.5 }); // グレー表示
-					//}
-					//else if (visibilityMap[index] == Visibility::Visible)
-					//{
-					//	texture.draw(Arg::bottomCenter = pos); // 通常表示
-					//}
 
 					// Fog 描画
 					switch (visibilityMap[index])
@@ -1703,17 +1967,14 @@ void Battle::draw() const
 				}
 			}
 
-			//bui
+			// 建物描画
 			for (auto aaa : buiTex)
 			{
-				if (aaa.IsSelect)
-				{
-					TextureAsset(aaa.Image).draw(Arg::bottomCenter = ToTileBottomCenter(Point(aaa.colBuilding, aaa.rowBuilding), N).movedBy(0, -15)).drawFrame(3.0, Palette::Red);
-				}
-				else
-				{
-					TextureAsset(aaa.Image).draw(Arg::bottomCenter = ToTileBottomCenter(Point(aaa.colBuilding, aaa.rowBuilding), N).movedBy(0, -15));
-				}
+				const Vec2 pos = ToTileBottomCenter(Point(aaa.colBuilding, aaa.rowBuilding), N);
+				if (cameraView.intersects(pos))
+					aaa.IsSelect ?
+					TextureAsset(aaa.Image).draw(Arg::bottomCenter = pos.movedBy(0, -TileThickness)).drawFrame(3.0, Palette::Red) :
+					TextureAsset(aaa.Image).draw(Arg::bottomCenter = pos.movedBy(0, -TileThickness));
 			}
 
 			// プレイヤーユニット描画
@@ -1761,7 +2022,6 @@ void Battle::draw() const
 			}
 		}
 
-
 		//範囲指定もしくは移動先矢印
 		if (MouseR.pressed())
 		{
@@ -1782,6 +2042,15 @@ void Battle::draw() const
 			{
 				Line{ cursPos, Cursor::Pos() }
 				.drawArrow(10, Vec2{ 40, 80 }, Palette::Orange);
+			}
+		}
+
+		if (IsBuildSelectTraget == true)
+		{
+			if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+			{
+				// マウスカーソルがあるタイルを強調表示する
+				ToTile(*index, N).draw(ColorF{ 1.0, 0.2 });
 			}
 		}
 	}
@@ -1820,8 +2089,8 @@ void Battle::draw() const
 		{
 			// ゲージの高さ（画像下から上へ）
 			const double gaugeHeight = 64 * arrT[1];
-			renderTextureBuildMenuKouhei.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
-			for (auto&& [i, re] : Indexed(arrBuildMenuHouheiYoyaku))
+			renderTextureBuildMenuThunderwalker.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+			for (auto&& [i, re] : Indexed(arrBuildMenuThunderwalkerYoyaku))
 			{
 				if (i == 0)
 				{
@@ -1830,6 +2099,37 @@ void Battle::draw() const
 					re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
 					gaugeRect
 						.draw(ColorF{ 0.0, 0.5 }); // 上が透明、下が白
+				}
+				else
+				{
+					re.texture.resized(32).draw(Scene::Size().x - 328 - 32, Scene::Size().y - 328 - 30 + 32 + (i * 32) + 4);
+				}
+			}
+			break;
+		}
+		case 5:
+		{
+			// ゲージの高さ（画像下から上へ）
+			const double gaugeHeight = 64 * arrT[2];
+			renderTextureBuildMenuKouhei.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+			//TODO 到着時に以下を行う
+			for (auto&& [i, re] : Indexed(arrBuildMenuKouheiYoyaku))
+			{
+				if (i == 0)
+				{
+					re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
+
+					if (re.isMoved)
+					{
+
+					}
+					else
+					{
+						// 明るくする矩形領域（ゲージ部分）
+						RectF gaugeRect{ Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4, 64, gaugeHeight };
+						gaugeRect
+							.draw(ColorF{ 0.0, 0.5 }); // 上が透明、下が白
+					}
 				}
 				else
 				{
