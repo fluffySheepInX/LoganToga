@@ -48,7 +48,11 @@ public:
 class cRightMenu
 {
 public:
-	int sortId = 0;
+	/// @brief ↓↓の予約idを用いる時は、場所を紐づける用途になる
+	long sortId = 0;
+	/// @brief 将来、pushした後に並び替えたいことがあるかもしれない。
+	/// 例えば兵優先コマンドなど←その用途ならタグ付けのほうが……
+	long sortYoyakuId = 0;
 	String key;
 	String kindForProcess;
 
@@ -62,6 +66,12 @@ public:
 
 	/// @brief 予約と一緒のクラスで良いか疑問……
 	bool isMoved = false;
+	int32 rowBuilding = -1; // 予約した行
+	int32 colBuilding = -1; // 予約した列
+
+	///遠隔地に生産する用
+	//int32 rowProduct = -1; // 予約した行
+	//int32 colProduct = -1; // 予約した列
 };
 class cRightMenuHomeYoyaku
 {
@@ -86,6 +96,8 @@ private:
 	void draw() const override;
 
 	void renB(RenderTexture&, cBuildPrepare&, Array<cRightMenu>&);
+	Array<Array<Unit*>> GetMovableUnitGroups();
+	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
@@ -96,9 +108,10 @@ private:
 	// マップの一辺のタイル数
 	int32 N;
 	// タイルの一辺の長さ（ピクセル）
-	Vec2 TileOffset{ 48, 24 };
+	//Vec2 TileOffset{ 48, 24 };
+	Vec2 TileOffset{ 50, 25 };
 	// タイルの厚み（ピクセル）
-	int32 TileThickness = 17;
+	int32 TileThickness = 15;
 	// 各列の四角形
 	Array<Quad> columnQuads = MakeColumnQuads(N);
 	// 各行の四角形
@@ -108,8 +121,8 @@ private:
 	/// @brief 戦場の霧
 	Grid<Visibility> visibilityMap;
 
-	int32 DistanceBetweenUnit = 0;
-	int32 DistanceBetweenUnitTate = 0;
+	int32 DistanceBetweenUnit = 32;
+	int32 DistanceBetweenUnitTate = 32;
 
 	ClassBattle classBattle;
 	BattleStatus battleStatus = BattleStatus::Message;
@@ -162,19 +175,24 @@ private:
 
 	RenderTexture renderTextureBuildMenuEmpty;
 	RenderTexture renderTextureBuildMenuHome;
-	RenderTexture renderTextureBuildMenuKouhei;
 	RenderTexture renderTextureBuildMenuThunderwalker;
+	RenderTexture renderTextureBuildMenuKouhei;
+	RenderTexture renderTextureBuildMenuKeisouHoheiT;
 	//Array<Rect> rectBuildMenuHome;
 
 	/// @brief home
 	cBuildPrepare cbp;
-	Array<cRightMenu> htBuildMenuHome;
+	Array<cRightMenu> arrayComRight_BuildMenu_Home;
 	/// @brief 大将
 	cBuildPrepare cbpThunderwalker;
-	Array<cRightMenu> htBuildMenuThunderwalker;
+	Array<cRightMenu> arrayComRight_BuildMenu_Thunderwalker;
 	/// @brief 工兵
 	cBuildPrepare cbpKouhei;
-	Array<cRightMenu> htBuildMenuKouhei;
+	Array<cRightMenu> arrayComRight_BuildMenu_Kouhei;
+	/// @brief 軽装歩兵詰所
+	cBuildPrepare cbpKeisouHoheiT;
+	Array<cRightMenu> arrayComRight_BuildMenu_KeisouHoheiT;
+	cRightMenu& tempSelectComRight;
 
 	bool IsBuildMenuHome = false;
 	bool IsBuildSelectTraget = false;
@@ -184,8 +202,11 @@ private:
 	bool isMovedYoyaku = false;
 	/// @brief 移動後に建築するユニットはどれか
 	long longIsMovedYoyakuId = -1;
+	int32 rowBuildingTarget = -1; // 予約した行
+	int32 colBuildingTarget = -1; // 予約した列
 	/// @brief 移動後に何を建築するか特定する為
 	int32 cRightMenuCount = 0;
+	/// @brief 選択された建築メニューのID
 	int32 cRightMenuTargetCount = -1;
 
 	long longBuildMenuHomeYoyakuIdCount = 0;
@@ -193,13 +214,15 @@ private:
 	Array<cRightMenu> arrBuildMenuHomeYoyaku;
 	Array<cRightMenu> arrBuildMenuThunderwalkerYoyaku;
 	Array<cRightMenu> arrBuildMenuKouheiYoyaku;
-	Stopwatch stopwatch{ StartImmediately::No };
+	Array<cRightMenu> arrBuildMenuKeisouYoyaku;
 	/// @brief 建築にかかる時間、つまり後でtimeに置き換える必要あり
 	const double durationSec = 5.0;
 	//これArrayにしなきゃ駄目（並列して建築できないから）
 	double t = -1.0;
-	Array<double> arrT = { -1.0,-1.0,-1.0 };
+	Array<double> arrT = { -1.0,-1.0,-1.0,-1.0 };
+	Stopwatch stopwatch{ StartImmediately::No };
 	Stopwatch stopwatch001{ StartImmediately::No };
 	Stopwatch stopwatch002{ StartImmediately::No };
+	Stopwatch stopwatch003{ StartImmediately::No };
 
 };
