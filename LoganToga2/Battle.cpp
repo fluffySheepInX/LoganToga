@@ -919,7 +919,6 @@ Co::Task<void> Battle::mainLoop()
 			arrT[3] = Min(stopwatch003.sF() / tempTime, 1.0);
 		}
 
-
 		if (isMovedYoyaku == true)
 		{
 			if (aiRoot[longIsMovedYoyakuId].size() > 0)
@@ -1549,7 +1548,7 @@ Co::Task<void> Battle::mainLoop()
 						const double posY = (i * TileOffset.y) - TileThickness;
 						const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
 
-						itemUnit.orderPosiLeft = pos;
+						itemUnit.orderPosiLeft = Vec2(Math::Round(pos.x), Math::Round(pos.y));
 
 						//if (aiRoot[itemUnit.ID].size() == 1)
 						//{
@@ -2436,6 +2435,17 @@ Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 
 	return groups;
 }
+
+auto roundTo = [](double value, int digits = 3)
+	{
+		double scale = std::pow(10.0, digits);
+		return std::round(value * scale) / scale;
+	};
+int roundToInt(double value)
+{
+	return static_cast<int32>(std::round(value));
+}
+
 /// @brief 指定されたユニットの部隊に対して、指定された開始位置と終了位置に沿ってユニットを配置します。
 /// @param units 
 /// @param start 
@@ -2446,23 +2456,68 @@ void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start
 	const int32 count = units.size();
 	const int32 centerOffset = (count - 1) / 2;
 
-	const double angleForward = Math::Atan2(end.y - start.y, end.x - start.x);       // 前方角度
-	const double anglePerpendicular = Math::Pi / 2 - angleForward;                   // 横向き
+	//// 前方角度
+	//double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
+	//// 横向き
+	//double anglePerpendicular = Math::Pi / 2 - angleForward;
+
+	//for (auto&& [i, unit] : Indexed(units))
+	//{
+	//	// 小数点以下3桁で丸める例
+	//	double s = Math::Sin(anglePerpendicular);
+	//	double roundedSin = std::round(s * 1000) / 1000;
+
+	//	double c = DistanceBetweenUnit * Math::Cos(anglePerpendicular);
+	//	double aaaaa = Math::Round(DistanceBetweenUnit * Math::Cos(anglePerpendicular));
+	//	double aaaaaa = (i - centerOffset) * Math::Round(aaaaa);
+	//	double bbbbbb = rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
+
+	//	double x = end.x
+	//		+ (i - centerOffset) * DistanceBetweenUnit * Math::Cos(anglePerpendicular)
+	//		- rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
+
+	//	double y = end.y
+	//		- (i - centerOffset) * DistanceBetweenUnit * Math::Sin(anglePerpendicular)
+	//		- rowIndex * DistanceBetweenUnitTate * Math::Sin(angleForward);
+
+	//	Unit& cuu = GetCU(unit->ID);
+	//	cuu.orderPosiLeft = Vec2(Floor(x), Floor(y));
+	//	cuu.orderPosiLeftLast = cuu.orderPosiLeft;
+	//	cuu.FlagMove = false;
+	//	cuu.FlagMoveAI = true;
+
+	//	//auto index = ToIndex(cuu.orderPosiLeft, columnQuads, rowQuads);
+	//}
+
+	double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
+	double anglePerpendicular = Math::Pi / 2 - angleForward;
 
 	for (auto&& [i, unit] : Indexed(units))
 	{
-		double x = end.x + (i - centerOffset) * DistanceBetweenUnit * Math::Cos(anglePerpendicular)
-			- rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
+		double cosPerpendicular = Math::Cos(anglePerpendicular);
+		double sinPerpendicular = Math::Sin(anglePerpendicular);
 
-		double y = end.y - (i - centerOffset) * DistanceBetweenUnit * Math::Sin(anglePerpendicular)
-			- rowIndex * DistanceBetweenUnitTate * Math::Sin(angleForward);
+		double aaaaa = Math::Round(DistanceBetweenUnit * cosPerpendicular); // double
+		double aaaaaa = (i - centerOffset) * Math::Round(aaaaa); // 明示的に Math::Round を使う
+
+		int32 aaaafdjnus = (i - centerOffset);
+		int32 iuirkuinf = aaaaa;
+		int32 uier = aaaafdjnus * iuirkuinf; // ここで整数の掛け算を行う
+		int32 dooi = aaaafdjnus * Math::Round(DistanceBetweenUnit * sinPerpendicular);
+
+		double offsetX = (i - centerOffset) * DistanceBetweenUnit * cosPerpendicular;
+		double offsetY = (i - centerOffset) * DistanceBetweenUnit * sinPerpendicular;
+
+		double rowOffsetX = rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
+		double rowOffsetY = rowIndex * DistanceBetweenUnitTate * Math::Sin(angleForward);
+
+		double x = end.x + uier - rowOffsetX;
+		double y = end.y - dooi - rowOffsetY;
 
 		Unit& cuu = GetCU(unit->ID);
-		cuu.orderPosiLeft = Vec2(x, y);
+		cuu.orderPosiLeft = Vec2(Floor(x), Floor(y));
 		cuu.orderPosiLeftLast = cuu.orderPosiLeft;
 		cuu.FlagMove = false;
 		cuu.FlagMoveAI = true;
-
-		//auto index = ToIndex(cuu.orderPosiLeft, columnQuads, rowQuads);
 	}
 }

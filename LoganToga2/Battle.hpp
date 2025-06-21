@@ -121,8 +121,8 @@ private:
 	/// @brief 戦場の霧
 	Grid<Visibility> visibilityMap;
 
-	int32 DistanceBetweenUnit = 32;
-	int32 DistanceBetweenUnitTate = 32;
+	const double DistanceBetweenUnit = 32.0;
+	const double DistanceBetweenUnitTate = 32.0;
 
 	ClassBattle classBattle;
 	BattleStatus battleStatus = BattleStatus::Message;
