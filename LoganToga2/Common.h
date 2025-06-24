@@ -3,6 +3,7 @@
 #include "libs/CoTaskLib.hpp"
 #include "ClassMap.h" 
 #include "ClassMapBattle.h"
+#include "ClassUnit.h"
 
 inline Optional<bool> downKeyEscapeResult;
 inline Polygon EXITBTNRECT = {};
@@ -90,6 +91,7 @@ public:
 		archive(cookies, itemCounts);
 	}
 };
+
 
 /// @brief 描画された最大のアルファ成分を保持するブレンドステートを作成する
 /// @return 
@@ -738,7 +740,7 @@ public:
 			.replaced(U" ", U"")
 			.replaced(U"\t", U"");
 	}
-	static ClassMapBattle GetClassMapBattle(ClassMap cm){
+	static ClassMapBattle GetClassMapBattle(ClassMap cm) {
 		ClassMapBattle cmb;
 		cmb.name = cm.name;
 		for (String aaa : cm.data)

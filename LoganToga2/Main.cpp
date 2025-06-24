@@ -6,118 +6,10 @@
 #include "Game.hpp"
 #include "Battle.hpp"
 #include "ClassUnit.h"
+#include "ClassCommonConfig.h"
 
-void Init()
+void Init(CommonConfig& commonConfig)
 {
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/010_FaceImage/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		TextureAsset::Register(filename, filePath);
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/006_CardImage/"))
-	{
-		String filename = U"/006_CardImage/" + FileSystem::FileName(filePath);
-		TextureAsset::Register(filename, filePath);
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/005_BackgroundImage/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		TextureAsset::Register(filename, filePath);
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/040_ChipImage/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		TextureAsset::Register(filename, filePath);
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoPower/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		const JSON jsonPower = JSON::Load(filePath);
-		if (not jsonPower) // もし読み込みに失敗したら
-		{
-			continue;
-		}
-
-		//for (const auto& [key, value] : jsonPower[U"Power"])
-		//{
-		//	ClassPower cp;
-		//	cp.PowerTag = value[U"PowerTag"].getString();
-		//	cp.PowerName = value[U"PowerName"].getString();
-		//	cp.HelpString = value[U"Help"].getString();
-		//	cp.SortKey = Parse<int32>(value[U"SortKey"].getString());
-		//	cp.Image = value[U"Image"].getString();
-		//	cp.Text = value[U"Text"].getString();
-		//	cp.Diff = value[U"Diff"].getString();
-		//	cp.Money = Parse<long>(value[U"Money"].getString());
-		//	cp.Wave = Parse<int32>(value[U"Wave"].getString());
-		//	manager.get().get()->classGameStatus.arrayClassPower.push_back(std::move(cp));
-		//}
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoBGM/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		const JSON jsonPower = JSON::Load(filePath);
-		if (not jsonPower) continue;
-
-		//for (const auto& [key, value] : jsonPower[U"BGM"])
-		//{
-		//	ClassBGM cp;
-		//	if (value.hasElement(U"BGMTag") == true)
-		//	{
-		//		cp.tag = value[U"BGMTag"].getString();
-		//	}
-		//	if (value.hasElement(U"BGMName") == true)
-		//	{
-		//		cp.name = value[U"BGMName"].getString();
-		//	}
-		//	if (value.hasElement(U"OP") == true)
-		//	{
-		//		cp.op = true;
-		//	}
-		//	if (value.hasElement(U"PREPARE") == true)
-		//	{
-		//		cp.prepare = true;
-		//	}
-		//	if (value.hasElement(U"BATTLE") == true)
-		//	{
-		//		cp.battle = true;
-		//	}
-
-		//	AudioAsset::Register(cp.tag, PATHBASE + PATH_DEFAULT_GAME + U"/045_BGM/" + cp.tag);
-
-		//	manager.get().get()->classGameStatus.arrayClassBGM.push_back(std::move(cp));
-		//}
-	}
-	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoCard/"))
-	{
-		String filename = FileSystem::FileName(filePath);
-		const JSON jsonPower = JSON::Load(filePath);
-		if (not jsonPower) continue;
-
-		//for (const auto& [key, value] : jsonPower[U"Card"])
-		//{
-		//	ClassCard cc;
-		//	cc.nameTag = value[U"name_tag"].getString();
-		//	cc.sortKey = Parse<int32>(value[U"sortkey"].getString());
-		//	cc.func = value[U"func"].getString();
-		//	const Array<String> strArray = value[U"icon"].getString().split(U',');
-		//	for (auto& s : strArray)
-		//	{
-		//		cc.icon.push_back(s.replaced(U" ", U"").replaced(U"\t", U""));
-		//	}
-		//	cc.icon.reverse();
-
-		//	cc.name = value[U"name"].getString();
-		//	cc.help = value[U"help"].getString();
-		//	cc.attackMyUnit = Parse<int32>(value[U"attackMyUnit"].getString());
-		//	cc.defMyUnit = Parse<int32>(value[U"defMyUnit"].getString());
-		//	cc.moveMyUnit = Parse<int32>(value[U"moveMyUnit"].getString());
-		//	cc.costMyUnit = Parse<int32>(value[U"costMyUnit"].getString());
-		//	cc.hpMyUnit = Parse<int32>(value[U"hpMyUnit"].getString());
-		//	manager.get().get()->classGameStatus.arrayClassCard.push_back(std::move(cc));
-		//}
-	}
-
 	// Unit.jsonからデータを読み込む
 	{
 		const JSON jsonUnit = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoUnit/Unit.json");
@@ -184,9 +76,7 @@ void Init()
 		const JSON skillData = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + +U"/070_Scenario/InfoSkill/skill.json");
 
 		if (not skillData) // もし読み込みに失敗したら
-		{
 			throw Error{ U"Failed to load `skill.json`" };
-		}
 
 		Array<Skill> arrayClassSkill;
 		for (const auto& [key, value] : skillData[U"Skill"]) {
@@ -386,6 +276,7 @@ void Init()
 						break;
 					}
 
+		commonConfig.arrayUnit = arrayClassUnit;
 		//manager.get().get()->classGameStatus.arrayClassUnit = arrayClassUnit;
 	}
 	//// obj.jsonからデータを読み込む
@@ -477,6 +368,9 @@ void Main()
 			reader(saveData);
 	}
 
+	CommonConfig commonConfig;
+	Init(commonConfig);
+
 	int32 argc = System::GetArgc();
 	char** argv = System::GetArgv();
 	// 0:パス
@@ -507,7 +401,7 @@ void Main()
 		ss.SkillAttack = U"SkillAttack";
 		systemString = ss;
 
-		const auto battle = Co::PlaySceneFrom<Battle>(saveData).runScoped();
+		const auto battle = Co::PlaySceneFrom<Battle>(saveData, commonConfig).runScoped();
 		loop();
 	}
 	else

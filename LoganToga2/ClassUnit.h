@@ -6,6 +6,30 @@
 class ClassTempStatus
 {
 public:
+	friend void Formatter(FormatData& formatData, const ClassTempStatus& value)
+	{
+		formatData.string += U"({}, {}, {})"_fmt(
+			value.Medical,
+			value.Hp,
+			value.HpMAX,
+			value.Mp,
+			value.Attack,
+			value.Defense,
+			value.Magic,
+			value.MagDef,
+			value.Speed,
+			value.plus_speed_time, value.Dext, value.Move, value.Hprec, value.Mprec, value.Exp,
+			value.Exp_mul, value.Heal_max, value.Summon_max, value.No_knock, value.Loyal, value.Alive_per, value.Escape_range
+		);
+	}
+	//template <class Archive>
+	//void SIV3D_SERIALIZE(Archive& unit)
+	//{
+	//	Archive(Medical, Hp, HpMAX, Mp, Attack, Defense, Magic, MagDef, Speed, plus_speed_time,
+	//		Dext, Move, Hprec, Mprec, Exp, Exp_mul, Heal_max, Summon_max, No_knock, Loyal, Alive_per, Escape_range);
+	//}
+
+
 	// Medical
 	int32 Medical = 0;
 
@@ -74,6 +98,26 @@ public:
 class Unit
 {
 public:
+	friend void Formatter(FormatData& formatData, const Unit& value)
+	{
+		formatData.string += U"({}, {}, {})"_fmt(value.Name, value.NameTag, value.ID);
+	}
+	//template <class Archive>
+	//void SIV3D_SERIALIZE(Archive& unit)
+	//{
+	//	Archive(cts, Formation, ID, rectExecuteBtnStrategyMenu, rectExecuteBtnStrategyMenuLeader, rectExecuteBtnStrategyMenuMember,
+	//		rectDetailStrategyMenu, pressedDetailStrategyMenu, pressedUnit, rectBuildMenu, buiSyu,
+	//		visionRadius, initTilePos, IsBuilding, IsBuildingEnable, rowBuilding, colBuilding,
+	//		mapTipObjectType, NoWall2, HPCastle, CastleDefense, CastleMagdef, houkou, initXY,
+	//		IsLeader, IsSelect, IsDone, IsBattleEnable, NameTag, Name, Help, Text, Race, Class, Image,
+	//		Dead, Retreat, Join, Face, Voice_type, gender, Talent, Friend, Merce, Staff, InitMember, Enemy,
+	//		Level, Level_max, Price, Cost, Medical, HasExp, Hp, HpMAX, Mp, Attack, Defense, Magic, MagDef,
+	//		Speed, Dext, Move, Hprec, Mprec, Exp, Exp_mul, Heal_max, Summon_max, No_knock, Loyal, Alive_per,
+	//		Escape_range, SkillName, Skill, Finance, MoveType, FlagMove, FlagMoveAI, FlagMoving, FlagMovingEnd,
+	//		FlagMoveDispose, yokoUnit, TakasaUnit, FlagReachedDestination, orderPosiLeftFlagReachedDestination,
+	//		nowPosiLeft, orderPosiLeft, orderPosiLeftLast, vecMove, FlagMoveSkill, FlagMovingSkill);
+	//}
+
 	Unit() = default;
 	Unit& operator=(const Unit& other) {
 		if (this != &other) {
@@ -169,6 +213,8 @@ public:
 	int32 visionRadius = 3;
 	Point initTilePos = Point(0, 0); // ユニットのタイル上の位置
 
+	int32 waitTimeResource = 0; // 資源ポイントを獲得するまでの待ち時間
+
 	// IsLeader
 	bool IsBuilding = false;
 	bool isValidBuilding() const {
@@ -187,7 +233,7 @@ public:
 	String houkou = U"";
 	Point initXY = Point();
 
-	LiquidBarBattle bLiquidBarBattle;
+	//LiquidBarBattle bLiquidBarBattle;
 
 	// IsLeader
 	bool IsLeader = false;

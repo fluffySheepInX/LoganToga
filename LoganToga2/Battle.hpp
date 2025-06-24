@@ -7,6 +7,7 @@
 #include "ClassBattle.h"
 #include "ClassMapBattle.h"
 #include "ClassAStar.h" 
+#include "ClassCommonConfig.h"
 
 /*
 	インデックスとタイルの配置の関係 (N = 4)
@@ -20,6 +21,11 @@
 			(3, 3)
 */
 
+struct map_detail_position
+{
+	MapDetail classMapBattle;
+	Vec2 pos;
+};
 
 enum class BuildMenu
 {
@@ -87,7 +93,8 @@ public:
 class Battle : public FsScene
 {
 public:
-	Battle(GameData& saveData);
+	Battle(GameData& saveData, CommonConfig& commonConfig);
+	~Battle() override;
 private:
 	Co::Task<void> start() override;
 
@@ -99,6 +106,8 @@ private:
 	Array<Array<Unit*>> GetMovableUnitGroups();
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
+
+	CommonConfig& m_commonConfig;
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
 	const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
@@ -123,6 +132,7 @@ private:
 
 	const double DistanceBetweenUnit = 32.0;
 	const double DistanceBetweenUnitTate = 32.0;
+	const Font systemFont{ 30, Typeface::Bold };
 
 	ClassBattle classBattle;
 	BattleStatus battleStatus = BattleStatus::Message;
@@ -208,6 +218,22 @@ private:
 	int32 cRightMenuCount = 0;
 	/// @brief 選択された建築メニューのID
 	int32 cRightMenuTargetCount = -1;
+	/// @brief 移動後に資源ポイントを征服するユニットはどれか
+	long longIsGetResourceId = -1;
+	bool isGetResource = false;
+	bool IsResourceSelectTraget = false;
+	int32 rowResourceTarget = -1; // 予約した行
+	int32 colResourceTarget = -1; // 予約した列
+
+	struct resourceWait
+	{
+		int32 id = -1;
+		Stopwatch stopwatch{ StartImmediately::No };
+		int32 waitTime = 0; // 資源ポイントを獲得するまでの待ち時間
+		int32 rowResourceTarget = -1; // 予約した行
+		int32 colResourceTarget = -1; // 予約した列
+	};
+	Array<resourceWait> arrResourceWait;
 
 	long longBuildMenuHomeYoyakuIdCount = 0;
 	//Array<Array<cRightMenu>>将来的にはこうして拡張性を持たせる
@@ -224,5 +250,19 @@ private:
 	Stopwatch stopwatch001{ StartImmediately::No };
 	Stopwatch stopwatch002{ StartImmediately::No };
 	Stopwatch stopwatch003{ StartImmediately::No };
+
+	//資源
+
+	Stopwatch stopwatchFinance{ StartImmediately::No };
+	/// @brief 金
+	int32 gold = 0;
+
+	/// @brief 信頼
+	int32 trust = 0;
+
+	/// @brief 物資
+	int32 food = 0;
+
+
 
 };

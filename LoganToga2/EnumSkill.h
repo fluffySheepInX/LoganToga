@@ -51,3 +51,5 @@ enum class BattleWhichIsThePlayer { Sortie, Def, None };
 /// </summary>
 ///
 enum class FlagBattleMapUnit { Unit, Var, Spe };
+
+enum class resourceKind { None, Gold, Trust, Food };

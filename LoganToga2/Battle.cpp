@@ -183,8 +183,17 @@ static cRightMenu& dummyMenu()
 	return instance;
 }
 
-Battle::Battle(GameData& saveData)
-	:FsScene(U"Battle"), m_saveData{ saveData }, N{ 64 }
+void GetTempResource(ClassMapBattle& cmb)
+{
+	cmb.mapData[0][10].isResourcePoint = true;
+	cmb.mapData[0][10].resourcePointType = resourceKind::Gold;
+	cmb.mapData[0][10].resourcePointAmount = 11;
+	cmb.mapData[0][10].resourcePointDisplayName = U"金";
+	cmb.mapData[0][10].resourcePointIcon = U"david.png";
+}
+
+Battle::Battle(GameData& saveData, CommonConfig& commonConfig)
+	:FsScene(U"Battle"), m_saveData{ saveData }, m_commonConfig{ commonConfig }, N{ 64 }
 	, visibilityMap{ Grid<Visibility>(Size{ N, N }, Visibility::Unseen) }
 	, grid{ Grid<int32>(Size{ N, N }) }
 	, tempSelectComRight{ dummyMenu() }
@@ -226,6 +235,7 @@ Battle::Battle(GameData& saveData)
 	}
 
 	classBattle.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
+	GetTempResource(classBattle.classMapBattle.value());
 
 	N = classBattle.classMapBattle.value().mapData.size();
 	//Vec2 TileOffset{ 48, 24 };
@@ -234,6 +244,11 @@ Battle::Battle(GameData& saveData)
 	int32 TileThickness = 15;
 	Array<Quad> columnQuads = MakeColumnQuads(N);
 	Array<Quad> rowQuads = MakeRowQuads(N);
+}
+Battle::~Battle()
+{
+	abort = true;
+	abortMyUnits = true;
 }
 
 std::unique_ptr<TextureAssetData> MakeTextureAssetData1(const FilePath& path, const TextureDesc textureDesc)
@@ -328,6 +343,9 @@ Co::Task<void> Battle::start()
 		TextureAsset::Register(FileSystem::FileName(filePath), MakeTextureAssetData1(filePath, TextureDesc::Mipped));
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/043_ChipImageBuild/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
+	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/041_ChipImageSkill/"))
+		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
+
 
 	arrayBattleZinkei.push_back(false);
 	arrayBattleZinkei.push_back(false);
@@ -336,51 +354,6 @@ Co::Task<void> Battle::start()
 	arrayBattleCommand.push_back(false);
 
 	battleStatus = BattleStatus::Battle;
-
-	renderTextureSkill = RenderTexture{ 320,320 };
-	renderTextureSkill.clear(ColorF{ 0.5, 0.0 });
-	{
-		const ScopedRenderTarget2D target{ renderTextureSkill.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
-		const ScopedRenderStates2D blend{ MakeBlendState() };
-
-		//skill抽出
-		Array<Skill> table;
-		for (auto& item : classBattle.listOfAllUnit)
-		{
-			if (item.ListClassUnit.empty())
-				continue;
-			for (auto& itemUnit : item.ListClassUnit)
-			{
-				for (auto& ski : itemUnit.Skill)
-					table.push_back(ski);
-			}
-		}
-
-		// ソート
-		table.sort_by([](const Skill& a, const Skill& b)
-		{
-			return a.sortKey < b.sortKey;
-		});
-		table.erase(std::unique(table.begin(), table.end()), table.end());
-
-		for (const auto&& [i, key] : Indexed(table))
-		{
-			Rect rectSkill;
-			rectSkill.x = ((i % 10) * 32) + 4;
-			rectSkill.y = ((i / 10) * 32) + 4;
-			rectSkill.w = 32;
-			rectSkill.h = 32;
-			htSkill.emplace(key.nameTag, rectSkill);
-
-			for (auto& icons : key.icon.reversed())
-			{
-				TextureAsset(icons.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
-			}
-		}
-
-		Rect df = Rect(320, 320);
-		df.drawFrame(4, 0, ColorF{ 0.5 });
-	}
 
 	renderTextureBuildMenuEmpty = RenderTexture{ 328, 328 };
 	renderTextureBuildMenuEmpty.clear(ColorF{ 0.5, 0.0 });
@@ -468,25 +441,36 @@ Co::Task<void> Battle::start()
 
 	//ユニットの初期化
 	{
-		Unit uu;
-		uu.ID = classBattle.getIDCount();
-		uu.IsBuilding = false;
-		uu.initTilePos = Point{ 4, 0 };
-		uu.orderPosiLeft = Point{ 0, 0 };
-		uu.orderPosiLeftLast = Point{ 0, 0 };
-		uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-		uu.vecMove = Vec2{ 0, 0 };
-		uu.Speed = 1.0;
-		uu.Move = 500.0;
-		uu.FlagMove = false;
-		uu.FlagMoving = false;
-		uu.buiSyu = 1;
-		uu.Image = U"chip001.png";
+		for (auto uu : m_commonConfig.arrayUnit)
+		{
+			if (uu.Name == U"M14 Infantry Rifle")
+			{
+				uu.ID = classBattle.getIDCount();
+				uu.buiSyu = 1;
+				uu.initTilePos = Point{ 4, 0 };
+				uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
+				ClassHorizontalUnit cuu;
+				cuu.ListClassUnit.push_back(uu);
+				classBattle.listOfAllUnit.push_back(cuu);
+			}
+		}
 
-		ClassHorizontalUnit cuu;
-		cuu.ListClassUnit.push_back(uu);
+		//Unit uu;
+		//uu.ID = classBattle.getIDCount();
+		//uu.initTilePos = Point{ 4, 0 };
+		//uu.orderPosiLeft = Point{ 0, 0 };
+		//uu.orderPosiLeftLast = Point{ 0, 0 };
+		//uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
+		//uu.vecMove = Vec2{ 0, 0 };
+		//uu.Speed = 1.0;
+		//uu.Move = 500.0;
+		//uu.buiSyu = 1;
+		//uu.Image = U"chip001.png";
 
-		classBattle.listOfAllUnit.push_back(cuu);
+		//ClassHorizontalUnit cuu;
+		//cuu.ListClassUnit.push_back(uu);
+
+		//classBattle.listOfAllUnit.push_back(cuu);
 	}
 	{
 		Unit uu;
@@ -534,6 +518,53 @@ Co::Task<void> Battle::start()
 
 		classBattle.listOfAllEnemyUnit.push_back(cuu);
 	}
+
+	renderTextureSkill = RenderTexture{ 320,320 };
+	renderTextureSkill.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ renderTextureSkill.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		//skill抽出
+		Array<Skill> table;
+		for (auto& item : classBattle.listOfAllUnit)
+		{
+			if (item.ListClassUnit.empty())
+				continue;
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				for (auto& ski : itemUnit.Skill)
+					table.push_back(ski);
+			}
+		}
+
+		// ソート
+		table.sort_by([](const Skill& a, const Skill& b)
+		{
+			return a.sortKey < b.sortKey;
+		});
+		table.erase(std::unique(table.begin(), table.end()), table.end());
+
+		for (const auto&& [i, key] : Indexed(table))
+		{
+			Rect rectSkill;
+			rectSkill.x = ((i % 10) * 32) + 4;
+			rectSkill.y = ((i / 10) * 32) + 4;
+			rectSkill.w = 32;
+			rectSkill.h = 32;
+			htSkill.emplace(key.nameTag, rectSkill);
+
+			for (auto& icons : key.icon.reversed())
+			{
+				TextureAsset(icons.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
+			}
+		}
+
+		Rect df = Rect(320, 320);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+	}
+	renderTextureSkillUP = RenderTexture{ 320,320 };
+	renderTextureSkillUP.clear(ColorF{ 0.5, 0.0 });
 
 	//始点設定
 	viewPos = ToTileBottomCenter(classBattle.listOfAllUnit[0].ListClassUnit[0].initTilePos, N);
@@ -656,6 +687,8 @@ Co::Task<void> Battle::start()
 	//	}
 	//}
 
+	stopwatchFinance.restart();
+
 	co_await mainLoop().pausedWhile([&]
 		{
 			if (KeySpace.pressed())
@@ -663,6 +696,18 @@ Co::Task<void> Battle::start()
 				stopwatch.pause();
 				stopwatch001.pause();
 				stopwatch002.pause();
+				stopwatch003.pause();
+				Rect rectPauseBack{ 0, 0, Scene::Width(), Scene::Height() };
+				rectPauseBack.draw(ColorF{ 0.0, 0.0, 0.0, 0.5 });
+				const String pauseText = U"Pause";
+
+				Rect rectPause{ int32(Scene::Width() / 2 - systemFont(pauseText).region().w / 2),
+								0,
+								int32(systemFont(pauseText).region().w),
+								int32(systemFont(pauseText).region().h) };
+				rectPause.draw(Palette::Black);
+				systemFont(pauseText).drawAt(rectPause.x + rectPause.w / 2, rectPause.y + rectPause.h / 2, Palette::White);
+
 				return true;
 			}
 			else
@@ -670,6 +715,7 @@ Co::Task<void> Battle::start()
 				stopwatch.resume();
 				stopwatch001.resume();
 				stopwatch002.resume();
+				stopwatch003.resume();
 			}
 		});; // メインループ実行
 }
@@ -682,6 +728,44 @@ Co::Task<void> Battle::mainLoop()
 			co_return;
 
 		camera.update();
+
+		//stopwatchFinanceが一秒経過する度に処理を行う
+		if (stopwatchFinance.sF() >= 1.0)
+		{
+			int32 goldInc = 0;
+			int32 trustInc = 0;
+			int32 foodInc = 0;
+
+			for (auto ttt : classBattle.classMapBattle.value().mapData)
+			{
+				for (auto jjj : ttt)
+				{
+					if (jjj.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+					{
+						//資金の増加
+						switch (jjj.resourcePointType)
+						{
+						case resourceKind::Gold:
+							goldInc += jjj.resourcePointAmount;
+							break;
+						case resourceKind::Trust:
+							trustInc += jjj.resourcePointAmount;
+							break;
+						case resourceKind::Food:
+							foodInc += jjj.resourcePointAmount;
+							break;
+						default:
+							break;
+						}
+					}
+				}
+			}
+
+			stopwatchFinance.restart();
+			gold += 10 + goldInc; // 1秒ごとに10ゴールド増加
+			trust += 1 + trustInc; // 1秒ごとに1権勢増加
+			food += 5 + foodInc; // 1秒ごとに5食料増加
+		}
 
 		//毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
 		// 一度見たタイルは UnseenではなくSeenにしたい
@@ -1019,6 +1103,47 @@ Co::Task<void> Battle::mainLoop()
 				}
 			}
 		}
+		else if (isGetResource == true)
+		{
+			if (aiRoot[longIsGetResourceId].size() > 0)
+			{
+				//移動中
+			}
+			else
+			{
+				isGetResource = false;//移動が終わった為
+
+				resourceWait resWait;
+				resWait.id = longIsGetResourceId;
+				longIsGetResourceId = -1; // IDをリセット
+				resWait.waitTime = GetCU(resWait.id).waitTimeResource;
+				resWait.stopwatch.restart();
+				resWait.rowResourceTarget = rowResourceTarget;
+				resWait.colResourceTarget = colResourceTarget;
+				rowResourceTarget = -1; // リセット
+				colResourceTarget = -1; // リセット
+				arrResourceWait.push_back(resWait);
+			}
+		}
+
+		/// 資源ポイント獲得処理
+		Array<int32> deleteId;
+		for (const auto& ttt : arrResourceWait)
+		{
+			if (ttt.stopwatch.sF() >= ttt.waitTime)
+			{
+				classBattle.classMapBattle.value().mapData[ttt.colResourceTarget][ttt.rowResourceTarget]
+					.whichIsThePlayer = BattleWhichIsThePlayer::Sortie;
+				classBattle.classMapBattle.value().mapData[ttt.colResourceTarget][ttt.rowResourceTarget]
+					.resourcePointAmount += 7;
+				// 待機リストから削除
+				deleteId.push_back(ttt.id);
+			}
+		}
+		for (auto id : deleteId)
+		{
+			arrResourceWait.remove_if([&](const resourceWait& rw) { return rw.id == id; });
+		}
 
 		switch (battleStatus)
 		{
@@ -1027,10 +1152,6 @@ Co::Task<void> Battle::mainLoop()
 			//カメラ移動 || 部隊を選択状態にする。もしくは既に選択状態なら移動させる
 			{
 				const auto t = camera.createTransformer();
-
-				//右ダブルクリックで選択解除とする
-				//ここでFlagMoveがfalseになる
-				//そしてcontinue or break;
 
 				// 建築物選択チェック
 				bool isSeBu = false;
@@ -1083,6 +1204,7 @@ Co::Task<void> Battle::mainLoop()
 					}
 				}
 
+				// ユニット選択チェック
 				{
 					if (isSeBu == false)
 					{
@@ -1119,6 +1241,7 @@ Co::Task<void> Battle::mainLoop()
 										IsBuildMenuHome = unit.IsSelect;
 										buiSyu = unit.buiSyu; // 建築の種類
 										longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
+										IsResourceSelectTraget = true;
 									}
 								}
 							}
@@ -1416,6 +1539,8 @@ Co::Task<void> Battle::mainLoop()
 								Unit& cu = GetCU(longBuildSelectTragetId);
 								longBuildSelectTragetId = -1;
 
+								longIsMovedYoyakuId = cu.ID; // 移動中のユニットIDを保存
+
 								//これだと、将来困るかも
 								//移動中に別の生産場所を建築予定すると、上書きされる
 								rowBuildingTarget = index.value().y;
@@ -1426,18 +1551,10 @@ Co::Task<void> Battle::mainLoop()
 
 								// 移動先の座標算出
 								Vec2 nor = Cursor::PosF();
-								// 移動先が有効かどうかチェック || 本来は経路探索で移動可能かどうか調べるべき
-								auto indexTarget = ToIndex(nor, columnQuads, rowQuads);
-								if (not indexTarget.has_value())
-								{
-									cu.FlagMove = false;
-									co_return;
-								}
-
-								//移動
-								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+								// 移動先が有効かどうかチェックは実質上で済んでいる
 								cu.orderPosiLeft = nor;
 								cu.orderPosiLeftLast = nor;
+								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
 								cu.FlagMove = false;
 								//cuu.FlagMoving = true;
 								cu.FlagMoveAI = true;
@@ -1474,6 +1591,68 @@ Co::Task<void> Battle::mainLoop()
 						std::ref(abortMyUnits),
 						std::ref(pauseTaskMyUnits));
 
+							}
+						}
+					}
+				}
+				else if (IsResourceSelectTraget == true)
+				{
+					//資源ポイントの選択
+					if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+					{
+						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
+						{
+							if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
+							{
+								IsBuildSelectTraget = false;
+								IsBuildMenuHome = false;
+								Unit& cu = GetCU(longBuildSelectTragetId);
+								longBuildSelectTragetId = -1;
+								longIsGetResourceId = cu.ID; // 資源ポイントを選択したユニットIDを保存
+
+								rowResourceTarget = index.value().y;
+								colResourceTarget = index.value().x;
+
+								// 移動先の座標算出
+								Vec2 nor = Cursor::PosF();
+								// 移動先が有効かどうかチェックは実質上で済んでいる
+								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+								cu.orderPosiLeft = nor;
+								cu.orderPosiLeftLast = nor;
+								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+								cu.FlagMove = false;
+								//cuu.FlagMoving = true;
+								cu.FlagMoveAI = true;
+								cu.IsSelect = false;
+
+								IsBattleMove = false;
+
+								// 実行途中のタスクがあれば完了まで待つ。
+								if (taskMyUnits.isValid())
+								{
+									// 中断指示を出す
+									abortMyUnits = true;
+
+									// 完全に処理が完了する前に制御を返してくれる
+									taskMyUnits.wait();
+								}
+
+								abortMyUnits = false;
+								isGetResource = true; // 資源ポイントを選択したことを示す
+
+								taskMyUnits = Async(BattleMoveAStarMyUnits,
+													std::ref(classBattle.listOfAllUnit),
+													std::ref(classBattle.listOfAllEnemyUnit),
+													std::ref(classBattle.classMapBattle.value().mapData),
+													std::ref(aiRoot),
+													std::ref(debugRoot),
+													std::ref(debugAstar),
+													std::ref(columnQuads),
+													std::ref(rowQuads),
+													N,
+													std::ref(abortMyUnits),
+													std::ref(pauseTaskMyUnits)
+								);
 							}
 						}
 					}
@@ -1762,6 +1941,7 @@ Co::Task<void> Battle::mainLoop()
 						if (re.kindForProcess == U"UnitPro")
 						{
 							IsBuildSelectTraget = true;
+							IsResourceSelectTraget = false;
 							cRightMenuTargetCount = re.sortId;
 							tempSelectComRight = re;
 							break;
@@ -1925,6 +2105,8 @@ void Battle::draw() const
 			}
 			Array<Unit> buiTex;
 
+			Array<map_detail_position> amd;
+
 			// 上から順にタイルを描く
 			for (int32 i = 0; i < (N * 2 - 1); ++i)
 			{
@@ -1947,6 +2129,14 @@ void Battle::draw() const
 					{
 						String tip = classBattle.classMapBattle.value().mapData[index.x][index.y].tip;
 						TextureAsset(tip + U".png").draw(Arg::bottomCenter = pos);
+
+						if (classBattle.classMapBattle.value().mapData[index.x][index.y].isResourcePoint)
+						{
+							map_detail_position tempQ;
+							tempQ.classMapBattle = classBattle.classMapBattle.value().mapData[index.x][index.y];
+							tempQ.pos = pos;
+							amd.push_back(tempQ);
+						}
 					}
 
 					// 建物描写
@@ -1989,6 +2179,20 @@ void Battle::draw() const
 				}
 			}
 
+			/// 資源ポイントのアイコン描画
+			for (auto ttt : amd)
+			{
+				TextureAsset(ttt.classMapBattle.resourcePointIcon).draw(Arg::bottomCenter = ttt.pos.movedBy(0, -TileThickness));
+				switch (ttt.classMapBattle.whichIsThePlayer)
+				{
+				case BattleWhichIsThePlayer::Sortie:
+					Circle(ttt.pos, 16).draw(ColorF{ 0.0, 0.6 });
+					break;
+				default:
+					break;
+				}
+			}
+
 			//体力ゲージ
 			for (auto& item : classBattle.listOfAllUnit)
 			{
@@ -1999,7 +2203,7 @@ void Battle::draw() const
 					{
 						if (itemUnit.IsBattleEnable == false)
 							continue;
-						itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+						//itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 					}
 				}
 			}
@@ -2012,7 +2216,7 @@ void Battle::draw() const
 					{
 						if (itemUnit.IsBattleEnable == false)
 							continue;
-						itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+						//itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 					}
 				}
 			}
@@ -2154,6 +2358,36 @@ void Battle::draw() const
 	//-30とは下の線のこと
 	renderTextureSkill.draw(0, Scene::Size().y - 320 - 30);
 	renderTextureSkillUP.draw(0, Scene::Size().y - 320 - 30);
+	//現在の資源を左上に表示する
+	const String goldText = U"Gold:{0}"_fmt(gold);
+	const String trustText = U"Trust:{0}"_fmt(trust);
+	const String foodText = U"Food:{0}"_fmt(food);
+	{
+		Rect rectPause{ 0,
+					0,
+					int32(systemFont(goldText).region().w),
+					int32(systemFont(goldText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(goldText).drawAt(rectPause.center(), Palette::White);
+	}
+	{
+		Rect rectPause{ 0,
+					int32(systemFont(goldText).region().h),
+					int32(systemFont(trustText).region().w),
+					int32(systemFont(trustText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(trustText).drawAt(rectPause.center(), Palette::White);
+	}
+	{
+		Rect rectPause{ 0,
+					int32(systemFont(goldText).region().h + int32(systemFont(trustText).region().h)),
+					int32(systemFont(foodText).region().w),
+					int32(systemFont(foodText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(foodText).drawAt(rectPause.center(), Palette::White);
+	}
+
+
 
 	if (IsBuildMenuHome)
 	{
@@ -2403,6 +2637,9 @@ Texture Battle::LoadPremultipliedTexture(FilePathView path)
 	return Texture{ image };
 }
 
+/// @brief 
+/// @param ID 
+/// @return 
 Unit& Battle::GetCU(long ID)
 {
 	for (auto& temp : classBattle.listOfAllUnit)
@@ -2410,7 +2647,9 @@ Unit& Battle::GetCU(long ID)
 			if (temptemp.ID == ID)
 				return temptemp;
 }
-// 全ユニットから「移動可能なユニット」だけを抽出して部隊ごとにまとめる
+
+/// @brief 全ユニットから「移動可能なユニット」だけを抽出して部隊ごとにまとめる
+/// @return 
 Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 {
 	Array<Array<Unit*>> groups;
@@ -2422,28 +2661,14 @@ Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 		for (auto& unit : target.ListClassUnit)
 		{
 			if (unit.FlagMove && unit.IsBattleEnable)
-			{
 				group.push_back(&unit);
-			}
 		}
 
 		if (!group.isEmpty())
-		{
 			groups.push_back(group);
-		}
 	}
 
 	return groups;
-}
-
-auto roundTo = [](double value, int digits = 3)
-	{
-		double scale = std::pow(10.0, digits);
-		return std::round(value * scale) / scale;
-	};
-int roundToInt(double value)
-{
-	return static_cast<int32>(std::round(value));
 }
 
 /// @brief 指定されたユニットの部隊に対して、指定された開始位置と終了位置に沿ってユニットを配置します。
@@ -2456,63 +2681,25 @@ void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start
 	const int32 count = units.size();
 	const int32 centerOffset = (count - 1) / 2;
 
-	//// 前方角度
-	//double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
-	//// 横向き
-	//double anglePerpendicular = Math::Pi / 2 - angleForward;
-
-	//for (auto&& [i, unit] : Indexed(units))
-	//{
-	//	// 小数点以下3桁で丸める例
-	//	double s = Math::Sin(anglePerpendicular);
-	//	double roundedSin = std::round(s * 1000) / 1000;
-
-	//	double c = DistanceBetweenUnit * Math::Cos(anglePerpendicular);
-	//	double aaaaa = Math::Round(DistanceBetweenUnit * Math::Cos(anglePerpendicular));
-	//	double aaaaaa = (i - centerOffset) * Math::Round(aaaaa);
-	//	double bbbbbb = rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
-
-	//	double x = end.x
-	//		+ (i - centerOffset) * DistanceBetweenUnit * Math::Cos(anglePerpendicular)
-	//		- rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
-
-	//	double y = end.y
-	//		- (i - centerOffset) * DistanceBetweenUnit * Math::Sin(anglePerpendicular)
-	//		- rowIndex * DistanceBetweenUnitTate * Math::Sin(angleForward);
-
-	//	Unit& cuu = GetCU(unit->ID);
-	//	cuu.orderPosiLeft = Vec2(Floor(x), Floor(y));
-	//	cuu.orderPosiLeftLast = cuu.orderPosiLeft;
-	//	cuu.FlagMove = false;
-	//	cuu.FlagMoveAI = true;
-
-	//	//auto index = ToIndex(cuu.orderPosiLeft, columnQuads, rowQuads);
-	//}
-
 	double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
 	double anglePerpendicular = Math::Pi / 2 - angleForward;
 
 	for (auto&& [i, unit] : Indexed(units))
 	{
+		// 変数名はcopilot君
 		double cosPerpendicular = Math::Cos(anglePerpendicular);
 		double sinPerpendicular = Math::Sin(anglePerpendicular);
 
-		double aaaaa = Math::Round(DistanceBetweenUnit * cosPerpendicular); // double
-		double aaaaaa = (i - centerOffset) * Math::Round(aaaaa); // 明示的に Math::Round を使う
-
-		int32 aaaafdjnus = (i - centerOffset);
-		int32 iuirkuinf = aaaaa;
-		int32 uier = aaaafdjnus * iuirkuinf; // ここで整数の掛け算を行う
-		int32 dooi = aaaafdjnus * Math::Round(DistanceBetweenUnit * sinPerpendicular);
-
-		double offsetX = (i - centerOffset) * DistanceBetweenUnit * cosPerpendicular;
-		double offsetY = (i - centerOffset) * DistanceBetweenUnit * sinPerpendicular;
+		double distance_between_units_cos = Math::Round(DistanceBetweenUnit * cosPerpendicular);
+		int32 unit_spacing_offset_factor = (i - centerOffset);
+		int32 unit_spacing_offset_x = unit_spacing_offset_factor * distance_between_units_cos;
+		int32 unit_spacing_offset_y = unit_spacing_offset_factor * Math::Round(DistanceBetweenUnit * sinPerpendicular);
 
 		double rowOffsetX = rowIndex * DistanceBetweenUnitTate * Math::Cos(angleForward);
 		double rowOffsetY = rowIndex * DistanceBetweenUnitTate * Math::Sin(angleForward);
 
-		double x = end.x + uier - rowOffsetX;
-		double y = end.y - dooi - rowOffsetY;
+		double x = end.x + unit_spacing_offset_x - rowOffsetX;
+		double y = end.y - unit_spacing_offset_y - rowOffsetY;
 
 		Unit& cuu = GetCU(unit->ID);
 		cuu.orderPosiLeft = Vec2(Floor(x), Floor(y));

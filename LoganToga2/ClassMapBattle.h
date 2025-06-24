@@ -8,6 +8,19 @@ public:
 	/// @brief 種別、ClassUnitID、陣営
 	Array<std::tuple<String, long, BattleWhichIsThePlayer>> building;
 	FlagBattleMapUnit flagBattleMapUnit;
+
+	/// @brief タイルが資源ポイントかどうか
+	bool isResourcePoint = false;
+	/// @brief 資源ポイントの種類
+	resourceKind resourcePointType = resourceKind::None;
+	/// @brief 資源ポイントの量
+	int32 resourcePointAmount = -1;
+	/// @brief 資源ポイントの画面表示名
+	String resourcePointDisplayName = U"test-resourcePointDisplayName";
+	/// @brief 資源ポイントのアイコン
+	String resourcePointIcon = U"test-resourcePointIcon";
+	BattleWhichIsThePlayer whichIsThePlayer = BattleWhichIsThePlayer::None;
+
 	String unit;
 	String houkou;
 	String zinkei;
