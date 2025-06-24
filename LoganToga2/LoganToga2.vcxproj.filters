@@ -920,5 +920,8 @@
     <ClInclude Include="ClassCommonConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameUIToolkit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

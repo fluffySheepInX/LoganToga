@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Battle.hpp"
 #include "ClassBattle.h"
+# include "GameUIToolkit.h"
 #include <ranges>
 #include <vector>
 #include <iostream>
@@ -454,23 +455,6 @@ Co::Task<void> Battle::start()
 				classBattle.listOfAllUnit.push_back(cuu);
 			}
 		}
-
-		//Unit uu;
-		//uu.ID = classBattle.getIDCount();
-		//uu.initTilePos = Point{ 4, 0 };
-		//uu.orderPosiLeft = Point{ 0, 0 };
-		//uu.orderPosiLeftLast = Point{ 0, 0 };
-		//uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-		//uu.vecMove = Vec2{ 0, 0 };
-		//uu.Speed = 1.0;
-		//uu.Move = 500.0;
-		//uu.buiSyu = 1;
-		//uu.Image = U"chip001.png";
-
-		//ClassHorizontalUnit cuu;
-		//cuu.ListClassUnit.push_back(uu);
-
-		//classBattle.listOfAllUnit.push_back(cuu);
 	}
 	{
 		Unit uu;
@@ -489,7 +473,8 @@ Co::Task<void> Battle::start()
 		uu.IsBattleEnable = true;
 		uu.buiSyu = 5;
 		uu.Image = U"chip006.png";
-
+		uu.Hp = 100;
+		uu.HpMAX = 100;
 		ClassHorizontalUnit cuu;
 		cuu.ListClassUnit.push_back(uu);
 
@@ -570,6 +555,32 @@ Co::Task<void> Battle::start()
 	viewPos = ToTileBottomCenter(classBattle.listOfAllUnit[0].ListClassUnit[0].initTilePos, N);
 	camera.jumpTo(viewPos, camera.getTargetScale());
 
+	//ユニット体力バーの設定
+	for (auto& item : classBattle.listOfAllUnit)
+	{
+		if (!item.FlagBuilding &&
+			!item.ListClassUnit.empty())
+		{
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+				itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+			}
+		}
+	}
+	for (auto& item : classBattle.listOfAllEnemyUnit)
+	{
+		if (!item.FlagBuilding &&
+			!item.ListClassUnit.empty())
+		{
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+				itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+			}
+		}
+	}
+
 	//建物関係
 	ClassHorizontalUnit chuSor;
 	ClassHorizontalUnit chuDef;
@@ -602,8 +613,8 @@ Co::Task<void> Battle::start()
 		unitBui.CastleDefense = 1000;
 		unitBui.CastleMagdef = 1000;
 		unitBui.Image = U"home2.png";
-		unitBui.rowBuilding = 7;
-		unitBui.colBuilding = 7;
+		unitBui.rowBuilding = N - 2;
+		unitBui.colBuilding = N - 2;
 		chuDef.ListClassUnit.push_back(unitBui);
 	}
 
@@ -932,6 +943,8 @@ Co::Task<void> Battle::mainLoop()
 						uu.CastleMagdef = 1000;
 						uu.buiSyu = 6;
 						uu.Image = U"bu-keiso.png";
+						Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+						uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
 
 						ClassHorizontalUnit cuu;
 						cuu.FlagBuilding = true;
@@ -986,7 +999,11 @@ Co::Task<void> Battle::mainLoop()
 						uu.FlagMove = false;
 						uu.FlagMoving = false;
 						uu.IsBattleEnable = true;
+						uu.Hp = 100;
+						uu.HpMAX = 100;
 						uu.Image = U"chipGene006.png";
+						Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+						uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
 
 						ClassHorizontalUnit cuu;
 						for (size_t i = 0; i < 3; i++)
@@ -1831,6 +1848,30 @@ Co::Task<void> Battle::mainLoop()
 				}
 			}
 
+			//ユニット体力バーの設定
+			for (auto& item : classBattle.listOfAllUnit)
+			{
+				if (!item.FlagBuilding &&
+					!item.ListClassUnit.empty())
+					for (auto& itemUnit : item.ListClassUnit)
+					{
+						double hpp = (static_cast<double>(itemUnit.Hp) / itemUnit.HpMAX);
+						itemUnit.bLiquidBarBattle.update(hpp);
+						itemUnit.bLiquidBarBattle.ChangePoint(itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6));
+					}
+			}
+			for (auto& item : classBattle.listOfAllEnemyUnit)
+			{
+				if (!item.FlagBuilding &&
+					!item.ListClassUnit.empty())
+					for (auto& itemUnit : item.ListClassUnit)
+					{
+						double hpp = (static_cast<double>(itemUnit.Hp) / itemUnit.HpMAX);
+						itemUnit.bLiquidBarBattle.update(hpp);
+						itemUnit.bLiquidBarBattle.ChangePoint(itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6));
+					}
+			}
+
 			//skill選択処理
 			{
 				const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - 320 - 30) };
@@ -2203,7 +2244,7 @@ void Battle::draw() const
 					{
 						if (itemUnit.IsBattleEnable == false)
 							continue;
-						//itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+						itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 					}
 				}
 			}
@@ -2216,7 +2257,7 @@ void Battle::draw() const
 					{
 						if (itemUnit.IsBattleEnable == false)
 							continue;
-						//itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+						itemUnit.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 					}
 				}
 			}

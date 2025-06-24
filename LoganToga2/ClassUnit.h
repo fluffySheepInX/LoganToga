@@ -2,6 +2,7 @@
 # include "ClassSkill.h"
 # include "EnumSkill.h"
 # include "Common.h"
+# include "GameUIToolkit.h"
 
 class ClassTempStatus
 {
@@ -233,7 +234,7 @@ public:
 	String houkou = U"";
 	Point initXY = Point();
 
-	//LiquidBarBattle bLiquidBarBattle;
+	GameUIToolkit::LiquidBarBattle bLiquidBarBattle;
 
 	// IsLeader
 	bool IsLeader = false;

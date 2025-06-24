@@ -397,6 +397,7 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="EnumSkill.h" />
     <ClInclude Include="Game.hpp" />
+    <ClInclude Include="GameUIToolkit.h" />
     <ClInclude Include="libs\CoTaskLib.hpp" />
     <ClInclude Include="libs\CoTaskLib\Core.hpp" />
     <ClInclude Include="libs\CoTaskLib\Ease.hpp" />
