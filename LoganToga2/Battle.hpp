@@ -263,6 +263,16 @@ private:
 	/// @brief 物資
 	int32 food = 0;
 
-
-
+	/// @brief ミニマップ
+	const Size miniMapSize = Size(200, 200);
+	const Vec2 miniMapPosition = Scene::Size() - miniMapSize - Vec2(20, 20); // 右下から20pxオフセット
+	struct MinimapCol
+	{
+		Color color;
+		int32 x;
+		int32 y;
+	};
+	Array<MinimapCol> minimapCols;
+	HashTable<String, Color> colData;
+	void DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const;
 };

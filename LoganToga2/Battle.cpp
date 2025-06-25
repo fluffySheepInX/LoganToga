@@ -193,6 +193,128 @@ void GetTempResource(ClassMapBattle& cmb)
 	cmb.mapData[0][10].resourcePointIcon = U"david.png";
 }
 
+Vec2 ToIso(double x, double y)
+{
+	return Vec2((x - y), (x + y) / 2.0);
+}
+Color GetDominantColor(const String imageName, HashTable<String, Color>& data)
+{
+	// dataに指定された画像名が存在する場合はその色を返す
+	if (data.contains(imageName))
+	{
+		return data[imageName];
+	}
+
+	const Image image{ PATHBASE + PATH_DEFAULT_GAME + U"/015_BattleMapCellImage/" + imageName };
+
+	// 色の頻度を記録するハッシュマップ
+	HashTable<Color, int32> colorCount;
+
+	for (const auto& pixel : image)
+	{
+		// 透明ピクセルを除外したい場合は以下の if を有効に
+		if (pixel.a == 0) continue;
+
+		++colorCount[pixel];
+	}
+
+	// 最も頻度の高い色を見つける
+	Color dominantColor = Palette::Black;
+	int32 maxCount = 0;
+
+	for (const auto& [color, count] : colorCount)
+	{
+		if (count > maxCount)
+		{
+			dominantColor = color;
+			maxCount = count;
+		}
+	}
+
+	//dataに追加
+	data[imageName] = dominantColor;
+
+	return dominantColor;
+}
+void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
+{
+	const Vec2 tileSize = Vec2(50, 25+ TileThickness);
+
+	// --- ミニマップに表示する位置・サイズ
+	const Vec2 miniMapTopLeft = miniMapPosition;
+	const SizeF miniMapDrawArea = miniMapSize;
+
+	// --- マップの4隅をアイソメ変換 → 範囲を取得
+	const Vec2 isoA = ToIso(0, 0) * tileSize;
+	const Vec2 isoB = ToIso(map.width(), 0) * tileSize;
+	const Vec2 isoC = ToIso(0, map.height()) * tileSize;
+	const Vec2 isoD = ToIso(map.width(), map.height()) * tileSize;
+
+	const double minX = Min({ isoA.x, isoB.x, isoC.x, isoD.x });
+	const double minY = Min({ isoA.y, isoB.y, isoC.y, isoD.y });
+	const double maxX = Max({ isoA.x, isoB.x, isoC.x, isoD.x });
+	const double maxY = Max({ isoA.y, isoB.y, isoC.y, isoD.y });
+
+	const SizeF isoMapSize = Vec2(maxX - minX, maxY - minY);
+
+	// --- ミニマップに収めるためのスケーリング
+	const double scale = Min(miniMapDrawArea.x / isoMapSize.x, miniMapDrawArea.y / isoMapSize.y);
+
+	// --- スケーリング後のマップサイズ
+	const SizeF scaledMapSize = isoMapSize * scale;
+
+	// --- 中央に表示するためのオフセット（ミニマップ内で中央揃え）
+	const Vec2 offset = miniMapTopLeft + (miniMapDrawArea - scaledMapSize) / 2.0 - Vec2(minX, minY) * scale;
+
+	// --- 背景（薄い色で下地）を描画
+	RectF(miniMapTopLeft, miniMapDrawArea).draw(ColorF(0.1, 0.1, 0.1, 0.5));
+
+	// --- タイルの描画
+	for (int32 y = 0; y < map.height(); ++y)
+	{
+		for (int32 x = 0; x < map.width(); ++x)
+		{
+			const Vec2 iso = ToIso(x, y) * tileSize;
+			const Vec2 miniPos = iso * scale + offset;
+			const SizeF tileSizeScaled = tileSize * scale;
+
+			// デフォルト色
+			ColorF tileColor = Palette::White;
+
+			// 指定色があれば上書き（改善余地あり）
+			for (const auto& ttt : minimapCols)
+			{
+				if (ttt.x == x && ttt.y == y)
+				{
+					tileColor = ttt.color;
+					break;
+				}
+			}
+
+			// 描画
+			RectF(miniPos, tileSizeScaled).draw(tileColor);
+		}
+	}
+
+	// --- カメラ範囲を表示（白い枠）
+	{
+		//const Vec2 camTopLeftIso = ToIso(cameraRect.x, cameraRect.y) * tileSize;
+		//const Vec2 camBottomRightIso = ToIso(cameraRect.x + cameraRect.w, cameraRect.y + cameraRect.h) * tileSize;
+
+		//const Vec2 topLeft = camTopLeftIso * scale + offset;
+		//const Vec2 bottomRight = camBottomRightIso * scale + offset;
+		//const RectF cameraBox = RectF(topLeft, bottomRight - topLeft);
+
+		//cameraBox.drawFrame(1.5, ColorF(1.0));
+
+			const Vec2 camTopLeft = cameraRect.pos * Vec2(1.0, 1.0);
+			const Vec2 camBottomRight = camTopLeft + cameraRect.size;
+			RectF(camTopLeft * scale + offset, cameraRect.size * scale).drawFrame(1.5, ColorF(1.0));
+
+	}
+}
+
+
 Battle::Battle(GameData& saveData, CommonConfig& commonConfig)
 	:FsScene(U"Battle"), m_saveData{ saveData }, m_commonConfig{ commonConfig }, N{ 64 }
 	, visibilityMap{ Grid<Visibility>(Size{ N, N }, Visibility::Unseen) }
@@ -239,8 +361,7 @@ Battle::Battle(GameData& saveData, CommonConfig& commonConfig)
 	GetTempResource(classBattle.classMapBattle.value());
 
 	N = classBattle.classMapBattle.value().mapData.size();
-	//Vec2 TileOffset{ 48, 24 };
-	//int32 TileThickness = 17;
+	grid = Grid<int32>(Size{ N, N });
 	Vec2 TileOffset{ 50, 25 };
 	int32 TileThickness = 15;
 	Array<Quad> columnQuads = MakeColumnQuads(N);
@@ -626,7 +747,6 @@ Co::Task<void> Battle::start()
 	//		{
 	//			String key = std::get<0>(bui);
 	//			BattleWhichIsThePlayer bw = std::get<2>(bui);
-
 	//			// arrayClassObjectMapTip から適切な ClassObjectMapTip オブジェクトを見つける
 	//			for (const auto& mapTip : getData().classGameStatus.arrayClassObjectMapTip)
 	//			{
@@ -645,7 +765,6 @@ Co::Task<void> Battle::start()
 	//					unitBui.Image = mapTip.nameTag;
 	//					unitBui.rowBuilding = indexRow;
 	//					unitBui.colBuilding = indexCol;
-
 	//					if (bw == BattleWhichIsThePlayer::Sortie)
 	//					{
 	//						chuSor.ListClassUnit.push_back(unitBui);
@@ -697,6 +816,20 @@ Co::Task<void> Battle::start()
 	//		}
 	//	}
 	//}
+
+	for (int32 y = 0; y < grid.height(); ++y)
+	{
+		for (int32 x = 0; x < grid.width(); ++x)
+		{
+			String ttt = classBattle.classMapBattle.value().mapData[x][y].tip + U".png";
+			ColorF re = GetDominantColor(ttt, colData);
+			MinimapCol mc;
+			mc.color = re;
+			mc.x = x;
+			mc.y = y;
+			minimapCols.push_back(mc);
+		}
+	}
 
 	stopwatchFinance.restart();
 
@@ -2548,6 +2681,10 @@ void Battle::draw() const
 	{
 		renderTextureBuildMenuEmpty.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
 	}
+
+	// 既存描画後に追加
+	DrawMiniMap(grid, camera.getRegion());
+	//DrawMiniMap(grid, camera.getRegion(), miniMapPosition, miniMapSize, { 50,25 });
 }
 
 void Battle::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units, int32 mapSize) const
