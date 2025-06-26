@@ -272,7 +272,9 @@ private:
 		int32 x;
 		int32 y;
 	};
-	Array<MinimapCol> minimapCols;
+	HashTable<Point, ColorF> minimapCols;
 	HashTable<String, Color> colData;
 	void DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const;
+	void UnitRegister(String unitName, int32 col, int32 row,int32 num);
+
 };

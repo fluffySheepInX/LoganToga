@@ -41,6 +41,46 @@
       "rush_random_degree": "-1"
     },
     {
+      "name_tag": "gunSnipe",
+      "fkey": "gun*1",
+      "sortkey": "1",
+      "func": "missile",
+      "MoveType": "line",
+      "icon": "f_attack.png, _num5.png, _num1.png, we_gun010.png",
+      "name": "【狙撃銃・ヘーリントン式lv1】",
+      "help": "腕の良い鍛冶師に限り作れる精密狙撃銃。$\n\t\t十勝工業社の設計者ヘーリントン氏曰く、「時間と資源を費やすほどに品質は磨かれるが、人を費やしてもその限りではない」そうで。地方の家電メーカーで下積みした彼らしい経験が生きている。",
+      "Easing": "off",
+      "center": "on",
+      "mp": "0",
+      "slow_per": "100",
+      "slow_time": "-1",
+      "sound": "gun19, gun21, gun30",
+      "image": "a_bullet",
+      "direct": "on",
+      "w": "32",
+      "h": "32",
+      "a": "200",
+      "force_fire": "on",
+      "attr": "taiho",
+      "str": "999",
+      "str_kind": "attack",
+      "range": "700",
+      "damage_range_adjust": "0",
+      "range_min": "0",
+      "speed": "1450",
+      "gun_delay": "gunLaphroaig*1",
+      "pair_next": "b_kemuri_eff02",
+      "next": "m_hit_eff01",
+      "random_space": "10",
+      "offset": "on",
+      "ray": "185, 255, 255, 255",
+      "ray_strokeThickness": "3",
+      "force_ray": "on",
+      "rush": "-1",
+      "rush_interval": "-1",
+      "rush_random_degree": "-1"
+    },
+    {
       "name_tag": "gunLaphroaig002",
       "fkey": "gun*1",
       "sortkey": "5",
@@ -343,6 +383,5 @@
       "rush_interval": "-1",
       "rush_random_degree": "-1"
     }
-
   ]
 }

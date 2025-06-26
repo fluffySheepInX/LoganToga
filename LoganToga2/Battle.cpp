@@ -238,7 +238,10 @@ Color GetDominantColor(const String imageName, HashTable<String, Color>& data)
 }
 void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
 {
-	const Vec2 tileSize = Vec2(50, 25+ TileThickness);
+	//何故このサイズだとちょうどいいのかよくわかっていない
+	//pngファイルは100*65
+	//ミニマップ描写方法と通常マップ描写方法は異なるので、無理に合わせなくて良い？
+	const Vec2 tileSize = Vec2(50, 25 + 25);
 
 	// --- ミニマップに表示する位置・サイズ
 	const Vec2 miniMapTopLeft = miniMapPosition;
@@ -280,15 +283,9 @@ void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
 
 			// デフォルト色
 			ColorF tileColor = Palette::White;
-
-			// 指定色があれば上書き（改善余地あり）
-			for (const auto& ttt : minimapCols)
+			if (auto it = minimapCols.find(Point(x, y)); it != minimapCols.end())
 			{
-				if (ttt.x == x && ttt.y == y)
-				{
-					tileColor = ttt.color;
-					break;
-				}
+				tileColor = it->second;
 			}
 
 			// 描画
@@ -307,9 +304,9 @@ void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
 
 		//cameraBox.drawFrame(1.5, ColorF(1.0));
 
-			const Vec2 camTopLeft = cameraRect.pos * Vec2(1.0, 1.0);
-			const Vec2 camBottomRight = camTopLeft + cameraRect.size;
-			RectF(camTopLeft * scale + offset, cameraRect.size * scale).drawFrame(1.5, ColorF(1.0));
+		const Vec2 camTopLeft = cameraRect.pos * Vec2(1.0, 1.0);
+		const Vec2 camBottomRight = camTopLeft + cameraRect.size;
+		RectF(camTopLeft * scale + offset, cameraRect.size * scale).drawFrame(1.5, ColorF(1.0));
 
 	}
 }
@@ -445,6 +442,33 @@ void Battle::renB(RenderTexture& ren, cBuildPrepare& cbp, Array<cRightMenu>& arr
 	}
 }
 
+void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num)
+{
+	for (auto uu : m_commonConfig.arrayUnit)
+	{
+		if (uu.Name == unitName)
+		{
+			uu.ID = classBattle.getIDCount();
+			uu.buiSyu = 1;
+			uu.initTilePos =
+				Point{ col,
+						row };
+			uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
+			Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+			uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+			ClassHorizontalUnit cuu;
+
+			for (size_t i = 0; i < num; i++)
+			{
+				uu.ID = classBattle.getIDCount();
+				cuu.ListClassUnit.push_back(uu);
+			}
+
+			classBattle.listOfAllUnit.push_back(cuu);
+		}
+	}
+}
+
 Co::Task<void> Battle::start()
 {
 	// png フォルダ内のファイルを列挙する
@@ -556,6 +580,13 @@ Co::Task<void> Battle::start()
 			cbpHome.count = -1;
 			cbpHome.kind = U"Unit";
 			cbpKeisouHoheiT.htCountAndSyu.emplace(U"keisou-chipGene006.png", cbpHome);
+		}
+		{
+			cBuildPrepareKindAndCount cbpHome;
+			cbpHome.sortId = 1;
+			cbpHome.count = -1;
+			cbpHome.kind = U"Unit";
+			cbpKeisouHoheiT.htCountAndSyu.emplace(U"keisou-chipGene008.png", cbpHome);
 		}
 		cbpKeisouHoheiT.buiSyu = 6; // 建築の種類
 		renB(renderTextureBuildMenuKeisouHoheiT, cbpKeisouHoheiT, arrayComRight_BuildMenu_KeisouHoheiT);
@@ -823,11 +854,12 @@ Co::Task<void> Battle::start()
 		{
 			String ttt = classBattle.classMapBattle.value().mapData[x][y].tip + U".png";
 			ColorF re = GetDominantColor(ttt, colData);
-			MinimapCol mc;
-			mc.color = re;
-			mc.x = x;
-			mc.y = y;
-			minimapCols.push_back(mc);
+			//MinimapCol mc;
+			//mc.color = re;
+			//mc.x = x;
+			//mc.y = y;
+			//minimapCols.push_back(mc);
+			minimapCols.emplace(Point(x, y), re);
 		}
 	}
 
@@ -1116,39 +1148,18 @@ Co::Task<void> Battle::mainLoop()
 
 				if (key == U"keisou-chipGene006.png")
 				{
-					{
-						Unit uu;
-						uu.IsBuilding = false;
-
-						uu.initTilePos =
-							Point{ arrayComRight_BuildMenu_KeisouHoheiT[0].colBuilding,
-									arrayComRight_BuildMenu_KeisouHoheiT[0].rowBuilding };
-						uu.orderPosiLeft = Point{ 0, 0 };
-						uu.orderPosiLeftLast = Point{ 0, 0 };
-						uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-						uu.vecMove = Vec2{ 0, 0 };
-						uu.Speed = 1.0;
-						uu.Move = 500.0;
-						uu.FlagMove = false;
-						uu.FlagMoving = false;
-						uu.IsBattleEnable = true;
-						uu.Hp = 100;
-						uu.HpMAX = 100;
-						uu.Image = U"chipGene006.png";
-						Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
-						uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
-
-						ClassHorizontalUnit cuu;
-						for (size_t i = 0; i < 3; i++)
-						{
-							uu.ID = classBattle.getIDCount();
-							cuu.ListClassUnit.push_back(uu);
-						}
-
-						classBattle.listOfAllUnit.push_back(cuu);
-					}
+					UnitRegister(U"M14 Infantry Rifle",
+						arrayComRight_BuildMenu_KeisouHoheiT[0].colBuilding,
+						arrayComRight_BuildMenu_KeisouHoheiT[0].rowBuilding,
+						3);
 				}
-
+				else if (key == U"keisou-chipGene008.png")
+				{
+					UnitRegister(U"P99 Sniper Rifle",
+						arrayComRight_BuildMenu_KeisouHoheiT[0].colBuilding,
+						arrayComRight_BuildMenu_KeisouHoheiT[0].rowBuilding,
+						1);
+				}
 			}
 			arrT[3] = Min(stopwatch003.sF() / tempTime, 1.0);
 		}
@@ -1389,9 +1400,19 @@ Co::Task<void> Battle::mainLoop()
 										}
 										unit.IsSelect = !unit.IsSelect;
 										IsBuildMenuHome = unit.IsSelect;
-										buiSyu = unit.buiSyu; // 建築の種類
-										longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
-										IsResourceSelectTraget = true;
+
+										if (unit.IsSelect == true)
+										{
+											buiSyu = unit.buiSyu; // 建築の種類
+											longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
+											IsResourceSelectTraget = true;
+										}
+										else
+										{
+											buiSyu = -1; // 建築の種類をリセット
+											longBuildSelectTragetId = -1; // 選択されたユニットのIDをリセット
+											IsResourceSelectTraget = false;
+										}
 									}
 								}
 							}
@@ -1681,7 +1702,7 @@ Co::Task<void> Battle::mainLoop()
 				{
 					if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
 					{
-						if (ToTile(*index, N).leftClicked())
+						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)
 						{
 							{
 								IsBuildSelectTraget = false;
@@ -1752,6 +1773,17 @@ Co::Task<void> Battle::mainLoop()
 					{
 						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
 						{
+							int32 xxx = classBattle.classMapBattle.value().mapData.size();
+							int32 yyy = classBattle.classMapBattle.value().mapData[index->x].size();
+							int32 indexX = index->x;
+							int32 indexY = index->y;
+							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
+							{
+								continue; // 範囲外アクセスを防ぐ
+							}
+
+							//TODO 閉じるボタン押下時にここでエラー発生　原因・修正はともかく把握しておくこと
+							//ユニット選択後に閉じるボタン押下→問題無し
 							if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
 							{
 								IsBuildSelectTraget = false;
@@ -2532,36 +2564,6 @@ void Battle::draw() const
 	//-30とは下の線のこと
 	renderTextureSkill.draw(0, Scene::Size().y - 320 - 30);
 	renderTextureSkillUP.draw(0, Scene::Size().y - 320 - 30);
-	//現在の資源を左上に表示する
-	const String goldText = U"Gold:{0}"_fmt(gold);
-	const String trustText = U"Trust:{0}"_fmt(trust);
-	const String foodText = U"Food:{0}"_fmt(food);
-	{
-		Rect rectPause{ 0,
-					0,
-					int32(systemFont(goldText).region().w),
-					int32(systemFont(goldText).region().h) };
-		rectPause.draw(Palette::Black);
-		systemFont(goldText).drawAt(rectPause.center(), Palette::White);
-	}
-	{
-		Rect rectPause{ 0,
-					int32(systemFont(goldText).region().h),
-					int32(systemFont(trustText).region().w),
-					int32(systemFont(trustText).region().h) };
-		rectPause.draw(Palette::Black);
-		systemFont(trustText).drawAt(rectPause.center(), Palette::White);
-	}
-	{
-		Rect rectPause{ 0,
-					int32(systemFont(goldText).region().h + int32(systemFont(trustText).region().h)),
-					int32(systemFont(foodText).region().w),
-					int32(systemFont(foodText).region().h) };
-		rectPause.draw(Palette::Black);
-		systemFont(foodText).drawAt(rectPause.center(), Palette::White);
-	}
-
-
 
 	if (IsBuildMenuHome)
 	{
@@ -2682,9 +2684,46 @@ void Battle::draw() const
 		renderTextureBuildMenuEmpty.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
 	}
 
-	// 既存描画後に追加
-	DrawMiniMap(grid, camera.getRegion());
-	//DrawMiniMap(grid, camera.getRegion(), miniMapPosition, miniMapSize, { 50,25 });
+	//現在の資源を左上に表示する
+	const String goldText = U"Gold:{0}"_fmt(gold);
+	const String trustText = U"Trust:{0}"_fmt(trust);
+	const String foodText = U"Food:{0}"_fmt(food);
+	int32 baseXResource = 0;
+	int32 baseYResource = 0;
+	if (longBuildSelectTragetId == -1)
+	{
+		DrawMiniMap(grid, camera.getRegion());
+	}
+	else
+	{
+		baseXResource = Scene::Size().x - 328 - int32(systemFont(goldText).region().w);
+		baseYResource = Scene::Size().y - 328 - 30;
+	}
+	{
+		Rect rectPause{ baseXResource,
+					baseYResource,
+					int32(systemFont(goldText).region().w),
+					int32(systemFont(goldText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(goldText).drawAt(rectPause.center(), Palette::White);
+	}
+	{
+		Rect rectPause{ baseXResource,
+					baseYResource + int32(systemFont(goldText).region().h),
+					int32(systemFont(trustText).region().w),
+					int32(systemFont(trustText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(trustText).drawAt(rectPause.center(), Palette::White);
+	}
+	{
+		Rect rectPause{ baseXResource,
+					baseYResource + int32(systemFont(goldText).region().h + int32(systemFont(trustText).region().h)),
+					int32(systemFont(foodText).region().w),
+					int32(systemFont(foodText).region().h) };
+		rectPause.draw(Palette::Black);
+		systemFont(foodText).drawAt(rectPause.center(), Palette::White);
+	}
+
 }
 
 void Battle::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units, int32 mapSize) const
