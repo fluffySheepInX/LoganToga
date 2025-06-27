@@ -39,6 +39,7 @@ struct cBuildPrepareKindAndCount {
 	int32 count = 0;
 	/// @brief 建築にかかる時間
 	double time = 1.0;
+	String setumei = U""; // 説明文
 };
 class cBuildPrepare
 {
@@ -78,6 +79,8 @@ public:
 	///遠隔地に生産する用
 	//int32 rowProduct = -1; // 予約した行
 	//int32 colProduct = -1; // 予約した列
+
+	String setumei = U""; // 説明文
 };
 class cRightMenuHomeYoyaku
 {
@@ -111,6 +114,8 @@ private:
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
 	const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
+	const Font fontSkill{ FontMethod::MSDF, 12, Typeface::Bold };
+	const int32 underBarHeight = 30;
 
 	bool PauseFlag = false;
 	Array<Texture> textures;
@@ -173,6 +178,9 @@ private:
 	bool flagDisplaySkillSetumei = false;
 	String nowSelectSkillSetumei = U"";
 	Rect rectSkillSetumei = { 0,0,320,320 };
+
+	String nowSelectBuildSetumei = U"";
+	Rect rectSetumei = { 0,0,320,0 };
 
 	RenderTexture renderTextureZinkei;
 	Array<Rect> rectZinkei;
@@ -275,6 +283,6 @@ private:
 	HashTable<Point, ColorF> minimapCols;
 	HashTable<String, Color> colData;
 	void DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const;
-	void UnitRegister(String unitName, int32 col, int32 row,int32 num);
+	void UnitRegister(String unitName, int32 col, int32 row, int32 num);
 
 };

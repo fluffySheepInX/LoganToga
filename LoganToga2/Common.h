@@ -615,6 +615,7 @@ public:
 			.replaced(U"\r", U"")
 			.replaced(U"\n", U"")
 			.replaced(U" ", U"")
+			.replaced(U"$", U"\r\n")
 			.replaced(U"\t", U"");
 	}
 	static ClassMapBattle GetClassMapBattle(ClassMap cm) {

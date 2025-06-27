@@ -431,6 +431,7 @@ void Battle::renB(RenderTexture& ren, cBuildPrepare& cbp, Array<cRightMenu>& arr
 			crh.count = re.second.count;
 			crh.buiSyu = cbp.buiSyu; // 建築の種類
 			crh.time = re.second.time;
+			crh.setumei = re.second.setumei;
 			arr.push_back(crh);
 		}
 
@@ -566,6 +567,7 @@ Co::Task<void> Battle::start()
 			cbpHome.count = -1;
 			cbpHome.kind = U"UnitPro";
 			cbpHome.time = 1.0;
+			cbpHome.setumei = U"軽装歩兵詰所を建築します。";
 			cbpKouhei.htCountAndSyu.emplace(U"keisou-hohei.png", cbpHome);
 		}
 
@@ -1327,6 +1329,22 @@ Co::Task<void> Battle::mainLoop()
 		{
 		case BattleStatus::Battle:
 		{
+			// 画面下部のUIに触れたら選択解除
+			{
+				if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
+				{
+					buiSyu = -1;
+					longBuildSelectTragetId = -1;
+					IsResourceSelectTraget = false;
+					for (auto& target : classBattle.listOfAllUnit)
+					{
+						for (auto& unit : target.ListClassUnit)
+							unit.IsSelect = false;
+					}
+					co_await Co::NextFrame();
+				}
+			}
+
 			//カメラ移動 || 部隊を選択状態にする。もしくは既に選択状態なら移動させる
 			{
 				const auto t = camera.createTransformer();
@@ -1786,18 +1804,22 @@ Co::Task<void> Battle::mainLoop()
 				else if (IsResourceSelectTraget == true)
 				{
 					//資源ポイントの選択
-					if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+					if (const auto index = ToIndex(cursPos, columnQuads, rowQuads))
 					{
 						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
 						{
 							//[index->x]は試して駄目だったので[index->y]に
+							//そもそも0番目で良いだろう　どこも横は同じサイズである
 							int32 xxx = classBattle.classMapBattle.value().mapData.size();
-							int32 yyy = classBattle.classMapBattle.value().mapData[index->y].size();
+							int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
 							int32 indexX = index->x;
 							int32 indexY = index->y;
 							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
 							{
+								//ここに入る時がある
+								IsResourceSelectTraget = false;
 								continue; // 範囲外アクセスを防ぐ
+								//co_await Co::NextFrame();
 							}
 
 							//TODO 閉じるボタン押下時にここでエラー発生　原因・修正はともかく把握しておくこと
@@ -1814,7 +1836,7 @@ Co::Task<void> Battle::mainLoop()
 								colResourceTarget = index.value().x;
 
 								// 移動先の座標算出
-								Vec2 nor = Cursor::PosF();
+								Vec2 nor = ToTileBottomCenter(*index, N);
 								// 移動先が有効かどうかチェックは実質上で済んでいる
 								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
 								cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
@@ -1853,6 +1875,24 @@ Co::Task<void> Battle::mainLoop()
 													std::ref(abortMyUnits),
 													std::ref(pauseTaskMyUnits)
 								);
+							}
+						}
+						if (ToTile(*index, N).mouseOver())
+						{
+							int32 xxx = classBattle.classMapBattle.value().mapData.size();
+							int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
+							int32 indexX = index->x;
+							int32 indexY = index->y;
+							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
+							{
+								//ここに入る時がある
+								IsResourceSelectTraget = false;
+								continue; // 範囲外アクセスを防ぐ
+								//co_await Co::NextFrame();
+							}
+							if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
+							{
+								Cursor::RequestStyle(CursorStyle::Hand);
 							}
 						}
 					}
@@ -2109,10 +2149,12 @@ Co::Task<void> Battle::mainLoop()
 
 						nowSelectSkillSetumei = U"~~~Skill~~~\r\n" + nowSelectSkillSetumei;
 
-						while (not font(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), ColorF{ 0.0 }))
+						while (not fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Color(0.0, 0.0)))
 						{
 							rectSkillSetumei.h = rectSkillSetumei.h + 12;
 						}
+						rectSkillSetumei.x = re.second.pos.x + 32;
+						rectSkillSetumei.y = Scene::Size().y - underBarHeight - rectSkillSetumei.h;
 						break;
 					}
 					else
@@ -2244,6 +2286,23 @@ Co::Task<void> Battle::mainLoop()
 							}
 						}
 						break;
+					}
+					if (re.rect.mouseOver())
+					{
+						nowSelectBuildSetumei = U"";
+						rectSetumei = { 0,0,320,0 };
+						nowSelectBuildSetumei = U"~~~Unit Or Build~~~\r\n" + re.setumei;
+						while (not fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Color(0.0, 0.0)))
+						{
+							rectSetumei.h = rectSetumei.h + 12;
+						}
+						rectSetumei.x = Scene::Size().x - renderTextureBuildMenuEmpty.size().x;
+						rectSetumei.y = Scene::Size().y - underBarHeight - renderTextureBuildMenuEmpty.size().y - rectSetumei.h;
+						break;
+					}
+					else
+					{
+						nowSelectBuildSetumei = U"";
 					}
 				}
 
@@ -2588,8 +2647,13 @@ void Battle::draw() const
 	}
 
 	//-30とは下の線のこと
-	renderTextureSkill.draw(0, Scene::Size().y - 320 - 30);
-	renderTextureSkillUP.draw(0, Scene::Size().y - 320 - 30);
+	renderTextureSkill.draw(0, Scene::Size().y - 320 - underBarHeight);
+	renderTextureSkillUP.draw(0, Scene::Size().y - 320 - underBarHeight);
+	if (nowSelectSkillSetumei != U"")
+	{
+		rectSkillSetumei.draw(Palette::Black);
+		fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Palette::White);
+	}
 
 	if (IsBuildMenuHome)
 	{
@@ -2710,6 +2774,12 @@ void Battle::draw() const
 	else
 	{
 		renderTextureBuildMenuEmpty.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+	}
+
+	if (nowSelectBuildSetumei != U"")
+	{
+		rectSetumei.draw(Palette::Black);
+		fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Palette::White);
 	}
 
 	//現在の資源を左上に表示する
