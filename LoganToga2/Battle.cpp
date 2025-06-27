@@ -190,7 +190,7 @@ void GetTempResource(ClassMapBattle& cmb)
 	cmb.mapData[0][10].resourcePointType = resourceKind::Gold;
 	cmb.mapData[0][10].resourcePointAmount = 11;
 	cmb.mapData[0][10].resourcePointDisplayName = U"金";
-	cmb.mapData[0][10].resourcePointIcon = U"david.png";
+	cmb.mapData[0][10].resourcePointIcon = U"point000.png";
 }
 
 Vec2 ToIso(double x, double y)
@@ -1054,6 +1054,13 @@ Co::Task<void> Battle::mainLoop()
 				}
 
 				// 実行
+				if (key == U"zirai.png")
+				{
+					UnitRegister(U"LandmineAA",
+						arrBuildMenuThunderwalkerYoyaku[0].colBuilding,
+						arrBuildMenuThunderwalkerYoyaku[0].rowBuilding,
+						1);
+				}
 			}
 			arrT[1] = Min(stopwatch001.sF() / durationSec, 1.0);
 		}
@@ -1116,6 +1123,16 @@ Co::Task<void> Battle::mainLoop()
 						cuu.ListClassUnit.push_back(uu);
 
 						classBattle.listOfAllUnit.push_back(cuu);
+					}
+				}
+				else
+				{
+					if (key == U"zirai.png")
+					{
+						UnitRegister(U"LandmineAA",
+							colBuildingTarget,
+							rowBuildingTarget,
+							1);
 					}
 				}
 
@@ -1723,7 +1740,7 @@ Co::Task<void> Battle::mainLoop()
 								// 移動先の座標算出
 								Vec2 nor = Cursor::PosF();
 								// 移動先が有効かどうかチェックは実質上で済んでいる
-								cu.orderPosiLeft = nor;
+								cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 								cu.orderPosiLeftLast = nor;
 								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
 								cu.FlagMove = false;
@@ -1773,8 +1790,9 @@ Co::Task<void> Battle::mainLoop()
 					{
 						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
 						{
+							//[index->x]は試して駄目だったので[index->y]に
 							int32 xxx = classBattle.classMapBattle.value().mapData.size();
-							int32 yyy = classBattle.classMapBattle.value().mapData[index->x].size();
+							int32 yyy = classBattle.classMapBattle.value().mapData[index->y].size();
 							int32 indexX = index->x;
 							int32 indexY = index->y;
 							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
@@ -1799,7 +1817,7 @@ Co::Task<void> Battle::mainLoop()
 								Vec2 nor = Cursor::PosF();
 								// 移動先が有効かどうかチェックは実質上で済んでいる
 								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-								cu.orderPosiLeft = nor;
+								cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 								cu.orderPosiLeftLast = nor;
 								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
 								cu.FlagMove = false;
@@ -2158,14 +2176,20 @@ Co::Task<void> Battle::mainLoop()
 						}
 
 						cRightMenu ccc;
-						//ccc.sortId = re.sortId;
 						ccc.sortYoyakuId = longBuildMenuHomeYoyakuIdCount;
 						ccc.key = re.key;
 						ccc.kindForProcess = re.kindForProcess;
 						ccc.texture = TextureAsset(re.key);
 						ccc.time = re.time;
-						//ccc.rowBuilding = re.rowBuilding;
-						//ccc.colBuilding = re.colBuilding;
+
+						//ユニット走査
+						Unit& cu = GetCU(longBuildSelectTragetId);
+						if (const auto index = ToIndex(cu.GetNowPosiCenter(), columnQuads, rowQuads))
+						{
+							ccc.rowBuilding = index->y;
+							ccc.colBuilding = index->x;
+						}
+
 						longBuildMenuHomeYoyakuIdCount++;
 
 						if (re.buiSyu == 0)
@@ -2392,9 +2416,10 @@ void Battle::draw() const
 				switch (ttt.classMapBattle.whichIsThePlayer)
 				{
 				case BattleWhichIsThePlayer::Sortie:
-					Circle(ttt.pos, 16).draw(ColorF{ 0.0, 0.6 });
+					Circle(ttt.pos.movedBy(0, -TileThickness - TileOffset.y), 16).drawFrame(4, 0, ColorF{ 0.0, 0.6 });
 					break;
 				default:
+					Circle(ttt.pos.movedBy(0, -TileThickness - TileOffset.y), 16).drawFrame(4, 0, Palette::Red);
 					break;
 				}
 			}
@@ -2426,6 +2451,7 @@ void Battle::draw() const
 					}
 				}
 			}
+
 
 			// プレイヤーユニット描画
 			for (auto& item : classBattle.listOfAllUnit)
@@ -2618,12 +2644,14 @@ void Battle::draw() const
 			// ゲージの高さ（画像下から上へ）
 			const double gaugeHeight = 64 * arrT[2];
 			renderTextureBuildMenuKouhei.draw(Scene::Size().x - 328, Scene::Size().y - 328 - 30);
+			Rect(Scene::Size().x - 328 - 64 - (6), Scene::Size().y - 328 - 30, 70, 328).drawFrame(4, 0, Palette::Black);
+
 			//TODO 到着時に以下を行う
 			for (auto&& [i, re] : Indexed(arrBuildMenuKouheiYoyaku))
 			{
 				if (i == 0)
 				{
-					re.texture.resized(64).draw(Scene::Size().x - 328 - 64, Scene::Size().y - 328 - 30 + 4);
+					re.texture.resized(64).draw(Scene::Size().x - 328 - 64 - 2, Scene::Size().y - 328 - 30 + 4);
 
 					if (re.isMoved)
 					{
@@ -2696,7 +2724,7 @@ void Battle::draw() const
 	}
 	else
 	{
-		baseXResource = Scene::Size().x - 328 - int32(systemFont(goldText).region().w);
+		baseXResource = Scene::Size().x - 328 - int32(systemFont(goldText).region().w) - 64 - 6;
 		baseYResource = Scene::Size().y - 328 - 30;
 	}
 	{
@@ -2918,10 +2946,10 @@ void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start
 		double x = end.x + unit_spacing_offset_x - rowOffsetX;
 		double y = end.y - unit_spacing_offset_y - rowOffsetY;
 
-		Unit& cuu = GetCU(unit->ID);
-		cuu.orderPosiLeft = Vec2(Floor(x), Floor(y));
-		cuu.orderPosiLeftLast = cuu.orderPosiLeft;
-		cuu.FlagMove = false;
-		cuu.FlagMoveAI = true;
+		Unit& cu = GetCU(unit->ID);
+		cu.orderPosiLeft = Vec2(Floor(x), Floor(y)).movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
+		cu.orderPosiLeftLast = cu.orderPosiLeft;
+		cu.FlagMove = false;
+		cu.FlagMoveAI = true;
 	}
 }

@@ -26,6 +26,8 @@ void Init(CommonConfig& commonConfig)
 			cu.Hp = Parse<int32>(value[U"hp"].getString());
 			cu.Mp = Parse<int32>(value[U"mp"].getString());
 			cu.HpMAX = cu.Hp;
+			if (value.hasElement(U"visionRadius") == true)
+				cu.visionRadius = Parse<int32>(value[U"visionRadius"].getString());
 			cu.Attack = Parse<int32>(value[U"attack"].getString());
 			cu.Defense = Parse<int32>(value[U"defense"].getString());
 			cu.Magic = Parse<int32>(value[U"magic"].getString());
