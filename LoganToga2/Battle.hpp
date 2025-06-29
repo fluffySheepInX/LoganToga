@@ -20,6 +20,100 @@
 		(2, 3) (3, 2)
 			(3, 3)
 */
+class UnitMovePlan
+{
+private:
+	int64 targetID = -1;
+	Array<Point> path;
+	Optional<Point> currentTarget;
+	bool pathCompleted = false;
+	bool needsRepath = false;
+	bool retreating = false;
+	Vec2 lastKnownEnemyPos;
+public:
+	UnitMovePlan() = default;
+	void setLastKnownEnemyPos(const Vec2& pos)
+	{
+		lastKnownEnemyPos = pos;
+	}
+
+	Vec2 getLastKnownEnemyPos() const
+	{
+		return lastKnownEnemyPos;
+	}
+	void setTarget(int64 newTargetID)
+	{
+		targetID = newTargetID;
+	}
+	void setRetreating(bool va)
+	{
+		retreating = va;
+	}
+	bool isRetreating() const
+	{
+		return retreating;
+	}
+
+	int64 getTargetID() const
+	{
+		return targetID;
+	}
+
+	void setPath(const Array<Point>& newPath)
+	{
+		path = newPath;
+		pathCompleted = path.isEmpty();
+		currentTarget = pathCompleted ? Optional<Point>{} : Optional<Point>{ path.front() };
+	}
+
+	const Array<Point>& getPath() const
+	{
+		return path;
+	}
+
+	Optional<Point> getCurrentTarget() const
+	{
+		return currentTarget;
+	}
+
+	bool isPathCompleted() const
+	{
+		return pathCompleted;
+	}
+
+	void markRepathNeeded()
+	{
+		needsRepath = true;
+	}
+
+	bool isRepathNeeded() const
+	{
+		return needsRepath;
+	}
+
+	void stepToNext()
+	{
+		if (path.isEmpty())
+		{
+			pathCompleted = true;
+			currentTarget.reset();
+			return;
+		}
+
+		path.pop_front();
+
+		if (path.isEmpty())
+		{
+			pathCompleted = true;
+			currentTarget.reset();
+		}
+		else
+		{
+			currentTarget = path.front();
+		}
+	}
+};
+
 
 struct map_detail_position
 {
@@ -109,7 +203,6 @@ private:
 	Array<Array<Unit*>> GetMovableUnitGroups();
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
-
 	CommonConfig& m_commonConfig;
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
@@ -155,6 +248,7 @@ private:
 	//Optional<Point> ToIndex(const Vec2& pos, const Array<Quad>& columnQuads, const Array<Quad>& rowQuads);
 	Texture LoadPremultipliedTexture(FilePathView path);
 
+	Vec2 ToTileBottomCenterTTT(const Point& index, const int32 N) const;
 
 	Unit& GetCU(long ID);
 	Array<bool> arrayBattleZinkei;
@@ -167,7 +261,9 @@ private:
 	std::atomic<bool> abortMyUnits{ false };
 	std::atomic<bool> pauseTask{ false };
 	std::atomic<bool> pauseTaskMyUnits{ false };
-	HashTable<int64, Array<Point>> aiRoot;
+	std::atomic<bool> changeUnitMember{ false };
+	HashTable<int64, UnitMovePlan> aiRootEnemy;
+	HashTable<int64, UnitMovePlan> aiRootMy;
 	Array<Array<Point>> debugRoot;
 	Array<ClassAStar*> debugAstar;
 
@@ -262,6 +358,7 @@ private:
 	//資源
 
 	Stopwatch stopwatchFinance{ StartImmediately::No };
+	Stopwatch stopwatchGameTime{ StartImmediately::No };
 	/// @brief 金
 	int32 gold = 0;
 
@@ -283,6 +380,22 @@ private:
 	HashTable<Point, ColorF> minimapCols;
 	HashTable<String, Color> colData;
 	void DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const;
-	void UnitRegister(String unitName, int32 col, int32 row, int32 num);
+	void UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU);
 
+
+	RectF getCameraView() const;
+	void drawTileMap(const RectF& cameraView) const;
+	void drawFog(const RectF& cameraView) const;
+	void drawBuildings(const RectF& cameraView) const;
+	void drawUnits(const RectF& cameraView) const;
+	void drawHealthBars() const;
+	void drawSelectionRectangleOrArrow() const;
+	void drawSkillUI() const;
+	void drawBuildMenu() const;
+	void drawResourcesUI() const;
+	void drawBuildTargetHighlight() const;
+	void drawBuildDescription() const;
+	void drawResourcePoints(const RectF& cameraView) const;
+
+	ResourcePointTooltip resourcePointTooltip;
 };

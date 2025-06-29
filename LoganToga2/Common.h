@@ -579,6 +579,102 @@ private:
 		}
 	}
 };
+class ResourcePointTooltip : public Co::SequenceBase<>
+{
+public:
+	struct TooltipTarget
+	{
+		Circle area;         // 当たり判定範囲
+		String text;        // 表示するツールチップ文字列
+	};
+
+	ResourcePointTooltip() {}
+
+	void setTargets(const Array<TooltipTarget>& targets)
+	{
+		m_targets = targets;
+	}
+
+	void setTooltipEnabled(bool enabled)
+	{
+		m_tooltipEnabled = enabled;
+	}
+
+	void setCamera(const Camera2D& camera)
+	{
+		m_camera = camera;
+	}
+	void draw() const override
+	{
+		if (m_tooltipPosition && !m_currentText.isEmpty())
+		{
+			const Vec2 pos = m_tooltipPosition->movedBy(10, -20);
+			const auto region = m_font(m_currentText).region(pos);
+
+			region.stretched(6).draw(Palette::Yellow.withAlpha(200));
+			m_font(m_currentText).draw(pos, Palette::Black);
+		}
+	}
+private:
+	bool m_tooltipEnabled = false;
+	Array<TooltipTarget> m_targets;
+	Optional<Point> m_tooltipPosition;
+	String m_currentText;
+	Camera2D m_camera;
+
+	Font m_font{ 18 };
+
+	Co::Task<> start() override
+	{
+		while (true)
+		{
+			bool hovered = false;
+
+			//const auto ct = m_camera.createTransformer();
+			for (const auto& t : m_targets)
+			{
+				bool che = false;
+				{
+					const auto ct = m_camera.createTransformer();
+					if (t.area.mouseOver())
+						che = true;
+				}
+
+				if (che)
+				{
+					if (!m_tooltipEnabled)
+					{
+						co_await Co::NextFrame();
+						continue;
+					}
+
+					{
+						//const auto ct = m_camera.createTransformer();
+						m_tooltipPosition = Cursor::Pos();
+					}
+					m_currentText = t.text;
+
+					// マウスが外れるまで表示
+					co_await Co::WaitWhile([&]
+						{
+							const auto ct = m_camera.createTransformer();
+							return t.area.mouseOver();
+						});
+
+					m_tooltipPosition = none;
+					m_currentText.clear();
+					hovered = true;
+					break;
+				}
+			}
+
+			if (!hovered)
+			{
+				co_await Co::NextFrame();
+			}
+		}
+	}
+};
 
 inline bool downKeyEscape(Optional<bool> result)
 {
