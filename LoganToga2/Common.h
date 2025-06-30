@@ -649,7 +649,7 @@ private:
 					}
 
 					{
-						//const auto ct = m_camera.createTransformer();
+						const auto ct = m_camera.createTransformer();
 						m_tooltipPosition = Cursor::Pos();
 					}
 					m_currentText = t.text;

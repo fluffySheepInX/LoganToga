@@ -355,6 +355,18 @@ private:
 	Stopwatch stopwatch002{ StartImmediately::No };
 	Stopwatch stopwatch003{ StartImmediately::No };
 
+	//
+	struct BuildMenuCategory
+	{
+		Array<cRightMenu> reservations;
+		Stopwatch timer{ StartImmediately::No };
+		double progressTime = -1.0;
+	};
+	// 建物種別ごとのリスト（buiSyu == index）
+	Array<BuildMenuCategory> buildMenus = Array<BuildMenuCategory>(6);
+
+	//
+
 	//資源
 
 	Stopwatch stopwatchFinance{ StartImmediately::No };
@@ -398,4 +410,17 @@ private:
 	void drawResourcePoints(const RectF& cameraView) const;
 
 	ResourcePointTooltip resourcePointTooltip;
+
+	void updateResourceIncome();
+	void playResourceEffect();
+	void refreshFogOfWar();
+	void spawnTimedEnemy();
+	void updateResourceCapture();
+	void updateUnitHealthBars();
+	void handleBuildMenuSelectionA();
+	void handleBuildMenuSelectionB();
+	void updateBuildQueue();
+	Co::Task<> checkCancelSelectionByUIArea();
+	void updateUnitMovements();
+
 };

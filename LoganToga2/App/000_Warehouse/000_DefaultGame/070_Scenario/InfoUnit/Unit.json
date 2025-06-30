@@ -71,7 +71,7 @@
       "heal_max": "500",
       "summon_max": "5",
       "no_knock": "0",
-      "escape_range": "300",
+      "escape_range": "100",
       "movetype": "a",
       "bf": "0"
     },
