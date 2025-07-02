@@ -190,9 +190,10 @@ public:
 class Battle : public FsScene
 {
 public:
-	Battle(GameData& saveData, CommonConfig& commonConfig);
+	Battle(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle() override;
 private:
+	SystemString ss;
 	Co::Task<void> start() override;
 
 	Co::Task<void> mainLoop();
@@ -203,11 +204,14 @@ private:
 	Array<Array<Unit*>> GetMovableUnitGroups();
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
+	Array<ResourcePointTooltip::TooltipTarget> SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget> resourceTargets);
+
 	CommonConfig& m_commonConfig;
 	GameData& m_saveData;
 	Camera2D camera{ Vec2{ 0, 0 },1.0,CameraControl::Wheel };
 	const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
 	const Font fontSkill{ FontMethod::MSDF, 12, Typeface::Bold };
+	const Font fontZinkei{ FontMethod::MSDF, 12, Typeface::Bold };
 	const int32 underBarHeight = 30;
 
 	bool PauseFlag = false;
@@ -422,5 +426,12 @@ private:
 	void updateBuildQueue();
 	Co::Task<> checkCancelSelectionByUIArea();
 	void updateUnitMovements();
-
+	void handleSkillUISelection();
+	Co::Task<void> processBattlePhase();
+	void handleCameraInput();
+	void handleUnitAndBuildingSelection();
+	void handleBuildTargetSelection();
+	Co::Task<void> co_handleResourcePointSelection();
+	Co::Task<void> handleRightClickUnitActions(Point start, Point end);
+	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
 };

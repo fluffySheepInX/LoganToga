@@ -607,10 +607,40 @@ void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
 
 	}
 }
+Array<ResourcePointTooltip::TooltipTarget> Battle::SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget> resourceTargets)
+{
+	{
+		const auto& mapData = classBattle.classMapBattle.value().mapData;
 
+		const int32 mapSize = static_cast<int32>(mapData.size());
 
-Battle::Battle(GameData& saveData, CommonConfig& commonConfig)
+		for (int32 x = 0; x < mapSize; ++x)
+		{
+			for (int32 y = 0; y < static_cast<int32>(mapData[x].size()); ++y)
+			{
+				const auto& tile = mapData[x][y];
+
+				if (!tile.isResourcePoint)
+					continue;
+
+				const Vec2 pos = ToTileBottomCenter(Point(x, y), N);
+
+				const Circle area = Circle(pos.movedBy(0, -TileThickness - TileOffset.y), TextureAsset(tile.resourcePointIcon).region().w / 2);
+				String desc = U"資源ポイント\n所有者: {}\n種類:{}\n量:{}"_fmt(
+							(tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie) ? U"味方" : U"敵", U"金", U"5/s");
+
+				resourceTargets << ResourcePointTooltip::TooltipTarget{ area, desc };
+				resourcePointTooltip.setTargets(resourceTargets);
+			}
+		}
+	}
+
+	return resourceTargets;
+}
+
+Battle::Battle(GameData& saveData, CommonConfig& commonConfig, SystemString argSS)
 	:FsScene(U"Battle"), m_saveData{ saveData }, m_commonConfig{ commonConfig }, N{ 64 }
+	, ss{ argSS }
 	, visibilityMap{ Grid<Visibility>(Size{ N, N }, Visibility::Unseen) }
 	, grid{ Grid<int32>(Size{ N, N }) }
 	, tempSelectComRight{ dummyMenu() }
@@ -654,31 +684,7 @@ Battle::Battle(GameData& saveData, CommonConfig& commonConfig)
 	classBattle.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
 	GetTempResource(classBattle.classMapBattle.value());
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
-	{
-		const auto& mapData = classBattle.classMapBattle.value().mapData;
-
-		const int32 mapSize = static_cast<int32>(mapData.size());
-
-		for (int32 x = 0; x < mapSize; ++x)
-		{
-			for (int32 y = 0; y < static_cast<int32>(mapData[x].size()); ++y)
-			{
-				const auto& tile = mapData[x][y];
-
-				if (!tile.isResourcePoint)
-					continue;
-
-				const Vec2 pos = ToTileBottomCenter(Point(x, y), N);
-
-				const Circle area = Circle(pos.movedBy(0, -TileThickness - TileOffset.y), TextureAsset(tile.resourcePointIcon).region().w / 2);
-				String desc = U"資源ポイント\n所有者: {}\n種類:{}\n量:{}"_fmt(
-							(tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie) ? U"味方" : U"敵", U"金", U"5/s");
-
-				resourceTargets << ResourcePointTooltip::TooltipTarget{ area, desc };
-				resourcePointTooltip.setTargets(resourceTargets);
-			}
-		}
-	}
+	resourceTargets = SetResourceTargets(resourceTargets);
 	resourcePointTooltip.setTooltipEnabled(true);
 
 	N = classBattle.classMapBattle.value().mapData.size();
@@ -779,8 +785,8 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				Point{ col,
 						row };
 			uu.nowPosiLeft = ToTile(uu.initTilePos, N).asPolygon().centroid().movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-			Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
-			uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+			Vec2 temp = uu.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 8);
+			uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 8));
 			ClassHorizontalUnit cuu;
 
 			for (size_t i = 0; i < num; i++)
@@ -812,6 +818,25 @@ Co::Task<void> Battle::start()
 	arrayBattleCommand.push_back(false);
 
 	battleStatus = BattleStatus::Battle;
+
+	rectZinkei.push_back(Rect{ 8,8,60,40 });
+	rectZinkei.push_back(Rect{ 76,8,60,40 });
+	rectZinkei.push_back(Rect{ 144,8,60,40 });
+	renderTextureZinkei = RenderTexture{ 320,60 };
+	renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		Rect df = Rect(320, 60);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+
+		for (auto&& [i, ttt] : Indexed(rectZinkei))
+		{
+			ttt.draw(Palette::Aliceblue);
+			fontZinkei(ss.Zinkei[i]).draw(ttt, Palette::Black);
+		}
+	}
 
 	renderTextureBuildMenuEmpty = RenderTexture{ 328, 328 };
 	renderTextureBuildMenuEmpty.clear(ColorF{ 0.5, 0.0 });
@@ -1473,7 +1498,7 @@ void Battle::updateBuildQueue()
 					uu.Move = 500.0;
 					uu.FlagMove = uu.FlagMoving = false;
 					uu.IsBattleEnable = true;
-					uu.buiSyu = 5;
+					uu.buiSyu = 2;
 					uu.Image = U"chip006.png";
 
 					ClassHorizontalUnit cuu;
@@ -1510,7 +1535,7 @@ void Battle::updateBuildQueue()
 					uu.colBuilding = col;
 					uu.NoWall2 = 0;
 					uu.HPCastle = uu.CastleDefense = uu.CastleMagdef = 1000;
-					uu.buiSyu = 6;
+					uu.buiSyu = 3;
 					uu.Image = U"bu-keiso.png";
 					Vec2 temp = uu.GetNowPosiCenter().movedBy(-32, 22);
 					uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
@@ -1855,6 +1880,486 @@ void Battle::updateUnitMovements()
 	//updateMovement(classBattle.listOfAllUnit, aiRootMy);
 	//updateMovement(classBattle.listOfAllEnemyUnit, aiRootEnemy);
 }
+void Battle::handleSkillUISelection()
+{
+	//skill選択処理
+	{
+		const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - 320 - 30) };
+		for (auto&& [i, re] : Indexed(htSkill))
+		{
+			if (re.second.leftClicked())
+			{
+				bool flgEr = false;
+				for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
+				{
+					if (it->contains(re.first))
+					{
+						nowSelectSkill.erase(it);
+						flgEr = true;
+						break;
+					}
+				}
+
+				if (flgEr == false)
+				{
+					nowSelectSkill.push_back(re.first);
+				}
+			}
+			if (re.second.mouseOver())
+			{
+				flagDisplaySkillSetumei = true;
+				nowSelectSkillSetumei = U"";
+				//スキル説明を書く
+				for (auto& item : classBattle.listOfAllUnit)
+				{
+					if (!item.FlagBuilding &&
+						!item.ListClassUnit.empty())
+						for (auto& itemUnit : item.ListClassUnit)
+						{
+							for (auto& itemSkill : itemUnit.Skill)
+							{
+								if (itemSkill.nameTag == re.first)
+								{
+									nowSelectSkillSetumei = itemSkill.name + U"\r\n"
+										+ itemSkill.help + U"\r\n"
+										+ systemString.SkillAttack + U":" + Format(itemSkill.str);
+									;
+									break;
+								}
+							}
+							if (nowSelectSkillSetumei != U"")
+								break;
+						}
+					if (nowSelectSkillSetumei != U"")
+						break;
+				}
+
+				nowSelectSkillSetumei = U"~~~Skill~~~\r\n" + nowSelectSkillSetumei;
+
+				while (not fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Color(0.0, 0.0)))
+				{
+					rectSkillSetumei.h = rectSkillSetumei.h + 12;
+				}
+				rectSkillSetumei.x = re.second.pos.x + 32;
+				rectSkillSetumei.y = Scene::Size().y - underBarHeight - rectSkillSetumei.h;
+				break;
+			}
+			else
+			{
+				flagDisplaySkillSetumei = false;
+				nowSelectSkillSetumei = U"";
+			}
+		}
+
+		{
+			const ScopedRenderTarget2D target{ renderTextureSkillUP.clear(ColorF{ 0.5, 0.0, 0.0, 0.0 }) };
+			// 描画された最大のアルファ成分を保持するブレンドステート
+			const ScopedRenderStates2D blend{ MakeBlendState() };
+			for (auto&& [i, re] : Indexed(htSkill))
+				for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
+					if (it->contains(re.first))
+					{
+						re.second.drawFrame(2, 0, Palette::Red);
+						break;
+					}
+		}
+	}
+}
+void Battle::handleCameraInput()
+{
+	// カメラの移動処理（左クリックドラッグ）
+	if (MouseL.pressed() == true)
+	{
+		const auto vPos = (camera.getTargetCenter() - Cursor::Delta());
+		camera.jumpTo(vPos, camera.getTargetScale());
+	}
+	// 右クリック時のカーソル座標記録処理
+	if (MouseR.pressed() == false)
+	{
+		if (MouseR.up() == false)
+			cursPos = Cursor::Pos();
+	}
+	else if (MouseR.down() && IsBattleMove)
+	{
+		cursPos = Cursor::Pos();
+	}
+}
+void Battle::handleUnitAndBuildingSelection()
+{
+	// 建築物選択チェック
+	bool isSeBu = false;
+	{
+		// いったん押された建築物の固有IDを走査する
+		// 対象以外のIsSelectを全てfalseにしたいが為
+		long id = -1;
+		for (auto& item : classBattle.listOfAllUnit)
+		{
+			if (item.FlagBuilding == true &&
+				!item.ListClassUnit.empty())
+			{
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					Size tempSize = TextureAsset(itemUnit.Image).size();
+					Quad tempQ = ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), N);
+					const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
+					const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
+					const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
+					const double vHe = Abs(rightCenter.y - leftCenter.y);
+					double scale = tempSize.x / (horizontalWidth * 2);
+
+					if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + TileThickness).leftClicked())
+					{
+						id = itemUnit.ID;
+					}
+				}
+			}
+		}
+
+		if (id != -1)
+		{
+			for (auto& item : classBattle.listOfAllUnit)
+			{
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					if (id == itemUnit.ID)
+					{
+						itemUnit.IsSelect = !itemUnit.IsSelect;
+						IsBuildMenuHome = itemUnit.IsSelect;
+						buiSyu = itemUnit.buiSyu; // 建築の種類
+						isSeBu = true;
+					}
+					else
+					{
+						itemUnit.IsSelect = false;
+					}
+				}
+			}
+		}
+	}
+
+	// ユニット選択チェック
+	{
+		if (isSeBu == false)
+		{
+			//全ユニット走査、posからrectを生成し、クリックされたかチェック
+			for (auto& target : classBattle.listOfAllUnit)
+			{
+				for (auto& unit : target.ListClassUnit)
+				{
+					if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
+						|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.buiSyu != -1))
+					{
+						RectF rect = RectF(unit.nowPosiLeft, unit.yokoUnit, unit.TakasaUnit);
+						if (rect.leftClicked())
+						{
+							//クリックされたユニットのIDを取得
+							//そのユニットのIsSelectを反転させる
+							//IsBuildMenuHomeを反転させる
+							//他のユニットのIsSelectはfalseにする
+							for (auto& item : classBattle.listOfAllUnit)
+							{
+								for (auto& itemUnit : item.ListClassUnit)
+								{
+									if (unit.ID == itemUnit.ID)
+									{
+
+									}
+									else
+									{
+										itemUnit.IsSelect = false;
+									}
+								}
+							}
+							unit.IsSelect = !unit.IsSelect;
+							IsBuildMenuHome = unit.IsSelect;
+
+							if (unit.IsSelect == true)
+							{
+								buiSyu = unit.buiSyu; // 建築の種類
+								longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
+								IsResourceSelectTraget = true;
+							}
+							else
+							{
+								buiSyu = -1; // 建築の種類をリセット
+								longBuildSelectTragetId = -1; // 選択されたユニットのIDをリセット
+								IsResourceSelectTraget = false;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+void Battle::handleBuildTargetSelection()
+{
+	if (!IsBuildSelectTraget)
+		return;
+
+	if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+	{
+		if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)
+		{
+			IsBuildSelectTraget = false;
+			IsBuildMenuHome = false;
+
+			Unit& cu = GetCU(longBuildSelectTragetId);
+			longBuildSelectTragetId = -1;
+			longIsMovedYoyakuId = cu.ID;
+
+			rowBuildingTarget = index->y;
+			colBuildingTarget = index->x;
+
+			Vec2 nor = Cursor::PosF();
+			cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
+			cu.orderPosiLeftLast = nor;
+			cu.vecMove = (cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+			cu.FlagMove = false;
+			cu.FlagMoveAI = true;
+			cu.IsSelect = false;
+
+			IsBattleMove = false;
+
+			if (taskMyUnits.isValid())
+			{
+				abortMyUnits = true;
+				taskMyUnits.wait();
+			}
+			abortMyUnits = false;
+			isMovedYoyaku = true;
+
+			taskMyUnits = Async(BattleMoveAStarMyUnits,
+				std::ref(classBattle.listOfAllUnit),
+				std::ref(classBattle.listOfAllEnemyUnit),
+				std::ref(classBattle.classMapBattle.value().mapData),
+				std::ref(aiRootMy),
+				std::ref(debugRoot),
+				std::ref(debugAstar),
+				std::ref(columnQuads),
+				std::ref(rowQuads),
+				N,
+				std::ref(abortMyUnits),
+				std::ref(pauseTaskMyUnits));
+		}
+	}
+}
+Co::Task<void> Battle::co_handleResourcePointSelection()
+{
+	//資源ポイントの選択
+	if (const auto index = ToIndex(cursPos, columnQuads, rowQuads))
+	{
+		// 敵がいない時は動かない仕様になっている
+		if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
+		{
+			//[index->x]は試して駄目だったので[index->y]に
+			//そもそも0番目で良いだろう　どこも横は同じサイズである
+			int32 xxx = classBattle.classMapBattle.value().mapData.size();
+			int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
+			int32 indexX = index->x;
+			int32 indexY = index->y;
+			if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
+			{
+				IsResourceSelectTraget = false;
+				co_await Co::NextFrame(); // 範囲外アクセスを防ぐ
+			}
+
+			//TODO 閉じるボタン押下時にここでエラー発生　原因・修正はともかく把握しておくこと
+			//ユニット選択後に閉じるボタン押下→問題無し
+			if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
+			{
+				IsBuildSelectTraget = false;
+				IsBuildMenuHome = false;
+				Unit& cu = GetCU(longBuildSelectTragetId);
+				longBuildSelectTragetId = -1;
+				longIsGetResourceId = cu.ID; // 資源ポイントを選択したユニットIDを保存
+
+				rowResourceTarget = index.value().y;
+				colResourceTarget = index.value().x;
+
+				// 移動先の座標算出
+				Vec2 nor = ToTileBottomCenter(*index, N);
+				// 移動先が有効かどうかチェックは実質上で済んでいる
+				cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+				cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
+				cu.orderPosiLeftLast = nor;
+				cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
+				cu.FlagMove = false;
+				//cuu.FlagMoving = true;
+				cu.FlagMoveAI = true;
+				cu.IsSelect = false;
+
+				IsBattleMove = false;
+
+				// 実行途中のタスクがあれば完了まで待つ。
+				if (taskMyUnits.isValid())
+				{
+					// 中断指示を出す
+					abortMyUnits = true;
+
+					// 完全に処理が完了する前に制御を返してくれる
+					taskMyUnits.wait();
+				}
+
+				abortMyUnits = false;
+				isGetResource = true; // 資源ポイントを選択したことを示す
+
+				taskMyUnits = Async(BattleMoveAStarMyUnits,
+									std::ref(classBattle.listOfAllUnit),
+									std::ref(classBattle.listOfAllEnemyUnit),
+									std::ref(classBattle.classMapBattle.value().mapData),
+									std::ref(aiRootMy),
+									std::ref(debugRoot),
+									std::ref(debugAstar),
+									std::ref(columnQuads),
+									std::ref(rowQuads),
+									N,
+									std::ref(abortMyUnits),
+									std::ref(pauseTaskMyUnits)
+				);
+			}
+		}
+		if (ToTile(*index, N).mouseOver())
+		{
+			int32 xxx = classBattle.classMapBattle.value().mapData.size();
+			int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
+			int32 indexX = index->x;
+			int32 indexY = index->y;
+			if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
+			{
+				IsResourceSelectTraget = false;
+				co_return;
+			}
+			if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
+				Cursor::RequestStyle(CursorStyle::Hand);
+		}
+	}
+}
+Co::Task<void> Battle::processBattlePhase()
+{
+	co_await checkCancelSelectionByUIArea();
+
+	{
+		const auto t = camera.createTransformer();
+
+		//// プレイヤー入力処理全般
+		//handleUnitAndBuildingSelection();
+		//handleCameraInput();
+		//handleRightClickMovementOrSelection();
+		//handleBuildTargetSelection();
+		//handleResourcePointSelection();
+	}
+
+	updateUnitMovements();
+	updateUnitHealthBars();
+	handleSkillUISelection();
+	handleBuildMenuSelectionA();
+
+	co_return;
+}
+Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
+{
+	if (IsBattleMove == true)
+	{
+		if (arrayBattleZinkei[0] == true)
+		{
+			for (auto& target : classBattle.listOfAllUnit)
+				for (auto& unit : target.ListClassUnit)
+				{
+					Unit& cuu = GetCU(unit.ID);
+					cuu.orderPosiLeft = end.movedBy(Random(-10, 10), Random(-10, 10));
+					cuu.orderPosiLeftLast = cuu.orderPosiLeft;
+					cuu.FlagMove = false;
+					cuu.FlagMoveAI = true;
+				}
+		}
+		else if (arrayBattleZinkei[1] == true)
+		{
+			ClassHorizontalUnit liZenei;
+			liZenei = getMovableUnits(classBattle.listOfAllUnit, BattleFormation::F);
+			ClassHorizontalUnit liKouei;
+			liKouei = getMovableUnits(classBattle.listOfAllUnit, BattleFormation::B);
+			ClassHorizontalUnit liKihei;
+			liKihei = getMovableUnits(classBattle.listOfAllUnit, BattleFormation::M);
+			Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
+			lisClassHorizontalUnitLoop.push_back(liZenei);
+			lisClassHorizontalUnitLoop.push_back(liKouei);
+			lisClassHorizontalUnitLoop.push_back(liKihei);
+
+			for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
+			{
+				Array<Unit*> target;
+				for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
+					if (unit.FlagMove == true && unit.IsBattleEnable == true)
+						target.push_back(&unit);
+				if (target.size() == 0) continue;
+
+				AssignUnitsInFormation(target, start, end, i);
+			}
+		}
+		else
+		{
+			//正方
+			auto groups = GetMovableUnitGroups();
+			for (auto&& [i, group] : Indexed(groups))
+			{
+				AssignUnitsInFormation(group, start, end, i);
+			}
+		}
+
+		IsBattleMove = false;
+
+		// 実行途中のタスクがあれば完了まで待つ。
+		if (taskMyUnits.isValid())
+		{
+			// 中断指示を出す
+			abortMyUnits = true;
+
+			// 完全に処理が完了する前に制御を返してくれる
+			taskMyUnits.wait();
+		}
+
+		abortMyUnits = false;
+
+		//経路算出
+		taskMyUnits = Async(BattleMoveAStarMyUnits,
+						std::ref(classBattle.listOfAllUnit),
+						std::ref(classBattle.listOfAllEnemyUnit),
+						std::ref(classBattle.classMapBattle.value().mapData),
+						std::ref(aiRootMy),
+						std::ref(debugRoot),
+						std::ref(debugAstar),
+						std::ref(columnQuads),
+						std::ref(rowQuads),
+						N,
+						std::ref(abortMyUnits),
+						std::ref(pauseTaskMyUnits));
+	}
+	else
+	{
+		//範囲選択
+		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
+		const RectF selectionRect = RectF::FromPoints(start, end);
+		for (auto& target : classBattle.listOfAllUnit)
+		{
+			for (auto& unit : target.ListClassUnit)
+			{
+				if (unit.IsBuilding)
+					continue;
+
+				const Vec2 gnpc = unit.GetNowPosiCenter();
+				const bool inRect = selectionRect.intersects(gnpc);
+				GetCU(unit.ID).FlagMove = inRect;
+
+				if (inRect)
+					IsBattleMove = true;
+			}
+		}
+	}
+
+	co_return;
+}
+
 Co::Task<void> Battle::mainLoop()
 {
 	const auto _tooltip = resourcePointTooltip.playScoped();
@@ -1913,638 +2418,65 @@ Co::Task<void> Battle::mainLoop()
 			{
 				const auto t = camera.createTransformer();
 
-				// 建築物選択チェック
-				bool isSeBu = false;
-				{
-					// いったん押された建築物の固有IDを走査する
-					// 対象以外のIsSelectを全てfalseにしたいが為
-					long id = -1;
-					for (auto& item : classBattle.listOfAllUnit)
-					{
-						if (item.FlagBuilding == true &&
-							!item.ListClassUnit.empty())
-						{
-							for (auto& itemUnit : item.ListClassUnit)
-							{
-								Size tempSize = TextureAsset(itemUnit.Image).size();
-								Quad tempQ = ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), N);
-								const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
-								const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
-								const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
-								const double vHe = Abs(rightCenter.y - leftCenter.y);
-								double scale = tempSize.x / (horizontalWidth * 2);
+				handleUnitAndBuildingSelection();
+				handleCameraInput();
 
-								if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + TileThickness).leftClicked())
-								{
-									id = itemUnit.ID;
-								}
-							}
-						}
-					}
-
-					if (id != -1)
-					{
-						for (auto& item : classBattle.listOfAllUnit)
-						{
-							for (auto& itemUnit : item.ListClassUnit)
-							{
-								if (id == itemUnit.ID)
-								{
-									itemUnit.IsSelect = !itemUnit.IsSelect;
-									IsBuildMenuHome = itemUnit.IsSelect;
-									buiSyu = itemUnit.buiSyu; // 建築の種類
-									isSeBu = true;
-								}
-								else
-								{
-									itemUnit.IsSelect = false;
-								}
-							}
-						}
-					}
-				}
-
-				// ユニット選択チェック
-				{
-					if (isSeBu == false)
-					{
-						//全ユニット走査、posからrectを生成し、クリックされたかチェック
-						for (auto& target : classBattle.listOfAllUnit)
-						{
-							for (auto& unit : target.ListClassUnit)
-							{
-								if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
-									|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.buiSyu != -1))
-								{
-									RectF rect = RectF(unit.nowPosiLeft, unit.yokoUnit, unit.TakasaUnit);
-									if (rect.leftClicked())
-									{
-										//クリックされたユニットのIDを取得
-										//そのユニットのIsSelectを反転させる
-										//IsBuildMenuHomeを反転させる
-										//他のユニットのIsSelectはfalseにする
-										for (auto& item : classBattle.listOfAllUnit)
-										{
-											for (auto& itemUnit : item.ListClassUnit)
-											{
-												if (unit.ID == itemUnit.ID)
-												{
-
-												}
-												else
-												{
-													itemUnit.IsSelect = false;
-												}
-											}
-										}
-										unit.IsSelect = !unit.IsSelect;
-										IsBuildMenuHome = unit.IsSelect;
-
-										if (unit.IsSelect == true)
-										{
-											buiSyu = unit.buiSyu; // 建築の種類
-											longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
-											IsResourceSelectTraget = true;
-										}
-										else
-										{
-											buiSyu = -1; // 建築の種類をリセット
-											longBuildSelectTragetId = -1; // 選択されたユニットのIDをリセット
-											IsResourceSelectTraget = false;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-
-				//カメラ移動
-				if (MouseL.pressed() == true)
-				{
-					const auto vPos = (camera.getTargetCenter() - Cursor::Delta());
-					camera.jumpTo(vPos, camera.getTargetScale());
-				}
-				if (MouseR.pressed() == false && IsBattleMove == false)
-				{
-					if (MouseR.up() == false)
-					{
-						cursPos = Cursor::Pos();
-					}
-				}
-				else if (MouseR.pressed() == false && IsBattleMove == true)
-				{
-					if (MouseR.up() == false)
-					{
-						cursPos = Cursor::Pos();
-					}
-				}
-				else if (MouseR.down() == true && IsBattleMove == true)
-				{
-					cursPos = Cursor::Pos();
-				}
-
-				//部隊を選択状態にする。もしくは既に選択状態なら経路を算出する
-				if (MouseR.up() == true)
+				if (MouseR.up())
 				{
 					Point start = cursPos;
 					Point end = Cursor::Pos();
 
-					if (IsBattleMove == true)
-					{
-						Array<Unit*> lisUnit;
-						for (auto& target : classBattle.listOfAllUnit) {
-							for (auto& unit : target.ListClassUnit)
-							{
-								if (unit.FlagMove == true && unit.IsBattleEnable == true)
-									lisUnit.push_back(&unit);
-							}
-						}
-
-						//if (lisUnit.size() == 1)
-						//{
-						//	Unit* cu = lisUnit[0];
-						//	// 移動先の座標算出
-						//	Vec2 nor = Vec2(end - start).normalized();
-						//	Vec2 moved = cu->nowPosiLeft + Vec2(nor.x * cu->Speed, nor.y * cu->Speed);
-						//	// 移動先が有効かどうかチェック || 本来は経路探索で移動可能かどうか調べるべき
-						//	auto index = ToIndex(moved, columnQuads, rowQuads);
-						//	if (not index.has_value())
-						//	{
-						//		cu->FlagMove = false;
-						//		//co_return;
-						//		co_await Co::NextFrame();
-						//	}
-
-						//	//移動
-						//	Unit& cuu = GetCU(cu->ID);
-						//	cuu.vecMove = Vec2(cu->orderPosiLeft - cu->nowPosiLeft).normalized();
-						//	cuu.orderPosiLeft = end;
-						//	cuu.FlagMove = false;
-						//	//cuu.FlagMoving = true;
-						//	cuu.FlagMoveAI = true;
-						//}
-
-						if (arrayBattleZinkei[0] == true)
-						{
-							//密集
-
-							for (auto& target : classBattle.listOfAllUnit)
-								for (auto& unit : target.ListClassUnit)
-								{
-									Unit& cuu = GetCU(unit.ID);
-									cuu.orderPosiLeft = end.movedBy(Random(-10, 10), Random(-10, 10));
-									cuu.orderPosiLeftLast = cuu.orderPosiLeft;
-									cuu.FlagMove = false;
-									cuu.FlagMoveAI = true;
-								}
-						}
-						else if (arrayBattleZinkei[1] == true)
-						{
-							//横列
-
-							ClassHorizontalUnit liZenei;
-							for (auto& target : classBattle.listOfAllUnit)
-								for (auto& unit : target.ListClassUnit)
-								{
-									if (unit.Formation == BattleFormation::F && unit.FlagMove == true && unit.IsBattleEnable == true)
-										liZenei.ListClassUnit.push_back(unit);
-								}
-
-							ClassHorizontalUnit liKouei;
-							for (auto& target : classBattle.listOfAllUnit)
-								for (auto& unit : target.ListClassUnit)
-								{
-									if (unit.Formation == BattleFormation::B && unit.FlagMove == true && unit.IsBattleEnable == true)
-										liKouei.ListClassUnit.push_back(unit);
-								}
-
-							ClassHorizontalUnit liKihei;
-							for (auto& target : classBattle.listOfAllUnit)
-								for (auto& unit : target.ListClassUnit)
-								{
-									if (unit.Formation == BattleFormation::M && unit.FlagMove == true && unit.IsBattleEnable == true)
-										liKihei.ListClassUnit.push_back(unit);
-								}
-
-							Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
-							lisClassHorizontalUnitLoop.push_back(liZenei);
-							lisClassHorizontalUnitLoop.push_back(liKouei);
-							lisClassHorizontalUnitLoop.push_back(liKihei);
-
-							for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
-							{
-								Array<Unit*> target;
-								for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
-									if (unit.FlagMove == true && unit.IsBattleEnable == true)
-										target.push_back(&unit);
-
-								if (target.size() == 0)
-									continue;
-
-								//その部隊の人数を取得
-								size_t unitCount = target.size();
-
-								//商の数
-								int32 result = (unitCount - 1) / 2;
-
-								// 角度_X軸との角度を計算_θ'=直線とx軸のなす角度
-								double angle2 = Math::Atan2(end.y - start.y,
-													   end.x - start.x);
-								//θ
-								double angle = Math::Pi / 2 - angle2;
-
-								//移動フラグが立っているユニットだけ、繰り返す
-								if (unitCount % 2 == 1)//偶奇判定
-								{
-									for (auto&& [ii, unit] : Indexed(target))
-									{
-										//px+(b-切り捨て商)＊dcosθ+a＊d'cosθ’
-										double xPos = end.x
-											+ (
-												(ii - (result))
-												* (DistanceBetweenUnit * Math::Cos(angle))
-												)
-											-
-											(i * (DistanceBetweenUnitTate * Math::Cos(angle2)));
-										//py+(b-切り捨て商)＊dsinθ-a＊d'sinθ’
-										double yPos = end.y
-											- (
-											(ii - (result))
-											* (DistanceBetweenUnit * Math::Sin(angle))
-
-											)
-											-
-											(i * (DistanceBetweenUnitTate * Math::Sin(angle2)));
-
-										Unit& cuu = GetCU(unit->ID);
-										cuu.orderPosiLeft = Vec2(xPos, yPos);
-										cuu.orderPosiLeftLast = Vec2(xPos, yPos);
-										cuu.FlagMove = false;
-										cuu.FlagMoveAI = true;
-
-										//unit->orderPosiLeft = Vec2(xPos, yPos);
-										//unit->orderPosiLeftLast = Vec2(xPos, yPos);
-										//unit->FlagMove = false;
-										//unit->FlagMoveAI = true;
-
-										auto index = ToIndex(unit->orderPosiLeft, columnQuads, rowQuads);
-									}
-								}
-								else
-								{
-									for (auto&& [ii, unit] : Indexed(target))
-									{
-										//px+(b-切り捨て商)＊dcosθ+a＊d'cosθ’
-										double xPos = end.x
-											+ (
-												(ii - (result))
-												* (DistanceBetweenUnit * Math::Cos(angle))
-												)
-											-
-											(i * (DistanceBetweenUnitTate * Math::Cos(angle2)));
-										//py+(b-切り捨て商)＊dsinθ-a＊d'sinθ’
-										double yPos = end.y
-											- (
-											(ii - (result))
-											* (DistanceBetweenUnit * Math::Sin(angle))
-
-											)
-											-
-											(i * (DistanceBetweenUnitTate * Math::Sin(angle2)));
-
-										Unit& cuu = GetCU(unit->ID);
-										cuu.orderPosiLeft = Vec2(xPos, yPos);
-										cuu.orderPosiLeftLast = Vec2(xPos, yPos);
-										cuu.FlagMove = false;
-										cuu.FlagMoveAI = true;
-
-										//unit->orderPosiLeft = Vec2(xPos, yPos);
-										//unit->orderPosiLeftLast = Vec2(xPos, yPos);
-										//unit->FlagMove = false;
-										//unit->FlagMoveAI = true;
-
-										auto index = ToIndex(unit->orderPosiLeft, columnQuads, rowQuads);
-									}
-								}
-							}
-						}
-						else
-						{
-							//正方
-							auto groups = GetMovableUnitGroups();
-							for (auto&& [i, group] : Indexed(groups))
-							{
-								AssignUnitsInFormation(group, start, end, i);
-							}
-						}
-
-						IsBattleMove = false;
-
-						// 実行途中のタスクがあれば完了まで待つ。
-						if (taskMyUnits.isValid())
-						{
-							// 中断指示を出す
-							abortMyUnits = true;
-
-							// 完全に処理が完了する前に制御を返してくれる
-							taskMyUnits.wait();
-						}
-
-						abortMyUnits = false;
-
-						//経路算出
-						taskMyUnits = Async(BattleMoveAStarMyUnits,
-										std::ref(classBattle.listOfAllUnit),
-										std::ref(classBattle.listOfAllEnemyUnit),
-										std::ref(classBattle.classMapBattle.value().mapData),
-										std::ref(aiRootMy),
-										std::ref(debugRoot),
-										std::ref(debugAstar),
-										std::ref(columnQuads),
-										std::ref(rowQuads),
-										N,
-										std::ref(abortMyUnits),
-										std::ref(pauseTaskMyUnits));
-					}
-					else
-					{
-						//範囲選択
-						// 範囲選択の矩形を生成（start, endの大小関係を吸収）
-						const RectF selectionRect = RectF::FromPoints(start, end);
-
-						for (auto& target : classBattle.listOfAllUnit)
-						{
-							for (auto& unit : target.ListClassUnit)
-							{
-								if (unit.IsBuilding)
-									continue;
-
-								const Vec2 gnpc = unit.GetNowPosiCenter();
-
-								const bool inRect = selectionRect.intersects(gnpc);
-
-								GetCU(unit.ID).FlagMove = inRect;
-
-								if (inRect)
-								{
-									IsBattleMove = true;
-								}
-							}
-						}
-					}
+					//部隊を選択状態にする。もしくは既に選択状態なら経路を算出する
+					co_await handleRightClickUnitActions(start, end);
 				}
 
 				//建物の建築場所を選択する処理
 				//ここに存在するのは、MouseL.pressedで建築メニュー押下時に続けて処理されてしまう為
-				if (IsBuildSelectTraget == true)
+				handleBuildTargetSelection();
+				co_await co_handleResourcePointSelection();
+			}
+
+			//陣形処理
+			{
+				const Transformer2D transformer{ Mat3x2::Identity(),
+					Mat3x2::Translate(0,Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight) };
+
+				for (auto&& [j, ttt] : Indexed(rectZinkei))
 				{
-					if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+					if (ttt.leftClicked())
 					{
-						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)
+						arrayBattleZinkei.clear();
+						for (size_t k = 0; k < rectZinkei.size(); k++)
 						{
+							arrayBattleZinkei.push_back(false);
+						}
+						arrayBattleZinkei[j] = true;
+
+						renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+						{
+							const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+							const ScopedRenderStates2D blend{ MakeBlendState() };
+
+							Rect df = Rect(320, 60);
+							df.drawFrame(4, 0, ColorF{ 0.5 });
+
+							for (auto&& [i, ttt] : Indexed(rectZinkei))
 							{
-								IsBuildSelectTraget = false;
-								IsBuildMenuHome = false;
-								Unit& cu = GetCU(longBuildSelectTragetId);
-								longBuildSelectTragetId = -1;
-
-								longIsMovedYoyakuId = cu.ID; // 移動中のユニットIDを保存
-
-								//これだと、将来困るかも
-								//移動中に別の生産場所を建築予定すると、上書きされる
-								rowBuildingTarget = index.value().y;
-								colBuildingTarget = index.value().x;
-								//tempSelectComRight.rowBuilding = rowBuildingTarget;
-								//tempSelectComRight.colBuilding = colBuildingTarget;
-								//tempSelectComRight = dummyMenu();
-
-								// 移動先の座標算出
-								Vec2 nor = Cursor::PosF();
-								// 移動先が有効かどうかチェックは実質上で済んでいる
-								cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
-								cu.orderPosiLeftLast = nor;
-								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-								cu.FlagMove = false;
-								//cuu.FlagMoving = true;
-								cu.FlagMoveAI = true;
-								cu.IsSelect = false;
-
-								IsBattleMove = false;
-
-								// 実行途中のタスクがあれば完了まで待つ。
-								if (taskMyUnits.isValid())
-								{
-									// 中断指示を出す
-									abortMyUnits = true;
-
-									// 完全に処理が完了する前に制御を返してくれる
-									taskMyUnits.wait();
-								}
-
-								abortMyUnits = false;
-
-								//予約移動状態であることを示す
-								isMovedYoyaku = true;
-
-
-								taskMyUnits = Async(BattleMoveAStarMyUnits,
-						std::ref(classBattle.listOfAllUnit),
-						std::ref(classBattle.listOfAllEnemyUnit),
-						std::ref(classBattle.classMapBattle.value().mapData),
-						std::ref(aiRootMy),
-						std::ref(debugRoot),
-						std::ref(debugAstar),
-						std::ref(columnQuads),
-						std::ref(rowQuads),
-						N,
-						std::ref(abortMyUnits),
-						std::ref(pauseTaskMyUnits));
-
+								ttt.draw(Palette::Aliceblue);
+								if (arrayBattleZinkei[i] == true)
+									ttt.drawFrame(4, 0, Palette::Red);
+								fontZinkei(ss.Zinkei[i]).draw(ttt, Palette::Black);
 							}
 						}
-					}
-				}
-				else if (IsResourceSelectTraget == true)
-				{
-					//資源ポイントの選択
-					if (const auto index = ToIndex(cursPos, columnQuads, rowQuads))
-					{
-						if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
-						{
-							//[index->x]は試して駄目だったので[index->y]に
-							//そもそも0番目で良いだろう　どこも横は同じサイズである
-							int32 xxx = classBattle.classMapBattle.value().mapData.size();
-							int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
-							int32 indexX = index->x;
-							int32 indexY = index->y;
-							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
-							{
-								IsResourceSelectTraget = false;
-								co_await Co::NextFrame(); // 範囲外アクセスを防ぐ
-							}
 
-							//TODO 閉じるボタン押下時にここでエラー発生　原因・修正はともかく把握しておくこと
-							//ユニット選択後に閉じるボタン押下→問題無し
-							if (classBattle.classMapBattle.value().mapData[index->x][index->y].isResourcePoint)
-							{
-								IsBuildSelectTraget = false;
-								IsBuildMenuHome = false;
-								Unit& cu = GetCU(longBuildSelectTragetId);
-								longBuildSelectTragetId = -1;
-								longIsGetResourceId = cu.ID; // 資源ポイントを選択したユニットIDを保存
-
-								rowResourceTarget = index.value().y;
-								colResourceTarget = index.value().x;
-
-								// 移動先の座標算出
-								Vec2 nor = ToTileBottomCenter(*index, N);
-								// 移動先が有効かどうかチェックは実質上で済んでいる
-								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-								cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
-								cu.orderPosiLeftLast = nor;
-								cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-								cu.FlagMove = false;
-								//cuu.FlagMoving = true;
-								cu.FlagMoveAI = true;
-								cu.IsSelect = false;
-
-								IsBattleMove = false;
-
-								// 実行途中のタスクがあれば完了まで待つ。
-								if (taskMyUnits.isValid())
-								{
-									// 中断指示を出す
-									abortMyUnits = true;
-
-									// 完全に処理が完了する前に制御を返してくれる
-									taskMyUnits.wait();
-								}
-
-								abortMyUnits = false;
-								isGetResource = true; // 資源ポイントを選択したことを示す
-
-								taskMyUnits = Async(BattleMoveAStarMyUnits,
-													std::ref(classBattle.listOfAllUnit),
-													std::ref(classBattle.listOfAllEnemyUnit),
-													std::ref(classBattle.classMapBattle.value().mapData),
-													std::ref(aiRootMy),
-													std::ref(debugRoot),
-													std::ref(debugAstar),
-													std::ref(columnQuads),
-													std::ref(rowQuads),
-													N,
-													std::ref(abortMyUnits),
-													std::ref(pauseTaskMyUnits)
-								);
-							}
-						}
-						if (ToTile(*index, N).mouseOver())
-						{
-							int32 xxx = classBattle.classMapBattle.value().mapData.size();
-							int32 yyy = classBattle.classMapBattle.value().mapData[0].size();
-							int32 indexX = index->x;
-							int32 indexY = index->y;
-							if (index->x < 0 || index->y < 0 || index->x >= xxx || index->y >= yyy)
-							{
-								IsResourceSelectTraget = false;
-								break;
-							}
-							if (classBattle.classMapBattle.value().mapData[index->x - 1][index->y - 1].isResourcePoint)
-							{
-								Cursor::RequestStyle(CursorStyle::Hand);
-							}
-						}
 					}
 				}
 			}
+
 
 			updateUnitMovements();
 			updateUnitHealthBars();
-
-			//skill選択処理
-			{
-				const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - 320 - 30) };
-				for (auto&& [i, re] : Indexed(htSkill))
-				{
-					if (re.second.leftClicked())
-					{
-						bool flgEr = false;
-						for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
-						{
-							if (it->contains(re.first))
-							{
-								nowSelectSkill.erase(it);
-								flgEr = true;
-								break;
-							}
-						}
-
-						if (flgEr == false)
-						{
-							nowSelectSkill.push_back(re.first);
-						}
-					}
-					if (re.second.mouseOver())
-					{
-						flagDisplaySkillSetumei = true;
-						nowSelectSkillSetumei = U"";
-						//スキル説明を書く
-						for (auto& item : classBattle.listOfAllUnit)
-						{
-							if (!item.FlagBuilding &&
-								!item.ListClassUnit.empty())
-								for (auto& itemUnit : item.ListClassUnit)
-								{
-									for (auto& itemSkill : itemUnit.Skill)
-									{
-										if (itemSkill.nameTag == re.first)
-										{
-											nowSelectSkillSetumei = itemSkill.name + U"\r\n"
-												+ itemSkill.help + U"\r\n"
-												+ systemString.SkillAttack + U":" + Format(itemSkill.str);
-											;
-											break;
-										}
-									}
-									if (nowSelectSkillSetumei != U"")
-										break;
-								}
-							if (nowSelectSkillSetumei != U"")
-								break;
-						}
-
-						nowSelectSkillSetumei = U"~~~Skill~~~\r\n" + nowSelectSkillSetumei;
-
-						while (not fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Color(0.0, 0.0)))
-						{
-							rectSkillSetumei.h = rectSkillSetumei.h + 12;
-						}
-						rectSkillSetumei.x = re.second.pos.x + 32;
-						rectSkillSetumei.y = Scene::Size().y - underBarHeight - rectSkillSetumei.h;
-						break;
-					}
-					else
-					{
-						flagDisplaySkillSetumei = false;
-						nowSelectSkillSetumei = U"";
-					}
-				}
-
-				{
-					const ScopedRenderTarget2D target{ renderTextureSkillUP.clear(ColorF{ 0.5, 0.0, 0.0, 0.0 }) };
-					// 描画された最大のアルファ成分を保持するブレンドステート
-					const ScopedRenderStates2D blend{ MakeBlendState() };
-					for (auto&& [i, re] : Indexed(htSkill))
-						for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
-							if (it->contains(re.first))
-							{
-								re.second.drawFrame(2, 0, Palette::Red);
-								break;
-							}
-				}
-			}
-
+			handleSkillUISelection();
 			handleBuildMenuSelectionA();
 		}
 		break;
@@ -2660,6 +2592,7 @@ void Battle::drawUnits(const RectF& cameraView) const
 					if (u.IsSelect)
 						TextureAsset(u.Image).draw(Arg::center = center).drawFrame(3.0, Palette::Red);
 					TextureAsset(ringB).drawAt(center.movedBy(0, 16));
+					u.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 				}
 			}
 		};
@@ -2708,7 +2641,7 @@ void Battle::drawSelectionRectangleOrArrow() const
 }
 void Battle::drawSkillUI() const
 {
-	const int32 baseY = Scene::Size().y - 320 - underBarHeight;
+	const int32 baseY = Scene::Size().y - renderTextureSkill.height() - underBarHeight;
 
 	renderTextureSkill.draw(0, baseY);
 	renderTextureSkillUP.draw(0, baseY);
@@ -2728,12 +2661,10 @@ void Battle::drawBuildMenu() const
 	}
 
 	const int32 baseX = Scene::Size().x - 328;
-	const int32 baseY = Scene::Size().y - 328 - 30;
-
-	auto drawBuildList = [&](const Array<cRightMenu>& items, double gaugeRatio)
+	const int32 baseY = Scene::Size().y - 328 - underBarHeight;
+	Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
+	auto drawBuildList = [&](const Array<cRightMenu>& items, double currentTime)
 		{
-			const double gaugeHeight = 64 * gaugeRatio;
-
 			for (auto&& [i, item] : Indexed(items))
 			{
 				if (i == 0)
@@ -2741,6 +2672,10 @@ void Battle::drawBuildMenu() const
 					item.texture.resized(64).draw(baseX - 64, baseY + 4);
 					if (!item.isMoved)
 					{
+						double progressRatio = Saturate(currentTime / item.time); // 0.0 ～ 1.0 に制限
+						double gaugeRatio = Max(progressRatio, 0.1);
+						double gaugeHeight = 64 * gaugeRatio;
+
 						RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }
 						.draw(ColorF{ 0.0, 0.5 });
 					}
@@ -2752,24 +2687,27 @@ void Battle::drawBuildMenu() const
 			}
 		};
 
+	int index = buiSyu;
+	if (!InRange(index, 0, (int32)buildMenus.size()))
+		return;
+	auto& menu = buildMenus[index];
 	switch (buiSyu)
 	{
 	case 0:
 		renderTextureBuildMenuHome.draw(baseX, baseY);
-		drawBuildList(arrBuildMenuHomeYoyaku, t);
+		drawBuildList(arrBuildMenuHomeYoyaku, menu.timer.sF());
 		break;
 	case 1:
 		renderTextureBuildMenuThunderwalker.draw(baseX, baseY);
-		drawBuildList(arrBuildMenuThunderwalkerYoyaku, arrT[1]);
+		drawBuildList(arrBuildMenuThunderwalkerYoyaku, menu.timer.sF());
 		break;
 	case 2:
 		renderTextureBuildMenuKouhei.draw(baseX, baseY);
-		Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
-		drawBuildList(arrBuildMenuKouheiYoyaku, arrT[2]);
+		drawBuildList(menu.reservations, menu.timer.sF());
 		break;
 	case 3:
 		renderTextureBuildMenuKeisouHoheiT.draw(baseX, baseY);
-		drawBuildList(arrBuildMenuKeisouYoyaku, arrT[3]);
+		drawBuildList(arrBuildMenuKeisouYoyaku, menu.timer.sF());
 		break;
 	default:
 		break;
@@ -2872,13 +2810,13 @@ void Battle::draw() const
 		drawFog(cameraView);
 		drawBuildings(cameraView);
 		drawUnits(cameraView);
-		drawHealthBars();
 		drawResourcePoints(cameraView);
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight();
 	}
 
+	renderTextureZinkei.draw(0, Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight);
 	drawSkillUI();
 	drawBuildDescription();
 	drawBuildMenu();
@@ -3058,6 +2996,19 @@ Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 	}
 
 	return groups;
+}
+ClassHorizontalUnit Battle::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
+{
+	ClassHorizontalUnit result;
+
+	for (auto& target : source)
+		for (auto& unit : target.ListClassUnit)
+		{
+			if (unit.Formation == bf && unit.FlagMove == true && unit.IsBattleEnable == true)
+				result.ListClassUnit.push_back(unit);
+		}
+
+	return result;
 }
 
 /// @brief 指定されたユニットの部隊に対して、指定された開始位置と終了位置に沿ってユニットを配置します。

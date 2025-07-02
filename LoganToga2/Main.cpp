@@ -61,6 +61,10 @@ void Init(CommonConfig& commonConfig)
 					cu.Formation = BattleFormation::F;
 				}
 			}
+			else
+			{
+				cu.Formation = BattleFormation::F;
+			}
 			cu.Race = (value[U"race"].getString());
 			String sNa = value[U"skill"].getString();
 			if (sNa.contains(',') == true)
@@ -401,9 +405,12 @@ void Main()
 		ss.StatusSkill = U"";
 		ss.StatusSetumei = U"";
 		ss.SkillAttack = U"SkillAttack";
+		ss.Zinkei.push_back(U"密集");
+		ss.Zinkei.push_back(U"横列");
+		ss.Zinkei.push_back(U"正方");
 		systemString = ss;
 
-		const auto battle = Co::PlaySceneFrom<Battle>(saveData, commonConfig).runScoped();
+		const auto battle = Co::PlaySceneFrom<Battle>(saveData, commonConfig, systemString).runScoped();
 		loop();
 	}
 	else

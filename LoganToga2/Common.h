@@ -41,6 +41,7 @@ public:
 
 	String SkillAttack;
 
+	Array<String> Zinkei;
 };
 inline SystemString systemString;
 
