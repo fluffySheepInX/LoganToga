@@ -205,40 +205,42 @@ public:
 				//
 				{
 					bool con = false;
-					if (arrayObjEnemy.begin()->FlagBuilding == true)
+					if (arrayObjEnemy.size() != 0 && arrayObjEnemy.size() > 0)
 					{
-						for (const auto& bbb : mapData[x + i][y + j].building)
+						if (arrayObjEnemy.begin()->FlagBuilding == true)
 						{
-							for (const auto& aaa : arrayObjEnemy.begin()->ListClassUnit)
+							for (const auto& bbb : mapData[x + i][y + j].building)
 							{
-								if (aaa.ID == std::get<1>(bbb))
+								for (const auto& aaa : arrayObjEnemy.begin()->ListClassUnit)
 								{
-									//オブジェクトがあったらコンティニュー
-									switch (aaa.mapTipObjectType)
+									if (aaa.ID == std::get<1>(bbb))
 									{
-									case MapTipObjectType::WALL2:
+										//オブジェクトがあったらコンティニュー
+										switch (aaa.mapTipObjectType)
+										{
+										case MapTipObjectType::WALL2:
+											break;
+										case MapTipObjectType::GATE:
+											OpenOne(x + i, y + j, cost, parent, maxN);
+											break;
+										default:
+											break;
+										}
+
+										con = true;
+
 										break;
-									case MapTipObjectType::GATE:
-										OpenOne(x + i, y + j, cost, parent, maxN);
-										break;
-									default:
-										break;
+
 									}
-
-									con = true;
-
-									break;
-
 								}
-							}
 
-							if (con == true)
-							{
-								break;
+								if (con == true)
+								{
+									break;
+								}
 							}
 						}
 					}
-
 					if (con == true)
 					{
 						continue;

@@ -96,9 +96,13 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 {
 	while (true)
 	{
-		if (changeUnitMember == true) continue;
 		if (abort == true) break;
-		if (pause == true) continue;
+		if (pause || changeUnitMember)
+		{
+			//「何も処理せず continue」はスリープなしでCPUを占有するため、環境によってはフリーズや高負荷の原因
+			System::Sleep(1);
+			continue;
+		}
 
 		while (true)
 		{
@@ -339,19 +343,6 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 						const std::atomic<bool>& pause
 )
 {
-	int32 eneCou = 0;
-	for (auto ttt : enemy)
-	{
-		for (auto ijhiu : ttt.ListClassUnit)
-		{
-			eneCou++;
-		}
-	}
-	if (eneCou == 0)
-	{
-		return -1;
-	}
-
 	const auto targetSnapshot = target;
 	for (auto& aaa : targetSnapshot)
 	{
@@ -607,7 +598,7 @@ void Battle::DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const
 
 	}
 }
-Array<ResourcePointTooltip::TooltipTarget> Battle::SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget> resourceTargets)
+void Battle::SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget>& resourceTargets)
 {
 	{
 		const auto& mapData = classBattle.classMapBattle.value().mapData;
@@ -630,12 +621,9 @@ Array<ResourcePointTooltip::TooltipTarget> Battle::SetResourceTargets(Array<Reso
 							(tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie) ? U"味方" : U"敵", U"金", U"5/s");
 
 				resourceTargets << ResourcePointTooltip::TooltipTarget{ area, desc };
-				resourcePointTooltip.setTargets(resourceTargets);
 			}
 		}
 	}
-
-	return resourceTargets;
 }
 
 Battle::Battle(GameData& saveData, CommonConfig& commonConfig, SystemString argSS)
@@ -684,7 +672,8 @@ Battle::Battle(GameData& saveData, CommonConfig& commonConfig, SystemString argS
 	classBattle.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
 	GetTempResource(classBattle.classMapBattle.value());
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
-	resourceTargets = SetResourceTargets(resourceTargets);
+	SetResourceTargets(resourceTargets);
+	resourcePointTooltip.setTargets(resourceTargets);
 	resourcePointTooltip.setTooltipEnabled(true);
 
 	N = classBattle.classMapBattle.value().mapData.size();
@@ -1206,27 +1195,6 @@ void Battle::spawnTimedEnemy()
 		}
 	}
 }
-void Battle::updateResourceCapture()
-{
-	/// 資源ポイント獲得処理
-	Array<int32> deleteId;
-	for (const auto& ttt : arrResourceWait)
-	{
-		if (ttt.stopwatch.sF() >= ttt.waitTime)
-		{
-			classBattle.classMapBattle.value().mapData[ttt.colResourceTarget][ttt.rowResourceTarget]
-				.whichIsThePlayer = BattleWhichIsThePlayer::Sortie;
-			classBattle.classMapBattle.value().mapData[ttt.colResourceTarget][ttt.rowResourceTarget]
-				.resourcePointAmount += 7;
-			// 待機リストから削除
-			deleteId.push_back(ttt.id);
-		}
-	}
-	for (auto id : deleteId)
-	{
-		arrResourceWait.remove_if([&](const resourceWait& rw) { return rw.id == id; });
-	}
-}
 void Battle::updateUnitHealthBars()
 {
 	constexpr Vec2 offset{ -32, +22 }; // = -64 / 2, +32 / 2 + 6
@@ -1363,80 +1331,6 @@ void Battle::handleBuildMenuSelectionA()
 			return a.sortId < b.sortId;
 		});
 	}
-}
-void Battle::handleBuildMenuSelectionB()
-{
-	if (aiRootMy[longIsMovedYoyakuId].getPath().size() > 0)
-	{
-		//移動中
-	}
-	else
-	{
-		isMovedYoyaku = false;//移動が終わった為
-		longIsMovedYoyakuId = -1; // IDをリセット
-
-		// 対象の建物カテゴリ（buiSyu）に応じたメニューを選択
-		Array<cRightMenu> temp;
-		switch (buiSyu)
-		{
-		case 0:
-			temp = arrayComRight_BuildMenu_Home; break;
-		case 1:
-			temp = arrayComRight_BuildMenu_Thunderwalker; break;
-		case 2:
-			temp = arrayComRight_BuildMenu_Kouhei; break;
-		case 3:
-			temp = arrayComRight_BuildMenu_KeisouHoheiT; break;
-		default:
-			break;
-		}
-
-		for (auto&& [i, re] : IndexedRef(temp))
-		{
-			if (re.sortId == cRightMenuTargetCount)
-			{
-				cRightMenu ccc;
-				ccc.sortId = cRightMenuTargetCount;
-				ccc.sortYoyakuId = longBuildMenuHomeYoyakuIdCount;
-				ccc.key = re.key;
-				ccc.kindForProcess = re.kindForProcess;
-				ccc.texture = TextureAsset(re.key);
-				ccc.time = re.time;
-				ccc.rowBuilding = rowBuildingTarget;
-				ccc.colBuilding = colBuildingTarget;
-				rowBuildingTarget = -1; // リセット
-				colBuildingTarget = -1; // リセット
-				longBuildMenuHomeYoyakuIdCount++;
-
-				// カテゴリに追加
-				int index = re.buiSyu;
-				if (InRange(index, 0, (int32)buildMenus.size()))
-				{
-					auto& menu = buildMenus[index];
-					if (!menu.timer.isRunning())
-					{
-						menu.timer.start();
-						menu.progressTime = 0.0;
-					}
-					menu.reservations.push_back(ccc);
-				}
-
-				// 回数制限の更新と再描画
-				if (re.count > 0)
-				{
-					re.count--;
-					cbp.htCountAndSyu[re.key].count = re.count;
-					switch (re.buiSyu)
-					{
-					case 0: renB(renderTextureBuildMenuHome, cbp, arrayComRight_BuildMenu_Home); break;
-					case 2: renB(renderTextureBuildMenuKouhei, cbpKouhei, arrayComRight_BuildMenu_Kouhei); break;
-						// 他カテゴリ対応は必要に応じて
-					}
-				}
-			}
-		}
-	}
-
 }
 void Battle::updateBuildQueue()
 {
@@ -1606,9 +1500,9 @@ void Battle::updateUnitMovements()
 				if (itemUnit.IsBattleEnable == false)
 					continue;
 
+				std::scoped_lock lock(aiRootMutex);
 				if (!aiRootMy.contains(itemUnit.ID))
 					continue;
-
 				auto& plan = aiRootMy[itemUnit.ID];
 
 				if (plan.isPathCompleted())
@@ -1768,117 +1662,6 @@ void Battle::updateUnitMovements()
 			}
 		}
 	}
-
-	//auto updateMovement = [&](Array<ClassHorizontalUnit>& units, HashTable<int64, UnitMovePlan>& aiRoot)
-	//	{
-	//		for (auto& item : units)
-	//		{
-	//			for (auto& itemUnit : item.ListClassUnit)
-	//			{
-	//				if ((itemUnit.IsBuilding && itemUnit.mapTipObjectType == MapTipObjectType::WALL2) ||
-	//					(itemUnit.IsBuilding && itemUnit.mapTipObjectType == MapTipObjectType::GATE) ||
-	//					!itemUnit.IsBattleEnable ||
-	//					!aiRoot.contains(itemUnit.ID))
-	//				{
-	//					continue;
-	//				}
-	//				auto& plan = aiRoot[itemUnit.ID];
-	//				if (plan.isPathCompleted())
-	//				{
-	//					// 最終位置補正
-	//					if (!itemUnit.FlagMoving && itemUnit.FlagMovingEnd)
-	//						continue;
-	//					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
-	//					if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) < 3.0)
-	//					{
-	//						itemUnit.FlagMoving = false;
-	//						itemUnit.nowPosiLeft = itemUnit.orderPosiLeft;
-	//						itemUnit.FlagReachedDestination = true;
-	//						itemUnit.FlagMovingEnd = true;
-	//					}
-	//					continue;
-	//				}
-	//				if (itemUnit.FlagMoving)
-	//				{
-	//					// 移動処理
-	//					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
-	//					if (plan.getCurrentTarget())
-	//					{
-	//						if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) <= 3.0)
-	//						{
-	//							plan.stepToNext();
-	//							if (plan.getCurrentTarget())
-	//							{
-	//								// 到達チェック
-	//								const int32 i = plan.getCurrentTarget().value().manhattanLength();
-	//								const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
-	//								const int32 yi = (i < (N - 1)) ? i : (N - 1);
-	//								const int32 k2 = (plan.getCurrentTarget().value().manhattanDistanceFrom(Point{ xi, yi }) / 2);
-	//								const double posX = ((i < (N - 1)) ? (i * -TileOffset.x) : ((i - 2 * N + 2) * TileOffset.x));
-	//								const double posY = (i * TileOffset.y) - TileThickness;
-	//								const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
-	//								Vec2 nextPos = pos;
-	//								itemUnit.orderPosiLeft = nextPos;
-	//								itemUnit.vecMove = (itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter()).normalized();
-	//							}
-	//						}
-	//					}
-	//					if (plan.isPathCompleted())
-	//					{
-	//						itemUnit.orderPosiLeft = itemUnit.orderPosiLeftLast; // 最後の位置に戻す
-	//						Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
-	//						itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
-	//					}
-	//					//if (plan.getCurrentTarget())
-	//					//{
-	//					//	if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) <= 3.0)
-	//					//	{
-	//					//		plan.stepToNext();
-	//					//		if (plan.getCurrentTarget())
-	//					//		{
-	//					//			const Point target = plan.getCurrentTarget().value();
-	//					//			const int32 i = target.manhattanLength();
-	//					//			const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
-	//					//			const int32 yi = (i < (N - 1)) ? i : (N - 1);
-	//					//			const int32 k2 = (target.manhattanDistanceFrom(Point{ xi, yi }) / 2);
-	//					//			const double posX = ((i < (N - 1)) ? (i * -TileOffset.x) : ((i - 2 * N + 2) * TileOffset.x));
-	//					//			const double posY = (i * TileOffset.y) - TileThickness;
-	//					//			const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
-	//					//			itemUnit.orderPosiLeft = pos;
-	//					//			itemUnit.vecMove = (itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter()).normalized();
-	//					//		}
-	//					//	}
-	//					//}
-	//					//if (plan.isPathCompleted())
-	//					//{
-	//					//	itemUnit.orderPosiLeft = itemUnit.orderPosiLeftLast;
-	//					//	Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
-	//					//	itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
-	//					//}
-	//					continue;
-	//				}
-	//				if (plan.getCurrentTarget())
-	//				{
-	//					// 移動準備
-	//					const Point target = plan.getCurrentTarget().value();
-	//					const int32 i = target.manhattanLength();
-	//					const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
-	//					const int32 yi = (i < (N - 1)) ? i : (N - 1);
-	//					const int32 k2 = (target.manhattanDistanceFrom(Point{ xi, yi }) / 2);
-	//					const double posX = ((i < (N - 1)) ? (i * -TileOffset.x) : ((i - 2 * N + 2) * TileOffset.x));
-	//					const double posY = (i * TileOffset.y) - TileThickness;
-	//					const Vec2 pos = { (posX + TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
-	//					itemUnit.orderPosiLeft = Vec2(Math::Round(pos.x), Math::Round(pos.y));
-	//					Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
-	//					itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
-	//					itemUnit.FlagMoving = true;
-	//					itemUnit.FlagMovingEnd = false;
-	//				}
-	//			}
-	//		}
-	//	};
-	//updateMovement(classBattle.listOfAllUnit, aiRootMy);
-	//updateMovement(classBattle.listOfAllEnemyUnit, aiRootEnemy);
 }
 void Battle::handleSkillUISelection()
 {
@@ -2105,11 +1888,9 @@ void Battle::handleBuildTargetSelection()
 			IsBuildMenuHome = false;
 
 			Unit& cu = GetCU(longBuildSelectTragetId);
-			longBuildSelectTragetId = -1;
-			longIsMovedYoyakuId = cu.ID;
-
-			rowBuildingTarget = index->y;
-			colBuildingTarget = index->x;
+			cu.currentTask = UnitTask::MovingToBuild;
+			cu.rowBuildingTarget = index->y;
+			cu.colBuildingTarget = index->x;
 
 			Vec2 nor = Cursor::PosF();
 			cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
@@ -2127,7 +1908,6 @@ void Battle::handleBuildTargetSelection()
 				taskMyUnits.wait();
 			}
 			abortMyUnits = false;
-			isMovedYoyaku = true;
 
 			taskMyUnits = Async(BattleMoveAStarMyUnits,
 				std::ref(classBattle.listOfAllUnit),
@@ -2171,11 +1951,8 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 				IsBuildSelectTraget = false;
 				IsBuildMenuHome = false;
 				Unit& cu = GetCU(longBuildSelectTragetId);
-				longBuildSelectTragetId = -1;
-				longIsGetResourceId = cu.ID; // 資源ポイントを選択したユニットIDを保存
-
-				rowResourceTarget = index.value().y;
-				colResourceTarget = index.value().x;
+				cu.rowResourceTarget = index.value().y;
+				cu.colResourceTarget = index.value().x;
 
 				// 移動先の座標算出
 				Vec2 nor = ToTileBottomCenter(*index, N);
@@ -2188,7 +1965,7 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 				//cuu.FlagMoving = true;
 				cu.FlagMoveAI = true;
 				cu.IsSelect = false;
-
+				cu.currentTask = UnitTask::MovingToResource;
 				IsBattleMove = false;
 
 				// 実行途中のタスクがあれば完了まで待つ。
@@ -2202,7 +1979,6 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 				}
 
 				abortMyUnits = false;
-				isGetResource = true; // 資源ポイントを選択したことを示す
 
 				taskMyUnits = Async(BattleMoveAStarMyUnits,
 									std::ref(classBattle.listOfAllUnit),
@@ -2359,7 +2135,90 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 
 	co_return;
 }
+void Battle::pushToBuildMenu(Unit& unit)
+{
+	if (unit.buiSyu < 0)
+		return;
 
+	// 対象の建物カテゴリ（buiSyu）に応じたメニューを選択
+	Array<cRightMenu> temp;
+	switch (unit.buiSyu)
+	{
+	case 0:
+		temp = arrayComRight_BuildMenu_Home; break;
+	case 1:
+		temp = arrayComRight_BuildMenu_Thunderwalker; break;
+	case 2:
+		temp = arrayComRight_BuildMenu_Kouhei; break;
+	case 3:
+		temp = arrayComRight_BuildMenu_KeisouHoheiT; break;
+	default:
+		break;
+	}
+
+	for (auto&& [i, re] : IndexedRef(temp))
+	{
+		if (re.sortId == cRightMenuTargetCount)
+		{
+			cRightMenu ccc;
+			ccc.sortId = cRightMenuTargetCount;
+			ccc.sortYoyakuId = longBuildMenuHomeYoyakuIdCount;
+			ccc.key = re.key;
+			ccc.kindForProcess = re.kindForProcess;
+			ccc.texture = TextureAsset(re.key);
+			ccc.time = re.time;
+			ccc.rowBuilding = unit.rowBuildingTarget;
+			ccc.colBuilding = unit.colBuildingTarget;
+
+			// ユニットの状態を初期化（再選択など無効化）
+			unit.IsSelect = false;
+			unit.FlagMoveAI = false;
+			unit.currentTask = UnitTask::None;
+			unit.rowBuildingTarget = -1;
+			unit.colBuildingTarget = -1;
+
+			longBuildMenuHomeYoyakuIdCount++;
+
+			// カテゴリに追加
+			int index = re.buiSyu;
+			if (InRange(index, 0, (int32)buildMenus.size()))
+			{
+				auto& menu = buildMenus[index];
+				if (!menu.timer.isRunning())
+				{
+					menu.timer.start();
+					menu.progressTime = 0.0;
+				}
+				menu.reservations.push_back(ccc);
+			}
+
+			// 回数制限の更新と再描画
+			if (re.count > 0)
+			{
+				re.count--;
+				cbp.htCountAndSyu[re.key].count = re.count;
+				switch (re.buiSyu)
+				{
+				case 0: renB(renderTextureBuildMenuHome, cbp, arrayComRight_BuildMenu_Home); break;
+				case 2: renB(renderTextureBuildMenuKouhei, cbpKouhei, arrayComRight_BuildMenu_Kouhei); break;
+					// 他カテゴリ対応は必要に応じて
+				}
+			}
+		}
+	}
+}
+void Battle::addResource(Unit& unit)
+{
+	classBattle.classMapBattle.value().mapData[unit.colResourceTarget][unit.rowResourceTarget]
+		.whichIsThePlayer = BattleWhichIsThePlayer::Sortie;
+	classBattle.classMapBattle.value().mapData[unit.colResourceTarget][unit.rowResourceTarget]
+		.resourcePointAmount += 7;
+	unit.taskTimer.reset();
+	unit.currentTask = UnitTask::None;
+	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
+	SetResourceTargets(resourceTargets);
+	resourcePointTooltip.setTargets(resourceTargets);
+}
 Co::Task<void> Battle::mainLoop()
 {
 	const auto _tooltip = resourcePointTooltip.playScoped();
@@ -2379,34 +2238,45 @@ Co::Task<void> Battle::mainLoop()
 		////後でbattle内に移動(ポーズ処理を考慮
 		updateBuildQueue();
 
-		if (isMovedYoyaku == true)
+		for (auto& group : classBattle.listOfAllUnit)
 		{
-			handleBuildMenuSelectionB();
-		}
-		else if (isGetResource == true)
-		{
-			if (aiRootMy[longIsGetResourceId].getPath().size() > 0)
+			for (auto& unit : group.ListClassUnit)
 			{
-				//移動中
-			}
-			else
-			{
-				isGetResource = false;//移動が終わった為
+				switch (unit.currentTask)
+				{
+				case UnitTask::MovingToBuild:
+				{
+					std::scoped_lock lock(aiRootMutex);
+					if (aiRootMy[unit.ID].getPath().isEmpty())
+					{
+						unit.currentTask = UnitTask::None;
+						pushToBuildMenu(unit);
+					}
+				}
+				break;
+				case UnitTask::MovingToResource:
+				{
+					std::scoped_lock lock(aiRootMutex);
+					if (aiRootMy[unit.ID].getPath().isEmpty())
+					{
+						unit.currentTask = UnitTask::WorkingOnResource;
+						unit.taskTimer.restart();
+					}
+				}
+				break;
 
-				resourceWait resWait;
-				resWait.id = longIsGetResourceId;
-				longIsGetResourceId = -1; // IDをリセット
-				resWait.waitTime = GetCU(resWait.id).waitTimeResource;
-				resWait.stopwatch.restart();
-				resWait.rowResourceTarget = rowResourceTarget;
-				resWait.colResourceTarget = colResourceTarget;
-				rowResourceTarget = -1; // リセット
-				colResourceTarget = -1; // リセット
-				arrResourceWait.push_back(resWait);
+				case UnitTask::WorkingOnResource:
+					if (unit.taskTimer.sF() >= unit.waitTimeResource)
+					{
+						addResource(unit);
+					}
+					break;
+
+				default:
+					break;
+				}
 			}
 		}
-
-		updateResourceCapture();
 
 		switch (battleStatus)
 		{
@@ -2788,7 +2658,7 @@ void Battle::drawResourcePoints(const RectF& cameraView) const
 
 			// 所有者に応じて円枠の色を変える
 			const ColorF circleColor = (tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
-				? ColorF{ 0.0, 0.6 }
+				? ColorF{ Palette::Aqua }
 			: ColorF(Palette::Red);
 
 			Circle(pos.movedBy(0, -TileThickness - TileOffset.y), 16).drawFrame(4, 0, circleColor);

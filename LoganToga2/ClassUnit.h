@@ -30,7 +30,6 @@ public:
 	//		Dext, Move, Hprec, Mprec, Exp, Exp_mul, Heal_max, Summon_max, No_knock, Loyal, Alive_per, Escape_range);
 	//}
 
-
 	// Medical
 	int32 Medical = 0;
 
@@ -195,6 +194,13 @@ public:
 	ClassTempStatus cts = ClassTempStatus();
 
 	BattleFormation Formation = BattleFormation::F;
+	UnitTask currentTask = UnitTask::None;
+	Stopwatch taskTimer;
+	int32 rowResourceTarget = -1;
+	int32 colResourceTarget = -1;
+	/// @brief 建てる場所
+	int32 rowBuildingTarget = -1;
+	int32 colBuildingTarget = -1;
 
 	long long ID = 0;
 
@@ -222,6 +228,7 @@ public:
 		return IsBuilding;
 	}
 	bool IsBuildingEnable = false;
+	/// @brief 建っている場所
 	int32 rowBuilding = 0;
 	int32 colBuilding = 0;
 	MapTipObjectType mapTipObjectType = MapTipObjectType::None;

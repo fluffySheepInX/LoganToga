@@ -204,7 +204,7 @@ private:
 	Array<Array<Unit*>> GetMovableUnitGroups();
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
-	Array<ResourcePointTooltip::TooltipTarget> SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget> resourceTargets);
+	void SetResourceTargets(Array<ResourcePointTooltip::TooltipTarget>& resourceTargets);
 
 	CommonConfig& m_commonConfig;
 	GameData& m_saveData;
@@ -318,30 +318,15 @@ private:
 	int32 buiSyu = 0; // 建築の種類
 	/// @brief 移動後に建築するムーヴが発動しているか
 	bool isMovedYoyaku = false;
-	/// @brief 移動後に建築するユニットはどれか
-	long longIsMovedYoyakuId = -1;
-	int32 rowBuildingTarget = -1; // 予約した行
-	int32 colBuildingTarget = -1; // 予約した列
 	/// @brief 移動後に何を建築するか特定する為
 	int32 cRightMenuCount = 0;
 	/// @brief 選択された建築メニューのID
 	int32 cRightMenuTargetCount = -1;
 	/// @brief 移動後に資源ポイントを征服するユニットはどれか
-	long longIsGetResourceId = -1;
 	bool isGetResource = false;
 	bool IsResourceSelectTraget = false;
 	int32 rowResourceTarget = -1; // 予約した行
 	int32 colResourceTarget = -1; // 予約した列
-
-	struct resourceWait
-	{
-		int32 id = -1;
-		Stopwatch stopwatch{ StartImmediately::No };
-		int32 waitTime = 0; // 資源ポイントを獲得するまでの待ち時間
-		int32 rowResourceTarget = -1; // 予約した行
-		int32 colResourceTarget = -1; // 予約した列
-	};
-	Array<resourceWait> arrResourceWait;
 
 	long longBuildMenuHomeYoyakuIdCount = 0;
 	//Array<Array<cRightMenu>>将来的にはこうして拡張性を持たせる
@@ -419,10 +404,8 @@ private:
 	void playResourceEffect();
 	void refreshFogOfWar();
 	void spawnTimedEnemy();
-	void updateResourceCapture();
 	void updateUnitHealthBars();
 	void handleBuildMenuSelectionA();
-	void handleBuildMenuSelectionB();
 	void updateBuildQueue();
 	Co::Task<> checkCancelSelectionByUIArea();
 	void updateUnitMovements();
@@ -434,4 +417,7 @@ private:
 	Co::Task<void> co_handleResourcePointSelection();
 	Co::Task<void> handleRightClickUnitActions(Point start, Point end);
 	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
+	void pushToBuildMenu(Unit& unit);
+	void addResource(Unit& unit);
+
 };
