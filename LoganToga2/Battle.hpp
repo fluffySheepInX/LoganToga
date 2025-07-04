@@ -127,23 +127,6 @@ enum class BuildMenu
 	Kouhei,
 	Zirai
 };
-struct cBuildPrepareKindAndCount {
-	int32 sortId = 0;
-	String kind = U"";
-	int32 count = 0;
-	/// @brief 建築にかかる時間
-	double time = 1.0;
-	String setumei = U""; // 説明文
-};
-class cBuildPrepare
-{
-public:
-	//第一引数は最終的にkeyという変数で扱われる
-	HashTable<String, cBuildPrepareKindAndCount> htCountAndSyu;
-	int32 buiSyu = 0; // 建築メニューの種類
-	//0=参謀本部,1=Thunderwalker(大将),2=軽装歩兵詰所,3=騎兵詰所
-	//,4=重装歩兵詰所,5=工兵詰所,6=砲兵詰所,7=弓兵詰所,8=魔法墨詰所,9=騎士団詰所
-};
 
 /// @brief 建築メニューの一つ一つの項目
 class cRightMenu
@@ -200,7 +183,7 @@ private:
 
 	void draw() const override;
 
-	void renB(RenderTexture&, cBuildPrepare&, Array<cRightMenu>&);
+	void renB();
 	Array<Array<Unit*>> GetMovableUnitGroups();
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 
@@ -296,23 +279,21 @@ private:
 	RenderTexture renderTextureBuildMenuThunderwalker;
 	RenderTexture renderTextureBuildMenuKouhei;
 	RenderTexture renderTextureBuildMenuKeisouHoheiT;
-	//Array<Rect> rectBuildMenuHome;
 
-	/// @brief home
-	cBuildPrepare cbp;
-	Array<cRightMenu> arrayComRight_BuildMenu_Home;
-	/// @brief 大将
-	cBuildPrepare cbpThunderwalker;
-	Array<cRightMenu> arrayComRight_BuildMenu_Thunderwalker;
-	/// @brief 工兵
-	cBuildPrepare cbpKouhei;
-	Array<cRightMenu> arrayComRight_BuildMenu_Kouhei;
-	/// @brief 軽装歩兵詰所
-	cBuildPrepare cbpKeisouHoheiT;
-	Array<cRightMenu> arrayComRight_BuildMenu_KeisouHoheiT;
-	cRightMenu& tempSelectComRight;
+	/// @brief 種別-アクション名,紐づくアクション 保守性を考え。
+	HashTable<String, BuildAction> htBuildMenu;
+	BuildAction& tempSelectComRight;
+
+	HashTable<String, RenderTexture> htBuildMenuRenderTexture;
+
+
+	// memo
+	//0=参謀本部,1=Thunderwalker(大将),2=軽装歩兵詰所,3=騎兵詰所
+//,4=重装歩兵詰所,5=工兵詰所,6=砲兵詰所,7=弓兵詰所,8=魔法墨詰所,9=騎士団詰所
 
 	bool IsBuildMenuHome = false;
+
+	/// @brief 単一選択とドラッグ選択が出来るようにしたいので、いつかenumにする
 	bool IsBuildSelectTraget = false;
 	long longBuildSelectTragetId = -1;
 	int32 buiSyu = 0; // 建築の種類
@@ -329,20 +310,6 @@ private:
 	int32 colResourceTarget = -1; // 予約した列
 
 	long longBuildMenuHomeYoyakuIdCount = 0;
-	//Array<Array<cRightMenu>>将来的にはこうして拡張性を持たせる
-	Array<cRightMenu> arrBuildMenuHomeYoyaku;
-	Array<cRightMenu> arrBuildMenuThunderwalkerYoyaku;
-	Array<cRightMenu> arrBuildMenuKouheiYoyaku;
-	Array<cRightMenu> arrBuildMenuKeisouYoyaku;
-	/// @brief 建築にかかる時間、つまり後でtimeに置き換える必要あり
-	const double durationSec = 5.0;
-	//これArrayにしなきゃ駄目（並列して建築できないから）
-	double t = -1.0;
-	Array<double> arrT = { -1.0,-1.0,-1.0,-1.0 };
-	Stopwatch stopwatch{ StartImmediately::No };
-	Stopwatch stopwatch001{ StartImmediately::No };
-	Stopwatch stopwatch002{ StartImmediately::No };
-	Stopwatch stopwatch003{ StartImmediately::No };
 
 	//
 	struct BuildMenuCategory
@@ -417,7 +384,7 @@ private:
 	Co::Task<void> co_handleResourcePointSelection();
 	Co::Task<void> handleRightClickUnitActions(Point start, Point end);
 	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
-	void pushToBuildMenu(Unit& unit);
+	void afterMovedPushToBuildMenu(Unit& unit);
 	void addResource(Unit& unit);
 
 };

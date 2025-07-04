@@ -3,139 +3,89 @@
 # include "EnumSkill.h"
 # include "Common.h"
 # include "GameUIToolkit.h"
+# include "ClassBuildAction.h"
 
 class ClassTempStatus
 {
 public:
-	friend void Formatter(FormatData& formatData, const ClassTempStatus& value)
-	{
-		formatData.string += U"({}, {}, {})"_fmt(
-			value.Medical,
-			value.Hp,
-			value.HpMAX,
-			value.Mp,
-			value.Attack,
-			value.Defense,
-			value.Magic,
-			value.MagDef,
-			value.Speed,
-			value.plus_speed_time, value.Dext, value.Move, value.Hprec, value.Mprec, value.Exp,
-			value.Exp_mul, value.Heal_max, value.Summon_max, value.No_knock, value.Loyal, value.Alive_per, value.Escape_range
-		);
-	}
-	//template <class Archive>
-	//void SIV3D_SERIALIZE(Archive& unit)
-	//{
-	//	Archive(Medical, Hp, HpMAX, Mp, Attack, Defense, Magic, MagDef, Speed, plus_speed_time,
-	//		Dext, Move, Hprec, Mprec, Exp, Exp_mul, Heal_max, Summon_max, No_knock, Loyal, Alive_per, Escape_range);
-	//}
-
-	// Medical
 	int32 Medical = 0;
-
-	// Hp
 	int32 Hp = 0;
-	// HpMAX
 	int32 HpMAX = 0;
-
-	// Mp
 	int32 Mp = 0;
-
-	// Attack
 	int32 Attack = 0;
-
-	// Defense
 	int32 Defense = 0;
-
-	// Magic
 	int32 Magic = 0;
-
-	//MagDef
 	int32 MagDef = 0;
-
-	// Speed
 	double Speed = 0.0;
 	double plus_speed_time = 0.0;
-
-	// Dext
 	int32 Dext = 0;
-
-	// Move
 	int32 Move = 0;
-
-	// Hprec
 	int32 Hprec = 0;
-
-	// Mprec
 	int32 Mprec = 0;
-
-	// Exp
 	int32 Exp = 0;
-
-	// Exp_mul
 	int32 Exp_mul = 0;
-
-	// Heal_max
 	int32 Heal_max = 0;
-
-	// Summon_max
 	int32 Summon_max = 0;
-
-	// No_knock
 	int32 No_knock = 0;
-
-	// Loyal
 	int32 Loyal = 0;
-
-	// Alive_per
 	int32 Alive_per = 0;
-
-	// Escape_range
 	int32 Escape_range = 0;
-
 };
 
 class Unit
 {
 public:
-	friend void Formatter(FormatData& formatData, const Unit& value)
-	{
-		formatData.string += U"({}, {}, {})"_fmt(value.Name, value.NameTag, value.ID);
-	}
-	//template <class Archive>
-	//void SIV3D_SERIALIZE(Archive& unit)
-	//{
-	//	Archive(cts, Formation, ID, rectExecuteBtnStrategyMenu, rectExecuteBtnStrategyMenuLeader, rectExecuteBtnStrategyMenuMember,
-	//		rectDetailStrategyMenu, pressedDetailStrategyMenu, pressedUnit, rectBuildMenu, buiSyu,
-	//		visionRadius, initTilePos, IsBuilding, IsBuildingEnable, rowBuilding, colBuilding,
-	//		mapTipObjectType, NoWall2, HPCastle, CastleDefense, CastleMagdef, houkou, initXY,
-	//		IsLeader, IsSelect, IsDone, IsBattleEnable, NameTag, Name, Help, Text, Race, Class, Image,
-	//		Dead, Retreat, Join, Face, Voice_type, gender, Talent, Friend, Merce, Staff, InitMember, Enemy,
-	//		Level, Level_max, Price, Cost, Medical, HasExp, Hp, HpMAX, Mp, Attack, Defense, Magic, MagDef,
-	//		Speed, Dext, Move, Hprec, Mprec, Exp, Exp_mul, Heal_max, Summon_max, No_knock, Loyal, Alive_per,
-	//		Escape_range, SkillName, Skill, Finance, MoveType, FlagMove, FlagMoveAI, FlagMoving, FlagMovingEnd,
-	//		FlagMoveDispose, yokoUnit, TakasaUnit, FlagReachedDestination, orderPosiLeftFlagReachedDestination,
-	//		nowPosiLeft, orderPosiLeft, orderPosiLeftLast, vecMove, FlagMoveSkill, FlagMovingSkill);
-	//}
-
 	Unit() = default;
-	Unit& operator=(const Unit& other) {
-		if (this != &other) {
-			Formation = other.Formation; // 前提：ClassFormationが適切なコピーコンストラクタを持つ
+	Unit& operator=(const Unit& other)
+	{
+		if (this != &other)
+		{
+			cts = other.cts;
+			Formation = other.Formation;
+			currentTask = other.currentTask;
+			// taskTimer はコピーできないため再初期化（スタートしない状態）
+			taskTimer.reset();
+
+			rowResourceTarget = other.rowResourceTarget;
+			colResourceTarget = other.colResourceTarget;
 			ID = other.ID;
+
+			pressedUnit = other.pressedUnit;
+
+			classBuild = other.classBuild;
+			tempSelectComRight = other.tempSelectComRight;
+
+			visionRadius = other.visionRadius;
+			initTilePos = other.initTilePos;
+			waitTimeResource = other.waitTimeResource;
+
+			IsBuilding = other.IsBuilding;
+			IsBuildingEnable = other.IsBuildingEnable;
+			rowBuilding = other.rowBuilding;
+			colBuilding = other.colBuilding;
+			mapTipObjectType = other.mapTipObjectType;
+			NoWall2 = other.NoWall2;
+			HPCastle = other.HPCastle;
+			CastleDefense = other.CastleDefense;
+			CastleMagdef = other.CastleMagdef;
+
 			houkou = other.houkou;
 			initXY = other.initXY;
+
+			bLiquidBarBattle = other.bLiquidBarBattle;
+
 			IsLeader = other.IsLeader;
 			IsSelect = other.IsSelect;
 			IsDone = other.IsDone;
 			IsBattleEnable = other.IsBattleEnable;
+
 			NameTag = other.NameTag;
 			Name = other.Name;
 			Help = other.Help;
 			Text = other.Text;
 			Race = other.Race;
 			Class = other.Class;
-			Image = other.Image;
+			ImageName = other.ImageName;
 			Dead = other.Dead;
 			Retreat = other.Retreat;
 			Join = other.Join;
@@ -148,6 +98,7 @@ public:
 			Staff = other.Staff;
 			InitMember = other.InitMember;
 			Enemy = other.Enemy;
+
 			Level = other.Level;
 			Level_max = other.Level_max;
 			Price = other.Price;
@@ -155,6 +106,7 @@ public:
 			Medical = other.Medical;
 			HasExp = other.HasExp;
 			Hp = other.Hp;
+			HpMAX = other.HpMAX;
 			Mp = other.Mp;
 			Attack = other.Attack;
 			Defense = other.Defense;
@@ -173,18 +125,28 @@ public:
 			Loyal = other.Loyal;
 			Alive_per = other.Alive_per;
 			Escape_range = other.Escape_range;
-			SkillName = other.SkillName; // コピーされるStringの各要素は新しいメモリを確保します
-			Skill = other.Skill; // 前提：ClassSkillが適切なコピーコンストラクタを持つ
+
+			SkillName = other.SkillName;
+			arrSkill = other.arrSkill;
 			Finance = other.Finance;
 			MoveType = other.MoveType;
+
 			FlagMove = other.FlagMove;
+			FlagMoveAI = other.FlagMoveAI;
 			FlagMoving = other.FlagMoving;
+			FlagMovingEnd = other.FlagMovingEnd;
 			FlagMoveDispose = other.FlagMoveDispose;
+
 			yokoUnit = other.yokoUnit;
 			TakasaUnit = other.TakasaUnit;
+			FlagReachedDestination = other.FlagReachedDestination;
+			orderPosiLeftFlagReachedDestination = other.orderPosiLeftFlagReachedDestination;
+
 			nowPosiLeft = other.nowPosiLeft;
 			orderPosiLeft = other.orderPosiLeft;
+			orderPosiLeftLast = other.orderPosiLeftLast;
 			vecMove = other.vecMove;
+
 			FlagMoveSkill = other.FlagMoveSkill;
 			FlagMovingSkill = other.FlagMovingSkill;
 		}
@@ -195,27 +157,26 @@ public:
 
 	BattleFormation Formation = BattleFormation::F;
 	UnitTask currentTask = UnitTask::None;
+	/// @brief buildなど
 	Stopwatch taskTimer;
+	/// @brief ゲージを出す為
+	double progressTime = -1.0;
+	Array<BuildAction> arrYoyakuBuild;
+	BuildAction tempIsBuildSelectTragetBuildAction;
+	/// @brief 確保する場所
 	int32 rowResourceTarget = -1;
 	int32 colResourceTarget = -1;
-	/// @brief 建てる場所
-	int32 rowBuildingTarget = -1;
-	int32 colBuildingTarget = -1;
 
 	long long ID = 0;
 
-	// 使用しているところがない　消していいか？
-	Rect rectExecuteBtnStrategyMenu;
-	Rect rectExecuteBtnStrategyMenuLeader;
-	Rect rectExecuteBtnStrategyMenuMember;
-	Rect rectDetailStrategyMenu;
-	bool pressedDetailStrategyMenu = false;
-
 	/// @brief 建築メニューなどを表示するかどうかのフラグ
 	bool pressedUnit = false;
-	/// @brief 工兵などでクリック時に建築メニューを表示する？？？
-	Rect rectBuildMenu;
-	int32 buiSyu = -1; // 建築の種類 //0 = home,1 = kouhei, 2 =大将
+	String classBuild;
+	BuildAction tempSelectComRight;
+	RectF GetRectNowPosi() const
+	{
+		return RectF(nowPosiLeft, yokoUnit, TakasaUnit);
+	}
 
 	int32 visionRadius = 3;
 	Point initTilePos = Point(0, 0); // ユニットのタイル上の位置
@@ -274,7 +235,7 @@ public:
 	String Class;
 
 	// Image
-	String Image;
+	String ImageName;
 
 	// Dead
 	String Dead;
@@ -393,7 +354,7 @@ public:
 	Array<String> SkillName;
 
 	// Skill
-	Array<Skill> Skill;
+	Array<Skill> arrSkill;
 
 	// Finance
 	int32 Finance = 0;
@@ -438,7 +399,7 @@ public:
 	Vec2 orderPosiLeftLast;
 
 	// OrderPosiCenter
-	Vec2 GetOrderPosiCenter()
+	Vec2 GetOrderPosiCenter() const
 	{
 		return Vec2(orderPosiLeft.x + (yokoUnit / 2), orderPosiLeft.y + (TakasaUnit / 2));
 	}

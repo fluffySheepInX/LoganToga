@@ -57,6 +57,7 @@ enum class resourceKind { None, Gold, Trust, Food };
 enum class UnitTask
 {
 	None,
+	Build,
 	MovingToBuild,
 	MovingToResource,
 	WorkingOnResource

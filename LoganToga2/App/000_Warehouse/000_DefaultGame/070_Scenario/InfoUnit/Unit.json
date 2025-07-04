@@ -3,6 +3,8 @@
     {
       "name_tag": "LineInfantryM14",
       "name": "M14 Infantry Rifle",
+      "classBuild": "Kouhei",
+      "memo": "classBuildはあとでデフォの歩兵用に切り替え",
       "help": "平原戦を確実に勝つ為の津波であった。\r\n両脇を妻帯者で固め、中央に若者を据えて強力に前進する。\r\n勝つ為の武装は整えた。後は喇叭の音を望むのみ。",
       "race": "human",
       "image": "chipGene001.png",

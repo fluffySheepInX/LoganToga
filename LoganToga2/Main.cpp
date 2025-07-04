@@ -7,10 +7,11 @@
 #include "Battle.hpp"
 #include "ClassUnit.h"
 #include "ClassCommonConfig.h"
+#include "ClassBuildAction.h"
 
 void Init(CommonConfig& commonConfig)
 {
-	// Unit.jsonからデータを読み込む
+	// Unit.jsonを読み込む
 	{
 		const JSON jsonUnit = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoUnit/Unit.json");
 
@@ -22,12 +23,14 @@ void Init(CommonConfig& commonConfig)
 			Unit cu;
 			cu.NameTag = value[U"name_tag"].getString();
 			cu.Name = value[U"name"].getString();
-			cu.Image = value[U"image"].getString();
+			cu.ImageName = value[U"image"].getString();
 			cu.Hp = Parse<int32>(value[U"hp"].getString());
 			cu.Mp = Parse<int32>(value[U"mp"].getString());
 			cu.HpMAX = cu.Hp;
 			if (value.hasElement(U"visionRadius") == true)
 				cu.visionRadius = Parse<int32>(value[U"visionRadius"].getString());
+			if (value.hasElement(U"classBuild") == true)
+				cu.classBuild = value[U"classBuild"].getString();
 			cu.Attack = Parse<int32>(value[U"attack"].getString());
 			cu.Defense = Parse<int32>(value[U"defense"].getString());
 			cu.Magic = Parse<int32>(value[U"magic"].getString());
@@ -275,23 +278,63 @@ void Init(CommonConfig& commonConfig)
 		//unitのスキル名からスキルクラスを探し、unitに格納
 		for (auto& itemUnit : arrayClassUnit)
 			for (const auto& itemSkillName : itemUnit.SkillName)
-				for (const auto& skill : arrayClassSkill)
+				for (auto& skill : arrayClassSkill)
 					if (skill.nameTag == itemSkillName)
 					{
-						itemUnit.Skill.emplace_back(skill);
+						itemUnit.arrSkill.emplace_back(skill);
 						break;
 					}
 
-		commonConfig.arrayUnit = arrayClassUnit;
-		//manager.get().get()->classGameStatus.arrayClassUnit = arrayClassUnit;
+		commonConfig.arrayUnit = std::move(arrayClassUnit);
 	}
+	// buildメニューを読み込む
+	{
+		const JSON jsonBuildMenu = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoBuildMenu/aaa.json");
+
+		if (not jsonBuildMenu)
+			throw Error{ U"Failed to load `aaa.json`" };
+
+		for (auto&& [index, object] : jsonBuildMenu)
+		{
+			Array<BuildAction> arrBa;
+			for (auto&& [index2, object2] : object)
+			{
+				BuildAction ba;
+				ba.id = object2[U"id"].getString();
+				ba.name = object2[U"name"].getString();
+				ba.description = object2[U"description"].getString();
+				ba.icon = object2[U"icon"].getString();
+				HashTable<String, int32> costTemp;
+				for (auto&& [index3, object3] : object2[U"cost"])
+				{
+					int32 ioudiu = object3.get<int32>();
+					costTemp.emplace(index3, object3.get<int32>());
+				}
+				ba.buildTime = object2[U"buildTime"].get<double>();
+				ba.category = object2[U"category"].getString();
+				Array<String> requiresTemp;
+				for (auto&& [index3, object3] : object2[U"requires"])
+				{
+					requiresTemp.push_back(object3.getString());
+				}
+				ba.isMove = ParseBool(object2[U"isMove"].getString());
+				for (auto&& [key, object3] : object2[U"result"])
+				{
+					ba.result.spawn = object3[U"spawn"].getString();
+					ba.result.type = object3[U"type"].getString();
+				}
+				arrBa.push_back(ba);
+			}
+			commonConfig.htBuildMenuBaseData.emplace(index, arrBa);
+		}
+	}
+
 	//// obj.jsonからデータを読み込む
+
 	//{
 	//	const JSON objData = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoObject/obj.json");
-
 	//	if (not objData) // もし読み込みに失敗したら
 	//		throw Error{ U"Failed to load `obj.json`" };
-
 	//	Array<ClassObjectMapTip> arrayClassObj;
 	//	for (const auto& [key, value] : objData[U"obj"]) {
 	//		ClassObjectMapTip cu;
@@ -309,7 +352,6 @@ void Init(CommonConfig& commonConfig)
 	//		cu.castle = value[U"castle"].get<int32>();
 	//		cu.castleDefense = value[U"castle_defense"].get<int32>();
 	//		cu.castleMagdef = value[U"castle_magdef"].get<int32>();
-
 	//		arrayClassObj.push_back(std::move(cu));
 	//	}
 	//	manager.get().get()->classGameStatus.arrayClassObjectMapTip = arrayClassObj;
@@ -317,10 +359,8 @@ void Init(CommonConfig& commonConfig)
 	////enemy
 	//{
 	//	const JSON jsonUnit = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoEnemy/enemy.json");
-
 	//	if (not jsonUnit) // もし読み込みに失敗したら
 	//		throw Error{ U"Failed to load `Unit.json`" };
-
 	//	Array<ClassEnemy> arrayClassUnit;
 	//	for (const auto& [key, value] : jsonUnit[U"enemy"]) {
 	//		ClassEnemy ce;
@@ -330,7 +370,9 @@ void Init(CommonConfig& commonConfig)
 	//	}
 	//	manager.get().get()->classGameStatus.arrayClassEnemy = arrayClassUnit;
 	//}
-	//// config.tomlからデータを読み込む
+
+	// config.tomlからデータを読み込む
+
 	//{
 	//	const TOMLReader tomlConfig{ PATHBASE + PATH_DEFAULT_GAME + U"/config.toml" };
 	//	if (not tomlConfig) // もし読み込みに失敗したら

@@ -165,6 +165,7 @@
     <ClCompile Include="Battle.cpp" />
     <ClCompile Include="ClassAStar.cpp" />
     <ClCompile Include="ClassBattle.cpp" />
+    <ClCompile Include="ClassBuildAction.cpp" />
     <ClCompile Include="ClassCommonConfig.cpp" />
     <ClCompile Include="ClassHorizontalUnit.cpp" />
     <ClCompile Include="ClassMap.cpp" />
@@ -388,6 +389,7 @@
     <ClInclude Include="Battle.hpp" />
     <ClInclude Include="ClassAStar.h" />
     <ClInclude Include="ClassBattle.h" />
+    <ClInclude Include="ClassBuildAction.h" />
     <ClInclude Include="ClassCommonConfig.h" />
     <ClInclude Include="ClassHorizontalUnit.h" />
     <ClInclude Include="ClassMap.h" />
