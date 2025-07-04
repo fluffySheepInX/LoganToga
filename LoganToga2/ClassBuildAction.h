@@ -6,6 +6,7 @@ struct BuildAction {
 	String icon;
 	/// @brief -1は無制限
 	int32 buildCount = -1;
+	int32 createCount = 1;
 	HashTable<String, int32> cost;
 	double buildTime;
 	String category;

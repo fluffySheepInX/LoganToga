@@ -48,6 +48,7 @@
             "name": "軽装歩兵詰所",
             "description": "浸透してヨシ、決死隊してヨシ、弾除けにヨシ！",
             "icon": "keisou-hohei.png",
+            "createCount": "1",
             "cost": {
                 "wood": 15
             },
@@ -60,7 +61,7 @@
             "result": [
                 {
                     "type": "unit",
-                    "spawn": "LineInfantryM14"
+                    "spawn": "keisouTumejo"
                 }
             ]
         },
@@ -69,11 +70,12 @@
             "name": "軽装歩兵産出",
             "description": "びううｙぐゆｙぎゅゆｇ",
             "icon": "keisou-chipGene006.png",
+            "createCount": "5",
             "cost": {
                 "wood": 15
             },
             "buildTime": 0.5,
-            "category": "unitProduct",
+            "category": "unit",
             "requires": [
                 "none"
             ],

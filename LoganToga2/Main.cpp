@@ -24,6 +24,8 @@ void Init(CommonConfig& commonConfig)
 			cu.NameTag = value[U"name_tag"].getString();
 			cu.Name = value[U"name"].getString();
 			cu.ImageName = value[U"image"].getString();
+			if (value.hasElement(U"isBuilding") == true)
+				cu.IsBuilding = Parse<bool>(value[U"isBuilding"].getString());
 			cu.Hp = Parse<int32>(value[U"hp"].getString());
 			cu.Mp = Parse<int32>(value[U"mp"].getString());
 			cu.HpMAX = cu.Hp;
@@ -304,6 +306,8 @@ void Init(CommonConfig& commonConfig)
 				ba.name = object2[U"name"].getString();
 				ba.description = object2[U"description"].getString();
 				ba.icon = object2[U"icon"].getString();
+				if (object2.hasElement(U"createCount") == true)
+					ba.createCount = Parse<int32>(object2[U"createCount"].getString());
 				HashTable<String, int32> costTemp;
 				for (auto&& [index3, object3] : object2[U"cost"])
 				{

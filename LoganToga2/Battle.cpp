@@ -1193,7 +1193,6 @@ void Battle::handleBuildMenuSelectionA()
 						hbm.second.rowBuildingTarget = index->y;
 						hbm.second.colBuildingTarget = index->x;
 						itemUnit.currentTask = UnitTask::None;
-						itemUnit.IsSelect = false;
 					}
 					else
 					{
@@ -1239,15 +1238,6 @@ void Battle::handleBuildMenuSelectionA()
 			}
 		}
 	}
-
-	// sortYoyakuId による予約ソート
-	for (auto& menu : buildMenus)
-	{
-		menu.reservations.sort_by([](const cRightMenu& a, const cRightMenu& b)
-		{
-			return a.sortId < b.sortId;
-		});
-	}
 }
 void Battle::updateBuildQueue()
 {
@@ -1269,6 +1259,7 @@ void Battle::updateBuildQueue()
 			//int32 kuhukgiuy = itemUnit.arrYoyakuBuild.front().
 			const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
 			const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
+			const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
 
 			if (itemUnit.progressTime >= 1.0)
 			{
@@ -1290,7 +1281,7 @@ void Battle::updateBuildQueue()
 					yfyu.spawn = tempBA.spawn;
 					yfyu.tempColBuildingTarget = tempColBuildingTarget;
 					yfyu.tempRowBuildingTarget = tempRowBuildingTarget;
-					yfyu.count = 3;
+					yfyu.count = createCount;
 					temo.push_back(yfyu);
 				}
 			}
@@ -1300,7 +1291,7 @@ void Battle::updateBuildQueue()
 		}
 	}
 
-	for (auto& uihbui: temo)
+	for (auto& uihbui : temo)
 	{
 		UnitRegister(uihbui.spawn, uihbui.tempColBuildingTarget, uihbui.tempRowBuildingTarget, uihbui.count, classBattle.listOfAllUnit);
 	}
@@ -1730,15 +1721,8 @@ void Battle::handleBuildTargetSelection()
 
 			Unit& cu = GetCU(longBuildSelectTragetId);
 			cu.currentTask = UnitTask::MovingToBuild;
-			cu.tempIsBuildSelectTragetBuildAction.rowBuildingTarget = index->y;
-			cu.tempIsBuildSelectTragetBuildAction.colBuildingTarget = index->x;
-			cu.progressTime = 0.0;
-			cu.taskTimer.restart();
-			cu.arrYoyakuBuild.push_back(cu.tempIsBuildSelectTragetBuildAction);
-
-			Vec2 nor = Cursor::PosF();
-			cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
-			cu.orderPosiLeftLast = nor;
+			cu.orderPosiLeft = Cursor::PosF().movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
+			cu.orderPosiLeftLast = Cursor::PosF();
 			cu.vecMove = (cu.orderPosiLeft - cu.nowPosiLeft).normalized();
 			cu.FlagMove = false;
 			cu.FlagMoveAI = true;
@@ -1985,41 +1969,29 @@ void Battle::afterMovedPushToBuildMenu(Unit& itemUnit)
 {
 	if (itemUnit.classBuild == U"") return;//そもそも建設出来ないはず
 
-	//cRightMenu ccc;
-	//ccc.sortId = cRightMenuTargetCount;
-	//ccc.sortYoyakuId = longBuildMenuHomeYoyakuIdCount++;
-	//ccc.key = re.key;
-	//ccc.kindForProcess = re.kindForProcess;
-	//ccc.texture = TextureAsset(re.key);
-	//ccc.time = re.time;
-	//ccc.rowBuilding = unit.rowBuildingTarget;
-	//ccc.colBuilding = unit.colBuildingTarget;
-
-	// ユニットの状態を初期化（再選択など無効化）
+	const auto& index = ToIndex(itemUnit.GetNowPosiCenter(), columnQuads, rowQuads);
+	itemUnit.tempIsBuildSelectTragetBuildAction.rowBuildingTarget = index->y;
+	itemUnit.tempIsBuildSelectTragetBuildAction.colBuildingTarget = index->x;
 	itemUnit.IsSelect = false;
 	itemUnit.FlagMoveAI = false;
 	itemUnit.currentTask = UnitTask::None;
 
-	//// カテゴリに追加
-	//int index = re.buiSyu;
-	//if (InRange(index, 0, (int32)buildMenus.size()))
-	//{
-	//	auto& menu = buildMenus[index];
-	//	if (!menu.timer.isRunning())
-	//	{
-	//		menu.timer.start();
-	//		menu.progressTime = 0.0;
-	//	}
-	//	menu.reservations.push_back(ccc);
-	//}
+	IsBuildSelectTraget = false;
 
-	//// 回数制限の更新と再描画
-	//if (re.count > 0)
-	//{
-	//	htBuildMenu[unit.classBuild + U"-"].buildCount = re.count--;
-	//	renB();
-	//}
-
+	//Battle::updateBuildQueueで作る
+	if (itemUnit.taskTimer.isRunning() == false)
+	{
+		itemUnit.progressTime = 0.0;
+		itemUnit.taskTimer.restart();
+	}
+	itemUnit.arrYoyakuBuild.push_back(itemUnit.tempIsBuildSelectTragetBuildAction);
+	// 回数制限の更新と再描画
+	if (itemUnit.tempIsBuildSelectTragetBuildAction.buildCount > 0)
+	{
+		htBuildMenu[itemUnit.classBuild + U"-" + itemUnit.tempIsBuildSelectTragetBuildAction.id].buildCount--;
+		//キーだけ渡して該当のrenderだけ更新するように
+		//renB();
+	}
 }
 void Battle::addResource(Unit& unit)
 {
@@ -2271,11 +2243,16 @@ void Battle::drawUnits(const RectF& cameraView) const
 
 					const Vec2 center = u.GetNowPosiCenter();
 
-					TextureAsset(ringA).drawAt(center.movedBy(0, 8));
+					if (!u.IsBuilding)
+						TextureAsset(ringA).drawAt(center.movedBy(0, 8));
+
 					TextureAsset(u.ImageName).draw(Arg::center = center);
+
 					if (u.IsSelect)
 						TextureAsset(u.ImageName).draw(Arg::center = center).drawFrame(3.0, Palette::Red);
-					TextureAsset(ringB).drawAt(center.movedBy(0, 16));
+					if (!u.IsBuilding)
+						TextureAsset(ringB).drawAt(center.movedBy(0, 16));
+
 					u.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 				}
 			}
@@ -2363,57 +2340,30 @@ void Battle::drawBuildMenu() const
 		re.second.draw(baseX, baseY);
 	}
 
-	auto drawBuildList = [&](const Array<cRightMenu>& items, double currentTime)
+	for (auto& item : classBattle.listOfAllUnit)
+	{
+		for (auto& itemUnit : item.ListClassUnit)
 		{
-			for (auto&& [i, item] : Indexed(items))
+			if (itemUnit.IsSelect == false) continue;
+			for (auto&& [i, uybuy] : Indexed(itemUnit.arrYoyakuBuild))
 			{
 				if (i == 0)
 				{
-					item.texture.resized(64).draw(baseX - 64, baseY + 4);
-					if (!item.isMoved)
-					{
-						double progressRatio = Saturate(currentTime / item.time); // 0.0 ～ 1.0 に制限
-						double gaugeRatio = Max(progressRatio, 0.1);
-						double gaugeHeight = 64 * gaugeRatio;
+					TextureAsset(uybuy.icon).resized(64).draw(baseX - 64, baseY + 4);
+					double progressRatio = Saturate(itemUnit.taskTimer.sF() / uybuy.buildTime); // 0.0 ～ 1.0 に制限
+					double gaugeRatio = Max(progressRatio, 0.1);
+					double gaugeHeight = 64 * gaugeRatio;
 
-						RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }
-						.draw(ColorF{ 0.0, 0.5 });
-					}
+					RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }
+					.draw(ColorF{ 0.0, 0.5 });
 				}
 				else
 				{
-					item.texture.resized(32).draw(baseX - 32, baseY + 32 + (i * 32) + 4);
+					TextureAsset(uybuy.icon).resized(32).draw(baseX - 32, baseY + 32 + (i * 32) + 4);
 				}
 			}
-		};
-
-	//int index = buiSyu;
-	//if (!InRange(index, 0, (int32)buildMenus.size())) return;
-	//auto& menu = buildMenus[index];
-	//switch (buiSyu)
-	//{
-	//case 0:
-	//	renderTextureBuildMenuHome.draw(baseX, baseY);
-	//	//TODO どうする
-	//	//drawBuildList(arrBuildMenuHomeYoyaku, menu.timer.sF());
-	//	break;
-	//case 1:
-	//	renderTextureBuildMenuThunderwalker.draw(baseX, baseY);
-	//	//TODO どうする
-	//	//drawBuildList(arrBuildMenuThunderwalkerYoyaku, menu.timer.sF());
-	//	break;
-	//case 2:
-	//	renderTextureBuildMenuKouhei.draw(baseX, baseY);
-	//	drawBuildList(menu.reservations, menu.timer.sF());
-	//	break;
-	//case 3:
-	//	renderTextureBuildMenuKeisouHoheiT.draw(baseX, baseY);
-	//	//TODO どうする
-	//	//drawBuildList(arrBuildMenuKeisouYoyaku, menu.timer.sF());
-	//	break;
-	//default:
-	//	break;
-	//}
+		}
+	}
 }
 void Battle::drawResourcesUI() const
 {
