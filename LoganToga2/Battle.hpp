@@ -241,8 +241,8 @@ private:
 	Array<bool> arrayBattleZinkei;
 	Array<bool> arrayBattleCommand;
 
-	AsyncTask<int32> task;
-	AsyncTask<int32> taskMyUnits;
+	AsyncTask<void> task;
+	AsyncTask<void> taskMyUnits;
 
 	std::atomic<bool> abort{ false };
 	std::atomic<bool> abortMyUnits{ false };
@@ -296,7 +296,6 @@ private:
 	/// @brief 単一選択とドラッグ選択が出来るようにしたいので、いつかenumにする
 	bool IsBuildSelectTraget = false;
 	long longBuildSelectTragetId = -1;
-	int32 buiSyu = 0; // 建築の種類
 	/// @brief 移動後に建築するムーヴが発動しているか
 	bool isMovedYoyaku = false;
 	/// @brief 移動後に何を建築するか特定する為
@@ -348,7 +347,7 @@ private:
 	HashTable<Point, ColorF> minimapCols;
 	HashTable<String, Color> colData;
 	void DrawMiniMap(const Grid<int32>& map, const RectF& cameraRect) const;
-	void UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU);
+	void UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy);
 
 
 	RectF getCameraView() const;

@@ -94,241 +94,218 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 						std::atomic<bool>& changeUnitMember
 )
 {
-	while (true)
+	static size_t unitIndexEnemy = 0;
+	constexpr size_t MaxUnitsPerFrame = 5;
+
+	size_t processed = 0;
+	Array<Unit*> flatList;
+
+	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
+	for (auto& group : enemy)
 	{
-		if (abort == true) break;
-		if (pause || changeUnitMember)
+		for (auto& unit : group.ListClassUnit)
 		{
-			//「何も処理せず continue」はスリープなしでCPUを占有するため、環境によってはフリーズや高負荷の原因
-			System::Sleep(1);
-			continue;
-		}
-
-		while (true)
-		{
-			const auto isValidTarget = [](const Unit& unit) -> bool
-				{
-					if (unit.IsBuilding && (unit.mapTipObjectType == MapTipObjectType::WALL2 || unit.mapTipObjectType == MapTipObjectType::GATE))
-						return false;
-
-					if (!unit.IsBattleEnable)
-						return false;
-
-					return true;
-				};
-
-			if (abort == true) break;
-			if (pause == true) continue;
-			if (changeUnitMember == true) break;
-			const auto targetSnapshot = target;
-			for (auto& aaa : targetSnapshot)
-			{
-				if (abort == true) break;
-				if (aaa.FlagBuilding == true) continue;
-
-				for (auto& bbb : aaa.ListClassUnit)
-				{
-					if (abort == true) break;
-					if (!isValidTarget(bbb)) continue;
-					if (aiRoot.contains(bbb.ID) && !aiRoot[bbb.ID].isPathCompleted()) continue;
-
-					Array<Point> listRoot;
-
-					//まず現在のマップチップを取得
-					s3d::Optional<Size> nowIndex = ToIndex(bbb.GetNowPosiCenter(), columnQuads, rowQuads);
-					if (nowIndex.has_value() == false)
-						continue;
-
-					//標的は次のうちのどれか
-					//1.ランダムに決定
-					//2.最寄りの敵
-					//3.一番弱い敵
-					//4.一番体力の無い敵
-					//...など
-
-					//最寄りの敵の座標を取得
-					HashTable<double, Unit> dicDis;
-					Vec2 posA = bbb.GetNowPosiCenter();
-					try
-					{
-						for (auto& ccc : enemy) {
-							for (auto& ddd : ccc.ListClassUnit) {
-								if (!isValidTarget(ddd)) continue;
-
-								Vec2 posB = ddd.GetNowPosiCenter();
-								double dist = posA.distanceFrom(posB);
-								while (dicDis.contains(dist)) {
-									dist += 0.0001; // 衝突回避
-								}
-								if (abort == true) break;
-								dicDis.emplace(dist, ddd);
-							}
-						}
-					}
-					catch (const std::exception&)
-					{
-						throw;
-					}
-
-					if (dicDis.size() == 0)
-						continue;
-
-					auto minElement = dicDis.begin();
-					for (auto it = dicDis.begin(); it != dicDis.end(); ++it)
-					{
-						if (it->first < minElement->first)
-						{
-							minElement = it;
-						}
-					}
-					Print << minElement->second.ID;
-					bool flagGetEscapeRange = false;
-					Vec2 retreatTargetPos;
-					//escape_rangeの範囲なら、撤退。その為、反対側の座標を調整したものを扱う
-					if (bbb.Escape_range >= 1)
-					{
-						Circle cCheck = Circle(bbb.GetNowPosiCenter(), bbb.Escape_range);
-						Circle cCheck2 = Circle(minElement->second.GetNowPosiCenter(), 1);
-						if (cCheck.intersects(cCheck2) == true)
-						{
-							//撤退
-							double newDistance = 50.0;
-							double angle = atan2(minElement->second.GetNowPosiCenter().y - bbb.GetNowPosiCenter().y, minElement->second.GetNowPosiCenter().x - bbb.GetNowPosiCenter().x);
-							double xC, yC;
-							// 反対方向に進むために角度を180度反転
-							angle += Math::Pi;
-							xC = bbb.GetNowPosiCenter().x + newDistance * cos(angle);
-							yC = bbb.GetNowPosiCenter().y + newDistance * sin(angle);
-							//minElement->second.nowPosiLeft = Vec2(xC, yC);
-
-							//TODO 画面端だとタイル外となるので、調整
-							retreatTargetPos = Vec2(xC, yC);
-							flagGetEscapeRange = true;
-						}
-					}
-
-					if (bbb.FlagMoving == true && flagGetEscapeRange == false)
-						continue;
-					if (bbb.FlagMovingEnd == false && flagGetEscapeRange == false)
-						continue;
-
-					//最寄りの敵のマップチップを取得
-					s3d::Optional<Size> nowIndexEnemy;
-					if (flagGetEscapeRange)
-					{
-						nowIndexEnemy = ToIndex(retreatTargetPos, columnQuads, rowQuads);
-					}
-					else
-					{
-						nowIndexEnemy = ToIndex(minElement->second.GetNowPosiCenter(), columnQuads, rowQuads);
-					}
-
-					if (nowIndexEnemy.has_value() == false) continue;
-					if (nowIndexEnemy.value() == nowIndex.value()) continue;
-
-					////現在地を開く
-					ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
-					Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-					MicrosecClock mc;
-					////移動経路取得
-					while (true)
-					{
-						try
-						{
-							if (abort == true)
-								break;
-
-							if (startAstar.has_value() == false)
-							{
-								listRoot.clear();
-								break;
-							}
-
-							//Print << U"AAAAAAAAAAAAAAAAA:" + Format(mc.us());
-							classAStarManager.OpenAround(startAstar.value(),
-															mapData,
-															enemy,
-															target,
-															N
-							);
-							//Print << U"BBBBBBBBBBBBBBBB:" + Format(mc.us());
-							startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-
-							classAStarManager.RemoveClassAStar(startAstar.value());
-
-							if (classAStarManager.GetListClassAStar().size() != 0)
-							{
-								startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-							}
-
-							if (startAstar.has_value() == false)
-							{
-								continue;
-							}
-
-							//敵まで到達したか
-							if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-							{
-								startAstar.value()->GetRoot(listRoot);
-								listRoot.reverse();
-								break;
-							}
-						}
-						catch (const std::exception&)
-						{
-							throw;
-						}
-					}
-
-					// 経路が取得できた場合、aiRootにセット
-					if (listRoot.size() != 0)
-					{
-						UnitMovePlan plan;
-						if (flagGetEscapeRange)
-						{
-							// もし撤退中なら特別なターゲットIDを設定
-							// 撤退中は、経路の最初の位置を最後に見た敵の位置として記録する
-							plan.setRetreating(true);
-							plan.setTarget(-1); // -1: 撤退中の特別なターゲットID
-							Unit iugiu = minElement->second;
-							plan.setLastKnownEnemyPos(minElement->second.GetNowPosiCenter());
-
-							{
-								std::scoped_lock lock(aiRootMutex);
-								for (auto& iydihlfdvhjkl : target)
-								{
-									for (auto& jouihdsjk : iydihlfdvhjkl.ListClassUnit)
-									{
-										//一致するユニットの情報を変更
-										if (jouihdsjk.ID == bbb.ID)
-										{
-											// 強制的に再移動準備させる
-											jouihdsjk.FlagMoving = false;
-											jouihdsjk.FlagMovingEnd = true;
-										}
-									}
-								}
-							}
-						}
-						else
-						{
-							plan.setTarget(minElement->second.ID);
-						}
-						plan.setPath(listRoot);
-						{
-							std::scoped_lock lock(aiRootMutex);
-							aiRoot[bbb.ID] = plan;
-							// 経路セット時に1個除去しておく
-							if (aiRoot[bbb.ID].getPath().size() > 1)
-								aiRoot[bbb.ID].stepToNext();
-						}
-					}
-				}
-			}
+			if (!unit.IsBattleEnable || unit.IsBuilding)
+				continue;
+			if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
+				continue;
+			flatList.push_back(&unit);
 		}
 	}
 
-	return -1;
+	const size_t total = flatList.size();
+	if (total == 0)
+		return 0;
+
+	const auto isValidTarget = [](const Unit& unit) -> bool
+		{
+			if (unit.IsBuilding && (unit.mapTipObjectType == MapTipObjectType::WALL2 || unit.mapTipObjectType == MapTipObjectType::GATE))
+				return false;
+
+			if (!unit.IsBattleEnable)
+				return false;
+
+			return true;
+		};
+
+	for (size_t i = 0; i < total; ++i)
+	{
+		if (abort)
+			break;
+
+		size_t idx = (unitIndexEnemy + i) % total;
+		Unit& unit = *flatList[idx];
+
+		Optional<Size> nowIndex = ToIndex(unit.GetNowPosiCenter(), columnQuads, rowQuads);
+		if (!nowIndex)
+			continue;
+
+		//標的は次のうちのどれか
+		//1.ランダムに決定
+		//2.最寄りの敵
+		//3.一番弱い敵
+		//4.一番体力の無い敵
+		//...など
+
+		//最寄りの敵の座標を取得
+		HashTable<double, Unit> dicDis;
+		Vec2 posA = unit.GetNowPosiCenter();
+		try
+		{
+			auto uisuif = target;
+			for (const auto& ccc : uisuif) {
+				for (const auto& ddd : ccc.ListClassUnit) {
+					if (!isValidTarget(ddd)) continue;
+
+					Vec2 posB = ddd.GetNowPosiCenter();
+					double dist = posA.distanceFrom(posB);
+					while (dicDis.contains(dist)) {
+						dist += 0.0001; // 衝突回避
+					}
+					if (abort == true) break;
+					dicDis.emplace(dist, ddd);
+				}
+			}
+		}
+		catch (const std::exception&)
+		{
+			throw;
+		}
+		catch (const s3d::Error&)
+		{
+			throw;
+		}
+
+		if (dicDis.size() == 0)
+			continue;
+
+		auto minElement = dicDis.begin();
+		for (auto it = dicDis.begin(); it != dicDis.end(); ++it)
+		{
+			if (it->first < minElement->first)
+				minElement = it;
+		}
+
+		bool flagGetEscapeRange = false;
+		Vec2 retreatTargetPos;
+		//escape_rangeの範囲なら、撤退。その為、反対側の座標を調整したものを扱う
+		if (unit.Escape_range >= 1)
+		{
+			Circle cCheck = Circle(unit.GetNowPosiCenter(), unit.Escape_range);
+			Circle cCheck2 = Circle(minElement->second.GetNowPosiCenter(), 1);
+			if (cCheck.intersects(cCheck2) == true)
+			{
+				//撤退
+				double newDistance = 50.0;
+				double angle = atan2(minElement->second.GetNowPosiCenter().y - unit.GetNowPosiCenter().y,
+					minElement->second.GetNowPosiCenter().x - unit.GetNowPosiCenter().x);
+				double xC, yC;
+				// 反対方向に進むために角度を180度反転
+				angle += Math::Pi;
+				xC = unit.GetNowPosiCenter().x + newDistance * cos(angle);
+				yC = unit.GetNowPosiCenter().y + newDistance * sin(angle);
+				//minElement->second.nowPosiLeft = Vec2(xC, yC);
+
+				//TODO 画面端だとタイル外となるので、調整
+				retreatTargetPos = Vec2(xC, yC);
+				flagGetEscapeRange = true;
+			}
+		}
+
+		if (unit.FlagMoving == true && flagGetEscapeRange == false)
+			continue;
+		if (unit.FlagMovingEnd == false && flagGetEscapeRange == false)
+			continue;
+
+		//最寄りの敵のマップチップを取得
+		s3d::Optional<Size> nowIndexEnemy;
+		nowIndexEnemy = flagGetEscapeRange
+			? ToIndex(retreatTargetPos, columnQuads, rowQuads)
+			: ToIndex(minElement->second.GetNowPosiCenter(), columnQuads, rowQuads);
+		if (nowIndexEnemy.has_value() == false) continue;
+		if (nowIndexEnemy.value() == nowIndex.value()) continue;
+
+		////現在地を開く
+		ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
+		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+		Array<Point> listRoot;
+		MicrosecClock mc;
+		////移動経路取得
+
+		while (true)
+		{
+			try
+			{
+				if (abort == true) break;
+				if (startAstar.has_value() == false)
+				{
+					listRoot.clear();
+					break;
+				}
+				classAStarManager.OpenAround(startAstar.value(),
+												mapData,
+												enemy,
+												target,
+												N
+				);
+				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+				classAStarManager.RemoveClassAStar(startAstar.value());
+				if (classAStarManager.GetListClassAStar().size() != 0)
+					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+				if (startAstar.has_value() == false)
+					continue;
+
+				//敵まで到達したか
+				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+				{
+					startAstar.value()->GetRoot(listRoot);
+					listRoot.reverse();
+					break;
+				}
+			}
+			catch (const std::exception&)
+			{
+				throw;
+			}
+		}
+
+		// 経路が取得できた場合、aiRootにセット
+		if (listRoot.size() != 0)
+		{
+			UnitMovePlan plan;
+			if (flagGetEscapeRange)
+			{
+				// もし撤退中なら特別なターゲットIDを設定
+				// 撤退中は、経路の最初の位置を最後に見た敵の位置として記録する
+				plan.setRetreating(true);
+				plan.setTarget(-1); // -1: 撤退中の特別なターゲットID
+				Unit iugiu = minElement->second;
+				plan.setLastKnownEnemyPos(minElement->second.GetNowPosiCenter());
+				// 強制的に再移動準備させる
+				unit.FlagMoving = false;
+				unit.FlagMovingEnd = true;
+			}
+			else
+			{
+				plan.setTarget(minElement->second.ID);
+			}
+			plan.setPath(listRoot);
+			{
+				std::scoped_lock lock(aiRootMutex);
+				aiRoot[unit.ID] = plan;
+				// 経路セット時に1個除去しておく
+				if (aiRoot[unit.ID].getPath().size() > 1)
+					aiRoot[unit.ID].stepToNext();
+			}
+		}
+
+		processed++;
+		if (processed >= MaxUnitsPerFrame)
+			break;
+	}
+
+	unitIndexEnemy = (unitIndexEnemy + processed) % total;
+	return static_cast<int32>(processed);
 }
 int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 						Array<ClassHorizontalUnit>& enemy,
@@ -344,126 +321,120 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 )
 {
 	const auto targetSnapshot = target;
-	for (auto& aaa : targetSnapshot)
+
+	static size_t unitIndex = 0; // ラウンドロビンインデックス
+	constexpr size_t MaxUnitsPerFrame = 5; // 1フレームで処理するユニット数
+
+	size_t processed = 0;
+	Array<Unit*> flatList;
+
+	// --- フラット化して高速アクセスに備える
+	for (auto& group : target)
 	{
-		if (abort == true)
-			break;
-
-		if (aaa.FlagBuilding == true)
-			continue;
-
-		for (auto& listClassUnit : aaa.ListClassUnit)
+		for (auto& unit : group.ListClassUnit)
 		{
-			if (abort == true)
-				break;
-			if (listClassUnit.IsBuilding == true && listClassUnit.mapTipObjectType == MapTipObjectType::WALL2)
+			if (!unit.IsBattleEnable || unit.IsBuilding)
 				continue;
-			if (listClassUnit.IsBuilding == true && listClassUnit.mapTipObjectType == MapTipObjectType::GATE)
+			if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
 				continue;
-			if (listClassUnit.IsBattleEnable == false)//戦闘不能はスキップ
-				continue;
-			if (listClassUnit.FlagMoving == true)
-				continue;
-			if (listClassUnit.FlagMovingEnd == false)
-				continue;
-			if (listClassUnit.FlagMoveAI == false)
-				continue;
-
-			Array<Point> listRoot;
-
-			//指定のマップチップを取得
-			s3d::Optional<Size> nowIndexEnemy = ToIndex(listClassUnit.orderPosiLeft, columnQuads, rowQuads);
-			if (nowIndexEnemy.has_value() == false)
-				continue;
-
-			////現在地を開く
-			ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
-
-			//現在のマップチップを取得
-			s3d::Optional<Size> nowIndex = ToIndex(listClassUnit.GetNowPosiCenter(), columnQuads, rowQuads);
-			if (nowIndex.has_value() == false)
-				continue;
-
-			Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-			MicrosecClock mc;
-			////移動経路取得
-			while (true)
-			{
-				try
-				{
-					if (abort == true)
-						break;
-
-					if (startAstar.has_value() == false)
-					{
-						listRoot.clear();
-						break;
-					}
-
-					//Print << U"AAAAAAAAAAAAAAAAA:" + Format(mc.us());
-					classAStarManager.OpenAround(startAstar.value(),
-													mapData,
-													enemy,
-													target,
-													N
-					);
-					//Print << U"BBBBBBBBBBBBBBBB:" + Format(mc.us());
-					startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-
-					classAStarManager.RemoveClassAStar(startAstar.value());
-
-					if (classAStarManager.GetListClassAStar().size() != 0)
-					{
-						startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-					}
-
-					if (startAstar.has_value() == false)
-						continue;
-
-					//敵まで到達したか
-					if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-					{
-						startAstar.value()->GetRoot(listRoot);
-						listRoot.reverse();
-						break;
-					}
-				}
-				catch (const std::exception&)
-				{
-					throw;
-				}
-			}
-
-			if (listRoot.size() != 0)
-			{
-				UnitMovePlan plan;
-				plan.setPath(listRoot);
-				{
-					std::scoped_lock lock(aiRootMutex);
-					aiRoot[listClassUnit.ID] = plan;
-				}
-				// 経路セット時に1個除去しておく
-				if (aiRoot[listClassUnit.ID].getPath().size() > 1)
-					aiRoot[listClassUnit.ID].stepToNext();
-				debugRoot.push_back(listRoot);
-				{
-					std::scoped_lock lock(aiRootMutex);
-					for (auto& iydihlfdvhjkl : target)
-					{
-						for (auto& jouihdsjk : iydihlfdvhjkl.ListClassUnit)
-						{
-							//一致するユニットの情報を変更
-							if (jouihdsjk.ID == listClassUnit.ID)
-							{
-								jouihdsjk.FlagMoveAI = false;
-							}
-						}
-					}
-				}
-			}
+			flatList.push_back(&unit);
 		}
 	}
-	return -1;
+
+	const size_t total = flatList.size();
+	if (total == 0) return 0;
+	for (size_t i = 0; i < total; ++i)
+	{
+		if (abort) break;
+
+		size_t idx = (unitIndex + i) % total;
+		Unit& unit = *flatList[idx];
+
+		//指定のマップチップを取得
+		s3d::Optional<Size> nowIndexEnemy = ToIndex(unit.orderPosiLeft, columnQuads, rowQuads);
+		if (nowIndexEnemy.has_value() == false)
+			continue;
+
+		//現在のマップチップを取得
+		s3d::Optional<Size> nowIndex = ToIndex(unit.GetNowPosiCenter(), columnQuads, rowQuads);
+		if (nowIndex.has_value() == false)
+			continue;
+
+		////現在地を開く
+		ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
+
+		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+		Array<Point> listRoot;
+
+		////移動経路取得
+		while (true)
+		{
+			try
+			{
+				if (abort == true)
+					break;
+
+				if (startAstar.has_value() == false)
+				{
+					listRoot.clear();
+					break;
+				}
+
+				//Print << U"AAAAAAAAAAAAAAAAA:" + Format(mc.us());
+				classAStarManager.OpenAround(startAstar.value(),
+												mapData,
+												enemy,
+												target,
+												N
+				);
+				//Print << U"BBBBBBBBBBBBBBBB:" + Format(mc.us());
+				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+
+				classAStarManager.RemoveClassAStar(startAstar.value());
+
+				if (classAStarManager.GetListClassAStar().size() != 0)
+				{
+					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+				}
+
+				if (startAstar.has_value() == false)
+					continue;
+
+				//敵まで到達したか
+				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+				{
+					startAstar.value()->GetRoot(listRoot);
+					listRoot.reverse();
+					break;
+				}
+			}
+			catch (const std::exception&)
+			{
+				throw;
+			}
+		}
+
+		if (listRoot.size() != 0)
+		{
+			UnitMovePlan plan;
+			plan.setPath(listRoot);
+			{
+				std::scoped_lock lock(aiRootMutex);
+				aiRoot[unit.ID] = plan;
+			}
+			// 経路セット時に1個除去しておく
+			if (aiRoot[unit.ID].getPath().size() > 1)
+				aiRoot[unit.ID].stepToNext();
+			debugRoot.push_back(listRoot);
+			unit.FlagMoveAI = false;
+
+		}
+		processed++;
+		if (processed >= MaxUnitsPerFrame)
+			break;
+	}
+	unitIndex = (unitIndex + processed) % total;
+	return static_cast<int32>(processed);
 }
 
 static BuildAction& dummyMenu()
@@ -687,6 +658,10 @@ Battle::~Battle()
 {
 	abort = true;
 	abortMyUnits = true;
+	if (task.isValid())
+		task.wait(); // 完全に終了を待つ
+	if (taskMyUnits.isValid())
+		taskMyUnits.wait(); // 完全に終了を待つ
 }
 
 std::unique_ptr<TextureAssetData> MakeTextureAssetData1(const FilePath& path, const TextureDesc textureDesc)
@@ -761,7 +736,7 @@ void Battle::renB()
 	}
 }
 
-void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU)
+void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy)
 {
 	//新しいコピーを作る
 	for (auto uu : m_commonConfig.arrayUnit)
@@ -781,6 +756,10 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				.movedBy(-64 / 2, (32 / 2) + 8);
 			uu.bLiquidBarBattle =
 				GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 8));
+
+			if (enemy)
+				uu.FlagMoveAI = true;
+
 			ClassHorizontalUnit cuu;
 
 			for (size_t i = 0; i < num; i++)
@@ -997,16 +976,60 @@ Co::Task<void> Battle::start()
 	stopwatchFinance.restart();
 	stopwatchGameTime.restart();
 
-	task = Async(BattleMoveAStar,
-		std::ref(classBattle.listOfAllEnemyUnit),
-		std::ref(classBattle.listOfAllUnit),
-		std::ref(classBattle.classMapBattle.value().mapData),
-		std::ref(aiRootEnemy),
-		std::ref(debugRoot), std::ref(debugAstar),
-		std::ref(columnQuads),
-		std::ref(rowQuads),
-		N,
-		std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));
+	task = Async([this]() {
+		while (!abort)
+		{
+			if (!pauseTask)
+			{
+				BattleMoveAStar(
+					classBattle.listOfAllUnit,
+					classBattle.listOfAllEnemyUnit,
+					classBattle.classMapBattle.value().mapData,
+					aiRootEnemy,
+					debugRoot,
+					debugAstar,
+					columnQuads,
+					rowQuads,
+					N,
+					abort,
+					pauseTask, changeUnitMember);
+			}
+			System::Sleep(1);
+		}
+	});
+	//task = Async(BattleMoveAStar,
+	//	std::ref(classBattle.listOfAllEnemyUnit),
+	//	std::ref(classBattle.listOfAllUnit),
+	//	std::ref(classBattle.classMapBattle.value().mapData),
+	//	std::ref(aiRootEnemy),
+	//	std::ref(debugRoot), std::ref(debugAstar),
+	//	std::ref(columnQuads),
+	//	std::ref(rowQuads),
+	//	N,
+	//	std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));
+
+	// 経路探索スレッド起動
+	taskMyUnits = Async([this]() {
+		while (!abortMyUnits)
+		{
+			if (!pauseTaskMyUnits)
+			{
+				BattleMoveAStarMyUnits(
+					classBattle.listOfAllUnit,
+					classBattle.listOfAllEnemyUnit,
+					classBattle.classMapBattle.value().mapData,
+					aiRootMy,
+					debugRoot,
+					debugAstar,
+					columnQuads,
+					rowQuads,
+					N,
+					abortMyUnits,
+					pauseTaskMyUnits);
+			}
+			System::Sleep(1); // CPU過負荷防止
+		}
+	});
 
 	co_await mainLoop().pausedWhile([&]
 		{
@@ -1109,10 +1132,11 @@ void Battle::spawnTimedEnemy()
 		{
 			int32 iyigu = Random(0, N - 1);
 			changeUnitMember = true;
-			UnitRegister(U"P99 Sniper Rifle",
+			UnitRegister(U"sniperP99",
 			0,
 			Random(0, N - 1),
-			1, classBattle.listOfAllEnemyUnit);
+			1, classBattle.listOfAllEnemyUnit, true);
+
 			changeUnitMember = false;
 			stopwatchGameTime.restart();
 		}
@@ -1120,10 +1144,10 @@ void Battle::spawnTimedEnemy()
 		{
 			int32 iyigu = Random(0, N - 1);
 			changeUnitMember = true;
-			UnitRegister(U"P99 Sniper Rifle",
+			UnitRegister(U"sniperP99",
 			Random(0, N - 1),
 			N - 1,
-			1, classBattle.listOfAllEnemyUnit);
+			1, classBattle.listOfAllEnemyUnit, true);
 			changeUnitMember = false;
 			stopwatchGameTime.restart();
 		}
@@ -1293,14 +1317,13 @@ void Battle::updateBuildQueue()
 
 	for (auto& uihbui : temo)
 	{
-		UnitRegister(uihbui.spawn, uihbui.tempColBuildingTarget, uihbui.tempRowBuildingTarget, uihbui.count, classBattle.listOfAllUnit);
+		UnitRegister(uihbui.spawn, uihbui.tempColBuildingTarget, uihbui.tempRowBuildingTarget, uihbui.count, classBattle.listOfAllUnit, false);
 	}
 }
 Co::Task<> Battle::checkCancelSelectionByUIArea()
 {
 	if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
 	{
-		buiSyu = -1;
 		longBuildSelectTragetId = -1;
 		IsResourceSelectTraget = false;
 
@@ -1689,14 +1712,11 @@ void Battle::handleUnitAndBuildingSelection()
 
 							if (unit.IsSelect == true)
 							{
-								//TODO どうする
-								//buiSyu = unit.buiSyu; // 建築の種類
 								longBuildSelectTragetId = unit.ID; // 選択されたユニットのIDを保存
 								IsResourceSelectTraget = true;
 							}
 							else
 							{
-								buiSyu = -1; // 建築の種類をリセット
 								longBuildSelectTragetId = -1; // 選択されたユニットのIDをリセット
 								IsResourceSelectTraget = false;
 							}
@@ -1729,26 +1749,7 @@ void Battle::handleBuildTargetSelection()
 			cu.IsSelect = false;
 
 			IsBattleMove = false;
-
-			if (taskMyUnits.isValid())
-			{
-				abortMyUnits = true;
-				taskMyUnits.wait();
-			}
 			abortMyUnits = false;
-
-			taskMyUnits = Async(BattleMoveAStarMyUnits,
-				std::ref(classBattle.listOfAllUnit),
-				std::ref(classBattle.listOfAllEnemyUnit),
-				std::ref(classBattle.classMapBattle.value().mapData),
-				std::ref(aiRootMy),
-				std::ref(debugRoot),
-				std::ref(debugAstar),
-				std::ref(columnQuads),
-				std::ref(rowQuads),
-				N,
-				std::ref(abortMyUnits),
-				std::ref(pauseTaskMyUnits));
 		}
 	}
 }
@@ -1757,8 +1758,7 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 	//資源ポイントの選択
 	if (const auto index = ToIndex(cursPos, columnQuads, rowQuads))
 	{
-		// 敵がいない時は動かない仕様になっている
-		if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)//ダブルクリックが良いかも　画面ドラッグを考慮し
+		if (ToTile(*index, N).leftClicked() && IsResourceSelectTraget)//ダブルクリックが良いかも　画面ドラッグを考慮し
 		{
 			//[index->x]は試して駄目だったので[index->y]に
 			//そもそも0番目で良いだろう　どこも横は同じサイズである
@@ -1795,32 +1795,21 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 				cu.IsSelect = false;
 				cu.currentTask = UnitTask::MovingToResource;
 				IsBattleMove = false;
-
-				// 実行途中のタスクがあれば完了まで待つ。
-				if (taskMyUnits.isValid())
-				{
-					// 中断指示を出す
-					abortMyUnits = true;
-
-					// 完全に処理が完了する前に制御を返してくれる
-					taskMyUnits.wait();
-				}
-
 				abortMyUnits = false;
 
-				taskMyUnits = Async(BattleMoveAStarMyUnits,
-									std::ref(classBattle.listOfAllUnit),
-									std::ref(classBattle.listOfAllEnemyUnit),
-									std::ref(classBattle.classMapBattle.value().mapData),
-									std::ref(aiRootMy),
-									std::ref(debugRoot),
-									std::ref(debugAstar),
-									std::ref(columnQuads),
-									std::ref(rowQuads),
-									N,
-									std::ref(abortMyUnits),
-									std::ref(pauseTaskMyUnits)
-				);
+				//taskMyUnits = Async(BattleMoveAStarMyUnits,
+				//					std::ref(classBattle.listOfAllUnit),
+				//					std::ref(classBattle.listOfAllEnemyUnit),
+				//					std::ref(classBattle.classMapBattle.value().mapData),
+				//					std::ref(aiRootMy),
+				//					std::ref(debugRoot),
+				//					std::ref(debugAstar),
+				//					std::ref(columnQuads),
+				//					std::ref(rowQuads),
+				//					N,
+				//					std::ref(abortMyUnits),
+				//					std::ref(pauseTaskMyUnits)
+				//);
 			}
 		}
 		if (ToTile(*index, N).mouseOver())
@@ -1913,31 +1902,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 
 		IsBattleMove = false;
 
-		// 実行途中のタスクがあれば完了まで待つ。
-		if (taskMyUnits.isValid())
-		{
-			// 中断指示を出す
-			abortMyUnits = true;
-
-			// 完全に処理が完了する前に制御を返してくれる
-			taskMyUnits.wait();
-		}
-
 		abortMyUnits = false;
-
-		//経路算出
-		taskMyUnits = Async(BattleMoveAStarMyUnits,
-						std::ref(classBattle.listOfAllUnit),
-						std::ref(classBattle.listOfAllEnemyUnit),
-						std::ref(classBattle.classMapBattle.value().mapData),
-						std::ref(aiRootMy),
-						std::ref(debugRoot),
-						std::ref(debugAstar),
-						std::ref(columnQuads),
-						std::ref(rowQuads),
-						N,
-						std::ref(abortMyUnits),
-						std::ref(pauseTaskMyUnits));
 	}
 	else
 	{
