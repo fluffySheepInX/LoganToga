@@ -31,6 +31,7 @@ private:
 	bool retreating = false;
 	Vec2 lastKnownEnemyPos;
 public:
+	Point lastPoint;
 	UnitMovePlan() = default;
 	void setLastKnownEnemyPos(const Vec2& pos)
 	{

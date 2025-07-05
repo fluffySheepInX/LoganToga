@@ -101,16 +101,27 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 	Array<Unit*> flatList;
 
 	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
-	for (auto& group : enemy)
+	try
 	{
-		for (auto& unit : group.ListClassUnit)
+		for (auto& group : enemy)
 		{
-			if (!unit.IsBattleEnable || unit.IsBuilding)
-				continue;
-			if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
-				continue;
-			flatList.push_back(&unit);
+			for (auto& unit : group.ListClassUnit)
+			{
+				if (!unit.IsBattleEnable || unit.IsBuilding)
+					continue;
+				if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
+					continue;
+				flatList.push_back(&unit);
+			}
 		}
+	}
+	catch (const std::exception&)
+	{
+		return -1;
+	}
+	catch (const s3d::Error)
+	{
+		return -1;
 	}
 
 	const size_t total = flatList.size();
@@ -329,16 +340,27 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 	Array<Unit*> flatList;
 
 	// --- フラット化して高速アクセスに備える
-	for (auto& group : target)
+	try
 	{
-		for (auto& unit : group.ListClassUnit)
+		for (auto& group : target)
 		{
-			if (!unit.IsBattleEnable || unit.IsBuilding)
-				continue;
-			if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
-				continue;
-			flatList.push_back(&unit);
+			for (auto& unit : group.ListClassUnit)
+			{
+				if (!unit.IsBattleEnable || unit.IsBuilding)
+					continue;
+				if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
+					continue;
+				flatList.push_back(&unit);
+			}
 		}
+	}
+	catch (const std::exception&)
+	{
+		return -1;
+	}
+	catch (const s3d::Error)
+	{
+		return -1;
 	}
 
 	const size_t total = flatList.size();
@@ -422,9 +444,6 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 				std::scoped_lock lock(aiRootMutex);
 				aiRoot[unit.ID] = plan;
 			}
-			// 経路セット時に1個除去しておく
-			if (aiRoot[unit.ID].getPath().size() > 1)
-				aiRoot[unit.ID].stepToNext();
 			debugRoot.push_back(listRoot);
 			unit.FlagMoveAI = false;
 
@@ -1366,6 +1385,8 @@ void Battle::updateUnitMovements()
 
 					//最終移動
 					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
+
+					//ここばっかりはどうするか思案。最後のマスだけはマスから外れたら次ということは出来ない
 					if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) < 3.0)
 					{
 						itemUnit.FlagMoving = false;
@@ -1381,9 +1402,19 @@ void Battle::updateUnitMovements()
 				{
 					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
 
-					if (plan.getCurrentTarget())
+					if (auto iuyb = plan.getCurrentTarget())
 					{
-						if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) <= 3.0)
+						bool calculateResult = false;
+						{
+							Optional<Size> nowIndex = ToIndex(itemUnit.GetNowPosiCenter(), columnQuads, rowQuads);
+							if (plan.lastPoint.x != nowIndex->x || plan.lastPoint.y != nowIndex->y)
+							{
+								plan.lastPoint = nowIndex.value();
+								calculateResult = true;
+							}
+						}
+						//if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) < 3.0)
+						if (calculateResult)
 						{
 							plan.stepToNext();
 							if (plan.getCurrentTarget())
@@ -1405,6 +1436,8 @@ void Battle::updateUnitMovements()
 					if (plan.isPathCompleted())
 					{
 						itemUnit.orderPosiLeft = itemUnit.orderPosiLeftLast; // 最後の位置に戻す
+						Optional<Size> oor = ToIndex(itemUnit.GetOrderPosiCenter(), columnQuads, rowQuads);
+						plan.lastPoint = oor.value();
 						Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
 						itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
 					}
@@ -1412,8 +1445,11 @@ void Battle::updateUnitMovements()
 				}
 
 				// 次のマスに向けて移動準備
-				if (plan.getCurrentTarget().has_value())
+				if (auto iuyb = plan.getCurrentTarget())
 				{
+					plan.lastPoint = iuyb.value();
+					plan.stepToNext();
+
 					// そのタイルの底辺中央の座標
 					const int32 i = plan.getCurrentTarget().value().manhattanLength();
 					const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
@@ -1428,6 +1464,43 @@ void Battle::updateUnitMovements()
 					Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
 					itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
 
+					Vec2 vecMove = { 0,0 };
+					// --- 衝突回避設定（調整可能なパラメータ）
+					const double repulsionRadius = 24.0;    // どれくらい近いと押し合うか
+					const double repulsionStrength = 0.5;   // どれくらい押すか（0.0〜1.0）
+
+					Vec2 totalRepulsion = Vec2{ 0.0, 0.0 };
+
+					for (const auto& group : classBattle.listOfAllUnit) // 自軍ユニット一覧
+					{
+						for (const auto& other : group.ListClassUnit)
+						{
+							if (itemUnit.ID == other.ID || !other.IsBattleEnable)
+								continue;
+
+							Vec2 dir = itemUnit.GetNowPosiCenter() - other.GetNowPosiCenter();
+							double dist = dir.length();
+
+							if (dist < 0.01) // ぴったり重なってる
+							{
+								// ランダムな方向に軽くずらす（方向の定義ができないため）
+								double angle = Random<double>(0.0, Math::TwoPi);
+								Vec2 force = Vec2{ Cos(angle), Sin(angle) } *1.0;
+								totalRepulsion += force;
+							}
+							else if (dist < repulsionRadius)
+							{
+								Vec2 force = dir.normalized() * ((repulsionRadius - dist) / repulsionRadius);
+								totalRepulsion += force;
+							}
+						}
+					}
+
+					// --- 合成：A*の方向 + 衝突回避方向
+					vecMove += totalRepulsion * repulsionStrength;
+
+					// 正規化してスピード反映（重要）
+					itemUnit.vecMove = vecMove.length() > 0.01 ? vecMove.normalized() : hhh.normalized();
 					itemUnit.FlagMoving = true;
 					itemUnit.FlagMovingEnd = false;
 				}
