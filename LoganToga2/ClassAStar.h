@@ -188,114 +188,49 @@ public:
 	{
 		int32 x = parent->GetRow();
 		int32 y = parent->GetCol();
-		int32 cost = parent->GetCost();
-		cost += 1;
-		for (int j = -1; j < 2; j++)
+		int32 cost = parent->GetCost() + 1;
+
+		for (int j = -1; j <= 1; ++j)
 		{
-			for (int i = -1; i < 2; i++)
+			for (int i = -1; i <= 1; ++i)
 			{
-				if (x + i < 0 || y + j < 0 || x + i >= mapData.size() || y + j >= mapData[x + i].size())
-				{
-					continue;
-				}
+				int nx = x + i;
+				int ny = y + j;
 
-				//// GATE系の壊せるオブジェクトが存在するかチェック
-				//
-				//味方の壊せる・敵の壊せるオブジェクトは通行可能とする？
-				//
-				{
-					bool con = false;
-					if (arrayObjEnemy.size() != 0 && arrayObjEnemy.size() > 0)
-					{
-						if (arrayObjEnemy.begin()->FlagBuilding == true)
-						{
-							for (const auto& bbb : mapData[x + i][y + j].building)
-							{
-								for (const auto& aaa : arrayObjEnemy.begin()->ListClassUnit)
-								{
-									if (aaa.ID == std::get<1>(bbb))
-									{
-										//オブジェクトがあったらコンティニュー
-										switch (aaa.mapTipObjectType)
-										{
-										case MapTipObjectType::WALL2:
-											break;
-										case MapTipObjectType::GATE:
-											OpenOne(x + i, y + j, cost, parent, maxN);
-											break;
-										default:
-											break;
-										}
-
-										con = true;
-
-										break;
-
-									}
-								}
-
-								if (con == true)
-								{
-									break;
-								}
-							}
-						}
-					}
-					if (con == true)
-					{
-						continue;
-					}
-				}
-
-				//// GATE系の壊せるオブジェクトが存在するかチェック
-				//
-				//味方の壊せる・敵の壊せるオブジェクトは通行可能とする？
-				//
-				{
-					bool con = false;
-					if (arrayObjMy.begin()->FlagBuilding == true)
-					{
-						for (const auto& bbb : mapData[x + i][y + j].building)
-						{
-							for (const auto& aaa : arrayObjMy.begin()->ListClassUnit)
-							{
-								if (aaa.ID == std::get<1>(bbb))
-								{
-									//オブジェクトがあったらコンティニュー
-									switch (aaa.mapTipObjectType)
-									{
-									case MapTipObjectType::WALL2:
-										break;
-									case MapTipObjectType::GATE:
-										OpenOne(x + i, y + j, cost, parent, maxN);
-										break;
-									default:
-										break;
-									}
-
-									con = true;
-
-									break;
-
-								}
-							}
-
-							if (con == true)
-							{
-								break;
-							}
-						}
-					}
-
-					if (con == true)
-					{
-						continue;
-					}
-				}
-
-				OpenOne(x + i, y + j, cost, parent, maxN);
+				if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
+				if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN)) continue;
+				if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN)) continue;
+				OpenOne(nx, ny, cost, parent, maxN);
 			}
 		}
+	}
+	bool checkObstacleAndContinue(
+		const Array<ClassHorizontalUnit>& unitArray,
+		int32 mapX, int32 mapY, int32 cost,
+		ClassAStar* parent, int32 maxN)
+	{
+		auto ygiuuh = unitArray;
+		for (const auto& group : ygiuuh)
+		{
+			for (const auto& unit : group.ListClassUnit)
+			{
+				if (!unit.IsBuilding) continue;
+				if (unit.initTilePos != Point(mapX, mapY)) continue;
+
+				// 壊せる障害物は通行可（例：ゲート）
+				if (unit.mapTipObjectType == MapTipObjectType::GATE
+					|| unit.mapTipObjectType == MapTipObjectType::HOME)
+				{
+					OpenOne(mapX, mapY, cost, parent, maxN);
+					return true;
+				}
+
+				//最寄りの敵が破壊不能だと動かなくなる
+				// 壁や鉄条網など通行不可
+				return true;
+			}
+		}
+		return false;
 	}
 
 private:
