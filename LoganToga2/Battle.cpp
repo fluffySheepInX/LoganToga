@@ -67,6 +67,14 @@ Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
 
 std::mutex aiRootMutex;
 
+void bhjdsvjhbsd(const std::exception& ex)
+{
+	std::string msg = ex.what();
+	Print << U"例外長: {}"_fmt(msg.size());
+	Print << Unicode::Widen(msg);
+	Logger << U"例外: " << Unicode::Widen(ex.what());
+}
+
 /// @brief アスターアルゴリズムで移動経路取得
 /// @param target 
 /// @param enemy 
@@ -107,21 +115,15 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 		{
 			for (auto& unit : group.ListClassUnit)
 			{
-				if (!unit.IsBattleEnable || unit.IsBuilding)
-					continue;
-				if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
-					continue;
-				flatList.push_back(&unit);
+				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+				if (unit.moveState == moveState::MoveAI)
+					flatList.push_back(&unit);
 			}
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& e)
 	{
-		return -1;
-	}
-	catch (const s3d::Error)
-	{
-		return -1;
+		bhjdsvjhbsd(e);
 	}
 
 	const size_t total = flatList.size();
@@ -130,6 +132,7 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 
 	const auto isValidTarget = [](const Unit& unit) -> bool
 		{
+			//これどうなん？　GATEは壊せるけど無視ということか？
 			if (unit.IsBuilding && (unit.mapTipObjectType == MapTipObjectType::WALL2 || unit.mapTipObjectType == MapTipObjectType::GATE))
 				return false;
 
@@ -178,13 +181,9 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 				}
 			}
 		}
-		catch (const std::exception&)
+		catch (const std::exception& e)
 		{
-			throw;
-		}
-		catch (const s3d::Error&)
-		{
-			throw;
+			bhjdsvjhbsd(e);
 		}
 
 		if (dicDis.size() == 0)
@@ -223,9 +222,8 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 			}
 		}
 
-		if (unit.FlagMoving == true && flagGetEscapeRange == false)
-			continue;
-		if (unit.FlagMovingEnd == false && flagGetEscapeRange == false)
+		if ((unit.moveState == moveState::Moving || unit.moveState == moveState::MovingEnd)
+			&& flagGetEscapeRange == false)
 			continue;
 
 		//最寄りの敵のマップチップを取得
@@ -259,6 +257,8 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 												target,
 												N
 				);
+				Print << U"AAAAAAAB:" + Format(mc.us());
+				Print << U"A*探索ノード数: {}"_fmt(classAStarManager.GetPool().size());
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 				classAStarManager.RemoveClassAStar(startAstar.value());
 				if (classAStarManager.GetListClassAStar().size() != 0)
@@ -271,12 +271,13 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 				{
 					startAstar.value()->GetRoot(listRoot);
 					listRoot.reverse();
+					classAStarManager.Clear();
 					break;
 				}
 			}
-			catch (const std::exception&)
+			catch (const std::exception& e)
 			{
-				throw;
+				bhjdsvjhbsd(e);
 			}
 		}
 
@@ -290,16 +291,14 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 				// 撤退中は、経路の最初の位置を最後に見た敵の位置として記録する
 				plan.setRetreating(true);
 				plan.setTarget(-1); // -1: 撤退中の特別なターゲットID
-				Unit iugiu = minElement->second;
+				//Unit iugiu = minElement->second;
 				plan.setLastKnownEnemyPos(minElement->second.GetNowPosiCenter());
-				// 強制的に再移動準備させる
-				unit.FlagMoving = false;
-				unit.FlagMovingEnd = true;
 			}
 			else
 			{
 				plan.setTarget(minElement->second.ID);
 			}
+			unit.moveState = moveState::None;
 			plan.setPath(listRoot);
 			{
 				std::scoped_lock lock(aiRootMutex);
@@ -333,6 +332,7 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 {
 	const auto targetSnapshot = target;
 
+	//経路共有方式は相いれないので後で消す
 	static size_t unitIndex = 0; // ラウンドロビンインデックス
 	constexpr size_t MaxUnitsPerFrame = 5; // 1フレームで処理するユニット数
 
@@ -346,25 +346,33 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 		{
 			for (auto& unit : group.ListClassUnit)
 			{
-				if (!unit.IsBattleEnable || unit.IsBuilding)
-					continue;
-				if (!unit.FlagMoveAI || unit.FlagMoving || !unit.FlagMovingEnd)
-					continue;
-				flatList.push_back(&unit);
+				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+				if (unit.moveState == moveState::MoveAI)
+					flatList.push_back(&unit);
 			}
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& e)
 	{
-		return -1;
-	}
-	catch (const s3d::Error)
-	{
-		return -1;
+		bhjdsvjhbsd(e);
 	}
 
 	const size_t total = flatList.size();
 	if (total == 0) return 0;
+
+	Vec2 sum = Vec2::Zero();
+	int count = 0;
+
+	for (const Unit* unit : flatList)
+	{
+		sum += unit->GetNowPosiCenter();
+		++count;
+	}
+
+	// 重心
+	Vec2 center = Vec2::Zero();
+	if (count > 0) center = sum / count;
+
 	for (size_t i = 0; i < total; ++i)
 	{
 		if (abort) break;
@@ -402,14 +410,13 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 					break;
 				}
 
-				//Print << U"AAAAAAAAAAAAAAAAA:" + Format(mc.us());
 				classAStarManager.OpenAround(startAstar.value(),
 												mapData,
 												enemy,
 												target,
 												N
 				);
-				//Print << U"BBBBBBBBBBBBBBBB:" + Format(mc.us());
+				Print << U"BBBBBBBBBBBBBBBB:";
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 
 				classAStarManager.RemoveClassAStar(startAstar.value());
@@ -430,9 +437,9 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 					break;
 				}
 			}
-			catch (const std::exception&)
+			catch (const std::exception& e)
 			{
-				throw;
+				bhjdsvjhbsd(e);
 			}
 		}
 
@@ -445,8 +452,7 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 				aiRoot[unit.ID] = plan;
 			}
 			debugRoot.push_back(listRoot);
-			unit.FlagMoveAI = false;
-
+			unit.moveState = moveState::Moving;
 		}
 		processed++;
 		if (processed >= MaxUnitsPerFrame)
@@ -755,6 +761,13 @@ void Battle::renB()
 	}
 }
 
+/// @brief 
+/// @param unitName 
+/// @param col 
+/// @param row 産出するユニット数
+/// @param num 
+/// @param listU 
+/// @param enemy 
 void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy)
 {
 	//新しいコピーを作る
@@ -777,7 +790,7 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 8));
 
 			if (enemy)
-				uu.FlagMoveAI = true;
+				uu.moveState = moveState::MoveAI;
 
 			ClassHorizontalUnit cuu;
 
@@ -1372,16 +1385,22 @@ void Battle::updateUnitMovements()
 					continue;
 				if (itemUnit.IsBattleEnable == false)
 					continue;
+				if (itemUnit.moveState == moveState::None) continue;
+				if (itemUnit.moveState == moveState::FlagMoveCalc) continue;
 
-				std::scoped_lock lock(aiRootMutex);
-				if (!aiRootMy.contains(itemUnit.ID))
-					continue;
+				{
+					std::scoped_lock lock(aiRootMutex);
+					if (!aiRootMy.contains(itemUnit.ID)) continue;
+				}
 				auto& plan = aiRootMy[itemUnit.ID];
 
 				if (plan.isPathCompleted())
 				{
-					if (itemUnit.FlagMoving == false && itemUnit.FlagMovingEnd == true)
+					if (itemUnit.moveState == moveState::MovingEnd)
+					{
+						itemUnit.moveState = moveState::None; // 移動完了状態から通常状態に戻す
 						continue;
+					}
 
 					//最終移動
 					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
@@ -1389,16 +1408,15 @@ void Battle::updateUnitMovements()
 					//ここばっかりはどうするか思案。最後のマスだけはマスから外れたら次ということは出来ない
 					if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) < 3.0)
 					{
-						itemUnit.FlagMoving = false;
 						itemUnit.nowPosiLeft = itemUnit.orderPosiLeft; // 位置をピッタリ補正して止めるのもあり
 						itemUnit.FlagReachedDestination = true;
-						itemUnit.FlagMovingEnd = true;
+						itemUnit.moveState = moveState::MovingEnd; // 移動完了状態にする
 					}
 
 					continue;
 				}
 
-				if (itemUnit.FlagMoving)
+				if (itemUnit.moveState == moveState::Moving)
 				{
 					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
 
@@ -1501,8 +1519,7 @@ void Battle::updateUnitMovements()
 
 					// 正規化してスピード反映（重要）
 					itemUnit.vecMove = vecMove.length() > 0.01 ? vecMove.normalized() : hhh.normalized();
-					itemUnit.FlagMoving = true;
-					itemUnit.FlagMovingEnd = false;
+					itemUnit.moveState = moveState::Moving; // 移動状態にする
 				}
 			}
 		}
@@ -1517,13 +1534,15 @@ void Battle::updateUnitMovements()
 				if (itemUnit.IsBattleEnable == false)
 					continue;
 
-				if (!aiRootEnemy.contains(itemUnit.ID))
-					continue;
+				{
+					std::scoped_lock lock(aiRootMutex);
+					if (!aiRootEnemy.contains(itemUnit.ID)) continue;
+				}
 
 				auto& plan = aiRootEnemy[itemUnit.ID];
 
-				// 1. 移動準備（FlagMoving == false の場合のみ）
-				if (!itemUnit.FlagMoving && plan.getCurrentTarget())
+				// 1. 移動準備
+				if (itemUnit.moveState == moveState::None && plan.getCurrentTarget())
 				{
 					const Point targetTile = plan.getCurrentTarget().value();
 
@@ -1540,12 +1559,11 @@ void Battle::updateUnitMovements()
 					Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
 					itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
 
-					itemUnit.FlagMoving = true;
-					itemUnit.FlagMovingEnd = false;
+					itemUnit.moveState = moveState::Moving; // 移動状態にする
 				}
 
-				// 2. 移動処理（FlagMoving == true の場合）
-				if (itemUnit.FlagMoving)
+				// 2. 移動処理
+				if (itemUnit.moveState == moveState::Moving)
 				{
 					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
 
@@ -1554,13 +1572,9 @@ void Battle::updateUnitMovements()
 						if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) <= 3.0)
 						{
 							plan.stepToNext();
-
 							if (plan.getCurrentTarget())
 							{
 								const Point targetTile = plan.getCurrentTarget().value();
-
-								// タイルの底辺中央座標を計算（略）
-															// そのタイルの底辺中央の座標
 								const int32 i = plan.getCurrentTarget().value().manhattanLength();
 								const int32 xi = (i < (N - 1)) ? 0 : (i - (N - 1));
 								const int32 yi = (i < (N - 1)) ? i : (N - 1);
@@ -1573,17 +1587,15 @@ void Battle::updateUnitMovements()
 								Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
 								itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
 
-								itemUnit.FlagMoving = true;
-								itemUnit.FlagMovingEnd = false;
+								itemUnit.moveState = moveState::Moving; // 移動状態にする
 							}
 						}
 					}
 
 					if (plan.isPathCompleted())
 					{
-						itemUnit.FlagMoving = false;
 						itemUnit.FlagReachedDestination = true;
-						itemUnit.FlagMovingEnd = true;
+						itemUnit.moveState = moveState::MoveAI;
 					}
 				}
 			}
@@ -1817,8 +1829,7 @@ void Battle::handleBuildTargetSelection()
 			cu.orderPosiLeft = Cursor::PosF().movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 			cu.orderPosiLeftLast = Cursor::PosF();
 			cu.vecMove = (cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-			cu.FlagMove = false;
-			cu.FlagMoveAI = true;
+			cu.moveState = moveState::MoveAI;
 			cu.IsSelect = false;
 
 			IsBattleMove = false;
@@ -1862,9 +1873,7 @@ Co::Task<void> Battle::co_handleResourcePointSelection()
 				cu.orderPosiLeft = nor.movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 				cu.orderPosiLeftLast = nor;
 				cu.vecMove = Vec2(cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-				cu.FlagMove = false;
-				//cuu.FlagMoving = true;
-				cu.FlagMoveAI = true;
+				cu.moveState = moveState::MoveAI;
 				cu.IsSelect = false;
 				cu.currentTask = UnitTask::MovingToResource;
 				IsBattleMove = false;
@@ -1935,8 +1944,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 					Unit& cuu = GetCU(unit.ID);
 					cuu.orderPosiLeft = end.movedBy(Random(-10, 10), Random(-10, 10));
 					cuu.orderPosiLeftLast = cuu.orderPosiLeft;
-					cuu.FlagMove = false;
-					cuu.FlagMoveAI = true;
+					cuu.moveState = moveState::MoveAI;
 				}
 		}
 		else if (arrayBattleZinkei[1] == true)
@@ -1956,7 +1964,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 			{
 				Array<Unit*> target;
 				for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
-					if (unit.FlagMove == true && unit.IsBattleEnable == true)
+					if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
 						target.push_back(&unit);
 				if (target.size() == 0) continue;
 
@@ -1979,22 +1987,24 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 	}
 	else
 	{
-		//範囲選択
+		////範囲選択
+
 		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
 		const RectF selectionRect = RectF::FromPoints(start, end);
 		for (auto& target : classBattle.listOfAllUnit)
 		{
 			for (auto& unit : target.ListClassUnit)
 			{
-				if (unit.IsBuilding)
-					continue;
+				if (unit.IsBuilding) continue;
 
 				const Vec2 gnpc = unit.GetNowPosiCenter();
 				const bool inRect = selectionRect.intersects(gnpc);
-				GetCU(unit.ID).FlagMove = inRect;
 
 				if (inRect)
+				{
+					GetCU(unit.ID).moveState = moveState::FlagMoveCalc;
 					IsBattleMove = true;
+				}
 			}
 		}
 	}
@@ -2011,7 +2021,7 @@ void Battle::afterMovedPushToBuildMenu(Unit& itemUnit)
 	itemUnit.tempIsBuildSelectTragetBuildAction.rowBuildingTarget = index->y;
 	itemUnit.tempIsBuildSelectTragetBuildAction.colBuildingTarget = index->x;
 	itemUnit.IsSelect = false;
-	itemUnit.FlagMoveAI = false;
+	itemUnit.moveState = moveState::None;
 	itemUnit.currentTask = UnitTask::None;
 
 	IsBuildSelectTraget = false;
@@ -2677,7 +2687,7 @@ Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 
 		for (auto& unit : target.ListClassUnit)
 		{
-			if (unit.FlagMove && unit.IsBattleEnable)
+			if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable)
 				group.push_back(&unit);
 		}
 
@@ -2694,7 +2704,7 @@ ClassHorizontalUnit Battle::getMovableUnits(Array<ClassHorizontalUnit>& source, 
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
-			if (unit.Formation == bf && unit.FlagMove == true && unit.IsBattleEnable == true)
+			if (unit.Formation == bf && unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
 				result.ListClassUnit.push_back(unit);
 		}
 
@@ -2734,7 +2744,6 @@ void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start
 		Unit& cu = GetCU(unit->ID);
 		cu.orderPosiLeft = Vec2(Floor(x), Floor(y)).movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 		cu.orderPosiLeftLast = cu.orderPosiLeft;
-		cu.FlagMove = false;
-		cu.FlagMoveAI = true;
+		cu.moveState = moveState::MoveAI;
 	}
 }

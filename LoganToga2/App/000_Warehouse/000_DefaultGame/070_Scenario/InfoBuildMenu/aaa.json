@@ -86,6 +86,28 @@
                     "spawn": "LineInfantryM14"
                 }
             ]
+        },
+        {
+            "id": "ironWall.png",
+            "name": "鉄条網設置",
+            "description": "鉄条網",
+            "icon": "keisou-chipGene006.png",
+            "createCount": "1",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "ironWall"
+                }
+            ]
         }
     ]
 }

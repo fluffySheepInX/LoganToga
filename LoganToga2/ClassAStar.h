@@ -97,7 +97,11 @@ public:
 	ClassAStarManager(int x, int y)
 		: endX(x), endY(y), listClassAStar(Array<ClassAStar*>()) {
 	}
-
+	~ClassAStarManager() {
+		for (auto& [_, ptr] : pool) {
+			delete ptr;
+		}
+	}
 	// Pool のゲッターとセッター
 	const HashTable<Point, ClassAStar*>& GetPool() const {
 		return pool;
@@ -152,33 +156,47 @@ public:
 		});
 	}
 
+	void Clear() {
+		for (auto& p : pool) {
+			delete p.second;
+		}
+		pool.clear();
+		listClassAStar.clear();
+	}
+
 	Optional<ClassAStar*> OpenOne(int x, int y, int cost, ClassAStar* parent, int32 maxN, AStarStatus status = AStarStatus::Open) {
-		if (x < 0 || y < 0)
-		{
+		//if (x < 0 || y < 0)
+		//{
+		//	return none;
+		//}
+		//if (x > maxN || y > maxN)
+		//{
+		//	return none;
+		//}
+
+		if (x >= maxN || y >= maxN || x < 0 || y < 0)
 			return none;
-		}
-		if (x > maxN || y > maxN)
-		{
+
+		if (cost > 100)  // 上限はマップサイズや用途によって調整
 			return none;
-		}
 
 		Point key(x, y);
 
-		ClassAStar* getClassAStar = CreateClassAStar(x, y);
-		if (getClassAStar->GetAStarStatus() != AStarStatus::None)
+		// ここで事前チェックしておくことで、無駄な CreateClassAStar() 呼び出しを防ぐ
+		if (pool.contains(key) && pool[key]->GetAStarStatus() != AStarStatus::None)
 		{
 			return none;
 		}
 
+		ClassAStar* getClassAStar = CreateClassAStar(x, y);
 		getClassAStar->SetAStarStatus(status);
 		getClassAStar->SetCost(cost);
 
-		if (parent == nullptr) {
-		}
-		else
+		if (parent != nullptr)
 		{
 			getClassAStar->SetRefClassAStar(parent);
 		}
+
 		listClassAStar.push_back(getClassAStar);
 
 		return getClassAStar;
@@ -186,22 +204,30 @@ public:
 
 	void OpenAround(ClassAStar* parent, Array<Array<MapDetail>>& mapData, Array<ClassHorizontalUnit>& arrayObjEnemy, Array<ClassHorizontalUnit>& arrayObjMy, int32 maxN)
 	{
-		int32 x = parent->GetRow();
-		int32 y = parent->GetCol();
-		int32 cost = parent->GetCost() + 1;
-
-		for (int j = -1; j <= 1; ++j)
+		try
 		{
-			for (int i = -1; i <= 1; ++i)
-			{
-				int nx = x + i;
-				int ny = y + j;
+			int32 x = parent->GetRow();
+			int32 y = parent->GetCol();
+			int32 cost = parent->GetCost() + 1;
 
-				if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
-				if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN)) continue;
-				if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN)) continue;
-				OpenOne(nx, ny, cost, parent, maxN);
+			for (int j = -1; j <= 1; ++j)
+			{
+				for (int i = -1; i <= 1; ++i)
+				{
+					int nx = x + i;
+					int ny = y + j;
+
+					if (i == 0 && j == 0) continue; // 自分自身はスキップ
+					if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
+					//if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN)) continue;
+					//if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN)) continue;
+					OpenOne(nx, ny, cost, parent, maxN);
+				}
 			}
+		}
+		catch (const Error& ex)
+		{
+			Print << ex;
 		}
 	}
 	bool checkObstacleAndContinue(
@@ -221,7 +247,13 @@ public:
 				if (unit.mapTipObjectType == MapTipObjectType::GATE
 					|| unit.mapTipObjectType == MapTipObjectType::HOME)
 				{
-					OpenOne(mapX, mapY, cost, parent, maxN);
+					if (!pool.contains(Point(mapX, mapY)))
+					{
+						int penalty = 5; // 任意
+						OpenOne(mapX, mapY, cost + penalty, parent, maxN);
+					}
+					//OpenOne(mapX, mapY, cost, parent, maxN);
+					//通行可能、その後探索打ち切り
 					return true;
 				}
 

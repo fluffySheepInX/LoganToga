@@ -31,6 +31,19 @@ public:
 	int32 Alive_per = 0;
 	int32 Escape_range = 0;
 };
+enum class moveState
+{
+	/// @brief 何もしない状態
+	None,
+	/// @brief 移動計算中
+	FlagMoveCalc,
+	/// @brief AIによる移動計算中
+	MoveAI,
+	/// @brief AIによる移動中
+	Moving,
+	/// @brief 移動終
+	MovingEnd,
+};
 
 class Unit
 {
@@ -130,12 +143,11 @@ public:
 			arrSkill = other.arrSkill;
 			Finance = other.Finance;
 			MoveType = other.MoveType;
-
-			FlagMove = other.FlagMove;
-			FlagMoveAI = other.FlagMoveAI;
-			FlagMoving = other.FlagMoving;
-			FlagMovingEnd = other.FlagMovingEnd;
-			FlagMoveDispose = other.FlagMoveDispose;
+			moveState = other.moveState;
+			//FlagMoveCalc = other.FlagMoveCalc;
+			//FlagMoveAI = other.FlagMoveAI;
+			//FlagMoving = other.FlagMoving;
+			//FlagMovingEnd = other.FlagMovingEnd;
 
 			yokoUnit = other.yokoUnit;
 			TakasaUnit = other.TakasaUnit;
@@ -350,35 +362,30 @@ public:
 	// Escape_range
 	int32 Escape_range = 0;
 
-	// SkillName
 	Array<String> SkillName;
 
-	// Skill
 	Array<Skill> arrSkill;
 
-	// Finance
 	int32 Finance = 0;
 
-	// MoveType
+	/// @brief 恐らく地形で移動する際のタイプを示す
 	String MoveType;
 
-	// FlagMove
-	// これを対象としますよ、というフラグ
-	bool FlagMove = false;
+	moveState moveState = moveState::None;
 
-	// 経路探索の対象としますよ、というフラグ
-	bool FlagMoveAI = false;
+	//// これを今から計算対象としますよ、というフラグ
+	//bool FlagMoveCalc = false;
 
-	// FlagMoving
-	//実際に座標を動かす処理に突入する為のフラグ
-	bool FlagMoving = false;
+	//// 経路探索の対象としますよ、というフラグ
+	//bool FlagMoveAI = false;
 
-	// FlagMoving
-	/// @brief 移動が終わったかどうかのフラグ(恐らく
-	bool FlagMovingEnd = true;
+	//// FlagMoving
+	////実際に座標を動かす処理に突入する為のフラグ
+	//bool FlagMoving = false;
 
-	// FlagMoveDispose
-	bool FlagMoveDispose = false;
+	//// FlagMoving
+	///// @brief 移動が終わったかどうかのフラグ(恐らく
+	//bool FlagMovingEnd = true;
 
 	int32 yokoUnit = 32;
 	int32 TakasaUnit = 32;

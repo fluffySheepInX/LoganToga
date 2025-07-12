@@ -25,7 +25,16 @@ void Init(CommonConfig& commonConfig)
 			cu.Name = value[U"name"].getString();
 			cu.ImageName = value[U"image"].getString();
 			if (value.hasElement(U"isBuilding") == true)
+			{
 				cu.IsBuilding = Parse<bool>(value[U"isBuilding"].getString());
+				if (value.hasElement(U"objKind") == true)
+				{
+					if (value[U"objKind"].getString() == U"gate")
+					{
+						cu.mapTipObjectType = MapTipObjectType::GATE;
+					}
+				}
+			}
 			cu.Hp = Parse<int32>(value[U"hp"].getString());
 			cu.Mp = Parse<int32>(value[U"mp"].getString());
 			cu.HpMAX = cu.Hp;
