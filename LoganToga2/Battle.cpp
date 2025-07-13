@@ -100,7 +100,8 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 						const int32 N,
 						const std::atomic<bool>& abort,
 						const std::atomic<bool>& pause,
-						std::atomic<bool>& changeUnitMember
+						std::atomic<bool>& changeUnitMember,
+						HashTable<Point, const Unit*>& hsBuildingUnitForAstar
 )
 {
 	static size_t unitIndexEnemy = 0;
@@ -241,7 +242,6 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 		Array<Point> listRoot;
 		MicrosecClock mc;
 		////移動経路取得
-
 		while (true)
 		{
 			try
@@ -256,10 +256,9 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 												mapData,
 												enemy,
 												target,
-												N
+												N, hsBuildingUnitForAstar
 				);
-				Print << U"AAAAAAAB:" + Format(mc.us());
-				Print << U"A*探索ノード数: {}"_fmt(classAStarManager.GetPool().size());
+				Print << U"BattleMoveAStar:A*探索ノード数: {0}:{1}"_fmt(classAStarManager.GetPool().size(), mc.us());
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 				classAStarManager.RemoveClassAStar(startAstar.value());
 				if (classAStarManager.GetListClassAStar().size() != 0)
@@ -328,7 +327,8 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 						Array<Quad>& rowQuads,
 						const int32 N,
 						const std::atomic<bool>& abort,
-						const std::atomic<bool>& pause
+						const std::atomic<bool>& pause,
+						HashTable<Point, const Unit*>& hsBuildingUnitForAstar
 )
 {
 	const auto targetSnapshot = target;
@@ -386,7 +386,8 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 												mapData,
 												enemy,
 												target,
-												N
+												N,
+												hsBuildingUnitForAstar
 				);
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 				classAStarManager.RemoveClassAStar(startAstar.value());
@@ -431,7 +432,7 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	while (true) {
 		if (abort) break;
 		if (!startAstar2.has_value()) { pathShare.clear(); break; }
-		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N);
+		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
 		startAstar2.value()->SetAStarStatus(AStarStatus::Closed);
 		astarToGoal.RemoveClassAStar(startAstar2.value());
 		if (astarToGoal.GetListClassAStar().size() != 0)
@@ -449,126 +450,127 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 
 	for (Unit* unit : flatList)
 	{
-		//Array<Point> firstPath;
-		//{
-		//	s3d::Optional<Size> nowIndexFirstGoal = ToIndex(unit->getFirstMergePos(), columnQuads, rowQuads);
-		//	if (nowIndexFirstGoal.has_value() == false) continue;
-		//	s3d::Optional<Size> nowIndex = ToIndex(unit->GetNowPosiCenter(), columnQuads, rowQuads);
-		//	if (nowIndex.has_value() == false) continue;
-		//	if (nowIndexFirstGoal != nowIndex)
-		//	{
-		//		ClassAStarManager classAStarManager(nowIndexFirstGoal.value().x, nowIndexFirstGoal.value().y);
-		//		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-		//		while (true)
-		//		{
-		//			try
-		//			{
-		//				if (abort == true) break;
+		Array<Point> firstPath;
+		{
+			s3d::Optional<Size> nowIndexFirstGoal = ToIndex(unit->getFirstMergePos(), columnQuads, rowQuads);
+			if (nowIndexFirstGoal.has_value() == false) continue;
+			s3d::Optional<Size> nowIndex = ToIndex(unit->GetNowPosiCenter(), columnQuads, rowQuads);
+			if (nowIndex.has_value() == false) continue;
+			if (nowIndexFirstGoal != nowIndex)
+			{
+				ClassAStarManager classAStarManager(nowIndexFirstGoal.value().x, nowIndexFirstGoal.value().y);
+				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+				while (true)
+				{
+					try
+					{
+						if (abort == true) break;
 
-		//				if (startAstar.has_value() == false)
-		//				{
-		//					firstPath.clear();
-		//					break;
-		//				}
+						if (startAstar.has_value() == false)
+						{
+							firstPath.clear();
+							break;
+						}
 
-		//				classAStarManager.OpenAround(startAstar.value(),
-		//												mapData,
-		//												enemy,
-		//												target,
-		//												N
-		//				);
-		//				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-		//				classAStarManager.RemoveClassAStar(startAstar.value());
-		//				if (classAStarManager.GetListClassAStar().size() != 0)
-		//				{
-		//					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-		//				}
+						classAStarManager.OpenAround(startAstar.value(),
+														mapData,
+														enemy,
+														target,
+														N, hsBuildingUnitForAstar
+						);
+						startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+						classAStarManager.RemoveClassAStar(startAstar.value());
+						if (classAStarManager.GetListClassAStar().size() != 0)
+						{
+							startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+						}
 
-		//				if (startAstar.has_value() == false)
-		//					continue;
+						if (startAstar.has_value() == false)
+							continue;
 
-		//				//敵まで到達したか
-		//				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-		//				{
-		//					startAstar.value()->GetRoot(firstPath);
-		//					firstPath.reverse();
-		//					break;
-		//				}
-		//			}
-		//			catch (const std::exception& e)
-		//			{
-		//				bhjdsvjhbsd(e);
-		//			}
-		//		}
-		//	}
-		//}
+						//敵まで到達したか
+						if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+						{
+							startAstar.value()->GetRoot(firstPath);
+							firstPath.reverse();
+							break;
+						}
+					}
+					catch (const std::exception& e)
+					{
+						bhjdsvjhbsd(e);
+					}
+				}
+			}
+		}
 
-		//Array<Point> endPath;
-		//{
-		//	s3d::Optional<Size> nowIndexEndGoal = ToIndex(unit->GetOrderPosiCenter(), columnQuads, rowQuads);
-		//	if (nowIndexEndGoal.has_value() == false) continue;
-		//	s3d::Optional<Size> nowIndex = ToIndex(unit->getLastMergePos(), columnQuads, rowQuads);
-		//	if (nowIndex.has_value() == false) continue;
-		//	if (nowIndexEndGoal != nowIndex)
-		//	{
-		//		ClassAStarManager classAStarManager(nowIndexEndGoal.value().x, nowIndexEndGoal.value().y);
-		//		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-		//		while (true)
-		//		{
-		//			try
-		//			{
-		//				if (abort == true) break;
+		Array<Point> endPath;
+		{
+			s3d::Optional<Size> nowIndexEndGoal = ToIndex(unit->GetOrderPosiCenter(), columnQuads, rowQuads);
+			if (nowIndexEndGoal.has_value() == false) continue;
+			s3d::Optional<Size> nowIndex = ToIndex(unit->getLastMergePos(), columnQuads, rowQuads);
+			if (nowIndex.has_value() == false) continue;
+			if (nowIndexEndGoal != nowIndex)
+			{
+				ClassAStarManager classAStarManager(nowIndexEndGoal.value().x, nowIndexEndGoal.value().y);
+				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+				while (true)
+				{
+					try
+					{
+						if (abort == true) break;
 
-		//				if (startAstar.has_value() == false)
-		//				{
-		//					endPath.clear();
-		//					break;
-		//				}
+						if (startAstar.has_value() == false)
+						{
+							endPath.clear();
+							break;
+						}
 
-		//				classAStarManager.OpenAround(startAstar.value(),
-		//												mapData,
-		//												enemy,
-		//												target,
-		//												N
-		//				);
-		//				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-		//				classAStarManager.RemoveClassAStar(startAstar.value());
-		//				if (classAStarManager.GetListClassAStar().size() != 0)
-		//				{
-		//					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-		//				}
+						classAStarManager.OpenAround(startAstar.value(),
+														mapData,
+														enemy,
+														target,
+														N, hsBuildingUnitForAstar
+						);
+						startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+						classAStarManager.RemoveClassAStar(startAstar.value());
+						if (classAStarManager.GetListClassAStar().size() != 0)
+						{
+							startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+						}
 
-		//				if (startAstar.has_value() == false)
-		//					continue;
+						if (startAstar.has_value() == false)
+							continue;
 
-		//				//敵まで到達したか
-		//				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-		//				{
-		//					startAstar.value()->GetRoot(endPath);
-		//					endPath.reverse();
-		//					break;
-		//				}
-		//			}
-		//			catch (const std::exception& e)
-		//			{
-		//				bhjdsvjhbsd(e);
-		//			}
-		//		}
-		//	}
-		//}
+						//敵まで到達したか
+						if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+						{
+							startAstar.value()->GetRoot(endPath);
+							endPath.reverse();
+							break;
+						}
+					}
+					catch (const std::exception& e)
+					{
+						bhjdsvjhbsd(e);
+					}
+				}
+			}
+		}
 
-		//firstPath.append(pathShare).append(endPath);
+		auto guifd = firstPath.append(pathShare).append(endPath);
+		//auto guifd = pathShare;
 
-		if (pathShare.size() != 0)
+		if (guifd.size() != 0)
 		{
 			UnitMovePlan plan;
-			pathShare.pop_front(); // 最初の位置は現在地なので削除
-			plan.setPath(pathShare);
+			guifd.pop_front(); // 最初の位置は現在地なので削除
+			plan.setPath(guifd);
 			{
 				std::scoped_lock lock(aiRootMutex);
 				aiRoot[unit->ID] = plan;
 			}
-			debugRoot.push_back(pathShare);
+			debugRoot.push_back(guifd);
 			htUnit[unit->ID]->moveState = moveState::Moving;
 		}
 
@@ -585,7 +587,8 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 						Array<Quad>& rowQuads,
 						const int32 N,
 						const std::atomic<bool>& abort,
-						const std::atomic<bool>& pause
+						const std::atomic<bool>& pause,
+						HashTable<Point, const Unit*>& hsBuildingUnitForAstar
 )
 {
 	const auto targetSnapshot = target;
@@ -658,7 +661,7 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 												mapData,
 												enemy,
 												target,
-												N
+												N, hsBuildingUnitForAstar
 				);
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 				classAStarManager.RemoveClassAStar(startAstar.value());
@@ -1039,6 +1042,11 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 			{
 				uu.ID = classBattle.getIDCount();
 				cuu.ListClassUnit.push_back(uu);
+				if (uu.IsBuilding)
+				{
+					unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
+					hsBuildingUnitForAstar[uu.initTilePos] = unitsForHsBuildingUnitForAstar.back().get(); // これなら再配置でもアドレスは変わらない
+				}
 			}
 
 			listU.push_back(cuu);
@@ -1254,6 +1262,7 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTask)
 			{
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
 				BattleMoveAStar(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
@@ -1265,7 +1274,7 @@ Co::Task<void> Battle::start()
 					rowQuads,
 					N,
 					abort,
-					pauseTask, changeUnitMember);
+					pauseTask, changeUnitMember, hsBuildingUnitForAstarSnapshot);
 			}
 			System::Sleep(1);
 		}
@@ -1287,6 +1296,7 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTaskMyUnits)
 			{
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
 				BattleMoveAStarMyUnitsKai(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
@@ -1298,7 +1308,7 @@ Co::Task<void> Battle::start()
 					rowQuads,
 					N,
 					abortMyUnits,
-					pauseTaskMyUnits);
+					pauseTaskMyUnits, hsBuildingUnitForAstarSnapshot);
 			}
 			System::Sleep(1); // CPU過負荷防止
 		}
