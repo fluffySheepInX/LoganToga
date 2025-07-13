@@ -219,8 +219,8 @@ public:
 
 					if (i == 0 && j == 0) continue; // 自分自身はスキップ
 					if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
-					//if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN)) continue;
-					//if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN)) continue;
+					if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN)) continue;
+					if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN)) continue;
 					OpenOne(nx, ny, cost, parent, maxN);
 				}
 			}
@@ -249,8 +249,7 @@ public:
 				{
 					if (!pool.contains(Point(mapX, mapY)))
 					{
-						int penalty = 5; // 任意
-						OpenOne(mapX, mapY, cost + penalty, parent, maxN);
+						OpenOne(mapX, mapY, cost, parent, maxN);
 					}
 					//OpenOne(mapX, mapY, cost, parent, maxN);
 					//通行可能、その後探索打ち切り
