@@ -5,6 +5,7 @@
 #include <ranges>
 #include <vector>
 #include <iostream>
+#include "ClassUnit.h"
 
 /// @brief 指定した座標にあるタイルのインデックスを返します。
 /// @param pos 座標
@@ -317,6 +318,262 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 	unitIndexEnemy = (unitIndexEnemy + processed) % total;
 	return static_cast<int32>(processed);
 }
+int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
+						Array<ClassHorizontalUnit>& enemy,
+						Array<Array<MapDetail>> mapData,
+						HashTable<int64, UnitMovePlan>& aiRoot,
+						Array<Array<Point>>& debugRoot,
+						Array<ClassAStar*>& list,
+						Array<Quad>& columnQuads,
+						Array<Quad>& rowQuads,
+						const int32 N,
+						const std::atomic<bool>& abort,
+						const std::atomic<bool>& pause
+)
+{
+	const auto targetSnapshot = target;
+	HashTable<int32, Unit*> htUnit;
+	// フラット化して高速アクセスに備える
+	Array<Unit*> flatList;
+	for (auto& group : target)
+	{
+		for (auto& unit : group.ListClassUnit)
+		{
+			if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+			if (unit.moveState == moveState::MoveAI)
+			{
+				flatList.push_back(&unit);
+				htUnit.emplace(unit.ID, &unit);
+			}
+		}
+	}
+
+	if (flatList.size() == 0) return 0;
+	if (abort) return 0;
+
+	// 共通経路(始まり合流地点→終わり合流地点)を算出
+	s3d::Optional<Size> startIndex = ToIndex(flatList[0]->getFirstMergePos(), columnQuads, rowQuads);
+	if (startIndex.has_value() == false) return 0;
+	s3d::Optional<Size> endIndex = ToIndex(flatList[0]->getLastMergePos(), columnQuads, rowQuads);
+	if (endIndex.has_value() == false) return 0;
+
+	if (startIndex == endIndex)
+	{
+		//単一ユニットがこのケース
+		s3d::Optional<Size> startIndex = ToIndex(flatList[0]->GetNowPosiCenter(), columnQuads, rowQuads);
+		if (startIndex.has_value() == false) return 0;
+		s3d::Optional<Size> endIndex = ToIndex(flatList[0]->GetOrderPosiCenter(), columnQuads, rowQuads);
+		if (endIndex.has_value() == false) return 0;
+		ClassAStarManager classAStarManager(endIndex.value().x, endIndex.value().y);
+		Optional<ClassAStar*> startAstar
+			= classAStarManager.OpenOne(startIndex.value().x, startIndex.value().y, 0, nullptr, N);
+		Array<Point> fullPath;
+
+		////移動経路取得
+		while (true)
+		{
+			try
+			{
+				if (abort == true) break;
+
+				if (startAstar.has_value() == false)
+				{
+					fullPath.clear();
+					break;
+				}
+
+				classAStarManager.OpenAround(startAstar.value(),
+												mapData,
+												enemy,
+												target,
+												N
+				);
+				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+				classAStarManager.RemoveClassAStar(startAstar.value());
+				if (classAStarManager.GetListClassAStar().size() != 0)
+				{
+					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+				}
+
+				if (startAstar.has_value() == false)
+					continue;
+
+				//敵まで到達したか
+				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+				{
+					startAstar.value()->GetRoot(fullPath);
+					fullPath.reverse();
+					break;
+				}
+			}
+			catch (const std::exception& e)
+			{
+				bhjdsvjhbsd(e);
+			}
+		}
+		if (fullPath.size() != 0)
+		{
+			UnitMovePlan plan;
+			plan.setPath(fullPath);
+			{
+				std::scoped_lock lock(aiRootMutex);
+				aiRoot[flatList[0]->ID] = plan;
+			}
+			//debugRoot.push_back(fullPath);
+			htUnit[flatList[0]->ID]->moveState = moveState::Moving;
+		}
+		return 0;
+	}
+
+	ClassAStarManager astarToGoal(endIndex.value().x, endIndex.value().y);
+	Optional<ClassAStar*> startAstar2 = astarToGoal.OpenOne(startIndex.value().x, startIndex.value().y, 0, nullptr, N);
+	Array<Point> pathShare;
+	while (true) {
+		if (abort) break;
+		if (!startAstar2.has_value()) { pathShare.clear(); break; }
+		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N);
+		startAstar2.value()->SetAStarStatus(AStarStatus::Closed);
+		astarToGoal.RemoveClassAStar(startAstar2.value());
+		if (astarToGoal.GetListClassAStar().size() != 0)
+			startAstar2 = SearchMinScore(astarToGoal.GetListClassAStar());
+		if (!startAstar2.has_value()) continue;
+		//敵まで到達したか
+		if (startAstar2.value()->GetRow() == astarToGoal.GetEndX() && startAstar2.value()->GetCol() == astarToGoal.GetEndY())
+		{
+			startAstar2.value()->GetRoot(pathShare);
+			pathShare.reverse();
+			astarToGoal.Clear();
+			break;
+		}
+	}
+
+	for (Unit* unit : flatList)
+	{
+		//Array<Point> firstPath;
+		//{
+		//	s3d::Optional<Size> nowIndexFirstGoal = ToIndex(unit->getFirstMergePos(), columnQuads, rowQuads);
+		//	if (nowIndexFirstGoal.has_value() == false) continue;
+		//	s3d::Optional<Size> nowIndex = ToIndex(unit->GetNowPosiCenter(), columnQuads, rowQuads);
+		//	if (nowIndex.has_value() == false) continue;
+		//	if (nowIndexFirstGoal != nowIndex)
+		//	{
+		//		ClassAStarManager classAStarManager(nowIndexFirstGoal.value().x, nowIndexFirstGoal.value().y);
+		//		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+		//		while (true)
+		//		{
+		//			try
+		//			{
+		//				if (abort == true) break;
+
+		//				if (startAstar.has_value() == false)
+		//				{
+		//					firstPath.clear();
+		//					break;
+		//				}
+
+		//				classAStarManager.OpenAround(startAstar.value(),
+		//												mapData,
+		//												enemy,
+		//												target,
+		//												N
+		//				);
+		//				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+		//				classAStarManager.RemoveClassAStar(startAstar.value());
+		//				if (classAStarManager.GetListClassAStar().size() != 0)
+		//				{
+		//					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+		//				}
+
+		//				if (startAstar.has_value() == false)
+		//					continue;
+
+		//				//敵まで到達したか
+		//				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+		//				{
+		//					startAstar.value()->GetRoot(firstPath);
+		//					firstPath.reverse();
+		//					break;
+		//				}
+		//			}
+		//			catch (const std::exception& e)
+		//			{
+		//				bhjdsvjhbsd(e);
+		//			}
+		//		}
+		//	}
+		//}
+
+		//Array<Point> endPath;
+		//{
+		//	s3d::Optional<Size> nowIndexEndGoal = ToIndex(unit->GetOrderPosiCenter(), columnQuads, rowQuads);
+		//	if (nowIndexEndGoal.has_value() == false) continue;
+		//	s3d::Optional<Size> nowIndex = ToIndex(unit->getLastMergePos(), columnQuads, rowQuads);
+		//	if (nowIndex.has_value() == false) continue;
+		//	if (nowIndexEndGoal != nowIndex)
+		//	{
+		//		ClassAStarManager classAStarManager(nowIndexEndGoal.value().x, nowIndexEndGoal.value().y);
+		//		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+		//		while (true)
+		//		{
+		//			try
+		//			{
+		//				if (abort == true) break;
+
+		//				if (startAstar.has_value() == false)
+		//				{
+		//					endPath.clear();
+		//					break;
+		//				}
+
+		//				classAStarManager.OpenAround(startAstar.value(),
+		//												mapData,
+		//												enemy,
+		//												target,
+		//												N
+		//				);
+		//				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+		//				classAStarManager.RemoveClassAStar(startAstar.value());
+		//				if (classAStarManager.GetListClassAStar().size() != 0)
+		//				{
+		//					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+		//				}
+
+		//				if (startAstar.has_value() == false)
+		//					continue;
+
+		//				//敵まで到達したか
+		//				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+		//				{
+		//					startAstar.value()->GetRoot(endPath);
+		//					endPath.reverse();
+		//					break;
+		//				}
+		//			}
+		//			catch (const std::exception& e)
+		//			{
+		//				bhjdsvjhbsd(e);
+		//			}
+		//		}
+		//	}
+		//}
+
+		//firstPath.append(pathShare).append(endPath);
+
+		if (pathShare.size() != 0)
+		{
+			UnitMovePlan plan;
+			plan.setPath(pathShare);
+			{
+				std::scoped_lock lock(aiRootMutex);
+				aiRoot[unit->ID] = plan;
+			}
+			debugRoot.push_back(pathShare);
+			htUnit[unit->ID]->moveState = moveState::Moving;
+		}
+
+	}
+}
+
 int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 						Array<ClassHorizontalUnit>& enemy,
 						Array<Array<MapDetail>> mapData,
@@ -360,19 +617,6 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 	const size_t total = flatList.size();
 	if (total == 0) return 0;
 
-	Vec2 sum = Vec2::Zero();
-	int count = 0;
-
-	for (const Unit* unit : flatList)
-	{
-		sum += unit->GetNowPosiCenter();
-		++count;
-	}
-
-	// 重心
-	Vec2 center = Vec2::Zero();
-	if (count > 0) center = sum / count;
-
 	for (size_t i = 0; i < total; ++i)
 	{
 		if (abort) break;
@@ -390,68 +634,142 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 		if (nowIndex.has_value() == false)
 			continue;
 
-		////現在地を開く
-		ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
-
-		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-		Array<Point> listRoot;
-
-		////移動経路取得
-		while (true)
-		{
-			try
-			{
-				if (abort == true)
-					break;
-
-				if (startAstar.has_value() == false)
-				{
-					listRoot.clear();
-					break;
+		// --- 合流地点を経由する経路構築 ---
+		Array<Point> fullPath;
+		bool usedMerge = false;
+		Vec2 mergePos = unit.getFirstMergePos();
+		if (mergePos != Vec2::Zero()) {
+			Optional<Point> mergeIndex = ToIndex(mergePos, columnQuads, rowQuads);
+			if (mergeIndex.has_value()) {
+				// すでに合流地点にいる場合はスキップ
+				if (nowIndex.value() == mergeIndex.value()) {
+					///ユニット召喚時を想定している
 				}
-
-				classAStarManager.OpenAround(startAstar.value(),
-												mapData,
-												enemy,
-												target,
-												N
-				);
-				Print << U"BBBBBBBBBBBBBBBB:";
-				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-
-				classAStarManager.RemoveClassAStar(startAstar.value());
-
-				if (classAStarManager.GetListClassAStar().size() != 0)
+				else
 				{
-					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-				}
+					// 1. 現在地→合流地点
+					ClassAStarManager astarToMerge(mergeIndex.value().x, mergeIndex.value().y);
+					Optional<ClassAStar*> startAstar1 = astarToMerge.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+					Array<Point> path1;
+					while (true) {
+						try
+						{
+							if (abort) break;
+							if (!startAstar1.has_value()) { path1.clear(); break; }
+							astarToMerge.OpenAround(startAstar1.value(), mapData, enemy, target, N);
+							startAstar1.value()->SetAStarStatus(AStarStatus::Closed);
+							astarToMerge.RemoveClassAStar(startAstar1.value());
+							if (astarToMerge.GetListClassAStar().size() != 0)
+								startAstar1 = SearchMinScore(astarToMerge.GetListClassAStar());
+							if (!startAstar1.has_value()) continue;
 
-				if (startAstar.has_value() == false)
-					continue;
-
-				//敵まで到達したか
-				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-				{
-					startAstar.value()->GetRoot(listRoot);
-					listRoot.reverse();
-					break;
+							//敵まで到達したか
+							if (startAstar1.value()->GetRow() == astarToMerge.GetEndX() && startAstar1.value()->GetCol() == astarToMerge.GetEndY())
+							{
+								startAstar1.value()->GetRoot(path1);
+								path1.reverse();
+								astarToMerge.Clear();
+								break;
+							}
+						}
+						catch (const std::exception& e)
+						{
+							bhjdsvjhbsd(e);
+						}
+					}
+					// 2. 合流地点→目的地
+					ClassAStarManager astarToGoal(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
+					Optional<ClassAStar*> startAstar2 = astarToGoal.OpenOne(mergeIndex.value().x, mergeIndex.value().y, 0, nullptr, N);
+					Array<Point> path2;
+					while (true) {
+						if (abort) break;
+						if (!startAstar2.has_value()) { path2.clear(); break; }
+						astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N);
+						startAstar2.value()->SetAStarStatus(AStarStatus::Closed);
+						astarToGoal.RemoveClassAStar(startAstar2.value());
+						if (astarToGoal.GetListClassAStar().size() != 0)
+							startAstar2 = SearchMinScore(astarToGoal.GetListClassAStar());
+						if (!startAstar2.has_value()) continue;
+						//敵まで到達したか
+						if (startAstar2.value()->GetRow() == astarToGoal.GetEndX() && startAstar2.value()->GetCol() == astarToGoal.GetEndY())
+						{
+							startAstar2.value()->GetRoot(path2);
+							path2.reverse();
+							astarToGoal.Clear();
+							break;
+						}
+					}
+					// 3. 経路を連結
+					if (!path1.isEmpty() && !path2.isEmpty()) {
+						fullPath = path1;
+						if (!fullPath.isEmpty() && !path2.isEmpty() && fullPath.back() == path2.front()) {
+							path2.pop_front(); // 重複を除去
+						}
+						fullPath.append(path2);
+						usedMerge = true;
+					}
 				}
-			}
-			catch (const std::exception& e)
-			{
-				bhjdsvjhbsd(e);
 			}
 		}
+		// --- 合流地点が無い場合は従来通り ---
+		if (usedMerge == false) {
+			////現在地を開く
+			ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
 
-		if (listRoot.size() != 0)
+			Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+
+			////移動経路取得
+			while (true)
+			{
+				try
+				{
+					if (abort == true) break;
+
+					if (startAstar.has_value() == false)
+					{
+						fullPath.clear();
+						break;
+					}
+
+					classAStarManager.OpenAround(startAstar.value(),
+													mapData,
+													enemy,
+													target,
+													N
+					);
+					startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+					classAStarManager.RemoveClassAStar(startAstar.value());
+					if (classAStarManager.GetListClassAStar().size() != 0)
+					{
+						startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+					}
+
+					if (startAstar.has_value() == false)
+						continue;
+
+					//敵まで到達したか
+					if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
+					{
+						startAstar.value()->GetRoot(fullPath);
+						fullPath.reverse();
+						break;
+					}
+				}
+				catch (const std::exception& e)
+				{
+					bhjdsvjhbsd(e);
+				}
+			}
+		}
+		if (fullPath.size() != 0)
 		{
 			UnitMovePlan plan;
-			plan.setPath(listRoot);
+			plan.setPath(fullPath);
 			{
 				std::scoped_lock lock(aiRootMutex);
 				aiRoot[unit.ID] = plan;
 			}
-			debugRoot.push_back(listRoot);
+			debugRoot.push_back(fullPath);
 			unit.moveState = moveState::Moving;
 		}
 		processed++;
@@ -1046,7 +1364,7 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTaskMyUnits)
 			{
-				BattleMoveAStarMyUnits(
+				BattleMoveAStarMyUnitsKai(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
 					classBattle.classMapBattle.value().mapData,
@@ -1146,7 +1464,6 @@ void Battle::updateResourceIncome()
 }
 void Battle::refreshFogOfWar()
 {
-
 	//毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
 	// 一度見たタイルは UnseenではなくSeenにしたい
 	for (auto&& ttt : visibilityMap)
@@ -1969,15 +2286,30 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 				if (target.size() == 0) continue;
 
 				AssignUnitsInFormation(target, start, end, i);
+
+				if (target.size() == 1) continue;
+				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+				setMergePos(target, &Unit::setFirstMergePos, pos2);
+				setMergePos(target, &Unit::setLastMergePos, pos);
 			}
 		}
 		else
 		{
 			//正方
+			Array<Unit*> target;
 			auto groups = GetMovableUnitGroups();
 			for (auto&& [i, group] : Indexed(groups))
 			{
 				AssignUnitsInFormation(group, start, end, i);
+				target.append(group);
+			}
+			if (target.size() > 1)
+			{
+				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+				setMergePos(target, &Unit::setFirstMergePos, pos2);
+				setMergePos(target, &Unit::setLastMergePos, pos);
 			}
 		}
 
@@ -2067,8 +2399,12 @@ Co::Task<void> Battle::mainLoop()
 
 		spawnTimedEnemy();
 		updateResourceIncome();
-		refreshFogOfWar();
-
+		// ここを変更
+		if (fogUpdateTimer.sF() >= 0.5)
+		{
+			refreshFogOfWar();
+			fogUpdateTimer.restart();
+		}
 		////後でbattle内に移動(ポーズ処理を考慮
 		updateBuildQueue();
 
@@ -2290,6 +2626,10 @@ void Battle::drawUnits(const RectF& cameraView) const
 					if (!u.IsBattleEnable) continue;
 
 					const Vec2 center = u.GetNowPosiCenter();
+
+					// 画面外なら描画しない
+					if (!cameraView.intersects(center))
+						continue;
 
 					if (!u.IsBuilding)
 						TextureAsset(ringA).drawAt(center.movedBy(0, 8));
@@ -2514,6 +2854,24 @@ void Battle::draw() const
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight();
+
+		// --- 合流地点の可視化（firstMergePos_ / lastMergePos_）
+		for (const auto& group : classBattle.listOfAllUnit)
+		{
+			for (const auto& unit : group.ListClassUnit)
+			{
+				// firstMergePos_が有効な場合
+				if (unit.getFirstMergePos() != Vec2::Zero())
+				{
+					Circle(unit.getFirstMergePos(), 12).drawFrame(3, 0, Palette::Red);
+				}
+				// lastMergePos_が有効な場合
+				if (unit.getLastMergePos() != Vec2::Zero())
+				{
+					Circle(unit.getLastMergePos(), 12).drawFrame(3, 0, Palette::Red);
+				}
+			}
+		}
 	}
 
 	renderTextureZinkei.draw(0, Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight);
@@ -2524,6 +2882,8 @@ void Battle::draw() const
 
 	if (longBuildSelectTragetId == -1)
 		DrawMiniMap(grid, camera.getRegion());
+
+
 }
 
 //ヘルパーメソッド
@@ -2745,5 +3105,22 @@ void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start
 		cu.orderPosiLeft = Vec2(Floor(x), Floor(y)).movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
 		cu.orderPosiLeftLast = cu.orderPosiLeft;
 		cu.moveState = moveState::MoveAI;
+	}
+}
+
+Vec2 Battle::calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos)
+{
+	Vec2 sum = Vec2::Zero();
+	int count = 0;
+	for (const auto* u : units) {
+		sum += getPos(u);
+		++count;
+	}
+	return (count > 0) ? (sum / count) : Vec2::Zero();
+}
+void Battle::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos)
+{
+	for (auto* u : units) {
+		(u->*setter)(setPos);
 	}
 }

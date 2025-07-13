@@ -386,5 +386,7 @@ private:
 	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
 	void afterMovedPushToBuildMenu(Unit& unit);
 	void addResource(Unit& unit);
-
+	Vec2 calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos);
+	void setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos);
+	Stopwatch fogUpdateTimer{ StartImmediately::Yes };
 };

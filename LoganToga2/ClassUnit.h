@@ -47,6 +47,9 @@ enum class moveState
 
 class Unit
 {
+private:
+	Vec2 firstMergePos_ = Vec2::Zero();
+	Vec2 lastMergePos_ = Vec2::Zero();
 public:
 	Unit() = default;
 	Unit& operator=(const Unit& other)
@@ -419,4 +422,12 @@ public:
 
 	// FlagMovingSkill
 	bool FlagMovingSkill = false;
+
+	// ファースト合流地点
+	void setFirstMergePos(const Vec2& pos) { firstMergePos_ = pos; }
+	Vec2 getFirstMergePos() const { return firstMergePos_; }
+
+	// ラスト合流地点
+	void setLastMergePos(const Vec2& pos) { lastMergePos_ = pos; }
+	Vec2 getLastMergePos() const { return lastMergePos_; }
 };
