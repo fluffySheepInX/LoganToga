@@ -67,6 +67,7 @@ Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
 }
 
 std::mutex aiRootMutex;
+std::mutex arrayMutex;
 
 void bhjdsvjhbsd(const std::exception& ex)
 {
@@ -113,6 +114,7 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
 	try
 	{
+		std::scoped_lock lock(arrayMutex);
 		for (auto& group : enemy)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -335,17 +337,25 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	HashTable<int32, Unit*> htUnit;
 	// フラット化して高速アクセスに備える
 	Array<Unit*> flatList;
-	for (auto& group : target)
+	try
 	{
-		for (auto& unit : group.ListClassUnit)
+		std::scoped_lock lock(arrayMutex);
+		for (auto& group : target)
 		{
-			if (!unit.IsBattleEnable || unit.IsBuilding) continue;
-			if (unit.moveState == moveState::MoveAI)
+			for (auto& unit : group.ListClassUnit)
 			{
-				flatList.push_back(&unit);
-				htUnit.emplace(unit.ID, &unit);
+				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+				if (unit.moveState == moveState::MoveAI)
+				{
+					flatList.push_back(&unit);
+					htUnit.emplace(unit.ID, &unit);
+				}
 			}
 		}
+	}
+	catch (const std::exception& e)
+	{
+		bhjdsvjhbsd(e);
 	}
 
 	if (flatList.size() == 0) return 0;

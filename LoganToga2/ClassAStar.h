@@ -236,9 +236,6 @@ public:
 		{
 			const Unit* unit = hsBuildingUnitForAstar[key];
 			const MapTipObjectType mapTipObjectType = unit->mapTipObjectType;
-			OpenOne(mapX, mapY, cost, parent, maxN);
-			return true;
-
 			// 壊せる障害物は通行可（例：ゲート、HOME）
 			if (unit->mapTipObjectType == MapTipObjectType::GATE
 				|| unit->mapTipObjectType == MapTipObjectType::HOME)
