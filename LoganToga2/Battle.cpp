@@ -1051,7 +1051,8 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 			for (size_t i = 0; i < num; i++)
 			{
 				uu.ID = classBattle.getIDCount();
-				cuu.ListClassUnit.push_back(uu);
+				auto copy = uu;
+				cuu.ListClassUnit.push_back(copy);
 				if (uu.IsBuilding)
 				{
 					unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));

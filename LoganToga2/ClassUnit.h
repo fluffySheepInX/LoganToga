@@ -5,6 +5,15 @@
 # include "GameUIToolkit.h"
 # include "ClassBuildAction.h"
 
+class Unit;
+
+// コンポーネントの基底クラス
+class UnitComponent {
+public:
+	virtual ~UnitComponent() = default;
+	virtual void update(Unit& owner) {}
+	virtual std::unique_ptr<UnitComponent> clone() const = 0; // 追加
+};
 class ClassTempStatus
 {
 public:
@@ -52,10 +61,129 @@ private:
 	Vec2 lastMergePos_ = Vec2::Zero();
 public:
 	Unit() = default;
+	// コピーコンストラクタ
+	Unit(const Unit& other) {
+		components.clear();
+		for (const auto& c : other.components) {
+			components.push_back(c->clone());
+		}
+		cts = other.cts;
+		Formation = other.Formation;
+		currentTask = other.currentTask;
+		// taskTimer はコピーできないため再初期化（スタートしない状態）
+		taskTimer.reset();
+
+		rowResourceTarget = other.rowResourceTarget;
+		colResourceTarget = other.colResourceTarget;
+		ID = other.ID;
+
+		pressedUnit = other.pressedUnit;
+
+		classBuild = other.classBuild;
+		tempSelectComRight = other.tempSelectComRight;
+
+		visionRadius = other.visionRadius;
+		initTilePos = other.initTilePos;
+		waitTimeResource = other.waitTimeResource;
+
+		IsBuilding = other.IsBuilding;
+		IsBuildingEnable = other.IsBuildingEnable;
+		rowBuilding = other.rowBuilding;
+		colBuilding = other.colBuilding;
+		mapTipObjectType = other.mapTipObjectType;
+		NoWall2 = other.NoWall2;
+		HPCastle = other.HPCastle;
+		CastleDefense = other.CastleDefense;
+		CastleMagdef = other.CastleMagdef;
+
+		houkou = other.houkou;
+		initXY = other.initXY;
+
+		bLiquidBarBattle = other.bLiquidBarBattle;
+
+		IsLeader = other.IsLeader;
+		IsSelect = other.IsSelect;
+		IsDone = other.IsDone;
+		IsBattleEnable = other.IsBattleEnable;
+
+		NameTag = other.NameTag;
+		Name = other.Name;
+		Help = other.Help;
+		Text = other.Text;
+		Race = other.Race;
+		Class = other.Class;
+		ImageName = other.ImageName;
+		Dead = other.Dead;
+		Retreat = other.Retreat;
+		Join = other.Join;
+		Face = other.Face;
+		Voice_type = other.Voice_type;
+		gender = other.gender;
+		Talent = other.Talent;
+		Friend = other.Friend;
+		Merce = other.Merce;
+		Staff = other.Staff;
+		InitMember = other.InitMember;
+		Enemy = other.Enemy;
+
+		Level = other.Level;
+		Level_max = other.Level_max;
+		Price = other.Price;
+		Cost = other.Cost;
+		Medical = other.Medical;
+		HasExp = other.HasExp;
+		Hp = other.Hp;
+		HpMAX = other.HpMAX;
+		Mp = other.Mp;
+		Attack = other.Attack;
+		Defense = other.Defense;
+		Magic = other.Magic;
+		MagDef = other.MagDef;
+		Speed = other.Speed;
+		Dext = other.Dext;
+		Move = other.Move;
+		Hprec = other.Hprec;
+		Mprec = other.Mprec;
+		Exp = other.Exp;
+		Exp_mul = other.Exp_mul;
+		Heal_max = other.Heal_max;
+		Summon_max = other.Summon_max;
+		No_knock = other.No_knock;
+		Loyal = other.Loyal;
+		Alive_per = other.Alive_per;
+		Escape_range = other.Escape_range;
+
+		SkillName = other.SkillName;
+		arrSkill = other.arrSkill;
+		Finance = other.Finance;
+		MoveType = other.MoveType;
+		moveState = other.moveState;
+		//FlagMoveCalc = other.FlagMoveCalc;
+		//FlagMoveAI = other.FlagMoveAI;
+		//FlagMoving = other.FlagMoving;
+		//FlagMovingEnd = other.FlagMovingEnd;
+
+		yokoUnit = other.yokoUnit;
+		TakasaUnit = other.TakasaUnit;
+		FlagReachedDestination = other.FlagReachedDestination;
+		orderPosiLeftFlagReachedDestination = other.orderPosiLeftFlagReachedDestination;
+
+		nowPosiLeft = other.nowPosiLeft;
+		orderPosiLeft = other.orderPosiLeft;
+		orderPosiLeftLast = other.orderPosiLeftLast;
+		vecMove = other.vecMove;
+
+		FlagMoveSkill = other.FlagMoveSkill;
+		FlagMovingSkill = other.FlagMovingSkill;
+	}
 	Unit& operator=(const Unit& other)
 	{
 		if (this != &other)
 		{
+			components.clear();
+			for (const auto& c : other.components) {
+				components.push_back(c->clone());
+			}
 			cts = other.cts;
 			Formation = other.Formation;
 			currentTask = other.currentTask;
@@ -166,6 +294,19 @@ public:
 			FlagMovingSkill = other.FlagMovingSkill;
 		}
 		return *this;
+	}
+	Array<std::unique_ptr<UnitComponent>> components;
+
+	template<typename T>
+	T* getComponent() {
+		for (auto& c : components) {
+			if (auto ptr = dynamic_cast<T*>(c.get())) return ptr;
+		}
+		return nullptr;
+	}
+
+	void update() {
+		for (auto& c : components) c->update(*this);
 	}
 
 	ClassTempStatus cts = ClassTempStatus();
@@ -430,4 +571,37 @@ public:
 	// ラスト合流地点
 	void setLastMergePos(const Vec2& pos) { lastMergePos_ = pos; }
 	Vec2 getLastMergePos() const { return lastMergePos_; }
+};
+
+// キャリアー機能
+class CarrierComponent : public UnitComponent {
+public:
+	int32 capacity = 4;
+	std::vector<Unit*> storedUnits;
+
+	/// @brief unitをマップ・AI・描画から除外
+	/// @param unit 
+	bool store(Unit* unit)
+	{
+		if (storedUnits.size() >= capacity) return false;
+		storedUnits.push_back(std::move(unit));
+		unit->IsBattleEnable = false; // 戦闘不可にする
+
+		return true;
+	}
+	void releaseAll(const Vec2& pos)
+	{
+		for (auto& unit : storedUnits) {
+			unit->IsBattleEnable = true; // 戦闘可能に戻す
+			unit->nowPosiLeft = unit->nowPosiLeft.movedBy(Random(-10,10), Random(-10, 10));
+		}
+		storedUnits.clear();
+	}
+	std::unique_ptr<UnitComponent> clone() const override {
+		// CarrierComponentの内容をコピー
+		auto ptr = std::make_unique<CarrierComponent>(*this);
+		// storedUnitsはポインタなので、必要に応じてコピー方法を工夫
+		ptr->storedUnits.clear(); // 通常は空にする
+		return ptr;
+	}
 };

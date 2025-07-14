@@ -108,6 +108,50 @@
                     "spawn": "ironWall"
                 }
             ]
+        },
+        {
+            "id": "kettenkrad.png",
+            "name": "ケッテンクラート産出",
+            "description": "ケッテンクラート",
+            "icon": "kettenkrad-export.png",
+            "createCount": "5",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "Kettenkrad"
+                }
+            ]
+        },
+        {
+            "id": "adsfsdfaasdfsda.png",
+            "name": "ブレンガン・キャリアー産出",
+            "description": "ブレンガン・キャリアー",
+            "icon": "adsfsdfaasdfsda.png",
+            "createCount": "5",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "BrenGunCarrier"
+                }
+            ]
         }
     ]
 }
