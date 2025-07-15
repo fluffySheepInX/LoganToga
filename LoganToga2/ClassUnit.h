@@ -175,6 +175,10 @@ public:
 
 		FlagMoveSkill = other.FlagMoveSkill;
 		FlagMovingSkill = other.FlagMovingSkill;
+
+		arrYoyakuBuild = other.arrYoyakuBuild;
+		tempIsBuildSelectTragetBuildAction = other.tempIsBuildSelectTragetBuildAction;
+		requiresMovement = other.requiresMovement;
 	}
 	Unit& operator=(const Unit& other)
 	{
@@ -292,6 +296,9 @@ public:
 
 			FlagMoveSkill = other.FlagMoveSkill;
 			FlagMovingSkill = other.FlagMovingSkill;
+			arrYoyakuBuild = other.arrYoyakuBuild;
+			tempIsBuildSelectTragetBuildAction = other.tempIsBuildSelectTragetBuildAction;
+			requiresMovement = other.requiresMovement;
 		}
 		return *this;
 	}
@@ -322,7 +329,7 @@ public:
 	/// @brief 確保する場所
 	int32 rowResourceTarget = -1;
 	int32 colResourceTarget = -1;
-
+	bool requiresMovement = false;  // 移動が必要な建築かどうか
 	long long ID = 0;
 
 	/// @brief 建築メニューなどを表示するかどうかのフラグ
@@ -571,6 +578,8 @@ public:
 	// ラスト合流地点
 	void setLastMergePos(const Vec2& pos) { lastMergePos_ = pos; }
 	Vec2 getLastMergePos() const { return lastMergePos_; }
+
+	bool isCarrierUnit = false;
 };
 
 // キャリアー機能
@@ -589,14 +598,46 @@ public:
 
 		return true;
 	}
+	//void releaseAll(const Vec2& pos)
+	//{
+	//	for (auto& unit : storedUnits) {
+	//		unit->IsBattleEnable = true; // 戦闘可能に戻す
+	//		unit->nowPosiLeft = unit->nowPosiLeft.movedBy(Random(-10, 10), Random(-10, 10));
+	//	}
+	//	storedUnits.clear();
+	//}
 	void releaseAll(const Vec2& pos)
 	{
-		for (auto& unit : storedUnits) {
+		if (storedUnits.empty()) return;
+
+		const int32 unitsCount = static_cast<int32>(storedUnits.size());
+		const double baseRadius = 50.0; // 基本展開半径
+
+		for (int32 i = 0; i < unitsCount; ++i) {
+			auto& unit = storedUnits[i];
 			unit->IsBattleEnable = true; // 戦闘可能に戻す
-			unit->nowPosiLeft = unit->nowPosiLeft.movedBy(Random(-10,10), Random(-10, 10));
+
+			if (unitsCount == 1) {
+				// 1体の場合は少しだけずらして配置
+				unit->nowPosiLeft = pos.movedBy(Random(-20, 20), Random(-20, 20))
+					.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
+			}
+			else {
+				// 複数の場合は円状に配置
+				const double angle = (2.0 * Math::Pi * i) / unitsCount;
+				const double radius = baseRadius + (unitsCount > 4 ? (unitsCount - 4) * 15.0 : 0.0);
+
+				const double offsetX = radius * Math::Cos(angle) + Random(-10, 10);
+				const double offsetY = radius * Math::Sin(angle) + Random(-10, 10);
+
+				unit->nowPosiLeft = pos.movedBy(offsetX, offsetY)
+					.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
+			}
 		}
+
 		storedUnits.clear();
 	}
+
 	std::unique_ptr<UnitComponent> clone() const override {
 		// CarrierComponentの内容をコピー
 		auto ptr = std::make_unique<CarrierComponent>(*this);

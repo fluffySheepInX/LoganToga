@@ -196,7 +196,7 @@ public:
 
 	void OpenAround(ClassAStar* parent, Array<Array<MapDetail>>& mapData,
 					Array<ClassHorizontalUnit>& arrayObjEnemy, Array<ClassHorizontalUnit>& arrayObjMy, int32 maxN,
-					HashTable<Point, const Unit*>& hsBuildingUnitForAstar)
+					HashTable<Point, const Unit*>& hsBuildingUnitForAstar,bool player = false)
 	{
 		try
 		{
@@ -214,7 +214,8 @@ public:
 					if (i == 0 && j == 0) continue; // 自分自身はスキップ
 					if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
 					if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN, hsBuildingUnitForAstar)) continue;
-					if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN, hsBuildingUnitForAstar)) continue;
+					if (!player)
+						if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN, hsBuildingUnitForAstar)) continue;
 					OpenOne(nx, ny, cost, parent, maxN);
 				}
 			}
@@ -237,15 +238,15 @@ public:
 			const Unit* unit = hsBuildingUnitForAstar[key];
 			const MapTipObjectType mapTipObjectType = unit->mapTipObjectType;
 			// 壊せる障害物は通行可（例：ゲート、HOME）
-			if (unit->mapTipObjectType == MapTipObjectType::GATE
-				|| unit->mapTipObjectType == MapTipObjectType::HOME)
-			{
-				if (!pool.contains(key))
-				{
-					OpenOne(mapX, mapY, cost, parent, maxN);
-				}
-				return true;
-			}
+			//if (unit->mapTipObjectType == MapTipObjectType::GATE
+			//	|| unit->mapTipObjectType == MapTipObjectType::HOME)
+			//{
+			//	if (!pool.contains(key))
+			//	{
+			//		OpenOne(mapX, mapY, cost, parent, maxN);
+			//	}
+			//	return true;
+			//}
 			// 壁や鉄条網など通行不可
 			return true;
 		}

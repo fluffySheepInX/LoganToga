@@ -1,6 +1,118 @@
 {
     "Kouhei": [
         {
+            "id": "000",
+            "name": "軽装歩兵詰所",
+            "description": "浸透してヨシ、決死隊してヨシ、弾除けにヨシ！",
+            "icon": "keisou-hohei.png",
+            "createCount": "1",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 6.0,
+            "category": "unitProduct",
+            "requires": [
+                "none"
+            ],
+            "isMove": "True",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "keisouTumejo"
+                }
+            ]
+        },
+        {
+            "id": "001",
+            "name": "軽装歩兵産出",
+            "description": "びううｙぐゆｙぎゅゆｇ",
+            "icon": "keisou-chipGene006.png",
+            "createCount": "5",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "LineInfantryM14"
+                }
+            ]
+        },
+        {
+            "id": "002",
+            "name": "鉄条網設置",
+            "description": "鉄条網",
+            "icon": "ironWall.png",
+            "createCount": "1",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "True",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "ironWall"
+                }
+            ]
+        },
+        {
+            "id": "003",
+            "name": "ケッテンクラート産出",
+            "description": "ケッテンクラート",
+            "icon": "kettenkrad-export.png",
+            "createCount": "5",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "Kettenkrad"
+                }
+            ]
+        },
+        {
+            "id": "004",
+            "name": "ブレンガン・キャリアー産出",
+            "description": "ブレンガン・キャリアー",
+            "icon": "adsfsdfaasdfsda.png",
+            "createCount": "5",
+            "cost": {
+                "wood": 15
+            },
+            "buildTime": 0.5,
+            "category": "unit",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "unit",
+                    "spawn": "BrenGunCarrier"
+                }
+            ]
+        }
+    ],
+    "warehousu": [
+        {
             "id": "build_wall",
             "name": "壁を建てる",
             "description": "敵の進行を防ぐ壁を建設する。",
@@ -42,31 +154,11 @@
                     "spawn": "GateA"
                 }
             ]
-        },
+        }
+    ],
+    "keisouHohei": [
         {
-            "id": "keisou-hohei.png",
-            "name": "軽装歩兵詰所",
-            "description": "浸透してヨシ、決死隊してヨシ、弾除けにヨシ！",
-            "icon": "keisou-hohei.png",
-            "createCount": "1",
-            "cost": {
-                "wood": 15
-            },
-            "buildTime": 6.0,
-            "category": "unitProduct",
-            "requires": [
-                "none"
-            ],
-            "isMove": "True",
-            "result": [
-                {
-                    "type": "unit",
-                    "spawn": "keisouTumejo"
-                }
-            ]
-        },
-        {
-            "id": "keisou-chipGene006.png",
+            "id": "keisouHohei000",
             "name": "軽装歩兵産出",
             "description": "びううｙぐゆｙぎゅゆｇ",
             "icon": "keisou-chipGene006.png",
@@ -86,70 +178,40 @@
                     "spawn": "LineInfantryM14"
                 }
             ]
-        },
+        }
+    ],
+    "BrenGunCarrier": [
         {
-            "id": "ironWall.png",
-            "name": "鉄条網設置",
-            "description": "鉄条網",
-            "icon": "keisou-chipGene006.png",
-            "createCount": "1",
-            "cost": {
-                "wood": 15
-            },
-            "buildTime": 0.5,
-            "category": "unit",
-            "requires": [
-                "none"
-            ],
-            "isMove": "False",
-            "result": [
-                {
-                    "type": "unit",
-                    "spawn": "ironWall"
-                }
-            ]
-        },
-        {
-            "id": "kettenkrad.png",
-            "name": "ケッテンクラート産出",
-            "description": "ケッテンクラート",
-            "icon": "kettenkrad-export.png",
-            "createCount": "5",
-            "cost": {
-                "wood": 15
-            },
-            "buildTime": 0.5,
-            "category": "unit",
-            "requires": [
-                "none"
-            ],
-            "isMove": "False",
-            "result": [
-                {
-                    "type": "unit",
-                    "spawn": "Kettenkrad"
-                }
-            ]
-        },
-        {
-            "id": "adsfsdfaasdfsda.png",
-            "name": "ブレンガン・キャリアー産出",
-            "description": "ブレンガン・キャリアー",
+            "id": "store000",
+            "name": "格納",
+            "description": "格納",
             "icon": "adsfsdfaasdfsda.png",
-            "createCount": "5",
-            "cost": {
-                "wood": 15
-            },
             "buildTime": 0.5,
-            "category": "unit",
+            "category": "Carrier",
             "requires": [
                 "none"
             ],
             "isMove": "False",
             "result": [
                 {
-                    "type": "unit",
-                    "spawn": "BrenGunCarrier"
+                    "type": "Carrier"
+                }
+            ]
+        },
+        {
+            "id": "releaseAll000",
+            "name": "展開",
+            "description": "展開",
+            "icon": "adsfsdfaasdfsda.png",
+            "buildTime": 0.5,
+            "category": "releaseAll",
+            "requires": [
+                "none"
+            ],
+            "isMove": "False",
+            "result": [
+                {
+                    "type": "Carrier"
                 }
             ]
         }

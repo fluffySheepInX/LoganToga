@@ -243,11 +243,14 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
 		Array<Point> listRoot;
 		MicrosecClock mc;
+		Stopwatch taskTimer;
+		taskTimer.restart();
 		////移動経路取得
 		while (true)
 		{
 			try
 			{
+				if (taskTimer.s() > 3) break;
 				if (abort == true) break;
 				if (startAstar.has_value() == false)
 				{
@@ -258,7 +261,8 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 												mapData,
 												enemy,
 												target,
-												N, hsBuildingUnitForAstar
+												N,
+												hsBuildingUnitForAstar
 				);
 				Print << U"BattleMoveAStar:A*探索ノード数: {0}:{1}"_fmt(classAStarManager.GetPool().size(), mc.us());
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
@@ -439,10 +443,14 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	ClassAStarManager astarToGoal(endIndex.value().x, endIndex.value().y);
 	Optional<ClassAStar*> startAstar2 = astarToGoal.OpenOne(startIndex.value().x, startIndex.value().y, 0, nullptr, N);
 	Array<Point> pathShare;
+	Stopwatch taskTimer;
+	taskTimer.restart();
+
 	while (true) {
+		if (taskTimer.s() > 3) break;
 		if (abort) break;
 		if (!startAstar2.has_value()) { pathShare.clear(); break; }
-		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
+		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar, true);
 		startAstar2.value()->SetAStarStatus(AStarStatus::Closed);
 		astarToGoal.RemoveClassAStar(startAstar2.value());
 		if (astarToGoal.GetListClassAStar().size() != 0)
@@ -979,7 +987,12 @@ void Battle::renB()
 	htBuildMenuRenderTexture.clear();
 	String key = U"";
 	int32 counter = -1;
-	for (auto& ttt : htBuildMenu)
+	Array<std::pair<String, BuildAction>> sortedArray(htBuildMenu.begin(), htBuildMenu.end());
+	sortedArray.sort_by([](const auto& a, const auto& b) {
+		return a.first < b.first;
+	});
+
+	for (auto& ttt : sortedArray)
 	{
 		String uibg = ttt.first.split('-')[0];
 		if (uibg != key)
@@ -1010,9 +1023,11 @@ void Battle::renB()
 		ttt.second.rectHantei = rectBuildMenuHome;
 		TextureAsset(ttt.second.icon)
 			.scaled(rectBuildMenuHome.w / rectBuildMenuHome.h)
-			.draw(rectBuildMenuHome.x, rectBuildMenuHome.y);
+			.draw(ttt.second.rectHantei.x, ttt.second.rectHantei.y);
 		counter++;
 	}
+
+	sortedArrayBuildMenu = sortedArray;
 }
 
 /// @brief 
@@ -1024,6 +1039,15 @@ void Battle::renB()
 /// @param enemy 
 void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy)
 {
+	// 事前に容量を確保して配列の再配置を防ぐ
+	const size_t expectedSize = listU.size() + 1;
+	if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
+	{
+		listU.reserve(expectedSize + 50);
+		Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
+			listU.capacity(), expectedSize + 50);
+	}
+
 	//新しいコピーを作る
 	for (auto uu : m_commonConfig.arrayUnit)
 	{
@@ -1122,8 +1146,8 @@ Co::Task<void> Battle::start()
 				String key = uigee.first + U"-" + fege.id;
 				htBuildMenu.emplace(key, fege);
 			}
-			renB();
 		}
+		renB();
 	}
 
 	//初期ユニット
@@ -1487,7 +1511,7 @@ void Battle::handleBuildMenuSelectionA()
 		{
 			if (itemUnit.IsSelect == false) continue;
 
-			for (auto& hbm : htBuildMenu)
+			for (auto& hbm : sortedArrayBuildMenu)
 			{
 				Array<String> resSp = hbm.first.split('-');
 				if (resSp[0] != itemUnit.classBuild) continue;
@@ -1502,6 +1526,146 @@ void Battle::handleBuildMenuSelectionA()
 						tempSelectComRight = hbm.second;
 						itemUnit.tempSelectComRight = tempSelectComRight;
 						break;
+					}
+
+					if (hbm.second.category == U"Carrier")
+					{
+						// 周囲3マス範囲のランダムユニット格納処理
+
+							// 現在選択されているユニットを取得
+						Unit* selectedCarrierUnit = nullptr;
+						for (auto& loau : classBattle.listOfAllUnit)
+						{
+							for (auto& unit : loau.ListClassUnit)
+							{
+								if (unit.IsSelect)
+								{
+									selectedCarrierUnit = &unit;
+									break;
+								}
+							}
+							if (selectedCarrierUnit) break;
+						}
+
+						if (!selectedCarrierUnit) continue;
+
+						// キャリアーコンポーネントを取得
+						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+						if (!carrierComponent) continue;
+
+						// 選択ユニットの現在位置のタイル座標を取得
+						Optional<Point> carrierTileIndex = ToIndex(selectedCarrierUnit->GetNowPosiCenter(), columnQuads, rowQuads);
+						if (!carrierTileIndex.has_value()) continue;
+
+						// 周囲3マス範囲のユニットを検索
+						Array<Unit*> nearbyUnits;
+						const int32 searchRadius = 3;
+
+						// 味方ユニットから検索
+						for (auto& group : classBattle.listOfAllUnit)
+						{
+							for (auto& unit : group.ListClassUnit)
+							{
+								// 自分自身、建物、戦闘不可ユニットは除外
+								if (unit.ID == selectedCarrierUnit->ID ||
+									unit.IsBuilding ||
+									!unit.IsBattleEnable || unit.isCarrierUnit) continue;
+
+								// ユニットの現在位置のタイル座標を取得
+								Optional<Point> unitTileIndex = ToIndex(unit.GetNowPosiCenter(), columnQuads, rowQuads);
+								if (!unitTileIndex.has_value()) continue;
+
+								// 距離をチェック（マンハッタン距離）
+								int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
+								if (distance <= searchRadius)
+								{
+									nearbyUnits.push_back(&unit);
+								}
+							}
+						}
+
+						// 範囲内にユニットがいない場合は処理終了
+						if (nearbyUnits.isEmpty())
+						{
+							Print << U"周囲3マス以内にユニットが見つかりません";
+							continue;
+						}
+
+						// ランダムに並び替え
+						Shuffle(nearbyUnits);
+
+						// キャリアーの容量まで格納
+						int32 storedCount = 0;
+						for (Unit* unit : nearbyUnits)
+						{
+							if (carrierComponent->store(unit))
+							{
+								storedCount++;
+								Print << U"ユニット '{}' を格納しました"_fmt(unit->Name);
+
+								// 容量に達したら終了
+								if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
+								{
+									break;
+								}
+							}
+							else
+							{
+								Print << U"キャリアーの容量が満杯です";
+								break;
+							}
+						}
+
+						if (storedCount > 0)
+						{
+							Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
+						}
+						else
+						{
+							Print << U"格納できるユニットがありませんでした";
+						}
+					}
+
+					if (hbm.second.category == U"releaseAll")
+					{
+						// 現在選択されているユニットを取得
+						Unit* selectedCarrierUnit = nullptr;
+						for (auto& loau : classBattle.listOfAllUnit)
+						{
+							for (auto& unit : loau.ListClassUnit)
+							{
+								if (unit.IsSelect)
+								{
+									selectedCarrierUnit = &unit;
+									break;
+								}
+							}
+							if (selectedCarrierUnit) break;
+						}
+
+						if (!selectedCarrierUnit) continue;
+
+						// キャリアーコンポーネントを取得
+						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+						if (!carrierComponent) continue;
+
+						// 格納されているユニットがあるかチェック
+						if (carrierComponent->storedUnits.empty())
+						{
+							Print << U"格納されているユニットがありません";
+							continue;
+						}
+
+						// 現在のキャリアーユニットの位置を取得
+						Vec2 releasePosition = selectedCarrierUnit->GetNowPosiCenter();
+
+						// 格納されているユニット数を記録（リリース前）
+						int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
+
+						// 全ユニットを解放
+						carrierComponent->releaseAll(releasePosition);
+
+						Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
 					}
 
 					// 設置位置の取得
@@ -2046,6 +2210,456 @@ void Battle::handleUnitAndBuildingSelection()
 		}
 	}
 }
+
+/// @brief 範囲選択されたタイル配列を取得
+/// @param start 開始タイル座標
+/// @param end 終了タイル座標
+/// @return 選択範囲内のタイル座標配列
+Array<Point> Battle::getRangeSelectedTiles(const Point& start, const Point& end)
+{
+	Array<Point> selectedTiles;
+
+	// 開始点と終了点から矩形範囲を計算
+	int32 minX = Min(start.x, end.x);
+	int32 maxX = Max(start.x, end.x);
+	int32 minY = Min(start.y, end.y);
+	int32 maxY = Max(start.y, end.y);
+
+	// 矩形範囲内の全タイルを配列に追加
+	for (int32 x = minX; x <= maxX; ++x)
+	{
+		for (int32 y = minY; y <= maxY; ++y)
+		{
+			// マップ範囲内かチェック
+			if (x >= 0 && x < N && y >= 0 && y < N)
+			{
+				selectedTiles.push_back(Point(x, y));
+			}
+		}
+	}
+
+	return selectedTiles;
+}
+
+/// @brief 選択されたタイルに対して建築処理を実行
+/// @param tiles 選択されたタイル座標配列
+void Battle::processBuildOnTiles(const Array<Point>& tiles)
+{
+	if (longBuildSelectTragetId == -1)
+	{
+		Print << U"建築ユニットが選択されていません";
+		return;
+	}
+
+	Unit& selectedUnit = GetCU(longBuildSelectTragetId);
+
+	// 建築可能なタイルの数をカウント
+	Array<Point> validTiles;
+	for (const auto& tile : tiles)
+	{
+		if (canBuildOnTile(tile))
+		{
+			validTiles.push_back(tile);
+		}
+	}
+
+	if (validTiles.isEmpty())
+	{
+		Print << U"建築可能なタイルがありません";
+		return;
+	}
+
+	// 建築可能なタイルに対して建築処理を実行
+	int32 builtCount = 0;
+	for (const auto& tile : validTiles)
+	{
+		// 建築メニューから選択された建築アクションを取得
+		BuildAction buildAction = selectedUnit.tempIsBuildSelectTragetBuildAction;
+
+		// タイル座標を建築ターゲットに設定
+		buildAction.rowBuildingTarget = tile.y;
+		buildAction.colBuildingTarget = tile.x;
+
+		// 建築予約に追加
+		selectedUnit.arrYoyakuBuild.push_back(buildAction);
+		builtCount++;
+
+		Print << U"タイル({}, {})に建築を予約しました"_fmt(tile.x, tile.y);
+	}
+
+	// 建築タイマーを開始（まだ動いていない場合）
+	if (!selectedUnit.taskTimer.isRunning() && !selectedUnit.arrYoyakuBuild.isEmpty())
+	{
+		selectedUnit.taskTimer.restart();
+		selectedUnit.progressTime = 0.0;
+	}
+
+	Print << U"合計 {} 箇所に建築を予約しました"_fmt(builtCount);
+
+	// 建築選択状態を解除
+	IsBuildSelectTraget = false;
+	IsBuildMenuHome = false;
+	selectedUnit.IsSelect = false;
+	longBuildSelectTragetId = -1;
+}
+
+/// @brief 指定タイルに建築可能かチェック
+/// @param tile タイル座標
+/// @return 建築可能ならtrue
+bool Battle::canBuildOnTile(const Point& tile) const
+{
+	// マップ範囲外チェック
+	if (tile.x < 0 || tile.x >= N || tile.y < 0 || tile.y >= N)
+	{
+		return false;
+	}
+
+	// 建物が既に存在するかチェック
+	for (const auto& group : classBattle.listOfAllUnit)
+	{
+		if (group.FlagBuilding)
+		{
+			for (const auto& unit : group.ListClassUnit)
+			{
+				if (unit.initTilePos == tile && unit.IsBattleEnable)
+				{
+					return false; // 既に建物が存在
+				}
+			}
+		}
+	}
+
+	// 敵の建物もチェック
+	for (const auto& group : classBattle.listOfAllEnemyUnit)
+	{
+		if (group.FlagBuilding)
+		{
+			for (const auto& unit : group.ListClassUnit)
+			{
+				if (unit.initTilePos == tile && unit.IsBattleEnable)
+				{
+					return false; // 敵の建物が存在
+				}
+			}
+		}
+	}
+
+	// ユニットが存在するかチェック
+	for (const auto& group : classBattle.listOfAllUnit)
+	{
+		for (const auto& unit : group.ListClassUnit)
+		{
+			if (!unit.IsBuilding && unit.IsBattleEnable)
+			{
+				Optional<Point> unitTilePos = ToIndex(unit.GetNowPosiCenter(), columnQuads, rowQuads);
+				if (unitTilePos && *unitTilePos == tile)
+				{
+					return false; // ユニットが存在
+				}
+			}
+		}
+	}
+
+	// 地形チェック（水タイルなど建築不可地形があれば追加）
+	// TODO: mapDataから地形情報を取得して建築可否を判定
+
+	return true; // 建築可能
+}
+
+/// @brief 建物をタイル上に作成
+/// @param tile タイル座標
+/// @param buildAction 建築アクション
+void Battle::createBuildingOnTile(const Point& tile, const BuildAction& buildAction)
+{
+	// 建物ユニットの作成
+	for (auto& baseUnit : m_commonConfig.arrayUnit)
+	{
+		if (baseUnit.NameTag == buildAction.result.spawn)
+		{
+			Unit newBuilding = baseUnit;
+			newBuilding.ID = classBattle.getIDCount();
+			newBuilding.IsBuilding = true;
+			newBuilding.initTilePos = tile;
+			newBuilding.colBuilding = tile.x;
+			newBuilding.rowBuilding = tile.y;
+			newBuilding.nowPosiLeft = ToTile(tile, N).asPolygon().centroid()
+				.movedBy(-(newBuilding.yokoUnit / 2), -(newBuilding.TakasaUnit / 2));
+
+			// 建築物グループに追加
+			ClassHorizontalUnit buildingGroup;
+			buildingGroup.FlagBuilding = true;
+			buildingGroup.ListClassUnit.push_back(newBuilding);
+			classBattle.listOfAllUnit.push_back(buildingGroup);
+
+			// A*用ハッシュテーブルに追加
+			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(newBuilding));
+			hsBuildingUnitForAstar[tile] = unitsForHsBuildingUnitForAstar.back().get();
+
+			break;
+		}
+	}
+}
+/// @brief 建築ハッシュテーブルの更新
+/// @param tile 建築されたタイル座標
+void Battle::updateBuildingHashTable(const Point& tile)
+{
+	// ミニマップの色更新
+	minimapCols[tile] = ColorF{ 0.5, 0.3, 0.1 }; // 建物の色
+
+	// 視界の更新（建物により視界が変わる場合）
+	refreshFogOfWar();
+}
+/// @brief 建築完了エフェクトの再生
+/// @param tile 建築されたタイル座標
+void Battle::playBuildCompleteEffect(const Point& tile)
+{
+	Vec2 worldPos = ToTileBottomCenter(tile, N);
+
+	// パーティクルエフェクト（実装されている場合）
+	// Effect::Add<BuildCompleteEffect>(worldPos);
+
+	// サウンドエフェクト（実装されている場合）
+	// SoundAsset(U"buildComplete").playOneShot();
+
+	Print << U"建築完了エフェクトを再生: タイル({}, {})"_fmt(tile.x, tile.y);
+}
+/// @brief 指定タイルで建築を実行（実際の建築処理）
+/// @param tile タイル座標
+/// @param itemUnit 建築を行うユニット
+void Battle::executeBuildOnTile(Unit& itemUnit)
+{
+	// 現在のタスクの建築を実行
+	BuildAction& currentBuildAction = itemUnit.arrYoyakuBuild.front();
+
+	// 建築位置の設定
+	Point tile(currentBuildAction.colBuildingTarget, currentBuildAction.rowBuildingTarget);
+
+	if (!canBuildOnTile(tile))
+	{
+		Print << U"タイル({}, {})は建築できません"_fmt(tile.x, tile.y);
+		return;
+	}
+
+	if (itemUnit.arrYoyakuBuild.isEmpty())
+	{
+		Print << U"建築キューが空です";
+		return;
+	}
+
+	// 建築結果の処理
+	if (currentBuildAction.result.type == U"unit")
+	{
+		const auto logFor = currentBuildAction;
+
+		// ユニットの生成
+		UnitRegister(currentBuildAction.result.spawn,
+				   tile.x, tile.y,
+				   currentBuildAction.createCount,
+				   classBattle.listOfAllUnit, false);
+
+		Print << U"タイル({}, {})にユニット '{}' を {} 体生成しました"_fmt(
+			tile.x, tile.y, logFor.result.spawn, logFor.createCount);
+	}
+	//else if (currentBuildAction.result.type == U"building")
+	//{
+	//	// 建物の配置
+	//	createBuildingOnTile(tile, currentBuildAction);
+
+	//	Print << U"タイル({}, {})に建物 '{}' を建設しました"_fmt(
+	//		tile.x, tile.y, currentBuildAction.result.spawn);
+	//}
+	//else if (currentBuildAction.result.type == U"wall")
+	//{
+	//	// 壁の建設
+	//	createWallOnTile(tile, currentBuildAction);
+
+	//	Print << U"タイル({}, {})に壁を建設しました"_fmt(tile.x, tile.y);
+	//}
+
+	// 資源の消費
+	//if (currentBuildAction.cost.gold > 0)
+	//{
+	//	gold = Max(0, gold - currentBuildAction.cost.gold);
+	//}
+	//if (currentBuildAction.cost.food > 0)
+	//{
+	//	food = Max(0, food - currentBuildAction.cost.food);
+	//}
+
+	// 建築ハッシュテーブルの更新（A*用）
+	updateBuildingHashTable(tile);
+
+	// 建築完了エフェクト
+	playBuildCompleteEffect(tile);
+}
+
+/// @brief 範囲選択に対応した建築処理（移動→建築のシーケンス）
+/// @param tiles 選択されたタイル座標配列
+void Battle::processBuildOnTilesWithMovement(const Array<Point>& tiles)
+{
+	if (longBuildSelectTragetId == -1)
+	{
+		Print << U"建築ユニットが選択されていません";
+		return;
+	}
+
+	Unit& selectedUnit = GetCU(longBuildSelectTragetId);
+
+	// 建築可能なタイルのみを抽出
+	Array<Point> validTiles;
+	for (const auto& tile : tiles)
+	{
+		if (canBuildOnTile(tile))
+		{
+			validTiles.push_back(tile);
+		}
+	}
+
+	if (validTiles.isEmpty())
+	{
+		Print << U"建築可能なタイルがありません";
+		return;
+	}
+
+	// 現在位置からの距離でソート（最適な移動順序）
+	Optional<Point> currentTilePos = ToIndex(selectedUnit.GetNowPosiCenter(), columnQuads, rowQuads);
+	if (currentTilePos)
+	{
+		validTiles.sort_by([&](const Point& a, const Point& b) {
+			return currentTilePos->manhattanDistanceFrom(a) < currentTilePos->manhattanDistanceFrom(b);
+		});
+	}
+
+	// 各タイルに対して移動→建築のタスクを作成
+	for (const auto& tile : validTiles)
+	{
+		BuildAction buildAction = selectedUnit.tempIsBuildSelectTragetBuildAction;
+		buildAction.rowBuildingTarget = tile.y;
+		buildAction.colBuildingTarget = tile.x;
+
+		// 移動が必要な建築として特別なタスクタイプを設定
+		selectedUnit.requiresMovement = true;
+
+		selectedUnit.arrYoyakuBuild.push_back(buildAction);
+		Print << U"タイル({}, {})への移動→建築を予約しました"_fmt(tile.x, tile.y);
+	}
+
+	// 最初の建築タスクを開始
+	if (!selectedUnit.arrYoyakuBuild.isEmpty())
+	{
+		selectedUnit.currentTask = UnitTask::MovingToBuild;
+
+		// 最初のタイルへの移動を開始
+		Point firstTile = Point(selectedUnit.arrYoyakuBuild.front().colBuildingTarget,
+							   selectedUnit.arrYoyakuBuild.front().rowBuildingTarget);
+
+		Vec2 targetPos = ToTileBottomCenter(firstTile, N);
+		selectedUnit.orderPosiLeft = targetPos.movedBy(-(selectedUnit.yokoUnit / 2), -(selectedUnit.TakasaUnit / 2));
+		selectedUnit.orderPosiLeftLast = targetPos;
+		selectedUnit.vecMove = (selectedUnit.orderPosiLeft - selectedUnit.nowPosiLeft).normalized();
+		selectedUnit.moveState = moveState::MoveAI;
+
+		if (!selectedUnit.taskTimer.isRunning())
+		{
+			selectedUnit.taskTimer.restart();
+			selectedUnit.progressTime = 0.0;
+		}
+	}
+
+	Print << U"合計 {} 箇所への移動→建築を予約しました"_fmt(validTiles.size());
+
+	// 建築選択状態を解除
+	IsBuildSelectTraget = false;
+	IsBuildMenuHome = false;
+	selectedUnit.IsSelect = false;
+	longBuildSelectTragetId = -1;
+}
+/// @brief 移動完了後の建築処理（改良版）
+/// @param unit 建築ユニット
+void Battle::afterMovedPushToBuildMenuAdvanced(Unit& itemUnit)
+{
+	if (itemUnit.classBuild == U"") return;
+	if (itemUnit.arrYoyakuBuild.isEmpty()) return;
+
+	// ユニットIDを事前に保存（参照破壊対策）
+	const int64 unitId = itemUnit.ID;
+	const size_t buildQueueSizeBefore = itemUnit.arrYoyakuBuild.size();
+
+	Print << U"建築前: ユニットID {} の建築キューサイズ: {}"_fmt(unitId, buildQueueSizeBefore);
+
+	// 建築実行
+	executeBuildOnTile(itemUnit);
+
+	// IDから再度ユニット参照を安全に取得
+	Unit* currentUnit = GetCUSafe(unitId);
+	if (!currentUnit)
+	{
+		Print << U"警告: ユニットID {} が見つかりません。建築処理を中断します。"_fmt(unitId);
+		return;
+	}
+
+	// 4. 建築キューの状態を確認・ログ出力
+	const size_t buildQueueSizeAfter = currentUnit->arrYoyakuBuild.size();
+	Print << U"建築後: ユニットID {} の建築キューサイズ: {} -> {}"_fmt(
+		unitId, buildQueueSizeBefore, buildQueueSizeAfter);
+
+	// 5. 建築キューが意図せず空になっていないかチェック
+	if (buildQueueSizeAfter == 0 && buildQueueSizeBefore > 1)
+	{
+		Print << U"警告: 建築キューが予想外に空になりました。参照破壊の可能性があります。";
+		Print << U"ユニットID: {}, 元のサイズ: {}, 現在のサイズ: {}"_fmt(
+			unitId, buildQueueSizeBefore, buildQueueSizeAfter);
+
+		// 緊急事態なので、建築処理を中断
+		currentUnit->currentTask = UnitTask::None;
+		currentUnit->moveState = moveState::None;
+		currentUnit->taskTimer.reset();
+		currentUnit->progressTime = -1.0;
+		IsBuildSelectTraget = false;
+		return;
+	}
+
+	// 6. 正常な場合のみ建築タスクを削除
+	if (!currentUnit->arrYoyakuBuild.isEmpty())
+	{
+		currentUnit->arrYoyakuBuild.pop_front();
+		Print << U"建築タスクを削除しました。残りタスク数: {}"_fmt(currentUnit->arrYoyakuBuild.size());
+	}
+	else
+	{
+		Print << U"警告: 削除すべき建築タスクが見つかりません";
+	}
+
+	// 次の建築タスクがあるかチェック
+	if (!currentUnit->arrYoyakuBuild.isEmpty())
+	{
+		// 次のタイルへの移動を開始
+		BuildAction& nextBuildAction = currentUnit->arrYoyakuBuild.front();
+		Point nextTile(nextBuildAction.colBuildingTarget, nextBuildAction.rowBuildingTarget);
+
+		Vec2 nextTargetPos = ToTileBottomCenter(nextTile, N);
+		currentUnit->orderPosiLeft = nextTargetPos.movedBy(-(currentUnit->yokoUnit / 2), -(currentUnit->TakasaUnit / 2));
+		currentUnit->orderPosiLeftLast = nextTargetPos;
+		currentUnit->vecMove = (currentUnit->orderPosiLeft - currentUnit->nowPosiLeft).normalized();
+		currentUnit->moveState = moveState::MoveAI;
+		currentUnit->currentTask = UnitTask::MovingToBuild;
+
+		Print << U"次のタイル({}, {})への移動を開始します"_fmt(nextTile.x, nextTile.y);
+	}
+	else
+	{
+		// すべての建築タスクが完了
+		currentUnit->currentTask = UnitTask::None;
+		currentUnit->moveState = moveState::None;
+		currentUnit->taskTimer.reset();
+		currentUnit->progressTime = -1.0;
+
+		Print << U"すべての建築タスクが完了しました";
+	}
+
+	IsBuildSelectTraget = false;
+}
+
 void Battle::handleBuildTargetSelection()
 {
 	if (!IsBuildSelectTraget)
@@ -2068,6 +2682,19 @@ void Battle::handleBuildTargetSelection()
 
 			IsBattleMove = false;
 			abortMyUnits = false;
+		}
+		// 右クリックドラッグによる範囲選択
+		if (MouseR.up() && longBuildSelectTragetId != -1) {
+			Point startTile, endTile;
+
+			if (auto startIndex = ToIndex(cursPos, columnQuads, rowQuads)) {
+				startTile = *startIndex;
+				endTile = *index;
+
+				Array<Point> selectedTiles = getRangeSelectedTiles(startTile, endTile);
+				// 新しい移動→建築処理を呼び出し
+				processBuildOnTilesWithMovement(selectedTiles);
+			}
 		}
 	}
 }
@@ -2324,45 +2951,61 @@ Co::Task<void> Battle::mainLoop()
 		}
 		////後でbattle内に移動(ポーズ処理を考慮
 		updateBuildQueue();
-
-		for (auto& group : classBattle.listOfAllUnit)
+		// 移動処理 - 安全なインデックスベースループ
+		try
 		{
-			for (auto& unit : group.ListClassUnit)
+			for (size_t groupIndex = 0; groupIndex < classBattle.listOfAllUnit.size(); ++groupIndex)
 			{
-				switch (unit.currentTask)
-				{
-				case UnitTask::MovingToBuild:
-				{
-					std::scoped_lock lock(aiRootMutex);
-					if (aiRootMy[unit.ID].getPath().isEmpty())
-					{
-						unit.currentTask = UnitTask::None;
-						afterMovedPushToBuildMenu(unit);
-					}
-				}
-				break;
-				case UnitTask::MovingToResource:
-				{
-					std::scoped_lock lock(aiRootMutex);
-					if (aiRootMy[unit.ID].getPath().isEmpty())
-					{
-						unit.currentTask = UnitTask::WorkingOnResource;
-						unit.taskTimer.restart();
-					}
-				}
-				break;
+				auto& item = classBattle.listOfAllUnit[groupIndex];
 
-				case UnitTask::WorkingOnResource:
-					if (unit.taskTimer.sF() >= unit.waitTimeResource)
+				// 各フレームでサイズを再取得（動的変更に対応）
+				for (size_t unitIndex = 0; unitIndex < item.ListClassUnit.size(); ++unitIndex)
+				{
+					auto& unit = item.ListClassUnit[unitIndex];
+
+					switch (unit.currentTask)
 					{
-						addResource(unit);
+					case UnitTask::MovingToBuild:
+					{
+						std::scoped_lock lock(aiRootMutex);
+						if (aiRootMy[unit.ID].getPath().isEmpty())
+						{
+							unit.currentTask = UnitTask::None;
+							//afterMovedPushToBuildMenu(unit);
+											// 移動完了→建築実行→次のタスクチェック
+							afterMovedPushToBuildMenuAdvanced(unit);
+						}
+					}
+					break;
+					case UnitTask::MovingToResource:
+					{
+						std::scoped_lock lock(aiRootMutex);
+						if (aiRootMy[unit.ID].getPath().isEmpty())
+						{
+							unit.currentTask = UnitTask::WorkingOnResource;
+							unit.taskTimer.restart();
+						}
 					}
 					break;
 
-				default:
-					break;
+					case UnitTask::WorkingOnResource:
+						if (unit.taskTimer.sF() >= unit.waitTimeResource)
+						{
+							addResource(unit);
+						}
+						break;
+
+					default:
+						break;
+					}
+
 				}
 			}
+		}
+		catch (const std::exception&)
+		{
+			// エラーが発生した場合、ループを継続
+			//参照破壊を想定
 		}
 
 		switch (battleStatus)
@@ -2713,14 +3356,114 @@ void Battle::drawResourcesUI() const
 		systemFont(text).drawAt(rect.center(), Palette::White);
 	}
 }
+//void Battle::drawBuildTargetHighlight() const
+//{
+//	if (IsBuildSelectTraget)
+//	{
+//		if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+//		{
+//			// マウスカーソルがあるタイルを強調表示する
+//			ToTile(*index, N).draw(ColorF{ 1.0, 0.2 });
+//		}
+//	}
+//}
 void Battle::drawBuildTargetHighlight() const
 {
 	if (IsBuildSelectTraget)
 	{
 		if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
 		{
-			// マウスカーソルがあるタイルを強調表示する
-			ToTile(*index, N).draw(ColorF{ 1.0, 0.2 });
+			// 右クリック範囲選択中の処理
+			if (MouseR.pressed() && longBuildSelectTragetId != -1)
+			{
+				// 開始点の取得
+				if (auto startIndex = ToIndex(cursPos, columnQuads, rowQuads))
+				{
+					Point startTile = *startIndex;
+					Point endTile = *index;
+
+					// 範囲選択されるタイル一覧を取得
+					Array<Point> previewTiles;
+
+					// 開始点と終了点から矩形範囲を計算
+					int32 minX = Min(startTile.x, endTile.x);
+					int32 maxX = Max(startTile.x, endTile.x);
+					int32 minY = Min(startTile.y, endTile.y);
+					int32 maxY = Max(startTile.y, endTile.y);
+
+					// 矩形範囲内の全タイルを配列に追加
+					for (int32 x = minX; x <= maxX; ++x)
+					{
+						for (int32 y = minY; y <= maxY; ++y)
+						{
+							// マップ範囲内かチェック
+							if (x >= 0 && x < N && y >= 0 && y < N)
+							{
+								previewTiles.push_back(Point(x, y));
+							}
+						}
+					}
+
+					// 範囲選択プレビューの描画
+					for (const auto& tile : previewTiles)
+					{
+						// 建築可能かどうかで色を変える
+						ColorF tileColor = canBuildOnTile(tile) ?
+							ColorF{ 0.0, 1.0, 0.2, 0.4 } :  // 緑半透明：建築可能
+							ColorF{ 1.0, 0.2, 0.2, 0.4 };   // 赤半透明：建築不可
+
+						ToTile(tile, N).draw(tileColor);
+					}
+
+					// 範囲選択の枠線を描画
+					{
+						const auto t = camera.createTransformer();
+						const double thickness = 2.0;
+						const double offset = Scene::DeltaTime() * 8;
+
+						// 開始タイルと終了タイルの座標を取得
+						Vec2 startPos = ToTileBottomCenter(startTile, N);
+						Vec2 endPos = ToTileBottomCenter(endTile, N);
+
+						// 矩形の四隅を計算
+						const Rect selectionRect = Rect::FromPoints(startPos.asPoint(), endPos.asPoint());
+
+						// 点線で枠を描画
+						selectionRect.top().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+						selectionRect.right().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+						selectionRect.bottom().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+						selectionRect.left().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+					}
+
+					// 選択予定数の表示
+					{
+						int32 validCount = 0;
+						int32 totalCount = previewTiles.size();
+
+						for (const auto& tile : previewTiles)
+						{
+							if (canBuildOnTile(tile)) validCount++;
+						}
+
+						// カーソル近くに情報表示
+						const String infoText = U"選択: {}/{} タイル"_fmt(validCount, totalCount);
+						const Vec2 textPos = Cursor::PosF().movedBy(20, -30);
+
+						// 背景を描画
+						const auto textRegion = font(infoText).region();
+						const RectF bgRect = RectF(textPos, textRegion.size).stretched(4);
+						bgRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.7 });
+
+						// テキストを描画
+						font(infoText).draw(textPos, Palette::White);
+					}
+				}
+			}
+			else
+			{
+				// 通常の単一タイルハイライト
+				ToTile(*index, N).draw(ColorF{ 1.0, 1.0, 0.2, 0.3 });
+			}
 		}
 	}
 }
@@ -2946,7 +3689,21 @@ Unit& Battle::GetCU(long ID)
 			if (temptemp.ID == ID)
 				return temptemp;
 }
-
+/// @brief IDからユニットを安全に取得（Optional版）
+/// @param ID ユニットID
+/// @return ユニットのポインタ（見つからない場合はnullptr）
+Unit* Battle::GetCUSafe(long ID)
+{
+	for (auto& temp : classBattle.listOfAllUnit)
+	{
+		for (auto& temptemp : temp.ListClassUnit)
+		{
+			if (temptemp.ID == ID)
+				return &temptemp;
+		}
+	}
+	return nullptr;
+}
 /// @brief 全ユニットから「移動可能なユニット」だけを抽出して部隊ごとにまとめる
 /// @return 
 Array<Array<Unit*>> Battle::GetMovableUnitGroups()

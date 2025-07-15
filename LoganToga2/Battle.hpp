@@ -284,6 +284,7 @@ private:
 	/// @brief 種別-アクション名,紐づくアクション 保守性を考え。
 	HashTable<String, BuildAction> htBuildMenu;
 	BuildAction& tempSelectComRight;
+	Array<std::pair<String, BuildAction>> sortedArrayBuildMenu;
 
 	HashTable<String, RenderTexture> htBuildMenuRenderTexture;
 
@@ -391,4 +392,16 @@ private:
 	Stopwatch fogUpdateTimer{ StartImmediately::Yes };
 	HashTable<Point, const Unit*> hsBuildingUnitForAstar;
 	Array<std::unique_ptr<Unit>> unitsForHsBuildingUnitForAstar;
+
+	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
+	void afterMovedPushToBuildMenuAdvanced(Unit& itemUnit);
+	Array<Point> getRangeSelectedTiles(const Point& start, const Point& end);
+	void processBuildOnTiles(const Array<Point>& tiles);
+	bool canBuildOnTile(const Point& tile) const;
+	void executeBuildOnTile(Unit& itemUnit);
+	void createBuildingOnTile(const Point& tile, const BuildAction& buildAction);
+	void updateBuildingHashTable(const Point& tile);
+	void playBuildCompleteEffect(const Point& tile);
+	Unit* GetCUSafe(long ID);
+
 };

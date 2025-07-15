@@ -89,6 +89,21 @@ void Init(CommonConfig& commonConfig)
 			{
 				cu.SkillName.push_back(sNa);
 			}
+
+			if (value.hasElement(U"isCarrierUnit") == true)
+			{
+				if (Parse<bool>(value[U"isCarrierUnit"].getString()))
+				{
+					cu.isCarrierUnit = true;
+					auto carrierComponent = std::make_unique<CarrierComponent>();
+					if (value.hasElement(U"carrierCapacity") == true)
+					{
+						carrierComponent->capacity = Parse<int32>(value[U"carrierCapacity"].getString());
+					}
+					cu.components.push_back(std::move(carrierComponent));
+				}
+			}
+
 			arrayClassUnit.push_back(std::move(cu));
 		}
 
@@ -318,10 +333,13 @@ void Init(CommonConfig& commonConfig)
 				if (object2.hasElement(U"createCount") == true)
 					ba.createCount = Parse<int32>(object2[U"createCount"].getString());
 				HashTable<String, int32> costTemp;
-				for (auto&& [index3, object3] : object2[U"cost"])
+				if (object2.hasElement(U"cost") == true)
 				{
-					int32 ioudiu = object3.get<int32>();
-					costTemp.emplace(index3, object3.get<int32>());
+					for (auto&& [index3, object3] : object2[U"cost"])
+					{
+						int32 ioudiu = object3.get<int32>();
+						costTemp.emplace(index3, object3.get<int32>());
+					}
 				}
 				ba.buildTime = object2[U"buildTime"].get<double>();
 				ba.category = object2[U"category"].getString();
@@ -330,11 +348,13 @@ void Init(CommonConfig& commonConfig)
 				{
 					requiresTemp.push_back(object3.getString());
 				}
-				ba.isMove = ParseBool(object2[U"isMove"].getString());
-				for (auto&& [key, object3] : object2[U"result"])
+				if (object2.hasElement(U"isMove") == true)
+					ba.isMove = ParseBool(object2[U"isMove"].getString());
+				for (auto&& [key, resultObj] : object2[U"result"])
 				{
-					ba.result.spawn = object3[U"spawn"].getString();
-					ba.result.type = object3[U"type"].getString();
+					if (resultObj.hasElement(U"spawn") == true)
+						ba.result.spawn = resultObj[U"spawn"].getString();
+					ba.result.type = resultObj[U"type"].getString();
 				}
 				arrBa.push_back(ba);
 			}

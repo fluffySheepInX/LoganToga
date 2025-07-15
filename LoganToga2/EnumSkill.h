@@ -59,6 +59,7 @@ enum class UnitTask
 	None,
 	Build,
 	MovingToBuild,
+	MovingToBuildArea,
 	MovingToResource,
 	WorkingOnResource
 };
