@@ -395,7 +395,7 @@ private:
 
 	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
 	void afterMovedPushToBuildMenuAdvanced(Unit& itemUnit);
-	Array<Point> getRangeSelectedTiles(const Point& start, const Point& end);
+	Array<Point> getRangeSelectedTiles(const Point& start, const Point& end) const;
 	void processBuildOnTiles(const Array<Point>& tiles);
 	bool canBuildOnTile(const Point& tile) const;
 	void executeBuildOnTile(Unit& itemUnit);

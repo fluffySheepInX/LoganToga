@@ -5,6 +5,7 @@
 #include "Common.h"
 #include "Game.hpp"
 #include "Battle.hpp"
+#include "Battle001.h"
 #include "ClassUnit.h"
 #include "ClassCommonConfig.h"
 #include "ClassBuildAction.h"
@@ -486,6 +487,32 @@ void Main()
 		systemString = ss;
 
 		const auto battle = Co::PlaySceneFrom<Battle>(saveData, commonConfig, systemString).runScoped();
+		loop();
+	}
+	else if(argc == 2 && args[1] == U"-Battle001")
+	{
+		SystemString ss;
+		ss.BattleMessage001 = U"BattleMessage001";
+		ss.StatusName = U"StatusName";
+		ss.StatusRace = U"";
+		ss.StatusPrice = U"";
+		ss.StatusHp = U"";
+		ss.StatusMp = U"";
+		ss.StatusAttack = U"";
+		ss.StatusDefense = U"";
+		ss.StatusMagic = U"";
+		ss.StatusMagDef = U"";
+		ss.StatusSpeed = U"";
+		ss.StatusMove = U"";
+		ss.StatusSkill = U"";
+		ss.StatusSetumei = U"";
+		ss.SkillAttack = U"SkillAttack";
+		ss.Zinkei.push_back(U"密集");
+		ss.Zinkei.push_back(U"横列");
+		ss.Zinkei.push_back(U"正方");
+		systemString = ss;
+
+		const auto game = Co::PlaySceneFrom<Battle001>(saveData, commonConfig, systemString).runScoped();
 		loop();
 	}
 	else

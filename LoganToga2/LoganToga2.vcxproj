@@ -164,6 +164,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Battle.cpp" />
+    <ClCompile Include="Battle001.cpp" />
     <ClCompile Include="ClassAStar.cpp" />
     <ClCompile Include="ClassBattle.cpp" />
     <ClCompile Include="ClassBuildAction.cpp" />
@@ -388,6 +389,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Battle.hpp" />
+    <ClInclude Include="Battle001.h" />
     <ClInclude Include="ClassAStar.h" />
     <ClInclude Include="ClassBattle.h" />
     <ClInclude Include="ClassBuildAction.h" />

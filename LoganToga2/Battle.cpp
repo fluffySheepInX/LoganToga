@@ -447,7 +447,7 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	taskTimer.restart();
 
 	while (true) {
-		if (taskTimer.s() > 3) break;
+		//if (taskTimer.s() > 3) break;
 		if (abort) break;
 		if (!startAstar2.has_value()) { pathShare.clear(); break; }
 		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar, true);
@@ -456,8 +456,10 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 		if (astarToGoal.GetListClassAStar().size() != 0)
 			startAstar2 = SearchMinScore(astarToGoal.GetListClassAStar());
 		if (!startAstar2.has_value()) continue;
-		//敵まで到達したか
-		if (startAstar2.value()->GetRow() == astarToGoal.GetEndX() && startAstar2.value()->GetCol() == astarToGoal.GetEndY())
+		//敵まで到達したか、あるいはその時点で可能性のある道を行く
+		if ((startAstar2.value()->GetRow() == astarToGoal.GetEndX()
+			&& startAstar2.value()->GetCol() == astarToGoal.GetEndY())
+			|| taskTimer.s() > 3)
 		{
 			startAstar2.value()->GetRoot(pathShare);
 			pathShare.reverse();
@@ -1323,7 +1325,7 @@ Co::Task<void> Battle::start()
 	//	std::ref(columnQuads),
 	//	std::ref(rowQuads),
 	//	N,
-	//	std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));
+	//	std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));  
 
 	// 経路探索スレッド起動
 	taskMyUnits = Async([this]() {
@@ -2211,36 +2213,91 @@ void Battle::handleUnitAndBuildingSelection()
 	}
 }
 
-/// @brief 範囲選択されたタイル配列を取得
+///// @brief 範囲選択されたタイル配列を取得
+///// @param start 開始タイル座標
+///// @param end 終了タイル座標
+///// @return 選択範囲内のタイル座標配列
+//Array<Point> Battle::getRangeSelectedTiles(const Point& start, const Point& end)
+//{
+//	Array<Point> selectedTiles;
+//
+//	// 開始点と終了点から矩形範囲を計算
+//	int32 minX = Min(start.x, end.x);
+//	int32 maxX = Max(start.x, end.x);
+//	int32 minY = Min(start.y, end.y);
+//	int32 maxY = Max(start.y, end.y);
+//
+//	// 矩形範囲内の全タイルを配列に追加
+//	for (int32 x = minX; x <= maxX; ++x)
+//	{
+//		for (int32 y = minY; y <= maxY; ++y)
+//		{
+//			// マップ範囲内かチェック
+//			if (x >= 0 && x < N && y >= 0 && y < N)
+//			{
+//				selectedTiles.push_back(Point(x, y));
+//			}
+//		}
+//	}
+//
+//	return selectedTiles;
+//}
+/// @brief 範囲選択されたタイル配列を取得（線状選択版）
 /// @param start 開始タイル座標
 /// @param end 終了タイル座標
-/// @return 選択範囲内のタイル座標配列
-Array<Point> Battle::getRangeSelectedTiles(const Point& start, const Point& end)
+/// @return 選択範囲内のタイル座標配列（線状）
+Array<Point> Battle::getRangeSelectedTiles(const Point& start, const Point& end) const
 {
 	Array<Point> selectedTiles;
 
-	// 開始点と終了点から矩形範囲を計算
-	int32 minX = Min(start.x, end.x);
-	int32 maxX = Max(start.x, end.x);
-	int32 minY = Min(start.y, end.y);
-	int32 maxY = Max(start.y, end.y);
+	// 開始点と終了点の差分を計算
+	int32 deltaX = end.x - start.x;
+	int32 deltaY = end.y - start.y;
 
-	// 矩形範囲内の全タイルを配列に追加
-	for (int32 x = minX; x <= maxX; ++x)
+	// どちらの方向により大きく動いたかを判定
+	bool isHorizontalDominant = Abs(deltaX) >= Abs(deltaY);
+
+	if (isHorizontalDominant)
 	{
+		// 横方向が主軸：水平線を描画
+		int32 minX = Min(start.x, end.x);
+		int32 maxX = Max(start.x, end.x);
+		int32 fixedY = start.y; // Y座標は開始点で固定
+
+		for (int32 x = minX; x <= maxX; ++x)
+		{
+			// マップ範囲内かチェック
+			if (x >= 0 && x < N && fixedY >= 0 && fixedY < N)
+			{
+				selectedTiles.push_back(Point(x, fixedY));
+			}
+		}
+
+		Print << U"水平線選択: Y={}, X={}〜{} ({} タイル)"_fmt(
+			fixedY, minX, maxX, selectedTiles.size());
+	}
+	else
+	{
+		// 縦方向が主軸：垂直線を描画
+		int32 minY = Min(start.y, end.y);
+		int32 maxY = Max(start.y, end.y);
+		int32 fixedX = start.x; // X座標は開始点で固定
+
 		for (int32 y = minY; y <= maxY; ++y)
 		{
 			// マップ範囲内かチェック
-			if (x >= 0 && x < N && y >= 0 && y < N)
+			if (fixedX >= 0 && fixedX < N && y >= 0 && y < N)
 			{
-				selectedTiles.push_back(Point(x, y));
+				selectedTiles.push_back(Point(fixedX, y));
 			}
 		}
+
+		Print << U"垂直線選択: X={}, Y={}〜{} ({} タイル)"_fmt(
+			fixedX, minY, maxY, selectedTiles.size());
 	}
 
 	return selectedTiles;
 }
-
 /// @brief 選択されたタイルに対して建築処理を実行
 /// @param tiles 選択されたタイル座標配列
 void Battle::processBuildOnTiles(const Array<Point>& tiles)
@@ -2929,6 +2986,32 @@ void Battle::addResource(Unit& unit)
 	SetResourceTargets(resourceTargets);
 	resourcePointTooltip.setTargets(resourceTargets);
 }
+class SafeUnitManager {
+private:
+	static inline HashTable<int64, std::weak_ptr<Unit>> unitRegistry;
+	static inline std::mutex registryMutex;
+
+public:
+	static std::shared_ptr<Unit> GetSafeUnit(int64 unitID) {
+		std::scoped_lock lock(registryMutex);
+
+		if (auto it = unitRegistry.find(unitID); it != unitRegistry.end()) {
+			if (auto unit = it->second.lock()) {
+				return unit;  // 有効な参照
+			}
+			else {
+				unitRegistry.erase(it);
+				return nullptr;
+			}
+		}
+		return nullptr;
+	}
+
+	static void RegisterUnit(std::shared_ptr<Unit> unit) {
+		std::scoped_lock lock(registryMutex);
+		unitRegistry[unit->ID] = unit;
+	}
+};
 Co::Task<void> Battle::mainLoop()
 {
 	const auto _tooltip = resourcePointTooltip.playScoped();
@@ -2951,9 +3034,8 @@ Co::Task<void> Battle::mainLoop()
 		}
 		////後でbattle内に移動(ポーズ処理を考慮
 		updateBuildQueue();
-		// 移動処理 - 安全なインデックスベースループ
-		try
-		{
+		try {
+			// 移動処理 - 安全なインデックスベースループ
 			for (size_t groupIndex = 0; groupIndex < classBattle.listOfAllUnit.size(); ++groupIndex)
 			{
 				auto& item = classBattle.listOfAllUnit[groupIndex];
@@ -2962,36 +3044,39 @@ Co::Task<void> Battle::mainLoop()
 				for (size_t unitIndex = 0; unitIndex < item.ListClassUnit.size(); ++unitIndex)
 				{
 					auto& unit = item.ListClassUnit[unitIndex];
+					// 安全な参照チェック
+					auto safeUnit = SafeUnitManager::GetSafeUnit(unit.ID);
+					if (!safeUnit) continue;
 
-					switch (unit.currentTask)
+					switch (safeUnit->currentTask)
 					{
 					case UnitTask::MovingToBuild:
 					{
 						std::scoped_lock lock(aiRootMutex);
-						if (aiRootMy[unit.ID].getPath().isEmpty())
+						if (aiRootMy[safeUnit->ID].getPath().isEmpty())
 						{
-							unit.currentTask = UnitTask::None;
+							safeUnit->currentTask = UnitTask::None;
 							//afterMovedPushToBuildMenu(unit);
 											// 移動完了→建築実行→次のタスクチェック
-							afterMovedPushToBuildMenuAdvanced(unit);
+							afterMovedPushToBuildMenuAdvanced(*safeUnit);
 						}
 					}
 					break;
 					case UnitTask::MovingToResource:
 					{
 						std::scoped_lock lock(aiRootMutex);
-						if (aiRootMy[unit.ID].getPath().isEmpty())
+						if (aiRootMy[safeUnit->ID].getPath().isEmpty())
 						{
-							unit.currentTask = UnitTask::WorkingOnResource;
-							unit.taskTimer.restart();
+							safeUnit->currentTask = UnitTask::WorkingOnResource;
+							safeUnit->taskTimer.restart();
 						}
 					}
 					break;
 
 					case UnitTask::WorkingOnResource:
-						if (unit.taskTimer.sF() >= unit.waitTimeResource)
+						if (safeUnit->taskTimer.sF() >= safeUnit->waitTimeResource)
 						{
-							addResource(unit);
+							addResource(*safeUnit);
 						}
 						break;
 
@@ -3002,10 +3087,9 @@ Co::Task<void> Battle::mainLoop()
 				}
 			}
 		}
-		catch (const std::exception&)
-		{
-			// エラーが発生した場合、ループを継続
-			//参照破壊を想定
+		catch (const std::exception& e) {
+		}
+		catch (...) {
 		}
 
 		switch (battleStatus)
@@ -3201,7 +3285,14 @@ void Battle::drawUnits(const RectF& cameraView) const
 					if (!u.IsBuilding)
 						TextureAsset(ringB).drawAt(center.movedBy(0, 16));
 
-					u.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+					if (!u.IsBuilding)
+					{
+						u.bLiquidBarBattle.draw(ColorF{ 0.9, 0.1, 0.1 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+					}
+					else
+					{
+						u.bLiquidBarBattle.draw(ColorF{ 0.5, 0.1, 1.0 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
+					}
 
 					// --- ここから追加 ---
 					// moveStateがFlagMoveCalcなら「！」を表示
@@ -3356,14 +3447,114 @@ void Battle::drawResourcesUI() const
 		systemFont(text).drawAt(rect.center(), Palette::White);
 	}
 }
+////void Battle::drawBuildTargetHighlight() const
+////{
+////	if (IsBuildSelectTraget)
+////	{
+////		if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
+////		{
+////			// マウスカーソルがあるタイルを強調表示する
+////			ToTile(*index, N).draw(ColorF{ 1.0, 0.2 });
+////		}
+////	}
+////}
 //void Battle::drawBuildTargetHighlight() const
 //{
 //	if (IsBuildSelectTraget)
 //	{
 //		if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
 //		{
-//			// マウスカーソルがあるタイルを強調表示する
-//			ToTile(*index, N).draw(ColorF{ 1.0, 0.2 });
+//			// 右クリック範囲選択中の処理
+//			if (MouseR.pressed() && longBuildSelectTragetId != -1)
+//			{
+//				// 開始点の取得
+//				if (auto startIndex = ToIndex(cursPos, columnQuads, rowQuads))
+//				{
+//					Point startTile = *startIndex;
+//					Point endTile = *index;
+//
+//					// 範囲選択されるタイル一覧を取得
+//					Array<Point> previewTiles;
+//
+//					// 開始点と終了点から矩形範囲を計算
+//					int32 minX = Min(startTile.x, endTile.x);
+//					int32 maxX = Max(startTile.x, endTile.x);
+//					int32 minY = Min(startTile.y, endTile.y);
+//					int32 maxY = Max(startTile.y, endTile.y);
+//
+//					// 矩形範囲内の全タイルを配列に追加
+//					for (int32 x = minX; x <= maxX; ++x)
+//					{
+//						for (int32 y = minY; y <= maxY; ++y)
+//						{
+//							// マップ範囲内かチェック
+//							if (x >= 0 && x < N && y >= 0 && y < N)
+//							{
+//								previewTiles.push_back(Point(x, y));
+//							}
+//						}
+//					}
+//
+//					// 範囲選択プレビューの描画
+//					for (const auto& tile : previewTiles)
+//					{
+//						// 建築可能かどうかで色を変える
+//						ColorF tileColor = canBuildOnTile(tile) ?
+//							ColorF{ 0.0, 1.0, 0.2, 0.4 } :  // 緑半透明：建築可能
+//							ColorF{ 1.0, 0.2, 0.2, 0.4 };   // 赤半透明：建築不可
+//
+//						ToTile(tile, N).draw(tileColor);
+//					}
+//
+//					// 範囲選択の枠線を描画
+//					{
+//						const auto t = camera.createTransformer();
+//						const double thickness = 2.0;
+//						const double offset = Scene::DeltaTime() * 8;
+//
+//						// 開始タイルと終了タイルの座標を取得
+//						Vec2 startPos = ToTileBottomCenter(startTile, N);
+//						Vec2 endPos = ToTileBottomCenter(endTile, N);
+//
+//						// 矩形の四隅を計算
+//						const Rect selectionRect = Rect::FromPoints(startPos.asPoint(), endPos.asPoint());
+//
+//						// 点線で枠を描画
+//						selectionRect.top().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+//						selectionRect.right().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+//						selectionRect.bottom().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+//						selectionRect.left().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+//					}
+//
+//					// 選択予定数の表示
+//					{
+//						int32 validCount = 0;
+//						int32 totalCount = previewTiles.size();
+//
+//						for (const auto& tile : previewTiles)
+//						{
+//							if (canBuildOnTile(tile)) validCount++;
+//						}
+//
+//						// カーソル近くに情報表示
+//						const String infoText = U"選択: {}/{} タイル"_fmt(validCount, totalCount);
+//						const Vec2 textPos = Cursor::PosF().movedBy(20, -30);
+//
+//						// 背景を描画
+//						const auto textRegion = font(infoText).region();
+//						const RectF bgRect = RectF(textPos, textRegion.size).stretched(4);
+//						bgRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.7 });
+//
+//						// テキストを描画
+//						font(infoText).draw(textPos, Palette::White);
+//					}
+//				}
+//			}
+//			else
+//			{
+//				// 通常の単一タイルハイライト
+//				ToTile(*index, N).draw(ColorF{ 1.0, 1.0, 0.2, 0.3 });
+//			}
 //		}
 //	}
 //}
@@ -3382,60 +3573,46 @@ void Battle::drawBuildTargetHighlight() const
 					Point startTile = *startIndex;
 					Point endTile = *index;
 
-					// 範囲選択されるタイル一覧を取得
-					Array<Point> previewTiles;
+					// **線状選択のプレビュー**
+					Array<Point> previewTiles = getRangeSelectedTiles(startTile, endTile);
 
-					// 開始点と終了点から矩形範囲を計算
-					int32 minX = Min(startTile.x, endTile.x);
-					int32 maxX = Max(startTile.x, endTile.x);
-					int32 minY = Min(startTile.y, endTile.y);
-					int32 maxY = Max(startTile.y, endTile.y);
+					// 選択方向の表示
+					int32 deltaX = endTile.x - startTile.x;
+					int32 deltaY = endTile.y - startTile.y;
+					bool isHorizontal = Abs(deltaX) >= Abs(deltaY);
 
-					// 矩形範囲内の全タイルを配列に追加
-					for (int32 x = minX; x <= maxX; ++x)
-					{
-						for (int32 y = minY; y <= maxY; ++y)
-						{
-							// マップ範囲内かチェック
-							if (x >= 0 && x < N && y >= 0 && y < N)
-							{
-								previewTiles.push_back(Point(x, y));
-							}
-						}
-					}
+					String directionText = isHorizontal ? U"水平線" : U"垂直線";
+					ColorF lineColor = isHorizontal ?
+						ColorF{ 0.0, 0.8, 1.0, 0.6 } :  // 水平：シアン
+						ColorF{ 1.0, 0.8, 0.0, 0.6 };   // 垂直：オレンジ
 
-					// 範囲選択プレビューの描画
+					// 線状選択プレビューの描画
 					for (const auto& tile : previewTiles)
 					{
-						// 建築可能かどうかで色を変える
+						// 建築可能かどうかで色を調整
 						ColorF tileColor = canBuildOnTile(tile) ?
-							ColorF{ 0.0, 1.0, 0.2, 0.4 } :  // 緑半透明：建築可能
+							lineColor :  // 元の方向色
 							ColorF{ 1.0, 0.2, 0.2, 0.4 };   // 赤半透明：建築不可
 
 						ToTile(tile, N).draw(tileColor);
 					}
 
-					// 範囲選択の枠線を描画
+					// 方向線の描画（開始点→終了点）
 					{
-						const auto t = camera.createTransformer();
-						const double thickness = 2.0;
-						const double offset = Scene::DeltaTime() * 8;
+						const double thickness = 3.0;
 
-						// 開始タイルと終了タイルの座標を取得
 						Vec2 startPos = ToTileBottomCenter(startTile, N);
 						Vec2 endPos = ToTileBottomCenter(endTile, N);
 
-						// 矩形の四隅を計算
-						const Rect selectionRect = Rect::FromPoints(startPos.asPoint(), endPos.asPoint());
-
-						// 点線で枠を描画
-						selectionRect.top().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
-						selectionRect.right().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
-						selectionRect.bottom().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
-						selectionRect.left().draw(LineStyle::SquareDot(offset), thickness, ColorF{ 1.0, 1.0, 0.0, 0.8 });
+						// 方向を示すアロー
+						Line{ startPos, endPos }.drawArrow(
+							thickness,
+							Vec2{ 20, 40 },
+							ColorF{ 1.0, 1.0, 0.0, 0.9 }
+						);
 					}
 
-					// 選択予定数の表示
+					// 選択情報の表示
 					{
 						int32 validCount = 0;
 						int32 totalCount = previewTiles.size();
@@ -3446,16 +3623,17 @@ void Battle::drawBuildTargetHighlight() const
 						}
 
 						// カーソル近くに情報表示
-						const String infoText = U"選択: {}/{} タイル"_fmt(validCount, totalCount);
+						const String infoText = U"{}: {}/{} タイル"_fmt(
+							directionText, validCount, totalCount);
 						const Vec2 textPos = Cursor::PosF().movedBy(20, -30);
 
 						// 背景を描画
 						const auto textRegion = font(infoText).region();
 						const RectF bgRect = RectF(textPos, textRegion.size).stretched(4);
-						bgRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.7 });
+						bgRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.8 });
 
 						// テキストを描画
-						font(infoText).draw(textPos, Palette::White);
+						fontSkill(infoText).draw(textPos, Palette::White);
 					}
 				}
 			}

@@ -20,6 +20,9 @@ public:
 	Array<ClassHorizontalUnit> listOfAllEnemyUnit;
 	BattleWhichIsThePlayer battleWhichIsThePlayer;
 
+	HashSet<Unit*> hsMyUnitBuilding;
+	HashSet<Unit*> hsEnemyUnitBuilding;
+
 	//中立ユニットのグループ
 	//Array<ClassHorizontalUnit> neutralUnitGroup;
 	std::optional<ClassMapBattle> classMapBattle;
