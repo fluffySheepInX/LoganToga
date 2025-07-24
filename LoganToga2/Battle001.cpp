@@ -60,6 +60,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	}
 
 	classBattleManage.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
+	GetTempResource(classBattleManage.classMapBattle.value());
 
 	/// >>>マップの読み込み
 	mapTile.N = classBattleManage.classMapBattle.value().mapData.size();
@@ -310,7 +311,205 @@ void Battle001::updateBuildingHashTable(const Point& tile, const ClassBattle& cl
 	// 視界の更新（建物により視界が変わる場合）
 	refreshFogOfWar(classBattleManage, visibilityMap, mapTile);
 }
+/// @brief カメラ操作の入力を処理します。
+void Battle001::handleCameraInput()
+{
+	// カメラの移動処理（左クリックドラッグ）
+	if (MouseL.pressed() == true)
+	{
+		const auto vPos = (camera.getTargetCenter() - Cursor::Delta());
+		camera.jumpTo(vPos, camera.getTargetScale());
+	}
+}
 
+/// @brief 全ユニットから「移動可能なユニット」だけを抽出して部隊ごとにまとめる
+/// @return 
+Array<Array<Unit*>> Battle001::GetMovableUnitGroups()
+{
+	Array<Array<Unit*>> groups;
+
+	for (auto& target : classBattleManage.listOfAllUnit)
+	{
+		Array<Unit*> group;
+
+		for (auto& unit : target.ListClassUnit)
+		{
+			if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable)
+				group.push_back(&unit);
+		}
+
+		if (!group.isEmpty())
+			groups.push_back(group);
+	}
+
+	return groups;
+}
+
+void Battle001::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex)
+{
+	const int32 count = units.size();
+	const int32 centerOffset = (count - 1) / 2;
+
+	double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
+	double anglePerpendicular = Math::Pi / 2 - angleForward;
+
+	for (auto&& [i, unit] : Indexed(units))
+	{
+		// 変数名はcopilot君
+		double cosPerpendicular = Math::Cos(anglePerpendicular);
+		double sinPerpendicular = Math::Sin(anglePerpendicular);
+
+		double distance_between_units_cos = Math::Round(DistanceBetweenUnitWidth * cosPerpendicular);
+		int32 unit_spacing_offset_factor = (i - centerOffset);
+		int32 unit_spacing_offset_x = unit_spacing_offset_factor * distance_between_units_cos;
+		int32 unit_spacing_offset_y = unit_spacing_offset_factor * Math::Round(DistanceBetweenUnitWidth * sinPerpendicular);
+
+		double rowOffsetX = rowIndex * DistanceBetweenUnitHeight * Math::Cos(angleForward);
+		double rowOffsetY = rowIndex * DistanceBetweenUnitHeight * Math::Sin(angleForward);
+
+		double x = end.x + unit_spacing_offset_x - rowOffsetX;
+		double y = end.y - unit_spacing_offset_y - rowOffsetY;
+
+		unit->orderPosiLeft = Vec2(Floor(end.x), Floor(end.y))
+			.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
+		unit->orderPosiLeftLast = unit->orderPosiLeft = Vec2(Floor(x), Floor(y))
+			.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
+		unit->moveState = moveState::MoveAI;
+	}
+}
+/// @brief ユニットの配列から位置ベクトルを取得し、その平均値（重心）を計算します。
+/// @param units 位置を計算する対象となるユニットの配列。
+/// @param getPos 各ユニットから位置ベクトル（Vec2）を取得する関数。
+/// @return ユニットの位置ベクトルの平均値。ユニットが存在しない場合は Vec2::Zero() を返します。
+Vec2 Battle001::calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos)
+{
+	Vec2 sum = Vec2::Zero();
+	int count = 0;
+	for (const auto* u : units) {
+		sum += getPos(u);
+		++count;
+	}
+	return (count > 0) ? (sum / count) : Vec2::Zero();
+}
+/// @brief 指定されたユニット配列内の各ユニットに、指定した位置を設定するメンバ関数を呼び出します。
+/// @param units 位置を設定する対象となるユニットの配列。
+/// @param setter 各ユニットの位置を設定するメンバ関数へのポインタ。
+/// @param setPos ユニットに設定する位置ベクトル。
+void Battle001::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos)
+{
+	for (auto* u : units) {
+		(u->*setter)(setPos);
+	}
+}
+ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
+{
+	ClassHorizontalUnit result;
+
+	for (auto& target : source)
+		for (auto& unit : target.ListClassUnit)
+		{
+			if (unit.Formation == bf && unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
+				result.ListClassUnit.push_back(unit);
+		}
+
+	return result;
+}
+
+Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
+{
+	if (is移動指示 == true)
+	{
+		if (arrayBattleZinkei[0] == true)
+		{
+			for (auto& target : classBattleManage.listOfAllUnit)
+				for (auto& unit : target.ListClassUnit)
+				{
+					unit.orderPosiLeft = end.movedBy(Random(-10, 10), Random(-10, 10));
+					unit.orderPosiLeftLast = unit.orderPosiLeft;
+					unit.moveState = moveState::MoveAI;
+				}
+		}
+		else if (arrayBattleZinkei[1] == true)
+		{
+			ClassHorizontalUnit liZenei;
+			liZenei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F);
+			ClassHorizontalUnit liKouei;
+			liKouei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B);
+			ClassHorizontalUnit liKihei;
+			liKihei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::M);
+			Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
+			lisClassHorizontalUnitLoop.push_back(liZenei);
+			lisClassHorizontalUnitLoop.push_back(liKouei);
+			lisClassHorizontalUnitLoop.push_back(liKihei);
+
+			for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
+			{
+				Array<Unit*> target;
+				for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
+					if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
+						target.push_back(&unit);
+				if (target.size() == 0) continue;
+
+				AssignUnitsInFormation(target, start, end, i);
+
+				if (target.size() == 1) continue;
+				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+				setMergePos(target, &Unit::setFirstMergePos, pos2);
+				setMergePos(target, &Unit::setLastMergePos, pos);
+			}
+		}
+		else
+		{
+			//正方
+			Array<Unit*> target;
+			auto groups = GetMovableUnitGroups();
+			for (auto&& [i, group] : Indexed(groups))
+			{
+				AssignUnitsInFormation(group, start, end, i);
+				target.append(group);
+			}
+			if (target.size() > 1)
+			{
+				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+				setMergePos(target, &Unit::setFirstMergePos, pos2);
+				setMergePos(target, &Unit::setLastMergePos, pos);
+			}
+		}
+
+		is移動指示 = false;
+
+		aStar.abortAStarMyUnits = false;
+	}
+	else
+	{
+		////範囲選択
+
+		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
+		const RectF selectionRect = RectF::FromPoints(start, end);
+
+		/// lockについて聞く
+		for (auto& target : classBattleManage.listOfAllUnit)
+		{
+			for (auto& unit : target.ListClassUnit)
+			{
+				if (unit.IsBuilding) continue;
+
+				const Vec2 gnpc = unit.GetNowPosiCenter();
+				const bool inRect = selectionRect.intersects(gnpc);
+
+				if (inRect)
+				{
+					unit.moveState = moveState::FlagMoveCalc;
+					is移動指示 = true;
+				}
+			}
+		}
+	}
+
+	co_return;
+}
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示します。
 /// @return 非同期タスク（Co::Task<void>）を返します。
 Co::Task<void> Battle001::start()
@@ -323,6 +522,13 @@ Co::Task<void> Battle001::start()
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/041_ChipImageSkill/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
+
+	/// modでカスタマイズ出来るようにあえて配列を使う
+	arrayBattleZinkei.push_back(false);
+	arrayBattleZinkei.push_back(false);
+	arrayBattleZinkei.push_back(false);
+	arrayBattleCommand.push_back(false);
+	arrayBattleCommand.push_back(false);
 
 	//初期ユニット
 	{
@@ -420,6 +626,30 @@ Co::Task<void> Battle001::mainLoop()
 			fogUpdateTimer.restart();
 		}
 
+		{
+			const auto t = camera.createTransformer();
+			handleCameraInput();
+			// 右クリック時のカーソル座標記録処理
+			if (MouseR.pressed() == false)
+			{
+				if (MouseR.up() == false)
+					cursPos = Cursor::Pos();
+			}
+			else if (MouseR.down() && is移動指示)
+			{
+				cursPos = Cursor::Pos();
+			}
+
+			if (MouseR.up())
+			{
+				Point start = cursPos;
+				Point end = Cursor::Pos();
+
+				//部隊を選択状態にする。もしくは既に選択状態なら経路を算出する
+				co_await handleRightClickUnitActions(start, end);
+			}
+
+		}
 
 		co_await Co::NextFrame();
 	}
@@ -574,7 +804,66 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 	drawGroup(classBattleManage.listOfAllUnit, U"ringA.png", U"ringB.png");
 	drawGroup(classBattleManage.listOfAllEnemyUnit, U"ringA_E.png", U"ringB_E.png");
 }
+/// @brief リソースポイントをカメラビュー内に描画します。
+/// @param cameraView 描画範囲を指定するカメラの矩形領域。
+/// @param classBattleManage バトルの状態やマップデータを管理するクラス。
+/// @param mapTile タイル座標や描画位置の計算に使用するマップタイル情報。
+void Battle001::drawResourcePoints(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const
+{
+	if (!classBattleManage.classMapBattle)
+		return;
 
+	const auto& mapData = classBattleManage.classMapBattle.value().mapData;
+
+	const int32 mapSize = static_cast<int32>(mapData.size());
+
+	for (int32 x = 0; x < mapSize; ++x)
+	{
+		for (int32 y = 0; y < static_cast<int32>(mapData[x].size()); ++y)
+		{
+			const auto& tile = mapData[x][y];
+
+			if (!tile.isResourcePoint)
+				continue;
+
+			const Vec2 pos = mapTile.ToTileBottomCenter(Point(x, y), mapTile.N);
+
+			if (!cameraView.intersects(pos))
+				continue;
+
+			// アイコンの描画
+			TextureAsset(tile.resourcePointIcon).draw(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness));
+
+			// 所有者に応じて円枠の色を変える
+			const ColorF circleColor = (tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+				? ColorF{ Palette::Aqua }
+			: ColorF(Palette::Red);
+
+			Circle(pos.movedBy(0, -mapTile.TileThickness - mapTile.TileOffset.y), 16).drawFrame(4, 0, circleColor);
+		}
+	}
+}
+/// @brief 選択範囲の矩形または矢印を描画します。
+void Battle001::drawSelectionRectangleOrArrow() const
+{
+	if (!MouseR.pressed())
+		return;
+
+	if (!is移動指示)
+	{
+		const double thickness = 3.0;
+		double offset = Scene::DeltaTime() * 10;
+		const Rect rect{ cursPos, Cursor::Pos() - cursPos };
+		rect.top().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
+		rect.right().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
+		rect.bottom().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
+		rect.left().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
+	}
+	else
+	{
+		Line{ cursPos, Cursor::Pos() }.drawArrow(10, Vec2{ 40, 80 }, Palette::Orange);
+	}
+}
 void Battle001::draw() const
 {
 	FsScene::draw();
@@ -590,7 +879,9 @@ void Battle001::draw() const
 		drawFog(cameraView, mapTile, visibilityMap);
 		drawBuildings(cameraView, classBattleManage, mapTile);
 		drawUnits(cameraView, classBattleManage);
-
+		drawResourcePoints(cameraView, classBattleManage, mapTile);
+		resourcePointTooltip.draw();
+		drawSelectionRectangleOrArrow();
 
 
 	}

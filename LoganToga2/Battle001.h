@@ -300,6 +300,33 @@ public:
 
 };
 
+class SafeUnitManager {
+private:
+	static inline HashTable<int64, std::weak_ptr<Unit>> unitRegistry;
+	static inline std::mutex registryMutex;
+
+public:
+	static std::shared_ptr<Unit> GetSafeUnit(int64 unitID) {
+		std::scoped_lock lock(registryMutex);
+
+		if (auto it = unitRegistry.find(unitID); it != unitRegistry.end()) {
+			if (auto unit = it->second.lock()) {
+				return unit;  // 有効な参照
+			}
+			else {
+				unitRegistry.erase(it);
+				return nullptr;
+			}
+		}
+		return nullptr;
+	}
+
+	static void RegisterUnit(std::shared_ptr<Unit> unit) {
+		std::scoped_lock lock(registryMutex);
+		unitRegistry[unit->ID] = unit;
+	}
+};
+
 class Battle001 : public FsScene
 {
 public:
@@ -370,7 +397,23 @@ private:
 	/// @param cameraView 描画範囲を指定する矩形領域。
 	/// @param classBattleManage ユニット情報を管理するClassBattleオブジェクト。
 	void drawUnits(const RectF& cameraView, const ClassBattle& classBattleManage) const;
+	/// @brief リソースポイントをカメラビュー内に描画します。
+	/// @param cameraView 描画範囲を指定するカメラの矩形領域。
+	/// @param classBattleManage バトルの状態やマップデータを管理するクラス。
+	/// @param mapTile タイル座標や描画位置の計算に使用するマップタイル情報。
+	void drawResourcePoints(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const;
+	/// @brief 選択範囲の矩形または矢印を描画します。
+	void drawSelectionRectangleOrArrow() const;
 
+	/// >>> プレイヤー操作
+	void handleCameraInput();
+	Co::Task<void> handleRightClickUnitActions(Point start, Point end);
+	Array<Array<Unit*>> GetMovableUnitGroups();
+	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
+	Vec2 calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos);
+	void setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos);
+	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
+	/// <<< プレイヤー操作
 
 	/// @brief TODO:後で消す
 	/// @param cmb 
@@ -409,6 +452,14 @@ private:
 	Grid<Visibility> visibilityMap;
 	/// @brief 
 	BattleStatus battleStatus = BattleStatus::Message;
+	/// @brief 
+	bool is移動指示 = false;
+	/// @brief 拡張性のため、enumを使わずに配列で管理
+	Array<bool> arrayBattleZinkei;
+	/// @brief
+	Array<bool> arrayBattleCommand;
+
+
 	/// @brief カーソルの現在位置
 	Point cursPos = Cursor::Pos();
 	/// @brief 地図タイルを表す
@@ -420,6 +471,11 @@ private:
 
 
 	Stopwatch fogUpdateTimer{ StartImmediately::Yes };
+
+	/// @brief 2つの単位間の距離を表す定数
+	const double DistanceBetweenUnitWidth = 32.0;
+	/// @brief 2つの単位間の距離を表す定数
+	const double DistanceBetweenUnitHeight = 32.0;
 
 
 	/// >>>資源
