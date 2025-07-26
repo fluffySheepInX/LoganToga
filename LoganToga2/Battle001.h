@@ -47,7 +47,7 @@ public:
 	/// @param columnQuads 列ごとのタイル領域を表すQuadの配列。
 	/// @param rowQuads 行ごとのタイル領域を表すQuadの配列。
 	/// @return 位置がタイル上にある場合はそのインデックス（Point型）、タイル上にない場合はnone（Optional<Point>型）。
-	Optional<Point> ToIndex(const Vec2& pos, const Array<Quad>& columnQuads, const Array<Quad>& rowQuads)
+	Optional<Point> ToIndex(const Vec2& pos, const Array<Quad>& columnQuads, const Array<Quad>& rowQuads) const
 	{
 		int32 x = -1, y = -1;
 
@@ -327,12 +327,46 @@ public:
 	}
 };
 
+/// @brief スポーン位置定数
+enum class SpawnEdge : int32
+{
+	Left = 0,
+	Right = 1,
+	Top = 2,
+	Bottom = 3
+};
+
 class Battle001 : public FsScene
 {
 public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle001() override;
 private:
+	static constexpr double FOG_UPDATE_INTERVAL = 0.5;
+	static constexpr double ENEMY_SPAWN_INTERVAL = 5.0;
+	static constexpr int32 LIQUID_BAR_WIDTH = 64;
+	static constexpr int32 LIQUID_BAR_HEIGHT = 8;
+	static constexpr int32 LIQUID_BAR_HEIGHT_POS = 24;
+	static constexpr double ARROW_THICKNESS = 10.0;
+	static constexpr Vec2 ARROW_HEAD_SIZE = Vec2{ 40, 80 };
+	static constexpr double SELECTION_THICKNESS = 3.0;
+	static constexpr double BUILDING_FRAME_THICKNESS = 3.0;
+	static constexpr int32 CIRCLE_FRAME_THICKNESS = 4;
+	static constexpr int32 RESOURCE_CIRCLE_RADIUS = 16;
+	static constexpr int32 RING_OFFSET_Y1 = 8;
+	static constexpr int32 RING_OFFSET_Y2 = 16;
+	static constexpr int32 EXCLAMATION_OFFSET_Y = 18;
+	static constexpr double DIRECTION_ARROW_THICKNESS = 3.0;
+	static constexpr Vec2 DIRECTION_ARROW_HEAD_SIZE = Vec2{ 20, 40 };
+	static constexpr int32 INFO_TEXT_OFFSET_X = 20;
+	static constexpr int32 INFO_TEXT_OFFSET_Y = -30;
+	static constexpr int32 INFO_TEXT_PADDING = 4;
+	static constexpr int32 RANDOM_MOVE_RANGE = 10;
+	static constexpr int32 FORMATION_DENSE密集 = 0;
+	static constexpr int32 FORMATION_HORIZONTAL横列 = 1;
+	static constexpr int32 FORMATION_SQUARE正方 = 2;
+
+	mutable std::mutex unitDataMutex;  // ユニットデータ専用ミューテックス
 	/// @brief 
 	SystemString ss;
 	/// @brief 
@@ -404,6 +438,14 @@ private:
 	void drawResourcePoints(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const;
 	/// @brief 選択範囲の矩形または矢印を描画します。
 	void drawSelectionRectangleOrArrow() const;
+	void drawBuildTargetHighlight(const MapTile& mapTile) const;
+	Array<Point> getRangeSelectedTiles(const Point& start, const Point& end, const MapTile mapTile) const;
+	bool canBuildOnTile(const Point& tile, const ClassBattle& classBattleManage, const MapTile& mapTile) const;
+	void handleDenseFormation(Point end);
+	void handleHorizontalFormation(Point start, Point end);
+	void handleSquareFormation(Point start, Point end);
+	void handleUnitSelection(const RectF& selectionRect);
+	//void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc) const;
 
 	/// >>> プレイヤー操作
 	void handleCameraInput();
@@ -413,6 +455,8 @@ private:
 	Vec2 calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos);
 	void setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos);
 	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
+	bool IsBuildSelectTraget = false;
+	long longBuildSelectTragetId = -1;
 	/// <<< プレイヤー操作
 
 	/// @brief TODO:後で消す

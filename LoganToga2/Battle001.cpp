@@ -3,6 +3,26 @@
 #include <ranges>
 #include <vector>
 
+template<typename DrawFunc>
+void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc)
+{
+	for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
+	{
+		int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+		int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+
+		for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
+		{
+			Point index{ xi + k, yi - k };
+			Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
+			if (!cameraView.intersects(pos))
+				continue;
+
+			drawFunc(index, pos);
+		}
+	}
+}
+
 /// @brief TODO:後で消す
 /// @param cmb 
 void Battle001::GetTempResource(ClassMapBattle& cmb)
@@ -35,11 +55,11 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 			int32 counter = 0;
 			while (true)
 			{
-				String aaa = U"ele{}"_fmt(counter);
-				const String ele = table[aaa].get<String>();
-				sM.ele.emplace(aaa, ele);
+				String elementKey = U"ele{}"_fmt(counter);
+				const String elementValue = table[elementKey].get<String>();
+				sM.ele.emplace(elementKey, elementValue);
 				counter++;
-				if (ele == U"")
+				if (elementValue == U"")
 				{
 					break;
 				}
@@ -50,17 +70,17 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 			const String str = table[U"data"].get<String>();
 			for (const auto sv : str | views::split(U"$"_sv))
 			{
-				String re = ClassStaticCommonMethod::ReplaceNewLine(String(sv.begin(), sv.end()));
-				if (re != U"")
+				String processedString
+					= ClassStaticCommonMethod::ReplaceNewLine(String(sv.begin(), sv.end()));
+				if (processedString != U"")
 				{
-					sM.data.push_back(ClassStaticCommonMethod::ReplaceNewLine(re));
+					sM.data.push_back(processedString);
 				}
 			}
 		}
 	}
 
 	classBattleManage.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
-	GetTempResource(classBattleManage.classMapBattle.value());
 
 	/// >>>マップの読み込み
 	mapTile.N = classBattleManage.classMapBattle.value().mapData.size();
@@ -147,54 +167,57 @@ void Battle001::UnitRegister(
 	Array<ClassHorizontalUnit>& listU,
 	bool enemy)
 {
-	// 事前に容量を確保して配列の再配置を防ぐ
-	const size_t expectedSize = listU.size() + 1;
-	if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
+	// 事前に容量を確保
+	listU.reserve(listU.size() + 1);
+
+	// 該当するユニットテンプレートを検索
+	auto it = std::find_if(m_commonConfig.arrayUnit.begin(), m_commonConfig.arrayUnit.end(),
+		[&unitName](const auto& unit) { return unit.NameTag == unitName; });
+
+	if (it == m_commonConfig.arrayUnit.end())
 	{
-		listU.reserve(expectedSize + 50);
-		Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
-			listU.capacity(), expectedSize + 50);
+		Print << U"Warning: Unit '{}' not found in unit templates"_fmt(unitName);
+		return;
 	}
 
-	//新しいコピーを作る
-	for (auto uu : m_commonConfig.arrayUnit)
+	if (num <= 0)
 	{
-		if (uu.NameTag == unitName)
+		Print << U"Warning: Invalid unit count: {}"_fmt(num);
+		return;
+	}
+
+	auto uu = *it; // 一度だけコピー
+	ClassHorizontalUnit cuu;
+
+	for (size_t i = 0; i < num; i++)
+	{
+		uu.ID = classBattleManage.getIDCount();
+		uu.initTilePos = Point{ col, row };
+		uu.nowPosiLeft = mapTile.ToTile(uu.initTilePos, mapTile.N)
+			.asPolygon()
+			.centroid()
+			.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
+		uu.taskTimer = Stopwatch();
+		uu.taskTimer.reset();
+
+		Vec2 temp = uu.GetNowPosiCenter().movedBy(-(LIQUID_BAR_WIDTH / 2), LIQUID_BAR_HEIGHT_POS);
+		uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, LIQUID_BAR_WIDTH, LIQUID_BAR_HEIGHT));
+
+		if (enemy)
+			uu.moveState = moveState::MoveAI;
+
+		cuu.ListClassUnit.push_back(uu);
+
+		if (uu.IsBuilding)
 		{
-			uu.ID = classBattleManage.getIDCount();
-			uu.initTilePos = Point{ col,row };
-			uu.nowPosiLeft =
-				mapTile.ToTile(uu.initTilePos, mapTile.N)
-				.asPolygon()
-				.centroid()
-				.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-			uu.taskTimer = Stopwatch();
-			uu.taskTimer.reset();
-			Vec2 temp = uu.GetNowPosiCenter()
-				.movedBy(-64 / 2, (32 / 2) + 8);
-			uu.bLiquidBarBattle =
-				GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 8));
-
-			if (enemy)
-				uu.moveState = moveState::MoveAI;
-
-			ClassHorizontalUnit cuu;
-
-			for (size_t i = 0; i < num; i++)
-			{
-				uu.ID = classBattleManage.getIDCount();
-				auto copy = uu;
-				cuu.ListClassUnit.push_back(copy);
-				if (uu.IsBuilding)
-				{
-					unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
-					// これなら再配置でもアドレスは変わらない(maybe
-					hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-				}
-			}
-
-			listU.push_back(cuu);
+			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
+			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
 		}
+	}
+
+	{
+		std::scoped_lock lock(unitDataMutex);
+		listU.push_back(std::move(cuu));
 	}
 }
 
@@ -203,28 +226,37 @@ void Battle001::UnitRegister(
 /// @param mapTile マップのサイズやタイル情報を持つクラス
 void Battle001::spawnTimedEnemy(ClassBattle& classBattleManage, MapTile mapTile)
 {
-	if (stopwatchGameTime.sF() >= 5)
+	if (stopwatchGameTime.sF() >= ENEMY_SPAWN_INTERVAL)
 	{
-		int32 kukj = Random(1, 2);
-		if (kukj / 2 == 0)
-		{
-			int32 iyigu = Random(0, mapTile.N - 1);
-			UnitRegister(classBattleManage, mapTile, U"sniperP99",
-				0,
-				Random(0, mapTile.N - 1),
-				1, classBattleManage.listOfAllEnemyUnit, true
-			);
+		const auto edge = static_cast<SpawnEdge>(Random(0, 3));
+		int32 x = 0, y = 0;
 
-		}
-		else
+		switch (edge)
 		{
-			int32 iyigu = Random(0, mapTile.N - 1);
-			UnitRegister(classBattleManage, mapTile, U"sniperP99",
-				Random(0, mapTile.N - 1),
-				mapTile.N - 1,
-				1, classBattleManage.listOfAllEnemyUnit, true
-			);
+		case SpawnEdge::Left:
+			x = 0;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Right:
+			x = mapTile.N - 1;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Top:
+			x = Random(0, mapTile.N - 1);
+			y = 0;
+			break;
+		case SpawnEdge::Bottom:
+			x = Random(0, mapTile.N - 1);
+			y = mapTile.N - 1;
+			break;
+		default:
+			x = 0;
+			y = 0;
+			break;
 		}
+
+		UnitRegister(classBattleManage, mapTile, U"sniperP99", x, y, 1,
+			classBattleManage.listOfAllEnemyUnit, true);
 
 		stopwatchGameTime.restart();
 	}
@@ -238,17 +270,25 @@ void Battle001::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units
 {
 	for (const auto& unit : units)
 	{
-		for (int dy = -unit.visionRadius; dy <= unit.visionRadius; ++dy)
+		const Vec2 unitPos = unit.GetNowPosiCenter();
+		const auto unitIndex = mapTile.ToIndex(unitPos, mapTile.columnQuads, mapTile.rowQuads);
+
+		if (!unitIndex) continue;
+
+		const Point centerTile = unitIndex.value();
+		const int32 visionRadius = unit.visionRadius;
+
+		for (int dy = -visionRadius; dy <= visionRadius; ++dy)
 		{
-			for (int dx = -unit.visionRadius; dx <= unit.visionRadius; ++dx)
+			for (int dx = -visionRadius; dx <= visionRadius; ++dx)
 			{
-				Vec2 pos = unit.GetNowPosiCenter();
-				if (const auto index = mapTile.ToIndex(unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads))
+				const Point targetTile = centerTile + Point{ dx, dy };
+
+				if (InRange(targetTile.x, 0, mapSize - 1) &&
+					InRange(targetTile.y, 0, mapSize - 1) &&
+					targetTile.manhattanDistanceFrom(centerTile) <= visionRadius)
 				{
-					Point p = index.value() + Point{ dx, dy };
-					if (InRange(p.x, 0, mapSize - 1) && InRange(p.y, 0, mapSize - 1))
-						if (p.manhattanDistanceFrom(index.value()) <= unit.visionRadius)
-							vis[p] = Visibility::Visible;
+					vis[targetTile] = Visibility::Visible;
 				}
 			}
 		}
@@ -260,10 +300,12 @@ void Battle001::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units
 /// @param mapTile マップのタイル情報を保持するMapTile型の参照。
 void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visibility>& visibilityMap, MapTile& mapTile)
 {
+	std::scoped_lock lock(unitDataMutex);
+
 	//毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
 	// 一度見たタイルは UnseenではなくSeenにしたい
-	for (auto&& ttt : visibilityMap)
-		ttt = Visibility::Unseen;
+	for (auto&& visibilityElement : visibilityMap)
+		visibilityElement = Visibility::Unseen;
 
 	for (auto& units : classBattleManage.listOfAllUnit)
 		UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), mapTile.N, mapTile);
@@ -347,33 +389,31 @@ Array<Array<Unit*>> Battle001::GetMovableUnitGroups()
 
 void Battle001::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex)
 {
-	const int32 count = units.size();
-	const int32 centerOffset = (count - 1) / 2;
+	const int32 unitCount = units.size();
+	const int32 centerOffset = (unitCount - 1) / 2;
 
-	double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
-	double anglePerpendicular = Math::Pi / 2 - angleForward;
+	const double angleForward = (start == end) ? 0.0 : Math::Atan2(end.y - start.y, end.x - start.x);
+	const double anglePerpendicular = Math::Pi / 2 - angleForward;
+
+	const double cosPerpendicular = Math::Cos(anglePerpendicular);
+	const double sinPerpendicular = Math::Sin(anglePerpendicular);
 
 	for (auto&& [i, unit] : Indexed(units))
 	{
-		// 変数名はcopilot君
-		double cosPerpendicular = Math::Cos(anglePerpendicular);
-		double sinPerpendicular = Math::Sin(anglePerpendicular);
+		const double unitSpacingCos = Math::Round(DistanceBetweenUnitWidth * cosPerpendicular);
+		const int32 spacingOffsetFactor = (i - centerOffset);
+		const int32 spacingOffsetX = spacingOffsetFactor * unitSpacingCos;
+		const int32 spacingOffsetY = spacingOffsetFactor * Math::Round(DistanceBetweenUnitWidth * sinPerpendicular);
 
-		double distance_between_units_cos = Math::Round(DistanceBetweenUnitWidth * cosPerpendicular);
-		int32 unit_spacing_offset_factor = (i - centerOffset);
-		int32 unit_spacing_offset_x = unit_spacing_offset_factor * distance_between_units_cos;
-		int32 unit_spacing_offset_y = unit_spacing_offset_factor * Math::Round(DistanceBetweenUnitWidth * sinPerpendicular);
+		const double rowOffsetX = rowIndex * DistanceBetweenUnitHeight * Math::Cos(angleForward);
+		const double rowOffsetY = rowIndex * DistanceBetweenUnitHeight * Math::Sin(angleForward);
 
-		double rowOffsetX = rowIndex * DistanceBetweenUnitHeight * Math::Cos(angleForward);
-		double rowOffsetY = rowIndex * DistanceBetweenUnitHeight * Math::Sin(angleForward);
+		const double finalX = end.x + spacingOffsetX - rowOffsetX;
+		const double finalY = end.y - spacingOffsetY - rowOffsetY;
 
-		double x = end.x + unit_spacing_offset_x - rowOffsetX;
-		double y = end.y - unit_spacing_offset_y - rowOffsetY;
-
-		unit->orderPosiLeft = Vec2(Floor(end.x), Floor(end.y))
-			.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
-		unit->orderPosiLeftLast = unit->orderPosiLeft = Vec2(Floor(x), Floor(y))
-			.movedBy(-(unit->yokoUnit / 2), -(unit->TakasaUnit / 2));
+		const Vec2 unitSize = Vec2(unit->yokoUnit / 2, unit->TakasaUnit / 2);
+		unit->orderPosiLeft = Vec2(Floor(finalX), Floor(finalY)) - unitSize;
+		unit->orderPosiLeftLast = unit->orderPosiLeft;
 		unit->moveState = moveState::MoveAI;
 	}
 }
@@ -415,67 +455,102 @@ ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& sourc
 	return result;
 }
 
+void Battle001::handleDenseFormation(Point end)
+{
+	for (auto& target : classBattleManage.listOfAllUnit)
+		for (auto& unit : target.ListClassUnit)
+		{
+			unit.orderPosiLeft =
+				end.movedBy(
+					Random(-RANDOM_MOVE_RANGE, RANDOM_MOVE_RANGE),
+					Random(-RANDOM_MOVE_RANGE, RANDOM_MOVE_RANGE));
+			unit.orderPosiLeftLast = unit.orderPosiLeft;
+			unit.moveState = moveState::MoveAI;
+		}
+}
+void Battle001::handleHorizontalFormation(Point start, Point end)
+{
+	ClassHorizontalUnit liZenei;
+	liZenei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F);
+	ClassHorizontalUnit liKouei;
+	liKouei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B);
+	ClassHorizontalUnit liKihei;
+	liKihei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::M);
+	Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
+	lisClassHorizontalUnitLoop.push_back(liZenei);
+	lisClassHorizontalUnitLoop.push_back(liKouei);
+	lisClassHorizontalUnitLoop.push_back(liKihei);
+
+	for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
+	{
+		Array<Unit*> target;
+		for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
+			if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
+				target.push_back(&unit);
+		if (target.size() == 0) continue;
+
+		AssignUnitsInFormation(target, start, end, i);
+
+		if (target.size() == 1) continue;
+		auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+		auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+		setMergePos(target, &Unit::setFirstMergePos, pos2);
+		setMergePos(target, &Unit::setLastMergePos, pos);
+	}
+
+}
+void Battle001::handleSquareFormation(Point start, Point end)
+{
+	Array<Unit*> target;
+	auto groups = GetMovableUnitGroups();
+	for (auto&& [i, group] : Indexed(groups))
+	{
+		AssignUnitsInFormation(group, start, end, i);
+		target.append(group);
+	}
+	if (target.size() > 1)
+	{
+		auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+		auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
+		setMergePos(target, &Unit::setFirstMergePos, pos2);
+		setMergePos(target, &Unit::setLastMergePos, pos);
+	}
+}
+void Battle001::handleUnitSelection(const RectF& selectionRect)
+{
+	std::scoped_lock lock(unitDataMutex);
+	for (auto& target : classBattleManage.listOfAllUnit)
+	{
+		for (auto& unit : target.ListClassUnit)
+		{
+			if (unit.IsBuilding) continue;
+
+			const Vec2 gnpc = unit.GetNowPosiCenter();
+			const bool inRect = selectionRect.intersects(gnpc);
+
+			if (inRect)
+			{
+				unit.moveState = moveState::FlagMoveCalc;
+				is移動指示 = true;
+			}
+		}
+	}
+}
 Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
 {
 	if (is移動指示 == true)
 	{
-		if (arrayBattleZinkei[0] == true)
+		if (arrayBattleZinkei[FORMATION_DENSE密集] == true)
 		{
-			for (auto& target : classBattleManage.listOfAllUnit)
-				for (auto& unit : target.ListClassUnit)
-				{
-					unit.orderPosiLeft = end.movedBy(Random(-10, 10), Random(-10, 10));
-					unit.orderPosiLeftLast = unit.orderPosiLeft;
-					unit.moveState = moveState::MoveAI;
-				}
+			handleDenseFormation(end);
 		}
-		else if (arrayBattleZinkei[1] == true)
+		else if (arrayBattleZinkei[FORMATION_HORIZONTAL横列] == true)
 		{
-			ClassHorizontalUnit liZenei;
-			liZenei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F);
-			ClassHorizontalUnit liKouei;
-			liKouei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B);
-			ClassHorizontalUnit liKihei;
-			liKihei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::M);
-			Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
-			lisClassHorizontalUnitLoop.push_back(liZenei);
-			lisClassHorizontalUnitLoop.push_back(liKouei);
-			lisClassHorizontalUnitLoop.push_back(liKihei);
-
-			for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
-			{
-				Array<Unit*> target;
-				for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
-					if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
-						target.push_back(&unit);
-				if (target.size() == 0) continue;
-
-				AssignUnitsInFormation(target, start, end, i);
-
-				if (target.size() == 1) continue;
-				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
-				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
-				setMergePos(target, &Unit::setFirstMergePos, pos2);
-				setMergePos(target, &Unit::setLastMergePos, pos);
-			}
+			handleHorizontalFormation(start, end);
 		}
-		else
+		else if (arrayBattleZinkei[FORMATION_SQUARE正方] == true)
 		{
-			//正方
-			Array<Unit*> target;
-			auto groups = GetMovableUnitGroups();
-			for (auto&& [i, group] : Indexed(groups))
-			{
-				AssignUnitsInFormation(group, start, end, i);
-				target.append(group);
-			}
-			if (target.size() > 1)
-			{
-				auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
-				auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
-				setMergePos(target, &Unit::setFirstMergePos, pos2);
-				setMergePos(target, &Unit::setLastMergePos, pos);
-			}
+			handleSquareFormation(start, end);
 		}
 
 		is移動指示 = false;
@@ -485,33 +560,15 @@ Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
 	else
 	{
 		////範囲選択
-
 		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
 		const RectF selectionRect = RectF::FromPoints(start, end);
-
-		/// lockについて聞く
-		for (auto& target : classBattleManage.listOfAllUnit)
-		{
-			for (auto& unit : target.ListClassUnit)
-			{
-				if (unit.IsBuilding) continue;
-
-				const Vec2 gnpc = unit.GetNowPosiCenter();
-				const bool inRect = selectionRect.intersects(gnpc);
-
-				if (inRect)
-				{
-					unit.moveState = moveState::FlagMoveCalc;
-					is移動指示 = true;
-				}
-			}
-		}
+		handleUnitSelection(selectionRect);
 	}
 
 	co_return;
 }
-/// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示します。
-/// @return 非同期タスク（Co::Task<void>）を返します。
+/// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
+/// @return 非同期タスク
 Co::Task<void> Battle001::start()
 {
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/040_ChipImage/"))
@@ -611,7 +668,7 @@ Co::Task<void> Battle001::mainLoop()
 
 	while (true)
 	{
-		if (shouldExit == false)
+		if (shouldExit == true)
 			co_return;
 
 		camera.update();
@@ -619,7 +676,7 @@ Co::Task<void> Battle001::mainLoop()
 		// 指定した経過時間後に敵ユニットをマップ上にスポーン
 		spawnTimedEnemy(classBattleManage, mapTile);
 
-		if (fogUpdateTimer.sF() >= 0.5)
+		if (fogUpdateTimer.sF() >= FOG_UPDATE_INTERVAL)
 		{
 			// 戦場の霧を更新
 			refreshFogOfWar(classBattleManage, visibilityMap, mapTile);
@@ -673,22 +730,27 @@ RectF Battle001::getCameraView(const Camera2D& camera, const MapTile& mapTile) c
 /// @param classBattleManage バトルマップのデータを管理するクラス。
 void Battle001::drawTileMap(const RectF& cameraView, const MapTile& mapTile, const ClassBattle& classBattleManage) const
 {
-	for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
-	{
-		int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
-		int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+	forEachVisibleTile(cameraView, mapTile, [&](const Point& index, const Vec2& pos) {
+		const auto& tile = classBattleManage.classMapBattle.value().mapData[index.x][index.y];
+		TextureAsset(tile.tip + U".png").draw(Arg::bottomCenter = pos);
+});
 
-		for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
-		{
-			Point index{ xi + k, yi - k };
-			Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
-			if (!cameraView.intersects(pos))
-				continue;
+	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
+	//{
+	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
 
-			const auto& tile = classBattleManage.classMapBattle.value().mapData[index.x][index.y];
-			TextureAsset(tile.tip + U".png").draw(Arg::bottomCenter = pos);
-		}
-	}
+	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
+	//	{
+	//		Point index{ xi + k, yi - k };
+	//		Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
+	//		if (!cameraView.intersects(pos))
+	//			continue;
+
+	//		const auto& tile = classBattleManage.classMapBattle.value().mapData[index.x][index.y];
+	//		TextureAsset(tile.tip + U".png").draw(Arg::bottomCenter = pos);
+	//	}
+	//}
 }
 /// @brief カメラビューとマップタイル、可視性マップに基づいてフォグ（霧）を描画します。
 /// @param cameraView 描画範囲を指定するカメラの矩形領域。
@@ -696,24 +758,31 @@ void Battle001::drawTileMap(const RectF& cameraView, const MapTile& mapTile, con
 /// @param visibilityMap 各タイルの可視状態を示すグリッド。
 void Battle001::drawFog(const RectF& cameraView, const MapTile& mapTile, const Grid<Visibility> visibilityMap) const
 {
-	for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
-	{
-		int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
-		int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
+	//{
+	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
 
-		for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
+	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
+	//	{
+	//		Point index{ xi + k, yi - k };
+	//		switch (visibilityMap[index])
+	//		{
+	//		case Visibility::Unseen:
+	//			mapTile.ToTile(index, mapTile.N).draw(ColorF{ 0.0, 0.6 });
+	//			break;
+	//		case Visibility::Visible:
+	//			break;
+	//		}
+	//	}
+	//}
+
+	forEachVisibleTile(cameraView, mapTile, [&](const Point& index, const Vec2& pos) {
+		if (visibilityMap[index] == Visibility::Unseen)
 		{
-			Point index{ xi + k, yi - k };
-			switch (visibilityMap[index])
-			{
-			case Visibility::Unseen:
-				mapTile.ToTile(index, mapTile.N).draw(ColorF{ 0.0, 0.6 });
-				break;
-			case Visibility::Visible:
-				break;
-			}
+			mapTile.ToTile(index, mapTile.N).draw(ColorF{ 0.0, 0.6 });
 		}
-	}
+	});
 }
 /// @brief カメラビュー内の建物を描画します。
 /// @param cameraView 描画範囲を指定するカメラの矩形領域。
@@ -722,7 +791,8 @@ void Battle001::drawFog(const RectF& cameraView, const MapTile& mapTile, const G
 void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const
 {
 	Array<Unit*> buildings;
-	for (const auto& group : { classBattleManage.hsMyUnitBuilding, classBattleManage.hsEnemyUnitBuilding })
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding,
+		classBattleManage.hsEnemyUnitBuilding })
 	{
 		for (const auto& item : group)
 		{
@@ -739,7 +809,7 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 		TextureAsset(u->ImageName).draw(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness));
 		if (u->IsSelect)
 			RectF(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness),
-				TextureAsset(u->ImageName).size()).drawFrame(3.0, Palette::Red);
+				TextureAsset(u->ImageName).size()).drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
 	}
 }
 /// @brief カメラビュー内のユニットを描画します。
@@ -747,6 +817,8 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 /// @param classBattleManage ユニット情報を管理するClassBattleオブジェクト。
 void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattleManage) const
 {
+	std::scoped_lock lock(unitDataMutex);
+
 	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB)
 		{
 			/// 範囲選択が本質の処理では、forループからHashTableへの置き換えは意味がない
@@ -772,15 +844,17 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 						continue;
 
 					if (!u.IsBuilding)
-						TextureAsset(ringA).drawAt(center.movedBy(0, 8));
+						TextureAsset(ringA).drawAt(center.movedBy(0, RING_OFFSET_Y1));
 
 					TextureAsset(u.ImageName).draw(Arg::center = center);
 
 					if (u.IsSelect)
-						TextureAsset(u.ImageName).draw(Arg::center = center).drawFrame(3.0, Palette::Red);
+						TextureAsset(u.ImageName)
+						.draw(Arg::center = center)
+						.drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
 
 					if (!u.IsBuilding)
-						TextureAsset(ringB).drawAt(center.movedBy(0, 16));
+						TextureAsset(ringB).drawAt(center.movedBy(0, RING_OFFSET_Y2));
 
 					if (!u.IsBuilding)
 					{
@@ -793,7 +867,7 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 
 					if (u.moveState == moveState::FlagMoveCalc || u.moveState == moveState::MoveAI)
 					{
-						const Vec2 exclamationPos = center.movedBy(0, -u.TakasaUnit / 2 - 18);
+						const Vec2 exclamationPos = center.movedBy(0, -u.TakasaUnit / 2 - EXCLAMATION_OFFSET_Y);
 						Color color = (u.moveState == moveState::FlagMoveCalc) ? Palette::Orange : Palette::Red;
 						fontInfo.font(U"！").drawAt(exclamationPos, color);
 					}
@@ -839,7 +913,9 @@ void Battle001::drawResourcePoints(const RectF& cameraView, const ClassBattle& c
 				? ColorF{ Palette::Aqua }
 			: ColorF(Palette::Red);
 
-			Circle(pos.movedBy(0, -mapTile.TileThickness - mapTile.TileOffset.y), 16).drawFrame(4, 0, circleColor);
+			Circle(pos.movedBy(0, -mapTile.TileThickness - mapTile.TileOffset.y)
+					, RESOURCE_CIRCLE_RADIUS)
+				.drawFrame(CIRCLE_FRAME_THICKNESS, 0, circleColor);
 		}
 	}
 }
@@ -851,17 +927,208 @@ void Battle001::drawSelectionRectangleOrArrow() const
 
 	if (!is移動指示)
 	{
-		const double thickness = 3.0;
-		double offset = Scene::DeltaTime() * 10;
+		const double offset = Scene::DeltaTime() * 10;
 		const Rect rect{ cursPos, Cursor::Pos() - cursPos };
-		rect.top().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
-		rect.right().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
-		rect.bottom().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
-		rect.left().draw(LineStyle::SquareDot(offset), thickness, Palette::Orange);
+		rect.top().draw(LineStyle::SquareDot(offset), SELECTION_THICKNESS, Palette::Orange);
+		rect.right().draw(LineStyle::SquareDot(offset), SELECTION_THICKNESS, Palette::Orange);
+		rect.bottom().draw(LineStyle::SquareDot(offset), SELECTION_THICKNESS, Palette::Orange);
+		rect.left().draw(LineStyle::SquareDot(offset), SELECTION_THICKNESS, Palette::Orange);
 	}
 	else
 	{
-		Line{ cursPos, Cursor::Pos() }.drawArrow(10, Vec2{ 40, 80 }, Palette::Orange);
+		Line{ cursPos, Cursor::Pos() }.drawArrow(ARROW_THICKNESS, ARROW_HEAD_SIZE, Palette::Orange);
+	}
+}
+/// @brief 指定タイルに建築可能かチェック
+/// @param tile タイル座標
+/// @return 建築可能ならtrue
+bool Battle001::canBuildOnTile(const Point& tile, const ClassBattle& classBattleManage, const MapTile& mapTile) const
+{
+	// マップ範囲外チェック
+	if (tile.x < 0 || tile.x >= mapTile.N || tile.y < 0 || tile.y >= mapTile.N)
+	{
+		return false;
+	}
+
+	// 建物が既に存在するかチェック
+	for (const auto& group : classBattleManage.hsMyUnitBuilding)
+	{
+		if (group->initTilePos == tile && group->IsBattleEnable)
+		{
+			return false; // 既に建物が存在
+		}
+	}
+
+	// 敵の建物もチェック
+	for (const auto& group : classBattleManage.hsEnemyUnitBuilding)
+	{
+		if (group->initTilePos == tile && group->IsBattleEnable)
+		{
+			return false; // 既に建物が存在
+		}
+	}
+
+	// ユニットが存在するかチェック
+	for (const auto& group : classBattleManage.listOfAllUnit)
+	{
+		for (const auto& unit : group.ListClassUnit)
+		{
+			if (!unit.IsBuilding && unit.IsBattleEnable)
+			{
+				Optional<Point> unitTilePos = mapTile.ToIndex(unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+				if (unitTilePos && *unitTilePos == tile)
+				{
+					return false; // ユニットが存在
+				}
+			}
+		}
+	}
+
+	// 地形チェック（水タイルなど建築不可地形があれば追加）
+	// TODO: mapDataから地形情報を取得して建築可否を判定
+
+	return true; // 建築可能
+}
+/// @brief 範囲選択されたタイル配列を取得（線状選択版）
+/// @param start 開始タイル座標
+/// @param end 終了タイル座標
+/// @return 選択範囲内のタイル座標配列（線状）
+Array<Point> Battle001::getRangeSelectedTiles(const Point& start, const Point& end, const MapTile mapTile) const
+{
+	Array<Point> selectedTiles;
+
+	// 開始点と終了点の差分を計算
+	int32 deltaX = end.x - start.x;
+	int32 deltaY = end.y - start.y;
+
+	// どちらの方向により大きく動いたかを判定
+	bool isHorizontalDominant = Abs(deltaX) >= Abs(deltaY);
+
+	if (isHorizontalDominant)
+	{
+		// 横方向が主軸：水平線を描画
+		int32 minX = Min(start.x, end.x);
+		int32 maxX = Max(start.x, end.x);
+		int32 fixedY = start.y; // Y座標は開始点で固定
+
+		for (int32 x = minX; x <= maxX; ++x)
+		{
+			// マップ範囲内かチェック
+			if (x >= 0 && x < mapTile.N && fixedY >= 0 && fixedY < mapTile.N)
+			{
+				selectedTiles.push_back(Point(x, fixedY));
+			}
+		}
+
+		Print << U"水平線選択: Y={}, X={}〜{} ({} タイル)"_fmt(
+			fixedY, minX, maxX, selectedTiles.size());
+	}
+	else
+	{
+		// 縦方向が主軸：垂直線を描画
+		int32 minY = Min(start.y, end.y);
+		int32 maxY = Max(start.y, end.y);
+		int32 fixedX = start.x; // X座標は開始点で固定
+
+		for (int32 y = minY; y <= maxY; ++y)
+		{
+			// マップ範囲内かチェック
+			if (fixedX >= 0 && fixedX < mapTile.N && y >= 0 && y < mapTile.N)
+			{
+				selectedTiles.push_back(Point(fixedX, y));
+			}
+		}
+
+		Print << U"垂直線選択: X={}, Y={}〜{} ({} タイル)"_fmt(
+			fixedX, minY, maxY, selectedTiles.size());
+	}
+
+	return selectedTiles;
+}
+
+void Battle001::drawBuildTargetHighlight(const MapTile& mapTile) const
+{
+	if (IsBuildSelectTraget)
+	{
+		if (const auto index = mapTile.ToIndex(Cursor::PosF(), mapTile.columnQuads, mapTile.rowQuads))
+		{
+			// 右クリック範囲選択中の処理
+			if (MouseR.pressed() && longBuildSelectTragetId != -1)
+			{
+				// 開始点の取得
+				if (auto startIndex = mapTile.ToIndex(cursPos, mapTile.columnQuads, mapTile.rowQuads))
+				{
+					Point startTile = *startIndex;
+					Point endTile = *index;
+
+					// **線状選択のプレビュー**
+					Array<Point> previewTiles = getRangeSelectedTiles(startTile, endTile, mapTile);
+
+					// 選択方向の表示
+					int32 deltaX = endTile.x - startTile.x;
+					int32 deltaY = endTile.y - startTile.y;
+					bool isHorizontal = Abs(deltaX) >= Abs(deltaY);
+
+					String directionText = isHorizontal ? U"水平線" : U"垂直線";
+					ColorF lineColor = isHorizontal ?
+						ColorF{ 0.0, 0.8, 1.0, 0.6 } :  // 水平：シアン
+						ColorF{ 1.0, 0.8, 0.0, 0.6 };   // 垂直：オレンジ
+
+					// 線状選択プレビューの描画
+					for (const auto& tile : previewTiles)
+					{
+						// 建築可能かどうかで色を調整
+						ColorF tileColor = canBuildOnTile(tile, classBattleManage, mapTile) ?
+							lineColor :  // 元の方向色
+							ColorF{ 1.0, 0.2, 0.2, 0.4 };   // 赤半透明：建築不可
+
+						mapTile.ToTile(tile, mapTile.N).draw(tileColor);
+					}
+
+					// 方向線の描画（開始点→終了点）
+					{
+						Vec2 startPos = mapTile.ToTileBottomCenter(startTile, mapTile.N);
+						Vec2 endPos = mapTile.ToTileBottomCenter(endTile, mapTile.N);
+
+						// 方向を示すアロー
+						Line{ startPos, endPos }.drawArrow(
+							DIRECTION_ARROW_THICKNESS,
+							DIRECTION_ARROW_HEAD_SIZE,
+							ColorF{ 1.0, 1.0, 0.0, 0.9 }
+						);
+					}
+
+					// 選択情報の表示
+					{
+						int32 validCount = 0;
+						int32 totalCount = previewTiles.size();
+
+						for (const auto& tile : previewTiles)
+						{
+							if (canBuildOnTile(tile, classBattleManage, mapTile)) validCount++;
+						}
+
+						// カーソル近くに情報表示
+						const String infoText = U"{}: {}/{} タイル"_fmt(
+							directionText, validCount, totalCount);
+						const Vec2 textPos = Cursor::PosF().movedBy(INFO_TEXT_OFFSET_X, INFO_TEXT_OFFSET_Y);
+
+						// 背景を描画
+						const auto textRegion = fontInfo.font(infoText).region();
+						const RectF bgRect = RectF(textPos, textRegion.size).stretched(INFO_TEXT_PADDING);
+						bgRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.8 });
+
+						// テキストを描画
+						fontInfo.fontSkill(infoText).draw(textPos, Palette::White);
+					}
+				}
+			}
+			else
+			{
+				// 通常の単一タイルハイライト
+				mapTile.ToTile(*index, mapTile.N).draw(ColorF{ 1.0, 1.0, 0.2, 0.3 });
+			}
+		}
 	}
 }
 void Battle001::draw() const
@@ -882,6 +1149,7 @@ void Battle001::draw() const
 		drawResourcePoints(cameraView, classBattleManage, mapTile);
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
+		drawBuildTargetHighlight(mapTile);
 
 
 	}

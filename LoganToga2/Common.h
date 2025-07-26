@@ -512,7 +512,7 @@ protected:
 	String m_nowSName;
 	HashTable<String, Array<UIElement>> m_uiElements;
 	Array<UIElement> sortedElements;
-	bool shouldExit = true;
+	bool shouldExit = false;
 };
 
 /// @brief 
