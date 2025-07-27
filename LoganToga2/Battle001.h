@@ -379,6 +379,7 @@ private:
 	Co::Task<void> mainLoop();
 	/// @brief 
 	void draw() const override;
+	void initUI();
 	/// @brief リソースターゲットのリストを設定します。
 	/// @param classBattleManage バトル管理を行うClassBattleオブジェクト。
 	/// @param resourceTargets ResourcePointTooltip::TooltipTargetの配列。設定されるリソースターゲットのリストです。
@@ -446,6 +447,28 @@ private:
 	void handleSquareFormation(Point start, Point end);
 	void handleUnitSelection(const RectF& selectionRect);
 	//void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc) const;
+	void drawSkillUI() const;
+	void drawBuildDescription() const;
+	void drawBuildMenu() const;
+	void drawResourcesUI() const;
+	void createRenderTex();
+	Color GetDominantColor(const String imageName, HashTable<String, Color>& data);
+	void DrawMiniMap(const Grid<Visibility>& map, const RectF& cameraRect) const;
+
+	/// >>>ミニマップ
+	/// @brief ミニマップのサイズを表す定数
+	const Size miniMapSize = Size(200, 200);
+	const Vec2 miniMapPosition = Scene::Size() - miniMapSize - Vec2(20, 20); // 右下から20pxオフセット
+	struct MinimapCol
+	{
+		Color color;
+		int32 x;
+		int32 y;
+	};
+	HashTable<Point, ColorF> minimapCols;
+	HashTable<String, Color> colData;
+	/// <<<ミニマップ
+
 
 	/// >>> プレイヤー操作
 	void handleCameraInput();
@@ -457,6 +480,7 @@ private:
 	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
 	bool IsBuildSelectTraget = false;
 	long longBuildSelectTragetId = -1;
+	bool IsBuildMenuHome = false;
 	/// <<< プレイヤー操作
 
 	/// @brief TODO:後で消す
@@ -536,6 +560,30 @@ private:
 	Array<std::unique_ptr<Unit>> unitsForHsBuildingUnitForAstar;
 	/// @brief  // ユニットの位置とそのユニットへのポインタを保持するht
 	HashTable<Point, Array<Unit*>> hsBuildingUnitForAstar;
+
+	/// >>> UI関連
+	/// @brief 種別-アクション名,紐づくアクション 保守性を考え。
+	HashTable<String, BuildAction> htBuildMenu;
+	Array<std::pair<String, BuildAction>> sortedArrayBuildMenu;
+
+	HashTable<String, RenderTexture> htBuildMenuRenderTexture;
+	RenderTexture renderTextureBuildMenuEmpty;
+	RenderTexture renderTextureSkill;
+	RenderTexture renderTextureSkillUP;
+	RenderTexture renderTextureZinkei;
+	Array<Rect> rectZinkei;
+	RenderTexture renderTextureOrderSkill;
+	Array<Rect> rectOrderSkill;
+	RenderTexture renderTextureSelektUnit;
+	Array<Rect> RectSelectUnit;
+	HashTable<String, Rect> htSkill;
+	Array<String> nowSelectSkill;
+	bool flagDisplaySkillSetumei = false;
+	String nowSelectSkillSetumei = U"";
+	Rect rectSkillSetumei = { 0,0,320,320 };
+	String nowSelectBuildSetumei = U"";
+	Rect rectSetumei = { 0,0,320,0 };
+	/// <<< UI関連
 
 };
 

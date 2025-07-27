@@ -23,6 +23,71 @@ void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFun
 	}
 }
 
+void Battle001::createRenderTex()
+{
+	htBuildMenuRenderTexture.clear();
+
+	if (htBuildMenu.empty())
+		return;
+
+	Array<std::pair<String, BuildAction>> sortedArray(htBuildMenu.begin(), htBuildMenu.end());
+	sortedArray.sort_by([](const auto& a, const auto& b) {
+		return a.first < b.first;
+	});
+
+	String currentKey = U"";
+	int32 counter = 0;
+
+	for (const auto& item : sortedArray)
+	{
+		const String key = item.first.split('-')[0];  // 1回だけ split
+
+		// 新しいカテゴリの場合、新しいレンダーテクスチャを作成
+		if (key != currentKey)
+		{
+			currentKey = key;
+
+			RenderTexture rt{ 328, 328 };
+			{
+				const ScopedRenderTarget2D target{ rt.clear(ColorF{ 0.8, 0.8, 0.8, 0.5 }) };
+				const ScopedRenderStates2D blend{ MakeBlendState() };
+				Rect(328, 328).drawFrame(4, 0, ColorF{ 0.5 });
+			}
+
+			htBuildMenuRenderTexture.emplace(key, std::move(rt));
+			counter = 0;
+		}
+
+		// 建築可能なアイテムのみ描画
+		if (item.second.buildCount == 0) continue;
+
+		// レンダーテクスチャに描画
+		{
+			const ScopedRenderTarget2D target{ htBuildMenuRenderTexture[currentKey] };
+			const ScopedRenderStates2D blend{ MakeBlendState() };
+
+			Rect rectBuildMenuHome{
+				((counter % 6) * 64) + 4,
+				((counter / 6) * 64) + 4,
+				64,
+				64
+			};
+
+			// const_cast を避けるため、非const版を作成することを検討
+			const_cast<BuildAction&>(item.second).rectHantei = rectBuildMenuHome;
+
+			const double scale = static_cast<double>(rectBuildMenuHome.w) / rectBuildMenuHome.h;
+			TextureAsset(item.second.icon)
+				.scaled(scale)
+				.draw(rectBuildMenuHome.x, rectBuildMenuHome.y);
+		}
+
+		counter++;
+	}
+
+	sortedArrayBuildMenu = std::move(sortedArray);
+}
+
 /// @brief TODO:後で消す
 /// @param cmb 
 void Battle001::GetTempResource(ClassMapBattle& cmb)
@@ -567,6 +632,132 @@ Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
 
 	co_return;
 }
+
+Color Battle001::GetDominantColor(const String imageName, HashTable<String, Color>& data)
+{
+	// dataに指定された画像名が存在する場合はその色を返す
+	if (data.contains(imageName))
+		return data[imageName];
+
+	const Image image{ PATHBASE + PATH_DEFAULT_GAME + U"/015_BattleMapCellImage/" + imageName };
+
+	// 色の頻度を記録
+	HashTable<Color, int32> colorCount;
+
+	for (const auto& pixel : image)
+	{
+		// 透明ピクセルを除外したい場合は以下の if を有効に
+		if (pixel.a == 0) continue;
+
+		++colorCount[pixel];
+	}
+
+	// 最も頻度の高い色を見つける
+	Color dominantColor = Palette::Black;
+	int32 maxCount = 0;
+
+	for (const auto& [color, count] : colorCount)
+	{
+		if (count > maxCount)
+		{
+			dominantColor = color;
+			maxCount = count;
+		}
+	}
+
+	//dataに追加
+	data[imageName] = dominantColor;
+
+	return dominantColor;
+}
+
+
+void Battle001::initUI()
+{
+	rectZinkei.push_back(Rect{ 8,8,60,40 });
+	rectZinkei.push_back(Rect{ 76,8,60,40 });
+	rectZinkei.push_back(Rect{ 144,8,60,40 });
+	renderTextureZinkei = RenderTexture{ 320,60 };
+	renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		Rect df = Rect(320, 60);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+
+		for (auto&& [i, ttt] : Indexed(rectZinkei))
+		{
+			ttt.draw(Palette::Aliceblue);
+			fontInfo.fontZinkei(ss.Zinkei[i]).draw(ttt, Palette::Black);
+		}
+	}
+
+	renderTextureSkill = RenderTexture{ 320,320 };
+	renderTextureSkill.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ renderTextureSkill.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		//skill抽出
+		Array<Skill> table;
+		for (auto& item : classBattleManage.listOfAllUnit)
+		{
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				for (auto& ski : itemUnit.arrSkill)
+					table.push_back(ski);
+			}
+		}
+
+		// ソート
+		table.sort_by([](const Skill& a, const Skill& b)
+		{
+			return a.sortKey < b.sortKey;
+		});
+		table.erase(std::unique(table.begin(), table.end()), table.end());
+
+		for (const auto&& [i, key] : Indexed(table))
+		{
+			Rect rectSkill;
+			rectSkill.x = ((i % 10) * 32) + 4;
+			rectSkill.y = ((i / 10) * 32) + 4;
+			rectSkill.w = 32;
+			rectSkill.h = 32;
+			htSkill.emplace(key.nameTag, rectSkill);
+
+			for (auto& icons : key.icon.reversed())
+			{
+				TextureAsset(icons.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
+			}
+		}
+
+		Rect df = Rect(320, 320);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+	}
+	renderTextureSkillUP = RenderTexture{ 320,320 };
+	renderTextureSkillUP.clear(ColorF{ 0.5, 0.0 });
+
+	renderTextureBuildMenuEmpty = RenderTexture{ 328, 328 };
+	renderTextureBuildMenuEmpty.clear(ColorF{ 0.5, 0.0 });
+	{
+		const ScopedRenderTarget2D target{ renderTextureBuildMenuEmpty.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+		Rect df = Rect(328, 328);
+		df.drawFrame(4, 0, ColorF{ 0.5 });
+	}
+
+	//ミニマップ用
+	for (int32 y = 0; y < visibilityMap.height(); ++y)
+	{
+		for (int32 x = 0; x < visibilityMap.width(); ++x)
+		{
+			String ttt = classBattleManage.classMapBattle.value().mapData[x][y].tip + U".png";
+			minimapCols.emplace(Point(x, y), GetDominantColor(ttt, colData));
+		}
+	}
+}
+
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
 /// @return 非同期タスク
 Co::Task<void> Battle001::start()
@@ -627,6 +818,8 @@ Co::Task<void> Battle001::start()
 	}
 
 	visibilityMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
+
+	initUI();
 
 	//始点設定
 	camera.jumpTo(
@@ -1131,6 +1324,214 @@ void Battle001::drawBuildTargetHighlight(const MapTile& mapTile) const
 		}
 	}
 }
+void Battle001::drawSkillUI() const
+{
+	const int32 baseY = Scene::Size().y - renderTextureSkill.height() - underBarHeight;
+
+	renderTextureSkill.draw(0, baseY);
+	renderTextureSkillUP.draw(0, baseY);
+
+	if (!nowSelectSkillSetumei.isEmpty())
+	{
+		rectSkillSetumei.draw(Palette::Black);
+		fontInfo.fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Palette::White);
+	}
+}
+void Battle001::drawBuildDescription() const
+{
+	if (nowSelectBuildSetumei != U"")
+	{
+		rectSetumei.draw(Palette::Black);
+		fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Palette::White);
+	}
+}
+void Battle001::drawBuildMenu() const
+{
+	if (!IsBuildMenuHome)
+	{
+		//ミニマップの邪魔
+		//renderTextureBuildMenuEmpty.draw(Scene::Size().x - 328, Scene::Size().y - 328 - underBarHeight);
+		return;
+	}
+
+	const int32 baseX = Scene::Size().x - 328;
+	const int32 baseY = Scene::Size().y - 328 - underBarHeight;
+
+	// 選択されたユニットを1回の検索で取得
+	const Unit* selectedUnit = nullptr;
+	for (const auto& group : classBattleManage.listOfAllUnit)
+	{
+		for (const auto& unit : group.ListClassUnit)
+		{
+			if (unit.IsSelect)
+			{
+				selectedUnit = &unit;
+				break;
+			}
+		}
+		if (selectedUnit) break;
+	}
+
+	if (!selectedUnit)
+		return;
+
+	// ビルドメニューの描画
+	const String& targetClassBuild = selectedUnit->classBuild;
+	for (const auto& [key, renderTexture] : htBuildMenuRenderTexture)
+	{
+		if (key == targetClassBuild)
+		{
+			renderTexture.draw(baseX, baseY);
+			break;
+		}
+	}
+
+	// 建築キューの描画
+	if (!selectedUnit->arrYoyakuBuild.empty())
+	{
+		Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
+
+		for (const auto& [i, buildItem] : Indexed(selectedUnit->arrYoyakuBuild))
+		{
+			if (i == 0)
+			{
+				// 現在建築中のアイテム
+				TextureAsset(buildItem.icon).resized(64).draw(baseX - 64, baseY + 4);
+
+				const double progressRatio = Saturate(selectedUnit->taskTimer.sF() / buildItem.buildTime);
+				const double gaugeHeight = 64 * Max(progressRatio, 0.1);
+
+				RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }.draw(ColorF{ 0.0, 0.5 });
+			}
+			else
+			{
+				// キューに入っているアイテム
+				TextureAsset(buildItem.icon)
+					.resized(32)
+					.draw(baseX - 32, baseY + 32 + (i * 32) + 4);
+			}
+		}
+	}
+}
+void Battle001::drawResourcesUI() const
+{
+	// リソース値の変更時のみ文字列を更新（キャッシュ機構を検討）
+	static int32 cachedGold = -1;
+	static int32 cachedTrust = -1;
+	static int32 cachedFood = -1;
+	static Array<String> cachedTexts;
+
+	if (gold != cachedGold || trust != cachedTrust || food != cachedFood)
+	{
+		cachedTexts = {
+			U"Gold:{0}"_fmt(gold),
+			U"Trust:{0}"_fmt(trust),
+			U"Food:{0}"_fmt(food)
+		};
+		cachedGold = gold;
+		cachedTrust = trust;
+		cachedFood = food;
+	}
+
+	int32 baseX = 0;
+	int32 baseY = 0;
+
+	if (longBuildSelectTragetId != -1)
+	{
+		baseX = Scene::Size().x - 328 - int32(fontInfo.fontSystem(cachedTexts[0]).region().w) - 64 - 6;
+		baseY = Scene::Size().y - 328 - 30;
+	}
+
+	for (size_t i = 0; i < cachedTexts.size(); ++i)
+	{
+		const String& text = cachedTexts[i];
+		const auto region = fontInfo.fontSystem(text).region();
+
+		const Rect rect{
+			baseX,
+			baseY + static_cast<int32>(i * region.h),
+			static_cast<int32>(region.w),
+			static_cast<int32>(region.h)
+		};
+
+		rect.draw(Palette::Black);
+		fontInfo.fontSystem(text).drawAt(rect.center(), Palette::White);
+	}
+}
+void Battle001::DrawMiniMap(const Grid<Visibility>& map, const RectF& cameraRect) const
+{
+	//何故このサイズだとちょうどいいのかよくわかっていない
+	//pngファイルは100*65
+	//ミニマップ描写方法と通常マップ描写方法は異なるので、無理に合わせなくて良い？
+	const Vec2 tileSize = Vec2(50, 25 + 25);
+
+	// --- ミニマップに表示する位置・サイズ
+	const Vec2 miniMapTopLeft = miniMapPosition;
+	const SizeF miniMapDrawArea = miniMapSize;
+
+	// --- マップの4隅をアイソメ変換 → 範囲を取得
+	const Vec2 isoA = mapTile.ToIso(0, 0) * tileSize;
+	const Vec2 isoB = mapTile.ToIso(map.width(), 0) * tileSize;
+	const Vec2 isoC = mapTile.ToIso(0, map.height()) * tileSize;
+	const Vec2 isoD = mapTile.ToIso(map.width(), map.height()) * tileSize;
+
+	const double minX = Min({ isoA.x, isoB.x, isoC.x, isoD.x });
+	const double minY = Min({ isoA.y, isoB.y, isoC.y, isoD.y });
+	const double maxX = Max({ isoA.x, isoB.x, isoC.x, isoD.x });
+	const double maxY = Max({ isoA.y, isoB.y, isoC.y, isoD.y });
+
+	const SizeF isoMapSize = Vec2(maxX - minX, maxY - minY);
+
+	// --- ミニマップに収めるためのスケーリング
+	const double scale = Min(miniMapDrawArea.x / isoMapSize.x, miniMapDrawArea.y / isoMapSize.y);
+
+	// --- スケーリング後のマップサイズ
+	const SizeF scaledMapSize = isoMapSize * scale;
+
+	// --- 中央に表示するためのオフセット（ミニマップ内で中央揃え）
+	const Vec2 offset = miniMapTopLeft + (miniMapDrawArea - scaledMapSize) / 2.0 - Vec2(minX, minY) * scale;
+
+	// --- 背景（薄い色で下地）を描画
+	RectF(miniMapTopLeft, miniMapDrawArea).draw(ColorF(0.1, 0.1, 0.1, 0.5));
+
+	// --- タイルの描画
+	for (int32 y = 0; y < map.height(); ++y)
+	{
+		for (int32 x = 0; x < map.width(); ++x)
+		{
+			const Vec2 iso = mapTile.ToIso(x, y) * tileSize;
+			const Vec2 miniPos = iso * scale + offset;
+			const SizeF tileSizeScaled = tileSize * scale;
+
+			// デフォルト色
+			ColorF tileColor = Palette::White;
+			if (auto it = minimapCols.find(Point(x, y)); it != minimapCols.end())
+			{
+				tileColor = it->second;
+			}
+
+			// 描画
+			RectF(miniPos, tileSizeScaled).draw(tileColor);
+		}
+	}
+
+	// --- カメラ範囲を表示（白い枠）
+	{
+		//const Vec2 camTopLeftIso = ToIso(cameraRect.x, cameraRect.y) * tileSize;
+		//const Vec2 camBottomRightIso = ToIso(cameraRect.x + cameraRect.w, cameraRect.y + cameraRect.h) * tileSize;
+
+		//const Vec2 topLeft = camTopLeftIso * scale + offset;
+		//const Vec2 bottomRight = camBottomRightIso * scale + offset;
+		//const RectF cameraBox = RectF(topLeft, bottomRight - topLeft);
+
+		//cameraBox.drawFrame(1.5, ColorF(1.0));
+
+		const Vec2 camTopLeft = cameraRect.pos * Vec2(1.0, 1.0);
+		const Vec2 camBottomRight = camTopLeft + cameraRect.size;
+		RectF(camTopLeft * scale + offset, cameraRect.size * scale).drawFrame(1.5, ColorF(1.0));
+
+	}
+}
 void Battle001::draw() const
 {
 	FsScene::draw();
@@ -1150,7 +1551,16 @@ void Battle001::draw() const
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight(mapTile);
-
-
 	}
+
+	renderTextureZinkei.draw(
+		0,
+		Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight);
+	drawSkillUI();
+	drawBuildDescription();
+	drawBuildMenu();
+
+	if (longBuildSelectTragetId == -1)
+		DrawMiniMap(visibilityMap, camera.getRegion());
+
 }
