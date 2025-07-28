@@ -196,7 +196,69 @@ public:
 
 	void OpenAround(ClassAStar* parent, Array<Array<MapDetail>>& mapData,
 					Array<ClassHorizontalUnit>& arrayObjEnemy, Array<ClassHorizontalUnit>& arrayObjMy, int32 maxN,
-					HashTable<Point, const Unit*>& hsBuildingUnitForAstar,bool player = false)
+					HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,bool player = false)
+	{
+		try
+		{
+			int32 x = parent->GetRow();
+			int32 y = parent->GetCol();
+			int32 cost = parent->GetCost() + 1;
+
+			for (int j = -1; j <= 1; ++j)
+			{
+				for (int i = -1; i <= 1; ++i)
+				{
+					int nx = x + i;
+					int ny = y + j;
+
+					if (i == 0 && j == 0) continue; // 自分自身はスキップ
+					if (nx < 0 || ny < 0 || nx >= mapData.size() || ny >= mapData[nx].size()) continue;
+					if (checkObstacleAndContinue(arrayObjEnemy, nx, ny, cost, parent, maxN, hsBuildingUnitForAstar)) continue;
+					if (!player)
+						if (checkObstacleAndContinue(arrayObjMy, nx, ny, cost, parent, maxN, hsBuildingUnitForAstar)) continue;
+					OpenOne(nx, ny, cost, parent, maxN);
+				}
+			}
+		}
+		catch (const Error& ex)
+		{
+			Print << ex;
+		}
+	}
+	// 最適化版: ユニットの位置をHashTableで事前構築し、高速に判定
+	bool checkObstacleAndContinue(
+		const Array<ClassHorizontalUnit>& unitArray,
+		int32 mapX, int32 mapY, int32 cost,
+		ClassAStar* parent, int32 maxN, HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar)
+	{
+		// 指定座標に建物があるか高速判定
+		Point key(mapX, mapY);
+		if (hsBuildingUnitForAstar.contains(key))
+		{
+			const Array<Unit*> unit = hsBuildingUnitForAstar[key];
+			const MapTipObjectType mapTipObjectType = unit[0]->mapTipObjectType;
+			// 壊せる障害物は通行可（例：ゲート、HOME）
+			//if (unit->mapTipObjectType == MapTipObjectType::GATE
+			//	|| unit->mapTipObjectType == MapTipObjectType::HOME)
+			//{
+			//	if (!pool.contains(key))
+			//	{
+			//		OpenOne(mapX, mapY, cost, parent, maxN);
+			//	}
+			//	return true;
+			//}
+			// 壁や鉄条網など通行不可
+			return true;
+		}
+		return false;
+	}
+
+
+
+	//いずれ消す
+	void OpenAround(ClassAStar* parent, Array<Array<MapDetail>>& mapData,
+				Array<ClassHorizontalUnit>& arrayObjEnemy, Array<ClassHorizontalUnit>& arrayObjMy, int32 maxN,
+				HashTable<Point, const Unit*>& hsBuildingUnitForAstar, bool player = false)
 	{
 		try
 		{
@@ -252,6 +314,9 @@ public:
 		}
 		return false;
 	}
+
+
+
 private:
 	HashTable<Point, ClassAStar*> pool;
 	Array<ClassAStar*> listClassAStar;

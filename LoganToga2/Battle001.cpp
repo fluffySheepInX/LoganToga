@@ -98,6 +98,11 @@ void Battle001::GetTempResource(ClassMapBattle& cmb)
 	cmb.mapData[0][10].resourcePointDisplayName = U"金";
 	cmb.mapData[0][10].resourcePointIcon = U"point000.png";
 }
+static BuildAction& dummyMenu()
+{
+	static BuildAction instance;
+	return instance;
+}
 /// @brief Battle001 クラスのコンストラクタ。ゲームデータや設定をもとにバトルマップを初期化し、リソース情報やツールチップの設定を行います。
 /// @param saveData ゲームの進行状況などを保持する GameData 型の参照。
 /// @param commonConfig 共通設定を保持する CommonConfig 型の参照。
@@ -107,6 +112,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	, m_saveData{ saveData }
 	, m_commonConfig{ commonConfig }
 	, ss{ argSS }
+	, tempSelectComRight{ dummyMenu() }
 {
 	const TOMLReader tomlMap{ PATHBASE + PATH_DEFAULT_GAME + U"/016_BattleMap/map001.toml" };
 	if (not tomlMap)
@@ -617,6 +623,10 @@ Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
 		{
 			handleSquareFormation(start, end);
 		}
+		else
+		{
+			handleSquareFormation(start, end);
+		}
 
 		is移動指示 = false;
 
@@ -632,7 +642,58 @@ Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
 
 	co_return;
 }
+void Battle001::playResourceEffect()
+{
+	//CircleEffect(Vec2{ 500, 500 }, 50, ColorF{ 1.0, 1.0, 0.2 });
+	//SoundAsset(U"resourceGet").playMulti();
+}
+void Battle001::updateResourceIncome()
+{
+	//stopwatchFinanceが一秒経過する度に処理を行う
+	if (stopwatchFinance.sF() >= 1.0)
+	{
+		int32 goldInc = 0;
+		int32 trustInc = 0;
+		int32 foodInc = 0;
 
+		for (auto ttt : classBattleManage.classMapBattle.value().mapData)
+		{
+			for (auto jjj : ttt)
+			{
+				if (jjj.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+				{
+					//資金の増加
+					switch (jjj.resourcePointType)
+					{
+					case resourceKind::Gold:
+						goldInc += jjj.resourcePointAmount;
+						break;
+					case resourceKind::Trust:
+						trustInc += jjj.resourcePointAmount;
+						break;
+					case resourceKind::Food:
+						foodInc += jjj.resourcePointAmount;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+
+		stopwatchFinance.restart();
+		gold += 10 + goldInc; // 1秒ごとに10ゴールド増加
+		trust += 1 + trustInc; // 1秒ごとに1権勢増加
+		food += 5 + foodInc; // 1秒ごとに5食料増加
+
+		// 資源取得エフェクトやサウンド再生（省略可）
+		playResourceEffect();
+	}
+}
+/// @brief 指定された画像の支配的な色（最も頻度の高い色）を取得します。
+/// @param imageName 色を取得する画像の名前。
+/// @param data 画像名と色の対応を保持するハッシュテーブル。既に色が記録されていれば再計算せずに返します。
+/// @return 画像内で最も頻度の高い色（支配的な色）。
 Color Battle001::GetDominantColor(const String imageName, HashTable<String, Color>& data)
 {
 	// dataに指定された画像名が存在する場合はその色を返す
@@ -670,8 +731,7 @@ Color Battle001::GetDominantColor(const String imageName, HashTable<String, Colo
 
 	return dominantColor;
 }
-
-
+/// @brief Battle001のUIを初期化 陣形・スキル・建築メニュー・ミニマップなどの描画用リソースを生成・設定
 void Battle001::initUI()
 {
 	rectZinkei.push_back(Rect{ 8,8,60,40 });
@@ -747,6 +807,20 @@ void Battle001::initUI()
 		df.drawFrame(4, 0, ColorF{ 0.5 });
 	}
 
+	//建築メニューの初期化
+	{
+		htBuildMenu.clear();
+		for (const auto uigee : m_commonConfig.htBuildMenuBaseData)
+		{
+			for (const auto fege : uigee.second)
+			{
+				String key = uigee.first + U"-" + fege.id;
+				htBuildMenu.emplace(key, fege);
+			}
+		}
+		createRenderTex();
+	}
+
 	//ミニマップ用
 	for (int32 y = 0; y < visibilityMap.height(); ++y)
 	{
@@ -757,6 +831,706 @@ void Battle001::initUI()
 		}
 	}
 }
+
+Co::Task<> Battle001::checkCancelSelectionByUIArea()
+{
+	if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
+	{
+		longBuildSelectTragetId = -1;
+
+		for (auto& target : classBattleManage.listOfAllUnit)
+		{
+			for (auto& unit : target.ListClassUnit)
+			{
+				unit.IsSelect = false;
+			}
+		}
+
+		co_await Co::NextFrame();
+	}
+	co_return;
+}
+/// @brief 建築予約をするのが本質
+void Battle001::handleBuildMenuSelectionA()
+{
+	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
+
+	//全部変更可能性あるので非const
+	for (auto& loau : classBattleManage.listOfAllUnit)
+	{
+		for (auto& itemUnit : loau.ListClassUnit)
+		{
+			if (itemUnit.IsSelect == false) continue;
+
+			for (auto& hbm : sortedArrayBuildMenu)
+			{
+				Array<String> resSp = hbm.first.split('-');
+				if (resSp[0] != itemUnit.classBuild) continue;
+
+				if (hbm.second.rectHantei.leftClicked())
+				{
+					if (hbm.second.isMove == true)
+					{
+						IsBuildSelectTraget = true;
+						itemUnit.tempIsBuildSelectTragetBuildAction = hbm.second;
+						tempSelectComRight = hbm.second;
+						itemUnit.tempSelectComRight = tempSelectComRight;
+						break;
+					}
+
+					if (hbm.second.category == U"Carrier")
+					{
+						// 周囲3マス範囲のランダムユニット格納処理
+
+							// 現在選択されているユニットを取得
+						Unit* selectedCarrierUnit = nullptr;
+						for (auto& loau : classBattleManage.listOfAllUnit)
+						{
+							for (auto& unit : loau.ListClassUnit)
+							{
+								if (unit.IsSelect)
+								{
+									selectedCarrierUnit = &unit;
+									break;
+								}
+							}
+							if (selectedCarrierUnit) break;
+						}
+
+						if (!selectedCarrierUnit) continue;
+
+						// キャリアーコンポーネントを取得
+						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+						if (!carrierComponent) continue;
+
+						// 選択ユニットの現在位置のタイル座標を取得
+						Optional<Point> carrierTileIndex = mapTile.ToIndex(
+							selectedCarrierUnit->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+						if (!carrierTileIndex.has_value()) continue;
+
+						// 周囲3マス範囲のユニットを検索
+						Array<Unit*> nearbyUnits;
+						const int32 searchRadius = 3;
+
+						// 味方ユニットから検索
+						for (auto& group : classBattleManage.listOfAllUnit)
+						{
+							for (auto& unit : group.ListClassUnit)
+							{
+								// 自分自身、建物、戦闘不可ユニットは除外
+								if (unit.ID == selectedCarrierUnit->ID ||
+									unit.IsBuilding ||
+									!unit.IsBattleEnable || unit.isCarrierUnit) continue;
+
+								// ユニットの現在位置のタイル座標を取得
+								Optional<Point> unitTileIndex = mapTile.ToIndex(
+									unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+								if (!unitTileIndex.has_value()) continue;
+
+								// 距離をチェック（マンハッタン距離）
+								int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
+								if (distance <= searchRadius)
+								{
+									nearbyUnits.push_back(&unit);
+								}
+							}
+						}
+
+						// 範囲内にユニットがいない場合は処理終了
+						if (nearbyUnits.isEmpty())
+						{
+							Print << U"周囲3マス以内にユニットが見つかりません";
+							continue;
+						}
+
+						// ランダムに並び替え
+						Shuffle(nearbyUnits);
+
+						// キャリアーの容量まで格納
+						int32 storedCount = 0;
+						for (Unit* unit : nearbyUnits)
+						{
+							if (carrierComponent->store(unit))
+							{
+								storedCount++;
+								Print << U"ユニット '{}' を格納しました"_fmt(unit->Name);
+
+								// 容量に達したら終了
+								if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
+								{
+									break;
+								}
+							}
+							else
+							{
+								Print << U"キャリアーの容量が満杯です";
+								break;
+							}
+						}
+
+						if (storedCount > 0)
+						{
+							Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
+						}
+						else
+						{
+							Print << U"格納できるユニットがありませんでした";
+						}
+					}
+
+					if (hbm.second.category == U"releaseAll")
+					{
+						// 現在選択されているユニットを取得
+						Unit* selectedCarrierUnit = nullptr;
+						for (auto& loau : classBattleManage.listOfAllUnit)
+						{
+							for (auto& unit : loau.ListClassUnit)
+							{
+								if (unit.IsSelect)
+								{
+									selectedCarrierUnit = &unit;
+									break;
+								}
+							}
+							if (selectedCarrierUnit) break;
+						}
+
+						if (!selectedCarrierUnit) continue;
+
+						// キャリアーコンポーネントを取得
+						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+						if (!carrierComponent) continue;
+
+						// 格納されているユニットがあるかチェック
+						if (carrierComponent->storedUnits.empty())
+						{
+							Print << U"格納されているユニットがありません";
+							continue;
+						}
+
+						// 現在のキャリアーユニットの位置を取得
+						Vec2 releasePosition = selectedCarrierUnit->GetNowPosiCenter();
+
+						// 格納されているユニット数を記録（リリース前）
+						int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
+
+						// 全ユニットを解放
+						carrierComponent->releaseAll(releasePosition);
+
+						Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
+					}
+
+					// 設置位置の取得
+					if (const auto& index = mapTile.ToIndex(
+						itemUnit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads))
+					{
+						hbm.second.rowBuildingTarget = index->y;
+						hbm.second.colBuildingTarget = index->x;
+						itemUnit.currentTask = UnitTask::None;
+					}
+					else
+					{
+						//現在選択ユニットはマップ外にいる……
+					}
+
+					IsBuildSelectTraget = false;
+
+					//Battle::updateBuildQueueで作る
+					if (itemUnit.taskTimer.isRunning() == false)
+					{
+						itemUnit.taskTimer.restart();
+						itemUnit.progressTime = 0.0;
+					}
+					itemUnit.arrYoyakuBuild.push_back(hbm.second);
+					// 回数制限の更新と再描画
+					if (hbm.second.buildCount > 0)
+					{
+						hbm.second.buildCount--;
+						//キーだけ渡して該当のrenderだけ更新するように
+						//renB();
+					}
+				}
+				else if (hbm.second.rectHantei.mouseOver())
+				{
+					nowSelectBuildSetumei = U"~~~Unit Or Build~~~\r\n" + hbm.second.description;
+					rectSetumei = { Scene::Size().x - renderTextureBuildMenuEmpty.size().x,
+						Scene::Size().y - underBarHeight - renderTextureBuildMenuEmpty.size().y,
+						320, 0 };
+					rectSetumei.h = fontInfo.fontSkill(nowSelectBuildSetumei).region().h;
+					while (!fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Color(0.0, 0.0)))
+					{
+						rectSetumei.h += 12;
+					}
+					rectSetumei.y -= rectSetumei.h;
+					break;
+				}
+				else
+				{
+					nowSelectBuildSetumei.clear();
+				}
+
+			}
+		}
+	}
+}
+void Battle001::handleUnitAndBuildingSelection()
+{
+	// 左クリック開始時の処理
+	if (MouseL.down())
+	{
+		isUnitSelectionPending = true;
+		clickStartPos = Cursor::Pos();
+		return; // down時は選択処理を行わない
+	}
+
+	// 左クリック終了時の処理
+	if (MouseL.up() && isUnitSelectionPending)
+	{
+		isUnitSelectionPending = false;
+
+		// ドラッグ判定：開始位置から一定距離以上移動していたらドラッグとみなす
+		const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		if (moveDistance > CLICK_THRESHOLD)
+		{
+			// ドラッグだった場合は選択処理をスキップ
+			return;
+		}
+
+		// 以下、実際の選択処理
+		bool isSeBu = false;
+		long selectedBuildingId = -1;
+
+		// 建築物選択チェック
+		for (const auto& item : classBattleManage.listOfAllUnit)
+		{
+			if (item.FlagBuilding == true && !item.ListClassUnit.empty())
+			{
+				for (const auto& itemUnit : item.ListClassUnit)
+				{
+					Size tempSize = TextureAsset(itemUnit.ImageName).size();
+					Quad tempQ = mapTile.ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), mapTile.N);
+					const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
+					const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
+					const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
+					const double vHe = Abs(rightCenter.y - leftCenter.y);
+					double scale = tempSize.x / (horizontalWidth * 2);
+
+					if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + mapTile.TileThickness).intersects(Cursor::PosF()))
+					{
+						selectedBuildingId = itemUnit.ID;
+						isSeBu = true;
+						break;
+					}
+				}
+				if (isSeBu) break;
+			}
+		}
+
+		// ユニット選択チェック（建築物が選択されていない場合のみ）
+		long selectedUnitId = -1;
+		if (!isSeBu)
+		{
+			for (const auto& target : classBattleManage.listOfAllUnit)
+			{
+				for (const auto& unit : target.ListClassUnit)
+				{
+					if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
+						|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.classBuild != U""))
+					{
+						if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+						{
+							selectedUnitId = unit.ID;
+							break;
+						}
+					}
+				}
+				if (selectedUnitId != -1) break;
+			}
+		}
+
+		// 何も選択されていない場合は全て選択解除
+		if (selectedBuildingId == -1 && selectedUnitId == -1)
+		{
+			for (auto& item : classBattleManage.listOfAllUnit)
+			{
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					itemUnit.IsSelect = false;
+				}
+			}
+			IsBuildMenuHome = false;
+			longBuildSelectTragetId = -1;
+			return;
+		}
+
+		// 選択状態の一括更新
+		for (auto& item : classBattleManage.listOfAllUnit)
+		{
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				bool newSelectState = false;
+
+				if (isSeBu && selectedBuildingId == itemUnit.ID)
+				{
+					// 建築物が選択された場合
+					newSelectState = !itemUnit.IsSelect;
+					IsBuildMenuHome = newSelectState;
+				}
+				else if (!isSeBu && selectedUnitId == itemUnit.ID)
+				{
+					// ユニットが選択された場合
+					newSelectState = !itemUnit.IsSelect;
+					IsBuildMenuHome = newSelectState;
+
+					if (newSelectState)
+					{
+						longBuildSelectTragetId = itemUnit.ID;
+					}
+					else
+					{
+						longBuildSelectTragetId = -1;
+					}
+				}
+				else
+				{
+					// その他のユニットは選択解除
+					newSelectState = false;
+				}
+
+				// IsSelectの更新
+				itemUnit.IsSelect = newSelectState;
+			}
+		}
+	}
+
+	// pressed中でキャンセル条件があれば保留状態をリセット
+	if (MouseL.pressed())
+	{
+		const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		if (moveDistance > CLICK_THRESHOLD)
+		{
+			isUnitSelectionPending = false; // ドラッグ開始でキャンセル
+		}
+	}
+}
+void Battle001::handleSkillUISelection()
+{
+	//skill選択処理
+	{
+		const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - 320 - 30) };
+		for (auto&& [i, re] : Indexed(htSkill))
+		{
+			if (re.second.leftClicked())
+			{
+				bool flgEr = false;
+				for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
+				{
+					if (it->contains(re.first))
+					{
+						nowSelectSkill.erase(it);
+						flgEr = true;
+						break;
+					}
+				}
+
+				if (flgEr == false)
+				{
+					nowSelectSkill.push_back(re.first);
+				}
+			}
+			if (re.second.mouseOver())
+			{
+				flagDisplaySkillSetumei = true;
+				nowSelectSkillSetumei = U"";
+				//スキル説明を書く
+				for (auto& item : classBattleManage.listOfAllUnit)
+				{
+					if (!item.FlagBuilding &&
+						!item.ListClassUnit.empty())
+						for (auto& itemUnit : item.ListClassUnit)
+						{
+							for (auto& itemSkill : itemUnit.arrSkill)
+							{
+								if (itemSkill.nameTag == re.first)
+								{
+									nowSelectSkillSetumei = itemSkill.name + U"\r\n"
+										+ itemSkill.help + U"\r\n"
+										+ systemString.SkillAttack + U":" + Format(itemSkill.str);
+									;
+									break;
+								}
+							}
+							if (nowSelectSkillSetumei != U"")
+								break;
+						}
+					if (nowSelectSkillSetumei != U"")
+						break;
+				}
+
+				nowSelectSkillSetumei = U"~~~Skill~~~\r\n" + nowSelectSkillSetumei;
+
+				while (not fontInfo.fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Color(0.0, 0.0)))
+				{
+					rectSkillSetumei.h = rectSkillSetumei.h + 12;
+				}
+				rectSkillSetumei.x = re.second.pos.x + 32;
+				rectSkillSetumei.y = Scene::Size().y - underBarHeight - rectSkillSetumei.h;
+				break;
+			}
+			else
+			{
+				flagDisplaySkillSetumei = false;
+				nowSelectSkillSetumei = U"";
+			}
+		}
+
+		{
+			const ScopedRenderTarget2D target{ renderTextureSkillUP.clear(ColorF{ 0.5, 0.0, 0.0, 0.0 }) };
+			// 描画された最大のアルファ成分を保持するブレンドステート
+			const ScopedRenderStates2D blend{ MakeBlendState() };
+			for (auto&& [i, re] : Indexed(htSkill))
+				for (auto it = nowSelectSkill.begin(); it != nowSelectSkill.end(); ++it)
+					if (it->contains(re.first))
+					{
+						re.second.drawFrame(2, 0, Palette::Red);
+						break;
+					}
+		}
+	}
+}
+void Battle001::updateUnitHealthBars()
+{
+	constexpr Vec2 offset{ -32, +22 }; // = -64 / 2, +32 / 2 + 6
+
+	auto updateBar = [&](Unit& unit)
+		{
+			double hpRatio = static_cast<double>(unit.Hp) / unit.HpMAX;
+			unit.bLiquidBarBattle.update(hpRatio);
+			unit.bLiquidBarBattle.ChangePoint(unit.GetNowPosiCenter() + offset);
+		};
+
+	for (auto& group : classBattleManage.listOfAllUnit)
+	{
+		if (group.FlagBuilding || group.ListClassUnit.empty())
+			continue;
+
+		for (auto& unit : group.ListClassUnit)
+			updateBar(unit);
+	}
+
+	for (auto& group : classBattleManage.listOfAllEnemyUnit)
+	{
+		if (group.FlagBuilding || group.ListClassUnit.empty())
+			continue;
+
+		for (auto& unit : group.ListClassUnit)
+			updateBar(unit);
+	}
+}
+void Battle001::updateUnitMovements()
+{
+	//移動処理
+	for (auto& item : classBattleManage.listOfAllUnit)
+	{
+		for (auto& itemUnit : item.ListClassUnit)
+		{
+			if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::WALL2)
+				continue;
+			if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::GATE)
+				continue;
+			if (itemUnit.IsBattleEnable == false)
+				continue;
+			if (itemUnit.moveState == moveState::None) continue;
+			if (itemUnit.moveState == moveState::MoveAI) continue;
+			if (itemUnit.moveState == moveState::FlagMoveCalc) continue;
+
+			{
+				std::scoped_lock lock(aStar.aiRootMutex);
+				if (!aiRootMy.contains(itemUnit.ID)) continue;
+			}
+			auto& plan = aiRootMy[itemUnit.ID];
+
+			if (plan.isPathCompleted())
+			{
+				if (itemUnit.moveState == moveState::MovingEnd)
+				{
+					itemUnit.moveState = moveState::None; // 移動完了状態から通常状態に戻す
+					continue;
+				}
+				else if (itemUnit.moveState == moveState::Moving)
+				{
+					//最終移動
+					itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
+
+					// 進行方向ベクトル
+					Vec2 moveDir = itemUnit.vecMove;
+					// 現在位置→目標位置ベクトル
+					Vec2 toTarget = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+
+					// 目標を通り過ぎた or 近づいたら到達とみなす
+					if (toTarget.dot(moveDir) <= 0 || toTarget.length() < 5.0)
+					{
+						itemUnit.nowPosiLeft = itemUnit.orderPosiLeft; // 位置をピッタリ補正して止めるのもあり
+						itemUnit.FlagReachedDestination = true;
+						itemUnit.moveState = moveState::MovingEnd; // 移動完了状態にする
+					}
+				}
+
+				continue;
+			}
+
+			if (itemUnit.moveState == moveState::Moving)
+			{
+				itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
+
+				if (auto iuyb = plan.getCurrentTarget())
+				{
+					bool calculateResult = false;
+					{
+						Optional<Size> nowIndex = mapTile.ToIndex(itemUnit.GetNowPosiCenter(),
+							mapTile.columnQuads, mapTile.rowQuads);
+						if (nowIndex.has_value())
+						{
+							if (plan.lastPoint.x != nowIndex->x || plan.lastPoint.y != nowIndex->y)
+							{
+								plan.lastPoint = nowIndex.value();
+								calculateResult = true;
+							}
+						}
+					}
+					//if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) < 3.0)
+					if (calculateResult)
+					{
+						plan.stepToNext();
+						if (plan.getCurrentTarget())
+						{
+							// 到達チェック
+							const int32 i = plan.getCurrentTarget().value().manhattanLength();
+							const int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+							const int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+							const int32 k2 = (plan.getCurrentTarget().value().manhattanDistanceFrom(Point{ xi, yi }) / 2);
+							const double posX = ((i < (mapTile.N - 1)) ? (i * -mapTile.TileOffset.x) : ((i - 2 * mapTile.N + 2) * mapTile.TileOffset.x));
+							const double posY = (i * mapTile.TileOffset.y) - mapTile.TileThickness;
+							const Vec2 pos = { (posX + mapTile.TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+							Vec2 nextPos = pos;
+							itemUnit.orderPosiLeft = nextPos;
+							itemUnit.vecMove = (itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter()).normalized();
+						}
+					}
+				}
+				if (plan.isPathCompleted())
+				{
+					itemUnit.orderPosiLeft = itemUnit.orderPosiLeftLast; // 最後の位置に戻す
+					Optional<Size> oor = mapTile.ToIndex(itemUnit.GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+					plan.lastPoint = oor.value();
+					Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+					itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
+				}
+				continue;
+			}
+
+			// 次のマスに向けて移動準備
+			if (auto iuyb = plan.getCurrentTarget())
+			{
+				plan.lastPoint = iuyb.value();
+				plan.stepToNext();
+
+				// そのタイルの底辺中央の座標
+				const int32 i = plan.getCurrentTarget().value().manhattanLength();
+				const int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+				const int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+				const int32 k2 = (plan.getCurrentTarget().value().manhattanDistanceFrom(Point{ xi, yi }) / 2);
+				const double posX = ((i < (mapTile.N - 1)) ? (i * -mapTile.TileOffset.x) : ((i - 2 * mapTile.N + 2) * mapTile.TileOffset.x));
+				const double posY = (i * mapTile.TileOffset.y) - mapTile.TileThickness;
+				const Vec2 pos = { (posX + mapTile.TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+
+				itemUnit.orderPosiLeft = Vec2(Math::Round(pos.x), Math::Round(pos.y));
+
+				Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+				itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
+				itemUnit.moveState = moveState::Moving; // 移動状態にする
+			}
+		}
+	}
+	for (auto& item : classBattleManage.listOfAllEnemyUnit)
+	{
+		for (auto& itemUnit : item.ListClassUnit)
+		{
+			if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::WALL2)
+				continue;
+			if (itemUnit.IsBuilding == true && itemUnit.mapTipObjectType == MapTipObjectType::GATE)
+				continue;
+			if (itemUnit.IsBattleEnable == false)
+				continue;
+
+			{
+				std::scoped_lock lock(aStar.aiRootMutex);
+				if (!aiRootEnemy.contains(itemUnit.ID)) continue;
+			}
+
+			auto& plan = aiRootEnemy[itemUnit.ID];
+
+			// 1. 移動準備
+			if (itemUnit.moveState == moveState::None && plan.getCurrentTarget())
+			{
+				const Point targetTile = plan.getCurrentTarget().value();
+
+				// そのタイルの底辺中央の座標
+				const int32 i = plan.getCurrentTarget().value().manhattanLength();
+				const int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+				const int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+				const int32 k2 = (plan.getCurrentTarget().value().manhattanDistanceFrom(Point{ xi, yi }) / 2);
+				const double posX = ((i < (mapTile.N - 1)) ? (i * -mapTile.TileOffset.x) : ((i - 2 * mapTile.N + 2) * mapTile.TileOffset.x));
+				const double posY = (i * mapTile.TileOffset.y) - mapTile.TileThickness;
+				const Vec2 pos = { (posX + mapTile.TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+				itemUnit.orderPosiLeft = Vec2(Math::Round(pos.x), Math::Round(pos.y));
+
+				Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+				itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
+
+				itemUnit.moveState = moveState::Moving; // 移動状態にする
+			}
+
+			// 2. 移動処理
+			if (itemUnit.moveState == moveState::Moving)
+			{
+				itemUnit.nowPosiLeft += itemUnit.vecMove * ((itemUnit.Move + itemUnit.cts.Speed) / 100.0);
+
+				if (plan.getCurrentTarget())
+				{
+					if (itemUnit.GetNowPosiCenter().distanceFrom(itemUnit.GetOrderPosiCenter()) <= 3.0)
+					{
+						plan.stepToNext();
+						if (plan.getCurrentTarget())
+						{
+							const Point targetTile = plan.getCurrentTarget().value();
+							const int32 i = plan.getCurrentTarget().value().manhattanLength();
+							const int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+							const int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+							const int32 k2 = (plan.getCurrentTarget().value().manhattanDistanceFrom(Point{ xi, yi }) / 2);
+							const double posX = ((i < (mapTile.N - 1)) ? (i * -mapTile.TileOffset.x) : ((i - 2 * mapTile.N + 2) * mapTile.TileOffset.x));
+							const double posY = (i * mapTile.TileOffset.y) - mapTile.TileThickness;
+							const Vec2 pos = { (posX + mapTile.TileOffset.x * 2 * k2) - (itemUnit.yokoUnit / 2), posY - itemUnit.TakasaUnit - 15 };
+							itemUnit.orderPosiLeft = Vec2(Math::Round(pos.x), Math::Round(pos.y));
+
+							Vec2 hhh = itemUnit.GetOrderPosiCenter() - itemUnit.GetNowPosiCenter();
+							itemUnit.vecMove = hhh.isZero() ? Vec2{ 0, 0 } : hhh.normalized();
+
+							itemUnit.moveState = moveState::Moving; // 移動状態にする
+						}
+					}
+				}
+
+				if (plan.isPathCompleted())
+				{
+					itemUnit.FlagReachedDestination = true;
+					itemUnit.moveState = moveState::MoveAI;
+				}
+			}
+		}
+	}
+}
+
 
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
 /// @return 非同期タスク
@@ -832,6 +1606,42 @@ Co::Task<void> Battle001::start()
 	stopwatchFinance.restart();
 	stopwatchGameTime.restart();
 
+	aStar.taskAStarEnemy = Async([this]() {
+		while (!aStar.abortAStarEnemy)
+		{
+			if (!aStar.pauseAStarTaskEnemy)
+			{
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				aStar.BattleMoveAStar(
+					classBattleManage.listOfAllUnit,
+					classBattleManage.listOfAllEnemyUnit,
+					classBattleManage.classMapBattle.value().mapData,
+					aiRootEnemy,
+					aStar.abortAStarEnemy,
+					aStar.pauseAStarTaskEnemy, aStar.changeUnitMember, hsBuildingUnitForAstarSnapshot, mapTile);
+			}
+			System::Sleep(1);
+		}
+	});
+
+	aStar.taskAStarMyUnits = Async([this]() {
+		while (!aStar.abortAStarMyUnits)
+		{
+			if (!aStar.pauseAStarTaskMyUnits)
+			{
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				aStar.BattleMoveAStarMyUnitsKai(
+					classBattleManage.listOfAllUnit,
+					classBattleManage.listOfAllEnemyUnit,
+					classBattleManage.classMapBattle.value().mapData,
+					aiRootMy,
+					aStar.abortAStarMyUnits,
+					aStar.pauseAStarTaskMyUnits, hsBuildingUnitForAstarSnapshot, mapTile);
+			}
+			System::Sleep(1); // CPU過負荷防止
+		}
+	});
+
 	co_await mainLoop().pausedWhile([&]
 	{
 		if (KeySpace.pressed())
@@ -868,17 +1678,37 @@ Co::Task<void> Battle001::mainLoop()
 		resourcePointTooltip.setCamera(camera);
 		// 指定した経過時間後に敵ユニットをマップ上にスポーン
 		spawnTimedEnemy(classBattleManage, mapTile);
-
+		// リソース状況の更新
+		updateResourceIncome();
+		// 戦場の霧を更新
 		if (fogUpdateTimer.sF() >= FOG_UPDATE_INTERVAL)
 		{
-			// 戦場の霧を更新
 			refreshFogOfWar(classBattleManage, visibilityMap, mapTile);
 			fogUpdateTimer.restart();
 		}
 
+		// 状態によっては選択状態を解除
+		co_await checkCancelSelectionByUIArea();
+
+		// ビルドメニュー領域での左クリック
+		bool IsBuildSelectTraget = false;
+		{
+			const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
+			for (auto& hbm : sortedArrayBuildMenu)
+			{
+				if (hbm.second.rectHantei.leftClicked())
+					IsBuildSelectTraget = true; // ビルドメニューがクリックされたのでhandleUnitAndBuildingSelectionをスキップ
+			}
+		}
+
+		//カメラ移動 || 部隊を選択状態にする。もしくは既に選択状態なら移動させる
 		{
 			const auto t = camera.createTransformer();
+
+			if (!IsBuildSelectTraget)
+				handleUnitAndBuildingSelection();
 			handleCameraInput();
+
 			// 右クリック時のカーソル座標記録処理
 			if (MouseR.pressed() == false)
 			{
@@ -890,20 +1720,68 @@ Co::Task<void> Battle001::mainLoop()
 				cursPos = Cursor::Pos();
 			}
 
+			//部隊を選択状態にする。もしくは既に選択状態なら経路を算出する
 			if (MouseR.up())
 			{
 				Point start = cursPos;
 				Point end = Cursor::Pos();
 
-				//部隊を選択状態にする。もしくは既に選択状態なら経路を算出する
 				co_await handleRightClickUnitActions(start, end);
 			}
-
 		}
+
+		//陣形処理
+		{
+			const Transformer2D transformer{ Mat3x2::Identity(),
+				Mat3x2::Translate(0,Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight) };
+
+			for (auto&& [j, ttt] : Indexed(rectZinkei))
+			{
+				if (ttt.leftClicked())
+				{
+					arrayBattleZinkei.clear();
+					for (size_t k = 0; k < rectZinkei.size(); k++)
+					{
+						arrayBattleZinkei.push_back(false);
+					}
+					arrayBattleZinkei[j] = true;
+
+					renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+					{
+						const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+						const ScopedRenderStates2D blend{ MakeBlendState() };
+
+						Rect df = Rect(320, 60);
+						df.drawFrame(4, 0, ColorF{ 0.5 });
+
+						for (auto&& [i, ttt] : Indexed(rectZinkei))
+						{
+							ttt.draw(Palette::Aliceblue);
+							if (arrayBattleZinkei[i] == true)
+								ttt.drawFrame(4, 0, Palette::Red);
+							fontInfo.fontZinkei(ss.Zinkei[i]).draw(ttt, Palette::Black);
+						}
+					}
+
+				}
+			}
+		}
+
+		// ユニットの移動処理
+		updateUnitMovements();
+		// 体力バーの更新
+		updateUnitHealthBars();
+		// 技UIの更新
+		handleSkillUISelection();
+		// ビルドメニューの選択処理(予約をするのが本質)
+		handleBuildMenuSelectionA();
 
 		co_await Co::NextFrame();
 	}
 }
+
+
+/// <<< UI
 
 /// @brief カメラの現在のビュー領域（矩形）を計算します。
 /// @param camera ビュー領域を計算するためのCamera2Dオブジェクト。
@@ -1324,6 +2202,7 @@ void Battle001::drawBuildTargetHighlight(const MapTile& mapTile) const
 		}
 	}
 }
+/// @brief スキル選択UIを描画
 void Battle001::drawSkillUI() const
 {
 	const int32 baseY = Scene::Size().y - renderTextureSkill.height() - underBarHeight;
@@ -1337,6 +2216,7 @@ void Battle001::drawSkillUI() const
 		fontInfo.fontSkill(nowSelectSkillSetumei).draw(rectSkillSetumei.stretched(-12), Palette::White);
 	}
 }
+/// @brief 選択中のビルドの説明を描画
 void Battle001::drawBuildDescription() const
 {
 	if (nowSelectBuildSetumei != U"")
@@ -1345,6 +2225,7 @@ void Battle001::drawBuildDescription() const
 		fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Palette::White);
 	}
 }
+/// @brief ビルドメニューと建築キューを描画
 void Battle001::drawBuildMenu() const
 {
 	if (!IsBuildMenuHome)
@@ -1413,6 +2294,7 @@ void Battle001::drawBuildMenu() const
 		}
 	}
 }
+/// @brief リソース（Gold、Trust、Food）のUIを描画します。リソース値が変更された場合のみ表示テキストを更新
 void Battle001::drawResourcesUI() const
 {
 	// リソース値の変更時のみ文字列を更新（キャッシュ機構を検討）
@@ -1559,6 +2441,7 @@ void Battle001::draw() const
 	drawSkillUI();
 	drawBuildDescription();
 	drawBuildMenu();
+	drawResourcesUI();
 
 	if (longBuildSelectTragetId == -1)
 		DrawMiniMap(visibilityMap, camera.getRegion());
