@@ -8,9 +8,9 @@ private:
 	bool pathCompleted = false;
 	bool needsRepath = false;
 	bool retreating = false;
-	Vec2 lastKnownEnemyPos;
+	Vec2 lastKnownEnemyPos = { 0,0 };
 public:
-	Point lastPoint;
+	Point lastPoint = { 0,0 };
 	ClassUnitMovePlan() = default;
 	void setLastKnownEnemyPos(const Vec2& pos)
 	{

@@ -6,7 +6,11 @@
 template<typename DrawFunc>
 void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc)
 {
-	for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
+	// カメラビューとタイル範囲の交差判定を事前計算
+	const int32 startI = Max(0, static_cast<int32>((cameraView.y - mapTile.TileOffset.y) / mapTile.TileOffset.y) - 1);
+	const int32 endI = Min(mapTile.N * 2 - 1, static_cast<int32>((cameraView.bottomY() + mapTile.TileOffset.y) / mapTile.TileOffset.y) + 1);
+
+	for (int32 i = startI; i < endI; ++i)  // ← startI, endI を使用
 	{
 		int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
 		int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
@@ -15,12 +19,29 @@ void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFun
 		{
 			Point index{ xi + k, yi - k };
 			Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
+
 			if (!cameraView.intersects(pos))
 				continue;
 
 			drawFunc(index, pos);
 		}
 	}
+
+	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
+	//{
+	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
+	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
+
+	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
+	//	{
+	//		Point index{ xi + k, yi - k };
+	//		Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
+	//		if (!cameraView.intersects(pos))
+	//			continue;
+
+	//		drawFunc(index, pos);
+	//	}
+	//}
 }
 
 void Battle001::createRenderTex()
@@ -373,13 +394,59 @@ void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visib
 {
 	std::scoped_lock lock(unitDataMutex);
 
-	//毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
-	// 一度見たタイルは UnseenではなくSeenにしたい
-	for (auto&& visibilityElement : visibilityMap)
-		visibilityElement = Visibility::Unseen;
+	// 💡 差分更新に変更
+	static HashSet<Point> lastVisibleTiles;
+	HashSet<Point> currentVisibleTiles;
 
+	// 新しく見える範囲を計算
 	for (auto& units : classBattleManage.listOfAllUnit)
-		UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), mapTile.N, mapTile);
+	{
+		for (const auto& unit : units.ListClassUnit)
+		{
+			const Vec2 unitPos = unit.GetNowPosiCenter();
+			const auto unitIndex = mapTile.ToIndex(unitPos, mapTile.columnQuads, mapTile.rowQuads);
+			if (!unitIndex) continue;
+
+			const Point centerTile = unitIndex.value();
+			const int32 visionRadius = unit.visionRadius;
+
+			for (int dy = -visionRadius; dy <= visionRadius; ++dy)
+			{
+				for (int dx = -visionRadius; dx <= visionRadius; ++dx)
+				{
+					const Point targetTile = centerTile + Point{ dx, dy };
+					if (InRange(targetTile.x, 0, mapTile.N - 1) &&
+						InRange(targetTile.y, 0, mapTile.N - 1) &&
+						targetTile.manhattanDistanceFrom(centerTile) <= visionRadius)
+					{
+						currentVisibleTiles.insert(targetTile);
+					}
+				}
+			}
+		}
+	}
+
+	// 差分のみ更新
+	for (const auto& tile : lastVisibleTiles)
+	{
+		if (!currentVisibleTiles.contains(tile))
+			visibilityMap[tile] = Visibility::Unseen;
+	}
+
+	for (const auto& tile : currentVisibleTiles)
+	{
+		visibilityMap[tile] = Visibility::Visible;
+	}
+
+	lastVisibleTiles = std::move(currentVisibleTiles);
+
+	////毎タスクで霧gridをfalseにすれば、「生きているユニットの周りだけ明るい」が可能
+	//// 一度見たタイルは UnseenではなくSeenにしたい
+	//for (auto&& visibilityElement : visibilityMap)
+	//	visibilityElement = Visibility::Unseen;
+
+	//for (auto& units : classBattleManage.listOfAllUnit)
+	//	UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), mapTile.N, mapTile);
 }
 /// @brief 指定されたファイルパスとテクスチャ設定から、テクスチャアセットデータを作成します。ロード時にアルファ値を考慮して色成分を補正し、テクスチャを生成します。
 /// @param path テクスチャファイルのパス。
@@ -457,7 +524,11 @@ Array<Array<Unit*>> Battle001::GetMovableUnitGroups()
 
 	return groups;
 }
-
+/// @brief 指定されたユニット配列を、開始点と終了点を基準とした隊形に割り当てます。
+/// @param units 隊形に配置するユニットの配列。
+/// @param start 隊形の開始位置を示す2次元座標。
+/// @param end 隊形の終了位置を示す2次元座標。
+/// @param rowIndex ユニットが配置される行のインデックス。
 void Battle001::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex)
 {
 	const int32 unitCount = units.size();
@@ -512,6 +583,10 @@ void Battle001::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(con
 		(u->*setter)(setPos);
 	}
 }
+/// @brief 指定された陣形で移動可能なユニットを抽出します。
+/// @param source ユニットの配列。各要素は ClassHorizontalUnit 型です。
+/// @param bf 抽出対象となる陣形（BattleFormation 型）。
+/// @return 指定された陣形で移動可能かつ戦闘可能なユニットのみを含む ClassHorizontalUnit オブジェクト。
 ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
 {
 	ClassHorizontalUnit result;
@@ -832,6 +907,8 @@ void Battle001::initUI()
 	}
 }
 
+/// @brief UIエリアによる選択キャンセルをチェックし、必要に応じて選択状態を解除
+/// @return 非同期タスク（Co::Task<>）を返します。UIエリアでキャンセル条件が満たされた場合、ユニットの選択状態を解除
 Co::Task<> Battle001::checkCancelSelectionByUIArea()
 {
 	if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
@@ -1073,6 +1150,7 @@ void Battle001::handleBuildMenuSelectionA()
 		}
 	}
 }
+/// @brief ユニットおよび建築物の選択処理を管理する　マウスの左クリック操作に応じて、ユニットや建築物の選択・選択解除を行う
 void Battle001::handleUnitAndBuildingSelection()
 {
 	// 左クリック開始時の処理
@@ -1088,13 +1166,13 @@ void Battle001::handleUnitAndBuildingSelection()
 	{
 		isUnitSelectionPending = false;
 
-		// ドラッグ判定：開始位置から一定距離以上移動していたらドラッグとみなす
-		const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
-		if (moveDistance > CLICK_THRESHOLD)
-		{
-			// ドラッグだった場合は選択処理をスキップ
-			return;
-		}
+		//// ドラッグ判定：開始位置から一定距離以上移動していたらドラッグとみなす
+		//const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		//if (moveDistance > CLICK_THRESHOLD)
+		//{
+		//	// ドラッグだった場合は選択処理をスキップ
+		//	return;
+		//}
 
 		// 以下、実際の選択処理
 		bool isSeBu = false;
@@ -1206,13 +1284,15 @@ void Battle001::handleUnitAndBuildingSelection()
 	// pressed中でキャンセル条件があれば保留状態をリセット
 	if (MouseL.pressed())
 	{
-		const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
-		if (moveDistance > CLICK_THRESHOLD)
-		{
-			isUnitSelectionPending = false; // ドラッグ開始でキャンセル
-		}
+		//const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		//if (moveDistance > CLICK_THRESHOLD)
+		//{
+		//	isUnitSelectionPending = false; // ドラッグ開始でキャンセル
+		//}
+		isUnitSelectionPending = false; // ドラッグ開始でキャンセル
 	}
 }
+/// @brief スキルUIの選択処理を行う
 void Battle001::handleSkillUISelection()
 {
 	//skill選択処理
@@ -1298,6 +1378,7 @@ void Battle001::handleSkillUISelection()
 		}
 	}
 }
+/// @brief ユニットの体力バーを現在の体力に基づいて更新
 void Battle001::updateUnitHealthBars()
 {
 	constexpr Vec2 offset{ -32, +22 }; // = -64 / 2, +32 / 2 + 6
@@ -1327,6 +1408,7 @@ void Battle001::updateUnitHealthBars()
 			updateBar(unit);
 	}
 }
+/// @brief 移動処理更新、移動状態や目的地到達を管理　A*経路探索の結果に基づき、位置や移動ベクトルを計算・更新
 void Battle001::updateUnitMovements()
 {
 	//移動処理
@@ -1531,6 +1613,204 @@ void Battle001::updateUnitMovements()
 	}
 }
 
+void Battle001::UnitTooltip::updateRenderTexture()
+{
+	if (content.isEmpty()) return;
+
+	// テキストの測定（原点基準で正確に取得）
+	const auto lines = content.split(U'\n');
+	int32 maxWidth = 0;
+	int32 totalHeight = 0;
+
+	// 原点基準でテキストサイズを測定
+	for (const auto& line : lines)
+	{
+		// region(Vec2::Zero()) で原点基準のサイズを取得
+		const auto textRegion = fontInfo.fontSkill(line).region(Vec2::Zero());
+
+		maxWidth = Max(maxWidth, static_cast<int32>(textRegion.w));
+		totalHeight += static_cast<int32>(textRegion.h) + 4;
+	}
+
+	// パディングとボーダーを考慮
+	const int32 padding = 16;
+	const int32 borderWidth = 3;
+	const int32 width = maxWidth + padding * 2 + borderWidth * 2;
+	const int32 height = totalHeight + padding * 2 + borderWidth * 2;
+
+	// テクスチャサイズが同じで、内容が変わっていない場合は作成をスキップ
+	if (renderTexture &&
+		renderTexture.size() == Size(width, height) &&
+		lastRenderedContent == content)
+	{
+		return;
+	}
+
+	// 前回の内容を記録
+	lastRenderedContent = content;
+
+	renderTexture = RenderTexture(width, height);
+
+	{
+		const ScopedRenderTarget2D target{ renderTexture };
+		const ScopedRenderStates2D blend{ MakeBlendState() };
+
+		// 外側のフレーム（光る効果）
+		RectF(0, 0, width, height).draw(ColorF{ 0.3, 0.6, 1.0, 0.8 });
+
+		// 内側の背景
+		RectF(borderWidth, borderWidth, width - borderWidth * 2, height - borderWidth * 2)
+			.draw(ColorF{ 0.05, 0.05, 0.15, 0.95 });
+
+		// グラデーション効果
+		for (int32 i = 0; i < borderWidth; ++i)
+		{
+			const double alpha = 0.3 * (1.0 - static_cast<double>(i) / borderWidth);
+			RectF(i, i, width - i * 2, height - i * 2)
+				.drawFrame(1, ColorF{ 0.5, 0.8, 1.0, alpha });
+		}
+
+		// テキストの描画（座標系を統一）
+		int32 yOffset = borderWidth + padding;
+		for (const auto& line : lines)
+		{
+			// 明示的に原点基準で描画
+			fontInfo.fontSkill(line).draw(
+				Vec2(borderWidth + padding, yOffset),
+				Palette::White
+			);
+
+			// 次の行の位置を計算（同じregion()メソッドを使用）
+			const auto textRegion = fontInfo.fontSkill(line).region(Vec2::Zero());
+			yOffset += static_cast<int32>(textRegion.h) + 4;
+		}
+	}
+}
+
+void Battle001::UnitTooltip::draw() const
+{
+	if (!isVisible || content.isEmpty()) return;
+
+	// フェードイン効果
+	const double fadeTime = 0.3;
+	const double alpha = Min(fadeTimer.sF() / fadeTime, 1.0);
+
+	// 画面端での位置調整
+	Vec2 drawPos = position;
+	const auto textureSize = renderTexture.size();
+
+	if (drawPos.x + textureSize.x > Scene::Width())
+		drawPos.x = Scene::Width() - textureSize.x - 10;
+	if (drawPos.y + textureSize.y > Scene::Height())
+		drawPos.y = position.y - textureSize.y - 10;
+
+	// 描画
+	renderTexture.draw(drawPos, ColorF{ 1.0, 1.0, 1.0, alpha });
+}
+// ユニット情報ツールチップのハンドリング
+void Battle001::handleUnitTooltip()
+{
+	if (!KeyControl.pressed())
+	{
+		unitTooltip.hide();
+		return;
+	}
+
+	Vec2 tooltipPos = Cursor::PosF().movedBy(20, -10);
+	bool foundUnit = false;
+	String currentInfo; // 現在のユニット情報を保存
+	{
+
+	const auto t = camera.createTransformer();
+
+	// マウス位置のユニットを検索
+	for (auto& group : { classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit })
+	{
+		for (auto& unitGroup : group)
+		{
+			if (unitGroup.FlagBuilding || unitGroup.ListClassUnit.empty())
+				continue;
+
+			for (const auto& unit : unitGroup.ListClassUnit)
+			{
+				if (!unit.IsBattleEnable) continue;
+
+				if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+				{
+					foundUnit = true;
+
+					// ユニット情報文字列の生成
+					String info = U"【{}】\n"_fmt(unit.Name);
+					info += U"ID: {}\n"_fmt(unit.ID);
+					info += U"HP: {}/{}\n"_fmt(unit.Hp, unit.HpMAX);
+					info += U"攻撃力: {}\n"_fmt(unit.Attack);
+					info += U"防御力: {}\n"_fmt(unit.Defense);
+					info += U"移動力: {}\n"_fmt(unit.Move);
+					//info += U"射程: {}\n"_fmt(unit.Reach);
+
+					if (!unit.IsBuilding)
+					{
+						info += U"陣形: {}\n"_fmt(
+							unit.Formation == BattleFormation::F ? U"前衛" :
+							unit.Formation == BattleFormation::M ? U"中衛" : U"後衛"
+						);
+
+						info += U"状態: {}\n"_fmt(
+							unit.moveState == moveState::None ? U"待機" :
+							unit.moveState == moveState::Moving ? U"移動中" :
+							unit.moveState == moveState::FlagMoveCalc ? U"移動準備" :
+							unit.moveState == moveState::MoveAI ? U"AI行動" : U"その他"
+						);
+					}
+					else
+					{
+						info += U"建築物\n";
+						if (!unit.arrYoyakuBuild.isEmpty())
+						{
+							info += U"建築キュー: {}\n"_fmt(unit.arrYoyakuBuild.size());
+						}
+					}
+
+					// スキル情報
+					if (!unit.arrSkill.isEmpty())
+					{
+						info += U"\n【スキル】\n";
+						for (const auto& skill : unit.arrSkill)
+						{
+							info += U"・{}\n"_fmt(skill.name);
+						}
+					}
+
+					// コンポーネント情報（キャリアーなど）
+					if (auto* carrierComponent = const_cast<Unit&>(unit).getComponent<CarrierComponent>())
+					{
+						info += U"\n【キャリアー】\n";
+						info += U"積載: {}/{}\n"_fmt(
+							carrierComponent->storedUnits.size(),
+							carrierComponent->capacity
+						);
+					}
+
+					currentInfo = info;
+					break;
+				}
+			}
+			if (foundUnit) break;
+		}
+		if (foundUnit) break;
+	}
+	}
+
+	if (foundUnit)
+	{
+		// 情報が変わった場合のみshow()を呼び出し
+		unitTooltip.show(tooltipPos, currentInfo);
+	}
+	else
+	{
+		unitTooltip.hide();
+	}
+}
 
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
 /// @return 非同期タスク
@@ -1676,6 +1956,9 @@ Co::Task<void> Battle001::mainLoop()
 
 		camera.update();
 		resourcePointTooltip.setCamera(camera);
+
+		// ユニット情報ツールチップの処理
+		handleUnitTooltip();
 		// 指定した経過時間後に敵ユニットをマップ上にスポーン
 		spawnTimedEnemy(classBattleManage, mapTile);
 		// リソース状況の更新
@@ -2446,4 +2729,6 @@ void Battle001::draw() const
 	if (longBuildSelectTragetId == -1)
 		DrawMiniMap(visibilityMap, camera.getRegion());
 
+	// ユニット情報ツールチップの描画
+	unitTooltip.draw();
 }

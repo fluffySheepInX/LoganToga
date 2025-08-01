@@ -480,7 +480,7 @@ public:
 												mapTile.N,
 												hsBuildingUnitForAstar
 				);
-				Print << U"BattleMoveAStar:A*探索ノード数: {0}:{1}"_fmt(classAStarManager.GetPool().size(), mc.us());
+				//Print << U"BattleMoveAStar:A*探索ノード数: {0}:{1}"_fmt(classAStarManager.GetPool().size(), mc.us());
 				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
 				classAStarManager.RemoveClassAStar(startAstar.value());
 				if (classAStarManager.GetListClassAStar().size() != 0)
@@ -819,7 +819,7 @@ public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle001() override;
 private:
-	static constexpr double FOG_UPDATE_INTERVAL = 0.5;
+	static constexpr double FOG_UPDATE_INTERVAL = 1.0;
 	static constexpr double ENEMY_SPAWN_INTERVAL = 5.0;
 	static constexpr int32 LIQUID_BAR_WIDTH = 64;
 	static constexpr int32 LIQUID_BAR_HEIGHT = 8;
@@ -957,7 +957,7 @@ private:
 	/// >>> ドラッグ操作
 	bool isUnitSelectionPending = false;    // ユニット選択が保留中かどうか
 	Point clickStartPos;                     // クリック開始位置
-	static constexpr double CLICK_THRESHOLD = 5.0;  // クリックと判定する最大移動距離
+	//static constexpr double CLICK_THRESHOLD = 5.0;  // クリックと判定する最大移動距離
 	/// <<< ドラッグ操作
 
 	/// >>> プレイヤー操作
@@ -986,7 +986,7 @@ private:
 	struct stOfFont
 	{
 		const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
-		const Font fontSkill{ FontMethod::MSDF, 12, Typeface::Bold };
+		const Font fontSkill{ 12 };
 		const Font fontZinkei{ FontMethod::MSDF, 12, Typeface::Bold };
 		const Font fontSystem{ 30, Typeface::Bold };
 		const Font emojiFontTitle = Font{ 48, Typeface::ColorEmoji };
@@ -1029,7 +1029,44 @@ private:
 	/// @brief 
 	ClassBattle classBattleManage;
 
+	void handleUnitTooltip();
+	struct UnitTooltip
+	{
+		bool isVisible = false;
+		Vec2 position;
+		String content;
+		RenderTexture renderTexture;
+		Stopwatch fadeTimer;
+		String lastRenderedContent;
+		stOfFont fontInfo;
+		void show(const Vec2& pos, const String& text)
+		{
+			// 同じ内容で既に表示中の場合は位置のみ更新
+			if (isVisible && content == text)
+			{
+				position = pos;
+				return; // タイマーをリセットしない
+			}
 
+			position = pos;
+			content = text;
+			isVisible = true;
+			fadeTimer.restart();
+			updateRenderTexture();
+		}
+
+		void hide()
+		{
+			isVisible = false;
+			// 非表示時に前回の内容をクリアして、次回必ず更新されるようにする
+			lastRenderedContent.clear();
+		}
+
+		void updateRenderTexture();
+		void draw() const;
+	};
+
+	UnitTooltip unitTooltip;
 
 
 
