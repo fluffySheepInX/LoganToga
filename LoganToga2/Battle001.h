@@ -819,7 +819,7 @@ public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle001() override;
 private:
-	static constexpr double FOG_UPDATE_INTERVAL = 1.0;
+	static constexpr double FOG_UPDATE_INTERVAL = 0.5;
 	static constexpr double ENEMY_SPAWN_INTERVAL = 5.0;
 	static constexpr int32 LIQUID_BAR_WIDTH = 64;
 	static constexpr int32 LIQUID_BAR_HEIGHT = 8;
@@ -939,6 +939,8 @@ private:
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
 	void updateUnitMovements();
+	void startAsyncFogCalculation();
+	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
 
 	/// >>>ミニマップ
 	/// @brief ミニマップのサイズを表す定数
@@ -959,6 +961,13 @@ private:
 	Point clickStartPos;                     // クリック開始位置
 	//static constexpr double CLICK_THRESHOLD = 5.0;  // クリックと判定する最大移動距離
 	/// <<< ドラッグ操作
+
+	// 💡 非同期Fog計算用
+	AsyncTask<void> taskFogCalculation;
+	std::atomic<bool> abortFogTask{ false };
+	std::atomic<bool> fogDataReady{ false };
+	Grid<Visibility> nextVisibilityMap; // 次フレーム用バッファ
+	mutable std::mutex fogMutex;
 
 	/// >>> プレイヤー操作
 	void handleCameraInput();

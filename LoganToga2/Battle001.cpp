@@ -194,12 +194,15 @@ Battle001::~Battle001()
 {
 	aStar.abortAStarEnemy = true;
 	aStar.abortAStarMyUnits = true;
+	abortFogTask = true;
 
 	/// >>>完全に終了を待つ---
 	if (aStar.taskAStarEnemy.isValid())
 		aStar.taskAStarEnemy.wait();
 	if (aStar.taskAStarMyUnits.isValid())
 		aStar.taskAStarMyUnits.wait();
+	if (taskFogCalculation.isValid())
+		taskFogCalculation.wait();
 	/// ---完全に終了を待つ<<<
 }
 /// @brief 
@@ -731,30 +734,70 @@ void Battle001::updateResourceIncome()
 		int32 trustInc = 0;
 		int32 foodInc = 0;
 
-		for (auto ttt : classBattleManage.classMapBattle.value().mapData)
+		// 💡 事前にリソースポイントのみをキャッシュ
+		static Array<Point> resourcePoints;
+		static bool resourcePointsCached = false;
+
+		if (!resourcePointsCached)
 		{
-			for (auto jjj : ttt)
+			for (int32 x = 0; x < classBattleManage.classMapBattle.value().mapData.size(); ++x)
 			{
-				if (jjj.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+				for (int32 y = 0; y < classBattleManage.classMapBattle.value().mapData[x].size(); ++y)
 				{
-					//資金の増加
-					switch (jjj.resourcePointType)
+					if (classBattleManage.classMapBattle.value().mapData[x][y].isResourcePoint)
 					{
-					case resourceKind::Gold:
-						goldInc += jjj.resourcePointAmount;
-						break;
-					case resourceKind::Trust:
-						trustInc += jjj.resourcePointAmount;
-						break;
-					case resourceKind::Food:
-						foodInc += jjj.resourcePointAmount;
-						break;
-					default:
-						break;
+						resourcePoints.push_back(Point(x, y));
 					}
 				}
 			}
+			resourcePointsCached = true;
 		}
+
+		// 💡 リソースポイントのみを走査
+		for (const auto& point : resourcePoints)
+		{
+			const auto& tile = classBattleManage.classMapBattle.value().mapData[point.x][point.y];
+			if (tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+			{
+				switch (tile.resourcePointType)
+				{
+				case resourceKind::Gold:
+					goldInc += tile.resourcePointAmount;
+					break;
+				case resourceKind::Trust:
+					trustInc += tile.resourcePointAmount;
+					break;
+				case resourceKind::Food:
+					foodInc += tile.resourcePointAmount;
+					break;
+				}
+			}
+		}
+
+		//for (auto ttt : classBattleManage.classMapBattle.value().mapData)
+		//{
+		//	for (auto jjj : ttt)
+		//	{
+		//		if (jjj.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
+		//		{
+		//			//資金の増加
+		//			switch (jjj.resourcePointType)
+		//			{
+		//			case resourceKind::Gold:
+		//				goldInc += jjj.resourcePointAmount;
+		//				break;
+		//			case resourceKind::Trust:
+		//				trustInc += jjj.resourcePointAmount;
+		//				break;
+		//			case resourceKind::Food:
+		//				foodInc += jjj.resourcePointAmount;
+		//				break;
+		//			default:
+		//				break;
+		//			}
+		//		}
+		//	}
+		//}
 
 		stopwatchFinance.restart();
 		gold += 10 + goldInc; // 1秒ごとに10ゴールド増加
@@ -1157,139 +1200,138 @@ void Battle001::handleUnitAndBuildingSelection()
 	if (MouseL.down())
 	{
 		isUnitSelectionPending = true;
-		clickStartPos = Cursor::Pos();
-		return; // down時は選択処理を行わない
+		clickStartPos = Cursor::Pos(); // クリック開始位置を記録
+		return;
 	}
 
 	// 左クリック終了時の処理
 	if (MouseL.up() && isUnitSelectionPending)
 	{
-		isUnitSelectionPending = false;
-
-		//// ドラッグ判定：開始位置から一定距離以上移動していたらドラッグとみなす
-		//const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
-		//if (moveDistance > CLICK_THRESHOLD)
-		//{
-		//	// ドラッグだった場合は選択処理をスキップ
-		//	return;
-		//}
-
-		// 以下、実際の選択処理
-		bool isSeBu = false;
-		long selectedBuildingId = -1;
-
-		// 建築物選択チェック
-		for (const auto& item : classBattleManage.listOfAllUnit)
+		// ドラッグ距離をチェック
+		const double dragDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		if (dragDistance < 5) // 例：5ピクセル未満ならクリック扱い
 		{
-			if (item.FlagBuilding == true && !item.ListClassUnit.empty())
-			{
-				for (const auto& itemUnit : item.ListClassUnit)
-				{
-					Size tempSize = TextureAsset(itemUnit.ImageName).size();
-					Quad tempQ = mapTile.ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), mapTile.N);
-					const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
-					const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
-					const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
-					const double vHe = Abs(rightCenter.y - leftCenter.y);
-					double scale = tempSize.x / (horizontalWidth * 2);
+			isUnitSelectionPending = false;
 
-					if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + mapTile.TileThickness).intersects(Cursor::PosF()))
-					{
-						selectedBuildingId = itemUnit.ID;
-						isSeBu = true;
-						break;
-					}
-				}
-				if (isSeBu) break;
-			}
-		}
+			bool isSeBu = false;
+			long selectedBuildingId = -1;
 
-		// ユニット選択チェック（建築物が選択されていない場合のみ）
-		long selectedUnitId = -1;
-		if (!isSeBu)
-		{
-			for (const auto& target : classBattleManage.listOfAllUnit)
+			// 建築物選択チェック
+			for (const auto& item : classBattleManage.listOfAllUnit)
 			{
-				for (const auto& unit : target.ListClassUnit)
+				if (item.FlagBuilding == true && !item.ListClassUnit.empty())
 				{
-					if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
-						|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.classBuild != U""))
+					for (const auto& itemUnit : item.ListClassUnit)
 					{
-						if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+						Size tempSize = TextureAsset(itemUnit.ImageName).size();
+						Quad tempQ = mapTile.ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), mapTile.N);
+						const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
+						const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
+						const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
+						const double vHe = Abs(rightCenter.y - leftCenter.y);
+						double scale = tempSize.x / (horizontalWidth * 2);
+
+						if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + mapTile.TileThickness).intersects(Cursor::PosF()))
 						{
-							selectedUnitId = unit.ID;
+							selectedBuildingId = itemUnit.ID;
+							isSeBu = true;
 							break;
 						}
 					}
+					if (isSeBu) break;
 				}
-				if (selectedUnitId != -1) break;
 			}
-		}
 
-		// 何も選択されていない場合は全て選択解除
-		if (selectedBuildingId == -1 && selectedUnitId == -1)
-		{
+			// ユニット選択チェック（建築物が選択されていない場合のみ）
+			long selectedUnitId = -1;
+			if (!isSeBu)
+			{
+				for (const auto& target : classBattleManage.listOfAllUnit)
+				{
+					for (const auto& unit : target.ListClassUnit)
+					{
+						if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
+							|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.classBuild != U""))
+						{
+							Print << Cursor::PosF();
+							Print << unit.GetRectNowPosi().center();
+							if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+							{
+								selectedUnitId = unit.ID;
+								break;
+							}
+						}
+					}
+					if (selectedUnitId != -1) break;
+				}
+			}
+
+			// 何も選択されていない場合は全て選択解除
+			if (selectedBuildingId == -1 && selectedUnitId == -1)
+			{
+				for (auto& item : classBattleManage.listOfAllUnit)
+				{
+					for (auto& itemUnit : item.ListClassUnit)
+					{
+						itemUnit.IsSelect = false;
+					}
+				}
+				IsBuildMenuHome = false;
+				longBuildSelectTragetId = -1;
+				return;
+			}
+
+			// 選択状態の一括更新
 			for (auto& item : classBattleManage.listOfAllUnit)
 			{
 				for (auto& itemUnit : item.ListClassUnit)
 				{
-					itemUnit.IsSelect = false;
-				}
-			}
-			IsBuildMenuHome = false;
-			longBuildSelectTragetId = -1;
-			return;
-		}
+					bool newSelectState = false;
 
-		// 選択状態の一括更新
-		for (auto& item : classBattleManage.listOfAllUnit)
-		{
-			for (auto& itemUnit : item.ListClassUnit)
-			{
-				bool newSelectState = false;
-
-				if (isSeBu && selectedBuildingId == itemUnit.ID)
-				{
-					// 建築物が選択された場合
-					newSelectState = !itemUnit.IsSelect;
-					IsBuildMenuHome = newSelectState;
-				}
-				else if (!isSeBu && selectedUnitId == itemUnit.ID)
-				{
-					// ユニットが選択された場合
-					newSelectState = !itemUnit.IsSelect;
-					IsBuildMenuHome = newSelectState;
-
-					if (newSelectState)
+					if (isSeBu && selectedBuildingId == itemUnit.ID)
 					{
-						longBuildSelectTragetId = itemUnit.ID;
+						// 建築物が選択された場合
+						newSelectState = !itemUnit.IsSelect;
+						IsBuildMenuHome = newSelectState;
+					}
+					else if (!isSeBu && selectedUnitId == itemUnit.ID)
+					{
+						// ユニットが選択された場合
+						newSelectState = !itemUnit.IsSelect;
+						IsBuildMenuHome = newSelectState;
+
+						if (newSelectState)
+						{
+							longBuildSelectTragetId = itemUnit.ID;
+						}
+						else
+						{
+							longBuildSelectTragetId = -1;
+						}
 					}
 					else
 					{
-						longBuildSelectTragetId = -1;
+						// その他のユニットは選択解除
+						newSelectState = false;
 					}
-				}
-				else
-				{
-					// その他のユニットは選択解除
-					newSelectState = false;
-				}
 
-				// IsSelectの更新
-				itemUnit.IsSelect = newSelectState;
+					// IsSelectの更新
+					itemUnit.IsSelect = newSelectState;
+				}
 			}
 		}
+		isUnitSelectionPending = false;
 	}
 
 	// pressed中でキャンセル条件があれば保留状態をリセット
+	// pressed中の処理は削除または条件を変更
 	if (MouseL.pressed())
 	{
-		//const double moveDistance = clickStartPos.distanceFrom(Cursor::Pos());
-		//if (moveDistance > CLICK_THRESHOLD)
-		//{
-		//	isUnitSelectionPending = false; // ドラッグ開始でキャンセル
-		//}
-		isUnitSelectionPending = false; // ドラッグ開始でキャンセル
+		const double dragDistance = clickStartPos.distanceFrom(Cursor::Pos());
+		if (dragDistance >= 5)
+		{
+			isUnitSelectionPending = false; // ドラッグ開始でキャンセル
+		}
 	}
 }
 /// @brief スキルUIの選択処理を行う
@@ -1812,6 +1854,91 @@ void Battle001::handleUnitTooltip()
 	}
 }
 
+void Battle001::startAsyncFogCalculation()
+{
+	taskFogCalculation = Async([this]() {
+		while (!abortFogTask)
+		{
+			if (fogUpdateTimer.sF() >= FOG_UPDATE_INTERVAL)
+			{
+				Grid<Visibility> tempMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
+
+				// 💡 ユニットデータのスナップショットを作成
+				Array<Unit> unitSnapshot;
+				{
+					std::scoped_lock lock(unitDataMutex);
+					for (auto& units : classBattleManage.listOfAllUnit)
+					{
+						for (const auto& unit : units.ListClassUnit)
+						{
+							if (unit.IsBattleEnable)
+								unitSnapshot.push_back(unit);
+						}
+					}
+				}
+
+				// スナップショットを使って安全に計算
+				calculateFogFromUnits(tempMap, unitSnapshot);
+
+				// 結果をメインスレッドで使用可能にする
+				{
+					std::scoped_lock lock(fogMutex);
+					nextVisibilityMap = std::move(tempMap);
+					fogDataReady = true;
+				}
+
+				fogUpdateTimer.restart();
+			}
+
+			System::Sleep(1); // CPU負荷軽減
+		}
+	});
+}
+
+void Battle001::calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units)
+{
+	static HashSet<Point> lastVisibleTiles;
+	HashSet<Point> currentVisibleTiles;
+
+	for (const auto& unit : units)
+	{
+		const Vec2 unitPos = unit.GetNowPosiCenter();
+		const auto unitIndex = mapTile.ToIndex(unitPos, mapTile.columnQuads, mapTile.rowQuads);
+		if (!unitIndex) continue;
+
+		const Point centerTile = unitIndex.value();
+		const int32 visionRadius = unit.visionRadius;
+
+		for (int dy = -visionRadius; dy <= visionRadius; ++dy)
+		{
+			for (int dx = -visionRadius; dx <= visionRadius; ++dx)
+			{
+				const Point targetTile = centerTile + Point{ dx, dy };
+				if (InRange(targetTile.x, 0, mapTile.N - 1) &&
+					InRange(targetTile.y, 0, mapTile.N - 1) &&
+					targetTile.manhattanDistanceFrom(centerTile) <= visionRadius)
+				{
+					currentVisibleTiles.insert(targetTile);
+				}
+			}
+		}
+	}
+
+	// 差分更新
+	for (const auto& tile : lastVisibleTiles)
+	{
+		if (!currentVisibleTiles.contains(tile))
+			visMap[tile] = Visibility::Unseen;
+	}
+
+	for (const auto& tile : currentVisibleTiles)
+	{
+		visMap[tile] = Visibility::Visible;
+	}
+
+	lastVisibleTiles = std::move(currentVisibleTiles);
+}
+
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
 /// @return 非同期タスク
 Co::Task<void> Battle001::start()
@@ -1922,6 +2049,8 @@ Co::Task<void> Battle001::start()
 		}
 	});
 
+	startAsyncFogCalculation();
+
 	co_await mainLoop().pausedWhile([&]
 	{
 		if (KeySpace.pressed())
@@ -1963,11 +2092,13 @@ Co::Task<void> Battle001::mainLoop()
 		spawnTimedEnemy(classBattleManage, mapTile);
 		// リソース状況の更新
 		updateResourceIncome();
-		// 戦場の霧を更新
-		if (fogUpdateTimer.sF() >= FOG_UPDATE_INTERVAL)
+
+		//// 戦場の霧を更新
+		if (fogDataReady.load())
 		{
-			refreshFogOfWar(classBattleManage, visibilityMap, mapTile);
-			fogUpdateTimer.restart();
+			std::scoped_lock lock(fogMutex);
+			visibilityMap = std::move(nextVisibilityMap);
+			fogDataReady = false;
 		}
 
 		// 状態によっては選択状態を解除
@@ -1990,6 +2121,7 @@ Co::Task<void> Battle001::mainLoop()
 
 			if (!IsBuildSelectTraget)
 				handleUnitAndBuildingSelection();
+
 			handleCameraInput();
 
 			// 右クリック時のカーソル座標記録処理
