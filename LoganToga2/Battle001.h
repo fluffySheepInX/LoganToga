@@ -1,14 +1,16 @@
 ﻿#pragma once
+#include "ClassSkill.h"
+#include "EnumSkill.h"
 #include "Common.h"
-#include "ClassSkill.h" 
 #include "ClassUnit.h"
 #include "ClassHorizontalUnit.h"
-#include "EnumSkill.h"
 #include "ClassBattle.h"
 #include "ClassMapBattle.h"
 #include "ClassAStar.h" 
 #include "ClassCommonConfig.h"
 #include "ClassUnitMovePlan.h"
+#include "GameUIToolkit.h"
+#include "ClassBuildAction.h"
 
 class MapTile
 {
@@ -941,6 +943,7 @@ private:
 	void updateUnitMovements();
 	void startAsyncFogCalculation();
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
+	ClassMapBattle GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig);
 
 	/// >>>ミニマップ
 	/// @brief ミニマップのサイズを表す定数
@@ -981,11 +984,6 @@ private:
 	long longBuildSelectTragetId = -1;
 	bool IsBuildMenuHome = false;
 	/// <<< プレイヤー操作
-
-	/// @brief TODO:後で消す
-	/// @param cmb 
-	void GetTempResource(ClassMapBattle& cmb);
-
 
 	/// @brief 
 	GameData& m_saveData;

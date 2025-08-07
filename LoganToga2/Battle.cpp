@@ -929,7 +929,7 @@ Battle::Battle(GameData& saveData, CommonConfig& commonConfig, SystemString argS
 		}
 	}
 
-	classBattle.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
+	//classBattle.classMapBattle = GetClassMapBattle(sM, commonConfig);
 	GetTempResource(classBattle.classMapBattle.value());
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
 	SetResourceTargets(resourceTargets);
@@ -1051,7 +1051,7 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 	}
 
 	//新しいコピーを作る
-	for (auto uu : m_commonConfig.arrayUnit)
+	for (auto uu : m_commonConfig.arrayInfoUnit)
 	{
 		if (uu.NameTag == unitName)
 		{
@@ -1154,7 +1154,7 @@ Co::Task<void> Battle::start()
 
 	//初期ユニット
 	{
-		for (auto uu : m_commonConfig.arrayUnit)
+		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
 			if (uu.Name == U"M14 Infantry Rifle")
 			{
@@ -1254,7 +1254,7 @@ Co::Task<void> Battle::start()
 	chuNa.FlagBuilding = true;
 
 	{
-		for (auto uu : m_commonConfig.arrayUnit)
+		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
 			if (uu.Name == U"M14 Infantry Rifle")
 			{
@@ -2429,7 +2429,7 @@ bool Battle::canBuildOnTile(const Point& tile) const
 void Battle::createBuildingOnTile(const Point& tile, const BuildAction& buildAction)
 {
 	// 建物ユニットの作成
-	for (auto& baseUnit : m_commonConfig.arrayUnit)
+	for (auto& baseUnit : m_commonConfig.arrayInfoUnit)
 	{
 		if (baseUnit.NameTag == buildAction.result.spawn)
 		{

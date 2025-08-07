@@ -312,7 +312,7 @@ void Init(CommonConfig& commonConfig)
 						break;
 					}
 
-		commonConfig.arrayUnit = std::move(arrayClassUnit);
+		commonConfig.arrayInfoUnit = std::move(arrayClassUnit);
 	}
 	// buildメニューを読み込む
 	{
@@ -363,58 +363,38 @@ void Init(CommonConfig& commonConfig)
 		}
 	}
 
-	//// obj.jsonからデータを読み込む
+	{
+		const JSON jsonInfoResource = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoResource/aaa.json");
 
-	//{
-	//	const JSON objData = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoObject/obj.json");
-	//	if (not objData) // もし読み込みに失敗したら
-	//		throw Error{ U"Failed to load `obj.json`" };
-	//	Array<ClassObjectMapTip> arrayClassObj;
-	//	for (const auto& [key, value] : objData[U"obj"]) {
-	//		ClassObjectMapTip cu;
-	//		cu.nameTag = value[U"name"].get<String>();
-	//		String ty = value[U"type"].get<String>();
-	//		if (ty == U"wall2")
-	//		{
-	//			cu.type = MapTipObjectType::WALL2;
-	//		}
-	//		else if (ty == U"gate")
-	//		{
-	//			cu.type = MapTipObjectType::GATE;
-	//		}
-	//		cu.noWall2 = value[U"no_wall2"].get<int32>();
-	//		cu.castle = value[U"castle"].get<int32>();
-	//		cu.castleDefense = value[U"castle_defense"].get<int32>();
-	//		cu.castleMagdef = value[U"castle_magdef"].get<int32>();
-	//		arrayClassObj.push_back(std::move(cu));
-	//	}
-	//	manager.get().get()->classGameStatus.arrayClassObjectMapTip = arrayClassObj;
-	//}
-	////enemy
-	//{
-	//	const JSON jsonUnit = JSON::Load(PATHBASE + PATH_DEFAULT_GAME + U"/070_Scenario/InfoEnemy/enemy.json");
-	//	if (not jsonUnit) // もし読み込みに失敗したら
-	//		throw Error{ U"Failed to load `Unit.json`" };
-	//	Array<ClassEnemy> arrayClassUnit;
-	//	for (const auto& [key, value] : jsonUnit[U"enemy"]) {
-	//		ClassEnemy ce;
-	//		ce.name = value[U"name"].getString();
-	//		ce.type = value[U"value"].getString().split(',');
-	//		arrayClassUnit.push_back(std::move(ce));
-	//	}
-	//	manager.get().get()->classGameStatus.arrayClassEnemy = arrayClassUnit;
-	//}
+		if (not jsonInfoResource)
+			throw Error{ U"Failed to load `aaa.json`" };
 
-	// config.tomlからデータを読み込む
+		for (auto&& [index, object] : jsonInfoResource)
+		{
+			for (auto&& [index2, object2] : object)
+			{
+				ClassResource cr;
+				cr.resourceName = object2[U"name"].getString();
+				cr.resourceIcon = object2[U"icon"].getString();
+				cr.resourceAmount = Parse<int32>(object2[U"amount"].getString());
 
-	//{
-	//	const TOMLReader tomlConfig{ PATHBASE + PATH_DEFAULT_GAME + U"/config.toml" };
-	//	if (not tomlConfig) // もし読み込みに失敗したら
-	//		throw Error{ U"Failed to load `config.toml`" };
-	//	manager.get().get()->classGameStatus.DistanceBetweenUnit = tomlConfig[U"config.DistanceBetweenUnit"].get<int32>();
-	//	manager.get().get()->classGameStatus.DistanceBetweenUnitTate = tomlConfig[U"config.DistanceBetweenUnitTate"].get<int32>();
-	//}
+				if (object2[U"kind"].getString() == U"gold")
+				{
+					cr.resourceType = resourceKind::Gold;
+				}
+				else if (object2[U"kind"].getString() == U"trust")
+				{
+					cr.resourceType = resourceKind::Trust;
+				}
+				else if (object2[U"kind"].getString() == U"food")
+				{
+					cr.resourceType = resourceKind::Food;
+				}
 
+				commonConfig.htResourceData.emplace(cr.resourceName, cr);
+			}
+		}
+	}
 }
 
 void loop()
@@ -489,7 +469,7 @@ void Main()
 		const auto battle = Co::PlaySceneFrom<Battle>(saveData, commonConfig, systemString).runScoped();
 		loop();
 	}
-	else if(argc == 2 && args[1] == U"-Battle001")
+	else if (argc == 2 && args[1] == U"-Battle001")
 	{
 		SystemString ss;
 		ss.BattleMessage001 = U"BattleMessage001";

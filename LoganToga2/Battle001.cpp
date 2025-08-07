@@ -26,22 +26,6 @@ void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFun
 			drawFunc(index, pos);
 		}
 	}
-
-	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
-	//{
-	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
-	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
-
-	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
-	//	{
-	//		Point index{ xi + k, yi - k };
-	//		Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
-	//		if (!cameraView.intersects(pos))
-	//			continue;
-
-	//		drawFunc(index, pos);
-	//	}
-	//}
 }
 
 void Battle001::createRenderTex()
@@ -109,21 +93,180 @@ void Battle001::createRenderTex()
 	sortedArrayBuildMenu = std::move(sortedArray);
 }
 
-/// @brief TODO:後で消す
-/// @param cmb 
-void Battle001::GetTempResource(ClassMapBattle& cmb)
-{
-	cmb.mapData[0][10].isResourcePoint = true;
-	cmb.mapData[0][10].resourcePointType = resourceKind::Gold;
-	cmb.mapData[0][10].resourcePointAmount = 11;
-	cmb.mapData[0][10].resourcePointDisplayName = U"金";
-	cmb.mapData[0][10].resourcePointIcon = U"point000.png";
-}
 static BuildAction& dummyMenu()
 {
 	static BuildAction instance;
 	return instance;
 }
+
+ClassMapBattle Battle001::GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig)
+{
+	ClassMapBattle cmb;
+	cmb.name = cm.name;
+	for (String aaa : cm.data)
+	{
+		Array<MapDetail> aMd;
+		Array s = aaa.split(U',');
+		for (auto bbb : s)
+		{
+			MapDetail md;
+
+			// RESOURCE:XXXパターンをチェック
+			if (bbb.includes(U"RESOURCE:"))
+			{
+				// RESOURCE:XXXを抽出
+				auto resourceStart = bbb.indexOf(U"RESOURCE:");
+				if (resourceStart != String::npos)
+				{
+					auto resourceEnd = bbb.indexOf(U',', resourceStart);
+					if (resourceEnd == String::npos) resourceEnd = bbb.length();
+
+					String resourcePattern = bbb.substr(resourceStart, resourceEnd - resourceStart);
+					String resourceName = resourcePattern.substr(9); // "RESOURCE:"を除去
+
+					// commonConfig.htResourceDataから対応するリソース情報を取得
+					if (commonConfig.htResourceData.contains(resourceName))
+					{
+						const ClassResource& resource = commonConfig.htResourceData[resourceName];
+
+						// MapDetailにリソース情報を設定
+						md.isResourcePoint = true;
+						md.resourcePointType = resource.resourceType;
+						md.resourcePointAmount = resource.resourceAmount;
+						md.resourcePointDisplayName = resource.resourceName;
+						md.resourcePointIcon = resource.resourceIcon;
+					}
+
+					// RESOURCE:XXXをマップデータから除去
+					bbb = bbb.replaced(resourcePattern, U"");
+				}
+			}
+
+			Array splitA = bbb.split(U'*');
+			//field(床画像
+			md.tip = cm.ele[splitA[0]];
+			//build(城壁や矢倉など
+			if (splitA.size() > 1)
+			{
+				if (splitA[1] == U"")
+				{
+
+				}
+				else
+				{
+					Array splitB = splitA[1].split(U'$');
+					//1件だけの場合も考慮
+					if (splitB.size() == 1)
+					{
+						Array splitWi = splitB[0].split(U':');
+						String re = cm.ele[splitWi[0]];
+						if (re != U"")
+						{
+							std::tuple<String, long, BattleWhichIsThePlayer> pp = { re,-1, BattleWhichIsThePlayer::None };
+							if (splitWi.size() == 1)
+							{
+								pp = { re,-1, BattleWhichIsThePlayer::None };
+							}
+							else
+							{
+								if (splitWi[1] == U"sor")
+								{
+									pp = { re,-1, BattleWhichIsThePlayer::Sortie };
+								}
+								else if (splitWi[1] == U"def")
+								{
+									pp = { re,-1, BattleWhichIsThePlayer::Def };
+								}
+								else
+								{
+									pp = { re,-1, BattleWhichIsThePlayer::None };
+								}
+							}
+
+							md.building.push_back(pp);
+						}
+					}
+					else
+					{
+						for (String item : splitB)
+						{
+							Array splitWi = item.split(U':');
+							String re = cm.ele[splitWi[0]];
+							if (re != U"")
+							{
+								std::tuple<String, long, BattleWhichIsThePlayer> pp = { re,-1, BattleWhichIsThePlayer::None };
+								if (splitWi.size() == 1)
+								{
+									pp = { re,-1, BattleWhichIsThePlayer::None };
+								}
+								else
+								{
+									if (splitWi[1] == U"sor")
+									{
+										pp = { re,-1, BattleWhichIsThePlayer::Sortie };
+									}
+									else if (splitWi[1] == U"def")
+									{
+										pp = { re,-1, BattleWhichIsThePlayer::Def };
+									}
+									else
+									{
+										pp = { re,-1, BattleWhichIsThePlayer::None };
+									}
+								}
+
+								md.building.push_back(pp);
+							}
+						}
+					}
+				}
+			}
+			//ユニットの情報
+			if (splitA.size() > 2)
+			{
+				Array re = splitA[2].split(U':');
+				if (re.size() == 0 || re[0] == U"-1")
+				{
+
+				}
+				else
+				{
+					md.unit = re[0];
+					md.houkou = re[1];
+					//
+					//md.BattleWhichIsThePlayer = re[2];
+				}
+			}
+			//【出撃、防衛、中立の位置】もしくは【退却位置】
+			if (splitA.size() > 3)
+			{
+				md.posSpecial = splitA[3];
+				if (md.posSpecial == U"@@")
+				{
+					md.kougekiButaiNoIti = true;
+				}
+				else if (md.posSpecial == U"@")
+				{
+					md.boueiButaiNoIti = true;
+				}
+				else
+				{
+
+				}
+			}
+			//陣形
+			if (splitA.size() > 5)
+			{
+				md.zinkei = splitA[5];
+			}
+			aMd.push_back(std::move(md));
+		}
+		cmb.mapData.push_back(std::move(aMd));
+	}
+
+	return cmb;
+}
+
 /// @brief Battle001 クラスのコンストラクタ。ゲームデータや設定をもとにバトルマップを初期化し、リソース情報やツールチップの設定を行います。
 /// @param saveData ゲームの進行状況などを保持する GameData 型の参照。
 /// @param commonConfig 共通設定を保持する CommonConfig 型の参照。
@@ -172,7 +315,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 		}
 	}
 
-	classBattleManage.classMapBattle = ClassStaticCommonMethod::GetClassMapBattle(sM);
+	classBattleManage.classMapBattle = GetClassMapBattle(sM, commonConfig);
 
 	/// >>>マップの読み込み
 	mapTile.N = classBattleManage.classMapBattle.value().mapData.size();
@@ -181,7 +324,6 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	/// <<<マップの読み込み
 
 	/// >>>Resourceの設定
-	GetTempResource(classBattleManage.classMapBattle.value());
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
 	SetResourceTargets(classBattleManage, resourceTargets, mapTile);
 	resourcePointTooltip.setTargets(resourceTargets);
@@ -236,7 +378,7 @@ void Battle001::SetResourceTargets(
 						(tile.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
 				? U"味方"
 				: U"敵"
-					, U"金", U"5/s");
+					, tile.resourcePointDisplayName, U"{0}/s"_fmt(tile.resourcePointAmount));
 
 			resourceTargets << ResourcePointTooltip::TooltipTarget{ area, desc };
 		}
@@ -266,10 +408,10 @@ void Battle001::UnitRegister(
 	listU.reserve(listU.size() + 1);
 
 	// 該当するユニットテンプレートを検索
-	auto it = std::find_if(m_commonConfig.arrayUnit.begin(), m_commonConfig.arrayUnit.end(),
+	auto it = std::find_if(m_commonConfig.arrayInfoUnit.begin(), m_commonConfig.arrayInfoUnit.end(),
 		[&unitName](const auto& unit) { return unit.NameTag == unitName; });
 
-	if (it == m_commonConfig.arrayUnit.end())
+	if (it == m_commonConfig.arrayInfoUnit.end())
 	{
 		Print << U"Warning: Unit '{}' not found in unit templates"_fmt(unitName);
 		return;
@@ -1763,84 +1905,84 @@ void Battle001::handleUnitTooltip()
 	String currentInfo; // 現在のユニット情報を保存
 	{
 
-	const auto t = camera.createTransformer();
+		const auto t = camera.createTransformer();
 
-	// マウス位置のユニットを検索
-	for (auto& group : { classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit })
-	{
-		for (auto& unitGroup : group)
+		// マウス位置のユニットを検索
+		for (auto& group : { classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit })
 		{
-			if (unitGroup.FlagBuilding || unitGroup.ListClassUnit.empty())
-				continue;
-
-			for (const auto& unit : unitGroup.ListClassUnit)
+			for (auto& unitGroup : group)
 			{
-				if (!unit.IsBattleEnable) continue;
+				if (unitGroup.FlagBuilding || unitGroup.ListClassUnit.empty())
+					continue;
 
-				if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+				for (const auto& unit : unitGroup.ListClassUnit)
 				{
-					foundUnit = true;
+					if (!unit.IsBattleEnable) continue;
 
-					// ユニット情報文字列の生成
-					String info = U"【{}】\n"_fmt(unit.Name);
-					info += U"ID: {}\n"_fmt(unit.ID);
-					info += U"HP: {}/{}\n"_fmt(unit.Hp, unit.HpMAX);
-					info += U"攻撃力: {}\n"_fmt(unit.Attack);
-					info += U"防御力: {}\n"_fmt(unit.Defense);
-					info += U"移動力: {}\n"_fmt(unit.Move);
-					//info += U"射程: {}\n"_fmt(unit.Reach);
-
-					if (!unit.IsBuilding)
+					if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
 					{
-						info += U"陣形: {}\n"_fmt(
-							unit.Formation == BattleFormation::F ? U"前衛" :
-							unit.Formation == BattleFormation::M ? U"中衛" : U"後衛"
-						);
+						foundUnit = true;
 
-						info += U"状態: {}\n"_fmt(
-							unit.moveState == moveState::None ? U"待機" :
-							unit.moveState == moveState::Moving ? U"移動中" :
-							unit.moveState == moveState::FlagMoveCalc ? U"移動準備" :
-							unit.moveState == moveState::MoveAI ? U"AI行動" : U"その他"
-						);
-					}
-					else
-					{
-						info += U"建築物\n";
-						if (!unit.arrYoyakuBuild.isEmpty())
+						// ユニット情報文字列の生成
+						String info = U"【{}】\n"_fmt(unit.Name);
+						info += U"ID: {}\n"_fmt(unit.ID);
+						info += U"HP: {}/{}\n"_fmt(unit.Hp, unit.HpMAX);
+						info += U"攻撃力: {}\n"_fmt(unit.Attack);
+						info += U"防御力: {}\n"_fmt(unit.Defense);
+						info += U"移動力: {}\n"_fmt(unit.Move);
+						//info += U"射程: {}\n"_fmt(unit.Reach);
+
+						if (!unit.IsBuilding)
 						{
-							info += U"建築キュー: {}\n"_fmt(unit.arrYoyakuBuild.size());
-						}
-					}
+							info += U"陣形: {}\n"_fmt(
+								unit.Formation == BattleFormation::F ? U"前衛" :
+								unit.Formation == BattleFormation::M ? U"中衛" : U"後衛"
+							);
 
-					// スキル情報
-					if (!unit.arrSkill.isEmpty())
-					{
-						info += U"\n【スキル】\n";
-						for (const auto& skill : unit.arrSkill)
+							info += U"状態: {}\n"_fmt(
+								unit.moveState == moveState::None ? U"待機" :
+								unit.moveState == moveState::Moving ? U"移動中" :
+								unit.moveState == moveState::FlagMoveCalc ? U"移動準備" :
+								unit.moveState == moveState::MoveAI ? U"AI行動" : U"その他"
+							);
+						}
+						else
 						{
-							info += U"・{}\n"_fmt(skill.name);
+							info += U"建築物\n";
+							if (!unit.arrYoyakuBuild.isEmpty())
+							{
+								info += U"建築キュー: {}\n"_fmt(unit.arrYoyakuBuild.size());
+							}
 						}
-					}
 
-					// コンポーネント情報（キャリアーなど）
-					if (auto* carrierComponent = const_cast<Unit&>(unit).getComponent<CarrierComponent>())
-					{
-						info += U"\n【キャリアー】\n";
-						info += U"積載: {}/{}\n"_fmt(
-							carrierComponent->storedUnits.size(),
-							carrierComponent->capacity
-						);
-					}
+						// スキル情報
+						if (!unit.arrSkill.isEmpty())
+						{
+							info += U"\n【スキル】\n";
+							for (const auto& skill : unit.arrSkill)
+							{
+								info += U"・{}\n"_fmt(skill.name);
+							}
+						}
 
-					currentInfo = info;
-					break;
+						// コンポーネント情報（キャリアーなど）
+						if (auto* carrierComponent = const_cast<Unit&>(unit).getComponent<CarrierComponent>())
+						{
+							info += U"\n【キャリアー】\n";
+							info += U"積載: {}/{}\n"_fmt(
+								carrierComponent->storedUnits.size(),
+								carrierComponent->capacity
+							);
+						}
+
+						currentInfo = info;
+						break;
+					}
 				}
+				if (foundUnit) break;
 			}
 			if (foundUnit) break;
 		}
-		if (foundUnit) break;
-	}
 	}
 
 	if (foundUnit)
@@ -1973,7 +2115,7 @@ Co::Task<void> Battle001::start()
 	ClassHorizontalUnit chuSor;
 	chuSor.FlagBuilding = true;
 	{
-		for (auto uu : m_commonConfig.arrayUnit)
+		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
 			if (uu.NameTag == U"Home")
 			{
