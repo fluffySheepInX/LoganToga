@@ -430,6 +430,8 @@ void Battle001::UnitRegister(
 	{
 		uu.ID = classBattleManage.getIDCount();
 		uu.initTilePos = Point{ col, row };
+		uu.colBuilding = col;
+		uu.rowBuilding = row;
 		uu.nowPosiLeft = mapTile.ToTile(uu.initTilePos, mapTile.N)
 			.asPolygon()
 			.centroid()
@@ -449,7 +451,8 @@ void Battle001::UnitRegister(
 		{
 			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-			classBattleManage.hsMyUnitBuilding.insert(&cuu.ListClassUnit.back());
+			auto u = std::make_shared<Unit>(uu);
+			classBattleManage.hsMyUnitBuilding.insert(u);
 		}
 	}
 
@@ -2804,8 +2807,6 @@ Co::Task<void> Battle001::start()
 	}
 
 	//初期ユニット-建物
-	ClassHorizontalUnit chuSor;
-	chuSor.FlagBuilding = true;
 	{
 		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
@@ -2822,12 +2823,8 @@ Co::Task<void> Battle001::start()
 					.asPolygon()
 					.centroid()
 					.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-
-				ClassHorizontalUnit cuu;
-				cuu.ListClassUnit.push_back(uu);
-				chuSor.ListClassUnit.push_back(uu);
-
-				classBattleManage.hsMyUnitBuilding.insert(&chuSor.ListClassUnit.back());
+				auto u = std::make_shared<Unit>(uu);
+				classBattleManage.hsMyUnitBuilding.insert(u);
 			}
 		}
 	}
@@ -3428,7 +3425,7 @@ void Battle001::drawFog(const RectF& cameraView, const MapTile& mapTile, const G
 /// @param mapTile 描画対象となるマップタイル。
 void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const
 {
-	Array<Unit*> buildings;
+	Array<std::shared_ptr<Unit>> buildings;
 	for (const auto& group : { classBattleManage.hsMyUnitBuilding,
 		classBattleManage.hsEnemyUnitBuilding })
 	{
@@ -3447,7 +3444,9 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 		TextureAsset(u->ImageName).draw(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness));
 		if (u->IsSelect)
 			RectF(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness),
-				TextureAsset(u->ImageName).size()).drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
+				TextureAsset(u->ImageName).size()
+			)
+			.drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
 	}
 }
 /// @brief カメラビュー内のユニットを描画します。
