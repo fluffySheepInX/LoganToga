@@ -1687,7 +1687,6 @@ void Battle001::updateUnitHealthBars()
 void Battle001::updateUnitMovements()
 {
 	//移動処理
-	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& item : classBattleManage.listOfAllUnit)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
