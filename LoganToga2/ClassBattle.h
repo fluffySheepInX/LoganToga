@@ -2,10 +2,13 @@
 #include "EnumSkill.h" 
 #include "ClassHorizontalUnit.h"
 #include "ClassMapBattle.h"
+#include <mutex>
 
 class ClassBattle
 {
 public:
+	mutable std::mutex unitListMutex;
+
 	long getIDCount() {
 		long re = iDCount;
 		iDCount++;
