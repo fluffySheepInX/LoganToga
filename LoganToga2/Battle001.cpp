@@ -2869,7 +2869,11 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskEnemy)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStar(
 					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
@@ -2888,7 +2892,11 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskMyUnits)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStarMyUnitsKai(
 					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
