@@ -2724,21 +2724,8 @@ void Battle::handleBuildTargetSelection()
 
 	if (const auto index = ToIndex(Cursor::PosF(), columnQuads, rowQuads))
 	{
-		if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1)
-		{
-			IsBuildSelectTraget = false;
-			IsBuildMenuHome = false;
-
-			Unit& cu = GetCU(longBuildSelectTragetId);
-			cu.currentTask = UnitTask::MovingToBuild;
-			cu.orderPosiLeft = Cursor::PosF().movedBy(-(cu.yokoUnit / 2), -(cu.TakasaUnit / 2));
-			cu.orderPosiLeftLast = Cursor::PosF();
-			cu.vecMove = (cu.orderPosiLeft - cu.nowPosiLeft).normalized();
-			cu.moveState = moveState::MoveAI;
-			cu.IsSelect = false;
-
-			IsBattleMove = false;
-			abortMyUnits = false;
+		if (ToTile(*index, N).leftClicked() && longBuildSelectTragetId != -1) {
+			processBuildOnTiles({ *index });
 		}
 		// 右クリックドラッグによる範囲選択
 		if (MouseR.up() && longBuildSelectTragetId != -1) {
