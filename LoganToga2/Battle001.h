@@ -1036,7 +1036,12 @@ private:
 	/// @brief 
 	ClassBattle classBattleManage;
 
+	void updateBuildQueue();
 	void handleUnitTooltip();
+	void processBuildOnTiles(const Array<Point>& tiles);
+	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
+	void handleBuildTargetSelection();
+
 	struct UnitTooltip
 	{
 		bool isVisible = false;
@@ -1128,6 +1133,17 @@ private:
 	String nowSelectBuildSetumei = U"";
 	Rect rectSetumei = { 0,0,320,0 };
 	/// <<< UI関連
+
+	Array<ClassExecuteSkills> m_Battle_player_skills;
+	Array<ClassExecuteSkills> m_Battle_enemy_skills;
+	Array<ClassExecuteSkills> m_Battle_neutral_skills;
+
+	void SkillProcess(Array<ClassHorizontalUnit>& ach, Array<ClassHorizontalUnit>& achTarget, Array<ClassExecuteSkills>& aces);
+	bool SkillProcess002(Array<ClassHorizontalUnit>& aaatarget, Vec2 xA, Unit& itemUnit, Skill& itemSkill, Array<ClassExecuteSkills>& aces);
+	void ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu);
+	void ColliderCheckHeal(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Unit* itemTarget);
+	void CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills& ces);
+	bool ProcessCollid(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget);
 
 };
 
