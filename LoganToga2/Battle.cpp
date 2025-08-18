@@ -1081,6 +1081,7 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				cuu.ListClassUnit.push_back(copy);
 				if (uu.IsBuilding)
 				{
+					std::scoped_lock lock(buildingMutex);
 					unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 					hsBuildingUnitForAstar[uu.initTilePos] = unitsForHsBuildingUnitForAstar.back().get(); // これなら再配置でもアドレスは変わらない
 				}
@@ -1308,7 +1309,11 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTask)
 			{
-				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				this->BattleMoveAStar(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
@@ -1331,7 +1336,11 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTaskMyUnits)
 			{
-				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				this->BattleMoveAStarMyUnitsKai(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
@@ -2460,8 +2469,11 @@ void Battle::createBuildingOnTile(const Point& tile, const BuildAction& buildAct
 			}
 
 			// A*用ハッシュテーブルに追加
-			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(newBuilding));
-			hsBuildingUnitForAstar[tile] = unitsForHsBuildingUnitForAstar.back().get();
+			{
+				std::scoped_lock lock(buildingMutex);
+				unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(newBuilding));
+				hsBuildingUnitForAstar[tile] = unitsForHsBuildingUnitForAstar.back().get();
+			}
 
 			break;
 		}

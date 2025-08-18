@@ -179,6 +179,7 @@ public:
 	~Battle() override;
 private:
 	mutable std::mutex aiRootMutex;
+	mutable std::mutex buildingMutex;
 	SystemString ss;
 	Co::Task<void> start() override;
 
