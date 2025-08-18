@@ -1362,29 +1362,36 @@ void Battle001::handleUnitAndBuildingSelection()
 			bool isSeBu = false;
 			long selectedBuildingId = -1;
 
-			// 建築物選択チェック
-			for (const auto& item : classBattleManage.listOfAllUnit)
+			Array<std::shared_ptr<Unit>> buildings;
+			for (const auto& group : { classBattleManage.hsMyUnitBuilding })
 			{
-				if (item.FlagBuilding == true && !item.ListClassUnit.empty())
+				for (const auto& item : group)
 				{
-					for (const auto& itemUnit : item.ListClassUnit)
-					{
-						Size tempSize = TextureAsset(itemUnit.ImageName).size();
-						Quad tempQ = mapTile.ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), mapTile.N);
-						const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
-						const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
-						const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
-						const double vHe = Abs(rightCenter.y - leftCenter.y);
-						double scale = tempSize.x / (horizontalWidth * 2);
+					buildings.push_back(item);
+				}
+			}
 
-						if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + mapTile.TileThickness).intersects(Cursor::PosF()))
-						{
-							selectedBuildingId = itemUnit.ID;
-							isSeBu = true;
-							break;
-						}
-					}
-					if (isSeBu) break;
+			for (const auto& u : buildings)
+			{
+				Size tempSize = TextureAsset(u->ImageName).size();
+				Quad tempQ = mapTile.ToTile(Point(u->colBuilding, u->rowBuilding), mapTile.N);
+				// tempQをtempSizeに合わせてスケーリングするための基準値を計算
+
+
+				// 横幅・縦幅（ToTile 基準）
+				int32 baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
+				int32 baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
+				// スケール計算
+				int32 scaleX = tempSize.x / (baseWidth);   // = 1.0
+				int32 scaleY = tempSize.y / (baseHeight);  // = 1.0
+				// Quad をスケーリングして移動
+				Size posCenter = Size(static_cast<int32>(tempQ.p0.x), static_cast<int32>(tempQ.p1.y));
+				auto tempQScaled = tempQ.scaledAt(posCenter, scaleX, scaleY);
+				if (tempQScaled.intersects(Cursor::PosF()))
+				{
+					selectedBuildingId = u->ID;
+					isSeBu = true;
+					break;
 				}
 			}
 
@@ -1422,47 +1429,75 @@ void Battle001::handleUnitAndBuildingSelection()
 						itemUnit.IsSelect = false;
 					}
 				}
+				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+				{
+					for (const auto& item : group)
+					{
+						item->IsSelect = false;
+					}
+				}
 				IsBuildMenuHome = false;
 				longBuildSelectTragetId = -1;
 				return;
 			}
 
-			// 選択状態の一括更新
-			for (auto& item : classBattleManage.listOfAllUnit)
+			if (!isSeBu)
 			{
-				for (auto& itemUnit : item.ListClassUnit)
+				// 選択状態の一括更新
+				for (auto& item : classBattleManage.listOfAllUnit)
 				{
-					bool newSelectState = false;
-
-					if (isSeBu && selectedBuildingId == itemUnit.ID)
+					for (auto& itemUnit : item.ListClassUnit)
 					{
-						// 建築物が選択された場合
-						newSelectState = !itemUnit.IsSelect;
-						IsBuildMenuHome = newSelectState;
-					}
-					else if (!isSeBu && selectedUnitId == itemUnit.ID)
-					{
-						// ユニットが選択された場合
-						newSelectState = !itemUnit.IsSelect;
-						IsBuildMenuHome = newSelectState;
+						bool newSelectState = false;
 
-						if (newSelectState)
+						if (isSeBu && selectedBuildingId == itemUnit.ID)
 						{
-							longBuildSelectTragetId = itemUnit.ID;
+							// 建築物が選択された場合
+							newSelectState = !itemUnit.IsSelect;
+							IsBuildMenuHome = newSelectState;
+						}
+						else if (!isSeBu && selectedUnitId == itemUnit.ID)
+						{
+							// ユニットが選択された場合
+							newSelectState = !itemUnit.IsSelect;
+							IsBuildMenuHome = newSelectState;
+
+							if (newSelectState)
+							{
+								longBuildSelectTragetId = itemUnit.ID;
+							}
+							else
+							{
+								longBuildSelectTragetId = -1;
+							}
 						}
 						else
 						{
-							longBuildSelectTragetId = -1;
+							// その他のユニットは選択解除
+							newSelectState = false;
+						}
+
+						// IsSelectの更新
+						itemUnit.IsSelect = newSelectState;
+					}
+				}
+			}
+			else
+			{
+				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+				{
+					for (const auto& item : group)
+					{
+						if (item->ID == selectedBuildingId)
+						{
+							item->IsSelect = true;
+							IsBuildMenuHome = true;
+						}
+						else
+						{
+							item->IsSelect = false;
 						}
 					}
-					else
-					{
-						// その他のユニットは選択解除
-						newSelectState = false;
-					}
-
-					// IsSelectの更新
-					itemUnit.IsSelect = newSelectState;
 				}
 			}
 		}
