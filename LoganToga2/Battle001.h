@@ -872,7 +872,7 @@ private:
 	/// @param classBattleManage バトル管理を行うClassBattleオブジェクト。
 	/// @param resourceTargets ResourcePointTooltip::TooltipTargetの配列。設定されるリソースターゲットのリストです。
 	/// @param mapTile 対象となるマップタイル。
-	void SetResourceTargets(ClassBattle classBattleManage, Array<ResourcePointTooltip::TooltipTarget>& resourceTargets, MapTile mapTile);
+	void SetResourceTargets(Array<Array<MapDetail>> mapData, Array<ResourcePointTooltip::TooltipTarget>& resourceTargets, MapTile mapTile);
 	void UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units, int32 mapSize, MapTile& mapTile) const;
 	void refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visibility>& visibilityMap, MapTile& mapTile);
 	void updateBuildingHashTable(const Point& tile, const ClassBattle& classBattleManage, Grid<Visibility> visibilityMap, MapTile& mapTile);

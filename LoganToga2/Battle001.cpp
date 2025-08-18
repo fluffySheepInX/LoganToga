@@ -325,7 +325,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 
 	/// >>>Resourceの設定
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
-	SetResourceTargets(classBattleManage, resourceTargets, mapTile);
+	SetResourceTargets(classBattleManage.classMapBattle.value().mapData, resourceTargets, mapTile);
 	resourcePointTooltip.setTargets(resourceTargets);
 	resourcePointTooltip.setTooltipEnabled(true);
 	/// <<<Resourceの設定
@@ -352,12 +352,10 @@ Battle001::~Battle001()
 /// @param resourceTargets 
 /// @param mapTile 
 void Battle001::SetResourceTargets(
-	ClassBattle classBattleManage,
+	Array<Array<MapDetail>> mapData,
 	Array<ResourcePointTooltip::TooltipTarget>& resourceTargets,
 	MapTile mapTile)
 {
-	const auto& mapData = classBattleManage.classMapBattle.value().mapData;
-
 	const int32 mapSize = static_cast<int32>(mapData.size());
 
 	for (int32 x = 0; x < mapSize; ++x)
@@ -1027,19 +1025,9 @@ void Battle001::initUI()
 
 		//skill抽出
 		Array<Skill> table;
+		for (auto& item : classBattleManage.listOfAllUnit)
 		{
-			std::scoped_lock lock(classBattleManage.unitListMutex);
-			for (auto& item : classBattleManage.listOfAllUnit)
-			{
-				for (auto& itemUnit : item.ListClassUnit)
-				{
-					for (auto& ski : itemUnit.arrSkill)
-						table.push_back(ski);
-				}
-			}
-		}
-
-		// ソート
+			for (auto& itemUnit : item.ListClassUnit)
 			{
 				for (auto& ski : itemUnit.arrSkill)
 					table.push_back(ski);
@@ -3950,49 +3938,6 @@ void Battle001::drawBuildMenu() const
 			}
 			if (targetClassBuild != U"") break;
 		}
-	}
-
-	//　建物ユニットチェック
-	for (const auto& unit : classBattleManage.hsMyUnitBuilding)
-	{
-		if (unit->IsSelect)
-		{
-			targetClassBuild = unit->classBuild;
-			arrYoyakuBuild = unit->arrYoyakuBuild;
-			taskTimer = unit->taskTimer;
-			break;
-		}
-	}
-
-	if (targetClassBuild == U"")
-		return;
-
-	// ビルドメニューの描画
-	for (const auto& [key, renderTexture] : htBuildMenuRenderTexture)
-	{
-		if (key == targetClassBuild)
-		{
-			renderTexture.draw(baseX, baseY);
-			break;
-		}
-	}
-
-	// 建築キューの描画
-	if (!arrYoyakuBuild.empty())
-	{
-		Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
-
-		for (const auto& [i, buildItem] : Indexed(arrYoyakuBuild))
-		{
-			if (i == 0)
-			{
-				targetClassBuild = unit.classBuild;
-				arrYoyakuBuild = unit.arrYoyakuBuild;
-				taskTimer = unit.taskTimer;
-				break;
-			}
-		}
-		if (targetClassBuild != U"") break;
 	}
 
 	//　建物ユニットチェック
