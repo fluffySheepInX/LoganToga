@@ -449,6 +449,7 @@ void Battle001::UnitRegister(
 		{
 			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
+			classBattleManage.hsMyUnitBuilding.insert(&cuu.ListClassUnit.back());
 		}
 	}
 
