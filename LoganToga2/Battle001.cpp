@@ -1468,6 +1468,12 @@ void Battle001::handleUnitAndBuildingSelection()
 
 			if (!isSeBu)
 			{
+				// ユニット選択時には、全ての建物の選択を解除
+				for (const auto& building : classBattleManage.hsMyUnitBuilding)
+				{
+					building->IsSelect = false;
+				}
+
 				// 選択状態の一括更新
 				for (auto& item : classBattleManage.listOfAllUnit)
 				{
@@ -1475,15 +1481,9 @@ void Battle001::handleUnitAndBuildingSelection()
 					{
 						bool newSelectState = false;
 
-						if (isSeBu && selectedBuildingId == itemUnit.ID)
+						if (selectedUnitId == itemUnit.ID)
 						{
-							// 建築物が選択された場合
-							newSelectState = !itemUnit.IsSelect;
-							IsBuildMenuHome = newSelectState;
-						}
-						else if (!isSeBu && selectedUnitId == itemUnit.ID)
-						{
-							// ユニットが選択された場合
+							// クリックされたユニットの選択状態を反転
 							newSelectState = !itemUnit.IsSelect;
 							IsBuildMenuHome = newSelectState;
 
@@ -1509,6 +1509,15 @@ void Battle001::handleUnitAndBuildingSelection()
 			}
 			else
 			{
+				// 建物選択時には、全てのユニットの選択を解除
+				for (auto& group : classBattleManage.listOfAllUnit)
+				{
+					for (auto& unit : group.ListClassUnit)
+					{
+						unit.IsSelect = false;
+					}
+				}
+
 				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
 				{
 					for (const auto& item : group)
