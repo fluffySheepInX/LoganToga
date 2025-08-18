@@ -1404,11 +1404,11 @@ void Battle001::handleUnitAndBuildingSelection()
 
 
 				// 横幅・縦幅（ToTile 基準）
-				int32 baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
-				int32 baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
+				double baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
+				double baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
 				// スケール計算
-				int32 scaleX = tempSize.x / (baseWidth);   // = 1.0
-				int32 scaleY = tempSize.y / (baseHeight);  // = 1.0
+				double scaleX = tempSize.x / (baseWidth);   // = 1.0
+				double scaleY = tempSize.y / (baseHeight);  // = 1.0
 				// Quad をスケーリングして移動
 				Size posCenter = Size(static_cast<int32>(tempQ.p0.x), static_cast<int32>(tempQ.p1.y));
 				auto tempQScaled = tempQ.scaledAt(posCenter, scaleX, scaleY);
