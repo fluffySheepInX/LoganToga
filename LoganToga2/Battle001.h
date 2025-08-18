@@ -822,6 +822,13 @@ public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle001() override;
 private:
+	struct ProductionOrder {
+		String spawn;
+		int32 tempColBuildingTarget;
+		int32 tempRowBuildingTarget;
+		int32 count;
+	};
+
 	static constexpr double FOG_UPDATE_INTERVAL = 0.5;
 	static constexpr double ENEMY_SPAWN_INTERVAL = 5.0;
 	static constexpr int32 LIQUID_BAR_WIDTH = 64;
@@ -938,6 +945,7 @@ private:
 	void updateResourceIncome();
 	Co::Task<> checkCancelSelectionByUIArea();
 	void handleBuildMenuSelectionA();
+	void processUnitBuildMenuSelection(Unit& unit);
 	void handleUnitAndBuildingSelection();
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
@@ -1038,6 +1046,7 @@ private:
 	ClassBattle classBattleManage;
 
 	void updateBuildQueue();
+	void processUnitBuildQueue(Unit& unit, Array<ProductionOrder>& productionList);
 	void handleUnitTooltip();
 	void processBuildOnTiles(const Array<Point>& tiles);
 	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
