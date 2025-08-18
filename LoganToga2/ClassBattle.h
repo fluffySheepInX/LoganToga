@@ -2,10 +2,13 @@
 #include "EnumSkill.h" 
 #include "ClassHorizontalUnit.h"
 #include "ClassMapBattle.h"
+#include <mutex>
 
 class ClassBattle
 {
 public:
+	mutable std::mutex unitListMutex;
+
 	long getIDCount() {
 		long re = iDCount;
 		iDCount++;
@@ -30,8 +33,8 @@ public:
 	Array<ClassHorizontalUnit> listOfAllEnemyUnit;
 	BattleWhichIsThePlayer battleWhichIsThePlayer;
 
-	HashSet<Unit*> hsMyUnitBuilding;
-	HashSet<Unit*> hsEnemyUnitBuilding;
+	HashSet<std::shared_ptr<Unit>> hsMyUnitBuilding;
+	HashSet<std::shared_ptr<Unit>> hsEnemyUnitBuilding;
 
 	//中立ユニットのグループ
 	//Array<ClassHorizontalUnit> neutralUnitGroup;

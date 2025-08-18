@@ -325,7 +325,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 
 	/// >>>Resourceの設定
 	Array<ResourcePointTooltip::TooltipTarget> resourceTargets;
-	SetResourceTargets(classBattleManage, resourceTargets, mapTile);
+	SetResourceTargets(classBattleManage.classMapBattle.value().mapData, resourceTargets, mapTile);
 	resourcePointTooltip.setTargets(resourceTargets);
 	resourcePointTooltip.setTooltipEnabled(true);
 	/// <<<Resourceの設定
@@ -352,12 +352,10 @@ Battle001::~Battle001()
 /// @param resourceTargets 
 /// @param mapTile 
 void Battle001::SetResourceTargets(
-	ClassBattle classBattleManage,
+	Array<Array<MapDetail>> mapData,
 	Array<ResourcePointTooltip::TooltipTarget>& resourceTargets,
 	MapTile mapTile)
 {
-	const auto& mapData = classBattleManage.classMapBattle.value().mapData;
-
 	const int32 mapSize = static_cast<int32>(mapData.size());
 
 	for (int32 x = 0; x < mapSize; ++x)
@@ -430,6 +428,8 @@ void Battle001::UnitRegister(
 	{
 		uu.ID = classBattleManage.getIDCount();
 		uu.initTilePos = Point{ col, row };
+		uu.colBuilding = col;
+		uu.rowBuilding = row;
 		uu.nowPosiLeft = mapTile.ToTile(uu.initTilePos, mapTile.N)
 			.asPolygon()
 			.centroid()
@@ -447,14 +447,16 @@ void Battle001::UnitRegister(
 
 		if (uu.IsBuilding)
 		{
+			std::scoped_lock lock(classBattleManage.unitListMutex);
 			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-			classBattleManage.hsMyUnitBuilding.insert(&cuu.ListClassUnit.back());
+			auto u = std::make_shared<Unit>(uu);
+			classBattleManage.hsMyUnitBuilding.insert(u);
 		}
 	}
 
 	{
-		std::scoped_lock lock(unitDataMutex);
+		std::scoped_lock lock(classBattleManage.unitListMutex);
 		listU.push_back(std::move(cuu));
 	}
 }
@@ -538,8 +540,6 @@ void Battle001::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units
 /// @param mapTile マップのタイル情報を保持するMapTile型の参照。
 void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visibility>& visibilityMap, MapTile& mapTile)
 {
-	std::scoped_lock lock(unitDataMutex);
-
 	// 💡 差分更新に変更
 	static HashSet<Point> lastVisibleTiles;
 	HashSet<Point> currentVisibleTiles;
@@ -653,7 +653,7 @@ void Battle001::handleCameraInput()
 Array<Array<Unit*>> Battle001::GetMovableUnitGroups()
 {
 	Array<Array<Unit*>> groups;
-
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 	{
 		Array<Unit*> group;
@@ -736,7 +736,7 @@ void Battle001::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(con
 ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
 {
 	ClassHorizontalUnit result;
-
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
@@ -749,6 +749,7 @@ ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& sourc
 
 void Battle001::handleDenseFormation(Point end)
 {
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 		for (auto& unit : target.ListClassUnit)
 		{
@@ -762,6 +763,7 @@ void Battle001::handleDenseFormation(Point end)
 }
 void Battle001::handleHorizontalFormation(Point start, Point end)
 {
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	ClassHorizontalUnit liZenei;
 	liZenei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F);
 	ClassHorizontalUnit liKouei;
@@ -810,7 +812,7 @@ void Battle001::handleSquareFormation(Point start, Point end)
 }
 void Battle001::handleUnitSelection(const RectF& selectionRect)
 {
-	std::scoped_lock lock(unitDataMutex);
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 	{
 		for (auto& unit : target.ListClassUnit)
@@ -1100,7 +1102,7 @@ Co::Task<> Battle001::checkCancelSelectionByUIArea()
 	if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
 	{
 		longBuildSelectTragetId = -1;
-
+		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (auto& target : classBattleManage.listOfAllUnit)
 		{
 			for (auto& unit : target.ListClassUnit)
@@ -1108,232 +1110,267 @@ Co::Task<> Battle001::checkCancelSelectionByUIArea()
 				unit.IsSelect = false;
 			}
 		}
-
+		for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+		{
+			for (const auto& item : group)
+			{
+				item->IsSelect = false;
+			}
+		}
 		co_await Co::NextFrame();
 	}
 	co_return;
 }
+void Battle001::processUnitBuildMenuSelection(Unit& itemUnit)
+{
+	if (itemUnit.IsSelect == false) return;
+
+	for (auto& hbm : sortedArrayBuildMenu)
+	{
+		Array<String> resSp = hbm.first.split('-');
+		if (resSp[0] != itemUnit.classBuild) continue;
+
+		if (hbm.second.rectHantei.leftClicked())
+		{
+			if (hbm.second.isMove == true)
+			{
+				IsBuildSelectTraget = true;
+				itemUnit.tempIsBuildSelectTragetBuildAction = hbm.second;
+				tempSelectComRight = hbm.second;
+				itemUnit.tempSelectComRight = tempSelectComRight;
+				return;
+			}
+
+			if (hbm.second.category == U"Carrier")
+			{
+				// 周囲3マス範囲のランダムユニット格納処理
+
+					// 現在選択されているユニットを取得
+				Unit* selectedCarrierUnit = nullptr;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					for (auto& loau : classBattleManage.listOfAllUnit)
+					{
+						for (auto& unit : loau.ListClassUnit)
+						{
+							if (unit.IsSelect)
+							{
+								selectedCarrierUnit = &unit;
+								break;
+							}
+						}
+						if (selectedCarrierUnit) break;
+					}
+				}
+
+				if (!selectedCarrierUnit) continue;
+
+				// キャリアーコンポーネントを取得
+				auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+				if (!carrierComponent) continue;
+
+				// 選択ユニットの現在位置のタイル座標を取得
+				Optional<Point> carrierTileIndex = mapTile.ToIndex(
+					selectedCarrierUnit->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+				if (!carrierTileIndex.has_value()) continue;
+
+				// 周囲3マス範囲のユニットを検索
+				Array<Unit*> nearbyUnits;
+				const int32 searchRadius = 3;
+
+				// 味方ユニットから検索
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					for (auto& group : classBattleManage.listOfAllUnit)
+					{
+						for (auto& unit : group.ListClassUnit)
+						{
+							// 自分自身、建物、戦闘不可ユニットは除外
+							if (unit.ID == selectedCarrierUnit->ID ||
+								unit.IsBuilding ||
+								!unit.IsBattleEnable || unit.isCarrierUnit) continue;
+
+							// ユニットの現在位置のタイル座標を取得
+							Optional<Point> unitTileIndex = mapTile.ToIndex(
+								unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+							if (!unitTileIndex.has_value()) continue;
+
+							// 距離をチェック（マンハッタン距離）
+							int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
+							if (distance <= searchRadius)
+							{
+								nearbyUnits.push_back(&unit);
+							}
+						}
+					}
+				}
+
+				// 範囲内にユニットがいない場合は処理終了
+				if (nearbyUnits.isEmpty())
+				{
+					Print << U"周囲3マス以内にユニットが見つかりません";
+					continue;
+				}
+
+				// ランダムに並び替え
+				Shuffle(nearbyUnits);
+
+				// キャリアーの容量まで格納
+				int32 storedCount = 0;
+				for (Unit* unit : nearbyUnits)
+				{
+					if (carrierComponent->store(unit))
+					{
+						storedCount++;
+						Print << U"ユニット '{}' を格納しました"_fmt(unit->Name);
+
+						// 容量に達したら終了
+						if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
+						{
+							break;
+						}
+					}
+					else
+					{
+						Print << U"キャリアーの容量が満杯です";
+						break;
+					}
+				}
+
+				if (storedCount > 0)
+				{
+					Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
+				}
+				else
+				{
+					Print << U"格納できるユニットがありませんでした";
+				}
+			}
+
+			if (hbm.second.category == U"releaseAll")
+			{
+				// 現在選択されているユニットを取得
+				Unit* selectedCarrierUnit = nullptr;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					for (auto& loau : classBattleManage.listOfAllUnit)
+					{
+						for (auto& unit : loau.ListClassUnit)
+						{
+							if (unit.IsSelect)
+							{
+								selectedCarrierUnit = &unit;
+								break;
+							}
+						}
+						if (selectedCarrierUnit) break;
+					}
+				}
+
+				if (!selectedCarrierUnit) continue;
+
+				// キャリアーコンポーネントを取得
+				auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
+				if (!carrierComponent) continue;
+
+				// 格納されているユニットがあるかチェック
+				if (carrierComponent->storedUnits.empty())
+				{
+					Print << U"格納されているユニットがありません";
+					continue;
+				}
+
+				// 現在のキャリアーユニットの位置を取得
+				Vec2 releasePosition = selectedCarrierUnit->GetNowPosiCenter();
+
+				// 格納されているユニット数を記録（リリース前）
+				int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
+
+				// 全ユニットを解放
+				carrierComponent->releaseAll(releasePosition);
+
+				Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
+			}
+
+			// 設置位置の取得
+			if (const auto& index = mapTile.ToIndex(
+				itemUnit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads))
+			{
+				hbm.second.rowBuildingTarget = index->y;
+				hbm.second.colBuildingTarget = index->x;
+				itemUnit.currentTask = UnitTask::None;
+			}
+			else
+			{
+				//現在選択ユニットはマップ外にいる……
+			}
+
+			IsBuildSelectTraget = false;
+
+			//Battle::updateBuildQueueで作る
+			if (itemUnit.taskTimer.isRunning() == false)
+			{
+				itemUnit.taskTimer.restart();
+				itemUnit.progressTime = 0.0;
+			}
+			itemUnit.arrYoyakuBuild.push_back(hbm.second);
+			// 回数制限の更新と再描画
+			if (hbm.second.buildCount > 0)
+			{
+				hbm.second.buildCount--;
+				//キーだけ渡して該当のrenderだけ更新するように
+				//renB();
+			}
+		}
+		else if (hbm.second.rectHantei.mouseOver())
+		{
+			nowSelectBuildSetumei = U"~~~Unit Or Build~~~\r\n" + hbm.second.description;
+			rectSetumei = { Scene::Size().x - renderTextureBuildMenuEmpty.size().x,
+				Scene::Size().y - underBarHeight - renderTextureBuildMenuEmpty.size().y,
+				320, 0 };
+			rectSetumei.h = fontInfo.fontSkill(nowSelectBuildSetumei).region().h;
+			while (!fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Color(0.0, 0.0)))
+			{
+				rectSetumei.h += 12;
+			}
+			rectSetumei.y -= rectSetumei.h;
+			break;
+		}
+		else
+		{
+			nowSelectBuildSetumei.clear();
+		}
+
+	}
+}
+
 /// @brief 建築予約をするのが本質
 void Battle001::handleBuildMenuSelectionA()
 {
 	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
-	//全部変更可能性あるので非const
+	// 通常ユニットの処理
 	for (auto& loau : classBattleManage.listOfAllUnit)
 	{
 		for (auto& itemUnit : loau.ListClassUnit)
 		{
-			if (itemUnit.IsSelect == false) continue;
-
-			for (auto& hbm : sortedArrayBuildMenu)
-			{
-				Array<String> resSp = hbm.first.split('-');
-				if (resSp[0] != itemUnit.classBuild) continue;
-
-				if (hbm.second.rectHantei.leftClicked())
-				{
-					if (hbm.second.isMove == true)
-					{
-						IsBuildSelectTraget = true;
-						itemUnit.tempIsBuildSelectTragetBuildAction = hbm.second;
-						tempSelectComRight = hbm.second;
-						itemUnit.tempSelectComRight = tempSelectComRight;
-						break;
-					}
-
-					if (hbm.second.category == U"Carrier")
-					{
-						// 周囲3マス範囲のランダムユニット格納処理
-
-							// 現在選択されているユニットを取得
-						Unit* selectedCarrierUnit = nullptr;
-						for (auto& loau : classBattleManage.listOfAllUnit)
-						{
-							for (auto& unit : loau.ListClassUnit)
-							{
-								if (unit.IsSelect)
-								{
-									selectedCarrierUnit = &unit;
-									break;
-								}
-							}
-							if (selectedCarrierUnit) break;
-						}
-
-						if (!selectedCarrierUnit) continue;
-
-						// キャリアーコンポーネントを取得
-						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
-						if (!carrierComponent) continue;
-
-						// 選択ユニットの現在位置のタイル座標を取得
-						Optional<Point> carrierTileIndex = mapTile.ToIndex(
-							selectedCarrierUnit->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-						if (!carrierTileIndex.has_value()) continue;
-
-						// 周囲3マス範囲のユニットを検索
-						Array<Unit*> nearbyUnits;
-						const int32 searchRadius = 3;
-
-						// 味方ユニットから検索
-						for (auto& group : classBattleManage.listOfAllUnit)
-						{
-							for (auto& unit : group.ListClassUnit)
-							{
-								// 自分自身、建物、戦闘不可ユニットは除外
-								if (unit.ID == selectedCarrierUnit->ID ||
-									unit.IsBuilding ||
-									!unit.IsBattleEnable || unit.isCarrierUnit) continue;
-
-								// ユニットの現在位置のタイル座標を取得
-								Optional<Point> unitTileIndex = mapTile.ToIndex(
-									unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-								if (!unitTileIndex.has_value()) continue;
-
-								// 距離をチェック（マンハッタン距離）
-								int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
-								if (distance <= searchRadius)
-								{
-									nearbyUnits.push_back(&unit);
-								}
-							}
-						}
-
-						// 範囲内にユニットがいない場合は処理終了
-						if (nearbyUnits.isEmpty())
-						{
-							Print << U"周囲3マス以内にユニットが見つかりません";
-							continue;
-						}
-
-						// ランダムに並び替え
-						Shuffle(nearbyUnits);
-
-						// キャリアーの容量まで格納
-						int32 storedCount = 0;
-						for (Unit* unit : nearbyUnits)
-						{
-							if (carrierComponent->store(unit))
-							{
-								storedCount++;
-								Print << U"ユニット '{}' を格納しました"_fmt(unit->Name);
-
-								// 容量に達したら終了
-								if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
-								{
-									break;
-								}
-							}
-							else
-							{
-								Print << U"キャリアーの容量が満杯です";
-								break;
-							}
-						}
-
-						if (storedCount > 0)
-						{
-							Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
-						}
-						else
-						{
-							Print << U"格納できるユニットがありませんでした";
-						}
-					}
-
-					if (hbm.second.category == U"releaseAll")
-					{
-						// 現在選択されているユニットを取得
-						Unit* selectedCarrierUnit = nullptr;
-						for (auto& loau : classBattleManage.listOfAllUnit)
-						{
-							for (auto& unit : loau.ListClassUnit)
-							{
-								if (unit.IsSelect)
-								{
-									selectedCarrierUnit = &unit;
-									break;
-								}
-							}
-							if (selectedCarrierUnit) break;
-						}
-
-						if (!selectedCarrierUnit) continue;
-
-						// キャリアーコンポーネントを取得
-						auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
-						if (!carrierComponent) continue;
-
-						// 格納されているユニットがあるかチェック
-						if (carrierComponent->storedUnits.empty())
-						{
-							Print << U"格納されているユニットがありません";
-							continue;
-						}
-
-						// 現在のキャリアーユニットの位置を取得
-						Vec2 releasePosition = selectedCarrierUnit->GetNowPosiCenter();
-
-						// 格納されているユニット数を記録（リリース前）
-						int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
-
-						// 全ユニットを解放
-						carrierComponent->releaseAll(releasePosition);
-
-						Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
-					}
-
-					// 設置位置の取得
-					if (const auto& index = mapTile.ToIndex(
-						itemUnit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads))
-					{
-						hbm.second.rowBuildingTarget = index->y;
-						hbm.second.colBuildingTarget = index->x;
-						itemUnit.currentTask = UnitTask::None;
-					}
-					else
-					{
-						//現在選択ユニットはマップ外にいる……
-					}
-
-					IsBuildSelectTraget = false;
-
-					//Battle::updateBuildQueueで作る
-					if (itemUnit.taskTimer.isRunning() == false)
-					{
-						itemUnit.taskTimer.restart();
-						itemUnit.progressTime = 0.0;
-					}
-					itemUnit.arrYoyakuBuild.push_back(hbm.second);
-					// 回数制限の更新と再描画
-					if (hbm.second.buildCount > 0)
-					{
-						hbm.second.buildCount--;
-						//キーだけ渡して該当のrenderだけ更新するように
-						//renB();
-					}
-				}
-				else if (hbm.second.rectHantei.mouseOver())
-				{
-					nowSelectBuildSetumei = U"~~~Unit Or Build~~~\r\n" + hbm.second.description;
-					rectSetumei = { Scene::Size().x - renderTextureBuildMenuEmpty.size().x,
-						Scene::Size().y - underBarHeight - renderTextureBuildMenuEmpty.size().y,
-						320, 0 };
-					rectSetumei.h = fontInfo.fontSkill(nowSelectBuildSetumei).region().h;
-					while (!fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Color(0.0, 0.0)))
-					{
-						rectSetumei.h += 12;
-					}
-					rectSetumei.y -= rectSetumei.h;
-					break;
-				}
-				else
-				{
-					nowSelectBuildSetumei.clear();
-				}
-
-			}
+			processUnitBuildMenuSelection(itemUnit);
 		}
+	}
+
+	// 建物ユニットの処理
+	Array<std::shared_ptr<Unit>> buildings;
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	{
+		for (const auto& item : group)
+		{
+			buildings.push_back(item);
+		}
+	}
+
+	for (const auto& unitBuildings : buildings)
+	{
+		processUnitBuildMenuSelection(*unitBuildings);
 	}
 }
 /// @brief ユニットおよび建築物の選択処理を管理する　マウスの左クリック操作に応じて、ユニットや建築物の選択・選択解除を行う
@@ -1359,29 +1396,36 @@ void Battle001::handleUnitAndBuildingSelection()
 			bool isSeBu = false;
 			long selectedBuildingId = -1;
 
-			// 建築物選択チェック
-			for (const auto& item : classBattleManage.listOfAllUnit)
+			Array<std::shared_ptr<Unit>> buildings;
+			for (const auto& group : { classBattleManage.hsMyUnitBuilding })
 			{
-				if (item.FlagBuilding == true && !item.ListClassUnit.empty())
+				for (const auto& item : group)
 				{
-					for (const auto& itemUnit : item.ListClassUnit)
-					{
-						Size tempSize = TextureAsset(itemUnit.ImageName).size();
-						Quad tempQ = mapTile.ToTile(Point(itemUnit.colBuilding, itemUnit.rowBuilding), mapTile.N);
-						const Vec2 leftCenter = (tempQ.p0 + tempQ.p3) / 2.0;
-						const Vec2 rightCenter = (tempQ.p1 + tempQ.p2) / 2.0;
-						const double horizontalWidth = Abs(rightCenter.x - leftCenter.x);
-						const double vHe = Abs(rightCenter.y - leftCenter.y);
-						double scale = tempSize.x / (horizontalWidth * 2);
+					buildings.push_back(item);
+				}
+			}
 
-						if (tempQ.scaled(scale).movedBy(0, -(vHe * scale) + mapTile.TileThickness).intersects(Cursor::PosF()))
-						{
-							selectedBuildingId = itemUnit.ID;
-							isSeBu = true;
-							break;
-						}
-					}
-					if (isSeBu) break;
+			for (const auto& u : buildings)
+			{
+				Size tempSize = TextureAsset(u->ImageName).size();
+				Quad tempQ = mapTile.ToTile(Point(u->colBuilding, u->rowBuilding), mapTile.N);
+				// tempQをtempSizeに合わせてスケーリングするための基準値を計算
+
+
+				// 横幅・縦幅（ToTile 基準）
+				double baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
+				double baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
+				// スケール計算
+				double scaleX = tempSize.x / (baseWidth);   // = 1.0
+				double scaleY = tempSize.y / (baseHeight);  // = 1.0
+				// Quad をスケーリングして移動
+				Size posCenter = Size(static_cast<int32>(tempQ.p0.x), static_cast<int32>(tempQ.p1.y));
+				auto tempQScaled = tempQ.scaledAt(posCenter, scaleX, scaleY);
+				if (tempQScaled.intersects(Cursor::PosF()))
+				{
+					selectedBuildingId = u->ID;
+					isSeBu = true;
+					break;
 				}
 			}
 
@@ -1389,6 +1433,7 @@ void Battle001::handleUnitAndBuildingSelection()
 			long selectedUnitId = -1;
 			if (!isSeBu)
 			{
+				std::scoped_lock lock(classBattleManage.unitListMutex);
 				for (const auto& target : classBattleManage.listOfAllUnit)
 				{
 					for (const auto& unit : target.ListClassUnit)
@@ -1412,6 +1457,7 @@ void Battle001::handleUnitAndBuildingSelection()
 			// 何も選択されていない場合は全て選択解除
 			if (selectedBuildingId == -1 && selectedUnitId == -1)
 			{
+				std::scoped_lock lock(classBattleManage.unitListMutex);
 				for (auto& item : classBattleManage.listOfAllUnit)
 				{
 					for (auto& itemUnit : item.ListClassUnit)
@@ -1419,47 +1465,87 @@ void Battle001::handleUnitAndBuildingSelection()
 						itemUnit.IsSelect = false;
 					}
 				}
+				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+				{
+					for (const auto& item : group)
+					{
+						item->IsSelect = false;
+					}
+				}
 				IsBuildMenuHome = false;
 				longBuildSelectTragetId = -1;
 				return;
 			}
 
-			// 選択状態の一括更新
-			for (auto& item : classBattleManage.listOfAllUnit)
+			if (!isSeBu)
 			{
-				for (auto& itemUnit : item.ListClassUnit)
+				// ユニット選択時には、全ての建物の選択を解除
+				for (const auto& building : classBattleManage.hsMyUnitBuilding)
 				{
-					bool newSelectState = false;
+					building->IsSelect = false;
+				}
 
-					if (isSeBu && selectedBuildingId == itemUnit.ID)
+				// 選択状態の一括更新
+				std::scoped_lock lock(classBattleManage.unitListMutex);
+				for (auto& item : classBattleManage.listOfAllUnit)
+				{
+					for (auto& itemUnit : item.ListClassUnit)
 					{
-						// 建築物が選択された場合
-						newSelectState = !itemUnit.IsSelect;
-						IsBuildMenuHome = newSelectState;
-					}
-					else if (!isSeBu && selectedUnitId == itemUnit.ID)
-					{
-						// ユニットが選択された場合
-						newSelectState = !itemUnit.IsSelect;
-						IsBuildMenuHome = newSelectState;
+						bool newSelectState = false;
 
-						if (newSelectState)
+						if (selectedUnitId == itemUnit.ID)
 						{
-							longBuildSelectTragetId = itemUnit.ID;
+							// クリックされたユニットの選択状態を反転
+							newSelectState = !itemUnit.IsSelect;
+							IsBuildMenuHome = newSelectState;
+
+							if (newSelectState)
+							{
+								longBuildSelectTragetId = itemUnit.ID;
+							}
+							else
+							{
+								longBuildSelectTragetId = -1;
+							}
 						}
 						else
 						{
-							longBuildSelectTragetId = -1;
+							// その他のユニットは選択解除
+							newSelectState = false;
+						}
+
+						// IsSelectの更新
+						itemUnit.IsSelect = newSelectState;
+					}
+				}
+			}
+			else
+			{
+				// 建物選択時には、全てのユニットの選択を解除
+				std::scoped_lock lock(classBattleManage.unitListMutex);
+				for (auto& group : classBattleManage.listOfAllUnit)
+				{
+					for (auto& unit : group.ListClassUnit)
+					{
+						unit.IsSelect = false;
+					}
+				}
+
+				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+				{
+					for (const auto& item : group)
+					{
+						if (item->ID == selectedBuildingId)
+						{
+							item->IsSelect = true;
+							IsBuildMenuHome = true;
+							longBuildSelectTragetId = item->ID;
+						}
+						else
+						{
+							item->IsSelect = false;
 						}
 					}
-					else
-					{
-						// その他のユニットは選択解除
-						newSelectState = false;
-					}
-
-					// IsSelectの更新
-					itemUnit.IsSelect = newSelectState;
 				}
 			}
 		}
@@ -1508,6 +1594,7 @@ void Battle001::handleSkillUISelection()
 				flagDisplaySkillSetumei = true;
 				nowSelectSkillSetumei = U"";
 				//スキル説明を書く
+				std::scoped_lock lock(classBattleManage.unitListMutex);
 				for (auto& item : classBattleManage.listOfAllUnit)
 				{
 					if (!item.FlagBuilding &&
@@ -1905,10 +1992,10 @@ void Battle001::handleUnitTooltip()
 	bool foundUnit = false;
 	String currentInfo; // 現在のユニット情報を保存
 	{
-
 		const auto t = camera.createTransformer();
 
 		// マウス位置のユニットを検索
+		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (auto& group : { classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit })
 		{
 			for (auto& unitGroup : group)
@@ -2015,6 +2102,7 @@ static bool NearlyEqual(double a, double b)
 
 void Battle001::SkillProcess(Array<ClassHorizontalUnit>& ach, Array<ClassHorizontalUnit>& achTarget, Array<ClassExecuteSkills>& aces)
 {
+	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& item : ach)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
@@ -2424,7 +2512,7 @@ void Battle001::handleBuildTargetSelection()
 	if (const auto index = mapTile.ToIndex(Cursor::PosF(), mapTile.columnQuads, mapTile.rowQuads))
 	{
 		if (mapTile.ToTile(*index, mapTile.N).leftClicked() && longBuildSelectTragetId != -1) {
-			processBuildOnTiles({ *index });
+			processBuildOnTilesWithMovement({ *index });
 		}
 		// 右クリックドラッグによる範囲選択
 		if (MouseR.up() && longBuildSelectTragetId != -1) {
@@ -2442,82 +2530,6 @@ void Battle001::handleBuildTargetSelection()
 	}
 }
 
-void Battle001::processBuildOnTiles(const Array<Point>& tiles)
-{
-	if (longBuildSelectTragetId == -1)
-	{
-		Print << U"建築ユニットが選択されていません";
-		return;
-	}
-
-	Unit* selectedUnitPtr = nullptr;
-	for (auto& group : classBattleManage.listOfAllUnit) {
-		for (auto& unit : group.ListClassUnit) {
-			if (unit.ID == longBuildSelectTragetId) {
-				selectedUnitPtr = &unit;
-				break;
-			}
-		}
-		if (selectedUnitPtr) break;
-	}
-
-	if (!selectedUnitPtr) {
-		Print << U"選択された建築ユニットが見つかりません";
-		return;
-	}
-	Unit& selectedUnit = *selectedUnitPtr;
-
-
-	// 建築可能なタイルの数をカウント
-	Array<Point> validTiles;
-	for (const auto& tile : tiles)
-	{
-		if (canBuildOnTile(tile, classBattleManage, mapTile))
-		{
-			validTiles.push_back(tile);
-		}
-	}
-
-	if (validTiles.isEmpty())
-	{
-		Print << U"建築可能なタイルがありません";
-		return;
-	}
-
-	// 建築可能なタイルに対して建築処理を実行
-	int32 builtCount = 0;
-	for (const auto& tile : validTiles)
-	{
-		// 建築メニューから選択された建築アクションを取得
-		BuildAction buildAction = selectedUnit.tempIsBuildSelectTragetBuildAction;
-
-		// タイル座標を建築ターゲットに設定
-		buildAction.rowBuildingTarget = tile.y;
-		buildAction.colBuildingTarget = tile.x;
-
-		// 建築予約に追加
-		selectedUnit.arrYoyakuBuild.push_back(buildAction);
-		builtCount++;
-
-		Print << U"タイル({}, {})に建築を予約しました"_fmt(tile.x, tile.y);
-	}
-
-	// 建築タイマーを開始（まだ動いていない場合）
-	if (!selectedUnit.taskTimer.isRunning() && !selectedUnit.arrYoyakuBuild.isEmpty())
-	{
-		selectedUnit.taskTimer.restart();
-		selectedUnit.progressTime = 0.0;
-	}
-
-	Print << U"合計 {} 箇所に建築を予約しました"_fmt(builtCount);
-
-	// 建築選択状態を解除
-	IsBuildSelectTraget = false;
-	IsBuildMenuHome = false;
-	selectedUnit.IsSelect = false;
-	longBuildSelectTragetId = -1;
-}
-
 void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 {
 	if (longBuildSelectTragetId == -1)
@@ -2527,14 +2539,17 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 	}
 
 	Unit* selectedUnitPtr = nullptr;
-	for (auto& group : classBattleManage.listOfAllUnit) {
-		for (auto& unit : group.ListClassUnit) {
-			if (unit.ID == longBuildSelectTragetId) {
-				selectedUnitPtr = &unit;
-				break;
+	{
+		std::scoped_lock lock(classBattleManage.unitListMutex);
+		for (auto& group : classBattleManage.listOfAllUnit) {
+			for (auto& unit : group.ListClassUnit) {
+				if (unit.ID == longBuildSelectTragetId) {
+					selectedUnitPtr = &unit;
+					break;
+				}
 			}
+			if (selectedUnitPtr) break;
 		}
-		if (selectedUnitPtr) break;
 	}
 
 	if (!selectedUnitPtr) {
@@ -2585,6 +2600,7 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 	// 最初の建築タスクを開始
 	if (!selectedUnit.arrYoyakuBuild.isEmpty())
 	{
+		selectedUnit.FlagReachedDestination = false;
 		selectedUnit.currentTask = UnitTask::MovingToBuild;
 
 		// 最初のタイルへの移動を開始
@@ -2596,15 +2612,7 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 		selectedUnit.orderPosiLeftLast = targetPos;
 		selectedUnit.vecMove = (selectedUnit.orderPosiLeft - selectedUnit.nowPosiLeft).normalized();
 		selectedUnit.moveState = moveState::MoveAI;
-
-		if (!selectedUnit.taskTimer.isRunning())
-		{
-			selectedUnit.taskTimer.restart();
-			selectedUnit.progressTime = 0.0;
-		}
 	}
-
-	Print << U"合計 {} 箇所への移動→建築を予約しました"_fmt(validTiles.size());
 
 	// 建築選択状態を解除
 	IsBuildSelectTraget = false;
@@ -2613,64 +2621,92 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 	longBuildSelectTragetId = -1;
 }
 
+void Battle001::processUnitBuildQueue(Unit& itemUnit, Array<ProductionOrder>& productionList)
+{
+	if (itemUnit.arrYoyakuBuild.isEmpty()) return;
+
+	auto& buildAction = itemUnit.arrYoyakuBuild.front();
+
+	// isMoveフラグを持つ建築アクションの場合、目的地到着を待つ
+	if (buildAction.isMove)
+	{
+		// まだ目的地に到着していなければ、キューの処理をスキップ
+		if (!itemUnit.FlagReachedDestination)
+		{
+			return;
+		}
+
+		// 到着済みで、タイマーが動いていなければ開始する
+		if (itemUnit.FlagReachedDestination && !itemUnit.taskTimer.isRunning())
+		{
+			itemUnit.taskTimer.restart();
+			itemUnit.progressTime = 0.0;
+		}
+	}
+
+	const double tempTime = buildAction.buildTime;
+	auto tempBA = buildAction.result;
+	const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
+	const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
+	const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
+
+	if (itemUnit.progressTime >= 1.0)
+	{
+		itemUnit.taskTimer.reset();
+		itemUnit.arrYoyakuBuild.pop_front();
+		if (!itemUnit.arrYoyakuBuild.isEmpty())
+		{
+			itemUnit.progressTime = 0.0;
+			itemUnit.taskTimer.restart();
+		}
+		else
+		{
+			itemUnit.progressTime = -1.0;
+		}
+
+		if (tempBA.type == U"unit")
+		{
+			ProductionOrder order;
+			order.spawn = tempBA.spawn;
+			order.tempColBuildingTarget = tempColBuildingTarget;
+			order.tempRowBuildingTarget = tempRowBuildingTarget;
+			order.count = createCount;
+			productionList.push_back(order);
+		}
+	}
+
+	// プログレス更新
+	if (itemUnit.taskTimer.isRunning())
+	{
+		itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
+	}
+}
 
 void Battle001::updateBuildQueue()
 {
-	using MyAnonymousClass = struct {
-		String spawn;
-		int32 tempColBuildingTarget;
-		int32 tempRowBuildingTarget;
-		int32 count;
-	};
-	Array<MyAnonymousClass> temo;
-	for (auto& loau : classBattleManage.listOfAllUnit)
+	Array<ProductionOrder> productionList;
+
+	// 通常ユニットのキューを処理
 	{
-		for (auto& itemUnit : loau.ListClassUnit)
+		for (auto& loau : classBattleManage.listOfAllUnit)
 		{
-			if (itemUnit.arrYoyakuBuild.isEmpty()) continue;
-
-			const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
-			auto tempBA = itemUnit.arrYoyakuBuild.front().result;
-			const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
-			const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
-			const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
-
-			if (itemUnit.progressTime >= 1.0)
+			for (auto& itemUnit : loau.ListClassUnit)
 			{
-				itemUnit.taskTimer.reset();
-				itemUnit.arrYoyakuBuild.pop_front();
-				if (!itemUnit.arrYoyakuBuild.isEmpty())
-				{
-					itemUnit.progressTime = 0.0;
-					itemUnit.taskTimer.restart();
-				}
-				else
-				{
-					itemUnit.progressTime = -1.0;
-				}
-
-				if (tempBA.type == U"unit")
-				{
-					MyAnonymousClass yfyu;
-					yfyu.spawn = tempBA.spawn;
-					yfyu.tempColBuildingTarget = tempColBuildingTarget;
-					yfyu.tempRowBuildingTarget = tempRowBuildingTarget;
-					yfyu.count = createCount;
-					temo.push_back(yfyu);
-				}
-			}
-
-			// プログレス更新
-			if (itemUnit.taskTimer.isRunning())
-			{
-				itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
+				processUnitBuildQueue(itemUnit, productionList);
 			}
 		}
 	}
 
-	for (auto& uihbui : temo)
+	// 建築ユニットのキューを処理
+	for (auto& buildingUnit : classBattleManage.hsMyUnitBuilding)
 	{
-		UnitRegister(classBattleManage, mapTile, uihbui.spawn, uihbui.tempColBuildingTarget, uihbui.tempRowBuildingTarget, uihbui.count, classBattleManage.listOfAllUnit, false);
+		processUnitBuildQueue(*buildingUnit, productionList);
+	}
+
+	// 生産リストに基づいてユニットを登録
+	for (auto& order : productionList)
+	{
+		UnitRegister(classBattleManage, mapTile, order.spawn, order.tempColBuildingTarget, order.tempRowBuildingTarget, order.count, classBattleManage.listOfAllUnit, false);
 	}
 }
 
@@ -2683,10 +2719,11 @@ void Battle001::startAsyncFogCalculation()
 			{
 				Grid<Visibility> tempMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
 
-				// 💡 ユニットデータのスナップショットを作成
+				//ユニットデータのスナップショットを作成
+				//TODO:全てのアクセスを mutex で保護する
 				Array<Unit> unitSnapshot;
 				{
-					std::scoped_lock lock(unitDataMutex);
+					std::scoped_lock lock(classBattleManage.unitListMutex);
 					for (auto& units : classBattleManage.listOfAllUnit)
 					{
 						for (const auto& unit : units.ListClassUnit)
@@ -2790,8 +2827,6 @@ Co::Task<void> Battle001::start()
 	}
 
 	//初期ユニット-建物
-	ClassHorizontalUnit chuSor;
-	chuSor.FlagBuilding = true;
 	{
 		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
@@ -2808,12 +2843,8 @@ Co::Task<void> Battle001::start()
 					.asPolygon()
 					.centroid()
 					.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-
-				ClassHorizontalUnit cuu;
-				cuu.ListClassUnit.push_back(uu);
-				chuSor.ListClassUnit.push_back(uu);
-
-				classBattleManage.hsMyUnitBuilding.insert(&chuSor.ListClassUnit.back());
+				auto u = std::make_shared<Unit>(uu);
+				classBattleManage.hsMyUnitBuilding.insert(u);
 			}
 		}
 	}
@@ -2838,8 +2869,13 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskEnemy)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStar(
+					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
 					classBattleManage.listOfAllEnemyUnit,
 					classBattleManage.classMapBattle.value().mapData,
@@ -2856,8 +2892,13 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskMyUnits)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(classBattleManage.unitListMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStarMyUnitsKai(
+					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
 					classBattleManage.listOfAllEnemyUnit,
 					classBattleManage.classMapBattle.value().mapData,
@@ -3414,13 +3455,15 @@ void Battle001::drawFog(const RectF& cameraView, const MapTile& mapTile, const G
 /// @param mapTile 描画対象となるマップタイル。
 void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classBattleManage, const MapTile mapTile) const
 {
-	Array<Unit*> buildings;
-	for (const auto& group : { classBattleManage.hsMyUnitBuilding,
-		classBattleManage.hsEnemyUnitBuilding })
+	Array<std::shared_ptr<Unit>> buildings;
 	{
-		for (const auto& item : group)
+		for (const auto& group : { classBattleManage.hsMyUnitBuilding,
+			classBattleManage.hsEnemyUnitBuilding })
 		{
-			buildings.push_back(item);
+			for (const auto& item : group)
+			{
+				buildings.push_back(item);
+			}
 		}
 	}
 
@@ -3433,7 +3476,9 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 		TextureAsset(u->ImageName).draw(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness));
 		if (u->IsSelect)
 			RectF(Arg::bottomCenter = pos.movedBy(0, -mapTile.TileThickness),
-				TextureAsset(u->ImageName).size()).drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
+				TextureAsset(u->ImageName).size()
+			)
+			.drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
 	}
 }
 /// @brief カメラビュー内のユニットを描画します。
@@ -3441,8 +3486,6 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 /// @param classBattleManage ユニット情報を管理するClassBattleオブジェクト。
 void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattleManage) const
 {
-	std::scoped_lock lock(unitDataMutex);
-
 	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB)
 		{
 			/// 範囲選択が本質の処理では、forループからHashTableへの置き換えは意味がない
@@ -3792,25 +3835,42 @@ void Battle001::drawBuildMenu() const
 	const int32 baseY = Scene::Size().y - 328 - underBarHeight;
 
 	// 選択されたユニットを1回の検索で取得
-	const Unit* selectedUnit = nullptr;
-	for (const auto& group : classBattleManage.listOfAllUnit)
+	String targetClassBuild = U"";
+	Array<BuildAction> arrYoyakuBuild;
+	Stopwatch taskTimer;
 	{
-		for (const auto& unit : group.ListClassUnit)
+		for (auto& group : classBattleManage.listOfAllUnit)
 		{
-			if (unit.IsSelect)
+			for (auto& unit : group.ListClassUnit)
 			{
-				selectedUnit = &unit;
-				break;
+				if (unit.IsSelect)
+				{
+					targetClassBuild = unit.classBuild;
+					arrYoyakuBuild = unit.arrYoyakuBuild;
+					taskTimer = unit.taskTimer;
+					break;
+				}
 			}
+			if (targetClassBuild != U"") break;
 		}
-		if (selectedUnit) break;
 	}
 
-	if (!selectedUnit)
+	//　建物ユニットチェック
+	for (const auto& unit : classBattleManage.hsMyUnitBuilding)
+	{
+		if (unit->IsSelect)
+		{
+			targetClassBuild = unit->classBuild;
+			arrYoyakuBuild = unit->arrYoyakuBuild;
+			taskTimer = unit->taskTimer;
+			break;
+		}
+	}
+
+	if (targetClassBuild == U"")
 		return;
 
 	// ビルドメニューの描画
-	const String& targetClassBuild = selectedUnit->classBuild;
 	for (const auto& [key, renderTexture] : htBuildMenuRenderTexture)
 	{
 		if (key == targetClassBuild)
@@ -3821,18 +3881,18 @@ void Battle001::drawBuildMenu() const
 	}
 
 	// 建築キューの描画
-	if (!selectedUnit->arrYoyakuBuild.empty())
+	if (!arrYoyakuBuild.empty())
 	{
 		Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
 
-		for (const auto& [i, buildItem] : Indexed(selectedUnit->arrYoyakuBuild))
+		for (const auto& [i, buildItem] : Indexed(arrYoyakuBuild))
 		{
 			if (i == 0)
 			{
 				// 現在建築中のアイテム
 				TextureAsset(buildItem.icon).resized(64).draw(baseX - 64, baseY + 4);
 
-				const double progressRatio = Saturate(selectedUnit->taskTimer.sF() / buildItem.buildTime);
+				const double progressRatio = Saturate(taskTimer.sF() / buildItem.buildTime);
 				const double gaugeHeight = 64 * Max(progressRatio, 0.1);
 
 				RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }.draw(ColorF{ 0.0, 0.5 });

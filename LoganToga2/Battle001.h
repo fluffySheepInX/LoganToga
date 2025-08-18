@@ -304,7 +304,6 @@ public:
 
 	std::atomic<bool> changeUnitMember{ false };
 	std::mutex aiRootMutex;
-	std::mutex arrayMutex;
 
 	Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
 		int minScore = std::numeric_limits<int>::max();
@@ -328,15 +327,16 @@ public:
 		return targetClassAStar;
 	}
 
-	int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
-							Array<ClassHorizontalUnit>& enemy,
-							Array<Array<MapDetail>> mapData,
-							HashTable<int64, ClassUnitMovePlan>& aiRoot,
-							const std::atomic<bool>& abort,
-							const std::atomic<bool>& pause,
-							std::atomic<bool>& changeUnitMember,
-							HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
-							MapTile& mapTile
+	int32 BattleMoveAStar(std::mutex& unitListMutex,
+		Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, ClassUnitMovePlan>& aiRoot,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		std::atomic<bool>& changeUnitMember,
+		HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
+		MapTile& mapTile
 	)
 	{
 		static size_t unitIndexEnemy = 0;
@@ -346,7 +346,7 @@ public:
 		Array<Unit*> flatList;
 
 		// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(unitListMutex);
 		for (auto& group : enemy)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -538,21 +538,22 @@ public:
 		return static_cast<int32>(processed);
 	}
 
-	int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
-							Array<ClassHorizontalUnit>& enemy,
-							Array<Array<MapDetail>> mapData,
-							HashTable<int64, ClassUnitMovePlan>& aiRoot,
-							const std::atomic<bool>& abort,
-							const std::atomic<bool>& pause,
-							HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
-							MapTile& mapTile
+	int32 BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
+		Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, ClassUnitMovePlan>& aiRoot,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
+		MapTile& mapTile
 	)
 	{
 		const auto targetSnapshot = target;
 		HashTable<int32, Unit*> htUnit;
 		// フラット化して高速アクセスに備える
 		Array<Unit*> flatList;
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(unitListMutex);
 		for (auto& group : target)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -822,6 +823,13 @@ public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle001() override;
 private:
+	struct ProductionOrder {
+		String spawn;
+		int32 tempColBuildingTarget;
+		int32 tempRowBuildingTarget;
+		int32 count;
+	};
+
 	static constexpr double FOG_UPDATE_INTERVAL = 0.5;
 	static constexpr double ENEMY_SPAWN_INTERVAL = 5.0;
 	static constexpr int32 LIQUID_BAR_WIDTH = 64;
@@ -864,7 +872,7 @@ private:
 	/// @param classBattleManage バトル管理を行うClassBattleオブジェクト。
 	/// @param resourceTargets ResourcePointTooltip::TooltipTargetの配列。設定されるリソースターゲットのリストです。
 	/// @param mapTile 対象となるマップタイル。
-	void SetResourceTargets(ClassBattle classBattleManage, Array<ResourcePointTooltip::TooltipTarget>& resourceTargets, MapTile mapTile);
+	void SetResourceTargets(Array<Array<MapDetail>> mapData, Array<ResourcePointTooltip::TooltipTarget>& resourceTargets, MapTile mapTile);
 	void UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units, int32 mapSize, MapTile& mapTile) const;
 	void refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visibility>& visibilityMap, MapTile& mapTile);
 	void updateBuildingHashTable(const Point& tile, const ClassBattle& classBattleManage, Grid<Visibility> visibilityMap, MapTile& mapTile);
@@ -938,6 +946,7 @@ private:
 	void updateResourceIncome();
 	Co::Task<> checkCancelSelectionByUIArea();
 	void handleBuildMenuSelectionA();
+	void processUnitBuildMenuSelection(Unit& unit);
 	void handleUnitAndBuildingSelection();
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
@@ -1038,8 +1047,8 @@ private:
 	ClassBattle classBattleManage;
 
 	void updateBuildQueue();
+	void processUnitBuildQueue(Unit& unit, Array<ProductionOrder>& productionList);
 	void handleUnitTooltip();
-	void processBuildOnTiles(const Array<Point>& tiles);
 	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
 	void handleBuildTargetSelection();
 

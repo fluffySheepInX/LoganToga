@@ -66,9 +66,6 @@ Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
 	return targetClassAStar;
 }
 
-std::mutex aiRootMutex;
-std::mutex arrayMutex;
-
 void bhjdsvjhbsd(const std::exception& ex)
 {
 	std::string msg = ex.what();
@@ -90,7 +87,7 @@ void bhjdsvjhbsd(const std::exception& ex)
 /// @param abort 
 /// @param pause 
 /// @return 
-int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
+int32 Battle::BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 						Array<ClassHorizontalUnit>& enemy,
 						Array<Array<MapDetail>> mapData,
 						HashTable<int64, UnitMovePlan>& aiRoot,
@@ -114,7 +111,7 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
 	try
 	{
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& group : enemy)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -307,7 +304,7 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 			unit.moveState = moveState::None;
 			plan.setPath(listRoot);
 			{
-				std::scoped_lock lock(aiRootMutex);
+				std::scoped_lock lock(this->aiRootMutex);
 				aiRoot[unit.ID] = plan;
 				// 経路セット時に1個除去しておく
 				if (aiRoot[unit.ID].getPath().size() > 1)
@@ -323,7 +320,7 @@ int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 	unitIndexEnemy = (unitIndexEnemy + processed) % total;
 	return static_cast<int32>(processed);
 }
-int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
+int32 Battle::BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 						Array<ClassHorizontalUnit>& enemy,
 						Array<Array<MapDetail>> mapData,
 						HashTable<int64, UnitMovePlan>& aiRoot,
@@ -343,7 +340,7 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	Array<Unit*> flatList;
 	try
 	{
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& group : target)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -587,7 +584,7 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 			guifd.pop_front(); // 最初の位置は現在地なので削除
 			plan.setPath(guifd);
 			{
-				std::scoped_lock lock(aiRootMutex);
+				std::scoped_lock lock(this->aiRootMutex);
 				aiRoot[unit->ID] = plan;
 			}
 			debugRoot.push_back(guifd);
@@ -597,7 +594,7 @@ int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	}
 }
 
-int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
+int32 Battle::BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 						Array<ClassHorizontalUnit>& enemy,
 						Array<Array<MapDetail>> mapData,
 						HashTable<int64, UnitMovePlan>& aiRoot,
@@ -712,7 +709,7 @@ int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
 			fullPath.pop_front(); // 最初の位置は現在地なので削除
 			plan.setPath(fullPath);
 			{
-				std::scoped_lock lock(aiRootMutex);
+				std::scoped_lock lock(this->aiRootMutex);
 				aiRoot[unit.ID] = plan;
 			}
 			debugRoot.push_back(fullPath);
@@ -1041,13 +1038,16 @@ void Battle::renB()
 /// @param enemy 
 void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy)
 {
-	// 事前に容量を確保して配列の再配置を防ぐ
-	const size_t expectedSize = listU.size() + 1;
-	if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
 	{
-		listU.reserve(expectedSize + 50);
-		Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
-			listU.capacity(), expectedSize + 50);
+		std::scoped_lock lock(classBattle.unitListMutex);
+		// 事前に容量を確保して配列の再配置を防ぐ
+		const size_t expectedSize = listU.size() + 1;
+		if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
+		{
+			listU.reserve(expectedSize + 50);
+			Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
+				listU.capacity(), expectedSize + 50);
+		}
 	}
 
 	//新しいコピーを作る
@@ -1081,12 +1081,16 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				cuu.ListClassUnit.push_back(copy);
 				if (uu.IsBuilding)
 				{
+					std::scoped_lock lock(buildingMutex);
 					unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 					hsBuildingUnitForAstar[uu.initTilePos] = unitsForHsBuildingUnitForAstar.back().get(); // これなら再配置でもアドレスは変わらない
 				}
 			}
 
-			listU.push_back(cuu);
+			{
+				std::scoped_lock lock(classBattle.unitListMutex);
+				listU.push_back(cuu);
+			}
 		}
 	}
 }
@@ -1154,6 +1158,7 @@ Co::Task<void> Battle::start()
 
 	//初期ユニット
 	{
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto uu : m_commonConfig.arrayInfoUnit)
 		{
 			if (uu.Name == U"M14 Infantry Rifle")
@@ -1177,12 +1182,14 @@ Co::Task<void> Battle::start()
 
 		//skill抽出
 		Array<Skill> table;
-		for (auto& item : classBattle.listOfAllUnit)
 		{
-			for (auto& itemUnit : item.ListClassUnit)
+			for (auto& item : classBattle.listOfAllUnit)
 			{
-				for (auto& ski : itemUnit.arrSkill)
-					table.push_back(ski);
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					for (auto& ski : itemUnit.arrSkill)
+						table.push_back(ski);
+				}
 			}
 		}
 
@@ -1215,32 +1222,36 @@ Co::Task<void> Battle::start()
 	renderTextureSkillUP.clear(ColorF{ 0.5, 0.0 });
 
 	//始点設定
-	viewPos = ToTileBottomCenter(classBattle.listOfAllUnit[0].ListClassUnit[0].initTilePos, N);
+	{
+		viewPos = ToTileBottomCenter(classBattle.listOfAllUnit[0].ListClassUnit[0].initTilePos, N);
+	}
 	camera.jumpTo(viewPos, camera.getTargetScale());
 	resourcePointTooltip.setCamera(camera);
 
 	//ユニット体力バーの設定
-	for (auto& item : classBattle.listOfAllUnit)
 	{
-		if (!item.FlagBuilding &&
-			!item.ListClassUnit.empty())
+		for (auto& item : classBattle.listOfAllUnit)
 		{
-			for (auto& itemUnit : item.ListClassUnit)
+			if (!item.FlagBuilding &&
+				!item.ListClassUnit.empty())
 			{
-				Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
-				itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+					itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+				}
 			}
 		}
-	}
-	for (auto& item : classBattle.listOfAllEnemyUnit)
-	{
-		if (!item.FlagBuilding &&
-			!item.ListClassUnit.empty())
+		for (auto& item : classBattle.listOfAllEnemyUnit)
 		{
-			for (auto& itemUnit : item.ListClassUnit)
+			if (!item.FlagBuilding &&
+				!item.ListClassUnit.empty())
 			{
-				Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
-				itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+				for (auto& itemUnit : item.ListClassUnit)
+				{
+					Vec2 temp = itemUnit.GetNowPosiCenter().movedBy(-64 / 2, (32 / 2) + 6);
+					itemUnit.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, 64, 16));
+				}
 			}
 		}
 	}
@@ -1279,7 +1290,6 @@ Co::Task<void> Battle::start()
 	}
 
 	classBattle.listOfAllUnit.push_back(chuSor);
-	//classBattle.listOfAllEnemyUnit.push_back(chuDef);
 
 	//ミニマップ用
 	for (int32 y = 0; y < grid.height(); ++y)
@@ -1299,8 +1309,12 @@ Co::Task<void> Battle::start()
 		{
 			if (!pauseTask)
 			{
-				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
-				BattleMoveAStar(
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
+				this->BattleMoveAStar(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
 					classBattle.classMapBattle.value().mapData,
@@ -1316,25 +1330,18 @@ Co::Task<void> Battle::start()
 			System::Sleep(1);
 		}
 	});
-	//task = Async(BattleMoveAStar,
-	//	std::ref(classBattle.listOfAllEnemyUnit),
-	//	std::ref(classBattle.listOfAllUnit),
-	//	std::ref(classBattle.classMapBattle.value().mapData),
-	//	std::ref(aiRootEnemy),
-	//	std::ref(debugRoot), std::ref(debugAstar),
-	//	std::ref(columnQuads),
-	//	std::ref(rowQuads),
-	//	N,
-	//	std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));  
-
 	// 経路探索スレッド起動
 	taskMyUnits = Async([this]() {
 		while (!abortMyUnits)
 		{
 			if (!pauseTaskMyUnits)
 			{
-				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
-				BattleMoveAStarMyUnitsKai(
+				HashTable<Point, const Unit*> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
+				this->BattleMoveAStarMyUnitsKai(
 					classBattle.listOfAllUnit,
 					classBattle.listOfAllEnemyUnit,
 					classBattle.classMapBattle.value().mapData,
@@ -1507,6 +1514,7 @@ void Battle::handleBuildMenuSelectionA()
 	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
 	//全部変更可能性あるので非const
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& loau : classBattle.listOfAllUnit)
 	{
 		for (auto& itemUnit : loau.ListClassUnit)
@@ -1731,46 +1739,49 @@ void Battle::updateBuildQueue()
 		int32 count;
 	};
 	Array<MyAnonymousClass> temo;
-	for (auto& loau : classBattle.listOfAllUnit)
 	{
-		for (auto& itemUnit : loau.ListClassUnit)
+		std::scoped_lock lock(classBattle.unitListMutex);
+		for (auto& loau : classBattle.listOfAllUnit)
 		{
-			if (itemUnit.arrYoyakuBuild.isEmpty()) continue;
-
-			const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
-			auto tempBA = itemUnit.arrYoyakuBuild.front().result;
-			//int32 kuhukgiuy = itemUnit.arrYoyakuBuild.front().
-			const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
-			const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
-			const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
-
-			if (itemUnit.progressTime >= 1.0)
+			for (auto& itemUnit : loau.ListClassUnit)
 			{
-				itemUnit.taskTimer.reset();
-				itemUnit.arrYoyakuBuild.pop_front();
-				if (!itemUnit.arrYoyakuBuild.isEmpty())
+				if (itemUnit.arrYoyakuBuild.isEmpty()) continue;
+
+				const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
+				auto tempBA = itemUnit.arrYoyakuBuild.front().result;
+				//int32 kuhukgiuy = itemUnit.arrYoyakuBuild.front().
+				const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
+				const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
+				const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
+
+				if (itemUnit.progressTime >= 1.0)
 				{
-					itemUnit.progressTime = 0.0;
-					itemUnit.taskTimer.restart();
-				}
-				else
-				{
-					itemUnit.progressTime = -1.0;
+					itemUnit.taskTimer.reset();
+					itemUnit.arrYoyakuBuild.pop_front();
+					if (!itemUnit.arrYoyakuBuild.isEmpty())
+					{
+						itemUnit.progressTime = 0.0;
+						itemUnit.taskTimer.restart();
+					}
+					else
+					{
+						itemUnit.progressTime = -1.0;
+					}
+
+					if (tempBA.type == U"unit")
+					{
+						MyAnonymousClass yfyu;
+						yfyu.spawn = tempBA.spawn;
+						yfyu.tempColBuildingTarget = tempColBuildingTarget;
+						yfyu.tempRowBuildingTarget = tempRowBuildingTarget;
+						yfyu.count = createCount;
+						temo.push_back(yfyu);
+					}
 				}
 
-				if (tempBA.type == U"unit")
-				{
-					MyAnonymousClass yfyu;
-					yfyu.spawn = tempBA.spawn;
-					yfyu.tempColBuildingTarget = tempColBuildingTarget;
-					yfyu.tempRowBuildingTarget = tempRowBuildingTarget;
-					yfyu.count = createCount;
-					temo.push_back(yfyu);
-				}
+				// プログレス更新
+				itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
 			}
-
-			// プログレス更新
-			itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
 		}
 	}
 
@@ -1786,6 +1797,7 @@ Co::Task<> Battle::checkCancelSelectionByUIArea()
 		longBuildSelectTragetId = -1;
 		IsResourceSelectTraget = false;
 
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& target : classBattle.listOfAllUnit)
 		{
 			for (auto& unit : target.ListClassUnit)
@@ -1802,6 +1814,7 @@ void Battle::updateUnitMovements()
 {
 	//移動処理
 	{
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& item : classBattle.listOfAllUnit)
 		{
 			for (auto& itemUnit : item.ListClassUnit)
@@ -1817,7 +1830,7 @@ void Battle::updateUnitMovements()
 				if (itemUnit.moveState == moveState::FlagMoveCalc) continue;
 
 				{
-					std::scoped_lock lock(aiRootMutex);
+					std::scoped_lock lock(this->aiRootMutex);
 					if (!aiRootMy.contains(itemUnit.ID)) continue;
 				}
 				auto& plan = aiRootMy[itemUnit.ID];
@@ -1935,7 +1948,7 @@ void Battle::updateUnitMovements()
 					continue;
 
 				{
-					std::scoped_lock lock(aiRootMutex);
+					std::scoped_lock lock(this->aiRootMutex);
 					if (!aiRootEnemy.contains(itemUnit.ID)) continue;
 				}
 
@@ -2032,6 +2045,7 @@ void Battle::handleSkillUISelection()
 				flagDisplaySkillSetumei = true;
 				nowSelectSkillSetumei = U"";
 				//スキル説明を書く
+				std::scoped_lock lock(classBattle.unitListMutex);
 				for (auto& item : classBattle.listOfAllUnit)
 				{
 					if (!item.FlagBuilding &&
@@ -2114,6 +2128,7 @@ void Battle::handleUnitAndBuildingSelection()
 		// いったん押された建築物の固有IDを走査する
 		// 対象以外のIsSelectを全てfalseにしたいが為
 		long id = -1;
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& item : classBattle.listOfAllUnit)
 		{
 			if (item.FlagBuilding == true &&
@@ -2164,6 +2179,7 @@ void Battle::handleUnitAndBuildingSelection()
 	{
 		if (isSeBu == false)
 		{
+			std::scoped_lock lock(classBattle.unitListMutex);
 			//全ユニット走査、posからrectを生成し、クリックされたかチェック
 			for (auto& target : classBattle.listOfAllUnit)
 			{
@@ -2371,6 +2387,7 @@ bool Battle::canBuildOnTile(const Point& tile) const
 		return false;
 	}
 
+	std::scoped_lock lock(classBattle.unitListMutex);
 	// 建物が既に存在するかチェック
 	for (const auto& group : classBattle.listOfAllUnit)
 	{
@@ -2446,11 +2463,17 @@ void Battle::createBuildingOnTile(const Point& tile, const BuildAction& buildAct
 			ClassHorizontalUnit buildingGroup;
 			buildingGroup.FlagBuilding = true;
 			buildingGroup.ListClassUnit.push_back(newBuilding);
-			classBattle.listOfAllUnit.push_back(buildingGroup);
+			{
+				std::scoped_lock lock(classBattle.unitListMutex);
+				classBattle.listOfAllUnit.push_back(buildingGroup);
+			}
 
 			// A*用ハッシュテーブルに追加
-			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(newBuilding));
-			hsBuildingUnitForAstar[tile] = unitsForHsBuildingUnitForAstar.back().get();
+			{
+				std::scoped_lock lock(buildingMutex);
+				unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(newBuilding));
+				hsBuildingUnitForAstar[tile] = unitsForHsBuildingUnitForAstar.back().get();
+			}
 
 			break;
 		}
@@ -2843,6 +2866,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 	{
 		if (arrayBattleZinkei[0] == true)
 		{
+			std::scoped_lock lock(classBattle.unitListMutex);
 			for (auto& target : classBattle.listOfAllUnit)
 				for (auto& unit : target.ListClassUnit)
 				{
@@ -2854,6 +2878,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 		}
 		else if (arrayBattleZinkei[1] == true)
 		{
+			std::scoped_lock lock(classBattle.unitListMutex);
 			ClassHorizontalUnit liZenei;
 			liZenei = getMovableUnits(classBattle.listOfAllUnit, BattleFormation::F);
 			ClassHorizontalUnit liKouei;
@@ -2911,6 +2936,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 
 		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
 		const RectF selectionRect = RectF::FromPoints(start, end);
+		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& target : classBattle.listOfAllUnit)
 		{
 			for (auto& unit : target.ListClassUnit)
@@ -2932,7 +2958,7 @@ Co::Task<void> Battle::handleRightClickUnitActions(Point start, Point end)
 	co_return;
 }
 /// @brief 建築予約をするのが本質
-/// @param unit 
+/// @param unit
 void Battle::afterMovedPushToBuildMenu(Unit& itemUnit)
 {
 	if (itemUnit.classBuild == U"") return;//そもそも建設出来ないはず
@@ -3039,7 +3065,7 @@ Co::Task<void> Battle::mainLoop()
 					{
 					case UnitTask::MovingToBuild:
 					{
-						std::scoped_lock lock(aiRootMutex);
+						std::scoped_lock lock(this->aiRootMutex);
 						if (aiRootMy[safeUnit->ID].getPath().isEmpty())
 						{
 							safeUnit->currentTask = UnitTask::None;
@@ -3051,7 +3077,7 @@ Co::Task<void> Battle::mainLoop()
 					break;
 					case UnitTask::MovingToResource:
 					{
-						std::scoped_lock lock(aiRootMutex);
+						std::scoped_lock lock(this->aiRootMutex);
 						if (aiRootMy[safeUnit->ID].getPath().isEmpty())
 						{
 							safeUnit->currentTask = UnitTask::WorkingOnResource;
@@ -3218,14 +3244,17 @@ void Battle::drawFog(const RectF& cameraView) const
 void Battle::drawBuildings(const RectF& cameraView) const
 {
 	Array<Unit> buildings;
-	for (const auto& group : { classBattle.listOfAllUnit, classBattle.listOfAllEnemyUnit })
 	{
-		for (const auto& item : group)
+		std::scoped_lock lock(classBattle.unitListMutex);
+		for (const auto& group : { classBattle.listOfAllUnit, classBattle.listOfAllEnemyUnit })
 		{
-			if (item.FlagBuilding)
+			for (const auto& item : group)
 			{
-				for (const auto& u : item.ListClassUnit)
-					buildings.push_back(u);
+				if (item.FlagBuilding)
+				{
+					for (const auto& u : item.ListClassUnit)
+						buildings.push_back(u);
+				}
 			}
 		}
 	}
@@ -3247,6 +3276,7 @@ void Battle::drawUnits(const RectF& cameraView) const
 {
 	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB)
 		{
+			std::scoped_lock lock(classBattle.unitListMutex);
 			for (const auto& item : group)
 			{
 				if (item.FlagBuilding || item.ListClassUnit.empty())
@@ -3318,6 +3348,7 @@ void Battle::drawHealthBars() const
 				}
 			}
 		};
+	std::scoped_lock lock(classBattle.unitListMutex);
 	drawBars(classBattle.listOfAllUnit);
 	drawBars(classBattle.listOfAllEnemyUnit);
 }
@@ -3367,12 +3398,15 @@ void Battle::drawBuildMenu() const
 	const Rect bbb = Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
 
 	String targetClassBuild = U"";
-	for (auto& item : classBattle.listOfAllUnit)
 	{
-		for (auto& itemUnit : item.ListClassUnit)
+		std::scoped_lock lock(classBattle.unitListMutex);
+		for (auto& item : classBattle.listOfAllUnit)
 		{
-			if (itemUnit.IsSelect == false) continue;
-			targetClassBuild = itemUnit.classBuild;
+			for (auto& itemUnit : item.ListClassUnit)
+			{
+				if (itemUnit.IsSelect == false) continue;
+				targetClassBuild = itemUnit.classBuild;
+			}
 		}
 	}
 	for (auto&& [i, re] : Indexed(htBuildMenuRenderTexture))
@@ -3381,6 +3415,7 @@ void Battle::drawBuildMenu() const
 		re.second.draw(baseX, baseY);
 	}
 
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& item : classBattle.listOfAllUnit)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
@@ -3844,11 +3879,12 @@ Texture Battle::LoadPremultipliedTexture(FilePathView path)
 	return Texture{ image };
 }
 
-/// @brief 
-/// @param ID 
-/// @return 
+/// @brief
+/// @param ID
+/// @return
 Unit& Battle::GetCU(long ID)
 {
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& temp : classBattle.listOfAllUnit)
 		for (auto& temptemp : temp.ListClassUnit)
 			if (temptemp.ID == ID)
@@ -3859,6 +3895,7 @@ Unit& Battle::GetCU(long ID)
 /// @return ユニットのポインタ（見つからない場合はnullptr）
 Unit* Battle::GetCUSafe(long ID)
 {
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& temp : classBattle.listOfAllUnit)
 	{
 		for (auto& temptemp : temp.ListClassUnit)
@@ -3870,11 +3907,12 @@ Unit* Battle::GetCUSafe(long ID)
 	return nullptr;
 }
 /// @brief 全ユニットから「移動可能なユニット」だけを抽出して部隊ごとにまとめる
-/// @return 
+/// @return
 Array<Array<Unit*>> Battle::GetMovableUnitGroups()
 {
 	Array<Array<Unit*>> groups;
 
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& target : classBattle.listOfAllUnit)
 	{
 		Array<Unit*> group;
@@ -3895,6 +3933,7 @@ ClassHorizontalUnit Battle::getMovableUnits(Array<ClassHorizontalUnit>& source, 
 {
 	ClassHorizontalUnit result;
 
+	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
@@ -3906,10 +3945,10 @@ ClassHorizontalUnit Battle::getMovableUnits(Array<ClassHorizontalUnit>& source, 
 }
 
 /// @brief 指定されたユニットの部隊に対して、指定された開始位置と終了位置に沿ってユニットを配置します。
-/// @param units 
-/// @param start 
-/// @param end 
-/// @param rowIndex 
+/// @param units
+/// @param start
+/// @param end
+/// @param rowIndex
 void Battle::AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex)
 {
 	const int32 count = units.size();

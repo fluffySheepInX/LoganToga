@@ -410,7 +410,7 @@
       "name_tag": "keisouTumejo",
       "name": "軽装歩兵詰所",
       "isBuilding": "true",
-      "classBuild": "Kouhei",
+      "classBuild": "keisouHohei",
       "race": "human",
       "image": "bu-keiso.png",
       "friend": "LineInfantryM14",

@@ -941,5 +941,8 @@
     <ClInclude Include="ClassUnitMovePlan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="280_ClassExecuteSkills.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
