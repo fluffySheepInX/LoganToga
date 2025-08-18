@@ -1038,14 +1038,16 @@ void Battle::renB()
 /// @param enemy 
 void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy)
 {
-	std::scoped_lock lock(classBattle.unitListMutex);
-	// 事前に容量を確保して配列の再配置を防ぐ
-	const size_t expectedSize = listU.size() + 1;
-	if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
 	{
-		listU.reserve(expectedSize + 50);
-		Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
-			listU.capacity(), expectedSize + 50);
+		std::scoped_lock lock(classBattle.unitListMutex);
+		// 事前に容量を確保して配列の再配置を防ぐ
+		const size_t expectedSize = listU.size() + 1;
+		if (listU.capacity() < expectedSize + 10) // 余裕をもって容量確保
+		{
+			listU.reserve(expectedSize + 50);
+			Print << U"UnitRegister: 配列容量を拡張しました ({} -> {})"_fmt(
+				listU.capacity(), expectedSize + 50);
+		}
 	}
 
 	//新しいコピーを作る
@@ -1084,7 +1086,10 @@ void Battle::UnitRegister(String unitName, int32 col, int32 row, int32 num, Arra
 				}
 			}
 
-			listU.push_back(cuu);
+			{
+				std::scoped_lock lock(classBattle.unitListMutex);
+				listU.push_back(cuu);
+			}
 		}
 	}
 }
@@ -1177,7 +1182,6 @@ Co::Task<void> Battle::start()
 		//skill抽出
 		Array<Skill> table;
 		{
-			std::scoped_lock lock(classBattle.unitListMutex);
 			for (auto& item : classBattle.listOfAllUnit)
 			{
 				for (auto& itemUnit : item.ListClassUnit)
@@ -1218,7 +1222,6 @@ Co::Task<void> Battle::start()
 
 	//始点設定
 	{
-		std::scoped_lock lock(classBattle.unitListMutex);
 		viewPos = ToTileBottomCenter(classBattle.listOfAllUnit[0].ListClassUnit[0].initTilePos, N);
 	}
 	camera.jumpTo(viewPos, camera.getTargetScale());
@@ -1226,7 +1229,6 @@ Co::Task<void> Battle::start()
 
 	//ユニット体力バーの設定
 	{
-		std::scoped_lock lock(classBattle.unitListMutex);
 		for (auto& item : classBattle.listOfAllUnit)
 		{
 			if (!item.FlagBuilding &&
@@ -1286,11 +1288,7 @@ Co::Task<void> Battle::start()
 		}
 	}
 
-	{
-		std::scoped_lock lock(classBattle.unitListMutex);
-		classBattle.listOfAllUnit.push_back(chuSor);
-	}
-	//classBattle.listOfAllEnemyUnit.push_back(chuDef);
+	classBattle.listOfAllUnit.push_back(chuSor);
 
 	//ミニマップ用
 	for (int32 y = 0; y < grid.height(); ++y)
@@ -1327,17 +1325,6 @@ Co::Task<void> Battle::start()
 			System::Sleep(1);
 		}
 	});
-	//task = Async(BattleMoveAStar,
-	//	std::ref(classBattle.listOfAllEnemyUnit),
-	//	std::ref(classBattle.listOfAllUnit),
-	//	std::ref(classBattle.classMapBattle.value().mapData),
-	//	std::ref(aiRootEnemy),
-	//	std::ref(debugRoot), std::ref(debugAstar),
-	//	std::ref(columnQuads),
-	//	std::ref(rowQuads),
-	//	N,
-	//	std::ref(abort), std::ref(pauseTask), std::ref(changeUnitMember));
-
 	// 経路探索スレッド起動
 	taskMyUnits = Async([this]() {
 		while (!abortMyUnits)
@@ -1450,7 +1437,6 @@ void Battle::refreshFogOfWar()
 	for (auto&& ttt : visibilityMap)
 		ttt = Visibility::Unseen;
 
-	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& units : classBattle.listOfAllUnit)
 		UpdateVisibility(std::ref(visibilityMap), std::ref(units.ListClassUnit), N);
 }
@@ -1495,7 +1481,6 @@ void Battle::updateUnitHealthBars()
 			unit.bLiquidBarBattle.ChangePoint(unit.GetNowPosiCenter() + offset);
 		};
 
-	std::scoped_lock lock(classBattle.unitListMutex);
 	for (auto& group : classBattle.listOfAllUnit)
 	{
 		if (group.FlagBuilding || group.ListClassUnit.empty())

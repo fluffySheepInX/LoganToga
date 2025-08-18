@@ -1049,7 +1049,6 @@ private:
 	void updateBuildQueue();
 	void processUnitBuildQueue(Unit& unit, Array<ProductionOrder>& productionList);
 	void handleUnitTooltip();
-	void processBuildOnTiles(const Array<Point>& tiles);
 	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
 	void handleBuildTargetSelection();
 

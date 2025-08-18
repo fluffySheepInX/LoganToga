@@ -447,6 +447,7 @@ void Battle001::UnitRegister(
 
 		if (uu.IsBuilding)
 		{
+			std::scoped_lock lock(classBattleManage.unitListMutex);
 			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
 			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
 			auto u = std::make_shared<Unit>(uu);
@@ -539,8 +540,6 @@ void Battle001::UpdateVisibility(Grid<Visibility>& vis, const Array<Unit>& units
 /// @param mapTile マップのタイル情報を保持するMapTile型の参照。
 void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visibility>& visibilityMap, MapTile& mapTile)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
-
 	// 💡 差分更新に変更
 	static HashSet<Point> lastVisibleTiles;
 	HashSet<Point> currentVisibleTiles;
@@ -1351,7 +1350,6 @@ void Battle001::handleBuildMenuSelectionA()
 	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
 	// 通常ユニットの処理
-	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& loau : classBattleManage.listOfAllUnit)
 	{
 		for (auto& itemUnit : loau.ListClassUnit)
@@ -1664,7 +1662,6 @@ void Battle001::updateUnitHealthBars()
 			unit.bLiquidBarBattle.ChangePoint(unit.GetNowPosiCenter() + offset);
 		};
 
-	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& group : classBattleManage.listOfAllUnit)
 	{
 		if (group.FlagBuilding || group.ListClassUnit.empty())
@@ -1995,7 +1992,6 @@ void Battle001::handleUnitTooltip()
 	bool foundUnit = false;
 	String currentInfo; // 現在のユニット情報を保存
 	{
-
 		const auto t = camera.createTransformer();
 
 		// マウス位置のユニットを検索
@@ -2534,85 +2530,6 @@ void Battle001::handleBuildTargetSelection()
 	}
 }
 
-void Battle001::processBuildOnTiles(const Array<Point>& tiles)
-{
-	if (longBuildSelectTragetId == -1)
-	{
-		Print << U"建築ユニットが選択されていません";
-		return;
-	}
-
-	Unit* selectedUnitPtr = nullptr;
-	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
-		for (auto& group : classBattleManage.listOfAllUnit) {
-			for (auto& unit : group.ListClassUnit) {
-				if (unit.ID == longBuildSelectTragetId) {
-					selectedUnitPtr = &unit;
-					break;
-				}
-			}
-			if (selectedUnitPtr) break;
-		}
-	}
-
-	if (!selectedUnitPtr) {
-		Print << U"選択された建築ユニットが見つかりません";
-		return;
-	}
-	Unit& selectedUnit = *selectedUnitPtr;
-
-
-	// 建築可能なタイルの数をカウント
-	Array<Point> validTiles;
-	for (const auto& tile : tiles)
-	{
-		if (canBuildOnTile(tile, classBattleManage, mapTile))
-		{
-			validTiles.push_back(tile);
-		}
-	}
-
-	if (validTiles.isEmpty())
-	{
-		Print << U"建築可能なタイルがありません";
-		return;
-	}
-
-	// 建築可能なタイルに対して建築処理を実行
-	int32 builtCount = 0;
-	for (const auto& tile : validTiles)
-	{
-		// 建築メニューから選択された建築アクションを取得
-		BuildAction buildAction = selectedUnit.tempIsBuildSelectTragetBuildAction;
-
-		// タイル座標を建築ターゲットに設定
-		buildAction.rowBuildingTarget = tile.y;
-		buildAction.colBuildingTarget = tile.x;
-
-		// 建築予約に追加
-		selectedUnit.arrYoyakuBuild.push_back(buildAction);
-		builtCount++;
-
-		Print << U"タイル({}, {})に建築を予約しました"_fmt(tile.x, tile.y);
-	}
-
-	// 建築タイマーを開始（まだ動いていない場合）
-	if (!selectedUnit.taskTimer.isRunning() && !selectedUnit.arrYoyakuBuild.isEmpty())
-	{
-		selectedUnit.taskTimer.restart();
-		selectedUnit.progressTime = 0.0;
-	}
-
-	Print << U"合計 {} 箇所に建築を予約しました"_fmt(builtCount);
-
-	// 建築選択状態を解除
-	IsBuildSelectTraget = false;
-	IsBuildMenuHome = false;
-	selectedUnit.IsSelect = false;
-	longBuildSelectTragetId = -1;
-}
-
 void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 {
 	if (longBuildSelectTragetId == -1)
@@ -2704,7 +2621,6 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 	longBuildSelectTragetId = -1;
 }
 
-
 void Battle001::processUnitBuildQueue(Unit& itemUnit, Array<ProductionOrder>& productionList)
 {
 	if (itemUnit.arrYoyakuBuild.isEmpty()) return;
@@ -2772,7 +2688,6 @@ void Battle001::updateBuildQueue()
 
 	// 通常ユニットのキューを処理
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (auto& loau : classBattleManage.listOfAllUnit)
 		{
 			for (auto& itemUnit : loau.ListClassUnit)
@@ -2804,8 +2719,7 @@ void Battle001::startAsyncFogCalculation()
 			{
 				Grid<Visibility> tempMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
 
-				// 💡 ユニットデータのスナップショットを作成
-
+				//ユニットデータのスナップショットを作成
 				//TODO:全てのアクセスを mutex で保護する
 				Array<Unit> unitSnapshot;
 				{
@@ -3415,7 +3329,6 @@ Co::Task<void> Battle001::mainLoop()
 		}
 
 		//体力が無くなったunit削除処理
-		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (auto& item : classBattleManage.listOfAllUnit)
 		{
 			for (auto& itemUnit : item.ListClassUnit)
@@ -3536,7 +3449,6 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 {
 	Array<std::shared_ptr<Unit>> buildings;
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (const auto& group : { classBattleManage.hsMyUnitBuilding,
 			classBattleManage.hsEnemyUnitBuilding })
 		{
@@ -3566,8 +3478,6 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 /// @param classBattleManage ユニット情報を管理するClassBattleオブジェクト。
 void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattleManage) const
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
-
 	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB)
 		{
 			/// 範囲選択が本質の処理では、forループからHashTableへの置き換えは意味がない
@@ -3718,7 +3628,6 @@ bool Battle001::canBuildOnTile(const Point& tile, const ClassBattle& classBattle
 	}
 
 	// ユニットが存在するかチェック
-	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (const auto& group : classBattleManage.listOfAllUnit)
 	{
 		for (const auto& unit : group.ListClassUnit)
@@ -3922,7 +3831,6 @@ void Battle001::drawBuildMenu() const
 	Array<BuildAction> arrYoyakuBuild;
 	Stopwatch taskTimer;
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
 		for (auto& group : classBattleManage.listOfAllUnit)
 		{
 			for (auto& unit : group.ListClassUnit)
