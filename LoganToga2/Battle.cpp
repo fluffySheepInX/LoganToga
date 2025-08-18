@@ -3052,7 +3052,6 @@ Co::Task<void> Battle::mainLoop()
 		updateBuildQueue();
 		try {
 			// 移動処理 - 安全なインデックスベースループ
-			std::scoped_lock lock(classBattle.unitListMutex);
 			for (size_t groupIndex = 0; groupIndex < classBattle.listOfAllUnit.size(); ++groupIndex)
 			{
 				auto& item = classBattle.listOfAllUnit[groupIndex];
