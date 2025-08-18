@@ -3024,153 +3024,143 @@ Co::Task<void> Battle001::mainLoop()
 			Array<ClassExecuteSkills> deleteCES;
 			for (ClassExecuteSkills& loop_Battle_player_skills : m_Battle_player_skills)
 			{
-				Array<int32> arrayNo;
-				for (auto& target : loop_Battle_player_skills.ArrayClassBullet)
-				{
-					target.lifeTime += Scene::DeltaTime();
-
-					switch (loop_Battle_player_skills.classSkill.SkillType)
-					{
-					case SkillType::missileAdd:
-					{
-						//時間が過ぎたら補正を終了する
-						if (target.lifeTime > target.duration)
-						{
-							loop_Battle_player_skills.classUnit->cts.Speed = 0.0;
-							loop_Battle_player_skills.classUnit->cts.plus_speed_time = 0.0;
-						}
-					}
-					break;
-					default:
-						break;
-					}
-
-					if (target.lifeTime > target.duration)
-					{
-						loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
-
-						//消滅
-						arrayNo.push_back(target.No);
-
-						break;
-					}
-					else
-					{
-						//イージングによって速度を変更させる
-						if (loop_Battle_player_skills.classSkill.Easing.has_value() == true)
-						{
-							// 移動の割合 0.0～1.0
-							const double t = Min(target.stopwatch.sF(), 1.0);
-							switch (loop_Battle_player_skills.classSkill.Easing.value())
-							{
-							case SkillEasing::easeOutExpo:
-							{
-								const double ea = EaseOutExpo(t);
-								target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))),
-									(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))));
-							}
-							break;
-							default:
-								break;
-							}
-						}
-						else
-						{
-							switch (loop_Battle_player_skills.classSkill.MoveType)
-							{
-							case MoveType::line:
-							{
-								if (loop_Battle_player_skills.classSkill.SkillCenter == SkillCenter::end)
-								{
-									Vec2 offPos = { -1,-1 };
-									for (size_t i = 0; i < classBattleManage.listOfAllUnit.size(); i++)
-									{
-										for (size_t j = 0; j < classBattleManage.listOfAllUnit[i].ListClassUnit.size(); j++)
-										{
-											if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllUnit[i].ListClassUnit[j].ID)
-											{
-												offPos = classBattleManage.listOfAllUnit[i].ListClassUnit[j].GetNowPosiCenter();
-											}
-										}
-									}
-									target.NowPosition = offPos;
-								}
-								else
-								{
-									target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
-										(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
-								}
-							}
-							break;
-							case MoveType::circle:
-							{
-								Vec2 offPos = { -1,-1 };
-								for (size_t i = 0; i < classBattleManage.listOfAllUnit.size(); i++)
-								{
-									for (size_t j = 0; j < classBattleManage.listOfAllUnit[i].ListClassUnit.size(); j++)
-									{
-										if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllUnit[i].ListClassUnit[j].ID)
-										{
-											offPos = classBattleManage.listOfAllUnit[i].ListClassUnit[j].GetNowPosiCenter();
-										}
-									}
-								}
-
-								const double theta = (target.RushNo * 60_deg + time * (loop_Battle_player_skills.classSkill.speed * Math::Pi / 180.0));
-								const Vec2 pos = OffsetCircular{ offPos, loop_Battle_player_skills.classSkill.radius, theta };
-
-								target.NowPosition = pos;
-							}
-							break;
-							case MoveType::swing:
-							{
-								const float degg = target.degree + (loop_Battle_player_skills.classSkill.speed / 100);
-								if (loop_Battle_player_skills.classSkill.range + target.initDegree > degg)
-								{
-									//範囲内
-									target.degree = degg;
-									target.radian = ToRadians(target.degree);
-								}
-								else
-								{
-
-								}
-							}
-							break;
-							default:
-								target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
-									(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
-								break;
-							}
-						}
-					}
-
-					//衝突したらunitのHPを減らし、消滅
-					RectF rrr = { Arg::bottomCenter(target.NowPosition),(double)loop_Battle_player_skills.classSkill.w,(double)loop_Battle_player_skills.classSkill.h };
-
-					bool bombCheck = false;
-					if (loop_Battle_player_skills.classSkill.SkillType == SkillType::heal)
-					{
-						ColliderCheckHeal(rrr, target, loop_Battle_player_skills, arrayNo, loop_Battle_player_skills.classUnitHealTarget);
-					}
-					else
-					{
-						ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllEnemyUnit);
-					}
-				}
-
-				loop_Battle_player_skills.ArrayClassBullet.remove_if([&](const ClassBullets& cb)
-					{
-						if (arrayNo.includes(cb.No))
-						{
-							return true;
-						}
-						else
-						{
-							return false;
-						}
-					});
-				arrayNo.clear();
+				//Array<int32> arrayNo;
+				//for (auto& target : loop_Battle_player_skills.ArrayClassBullet)
+				//{
+				//	target.lifeTime += Scene::DeltaTime();
+				//	switch (loop_Battle_player_skills.classSkill.SkillType)
+				//	{
+				//	case SkillType::missileAdd:
+				//	{
+				//		//時間が過ぎたら補正を終了する
+				//		if (target.lifeTime > target.duration)
+				//		{
+				//			loop_Battle_player_skills.classUnit->cts.Speed = 0.0;
+				//			loop_Battle_player_skills.classUnit->cts.plus_speed_time = 0.0;
+				//		}
+				//	}
+				//	break;
+				//	default:
+				//		break;
+				//	}
+				//	if (target.lifeTime > target.duration)
+				//	{
+				//		loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
+				//		//消滅
+				//		arrayNo.push_back(target.No);
+				//		break;
+				//	}
+				//	else
+				//	{
+				//		//イージングによって速度を変更させる
+				//		if (loop_Battle_player_skills.classSkill.Easing.has_value() == true)
+				//		{
+				//			// 移動の割合 0.0～1.0
+				//			const double t = Min(target.stopwatch.sF(), 1.0);
+				//			switch (loop_Battle_player_skills.classSkill.Easing.value())
+				//			{
+				//			case SkillEasing::easeOutExpo:
+				//			{
+				//				const double ea = EaseOutExpo(t);
+				//				target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))),
+				//					(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))));
+				//			}
+				//			break;
+				//			default:
+				//				break;
+				//			}
+				//		}
+				//		else
+				//		{
+				//			switch (loop_Battle_player_skills.classSkill.MoveType)
+				//			{
+				//			case MoveType::line:
+				//			{
+				//				if (loop_Battle_player_skills.classSkill.SkillCenter == SkillCenter::end)
+				//				{
+				//					Vec2 offPos = { -1,-1 };
+				//					for (size_t i = 0; i < classBattleManage.listOfAllUnit.size(); i++)
+				//					{
+				//						for (size_t j = 0; j < classBattleManage.listOfAllUnit[i].ListClassUnit.size(); j++)
+				//						{
+				//							if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllUnit[i].ListClassUnit[j].ID)
+				//							{
+				//								offPos = classBattleManage.listOfAllUnit[i].ListClassUnit[j].GetNowPosiCenter();
+				//							}
+				//						}
+				//					}
+				//					target.NowPosition = offPos;
+				//				}
+				//				else
+				//				{
+				//					target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
+				//						(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
+				//				}
+				//			}
+				//			break;
+				//			case MoveType::circle:
+				//			{
+				//				Vec2 offPos = { -1,-1 };
+				//				for (size_t i = 0; i < classBattleManage.listOfAllUnit.size(); i++)
+				//				{
+				//					for (size_t j = 0; j < classBattleManage.listOfAllUnit[i].ListClassUnit.size(); j++)
+				//					{
+				//						if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllUnit[i].ListClassUnit[j].ID)
+				//						{
+				//							offPos = classBattleManage.listOfAllUnit[i].ListClassUnit[j].GetNowPosiCenter();
+				//						}
+				//					}
+				//				}
+				//				const double theta = (target.RushNo * 60_deg + time * (loop_Battle_player_skills.classSkill.speed * Math::Pi / 180.0));
+				//				const Vec2 pos = OffsetCircular{ offPos, loop_Battle_player_skills.classSkill.radius, theta };
+				//				target.NowPosition = pos;
+				//			}
+				//			break;
+				//			case MoveType::swing:
+				//			{
+				//				const float degg = target.degree + (loop_Battle_player_skills.classSkill.speed / 100);
+				//				if (loop_Battle_player_skills.classSkill.range + target.initDegree > degg)
+				//				{
+				//					//範囲内
+				//					target.degree = degg;
+				//					target.radian = ToRadians(target.degree);
+				//				}
+				//				else
+				//				{
+				//				}
+				//			}
+				//			break;
+				//			default:
+				//				target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
+				//					(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
+				//				break;
+				//			}
+				//		}
+				//	}
+				//	//衝突したらunitのHPを減らし、消滅
+				//	RectF rrr = { Arg::bottomCenter(target.NowPosition),(double)loop_Battle_player_skills.classSkill.w,(double)loop_Battle_player_skills.classSkill.h };
+				//	bool bombCheck = false;
+				//	if (loop_Battle_player_skills.classSkill.SkillType == SkillType::heal)
+				//	{
+				//		ColliderCheckHeal(rrr, target, loop_Battle_player_skills, arrayNo, loop_Battle_player_skills.classUnitHealTarget);
+				//	}
+				//	else
+				//	{
+				//		ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllEnemyUnit);
+				//	}
+				//}
+				//loop_Battle_player_skills.ArrayClassBullet.remove_if([&](const ClassBullets& cb)
+				//	{
+				//		if (arrayNo.includes(cb.No))
+				//		{
+				//			return true;
+				//		}
+				//		else
+				//		{
+				//			return false;
+				//		}
+				//	});
+				//arrayNo.clear();
 			}
 			m_Battle_player_skills.remove_if([&](const ClassExecuteSkills& a) { return a.ArrayClassBullet.size() == 0; });
 		}
@@ -3178,136 +3168,128 @@ Co::Task<void> Battle001::mainLoop()
 			Array<ClassExecuteSkills> deleteCES;
 			for (ClassExecuteSkills& loop_Battle_player_skills : m_Battle_enemy_skills)
 			{
-				Array<int32> arrayNo;
-				for (auto& target : loop_Battle_player_skills.ArrayClassBullet)
-				{
-					target.lifeTime += Scene::DeltaTime();
-
-					if (target.lifeTime > target.duration)
-					{
-						loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
-
-						//消滅
-						arrayNo.push_back(target.No);
-
-						break;
-					}
-					else
-					{
-						//イージングによって速度を変更させる
-						if (loop_Battle_player_skills.classSkill.Easing.has_value() == true)
-						{
-							// 移動の割合 0.0～1.0
-							const double t = Min(target.stopwatch.sF(), 1.0);
-							switch (loop_Battle_player_skills.classSkill.Easing.value())
-							{
-							case SkillEasing::easeOutExpo:
-							{
-								const double ea = EaseOutExpo(t);
-								target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))),
-									(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))));
-							}
-							break;
-							default:
-								break;
-							}
-						}
-						else
-						{
-							switch (loop_Battle_player_skills.classSkill.MoveType)
-							{
-							case MoveType::line:
-							{
-								if (loop_Battle_player_skills.classSkill.SkillCenter == SkillCenter::end)
-								{
-									Vec2 offPos = { -1,-1 };
-									for (size_t i = 0; i < classBattleManage.listOfAllEnemyUnit.size(); i++)
-									{
-										for (size_t j = 0; j < classBattleManage.listOfAllEnemyUnit[i].ListClassUnit.size(); j++)
-										{
-											if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].ID)
-											{
-												offPos = classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].GetNowPosiCenter();
-											}
-										}
-									}
-									target.NowPosition = offPos;
-								}
-								else
-								{
-									target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
-										(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
-								}
-							}
-							break;
-							case MoveType::circle:
-							{
-								Vec2 offPos = { -1,-1 };
-								for (size_t i = 0; i < classBattleManage.listOfAllEnemyUnit.size(); i++)
-								{
-									for (size_t j = 0; j < classBattleManage.listOfAllEnemyUnit[i].ListClassUnit.size(); j++)
-									{
-										if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].ID)
-										{
-											offPos = classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].GetNowPosiCenter();
-										}
-									}
-								}
-
-								const double theta = (target.RushNo * 60_deg + time * (loop_Battle_player_skills.classSkill.speed * Math::Pi / 180.0));
-								const Vec2 pos = OffsetCircular{ offPos, loop_Battle_player_skills.classSkill.radius, theta };
-
-								target.NowPosition = pos;
-							}
-							break;
-							case MoveType::swing:
-							{
-								const float degg = target.degree + (loop_Battle_player_skills.classSkill.speed / 100);
-								if (loop_Battle_player_skills.classSkill.range + target.initDegree > degg)
-								{
-									//範囲内
-									target.degree = degg;
-									target.radian = ToRadians(target.degree);
-								}
-								else
-								{
-
-								}
-							}
-							break;
-							default:
-								target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
-									(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
-								break;
-							}
-						}
-					}
-
-					//衝突したらunitのHPを減らし、消滅
-					RectF rrr = { Arg::bottomCenter(target.NowPosition),(double)loop_Battle_player_skills.classSkill.w,(double)loop_Battle_player_skills.classSkill.h };
-
-					bool bombCheck = false;
-					if (loop_Battle_player_skills.classSkill.SkillType == SkillType::heal)
-					{
-						ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllEnemyUnit);
-					}
-					else
-					{
-						ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllUnit);
-					}
-				}
-				loop_Battle_player_skills.ArrayClassBullet.remove_if([&](const ClassBullets& cb)
-					{
-						if (arrayNo.includes(cb.No))
-						{
-							return true;
-						}
-						else
-						{
-							return false;
-						}
-					});
-				arrayNo.clear();
+				//Array<int32> arrayNo;
+				//for (auto& target : loop_Battle_player_skills.ArrayClassBullet)
+				//{
+				//	target.lifeTime += Scene::DeltaTime();
+				//	if (target.lifeTime > target.duration)
+				//	{
+				//		loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
+				//		//消滅
+				//		arrayNo.push_back(target.No);
+				//		break;
+				//	}
+				//	else
+				//	{
+				//		//イージングによって速度を変更させる
+				//		if (loop_Battle_player_skills.classSkill.Easing.has_value() == true)
+				//		{
+				//			// 移動の割合 0.0～1.0
+				//			const double t = Min(target.stopwatch.sF(), 1.0);
+				//			switch (loop_Battle_player_skills.classSkill.Easing.value())
+				//			{
+				//			case SkillEasing::easeOutExpo:
+				//			{
+				//				const double ea = EaseOutExpo(t);
+				//				target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))),
+				//					(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100) * (ea* loop_Battle_player_skills.classSkill.EasingRatio))));
+				//			}
+				//			break;
+				//			default:
+				//				break;
+				//			}
+				//		}
+				//		else
+				//		{
+				//			switch (loop_Battle_player_skills.classSkill.MoveType)
+				//			{
+				//			case MoveType::line:
+				//			{
+				//				if (loop_Battle_player_skills.classSkill.SkillCenter == SkillCenter::end)
+				//				{
+				//					Vec2 offPos = { -1,-1 };
+				//					for (size_t i = 0; i < classBattleManage.listOfAllEnemyUnit.size(); i++)
+				//					{
+				//						for (size_t j = 0; j < classBattleManage.listOfAllEnemyUnit[i].ListClassUnit.size(); j++)
+				//						{
+				//							if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].ID)
+				//							{
+				//								offPos = classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].GetNowPosiCenter();
+				//							}
+				//						}
+				//					}
+				//					target.NowPosition = offPos;
+				//				}
+				//				else
+				//				{
+				//					target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
+				//						(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
+				//				}
+				//			}
+				//			break;
+				//			case MoveType::circle:
+				//			{
+				//				Vec2 offPos = { -1,-1 };
+				//				for (size_t i = 0; i < classBattleManage.listOfAllEnemyUnit.size(); i++)
+				//				{
+				//					for (size_t j = 0; j < classBattleManage.listOfAllEnemyUnit[i].ListClassUnit.size(); j++)
+				//					{
+				//						if (loop_Battle_player_skills.UnitID == classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].ID)
+				//						{
+				//							offPos = classBattleManage.listOfAllEnemyUnit[i].ListClassUnit[j].GetNowPosiCenter();
+				//						}
+				//					}
+				//				}
+				//				const double theta = (target.RushNo * 60_deg + time * (loop_Battle_player_skills.classSkill.speed * Math::Pi / 180.0));
+				//				const Vec2 pos = OffsetCircular{ offPos, loop_Battle_player_skills.classSkill.radius, theta };
+				//				target.NowPosition = pos;
+				//			}
+				//			break;
+				//			case MoveType::swing:
+				//			{
+				//				const float degg = target.degree + (loop_Battle_player_skills.classSkill.speed / 100);
+				//				if (loop_Battle_player_skills.classSkill.range + target.initDegree > degg)
+				//				{
+				//					//範囲内
+				//					target.degree = degg;
+				//					target.radian = ToRadians(target.degree);
+				//				}
+				//				else
+				//				{
+				//				}
+				//			}
+				//			break;
+				//			default:
+				//				target.NowPosition = Vec2((target.NowPosition.x + (target.MoveVec.x * (loop_Battle_player_skills.classSkill.speed / 100))),
+				//					(target.NowPosition.y + (target.MoveVec.y * (loop_Battle_player_skills.classSkill.speed / 100))));
+				//				break;
+				//			}
+				//		}
+				//	}
+				//	//衝突したらunitのHPを減らし、消滅
+				//	RectF rrr = { Arg::bottomCenter(target.NowPosition),(double)loop_Battle_player_skills.classSkill.w,(double)loop_Battle_player_skills.classSkill.h };
+				//	bool bombCheck = false;
+				//	if (loop_Battle_player_skills.classSkill.SkillType == SkillType::heal)
+				//	{
+				//		ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllEnemyUnit);
+				//	}
+				//	else
+				//	{
+				//		ColliderCheck(rrr, target, loop_Battle_player_skills, arrayNo, classBattleManage.listOfAllUnit);
+				//	}
+				//}
+				//loop_Battle_player_skills.ArrayClassBullet.remove_if([&](const ClassBullets& cb)
+				//	{
+				//		if (arrayNo.includes(cb.No))
+				//		{
+				//			return true;
+				//		}
+				//		else
+				//		{
+				//			return false;
+				//		}
+				//	});
+				//arrayNo.clear();
 			}
 			m_Battle_enemy_skills.remove_if([&](const ClassExecuteSkills& a) { return a.ArrayClassBullet.size() == 0; });
 		}

@@ -11,6 +11,16 @@ public:
 		iDCount++;
 		return re;
 	}
+	long getBattleIDCount() {
+		long re = battleIDCount;
+		battleIDCount++;
+		return re;
+	}
+	long getDeleteCESIDCount() {
+		long re = deleteCESIDCount;
+		deleteCESIDCount++;
+		return re;
+	}
 
 	String battleSpot;
 	String sortieSpot;
@@ -30,4 +40,6 @@ public:
 	//std::vector<Rect> listBuildingAlive;
 private:
 	long iDCount = 0;
+	long battleIDCount = 0;
+	long deleteCESIDCount = 0;
 };
