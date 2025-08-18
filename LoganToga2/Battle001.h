@@ -304,7 +304,6 @@ public:
 
 	std::atomic<bool> changeUnitMember{ false };
 	std::mutex aiRootMutex;
-	std::mutex arrayMutex;
 
 	Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls) {
 		int minScore = std::numeric_limits<int>::max();
@@ -328,15 +327,16 @@ public:
 		return targetClassAStar;
 	}
 
-	int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
-							Array<ClassHorizontalUnit>& enemy,
-							Array<Array<MapDetail>> mapData,
-							HashTable<int64, ClassUnitMovePlan>& aiRoot,
-							const std::atomic<bool>& abort,
-							const std::atomic<bool>& pause,
-							std::atomic<bool>& changeUnitMember,
-							HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
-							MapTile& mapTile
+	int32 BattleMoveAStar(std::mutex& unitListMutex,
+		Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, ClassUnitMovePlan>& aiRoot,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		std::atomic<bool>& changeUnitMember,
+		HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
+		MapTile& mapTile
 	)
 	{
 		static size_t unitIndexEnemy = 0;
@@ -346,7 +346,7 @@ public:
 		Array<Unit*> flatList;
 
 		// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(unitListMutex);
 		for (auto& group : enemy)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -538,21 +538,22 @@ public:
 		return static_cast<int32>(processed);
 	}
 
-	int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
-							Array<ClassHorizontalUnit>& enemy,
-							Array<Array<MapDetail>> mapData,
-							HashTable<int64, ClassUnitMovePlan>& aiRoot,
-							const std::atomic<bool>& abort,
-							const std::atomic<bool>& pause,
-							HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
-							MapTile& mapTile
+	int32 BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
+		Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, ClassUnitMovePlan>& aiRoot,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		HashTable<Point, Array<Unit*>>& hsBuildingUnitForAstar,
+		MapTile& mapTile
 	)
 	{
 		const auto targetSnapshot = target;
 		HashTable<int32, Unit*> htUnit;
 		// フラット化して高速アクセスに備える
 		Array<Unit*> flatList;
-		std::scoped_lock lock(arrayMutex);
+		std::scoped_lock lock(unitListMutex);
 		for (auto& group : target)
 		{
 			for (auto& unit : group.ListClassUnit)

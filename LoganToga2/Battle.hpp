@@ -8,6 +8,7 @@
 #include "ClassMapBattle.h"
 #include "ClassAStar.h" 
 #include "ClassCommonConfig.h"
+#include <mutex>
 
 /*
 	インデックスとタイルの配置の関係 (N = 4)
@@ -177,6 +178,7 @@ public:
 	Battle(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	~Battle() override;
 private:
+	mutable std::mutex aiRootMutex;
 	SystemString ss;
 	Co::Task<void> start() override;
 
@@ -404,4 +406,46 @@ private:
 	void playBuildCompleteEffect(const Point& tile);
 	Unit* GetCUSafe(long ID);
 
+	int32 BattleMoveAStar(Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, UnitMovePlan>& aiRoot,
+		Array<Array<Point>>& debugRoot,
+		Array<ClassAStar*>& list,
+		Array<Quad>& columnQuads,
+		Array<Quad>& rowQuads,
+		const int32 N,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		std::atomic<bool>& changeUnitMember,
+		HashTable<Point, const Unit*>& hsBuildingUnitForAstar
+	);
+
+	int32 BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, UnitMovePlan>& aiRoot,
+		Array<Array<Point>>& debugRoot,
+		Array<ClassAStar*>& list,
+		Array<Quad>& columnQuads,
+		Array<Quad>& rowQuads,
+		const int32 N,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		HashTable<Point, const Unit*>& hsBuildingUnitForAstar
+	);
+
+	int32 BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
+		Array<ClassHorizontalUnit>& enemy,
+		Array<Array<MapDetail>> mapData,
+		HashTable<int64, UnitMovePlan>& aiRoot,
+		Array<Array<Point>>& debugRoot,
+		Array<ClassAStar*>& list,
+		Array<Quad>& columnQuads,
+		Array<Quad>& rowQuads,
+		const int32 N,
+		const std::atomic<bool>& abort,
+		const std::atomic<bool>& pause,
+		HashTable<Point, const Unit*>& hsBuildingUnitForAstar
+	);
 };
