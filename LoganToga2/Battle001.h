@@ -938,6 +938,7 @@ private:
 	void updateResourceIncome();
 	Co::Task<> checkCancelSelectionByUIArea();
 	void handleBuildMenuSelectionA();
+	void processUnitBuildMenuSelection(Unit& unit);
 	void handleUnitAndBuildingSelection();
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
