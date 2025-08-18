@@ -2777,6 +2777,8 @@ void Battle001::startAsyncFogCalculation()
 				Grid<Visibility> tempMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
 
 				// 💡 ユニットデータのスナップショットを作成
+
+				//TODO:全てのアクセスを mutex で保護する
 				Array<Unit> unitSnapshot;
 				{
 					std::scoped_lock lock(unitDataMutex);
