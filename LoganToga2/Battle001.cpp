@@ -1138,7 +1138,7 @@ void Battle001::handleBuildMenuSelectionA()
 						itemUnit.tempIsBuildSelectTragetBuildAction = hbm.second;
 						tempSelectComRight = hbm.second;
 						itemUnit.tempSelectComRight = tempSelectComRight;
-						break;
+						return;
 					}
 
 					if (hbm.second.category == U"Carrier")
@@ -2424,7 +2424,7 @@ void Battle001::handleBuildTargetSelection()
 	if (const auto index = mapTile.ToIndex(Cursor::PosF(), mapTile.columnQuads, mapTile.rowQuads))
 	{
 		if (mapTile.ToTile(*index, mapTile.N).leftClicked() && longBuildSelectTragetId != -1) {
-			processBuildOnTiles({ *index });
+			processBuildOnTilesWithMovement({ *index });
 		}
 		// 右クリックドラッグによる範囲選択
 		if (MouseR.up() && longBuildSelectTragetId != -1) {
@@ -2585,6 +2585,7 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 	// 最初の建築タスクを開始
 	if (!selectedUnit.arrYoyakuBuild.isEmpty())
 	{
+		selectedUnit.FlagReachedDestination = false;
 		selectedUnit.currentTask = UnitTask::MovingToBuild;
 
 		// 最初のタイルへの移動を開始
@@ -2596,12 +2597,6 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 		selectedUnit.orderPosiLeftLast = targetPos;
 		selectedUnit.vecMove = (selectedUnit.orderPosiLeft - selectedUnit.nowPosiLeft).normalized();
 		selectedUnit.moveState = moveState::MoveAI;
-
-		if (!selectedUnit.taskTimer.isRunning())
-		{
-			selectedUnit.taskTimer.restart();
-			selectedUnit.progressTime = 0.0;
-		}
 	}
 
 	Print << U"合計 {} 箇所への移動→建築を予約しました"_fmt(validTiles.size());
@@ -2629,8 +2624,27 @@ void Battle001::updateBuildQueue()
 		{
 			if (itemUnit.arrYoyakuBuild.isEmpty()) continue;
 
-			const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
-			auto tempBA = itemUnit.arrYoyakuBuild.front().result;
+			auto& buildAction = itemUnit.arrYoyakuBuild.front();
+
+			// isMoveフラグを持つ建築アクションの場合、目的地到着を待つ
+			if (buildAction.isMove)
+			{
+				// まだ目的地に到着していなければ、キューの処理をスキップ
+				if (!itemUnit.FlagReachedDestination)
+				{
+					continue;
+				}
+
+				// 到着済みで、タイマーが動いていなければ開始する
+				if (itemUnit.FlagReachedDestination && !itemUnit.taskTimer.isRunning())
+				{
+					itemUnit.taskTimer.restart();
+					itemUnit.progressTime = 0.0;
+				}
+			}
+
+			const double tempTime = buildAction.buildTime;
+			auto tempBA = buildAction.result;
 			const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
 			const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
 			const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
