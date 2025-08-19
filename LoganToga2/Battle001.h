@@ -34,6 +34,7 @@ public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss, bool isTest);
 	~Battle001() override;
 	MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
+	void initializeForTest(); // Public for test access
 private:
 	struct ProductionOrder {
 		String spawn;
@@ -144,6 +145,9 @@ private:
 	/// @brief 選択範囲の矩形または矢印を描画します。
 	void drawSelectionRectangleOrArrow() const;
 	void drawBuildTargetHighlight(const MapTile& mapTile) const;
+	void drawHUD() const;
+	void drawFormationUI() const;
+	void drawMinimap() const;
 	Array<Point> getRangeSelectedTiles(const Point& start, const Point& end, const MapTile mapTile) const;
 	bool canBuildOnTile(const Point& tile, const ClassBattle& classBattleManage, const MapTile& mapTile) const;
 	void handleDenseFormation(Point end);
