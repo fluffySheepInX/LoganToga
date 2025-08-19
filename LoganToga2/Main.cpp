@@ -9,6 +9,7 @@
 #include "ClassUnit.h"
 #include "ClassCommonConfig.h"
 #include "ClassBuildAction.h"
+#include "Test/TestRunner.h"
 
 void Init(CommonConfig& commonConfig)
 {
@@ -494,6 +495,13 @@ void Main()
 
 		const auto game = Co::PlaySceneFrom<Battle001>(saveData, commonConfig, systemString).runScoped();
 		loop();
+	}
+	else if (argc == 2 && args[1] == U"-test")
+	{
+		TestRunner runner;
+		runner.run();
+		// Tests finished, wait for user to close window.
+		while(System::Update());
 	}
 	else
 	{
