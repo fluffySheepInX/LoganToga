@@ -189,6 +189,12 @@
     <ClCompile Include="ClassUnitMovePlan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AStar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapTile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -942,6 +948,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="280_ClassExecuteSkills.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AStar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MapTile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SafeUnitManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

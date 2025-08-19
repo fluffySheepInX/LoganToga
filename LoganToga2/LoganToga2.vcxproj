@@ -163,6 +163,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AStar.cpp" />
     <ClCompile Include="Battle.cpp" />
     <ClCompile Include="Battle001.cpp" />
     <ClCompile Include="ClassAStar.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="libs\Gaussian\Gaussian.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MapTile.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='BattleDebug|x64'">Create</PrecompiledHeader>
@@ -390,6 +392,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="280_ClassExecuteSkills.h" />
+    <ClInclude Include="AStar.h" />
     <ClInclude Include="Battle.hpp" />
     <ClInclude Include="Battle001.h" />
     <ClInclude Include="ClassAStar.h" />
@@ -419,6 +422,8 @@
     <ClInclude Include="libs\CoTaskLib\Tween.hpp" />
     <ClInclude Include="libs\CoTaskLib\Typewriter.hpp" />
     <ClInclude Include="libs\Gaussian.hpp" />
+    <ClInclude Include="MapTile.h" />
+    <ClInclude Include="SafeUnitManager.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
