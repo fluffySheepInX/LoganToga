@@ -447,11 +447,16 @@ void Battle001::UnitRegister(
 
 		if (uu.IsBuilding)
 		{
-			std::scoped_lock lock(classBattleManage.unitListMutex);
-			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
-			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-			auto u = std::make_shared<Unit>(uu);
-			classBattleManage.hsMyUnitBuilding.insert(u);
+			{
+				std::scoped_lock lock(buildingMutex);
+				unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
+				hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
+			}
+			{
+				std::scoped_lock lock(classBattleManage.unitListMutex);
+				auto u = std::make_shared<Unit>(uu);
+				classBattleManage.hsMyUnitBuilding.insert(u);
+			}
 		}
 	}
 
@@ -2869,7 +2874,11 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskEnemy)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStar(
 					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
@@ -2888,7 +2897,11 @@ Co::Task<void> Battle001::start()
 		{
 			if (!aStar.pauseAStarTaskMyUnits)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				{
+					std::scoped_lock lock(buildingMutex);
+					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+				}
 				aStar.BattleMoveAStarMyUnitsKai(
 					classBattleManage.unitListMutex,
 					classBattleManage.listOfAllUnit,
