@@ -126,7 +126,7 @@ void TestRunner::test_updateUnitMovements()
     // This is a smoke test. We just want to ensure that calling the function doesn't crash.
     try
     {
-        //battle_for_test.updateUnitMovements();
+        battle_for_test.updateUnitMovements();
         ASSERT_TRUE(true, U"Test Case 1: updateUnitMovements() should run without crashing.");
     }
     catch (...)
@@ -136,8 +136,6 @@ void TestRunner::test_updateUnitMovements()
 
     Print << U"Test test_updateUnitMovements PASSED";
 }
-
-
 void TestRunner::run()
 {
     Print << U"--- Starting Tests ---";
@@ -145,6 +143,5 @@ void TestRunner::run()
     test_parseMapDetail();
     test_draw_refactoring();
     test_updateUnitMovements();
-
     Print << U"--- All Tests Finished ---";
 }
