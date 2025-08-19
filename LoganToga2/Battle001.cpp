@@ -292,6 +292,16 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	/// <<<Resourceの設定
 
 }
+
+void Battle001::initializeForTest()
+{
+	// Initialize necessary members for draw functions to run without crashing.
+	visibilityMap = Grid<Visibility>(1, 1, Visibility::Unseen); // Minimal initialization
+	mapTile.N = 1;
+	// Call the private UI initializer
+	initUI();
+}
+
 /// @brief 後片付け
 Battle001::~Battle001()
 {
@@ -3674,6 +3684,32 @@ void Battle001::DrawMiniMap(const Grid<Visibility>& map, const RectF& cameraRect
 
 	}
 }
+void Battle001::drawFormationUI() const
+{
+	renderTextureZinkei.draw(
+		0,
+		Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight);
+}
+
+void Battle001::drawMinimap() const
+{
+	if (longBuildSelectTragetId == -1)
+		DrawMiniMap(visibilityMap, camera.getRegion());
+}
+
+void Battle001::drawHUD() const
+{
+	drawFormationUI();
+	drawSkillUI();
+	drawBuildDescription();
+	drawBuildMenu();
+	drawResourcesUI();
+	drawMinimap();
+
+	// ユニット情報ツールチップの描画
+	unitTooltip.draw();
+}
+
 void Battle001::draw() const
 {
 	FsScene::draw();
@@ -3695,17 +3731,5 @@ void Battle001::draw() const
 		drawBuildTargetHighlight(mapTile);
 	}
 
-	renderTextureZinkei.draw(
-		0,
-		Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight);
-	drawSkillUI();
-	drawBuildDescription();
-	drawBuildMenu();
-	drawResourcesUI();
-
-	if (longBuildSelectTragetId == -1)
-		DrawMiniMap(visibilityMap, camera.getRegion());
-
-	// ユニット情報ツールチップの描画
-	unitTooltip.draw();
+	drawHUD();
 }

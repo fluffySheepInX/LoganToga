@@ -7,5 +7,6 @@ public:
 
 private:
     void test_parseMapDetail();
+    void test_draw_refactoring();
     // Add more test methods here
 };
