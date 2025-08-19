@@ -168,6 +168,8 @@ private:
 	Co::Task<> checkCancelSelectionByUIArea();
 	void handleBuildMenuSelectionA();
 	void processUnitBuildMenuSelection(Unit& unit);
+	void handleCarrierStoreCommand(Unit& unit);
+	void handleCarrierReleaseCommand(Unit& unit);
 	void handleUnitAndBuildingSelection();
 	void processClickSelection();
 	Optional<long long> findClickedBuildingId() const;
@@ -384,7 +386,7 @@ private:
 	bool tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills);
 	bool isTargetInRange(const Unit& attacker, const Unit& target, const Skill& skill) const;
 	ClassExecuteSkills createSkillExecution(Unit& attacker, const Unit& target, const Skill& skill);
-	void ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu);
+	void ColliderCheck(RectF skillHitbox, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu);
 	void ColliderCheckHeal(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Unit* itemTarget);
 	void CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills& ces);
 	bool ProcessCollid(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget);
