@@ -177,7 +177,7 @@ private:
 	void startAsyncFogCalculation();
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
 	ClassMapBattle GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig);
-	MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
+	//MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
 
 
 	/// >>>ミニマップ

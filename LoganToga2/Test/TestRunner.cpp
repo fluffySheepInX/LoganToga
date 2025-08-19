@@ -1,4 +1,4 @@
-#include "../stdafx.h"
+﻿#include "../stdafx.h"
 #include "TestRunner.h"
 #include "../Battle001.h" // Include the class to be tested
 #include <cassert>
@@ -13,6 +13,12 @@
 #define ASSERT_EQUAL(expected, actual, message) \
     if ((expected) != (actual)) { \
         Print << U"Assertion failed: " << (message) << U". Expected: " << (expected) << U", Actual: " << (actual); \
+        assert((expected) == (actual)); \
+    }
+
+#define ASSERT_EQUAL_ENUM(expected, actual, message) \
+    if ((expected) != (actual)) { \
+        Print << U"Assertion failed: " << (message) << U". Expected: " << ToString(static_cast<int>((expected))) << U", Actual: " << ToString(static_cast<int>((actual))); \
         assert((expected) == (actual)); \
     }
 
@@ -59,7 +65,7 @@ void TestRunner::test_parseMapDetail()
         StringView tile_data = U"g,RESOURCE:GOLD";
         MapDetail result = battle_for_test.parseMapDetail(tile_data, dummy_class_map, dummy_common_config);
         ASSERT_TRUE(result.isResourcePoint, U"Test Case 3: Should be a resource point");
-        ASSERT_EQUAL(resourceKind::Gold, result.resourcePointType, U"Test Case 3: Resource type should be Gold");
+		ASSERT_EQUAL_ENUM(resourceKind::Gold, result.resourcePointType, U"Test Case 3: Resource type should be Gold");
         ASSERT_EQUAL(10, result.resourcePointAmount, U"Test Case 3: Resource amount should be 10");
 		ASSERT_EQUAL(String(U"g,"), result.tip, U"Test Case 3: Tip should be 'g,' after parsing"); // The parser logic seems to leave the comma
     }
@@ -69,7 +75,7 @@ void TestRunner::test_parseMapDetail()
         StringView tile_data = U"g*w:sor";
         MapDetail result = battle_for_test.parseMapDetail(tile_data, dummy_class_map, dummy_common_config);
         ASSERT_EQUAL(size_t(1), result.building.size(), U"Test Case 4: Should have one building");
-        ASSERT_EQUAL(BattleWhichIsThePlayer::Sortie, std::get<2>(result.building[0]), U"Test Case 4: Building should belong to Sortie player");
+		ASSERT_EQUAL_ENUM(BattleWhichIsThePlayer::Sortie, std::get<2>(result.building[0]), U"Test Case 4: Building should belong to Sortie player");
     }
 
     Print << U"Test test_parseMapDetail PASSED";

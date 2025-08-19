@@ -9,6 +9,7 @@
 #include "ClassUnit.h"
 #include "ClassCommonConfig.h"
 #include "ClassBuildAction.h"
+#include "Test/TestRunner.h"
 
 void Init(CommonConfig& commonConfig)
 {
@@ -497,7 +498,6 @@ void Main()
 	}
 	else if (argc == 2 && args[1] == U"-test")
 	{
-		#include "Test/TestRunner.h"
 		TestRunner runner;
 		runner.run();
 		// Tests finished, wait for user to close window.
