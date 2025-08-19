@@ -1687,7 +1687,7 @@ void Battle001::updateUnitHealthBars()
 	}
 }
 /// @brief 移動処理更新、移動状態や目的地到達を管理　A*経路探索の結果に基づき、位置や移動ベクトルを計算・更新
-void Battle001::updateUnitMovements()
+void Battle001::updatePlayerUnitMovements()
 {
 	//移動処理
 	for (auto& item : classBattleManage.listOfAllUnit)
@@ -1812,6 +1812,10 @@ void Battle001::updateUnitMovements()
 			}
 		}
 	}
+}
+
+void Battle001::updateEnemyUnitMovements()
+{
 	for (auto& item : classBattleManage.listOfAllEnemyUnit)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
@@ -1889,6 +1893,12 @@ void Battle001::updateUnitMovements()
 			}
 		}
 	}
+}
+
+void Battle001::updateUnitMovements()
+{
+	updatePlayerUnitMovements();
+	updateEnemyUnitMovements();
 }
 
 void Battle001::UnitTooltip::updateRenderTexture()

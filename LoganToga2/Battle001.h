@@ -178,6 +178,8 @@ private:
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
 	void updateUnitMovements();
+	void updatePlayerUnitMovements();
+	void updateEnemyUnitMovements();
 	void startAsyncFogCalculation();
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
 	ClassMapBattle GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig);
