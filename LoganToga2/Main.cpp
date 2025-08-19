@@ -495,6 +495,14 @@ void Main()
 		const auto game = Co::PlaySceneFrom<Battle001>(saveData, commonConfig, systemString).runScoped();
 		loop();
 	}
+	else if (argc == 2 && args[1] == U"-test")
+	{
+		#include "Test/TestRunner.h"
+		TestRunner runner;
+		runner.run();
+		// Tests finished, wait for user to close window.
+		while(System::Update());
+	}
 	else
 	{
 		const auto game = Co::PlaySceneFrom<Game>(saveData).runScoped();

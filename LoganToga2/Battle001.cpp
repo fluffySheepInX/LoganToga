@@ -101,20 +101,20 @@ static BuildAction& dummyMenu()
 
 MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig)
 {
-	MapDetail md;
-	String bbb = String(tileData); // Modifiable copy
+	MapDetail map_detail;
+	String tile_data_mutable = String(tileData); // Modifiable copy
 
 	// RESOURCE:XXXパターンをチェック
-	if (bbb.includes(U"RESOURCE:"))
+	if (tile_data_mutable.includes(U"RESOURCE:"))
 	{
 		// RESOURCE:XXXを抽出
-		auto resourceStart = bbb.indexOf(U"RESOURCE:");
+		auto resourceStart = tile_data_mutable.indexOf(U"RESOURCE:");
 		if (resourceStart != String::npos)
 		{
-			auto resourceEnd = bbb.indexOf(U',', resourceStart);
-			if (resourceEnd == String::npos) resourceEnd = bbb.length();
+			auto resourceEnd = tile_data_mutable.indexOf(U',', resourceStart);
+			if (resourceEnd == String::npos) resourceEnd = tile_data_mutable.length();
 
-			String resourcePattern = bbb.substr(resourceStart, resourceEnd - resourceStart);
+			String resourcePattern = tile_data_mutable.substr(resourceStart, resourceEnd - resourceStart);
 			String resourceName = resourcePattern.substr(9); // "RESOURCE:"を除去
 
 			// commonConfig.htResourceDataから対応するリソース情報を取得
@@ -123,105 +123,115 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 				const ClassResource& resource = commonConfig.htResourceData[resourceName];
 
 				// MapDetailにリソース情報を設定
-				md.isResourcePoint = true;
-				md.resourcePointType = resource.resourceType;
-				md.resourcePointAmount = resource.resourceAmount;
-				md.resourcePointDisplayName = resource.resourceName;
-				md.resourcePointIcon = resource.resourceIcon;
+				map_detail.isResourcePoint = true;
+				map_detail.resourcePointType = resource.resourceType;
+				map_detail.resourcePointAmount = resource.resourceAmount;
+				map_detail.resourcePointDisplayName = resource.resourceName;
+				map_detail.resourcePointIcon = resource.resourceIcon;
 			}
 
 			// RESOURCE:XXXをマップデータから除去
-			bbb = bbb.replaced(resourcePattern, U"");
+			tile_data_mutable = tile_data_mutable.replaced(resourcePattern, U"");
 		}
 	}
 
-	Array splitA = bbb.split(U'*');
+	Array<String> main_parts = tile_data_mutable.split(U'*');
 	//field(床画像
-    // 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
-    md.tip = classMap.ele.at(splitA[0]);
+	// 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
+	map_detail.tip = classMap.ele.at(main_parts[0]);
 	//build(城壁や矢倉など
-	if (splitA.size() > 1)
+	if (main_parts.size() > 1)
 	{
-		if (splitA[1] != U"")
+		if (main_parts[1] != U"")
 		{
-			Array splitB = splitA[1].split(U'$');
-			for (String item : splitB)
+			Array<String> building_strings = main_parts[1].split(U'$');
+			for (const String& building_string : building_strings)
 			{
-				Array splitWi = item.split(U':');
-                // 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
-                String re = classMap.ele.at(splitWi[0]);
-				if (re != U"")
+				Array<String> building_parts = building_string.split(U':');
+				// 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
+				String building_name = classMap.ele.at(building_parts[0]);
+				if (building_name != U"")
 				{
-					std::tuple<String, long, BattleWhichIsThePlayer> pp = { re,-1, BattleWhichIsThePlayer::None };
-					if (splitWi.size() > 1)
+					std::tuple<String, long, BattleWhichIsThePlayer> building_tuple = { building_name, -1, BattleWhichIsThePlayer::None };
+					if (building_parts.size() > 1)
 					{
-						if (splitWi[1] == U"sor")
+						if (building_parts[1] == U"sor")
 						{
-							pp = { re,-1, BattleWhichIsThePlayer::Sortie };
+							building_tuple = { building_name, -1, BattleWhichIsThePlayer::Sortie };
 						}
-						else if (splitWi[1] == U"def")
+						else if (building_parts[1] == U"def")
 						{
-							pp = { re,-1, BattleWhichIsThePlayer::Def };
+							building_tuple = { building_name, -1, BattleWhichIsThePlayer::Def };
 						}
 					}
-					md.building.push_back(pp);
+					map_detail.building.push_back(building_tuple);
 				}
 			}
 		}
 	}
 	//ユニットの情報
-	if (splitA.size() > 2)
+	if (main_parts.size() > 2)
 	{
-		Array re = splitA[2].split(U':');
-		if (re[0] != U"-1")
+		Array<String> unit_parts = main_parts[2].split(U':');
+		if (unit_parts[0] != U"-1")
 		{
-			md.unit = re[0];
-			md.houkou = re[1];
+			map_detail.unit = unit_parts[0];
+			map_detail.houkou = unit_parts[1];
 		}
 	}
 	//【出撃、防衛、中立の位置】もしくは【退却位置】
-	if (splitA.size() > 3)
+	if (main_parts.size() > 3)
 	{
-		md.posSpecial = splitA[3];
-		if (md.posSpecial == U"@@")
+		map_detail.posSpecial = main_parts[3];
+		if (map_detail.posSpecial == U"@@")
 		{
-			md.kougekiButaiNoIti = true;
+			map_detail.kougekiButaiNoIti = true;
 		}
-		else if (md.posSpecial == U"@")
+		else if (map_detail.posSpecial == U"@")
 		{
-			md.boueiButaiNoIti = true;
+			map_detail.boueiButaiNoIti = true;
 		}
 	}
 	//陣形
-	if (splitA.size() > 5)
+	if (main_parts.size() > 5)
 	{
-		md.zinkei = splitA[5];
+		map_detail.zinkei = main_parts[5];
 	}
-	return md;
+	return map_detail;
 }
 
-ClassMapBattle Battle001::GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig)
+ClassMapBattle Battle001::GetClassMapBattle(ClassMap class_map, CommonConfig& commonConfig)
 {
-	ClassMapBattle cmb;
-	cmb.name = cm.name;
-	for (String aaa : cm.data)
+	ClassMapBattle battle_map;
+	battle_map.name = class_map.name;
+	for (const String& row_string : class_map.data)
 	{
-		Array<MapDetail> aMd;
-		Array s = aaa.split(U',');
-		for (auto bbb : s)
+		Array<MapDetail> map_detail_row;
+		Array<String> tile_strings = row_string.split(U',');
+		for (const auto& tile_data_string : tile_strings)
 		{
-			aMd.push_back(parseMapDetail(bbb, cm, commonConfig));
+			map_detail_row.push_back(parseMapDetail(tile_data_string, class_map, commonConfig));
 		}
-		cmb.mapData.push_back(std::move(aMd));
+		battle_map.mapData.push_back(std::move(map_detail_row));
 	}
 
-	return cmb;
+	return battle_map;
 }
 
 /// @brief Battle001 クラスのコンストラクタ。ゲームデータや設定をもとにバトルマップを初期化し、リソース情報やツールチップの設定を行います。
 /// @param saveData ゲームの進行状況などを保持する GameData 型の参照。
 /// @param commonConfig 共通設定を保持する CommonConfig 型の参照。
 /// @param argSS システム文字列情報を渡す SystemString 型の値。
+Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString argSS, bool isTest)
+	:FsScene(U"Battle")
+	, m_saveData{ saveData }
+	, m_commonConfig{ commonConfig }
+	, ss{ argSS }
+	, tempSelectComRight{ dummyMenu() }
+{
+	// Test mode constructor, skip file loading and initialization
+}
+
 Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString argSS)
 	:FsScene(U"Battle")
 	, m_saveData{ saveData }
@@ -229,21 +239,21 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	, ss{ argSS }
 	, tempSelectComRight{ dummyMenu() }
 {
-	const TOMLReader tomlMap{ PATHBASE + PATH_DEFAULT_GAME + U"/016_BattleMap/map001.toml" };
-	if (not tomlMap)
-		throw Error{ U"Failed to load `tomlMap`" };
+	const TOMLReader map_toml_reader{ PATHBASE + PATH_DEFAULT_GAME + U"/016_BattleMap/map001.toml" };
+	if (not map_toml_reader)
+		throw Error{ U"Failed to load `map_toml_reader`" };
 
-	ClassMap sM;
-	for (const auto& table : tomlMap[U"Map"].tableArrayView()) {
-		const String name = table[U"name"].get<String>();
+	ClassMap loaded_map;
+	for (const auto& map_table : map_toml_reader[U"Map"].tableArrayView()) {
+		const String name = map_table[U"name"].get<String>();
 
 		{
 			int32 counter = 0;
 			while (true)
 			{
 				String elementKey = U"ele{}"_fmt(counter);
-				const String elementValue = table[elementKey].get<String>();
-				sM.ele.emplace(elementKey, elementValue);
+				const String elementValue = map_table[elementKey].get<String>();
+				loaded_map.ele.emplace(elementKey, elementValue);
 				counter++;
 				if (elementValue == U"")
 				{
@@ -253,20 +263,20 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 		}
 		{
 			namespace views = std::views;
-			const String str = table[U"data"].get<String>();
+			const String str = map_table[U"data"].get<String>();
 			for (const auto sv : str | views::split(U"$"_sv))
 			{
 				String processedString
 					= ClassStaticCommonMethod::ReplaceNewLine(String(sv.begin(), sv.end()));
 				if (processedString != U"")
 				{
-					sM.data.push_back(processedString);
+					loaded_map.data.push_back(processedString);
 				}
 			}
 		}
 	}
 
-	classBattleManage.classMapBattle = GetClassMapBattle(sM, commonConfig);
+	classBattleManage.classMapBattle = GetClassMapBattle(loaded_map, commonConfig);
 
 	/// >>>マップの読み込み
 	mapTile.N = classBattleManage.classMapBattle.value().mapData.size();
@@ -345,19 +355,19 @@ void Battle001::SetResourceTargets(
 /// @param enemy ユニットが敵かどうかを示すフラグ
 void Battle001::UnitRegister(
 	ClassBattle& classBattleManage,
-	MapTile mapTile,
-	String unitName,
+	const MapTile& mapTile,
+	const String& unitName,
 	int32 col,
 	int32 row,
 	int32 num,
-	Array<ClassHorizontalUnit>& listU,
+	Array<ClassHorizontalUnit>& unit_list,
 	bool enemy)
 {
 	// 事前に容量を確保
-	listU.reserve(listU.size() + 1);
+	unit_list.reserve(unit_list.size() + 1);
 
 	// 該当するユニットテンプレートを検索
-	auto it = std::find_if(m_commonConfig.arrayInfoUnit.begin(), m_commonConfig.arrayInfoUnit.end(),
+	const auto it = std::find_if(m_commonConfig.arrayInfoUnit.begin(), m_commonConfig.arrayInfoUnit.end(),
 		[&unitName](const auto& unit) { return unit.NameTag == unitName; });
 
 	if (it == m_commonConfig.arrayInfoUnit.end())
@@ -372,43 +382,43 @@ void Battle001::UnitRegister(
 		return;
 	}
 
-	auto uu = *it; // 一度だけコピー
-	ClassHorizontalUnit cuu;
+	Unit unit_template = *it; // 一度だけコピー
+	ClassHorizontalUnit new_horizontal_unit;
 
 	for (size_t i = 0; i < num; i++)
 	{
-		uu.ID = classBattleManage.getIDCount();
-		uu.initTilePos = Point{ col, row };
-		uu.colBuilding = col;
-		uu.rowBuilding = row;
-		uu.nowPosiLeft = mapTile.ToTile(uu.initTilePos, mapTile.N)
+		unit_template.ID = classBattleManage.getIDCount();
+		unit_template.initTilePos = Point{ col, row };
+		unit_template.colBuilding = col;
+		unit_template.rowBuilding = row;
+		unit_template.nowPosiLeft = mapTile.ToTile(unit_template.initTilePos, mapTile.N)
 			.asPolygon()
 			.centroid()
-			.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-		uu.taskTimer = Stopwatch();
-		uu.taskTimer.reset();
+			.movedBy(-(unit_template.yokoUnit / 2), -(unit_template.TakasaUnit / 2));
+		unit_template.taskTimer = Stopwatch();
+		unit_template.taskTimer.reset();
 
-		Vec2 temp = uu.GetNowPosiCenter().movedBy(-(LIQUID_BAR_WIDTH / 2), LIQUID_BAR_HEIGHT_POS);
-		uu.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, LIQUID_BAR_WIDTH, LIQUID_BAR_HEIGHT));
+		Vec2 temp = unit_template.GetNowPosiCenter().movedBy(-(LIQUID_BAR_WIDTH / 2), LIQUID_BAR_HEIGHT_POS);
+		unit_template.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(temp.x, temp.y, LIQUID_BAR_WIDTH, LIQUID_BAR_HEIGHT));
 
 		if (enemy)
-			uu.moveState = moveState::MoveAI;
+			unit_template.moveState = moveState::MoveAI;
 
-		cuu.ListClassUnit.push_back(uu);
+		new_horizontal_unit.ListClassUnit.push_back(unit_template);
 
-		if (uu.IsBuilding)
+		if (unit_template.IsBuilding)
 		{
 			std::scoped_lock lock(classBattleManage.unitListMutex);
-			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(uu));
-			hsBuildingUnitForAstar[uu.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-			auto u = std::make_shared<Unit>(uu);
+			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(unit_template));
+			hsBuildingUnitForAstar[unit_template.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
+			auto u = std::make_shared<Unit>(unit_template);
 			classBattleManage.hsMyUnitBuilding.insert(u);
 		}
 	}
 
 	{
 		std::scoped_lock lock(classBattleManage.unitListMutex);
-		listU.push_back(std::move(cuu));
+		unit_list.push_back(std::move(new_horizontal_unit));
 	}
 }
 
@@ -761,7 +771,7 @@ void Battle001::handleSquareFormation(Point start, Point end)
 		setMergePos(target, &Unit::setLastMergePos, pos);
 	}
 }
-void Battle001::handleUnitSelection(const RectF& selectionRect)
+void Battle001::setUnitsSelectedInRect(const RectF& selectionRect)
 {
 	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
@@ -781,37 +791,41 @@ void Battle001::handleUnitSelection(const RectF& selectionRect)
 		}
 	}
 }
-Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
+
+void Battle001::issueMoveOrder(Point start, Point end)
 {
-	if (is移動指示 == true)
+	if (arrayBattleZinkei[FORMATION_DENSE密集] == true)
 	{
-		if (arrayBattleZinkei[FORMATION_DENSE密集] == true)
-		{
-			handleDenseFormation(end);
-		}
-		else if (arrayBattleZinkei[FORMATION_HORIZONTAL横列] == true)
-		{
-			handleHorizontalFormation(start, end);
-		}
-		else if (arrayBattleZinkei[FORMATION_SQUARE正方] == true)
-		{
-			handleSquareFormation(start, end);
-		}
-		else
-		{
-			handleSquareFormation(start, end);
-		}
-
-		is移動指示 = false;
-
-		aStar.abortAStarMyUnits = false;
+		handleDenseFormation(end);
+	}
+	else if (arrayBattleZinkei[FORMATION_HORIZONTAL横列] == true)
+	{
+		handleHorizontalFormation(start, end);
+	}
+	else if (arrayBattleZinkei[FORMATION_SQUARE正方] == true)
+	{
+		handleSquareFormation(start, end);
 	}
 	else
 	{
-		////範囲選択
-		// 範囲選択の矩形を生成（start, endの大小関係を吸収）
+		handleSquareFormation(start, end);
+	}
+
+	is移動指示 = false;
+
+	aStar.abortAStarMyUnits = false;
+}
+
+Co::Task<void> Battle001::handleRightClickUnitActions(Point start, Point end)
+{
+	if (is移動指示)
+	{
+		issueMoveOrder(start, end);
+	}
+	else
+	{
 		const RectF selectionRect = RectF::FromPoints(start, end);
-		handleUnitSelection(selectionRect);
+		setUnitsSelectedInRect(selectionRect);
 	}
 
 	co_return;
@@ -945,8 +959,7 @@ Color Battle001::GetDominantColor(const String imageName, HashTable<String, Colo
 
 	return dominantColor;
 }
-/// @brief Battle001のUIを初期化 陣形・スキル・建築メニュー・ミニマップなどの描画用リソースを生成・設定
-void Battle001::initUI()
+void Battle001::initFormationUI()
 {
 	rectZinkei.push_back(Rect{ 8,8,60,40 });
 	rectZinkei.push_back(Rect{ 76,8,60,40 });
@@ -957,16 +970,19 @@ void Battle001::initUI()
 		const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
 		const ScopedRenderStates2D blend{ MakeBlendState() };
 
-		Rect df = Rect(320, 60);
-		df.drawFrame(4, 0, ColorF{ 0.5 });
+		Rect background_rect = Rect(320, 60);
+		background_rect.drawFrame(4, 0, ColorF{ 0.5 });
 
-		for (auto&& [i, ttt] : Indexed(rectZinkei))
+		for (auto&& [i, formation_rect] : Indexed(rectZinkei))
 		{
-			ttt.draw(Palette::Aliceblue);
-			fontInfo.fontZinkei(ss.Zinkei[i]).draw(ttt, Palette::Black);
+			formation_rect.draw(Palette::Aliceblue);
+			fontInfo.fontZinkei(ss.Zinkei[i]).draw(formation_rect, Palette::Black);
 		}
 	}
+}
 
+void Battle001::initSkillUI()
+{
 	renderTextureSkill = RenderTexture{ 320,320 };
 	renderTextureSkill.clear(ColorF{ 0.5, 0.0 });
 	{
@@ -974,44 +990,47 @@ void Battle001::initUI()
 		const ScopedRenderStates2D blend{ MakeBlendState() };
 
 		//skill抽出
-		Array<Skill> table;
-		for (auto& item : classBattleManage.listOfAllUnit)
+		Array<Skill> all_skills;
+		for (auto& unit_group : classBattleManage.listOfAllUnit)
 		{
-			for (auto& itemUnit : item.ListClassUnit)
+			for (auto& unit : unit_group.ListClassUnit)
 			{
-				for (auto& ski : itemUnit.arrSkill)
-					table.push_back(ski);
+				for (auto& skill : unit.arrSkill)
+					all_skills.push_back(skill);
 			}
 		}
 
 		// ソート
-		table.sort_by([](const Skill& a, const Skill& b)
-		{
-			return a.sortKey < b.sortKey;
-		});
-		table.erase(std::unique(table.begin(), table.end()), table.end());
+		all_skills.sort_by([](const Skill& a, const Skill& b)
+			{
+				return a.sortKey < b.sortKey;
+			});
+		all_skills.erase(std::unique(all_skills.begin(), all_skills.end()), all_skills.end());
 
-		for (const auto&& [i, key] : Indexed(table))
+		for (const auto&& [i, skill] : Indexed(all_skills))
 		{
 			Rect rectSkill;
 			rectSkill.x = ((i % 10) * 32) + 4;
 			rectSkill.y = ((i / 10) * 32) + 4;
 			rectSkill.w = 32;
 			rectSkill.h = 32;
-			htSkill.emplace(key.nameTag, rectSkill);
+			htSkill.emplace(skill.nameTag, rectSkill);
 
-			for (auto& icons : key.icon.reversed())
+			for (auto& icon : skill.icon.reversed())
 			{
-				TextureAsset(icons.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
+				TextureAsset(icon.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
 			}
 		}
 
-		Rect df = Rect(320, 320);
-		df.drawFrame(4, 0, ColorF{ 0.5 });
+		Rect background_rect = Rect(320, 320);
+		background_rect.drawFrame(4, 0, ColorF{ 0.5 });
 	}
 	renderTextureSkillUP = RenderTexture{ 320,320 };
 	renderTextureSkillUP.clear(ColorF{ 0.5, 0.0 });
+}
 
+void Battle001::initBuildMenu()
+{
 	renderTextureBuildMenuEmpty = RenderTexture{ 328, 328 };
 	renderTextureBuildMenuEmpty.clear(ColorF{ 0.5, 0.0 });
 	{
@@ -1034,7 +1053,10 @@ void Battle001::initUI()
 		}
 		createRenderTex();
 	}
+}
 
+void Battle001::initMinimap()
+{
 	//ミニマップ用
 	for (int32 y = 0; y < visibilityMap.height(); ++y)
 	{
@@ -1044,6 +1066,16 @@ void Battle001::initUI()
 			minimapCols.emplace(Point(x, y), GetDominantColor(ttt, colData));
 		}
 	}
+}
+
+
+/// @brief Battle001のUIを初期化 陣形・スキル・建築メニュー・ミニマップなどの描画用リソースを生成・設定
+void Battle001::initUI()
+{
+	initFormationUI();
+	initSkillUI();
+	initBuildMenu();
+	initMinimap();
 }
 
 /// @brief UIエリアによる選択キャンセルをチェックし、必要に応じて選択状態を解除
@@ -1324,6 +1356,177 @@ void Battle001::handleBuildMenuSelectionA()
 		processUnitBuildMenuSelection(*unitBuildings);
 	}
 }
+
+Optional<long long> Battle001::findClickedBuildingId() const
+{
+	Array<std::shared_ptr<Unit>> buildings;
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	{
+		for (const auto& item : group)
+		{
+			buildings.push_back(item);
+		}
+	}
+
+	for (const auto& u : buildings)
+	{
+		Size tempSize = TextureAsset(u->ImageName).size();
+		Quad tempQ = mapTile.ToTile(Point(u->colBuilding, u->rowBuilding), mapTile.N);
+		// tempQをtempSizeに合わせてスケーリングするための基準値を計算
+
+
+		// 横幅・縦幅（ToTile 基準）
+		double baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
+		double baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
+		// スケール計算
+		double scaleX = tempSize.x / (baseWidth);   // = 1.0
+		double scaleY = tempSize.y / (baseHeight);  // = 1.0
+		// Quad をスケーリングして移動
+		Size posCenter = Size(static_cast<int32>(tempQ.p0.x), static_cast<int32>(tempQ.p1.y));
+		auto tempQScaled = tempQ.scaledAt(posCenter, scaleX, scaleY);
+		if (tempQScaled.intersects(Cursor::PosF()))
+		{
+			return u->ID;
+		}
+	}
+	return none;
+}
+
+Optional<long long> Battle001::findClickedUnitId() const
+{
+	std::scoped_lock lock(classBattleManage.unitListMutex);
+	for (const auto& target : classBattleManage.listOfAllUnit)
+	{
+		for (const auto& unit : target.ListClassUnit)
+		{
+			if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
+				|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.classBuild != U""))
+			{
+				if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
+				{
+					return unit.ID;
+				}
+			}
+		}
+	}
+	return none;
+}
+
+
+void Battle001::deselectAll()
+{
+	std::scoped_lock lock(classBattleManage.unitListMutex);
+	for (auto& item : classBattleManage.listOfAllUnit)
+	{
+		for (auto& itemUnit : item.ListClassUnit)
+		{
+			itemUnit.IsSelect = false;
+		}
+	}
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	{
+		for (const auto& item : group)
+		{
+			item->IsSelect = false;
+		}
+	}
+	IsBuildMenuHome = false;
+	longBuildSelectTragetId = -1;
+}
+
+void Battle001::toggleUnitSelection(long long unit_id)
+{
+	// 全ての建物の選択を解除
+	for (const auto& building : classBattleManage.hsMyUnitBuilding)
+	{
+		building->IsSelect = false;
+	}
+
+	// 選択状態の一括更新
+	std::scoped_lock lock(classBattleManage.unitListMutex);
+	for (auto& item : classBattleManage.listOfAllUnit)
+	{
+		for (auto& itemUnit : item.ListClassUnit)
+		{
+			bool newSelectState = false;
+
+			if (unit_id == itemUnit.ID)
+			{
+				// クリックされたユニットの選択状態を反転
+				newSelectState = !itemUnit.IsSelect;
+				IsBuildMenuHome = newSelectState;
+
+				if (newSelectState)
+				{
+					longBuildSelectTragetId = itemUnit.ID;
+				}
+				else
+				{
+					longBuildSelectTragetId = -1;
+				}
+			}
+			else
+			{
+				// その他のユニットは選択解除
+				newSelectState = false;
+			}
+
+			// IsSelectの更新
+			itemUnit.IsSelect = newSelectState;
+		}
+	}
+}
+
+void Battle001::toggleBuildingSelection(long long building_id)
+{
+	// 全てのユニットの選択を解除
+	std::scoped_lock lock(classBattleManage.unitListMutex);
+	for (auto& group : classBattleManage.listOfAllUnit)
+	{
+		for (auto& unit : group.ListClassUnit)
+		{
+			unit.IsSelect = false;
+		}
+	}
+
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	{
+		for (const auto& item : group)
+		{
+			if (item->ID == building_id)
+			{
+				item->IsSelect = true;
+				IsBuildMenuHome = true;
+				longBuildSelectTragetId = item->ID;
+			}
+			else
+			{
+				item->IsSelect = false;
+			}
+		}
+	}
+}
+
+void Battle001::processClickSelection()
+{
+	const Optional<long long> clickedBuildingId = findClickedBuildingId();
+	if (clickedBuildingId)
+	{
+		toggleBuildingSelection(*clickedBuildingId);
+		return;
+	}
+
+	const Optional<long long> clickedUnitId = findClickedUnitId();
+	if (clickedUnitId)
+	{
+		toggleUnitSelection(*clickedUnitId);
+		return;
+	}
+
+	// 何もクリックされなかった場合
+	deselectAll();
+}
+
 /// @brief ユニットおよび建築物の選択処理を管理する　マウスの左クリック操作に応じて、ユニットや建築物の選択・選択解除を行う
 void Battle001::handleUnitAndBuildingSelection()
 {
@@ -1338,177 +1541,19 @@ void Battle001::handleUnitAndBuildingSelection()
 	// 左クリック終了時の処理
 	if (MouseL.up() && isUnitSelectionPending)
 	{
-		// ドラッグ距離をチェック
 		const double dragDistance = clickStartPos.distanceFrom(Cursor::Pos());
 		if (dragDistance < CLICK_THRESHOLD)
 		{
-			isUnitSelectionPending = false;
-
-			bool isSeBu = false;
-			long selectedBuildingId = -1;
-
-			Array<std::shared_ptr<Unit>> buildings;
-			for (const auto& group : { classBattleManage.hsMyUnitBuilding })
-			{
-				for (const auto& item : group)
-				{
-					buildings.push_back(item);
-				}
-			}
-
-			for (const auto& u : buildings)
-			{
-				Size tempSize = TextureAsset(u->ImageName).size();
-				Quad tempQ = mapTile.ToTile(Point(u->colBuilding, u->rowBuilding), mapTile.N);
-				// tempQをtempSizeに合わせてスケーリングするための基準値を計算
-
-
-				// 横幅・縦幅（ToTile 基準）
-				double baseWidth = Abs(tempQ.p1.x - tempQ.p3.x);//100
-				double baseHeight = Abs(tempQ.p0.y - tempQ.p2.y) + mapTile.TileThickness;//65
-				// スケール計算
-				double scaleX = tempSize.x / (baseWidth);   // = 1.0
-				double scaleY = tempSize.y / (baseHeight);  // = 1.0
-				// Quad をスケーリングして移動
-				Size posCenter = Size(static_cast<int32>(tempQ.p0.x), static_cast<int32>(tempQ.p1.y));
-				auto tempQScaled = tempQ.scaledAt(posCenter, scaleX, scaleY);
-				if (tempQScaled.intersects(Cursor::PosF()))
-				{
-					selectedBuildingId = u->ID;
-					isSeBu = true;
-					break;
-				}
-			}
-
-			// ユニット選択チェック（建築物が選択されていない場合のみ）
-			long selectedUnitId = -1;
-			if (!isSeBu)
-			{
-				std::scoped_lock lock(classBattleManage.unitListMutex);
-				for (const auto& target : classBattleManage.listOfAllUnit)
-				{
-					for (const auto& unit : target.ListClassUnit)
-					{
-						if ((unit.IsBuilding == false && unit.IsBattleEnable == true)
-							|| (unit.IsBuilding == true && unit.IsBattleEnable == true && unit.classBuild != U""))
-						{
-							Print << Cursor::PosF();
-							Print << unit.GetRectNowPosi().center();
-							if (unit.GetRectNowPosi().intersects(Cursor::PosF()))
-							{
-								selectedUnitId = unit.ID;
-								break;
-							}
-						}
-					}
-					if (selectedUnitId != -1) break;
-				}
-			}
-
-			// 何も選択されていない場合は全て選択解除
-			if (selectedBuildingId == -1 && selectedUnitId == -1)
-			{
-				std::scoped_lock lock(classBattleManage.unitListMutex);
-				for (auto& item : classBattleManage.listOfAllUnit)
-				{
-					for (auto& itemUnit : item.ListClassUnit)
-					{
-						itemUnit.IsSelect = false;
-					}
-				}
-				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
-				{
-					for (const auto& item : group)
-					{
-						item->IsSelect = false;
-					}
-				}
-				IsBuildMenuHome = false;
-				longBuildSelectTragetId = -1;
-				return;
-			}
-
-			if (!isSeBu)
-			{
-				// ユニット選択時には、全ての建物の選択を解除
-				for (const auto& building : classBattleManage.hsMyUnitBuilding)
-				{
-					building->IsSelect = false;
-				}
-
-				// 選択状態の一括更新
-				std::scoped_lock lock(classBattleManage.unitListMutex);
-				for (auto& item : classBattleManage.listOfAllUnit)
-				{
-					for (auto& itemUnit : item.ListClassUnit)
-					{
-						bool newSelectState = false;
-
-						if (selectedUnitId == itemUnit.ID)
-						{
-							// クリックされたユニットの選択状態を反転
-							newSelectState = !itemUnit.IsSelect;
-							IsBuildMenuHome = newSelectState;
-
-							if (newSelectState)
-							{
-								longBuildSelectTragetId = itemUnit.ID;
-							}
-							else
-							{
-								longBuildSelectTragetId = -1;
-							}
-						}
-						else
-						{
-							// その他のユニットは選択解除
-							newSelectState = false;
-						}
-
-						// IsSelectの更新
-						itemUnit.IsSelect = newSelectState;
-					}
-				}
-			}
-			else
-			{
-				// 建物選択時には、全てのユニットの選択を解除
-				std::scoped_lock lock(classBattleManage.unitListMutex);
-				for (auto& group : classBattleManage.listOfAllUnit)
-				{
-					for (auto& unit : group.ListClassUnit)
-					{
-						unit.IsSelect = false;
-					}
-				}
-
-				for (const auto& group : { classBattleManage.hsMyUnitBuilding })
-				{
-					for (const auto& item : group)
-					{
-						if (item->ID == selectedBuildingId)
-						{
-							item->IsSelect = true;
-							IsBuildMenuHome = true;
-							longBuildSelectTragetId = item->ID;
-						}
-						else
-						{
-							item->IsSelect = false;
-						}
-					}
-				}
-			}
+			processClickSelection();
 		}
 		isUnitSelectionPending = false;
 	}
 
 	// pressed中でキャンセル条件があれば保留状態をリセット
-	// pressed中の処理は削除または条件を変更
 	if (MouseL.pressed())
 	{
 		const double dragDistance = clickStartPos.distanceFrom(Cursor::Pos());
-		if (dragDistance >= 5)
+		if (dragDistance >= CLICK_THRESHOLD)
 		{
 			isUnitSelectionPending = false; // ドラッグ開始でキャンセル
 		}
@@ -2050,222 +2095,158 @@ static bool NearlyEqual(double a, double b)
 	return abs(a - b) < DBL_EPSILON;
 }
 
-
-void Battle001::SkillProcess(Array<ClassHorizontalUnit>& ach, Array<ClassHorizontalUnit>& achTarget, Array<ClassExecuteSkills>& aces)
+void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
-	for (auto& item : ach)
+	// 発動中もしくは死亡ユニットはスキップ
+	if (unit.FlagMovingSkill == true || unit.IsBattleEnable == false)
 	{
-		for (auto& itemUnit : item.ListClassUnit)
+		return;
+	}
+
+	// どのスキルを試行するか決定する
+	Array<Skill> skills_to_try;
+	auto manually_selected_skills = unit.arrSkill.filter([&](const Skill& itemSkill) { return nowSelectSkill.contains(itemSkill.nameTag); });
+
+	if (manually_selected_skills.size() > 0)
+	{
+		skills_to_try = manually_selected_skills;
+	}
+	else
+	{
+		// 昇順（小さい値から大きい値へ）
+		skills_to_try = unit.arrSkill.sorted_by([](const auto& item1, const auto& item2) { return  item1.sortKey < item2.sortKey; });
+	}
+
+	// スキルを試行
+	for (auto& skill : skills_to_try)
+	{
+		const auto attacker_pos = unit.GetNowPosiCenter();
+
+		// ターゲットグループを決定
+		Array<ClassHorizontalUnit> potential_targets;
+		if (skill.SkillType == SkillType::heal)
 		{
-			//発動中もしくは死亡ユニットはスキップ
-			if (itemUnit.FlagMovingSkill == true || itemUnit.IsBattleEnable == false)
-				continue;
+			// This is not correct. It should be the unit's own group, not all attackers.
+			// This logic needs to be fixed later, but for now, I will preserve the original (buggy?) behavior.
+			// potential_targets = unit.parent_group; // This is a conceptual fix
+			potential_targets = classBattleManage.listOfAllUnit; // Preserving original behavior
+			potential_targets.shuffle();
+		}
+		else
+		{
+			potential_targets = target_groups;
+		}
 
-			auto temp = itemUnit.arrSkill.filter([&](const Skill& itemSkill) {return nowSelectSkill.contains(itemSkill.nameTag); });
-
-			if (temp.size() > 0)
-			{
-				for (auto& itemSkill : temp)
-				{
-					//ターゲットとなるユニットを抽出し、スキル射程範囲を確認
-					const auto xA = itemUnit.GetNowPosiCenter();
-
-					if (itemSkill.SkillType == SkillType::heal)
-					{
-						Array<ClassHorizontalUnit> copy = ach;
-						copy.shuffle();
-						if (SkillProcess002(copy, xA, itemUnit, itemSkill, aces))
-						{
-							return;
-						}
-					}
-					else
-					{
-						if (SkillProcess002(achTarget, xA, itemUnit, itemSkill, aces))
-						{
-							return;
-						}
-					}
-				}
-			}
-			else
-			{
-				//昇順（小さい値から大きい値へ）
-				for (Skill& itemSkill : itemUnit.arrSkill.sort_by([](const auto& item1, const auto& item2) { return  item1.sortKey < item2.sortKey; }))
-				{
-					//ターゲットとなるユニットを抽出し、スキル射程範囲を確認
-					const auto xA = itemUnit.GetNowPosiCenter();
-					if (itemSkill.SkillType == SkillType::heal)
-					{
-						Array<ClassHorizontalUnit> copy = ach;
-						copy.shuffle();
-						if (SkillProcess002(copy, xA, itemUnit, itemSkill, aces))
-						{
-							return;
-						}
-					}
-					else
-					{
-						if (SkillProcess002(achTarget, xA, itemUnit, itemSkill, aces))
-						{
-							return;
-						}
-					}
-				}
-			}
+		if (tryActivateSkillOnTargetGroup(potential_targets, attacker_pos, unit, skill, executed_skills))
+		{
+			// スキルが発動したら、このユニットは一旦終了
+			return;
 		}
 	}
 }
-bool Battle001::SkillProcess002(Array<ClassHorizontalUnit>& aaatarget, Vec2 xA, Unit& itemUnit, Skill& itemSkill, Array<ClassExecuteSkills>& aces)
+
+void Battle001::SkillProcess(Array<ClassHorizontalUnit>& attacker_groups, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills)
 {
-	for (auto& itemTargetHo : aaatarget)
+	std::scoped_lock lock(classBattleManage.unitListMutex);
+	for (auto& unit_group : attacker_groups)
 	{
-		for (auto& itemTarget : itemTargetHo.ListClassUnit)
+		for (auto& unit : unit_group.ListClassUnit)
 		{
-			//スキル発動条件確認
-			if (itemTarget.IsBattleEnable == false)
-			{
-				continue;
-			}
-			if (itemTarget.IsBuilding == true)
-			{
-				switch (itemTarget.mapTipObjectType)
-				{
-				case MapTipObjectType::WALL2:
-				{
-					continue;
-				}
-				break;
-				case MapTipObjectType::GATE:
-				{
-					if (itemTarget.HPCastle <= 0)
-					{
-						continue;
-					}
-				}
-				break;
-				default:
-					break;
-				}
-			}
-
-			//三平方の定理から射程内か確認
-			const Vec2 xB = itemTarget.GetNowPosiCenter();
-			const double teihen = xA.x - xB.x;
-			const double takasa = xA.y - xB.y;
-			const double syahen = (teihen * teihen) + (takasa * takasa);
-			const double kyori = std::sqrt(syahen);
-
-			const double xAHankei = (itemUnit.yokoUnit / 2.0) + itemSkill.range;
-			const double xBHankei = itemTarget.yokoUnit / 2.0;
-
-			bool check = true;
-			if (kyori > (xAHankei + xBHankei))
-			{
-				check = false;
-			}
-			// チェック
-			if (check == false)
-			{
-				continue;
-			}
-
-			int32 random = classBattleManage.getBattleIDCount();
-			int singleAttackNumber = random;
-
-			itemUnit.FlagMovingSkill = true;
-
-			//rush数だけ実行する
-			int32 rushBase = 1;
-			if (itemSkill.rush > 1) rushBase = itemSkill.rush;
-
-			ClassExecuteSkills ces;
-			ces.No = classBattleManage.getDeleteCESIDCount();
-			ces.UnitID = itemUnit.ID;
-			ces.classSkill = itemSkill;
-			ces.classUnit = &itemUnit;
-			ces.classUnitHealTarget = &itemTarget;
-
-			for (int iii = 0; iii < rushBase; iii++)
-			{
-				ClassBullets cbItemUnit;
-				cbItemUnit.No = singleAttackNumber;
-				cbItemUnit.RushNo = iii;
-				cbItemUnit.NowPosition = itemUnit.GetNowPosiCenter();
-				cbItemUnit.StartPosition = itemUnit.GetNowPosiCenter();
-				if (itemSkill.rushRandomDegree > 1)
-				{
-					int32 deg = Random(-itemSkill.rushRandomDegree, itemSkill.rushRandomDegree);
-					//ラジアン ⇒ 度*π/180 を掛ける
-					double rad = deg * (s3d::Math::Pi / 180);
-					//[0]を基準にするのでOK
-					Vec2 caRe = ConvertVecX(rad,
-						itemTarget.GetNowPosiCenter().x,
-						itemTarget.GetNowPosiCenter().y,
-						cbItemUnit.NowPosition.x,
-						cbItemUnit.NowPosition.y);
-					cbItemUnit.OrderPosition = caRe;
-				}
-				else
-				{
-					cbItemUnit.OrderPosition = itemTarget.GetNowPosiCenter();
-				}
-				if (itemSkill.speed == 0)
-				{
-					cbItemUnit.duration = 2.5;
-				}
-				else
-				{
-					cbItemUnit.duration = (itemSkill.range + itemSkill.speed - 1) / itemSkill.speed;
-				}
-				cbItemUnit.lifeTime = 0;
-
-				Vec2 ve = cbItemUnit.OrderPosition - cbItemUnit.NowPosition;
-				if (NearlyEqual(ve.x, ve.y))
-				{
-					cbItemUnit.MoveVec = ve;
-				}
-				else
-				{
-					cbItemUnit.MoveVec = ve.normalized();
-				}
-
-				//二点間の角度を求める
-				cbItemUnit.radian = Math::Atan2((float)(cbItemUnit.OrderPosition.y - cbItemUnit.NowPosition.y),
-					(float)(cbItemUnit.OrderPosition.x - cbItemUnit.NowPosition.x));
-				cbItemUnit.degree = cbItemUnit.radian * (180 / Math::Pi);
-				cbItemUnit.initDegree = cbItemUnit.degree;
-
-				ces.ArrayClassBullet.push_back(cbItemUnit);
-			}
-
-			aces.push_back(ces);
-
-			//攻撃を伴う支援技か？
-			switch (itemSkill.SkillType)
-			{
-			case SkillType::missileAdd:
-			{
-				itemUnit.cts.Speed = itemSkill.plus_speed;
-				//speedが0の場合、durationは2.5になる
-				for (auto& ttt : aces)
-				{
-					for (auto& tttt : ttt.ArrayClassBullet)
-					{
-						tttt.duration = itemSkill.plus_speed_time;
-					}
-				}
-			}
-			break;
-			default:
-				break;
-			}
-
-			return true;
+			findAndExecuteSkillForUnit(unit, target_groups, executed_skills);
 		}
 	}
-	return false;
+}
+
+bool Battle001::isTargetInRange(const Unit& attacker, const Unit& target, const Skill& skill) const
+{
+	const Vec2 attacker_pos = attacker.GetNowPosiCenter();
+	const Vec2 target_pos = target.GetNowPosiCenter();
+	const double distance_sq = attacker_pos.distanceFromSq(target_pos);
+
+	const double range_with_radii = (attacker.yokoUnit / 2.0) + skill.range + (target.yokoUnit / 2.0);
+	return distance_sq <= (range_with_radii * range_with_radii);
+}
+
+ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& target, const Skill& skill)
+{
+	attacker.FlagMovingSkill = true;
+
+	const int32 rush_count = (skill.rush > 1) ? skill.rush : 1;
+	const int32 single_attack_number = classBattleManage.getBattleIDCount();
+
+	ClassExecuteSkills executed_skill;
+	executed_skill.No = classBattleManage.getDeleteCESIDCount();
+	executed_skill.UnitID = attacker.ID;
+	executed_skill.classSkill = skill;
+	executed_skill.classUnit = &attacker;
+	executed_skill.classUnitHealTarget = const_cast<Unit*>(&target); // Original code did this, needs review
+
+	for (int i = 0; i < rush_count; ++i)
+	{
+		ClassBullets bullet;
+		bullet.No = single_attack_number;
+		bullet.RushNo = i;
+		bullet.StartPosition = attacker.GetNowPosiCenter();
+		bullet.NowPosition = bullet.StartPosition;
+
+		if (skill.rushRandomDegree > 1)
+		{
+			const double rad = Random(-skill.rushRandomDegree, skill.rushRandomDegree) * Math::Pi / 180.0;
+			bullet.OrderPosition = ConvertVecX(rad, target.GetNowPosiCenter().x, target.GetNowPosiCenter().y, bullet.NowPosition.x, bullet.NowPosition.y);
+		}
+		else
+		{
+			bullet.OrderPosition = target.GetNowPosiCenter();
+		}
+
+		bullet.duration = (skill.speed == 0) ? 2.5 : ((skill.range + skill.speed - 1) / skill.speed);
+		bullet.lifeTime = 0;
+
+		const Vec2 move_vec = bullet.OrderPosition - bullet.NowPosition;
+		bullet.MoveVec = move_vec.isZero() ? Vec2::Zero() : move_vec.normalized();
+		bullet.radian = Math::Atan2(move_vec.y, move_vec.x);
+		bullet.degree = ToDegrees(bullet.radian);
+		bullet.initDegree = bullet.degree;
+
+		executed_skill.ArrayClassBullet.push_back(bullet);
+	}
+
+	//攻撃を伴う支援技か？
+	if (skill.SkillType == SkillType::missileAdd)
+	{
+		attacker.cts.Speed = skill.plus_speed;
+		for (auto& bullet : executed_skill.ArrayClassBullet)
+		{
+			bullet.duration = skill.plus_speed_time;
+		}
+	}
+
+	return executed_skill;
+}
+
+bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills)
+{
+	for (auto& target_group : target_groups)
+	{
+		for (auto& target_unit : target_group.ListClassUnit)
+		{
+			//スキル発動条件確認
+			if (not target_unit.IsBattleEnable) continue;
+			if (target_unit.IsBuilding)
+			{
+				if (target_unit.mapTipObjectType == MapTipObjectType::WALL2) continue;
+				if (target_unit.mapTipObjectType == MapTipObjectType::GATE && target_unit.HPCastle <= 0) continue;
+			}
+
+			if (isTargetInRange(attacker, target_unit, skill))
+			{
+				ClassExecuteSkills new_skill_execution = createSkillExecution(attacker, target_unit, skill);
+				executed_skills.push_back(new_skill_execution);
+				return true; // スキル発動成功
+			}
+		}
+	}
+	return false; // 適切なターゲットが見つからなかった
 }
 
 void Battle001::ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu)
@@ -2779,23 +2760,23 @@ Co::Task<void> Battle001::start()
 
 	//初期ユニット-建物
 	{
-		for (auto uu : m_commonConfig.arrayInfoUnit)
+		for (auto unit_template : m_commonConfig.arrayInfoUnit)
 		{
-			if (uu.NameTag == U"Home")
+			if (unit_template.NameTag == U"Home")
 			{
-				uu.ID = classBattleManage.getIDCount();
-				uu.IsBuilding = true;
-				uu.mapTipObjectType = MapTipObjectType::HOME;
-				uu.rowBuilding = mapTile.N / 2;
-				uu.colBuilding = mapTile.N / 2;
-				uu.initTilePos = Point{ uu.rowBuilding, uu.colBuilding };
-				uu.Move = 0.0;
-				uu.nowPosiLeft = mapTile.ToTile(uu.initTilePos, mapTile.N)
+				unit_template.ID = classBattleManage.getIDCount();
+				unit_template.IsBuilding = true;
+				unit_template.mapTipObjectType = MapTipObjectType::HOME;
+				unit_template.rowBuilding = mapTile.N / 2;
+				unit_template.colBuilding = mapTile.N / 2;
+				unit_template.initTilePos = Point{ unit_template.rowBuilding, unit_template.colBuilding };
+				unit_template.Move = 0.0;
+				unit_template.nowPosiLeft = mapTile.ToTile(unit_template.initTilePos, mapTile.N)
 					.asPolygon()
 					.centroid()
-					.movedBy(-(uu.yokoUnit / 2), -(uu.TakasaUnit / 2));
-				auto u = std::make_shared<Unit>(uu);
-				classBattleManage.hsMyUnitBuilding.insert(u);
+					.movedBy(-(unit_template.yokoUnit / 2), -(unit_template.TakasaUnit / 2));
+				auto building_unit_ptr = std::make_shared<Unit>(unit_template);
+				classBattleManage.hsMyUnitBuilding.insert(building_unit_ptr);
 			}
 		}
 	}

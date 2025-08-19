@@ -30,7 +30,10 @@ class Battle001 : public FsScene
 {
 public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
+	// Test-only constructor
+	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss, bool isTest);
 	~Battle001() override;
+	MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
 private:
 	struct ProductionOrder {
 		String spawn;
@@ -77,6 +80,10 @@ private:
 	/// @brief 
 	void draw() const override;
 	void initUI();
+	void initFormationUI();
+	void initSkillUI();
+	void initBuildMenu();
+	void initMinimap();
 	/// @brief リソースターゲットのリストを設定します。
 	/// @param classBattleManage バトル管理を行うClassBattleオブジェクト。
 	/// @param resourceTargets ResourcePointTooltip::TooltipTargetの配列。設定されるリソースターゲットのリストです。
@@ -99,7 +106,7 @@ private:
 	/// @param num 登録するユニットの数。
 	/// @param listU ユニットを格納するClassHorizontalUnitの配列への参照。
 	/// @param enemy ユニットが敵かどうかを示すフラグ。
-	void UnitRegister(ClassBattle& classBattleManage, MapTile mapTile, String unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& listU, bool enemy);
+	void UnitRegister(ClassBattle& classBattleManage, const MapTile& mapTile, const String& unitName, int32 col, int32 row, int32 num, Array<ClassHorizontalUnit>& unit_list, bool enemy);
 	/// @brief カメラの現在のビュー領域（矩形）を計算します。
 	/// @param camera ビュー領域を計算するためのCamera2Dオブジェクト。
 	/// @param mapTile タイルのオフセット情報を含むMapTileオブジェクト。
@@ -142,7 +149,8 @@ private:
 	void handleDenseFormation(Point end);
 	void handleHorizontalFormation(Point start, Point end);
 	void handleSquareFormation(Point start, Point end);
-	void handleUnitSelection(const RectF& selectionRect);
+	void setUnitsSelectedInRect(const RectF& selectionRect);
+	void issueMoveOrder(Point start, Point end);
 	//void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc) const;
 	void drawSkillUI() const;
 	void drawBuildDescription() const;
@@ -157,6 +165,12 @@ private:
 	void handleBuildMenuSelectionA();
 	void processUnitBuildMenuSelection(Unit& unit);
 	void handleUnitAndBuildingSelection();
+	void processClickSelection();
+	Optional<long long> findClickedBuildingId() const;
+	Optional<long long> findClickedUnitId() const;
+	void deselectAll();
+	void toggleUnitSelection(long long unit_id);
+	void toggleBuildingSelection(long long building_id);
 	void handleSkillUISelection();
 	void updateUnitHealthBars();
 	void updateUnitMovements();
@@ -359,8 +373,11 @@ private:
 	Array<ClassExecuteSkills> m_Battle_enemy_skills;
 	Array<ClassExecuteSkills> m_Battle_neutral_skills;
 
-	void SkillProcess(Array<ClassHorizontalUnit>& ach, Array<ClassHorizontalUnit>& achTarget, Array<ClassExecuteSkills>& aces);
-	bool SkillProcess002(Array<ClassHorizontalUnit>& aaatarget, Vec2 xA, Unit& itemUnit, Skill& itemSkill, Array<ClassExecuteSkills>& aces);
+	void SkillProcess(Array<ClassHorizontalUnit>& attacker_groups, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills);
+	void findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills);
+	bool tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills);
+	bool isTargetInRange(const Unit& attacker, const Unit& target, const Skill& skill) const;
+	ClassExecuteSkills createSkillExecution(Unit& attacker, const Unit& target, const Skill& skill);
 	void ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu);
 	void ColliderCheckHeal(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Unit* itemTarget);
 	void CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills& ces);
