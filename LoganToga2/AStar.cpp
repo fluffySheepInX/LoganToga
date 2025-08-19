@@ -1,8 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "AStar.h"
 #include "ClassUnit.h"
 #include "ClassMapBattle.h"
-#include "ClassAStarManager.h"
 
 Optional<ClassAStar*> AStar::SearchMinScore(const Array<ClassAStar*>& ls) {
 	int minScore = std::numeric_limits<int>::max();

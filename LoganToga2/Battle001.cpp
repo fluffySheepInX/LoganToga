@@ -137,7 +137,8 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 
 	Array splitA = bbb.split(U'*');
 	//field(床画像
-	md.tip = classMap.ele[splitA[0]];
+    // 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
+    md.tip = classMap.ele.at(splitA[0]);
 	//build(城壁や矢倉など
 	if (splitA.size() > 1)
 	{
@@ -147,7 +148,8 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 			for (String item : splitB)
 			{
 				Array splitWi = item.split(U':');
-				String re = classMap.ele[splitWi[0]];
+                // 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
+                String re = classMap.ele.at(splitWi[0]);
 				if (re != U"")
 				{
 					std::tuple<String, long, BattleWhichIsThePlayer> pp = { re,-1, BattleWhichIsThePlayer::None };
@@ -168,11 +170,14 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 		}
 	}
 	//ユニットの情報
-	if (splitA.size() > 2 && re.size() > 0 && re[0] != U"-1")
+	if (splitA.size() > 2)
 	{
 		Array re = splitA[2].split(U':');
-		md.unit = re[0];
-		md.houkou = re[1];
+		if (re[0] != U"-1")
+		{
+			md.unit = re[0];
+			md.houkou = re[1];
+		}
 	}
 	//【出撃、防衛、中立の位置】もしくは【退却位置】
 	if (splitA.size() > 3)
