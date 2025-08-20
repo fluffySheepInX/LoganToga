@@ -234,7 +234,7 @@ private:
 	void AssignUnitsInFormation(const Array<Unit*>& units, const Vec2& start, const Vec2& end, int32 rowIndex);
 	Vec2 calcLastMerge(const Array<Unit*>& units, std::function<Vec2(const Unit*)> getPos);
 	void setMergePos(const Array<Unit*>& units, void (Unit::* setter)(const Vec2&), const Vec2& setPos);
-	ClassHorizontalUnit getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
+	Array<Unit*> getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf);
 	bool IsBuildSelectTraget = false;
 	long longBuildSelectTragetId = -1;
 	bool IsBuildMenuHome = false;

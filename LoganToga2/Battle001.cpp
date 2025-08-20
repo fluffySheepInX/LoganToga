@@ -706,15 +706,15 @@ void Battle001::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(con
 /// @param source ユニットの配列。各要素は ClassHorizontalUnit 型です。
 /// @param bf 抽出対象となる陣形（BattleFormation 型）。
 /// @return 指定された陣形で移動可能かつ戦闘可能なユニットのみを含む ClassHorizontalUnit オブジェクト。
-ClassHorizontalUnit Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
+Array<Unit*> Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
 {
-	ClassHorizontalUnit result;
+	Array<Unit*> result;
 	std::scoped_lock lock(classBattleManage.unitListMutex);
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
 			if (unit.Formation == bf && unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
-				result.ListClassUnit.push_back(unit);
+				result.push_back(&unit);
 		}
 
 	return result;
@@ -737,34 +737,25 @@ void Battle001::handleDenseFormation(Point end)
 void Battle001::handleHorizontalFormation(Point start, Point end)
 {
 	std::scoped_lock lock(classBattleManage.unitListMutex);
-	ClassHorizontalUnit liZenei;
-	liZenei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F);
-	ClassHorizontalUnit liKouei;
-	liKouei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B);
-	ClassHorizontalUnit liKihei;
-	liKihei = getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::M);
-	Array<ClassHorizontalUnit> lisClassHorizontalUnitLoop;
-	lisClassHorizontalUnitLoop.push_back(liZenei);
-	lisClassHorizontalUnitLoop.push_back(liKouei);
-	lisClassHorizontalUnitLoop.push_back(liKihei);
+	Array<Array<Unit*>> formationGroups;
+	formationGroups.push_back(getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F));
+	formationGroups.push_back(getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B));
+	formationGroups.push_back(getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::M));
 
-	for (auto&& [i, loopLisClassHorizontalUnit] : IndexedRef(lisClassHorizontalUnitLoop))
+	for (auto&& [i, group] : Indexed(formationGroups))
 	{
-		Array<Unit*> target;
-		for (auto& unit : loopLisClassHorizontalUnit.ListClassUnit)
-			if (unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
-				target.push_back(&unit);
-		if (target.size() == 0) continue;
+		if (group.isEmpty()) continue;
 
-		AssignUnitsInFormation(target, start, end, i);
+		AssignUnitsInFormation(group, start, end, i);
 
-		if (target.size() == 1) continue;
-		auto pos = calcLastMerge(target, [](const Unit* u) { return u->GetOrderPosiCenter(); });
-		auto pos2 = calcLastMerge(target, [](const Unit* u) { return u->GetNowPosiCenter(); });
-		setMergePos(target, &Unit::setFirstMergePos, pos2);
-		setMergePos(target, &Unit::setLastMergePos, pos);
+		if (group.size() > 1)
+		{
+			auto pos = calcLastMerge(group, [](const Unit* u) { return u->GetOrderPosiCenter(); });
+			auto pos2 = calcLastMerge(group, [](const Unit* u) { return u->GetNowPosiCenter(); });
+			setMergePos(group, &Unit::setFirstMergePos, pos2);
+			setMergePos(group, &Unit::setLastMergePos, pos);
+		}
 	}
-
 }
 void Battle001::handleSquareFormation(Point start, Point end)
 {
