@@ -18,6 +18,8 @@
 #include "AStar.h"
 #include "SafeUnitManager.h"
 
+class TestRunner; // Forward declaration for friending
+
 /// @brief スポーン位置定数
 enum class SpawnEdge : int32
 {
@@ -29,6 +31,7 @@ enum class SpawnEdge : int32
 
 class Battle001 : public FsScene
 {
+	friend class TestRunner;
 public:
 	Battle001(GameData& saveData, CommonConfig& commonConfig, SystemString ss);
 	// Test-only constructor
@@ -185,7 +188,12 @@ private:
 	void updateUnitHealthBars();
 	void updateUnitMovements();
 	void updatePlayerUnitMovements();
+	void handlePlayerPathMovement(Unit& unit, ClassUnitMovePlan& plan);
+	void startPlayerPathMovement(Unit& unit, ClassUnitMovePlan& plan);
+	void handleCompletedPlayerPath(Unit& unit, ClassUnitMovePlan& plan);
 	void updateEnemyUnitMovements();
+	void handleEnemyPathMovement(Unit& unit, ClassUnitMovePlan& plan);
+	void startEnemyPathMovement(Unit& unit, ClassUnitMovePlan& plan);
 	void startAsyncFogCalculation();
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
 	ClassMapBattle GetClassMapBattle(ClassMap classMap, CommonConfig& commonConfig);
@@ -355,10 +363,11 @@ private:
 	bool tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills);
 	bool isTargetInRange(const Unit& attacker, const Unit& target, const Skill& skill) const;
 	ClassExecuteSkills createSkillExecution(Unit& attacker, const Unit& target, const Skill& skill);
-	void ColliderCheck(RectF skillHitbox, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu);
-	void ColliderCheckHeal(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Unit* itemTarget);
+	void processSkillEffects();
+	void updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, Array<ClassHorizontalUnit>& friendlyUnits);
+	void handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, bool& isBomb);
 	void CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills& ces);
-	bool ProcessCollid(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget);
+	bool applySkillEffectAndRegisterHit(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget);
 
 	// Refactored mainLoop helpers
 	void updateGameSystems();
