@@ -894,31 +894,6 @@ void Battle001::updateResourceIncome()
 			}
 		}
 
-		//for (auto ttt : classBattleManage.classMapBattle.value().mapData)
-		//{
-		//	for (auto jjj : ttt)
-		//	{
-		//		if (jjj.whichIsThePlayer == BattleWhichIsThePlayer::Sortie)
-		//		{
-		//			//資金の増加
-		//			switch (jjj.resourcePointType)
-		//			{
-		//			case resourceKind::Gold:
-		//				goldInc += jjj.resourcePointAmount;
-		//				break;
-		//			case resourceKind::Trust:
-		//				trustInc += jjj.resourcePointAmount;
-		//				break;
-		//			case resourceKind::Food:
-		//				foodInc += jjj.resourcePointAmount;
-		//				break;
-		//			default:
-		//				break;
-		//			}
-		//		}
-		//	}
-		//}
-
 		stopwatchFinance.restart();
 		gold += 10 + goldInc; // 1秒ごとに10ゴールド増加
 		trust += 1 + trustInc; // 1秒ごとに1権勢増加
@@ -1136,153 +1111,14 @@ void Battle001::processUnitBuildMenuSelection(Unit& itemUnit)
 
 			if (hbm.second.category == U"Carrier")
 			{
-				// 周囲3マス範囲のランダムユニット格納処理
-
-					// 現在選択されているユニットを取得
-				Unit* selectedCarrierUnit = nullptr;
-				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
-					for (auto& loau : classBattleManage.listOfAllUnit)
-					{
-						for (auto& unit : loau.ListClassUnit)
-						{
-							if (unit.IsSelect)
-							{
-								selectedCarrierUnit = &unit;
-								break;
-							}
-						}
-						if (selectedCarrierUnit) break;
-					}
-				}
-
-				if (!selectedCarrierUnit) continue;
-
-				// キャリアーコンポーネントを取得
-				auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
-				if (!carrierComponent) continue;
-
-				// 選択ユニットの現在位置のタイル座標を取得
-				Optional<Point> carrierTileIndex = mapTile.ToIndex(
-					selectedCarrierUnit->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-				if (!carrierTileIndex.has_value()) continue;
-
-				// 周囲3マス範囲のユニットを検索
-				Array<Unit*> nearbyUnits;
-				const int32 searchRadius = 3;
-
-				// 味方ユニットから検索
-				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
-					for (auto& group : classBattleManage.listOfAllUnit)
-					{
-						for (auto& unit : group.ListClassUnit)
-						{
-							// 自分自身、建物、戦闘不可ユニットは除外
-							if (unit.ID == selectedCarrierUnit->ID ||
-								unit.IsBuilding ||
-								!unit.IsBattleEnable || unit.isCarrierUnit) continue;
-
-							// ユニットの現在位置のタイル座標を取得
-							Optional<Point> unitTileIndex = mapTile.ToIndex(
-								unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-							if (!unitTileIndex.has_value()) continue;
-
-							// 距離をチェック（マンハッタン距離）
-							int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
-							if (distance <= searchRadius)
-							{
-								nearbyUnits.push_back(&unit);
-							}
-						}
-					}
-				}
-
-				// 範囲内にユニットがいない場合は処理終了
-				if (nearbyUnits.isEmpty())
-				{
-					Print << U"周囲3マス以内にユニットが見つかりません";
-					continue;
-				}
-
-				// ランダムに並び替え
-				Shuffle(nearbyUnits);
-
-				// キャリアーの容量まで格納
-				int32 storedCount = 0;
-				for (Unit* unit : nearbyUnits)
-				{
-					if (carrierComponent->store(unit))
-					{
-						storedCount++;
-						Print << U"ユニット '{}' を格納しました"_fmt(unit->Name);
-
-						// 容量に達したら終了
-						if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
-						{
-							break;
-						}
-					}
-					else
-					{
-						Print << U"キャリアーの容量が満杯です";
-						break;
-					}
-				}
-
-				if (storedCount > 0)
-				{
-					Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
-				}
-				else
-				{
-					Print << U"格納できるユニットがありませんでした";
-				}
+				handleCarrierStoreCommand(itemUnit);
+				continue;
 			}
 
 			if (hbm.second.category == U"releaseAll")
 			{
-				// 現在選択されているユニットを取得
-				Unit* selectedCarrierUnit = nullptr;
-				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
-					for (auto& loau : classBattleManage.listOfAllUnit)
-					{
-						for (auto& unit : loau.ListClassUnit)
-						{
-							if (unit.IsSelect)
-							{
-								selectedCarrierUnit = &unit;
-								break;
-							}
-						}
-						if (selectedCarrierUnit) break;
-					}
-				}
-
-				if (!selectedCarrierUnit) continue;
-
-				// キャリアーコンポーネントを取得
-				auto* carrierComponent = selectedCarrierUnit->getComponent<CarrierComponent>();
-				if (!carrierComponent) continue;
-
-				// 格納されているユニットがあるかチェック
-				if (carrierComponent->storedUnits.empty())
-				{
-					Print << U"格納されているユニットがありません";
-					continue;
-				}
-
-				// 現在のキャリアーユニットの位置を取得
-				Vec2 releasePosition = selectedCarrierUnit->GetNowPosiCenter();
-
-				// 格納されているユニット数を記録（リリース前）
-				int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
-
-				// 全ユニットを解放
-				carrierComponent->releaseAll(releasePosition);
-
-				Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
+				handleCarrierReleaseCommand(itemUnit);
+				continue;
 			}
 
 			// 設置位置の取得
@@ -1335,6 +1171,115 @@ void Battle001::processUnitBuildMenuSelection(Unit& itemUnit)
 		}
 
 	}
+}
+
+void Battle001::handleCarrierStoreCommand(Unit& unit)
+{
+	// キャリアーコンポーネントを取得
+	auto* carrierComponent = unit.getComponent<CarrierComponent>();
+	if (!carrierComponent) return;
+
+	// 選択ユニットの現在位置のタイル座標を取得
+	Optional<Point> carrierTileIndex = mapTile.ToIndex(
+		unit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+	if (!carrierTileIndex.has_value()) return;
+
+	// 周囲3マス範囲のユニットを検索
+	Array<Unit*> nearbyUnits;
+	const int32 searchRadius = 3;
+
+	// 味方ユニットから検索
+	{
+		std::scoped_lock lock(classBattleManage.unitListMutex);
+		for (auto& group : classBattleManage.listOfAllUnit)
+		{
+			for (auto& otherUnit : group.ListClassUnit)
+			{
+				// 自分自身、建物、戦闘不可ユニット、他のキャリアは除外
+				if (otherUnit.ID == unit.ID ||
+					otherUnit.IsBuilding ||
+					!otherUnit.IsBattleEnable || otherUnit.isCarrierUnit) continue;
+
+				// ユニットの現在位置のタイル座標を取得
+				Optional<Point> unitTileIndex = mapTile.ToIndex(
+					otherUnit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+				if (!unitTileIndex.has_value()) continue;
+
+				// 距離をチェック（マンハッタン距離）
+				int32 distance = carrierTileIndex->manhattanDistanceFrom(*unitTileIndex);
+				if (distance <= searchRadius)
+				{
+					nearbyUnits.push_back(&otherUnit);
+				}
+			}
+		}
+	}
+
+	// 範囲内にユニットがいない場合は処理終了
+	if (nearbyUnits.isEmpty())
+	{
+		Print << U"周囲3マス以内に格納可能なユニットが見つかりません";
+		return;
+	}
+
+	// ランダムに並び替え
+	Shuffle(nearbyUnits);
+
+	// キャリアーの容量まで格納
+	int32 storedCount = 0;
+	for (Unit* unitToStore : nearbyUnits)
+	{
+		if (carrierComponent->store(unitToStore))
+		{
+			storedCount++;
+			Print << U"ユニット '{}' を格納しました"_fmt(unitToStore->Name);
+
+			// 容量に達したら終了
+			if (carrierComponent->storedUnits.size() >= carrierComponent->capacity)
+			{
+				break;
+			}
+		}
+		else
+		{
+			Print << U"キャリアーの容量が満杯です";
+			break;
+		}
+	}
+
+	if (storedCount > 0)
+	{
+		Print << U"合計 {} 体のユニットを格納しました"_fmt(storedCount);
+	}
+	else
+	{
+		Print << U"格納できるユニットがありませんでした";
+	}
+}
+
+void Battle001::handleCarrierReleaseCommand(Unit& unit)
+{
+	// キャリアーコンポーネントを取得
+	auto* carrierComponent = unit.getComponent<CarrierComponent>();
+	if (!carrierComponent) return;
+
+	// 格納されているユニットがあるかチェック
+	if (carrierComponent->storedUnits.empty())
+	{
+		Print << U"格納されているユニットがありません";
+		return;
+	}
+
+	// 現在のキャリアーユニットの位置を取得
+	Vec2 releasePosition = unit.GetNowPosiCenter();
+
+	// 格納されているユニット数を記録（リリース前）
+	int32 releasedCount = static_cast<int32>(carrierComponent->storedUnits.size());
+
+	// 全ユニットを解放
+	carrierComponent->releaseAll(releasePosition);
+
+	Print << U"合計 {} 体のユニットを解放しました"_fmt(releasedCount);
 }
 
 /// @brief 建築予約をするのが本質
@@ -2269,7 +2214,7 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 	return false; // 適切なターゲットが見つからなかった
 }
 
-void Battle001::ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu)
+void Battle001::ColliderCheck(RectF skillHitbox, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Array<int32>& arrayNo, Array<ClassHorizontalUnit>& chu)
 {
 	Circle tc2 = Circle{ target.NowPosition.x,target.NowPosition.y,loop_Battle_player_skills.classSkill.w / 2.0 };
 
@@ -2312,7 +2257,7 @@ void Battle001::ColliderCheck(RectF rrr, ClassBullets& target, ClassExecuteSkill
 
 			Circle cTar = Circle{ vv,1 };
 			if (loop_Battle_player_skills.classSkill.SkillCenter == SkillCenter::end
-				&& rrr.rotatedAt(rrr.bottomCenter(), target.radian + Math::ToRadians(90)).intersects(cTar) == true)
+				&& skillHitbox.rotatedAt(skillHitbox.bottomCenter(), target.radian + Math::ToRadians(90)).intersects(cTar) == true)
 			{
 				if (ProcessCollid(bombCheck, arrayNo, target, loop_Battle_player_skills, itemTarget))break;
 			}
@@ -3065,24 +3010,7 @@ void Battle001::drawTileMap(const RectF& cameraView, const MapTile& mapTile, con
 	forEachVisibleTile(cameraView, mapTile, [&](const Point& index, const Vec2& pos) {
 		const auto& tile = classBattleManage.classMapBattle.value().mapData[index.x][index.y];
 		TextureAsset(tile.tip + U".png").draw(Arg::bottomCenter = pos);
-});
-
-	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
-	//{
-	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
-	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
-
-	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
-	//	{
-	//		Point index{ xi + k, yi - k };
-	//		Vec2 pos = mapTile.ToTileBottomCenter(index, mapTile.N);
-	//		if (!cameraView.intersects(pos))
-	//			continue;
-
-	//		const auto& tile = classBattleManage.classMapBattle.value().mapData[index.x][index.y];
-	//		TextureAsset(tile.tip + U".png").draw(Arg::bottomCenter = pos);
-	//	}
-	//}
+	});
 }
 /// @brief カメラビューとマップタイル、可視性マップに基づいてフォグ（霧）を描画します。
 /// @param cameraView 描画範囲を指定するカメラの矩形領域。
@@ -3090,25 +3018,6 @@ void Battle001::drawTileMap(const RectF& cameraView, const MapTile& mapTile, con
 /// @param visibilityMap 各タイルの可視状態を示すグリッド。
 void Battle001::drawFog(const RectF& cameraView, const MapTile& mapTile, const Grid<Visibility> visibilityMap) const
 {
-	//for (int32 i = 0; i < (mapTile.N * 2 - 1); ++i)
-	//{
-	//	int32 xi = (i < (mapTile.N - 1)) ? 0 : (i - (mapTile.N - 1));
-	//	int32 yi = (i < (mapTile.N - 1)) ? i : (mapTile.N - 1);
-
-	//	for (int32 k = 0; k < (mapTile.N - Abs(mapTile.N - i - 1)); ++k)
-	//	{
-	//		Point index{ xi + k, yi - k };
-	//		switch (visibilityMap[index])
-	//		{
-	//		case Visibility::Unseen:
-	//			mapTile.ToTile(index, mapTile.N).draw(ColorF{ 0.0, 0.6 });
-	//			break;
-	//		case Visibility::Visible:
-	//			break;
-	//		}
-	//	}
-	//}
-
 	forEachVisibleTile(cameraView, mapTile, [&](const Point& index, const Vec2& pos) {
 		if (visibilityMap[index] == Visibility::Unseen)
 		{
