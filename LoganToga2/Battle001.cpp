@@ -2952,7 +2952,7 @@ Co::Task<void> Battle001::mainLoop()
 		co_await handlePlayerInput();
 		updateAllUnits();
 		processCombat();
-		checkUnitDeaths();
+		//checkUnitDeaths();
 
 		co_await Co::NextFrame();
 	}
