@@ -12,6 +12,7 @@
 #include "GameUIToolkit.h"
 #include "ClassBuildAction.h"
 #include "MapTile.h"
+#include "UnitTooltip.h"
 # include "280_ClassExecuteSkills.h" 
 
 #include "AStar.h"
@@ -283,41 +284,6 @@ private:
 	void processBuildOnTilesWithMovement(const Array<Point>& tiles);
 	void handleBuildTargetSelection();
 
-	struct UnitTooltip
-	{
-		bool isVisible = false;
-		Vec2 position;
-		String content;
-		RenderTexture renderTexture;
-		Stopwatch fadeTimer;
-		String lastRenderedContent;
-		stOfFont fontInfo;
-		void show(const Vec2& pos, const String& text)
-		{
-			// 同じ内容で既に表示中の場合は位置のみ更新
-			if (isVisible && content == text)
-			{
-				position = pos;
-				return; // タイマーをリセットしない
-			}
-
-			position = pos;
-			content = text;
-			isVisible = true;
-			fadeTimer.restart();
-			updateRenderTexture();
-		}
-
-		void hide()
-		{
-			isVisible = false;
-			// 非表示時に前回の内容をクリアして、次回必ず更新されるようにする
-			lastRenderedContent.clear();
-		}
-
-		void updateRenderTexture();
-		void draw() const;
-	};
 
 	UnitTooltip unitTooltip;
 
