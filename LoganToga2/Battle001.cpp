@@ -2239,6 +2239,14 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 		defStr = 0;
 	}
 
+	double damage = powerStr - defStr;
+	if (damage > 0 && ces.classSkill.SkillType != SkillType::heal)
+	{
+		Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
+			<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
+			<< U" with Skill: " << ces.classSkill.nameTag;
+	}
+
 	if (itemTarget.IsBuilding == true)
 	{
 		itemTarget.HPCastle = itemTarget.HPCastle - (powerStr)+(defStr);
