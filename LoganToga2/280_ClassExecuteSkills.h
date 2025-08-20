@@ -30,7 +30,6 @@ class ClassExecuteSkills
 public:
 	int32 No;
 	int32 UnitID;
-	Unit* classUnit;
 	Unit* classUnitHealTarget;
 	Skill classSkill;
 	Array<ClassBullets> ArrayClassBullet;

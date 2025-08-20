@@ -1827,6 +1827,54 @@ void Battle001::updateUnitMovements()
 	updateEnemyUnitMovements();
 }
 
+Unit* Battle001::getUnitById(int64 id)
+{
+	// Search in player units
+	for (auto& unit_group : classBattleManage.listOfAllUnit)
+	{
+		for (auto& unit : unit_group.ListClassUnit)
+		{
+			if (unit.ID == id)
+			{
+				return &unit;
+			}
+		}
+	}
+
+	// Search in enemy units
+	for (auto& unit_group : classBattleManage.listOfAllEnemyUnit)
+	{
+		for (auto& unit : unit_group.ListClassUnit)
+		{
+			if (unit.ID == id)
+			{
+				return &unit;
+			}
+		}
+	}
+
+	// Search in player buildings
+	for (const auto& building : classBattleManage.hsMyUnitBuilding)
+	{
+		if (building->ID == id)
+		{
+			return building.get();
+		}
+	}
+
+	// Search in enemy buildings
+	for (const auto& building : classBattleManage.hsEnemyUnitBuilding)
+	{
+		if (building->ID == id)
+		{
+			return building.get();
+		}
+	}
+
+	return nullptr;
+}
+
+
 // ユニット情報ツールチップのハンドリング
 void Battle001::handleUnitTooltip()
 {
@@ -2030,7 +2078,6 @@ ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& t
 	executed_skill.No = classBattleManage.getDeleteCESIDCount();
 	executed_skill.UnitID = attacker.ID;
 	executed_skill.classSkill = skill;
-	executed_skill.classUnit = &attacker;
 	executed_skill.classUnitHealTarget = const_cast<Unit*>(&target); // Original code did this, needs review
 
 	for (int i = 0; i < rush_count; ++i)
@@ -2203,7 +2250,7 @@ void Battle001::processSkillEffects()
 }
 
 
-void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills& ces)
+void Battle001::CalucDamage(Unit& itemTarget, double strTemp, const ClassExecuteSkills& ces, const Unit& attacker)
 {
 	double powerStr = 0;
 	double defStr = 0;
@@ -2212,21 +2259,21 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 	{
 	case SkillStrKind::attack:
 	{
-		powerStr = (ces.classUnit->Attack
+		powerStr = (attacker.Attack
 			* (strTemp / 100)
 			)
 			* Random(0.8, 1.2);
-		defStr = ces.classUnit->Defense * Random(0.8, 1.2);
+		defStr = itemTarget.Defense * Random(0.8, 1.2);
 	}
 	break;
 	case SkillStrKind::attack_magic:
 	{
 		powerStr = (
-			(ces.classUnit->Attack + ces.classUnit->Magic)
+			(attacker.Attack + attacker.Magic)
 			* (strTemp / 100)
 			)
 			* Random(0.8, 1.2);
-		defStr = ces.classUnit->Defense * Random(0.8, 1.2);
+		defStr = itemTarget.Defense * Random(0.8, 1.2);
 	}
 	break;
 	default:
@@ -2243,45 +2290,52 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 	if (damage > 0 && ces.classSkill.SkillType != SkillType::heal)
 	{
 		Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
-			<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
+			<< U" takes " << damage << U" damage from Attacker: " << attacker.Name << U" (ID:" << attacker.ID << U")"
 			<< U" with Skill: " << ces.classSkill.nameTag;
 	}
 
 	if (itemTarget.IsBuilding == true)
 	{
-		itemTarget.HPCastle = itemTarget.HPCastle - (powerStr)+(defStr);
+		itemTarget.HPCastle -= damage;
 	}
 	else
 	{
 		if (ces.classSkill.SkillType == SkillType::heal)
 		{
+			// Healing should not be affected by defense
 			if (ces.classSkill.attr == U"mp")
 			{
-				itemTarget.Mp = itemTarget.Mp + (powerStr)+(defStr);
+				itemTarget.Mp += powerStr;
 			}
 			else if (ces.classSkill.attr == U"hp")
 			{
-				itemTarget.Hp = itemTarget.Hp + (powerStr)+(defStr);
+				itemTarget.Hp += powerStr;
 			}
 		}
 		else
 		{
-			itemTarget.Hp = itemTarget.Hp - (powerStr)+(defStr);
+			itemTarget.Hp -= damage;
 		}
 	}
 }
 bool Battle001::applySkillEffectAndRegisterHit(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget)
 {
-	loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
+	Unit* attacker = getUnitById(loop_Battle_player_skills.UnitID);
+	if (not attacker)
+	{
+		return false; // Attacker not found, maybe died.
+	}
 
-	CalucDamage(itemTarget, loop_Battle_player_skills.classSkill.str, loop_Battle_player_skills);
+	attacker->FlagMovingSkill = false;
+
+	CalucDamage(itemTarget, loop_Battle_player_skills.classSkill.str, loop_Battle_player_skills, *attacker);
 
 	//消滅
 	arrayNo.push_back(target.No);
 	//一体だけ当たったらそこで終了
 	if (loop_Battle_player_skills.classSkill.SkillBomb == SkillBomb::off)
 	{
-		bombCheck == true;
+		bombCheck = true;
 		return true;
 	}
 	return false;

@@ -378,5 +378,6 @@ private:
 	void updateAllUnits();
 	void processCombat();
 	void checkUnitDeaths();
+	Unit* getUnitById(int64 id);
 };
 
