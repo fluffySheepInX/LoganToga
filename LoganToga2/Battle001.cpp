@@ -2192,8 +2192,6 @@ void Battle001::processSkillEffects()
 	// Neutral skills vs ...? (Logic unclear, assuming vs all for now)
 	for (auto& executedSkill : m_Battle_neutral_skills)
 	{
-		Print << U"[NEUTRAL_SKILL_LOG] Unit " << executedSkill.classUnit->ID
-			<< U" is using neutral skill " << executedSkill.classSkill.nameTag;
 		updateAndCheckCollisions(executedSkill, classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit);
 		updateAndCheckCollisions(executedSkill, classBattleManage.listOfAllEnemyUnit, classBattleManage.listOfAllUnit);
 	}
@@ -2947,6 +2945,22 @@ Co::Task<void> Battle001::mainLoop()
 
 	while (true)
 	{
+		{
+			bool found_producing = false;
+			for (auto& loau : classBattleManage.listOfAllUnit)
+			{
+				for (auto& itemUnit : loau.ListClassUnit)
+				{
+					if (!itemUnit.arrYoyakuBuild.isEmpty())
+					{
+						Print << U"[HP_WATCH] Frame Start. Producing Unit ID: " << itemUnit.ID << U", HP: " << itemUnit.Hp;
+						found_producing = true;
+						break;
+					}
+				}
+				if (found_producing) break;
+			}
+		}
 		if (shouldExit)
 			co_return;
 
