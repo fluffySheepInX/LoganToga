@@ -2192,6 +2192,8 @@ void Battle001::processSkillEffects()
 	// Neutral skills vs ...? (Logic unclear, assuming vs all for now)
 	for (auto& executedSkill : m_Battle_neutral_skills)
 	{
+		Print << U"[NEUTRAL_SKILL_LOG] Unit " << executedSkill.classUnit->ID
+			<< U" is using neutral skill " << executedSkill.classSkill.nameTag;
 		updateAndCheckCollisions(executedSkill, classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit);
 		updateAndCheckCollisions(executedSkill, classBattleManage.listOfAllEnemyUnit, classBattleManage.listOfAllUnit);
 	}
@@ -2952,7 +2954,7 @@ Co::Task<void> Battle001::mainLoop()
 		co_await handlePlayerInput();
 		updateAllUnits();
 		processCombat();
-		//checkUnitDeaths();
+		checkUnitDeaths();
 
 		co_await Co::NextFrame();
 	}
