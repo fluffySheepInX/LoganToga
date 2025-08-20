@@ -1,4 +1,5 @@
-#include "UnitTooltip.h"
+﻿#include "UnitTooltip.h"
+#include "Common.h"
 
 UnitTooltip::UnitTooltip(const Font& font)
 	: m_font(font)
