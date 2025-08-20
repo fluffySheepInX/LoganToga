@@ -184,9 +184,8 @@ void TestRunner::test_updateUnitMovements_simpleMove()
     ClassUnitMovePlan plan;
     // The actual path content doesn't matter much for this specific test,
     // as long as `isPathCompleted()` returns false.
-    plan.path.push_back(Point(1, 1));
-    plan.path.push_back(Point(2, 1));
-    plan.currentPathIndex = 1;
+    plan.setPathPush(Point(1, 1));
+    plan.setPathPush(Point(2, 1));
     battle_for_test.aiRootMy.emplace(test_unit.ID, plan);
 
     // Add unit to the battle manager
