@@ -2964,7 +2964,66 @@ void Battle001::handleFormationSelection()
 	{
 		if (ttt.leftClicked())
 		{
-			// ... (rest of the logic is unchanged)
+			arrayBattleZinkei.clear();
+			for (size_t k = 0; k < rectZinkei.size(); k++)
+			{
+				arrayBattleZinkei.push_back(false);
+			}
+			arrayBattleZinkei[j] = true;
+
+			renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+			{
+				const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+
+				// 描画された最大のアルファ成分を保持するブレンドステート
+				const ScopedRenderStates2D blend{ MakeBlendState() };
+
+				Rect df = Rect(320, 60);
+				df.drawFrame(4, 0, ColorF{ 0.5 });
+
+				for (auto&& [i, ttt] : Indexed(rectZinkei))
+				{
+					if (i == 0)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"密集").draw(ttt, Palette::Black);
+						continue;
+					}
+					else if (i == 1)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"横列").draw(ttt, Palette::Black);
+						continue;
+					}
+					else if (i == 2)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"正方").draw(ttt, Palette::Black);
+						continue;
+					}
+				}
+			}
 		}
 	}
 }
