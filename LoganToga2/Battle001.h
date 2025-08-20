@@ -81,6 +81,9 @@ private:
 	/// @brief 
 	void draw() const override;
 	void initUI();
+	void registerTextureAssets();
+	void setupInitialUnits();
+	void startAsyncTasks();
 	void initFormationUI();
 	void initSkillUI();
 	void initBuildMenu();
@@ -184,7 +187,7 @@ private:
 	void updateEnemyUnitMovements();
 	void startAsyncFogCalculation();
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
-	ClassMapBattle GetClassMapBattle(ClassMap cm, CommonConfig& commonConfig);
+	ClassMapBattle GetClassMapBattle(ClassMap classMap, CommonConfig& commonConfig);
 	//MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
 
 
@@ -394,6 +397,9 @@ private:
 	// Refactored mainLoop helpers
 	void updateGameSystems();
 	Co::Task<void> handlePlayerInput();
+	bool wasBuildMenuClicked();
+	Co::Task<void> handleRightClickInput();
+	void handleFormationSelection();
 	void updateAllUnits();
 	void processCombat();
 	void checkUnitDeaths();

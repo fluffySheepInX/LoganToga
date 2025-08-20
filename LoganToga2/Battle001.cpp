@@ -101,20 +101,20 @@ static BuildAction& dummyMenu()
 
 MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig)
 {
-	MapDetail map_detail;
-	String tile_data_mutable = String(tileData); // Modifiable copy
+	MapDetail mapDetail;
+	String tileDataMutable = String(tileData); // Modifiable copy
 
 	// RESOURCE:XXXパターンをチェック
-	if (tile_data_mutable.includes(U"RESOURCE:"))
+	if (tileDataMutable.includes(U"RESOURCE:"))
 	{
 		// RESOURCE:XXXを抽出
-		auto resourceStart = tile_data_mutable.indexOf(U"RESOURCE:");
+		auto resourceStart = tileDataMutable.indexOf(U"RESOURCE:");
 		if (resourceStart != String::npos)
 		{
-			auto resourceEnd = tile_data_mutable.indexOf(U',', resourceStart);
-			if (resourceEnd == String::npos) resourceEnd = tile_data_mutable.length();
+			auto resourceEnd = tileDataMutable.indexOf(U',', resourceStart);
+			if (resourceEnd == String::npos) resourceEnd = tileDataMutable.length();
 
-			String resourcePattern = tile_data_mutable.substr(resourceStart, resourceEnd - resourceStart);
+			String resourcePattern = tileDataMutable.substr(resourceStart, resourceEnd - resourceStart);
 			String resourceName = resourcePattern.substr(9); // "RESOURCE:"を除去
 
 			// commonConfig.htResourceDataから対応するリソース情報を取得
@@ -123,22 +123,22 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 				const ClassResource& resource = commonConfig.htResourceData[resourceName];
 
 				// MapDetailにリソース情報を設定
-				map_detail.isResourcePoint = true;
-				map_detail.resourcePointType = resource.resourceType;
-				map_detail.resourcePointAmount = resource.resourceAmount;
-				map_detail.resourcePointDisplayName = resource.resourceName;
-				map_detail.resourcePointIcon = resource.resourceIcon;
+				mapDetail.isResourcePoint = true;
+				mapDetail.resourcePointType = resource.resourceType;
+				mapDetail.resourcePointAmount = resource.resourceAmount;
+				mapDetail.resourcePointDisplayName = resource.resourceName;
+				mapDetail.resourcePointIcon = resource.resourceIcon;
 			}
 
 			// RESOURCE:XXXをマップデータから除去
-			tile_data_mutable = tile_data_mutable.replaced(resourcePattern, U"");
+			tileDataMutable = tileDataMutable.replaced(resourcePattern, U"");
 		}
 	}
 
-	Array<String> main_parts = tile_data_mutable.split(U'*');
+	Array<String> main_parts = tileDataMutable.split(U'*');
 	//field(床画像
 	// 修正: classMap.ele を HashTable から std::unordered_map に変更する必要がある場合、以下のようにアクセスします。
-	map_detail.tip = classMap.ele.at(main_parts[0]);
+	mapDetail.tip = classMap.ele.at(main_parts[0]);
 	//build(城壁や矢倉など
 	if (main_parts.size() > 1)
 	{
@@ -164,7 +164,7 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 							building_tuple = { building_name, -1, BattleWhichIsThePlayer::Def };
 						}
 					}
-					map_detail.building.push_back(building_tuple);
+					mapDetail.building.push_back(building_tuple);
 				}
 			}
 		}
@@ -175,47 +175,47 @@ MapDetail Battle001::parseMapDetail(StringView tileData, const ClassMap& classMa
 		Array<String> unit_parts = main_parts[2].split(U':');
 		if (unit_parts[0] != U"-1")
 		{
-			map_detail.unit = unit_parts[0];
-			map_detail.houkou = unit_parts[1];
+			mapDetail.unit = unit_parts[0];
+			mapDetail.houkou = unit_parts[1];
 		}
 	}
 	//【出撃、防衛、中立の位置】もしくは【退却位置】
 	if (main_parts.size() > 3)
 	{
-		map_detail.posSpecial = main_parts[3];
-		if (map_detail.posSpecial == U"@@")
+		mapDetail.posSpecial = main_parts[3];
+		if (mapDetail.posSpecial == U"@@")
 		{
-			map_detail.kougekiButaiNoIti = true;
+			mapDetail.kougekiButaiNoIti = true;
 		}
-		else if (map_detail.posSpecial == U"@")
+		else if (mapDetail.posSpecial == U"@")
 		{
-			map_detail.boueiButaiNoIti = true;
+			mapDetail.boueiButaiNoIti = true;
 		}
 	}
 	//陣形
 	if (main_parts.size() > 5)
 	{
-		map_detail.zinkei = main_parts[5];
+		mapDetail.zinkei = main_parts[5];
 	}
-	return map_detail;
+	return mapDetail;
 }
 
-ClassMapBattle Battle001::GetClassMapBattle(ClassMap class_map, CommonConfig& commonConfig)
+ClassMapBattle Battle001::GetClassMapBattle(ClassMap classMap, CommonConfig& commonConfig)
 {
-	ClassMapBattle battle_map;
-	battle_map.name = class_map.name;
-	for (const String& row_string : class_map.data)
+	ClassMapBattle battleMap;
+	battleMap.name = classMap.name;
+	for (const String& row_string : classMap.data)
 	{
 		Array<MapDetail> map_detail_row;
 		Array<String> tile_strings = row_string.split(U',');
 		for (const auto& tile_data_string : tile_strings)
 		{
-			map_detail_row.push_back(parseMapDetail(tile_data_string, class_map, commonConfig));
+			map_detail_row.push_back(parseMapDetail(tile_data_string, classMap, commonConfig));
 		}
-		battle_map.mapData.push_back(std::move(map_detail_row));
+		battleMap.mapData.push_back(std::move(map_detail_row));
 	}
 
-	return battle_map;
+	return battleMap;
 }
 
 /// @brief Battle001 クラスのコンストラクタ。ゲームデータや設定をもとにバトルマップを初期化し、リソース情報やツールチップの設定を行います。
@@ -2695,7 +2695,7 @@ void Battle001::calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit
 
 /// @brief バトルシーンのメインループを開始し、スペースキーが押されたときに一時停止画面を表示
 /// @return 非同期タスク
-Co::Task<void> Battle001::start()
+void Battle001::registerTextureAssets()
 {
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/040_ChipImage/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
@@ -2705,21 +2705,17 @@ Co::Task<void> Battle001::start()
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
 	for (const auto& filePath : FileSystem::DirectoryContents(PATHBASE + PATH_DEFAULT_GAME + U"/041_ChipImageSkill/"))
 		TextureAsset::Register(FileSystem::FileName(filePath), filePath);
+}
 
-	/// modでカスタマイズ出来るようにあえて配列を使う
-	arrayBattleZinkei.push_back(false);
-	arrayBattleZinkei.push_back(false);
-	arrayBattleZinkei.push_back(false);
-	arrayBattleCommand.push_back(false);
-	arrayBattleCommand.push_back(false);
-
+void Battle001::setupInitialUnits()
+{
 	//初期ユニット
 	{
 		UnitRegister(classBattleManage, mapTile, U"LineInfantryM14",
-					10,
-					10,
-					3,
-					classBattleManage.listOfAllUnit, false
+			10,
+			10,
+			3,
+			classBattleManage.listOfAllUnit, false
 		);
 	}
 
@@ -2745,22 +2741,10 @@ Co::Task<void> Battle001::start()
 			}
 		}
 	}
+}
 
-	visibilityMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
-
-	initUI();
-
-	//始点設定
-	camera.jumpTo(
-		mapTile.ToTileBottomCenter(
-			Point(10, 10),
-			mapTile.N),
-		camera.getTargetScale());
-	resourcePointTooltip.setCamera(camera);
-
-	stopwatchFinance.restart();
-	stopwatchGameTime.restart();
-
+void Battle001::startAsyncTasks()
+{
 	aStar.taskAStarEnemy = Async([this]() {
 		while (!aStar.abortAStarEnemy)
 		{
@@ -2782,7 +2766,7 @@ Co::Task<void> Battle001::start()
 			}
 			System::Sleep(1);
 		}
-	});
+		});
 
 	aStar.taskAStarMyUnits = Async([this]() {
 		while (!aStar.abortAStarMyUnits)
@@ -2805,9 +2789,41 @@ Co::Task<void> Battle001::start()
 			}
 			System::Sleep(1); // CPU過負荷防止
 		}
-	});
+		});
 
 	startAsyncFogCalculation();
+}
+
+
+Co::Task<void> Battle001::start()
+{
+	registerTextureAssets();
+
+	/// modでカスタマイズ出来るようにあえて配列を使う
+	arrayBattleZinkei.push_back(false);
+	arrayBattleZinkei.push_back(false);
+	arrayBattleZinkei.push_back(false);
+	arrayBattleCommand.push_back(false);
+	arrayBattleCommand.push_back(false);
+
+	setupInitialUnits();
+
+	visibilityMap = Grid<Visibility>(mapTile.N, mapTile.N, Visibility::Unseen);
+
+	initUI();
+
+	//始点設定
+	camera.jumpTo(
+		mapTile.ToTileBottomCenter(
+			Point(10, 10),
+			mapTile.N),
+		camera.getTargetScale());
+	resourcePointTooltip.setCamera(camera);
+
+	stopwatchFinance.restart();
+	stopwatchGameTime.restart();
+
+	startAsyncTasks();
 
 	co_await mainLoop().pausedWhile([&]
 	{
@@ -2850,22 +2866,118 @@ void Battle001::updateGameSystems()
 	}
 }
 
+bool Battle001::wasBuildMenuClicked()
+{
+	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
+	for (auto& hbm : sortedArrayBuildMenu)
+	{
+		if (hbm.second.rectHantei.leftClicked())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+Co::Task<void> Battle001::handleRightClickInput()
+{
+	if (!MouseR.pressed())
+	{
+		if (!MouseR.up())
+		{
+			cursPos = Cursor::Pos();
+		}
+	}
+	else if (MouseR.down() && is移動指示)
+	{
+		cursPos = Cursor::Pos();
+	}
+
+	if (MouseR.up())
+	{
+		Point start = cursPos;
+		Point end = Cursor::Pos();
+		co_await handleRightClickUnitActions(start, end);
+	}
+}
+
+void Battle001::handleFormationSelection()
+{
+	// 陣形処理
+	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight) };
+	for (auto&& [j, ttt] : Indexed(rectZinkei))
+	{
+		if (ttt.leftClicked())
+		{
+			arrayBattleZinkei.clear();
+			for (size_t k = 0; k < rectZinkei.size(); k++)
+			{
+				arrayBattleZinkei.push_back(false);
+			}
+			arrayBattleZinkei[j] = true;
+
+			renderTextureZinkei.clear(ColorF{ 0.5, 0.0 });
+			{
+				const ScopedRenderTarget2D target{ renderTextureZinkei.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
+
+				// 描画された最大のアルファ成分を保持するブレンドステート
+				const ScopedRenderStates2D blend{ MakeBlendState() };
+
+				Rect df = Rect(320, 60);
+				df.drawFrame(4, 0, ColorF{ 0.5 });
+
+				for (auto&& [i, ttt] : Indexed(rectZinkei))
+				{
+					if (i == 0)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"密集").draw(ttt, Palette::Black);
+						continue;
+					}
+					else if (i == 1)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"横列").draw(ttt, Palette::Black);
+						continue;
+					}
+					else if (i == 2)
+					{
+						if (i == j)
+						{
+							ttt.draw(Palette::Darkred);
+						}
+						else
+						{
+							ttt.draw(Palette::Aliceblue);
+						}
+						fontInfo.fontZinkei(U"正方").draw(ttt, Palette::Black);
+						continue;
+					}
+				}
+			}
+		}
+	}
+}
+
 Co::Task<void> Battle001::handlePlayerInput()
 {
 	co_await checkCancelSelectionByUIArea();
 
-	bool buildMenuClicked = false;
-	{
-		const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
-		for (auto& hbm : sortedArrayBuildMenu)
-		{
-			if (hbm.second.rectHantei.leftClicked())
-			{
-				buildMenuClicked = true;
-				break;
-			}
-		}
-	}
+	const bool buildMenuClicked = wasBuildMenuClicked();
 
 	{
 		const auto t = camera.createTransformer();
@@ -2877,39 +2989,12 @@ Co::Task<void> Battle001::handlePlayerInput()
 
 		handleCameraInput();
 
-		if (!MouseR.pressed())
-		{
-			if (!MouseR.up())
-			{
-				cursPos = Cursor::Pos();
-			}
-		}
-		else if (MouseR.down() && is移動指示)
-		{
-			cursPos = Cursor::Pos();
-		}
-
-		if (MouseR.up())
-		{
-			Point start = cursPos;
-			Point end = Cursor::Pos();
-			co_await handleRightClickUnitActions(start, end);
-		}
+		co_await handleRightClickInput();
 
 		handleBuildTargetSelection();
 	}
 
-	// 陣形処理
-	{
-		const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(0, Scene::Size().y - renderTextureSkill.height() - renderTextureZinkei.height() - underBarHeight) };
-		for (auto&& [j, ttt] : Indexed(rectZinkei))
-		{
-			if (ttt.leftClicked())
-			{
-				// ... (rest of the logic is unchanged)
-			}
-		}
-	}
+	handleFormationSelection();
 
 	handleSkillUISelection();
 	handleBuildMenuSelectionA();
