@@ -12,7 +12,7 @@
 class AStar
 {
 private:
-	static constexpr int32 SEARCH_TIMEOUT_S = 10;
+	static constexpr int32 SEARCH_TIMEOUT_S = 0.5;
 	static constexpr double RETREAT_DISTANCE = 50.0;
 
 public:

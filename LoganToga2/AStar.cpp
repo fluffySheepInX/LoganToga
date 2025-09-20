@@ -44,14 +44,16 @@ int32 AStar::BattleMoveAStar(std::mutex& unitListMutex,
 	Array<Unit*> flatList;
 
 	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
-	std::scoped_lock lock(unitListMutex);
-	for (auto& group : enemy)
 	{
-		for (auto& unit : group.ListClassUnit)
+		std::scoped_lock lock(unitListMutex);
+		for (auto& group : enemy)
 		{
-			if (!unit.IsBattleEnable || unit.IsBuilding) continue;
-			if (unit.moveState == moveState::MoveAI)
-				flatList.push_back(&unit);
+			for (auto& unit : group.ListClassUnit)
+			{
+				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+				if (unit.moveState == moveState::MoveAI)
+					flatList.push_back(&unit);
+			}
 		}
 	}
 
@@ -96,8 +98,14 @@ int32 AStar::BattleMoveAStar(std::mutex& unitListMutex,
 		// 現状は「最も近い敵」をターゲットとする
 		HashTable<double, Unit> dicDis;
 		Vec2 posA = unit.GetNowPosiCenter();
-		auto uisuif = target;
-		for (const auto& ccc : uisuif) {
+
+		Array<ClassHorizontalUnit> snapshot;
+		{
+			std::scoped_lock lock(unitListMutex);
+			snapshot = target; // ディープコピー or シャローコピー
+		}
+
+		for (const auto& ccc : snapshot) {
 			for (const auto& ddd : ccc.ListClassUnit) {
 				if (!isValidTarget(ddd)) continue;
 
@@ -279,16 +287,18 @@ int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
 	HashTable<int32, Unit*> htUnit;
 	// フラット化して高速アクセスに備える
 	Array<Unit*> flatList;
-	std::scoped_lock lock(unitListMutex);
-	for (auto& group : target)
 	{
-		for (auto& unit : group.ListClassUnit)
+		std::scoped_lock lock(unitListMutex);
+		for (auto& group : target)
 		{
-			if (!unit.IsBattleEnable || unit.IsBuilding) continue;
-			if (unit.moveState == moveState::MoveAI)
+			for (auto& unit : group.ListClassUnit)
 			{
-				flatList.push_back(&unit);
-				htUnit.emplace(unit.ID, &unit);
+				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+				if (unit.moveState == moveState::MoveAI)
+				{
+					flatList.push_back(&unit);
+					htUnit.emplace(unit.ID, &unit);
+				}
 			}
 		}
 	}
