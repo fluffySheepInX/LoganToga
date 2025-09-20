@@ -276,7 +276,6 @@ int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
 	MapTile& mapTile
 )
 {
-	const auto targetSnapshot = target;
 	HashTable<int32, Unit*> htUnit;
 	// フラット化して高速アクセスに備える
 	Array<Unit*> flatList;

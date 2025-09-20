@@ -45,6 +45,10 @@ public:
 		pathCompleted = path.isEmpty();
 		currentTarget = pathCompleted ? Optional<Point>{} : Optional<Point>{ path.front() };
 	}
+	void setPathPush(Point newPath)
+	{
+		path.push_back(newPath);
+	}
 
 	const Array<Point>& getPath() const
 	{
