@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "stdafx.h"
 #include "ClassAStar.h"
 #include "ClassHorizontalUnit.h"
@@ -12,7 +12,7 @@
 class AStar
 {
 private:
-	static constexpr int32 SEARCH_TIMEOUT_S = 3;
+	static constexpr int32 SEARCH_TIMEOUT_S = 10;
 	static constexpr double RETREAT_DISTANCE = 50.0;
 
 public:

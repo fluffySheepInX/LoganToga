@@ -195,7 +195,7 @@ private:
 	void handleEnemyPathMovement(Unit& unit, ClassUnitMovePlan& plan);
 	void startEnemyPathMovement(Unit& unit, ClassUnitMovePlan& plan);
 	void startAsyncFogCalculation();
-	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units);
+	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<const Unit*>& units);
 	ClassMapBattle GetClassMapBattle(ClassMap classMap, CommonConfig& commonConfig);
 	//MapDetail parseMapDetail(StringView tileData, const ClassMap& classMap, CommonConfig& commonConfig);
 

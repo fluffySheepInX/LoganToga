@@ -2504,7 +2504,7 @@ void Battle001::startAsyncFogCalculation()
 
 				//ユニットデータのスナップショットを作成
 				//TODO:全てのアクセスを mutex で保護する
-				Array<Unit> unitSnapshot;
+				Array<const Unit*> unitSnapshot;
 				{
 					std::scoped_lock lock(classBattleManage.unitListMutex);
 					for (auto& units : classBattleManage.listOfAllUnit)
@@ -2512,7 +2512,7 @@ void Battle001::startAsyncFogCalculation()
 						for (const auto& unit : units.ListClassUnit)
 						{
 							if (unit.IsBattleEnable)
-								unitSnapshot.push_back(unit);
+								unitSnapshot.push_back(&unit);
 						}
 					}
 				}
@@ -2535,19 +2535,19 @@ void Battle001::startAsyncFogCalculation()
 	});
 }
 
-void Battle001::calculateFogFromUnits(Grid<Visibility>& visMap, const Array<Unit>& units)
+void Battle001::calculateFogFromUnits(Grid<Visibility>& visMap, const Array<const Unit*>& units)
 {
 	static HashSet<Point> lastVisibleTiles;
 	HashSet<Point> currentVisibleTiles;
 
 	for (const auto& unit : units)
 	{
-		const Vec2 unitPos = unit.GetNowPosiCenter();
+		const Vec2 unitPos = unit->GetNowPosiCenter();
 		const auto unitIndex = mapTile.ToIndex(unitPos, mapTile.columnQuads, mapTile.rowQuads);
 		if (!unitIndex) continue;
 
 		const Point centerTile = unitIndex.value();
-		const int32 visionRadius = unit.visionRadius;
+		const int32 visionRadius = unit->visionRadius;
 
 		for (int dy = -visionRadius; dy <= visionRadius; ++dy)
 		{
@@ -2967,8 +2967,8 @@ Co::Task<void> Battle001::mainLoop()
 		updateGameSystems();
 		co_await handlePlayerInput();
 		updateAllUnits();
-		processCombat();
-		checkUnitDeaths();
+		//processCombat();
+		//checkUnitDeaths();
 
 		co_await Co::NextFrame();
 	}
