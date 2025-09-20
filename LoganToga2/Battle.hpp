@@ -255,6 +255,8 @@ private:
 	std::atomic<bool> changeUnitMember{ false };
 	HashTable<int64, UnitMovePlan> aiRootEnemy;
 	HashTable<int64, UnitMovePlan> aiRootMy;
+	HashTable<int64, std::shared_ptr<class ClassAStarManager>> m_enemyPathfindingJobs;
+	HashTable<int64, std::shared_ptr<class ClassAStarManager>> m_playerPathfindingJobs;
 	Array<Array<Point>> debugRoot;
 	Array<ClassAStar*> debugAstar;
 

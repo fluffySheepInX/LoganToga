@@ -88,22 +88,23 @@ void bhjdsvjhbsd(const std::exception& ex)
 /// @param pause 
 /// @return 
 int32 Battle::BattleMoveAStar(Array<ClassHorizontalUnit>& target,
-						Array<ClassHorizontalUnit>& enemy,
-						Array<Array<MapDetail>> mapData,
-						HashTable<int64, UnitMovePlan>& aiRoot,
-						Array<Array<Point>>& debugRoot,
-						Array<ClassAStar*>& list,
-						Array<Quad>& columnQuads,
-						Array<Quad>& rowQuads,
-						const int32 N,
-						const std::atomic<bool>& abort,
-						const std::atomic<bool>& pause,
-						std::atomic<bool>& changeUnitMember,
-						HashTable<Point, const Unit*>& hsBuildingUnitForAstar
+	Array<ClassHorizontalUnit>& enemy,
+	Array<Array<MapDetail>> mapData,
+	HashTable<int64, UnitMovePlan>& aiRoot,
+	Array<Array<Point>>& debugRoot,
+	Array<ClassAStar*>& list,
+	Array<Quad>& columnQuads,
+	Array<Quad>& rowQuads,
+	const int32 N,
+	const std::atomic<bool>& abort,
+	const std::atomic<bool>& pause,
+	std::atomic<bool>& changeUnitMember,
+	HashTable<Point, const Unit*>& hsBuildingUnitForAstar
 )
 {
 	static size_t unitIndexEnemy = 0;
 	constexpr size_t MaxUnitsPerFrame = 5;
+	constexpr int32 MaxAstarIterations = 100;
 
 	size_t processed = 0;
 	Array<Unit*> flatList;
@@ -132,63 +133,44 @@ int32 Battle::BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 		return 0;
 
 	const auto isValidTarget = [](const Unit& unit) -> bool
-		{
-			//これどうなん？　GATEは壊せるけど無視ということか？
-			if (unit.IsBuilding && (unit.mapTipObjectType == MapTipObjectType::WALL2 || unit.mapTipObjectType == MapTipObjectType::GATE))
-				return false;
-
-			if (!unit.IsBattleEnable)
-				return false;
-
-			return true;
-		};
+	{
+		if (unit.IsBuilding && (unit.mapTipObjectType == MapTipObjectType::WALL2 || unit.mapTipObjectType == MapTipObjectType::GATE))
+			return false;
+		if (!unit.IsBattleEnable)
+			return false;
+		return true;
+	};
 
 	for (size_t i = 0; i < total; ++i)
 	{
-		if (abort)
-			break;
+		if (abort) break;
+		if (processed >= MaxUnitsPerFrame) break;
 
 		size_t idx = (unitIndexEnemy + i) % total;
 		Unit& unit = *flatList[idx];
 
 		Optional<Size> nowIndex = ToIndex(unit.GetNowPosiCenter(), columnQuads, rowQuads);
-		if (!nowIndex)
-			continue;
+		if (!nowIndex) continue;
 
-		//標的は次のうちのどれか
-		//1.ランダムに決定
-		//2.最寄りの敵
-		//3.一番弱い敵
-		//4.一番体力の無い敵
-		//...など
-
-		//最寄りの敵の座標を取得
+		// --- Target selection ---
 		HashTable<double, Unit> dicDis;
 		Vec2 posA = unit.GetNowPosiCenter();
 		try
 		{
-			auto uisuif = target;
-			for (const auto& ccc : uisuif) {
+			for (const auto& ccc : target) {
 				for (const auto& ddd : ccc.ListClassUnit) {
 					if (!isValidTarget(ddd)) continue;
-
 					Vec2 posB = ddd.GetNowPosiCenter();
 					double dist = posA.distanceFrom(posB);
-					while (dicDis.contains(dist)) {
-						dist += 0.0001; // 衝突回避
-					}
-					if (abort == true) break;
+					while (dicDis.contains(dist)) dist += 0.0001;
+					if (abort) break;
 					dicDis.emplace(dist, ddd);
 				}
 			}
 		}
-		catch (const std::exception& e)
-		{
-			bhjdsvjhbsd(e);
-		}
+		catch (const std::exception& e) { bhjdsvjhbsd(e); }
 
-		if (dicDis.size() == 0)
-			continue;
+		if (dicDis.size() == 0) continue;
 
 		auto minElement = dicDis.begin();
 		for (auto it = dicDis.begin(); it != dicDis.end(); ++it)
@@ -197,143 +179,116 @@ int32 Battle::BattleMoveAStar(Array<ClassHorizontalUnit>& target,
 				minElement = it;
 		}
 
+		// --- Retreat Logic ---
 		bool flagGetEscapeRange = false;
 		Vec2 retreatTargetPos;
-		//escape_rangeの範囲なら、撤退。その為、反対側の座標を調整したものを扱う
 		if (unit.Escape_range >= 1)
 		{
-			Circle cCheck = Circle(unit.GetNowPosiCenter(), unit.Escape_range);
-			Circle cCheck2 = Circle(minElement->second.GetNowPosiCenter(), 1);
-			if (cCheck.intersects(cCheck2) == true)
+			if (Circle(unit.GetNowPosiCenter(), unit.Escape_range).intersects(Circle(minElement->second.GetNowPosiCenter(), 1)))
 			{
-				//撤退
-				double newDistance = 50.0;
-				double angle = atan2(minElement->second.GetNowPosiCenter().y - unit.GetNowPosiCenter().y,
-					minElement->second.GetNowPosiCenter().x - unit.GetNowPosiCenter().x);
-				double xC, yC;
-				// 反対方向に進むために角度を180度反転
-				angle += Math::Pi;
-				xC = unit.GetNowPosiCenter().x + newDistance * cos(angle);
-				yC = unit.GetNowPosiCenter().y + newDistance * sin(angle);
-				//minElement->second.nowPosiLeft = Vec2(xC, yC);
-
-				//TODO 画面端だとタイル外となるので、調整
-				retreatTargetPos = Vec2(xC, yC);
+				double angle = Math::Atan2(minElement->second.GetNowPosiCenter().y - unit.GetNowPosiCenter().y, minElement->second.GetNowPosiCenter().x - unit.GetNowPosiCenter().x) + Math::Pi;
+				retreatTargetPos = unit.GetNowPosiCenter() + Vec2::Right().rotated(angle) * 50.0;
 				flagGetEscapeRange = true;
 			}
 		}
 
-		if ((unit.moveState == moveState::Moving || unit.moveState == moveState::MovingEnd)
-			&& flagGetEscapeRange == false)
+		if ((unit.moveState == moveState::Moving || unit.moveState == moveState::MovingEnd) && !flagGetEscapeRange)
 			continue;
 
-		//最寄りの敵のマップチップを取得
-		s3d::Optional<Size> nowIndexEnemy;
-		nowIndexEnemy = flagGetEscapeRange
+		s3d::Optional<Size> targetTilePos = flagGetEscapeRange
 			? ToIndex(retreatTargetPos, columnQuads, rowQuads)
 			: ToIndex(minElement->second.GetNowPosiCenter(), columnQuads, rowQuads);
-		if (nowIndexEnemy.has_value() == false) continue;
-		if (nowIndexEnemy.value() == nowIndex.value()) continue;
 
-		////現在地を開く
-		ClassAStarManager classAStarManager(nowIndexEnemy.value().x, nowIndexEnemy.value().y);
-		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
-		Array<Point> listRoot;
-		MicrosecClock mc;
-		Stopwatch taskTimer;
-		taskTimer.restart();
-		////移動経路取得
-		while (true)
+		if (!targetTilePos || *targetTilePos == *nowIndex) continue;
+
+		// --- Incremental Pathfinding ---
+		std::shared_ptr<ClassAStarManager> job;
+		if (m_enemyPathfindingJobs.contains(unit.ID))
 		{
-			try
+			job = m_enemyPathfindingJobs[unit.ID];
+			if (job->GetEndX() != targetTilePos->x || job->GetEndY() != targetTilePos->y)
 			{
-				if (taskTimer.s() > 3) break;
-				if (abort == true) break;
-				if (startAstar.has_value() == false)
-				{
-					listRoot.clear();
-					break;
-				}
-				classAStarManager.OpenAround(startAstar.value(),
-												mapData,
-												enemy,
-												target,
-												N,
-												hsBuildingUnitForAstar
-				);
-				Print << U"BattleMoveAStar:A*探索ノード数: {0}:{1}"_fmt(classAStarManager.GetPool().size(), mc.us());
-				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-				classAStarManager.RemoveClassAStar(startAstar.value());
-				if (classAStarManager.GetListClassAStar().size() != 0)
-					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-				if (startAstar.has_value() == false)
-					continue;
-
-				//敵まで到達したか
-				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-				{
-					startAstar.value()->GetRoot(listRoot);
-					listRoot.reverse();
-					classAStarManager.Clear();
-					break;
-				}
-			}
-			catch (const std::exception& e)
-			{
-				bhjdsvjhbsd(e);
+				m_enemyPathfindingJobs.erase(unit.ID);
+				continue;
 			}
 		}
-
-		// 経路が取得できた場合、aiRootにセット
-		if (listRoot.size() != 0)
+		else
 		{
-			UnitMovePlan plan;
-			if (flagGetEscapeRange)
-			{
-				// もし撤退中なら特別なターゲットIDを設定
-				// 撤退中は、経路の最初の位置を最後に見た敵の位置として記録する
-				plan.setRetreating(true);
-				plan.setTarget(-1); // -1: 撤退中の特別なターゲットID
-				//Unit iugiu = minElement->second;
-				plan.setLastKnownEnemyPos(minElement->second.GetNowPosiCenter());
+			job = std::make_shared<ClassAStarManager>(targetTilePos->x, targetTilePos->y);
+			job->OpenOne(nowIndex->x, nowIndex->y, 0, nullptr, N);
+			m_enemyPathfindingJobs[unit.ID] = job;
+		}
+
+		Optional<ClassAStar*> startAstar = SearchMinScore(job->GetListClassAStar());
+		bool pathFound = false;
+
+		for (int32 step = 0; step < MaxAstarIterations; ++step)
+		{
+			if (!startAstar.has_value()) {
+				break;
 			}
-			else
+
+			if (startAstar.value()->GetRow() == job->GetEndX() && startAstar.value()->GetCol() == job->GetEndY())
 			{
-				plan.setTarget(minElement->second.ID);
+				Array<Point> listRoot;
+				startAstar.value()->GetRoot(listRoot);
+				listRoot.reverse();
+
+				if (!listRoot.isEmpty())
+				{
+					UnitMovePlan plan;
+					if (flagGetEscapeRange) {
+						plan.setRetreating(true);
+						plan.setTarget(-1);
+						plan.setLastKnownEnemyPos(minElement->second.GetNowPosiCenter());
+					}
+					else {
+						plan.setTarget(minElement->second.ID);
+					}
+					unit.moveState = moveState::None;
+					plan.setPath(listRoot);
+					{
+						std::scoped_lock lock(this->aiRootMutex);
+						aiRoot[unit.ID] = plan;
+						if (aiRoot[unit.ID].getPath().size() > 1)
+							aiRoot[unit.ID].stepToNext();
+					}
+				}
+				pathFound = true;
+				break;
 			}
-			unit.moveState = moveState::None;
-			plan.setPath(listRoot);
-			{
-				std::scoped_lock lock(this->aiRootMutex);
-				aiRoot[unit.ID] = plan;
-				// 経路セット時に1個除去しておく
-				if (aiRoot[unit.ID].getPath().size() > 1)
-					aiRoot[unit.ID].stepToNext();
-			}
+			job->OpenAround(startAstar.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
+			startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+			job->RemoveClassAStar(startAstar.value());
+			startAstar = SearchMinScore(job->GetListClassAStar());
+		}
+
+		if (pathFound || !startAstar.has_value())
+		{
+			m_enemyPathfindingJobs.erase(unit.ID);
 		}
 
 		processed++;
-		if (processed >= MaxUnitsPerFrame)
-			break;
 	}
 
 	unitIndexEnemy = (unitIndexEnemy + processed) % total;
 	return static_cast<int32>(processed);
 }
 int32 Battle::BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
-						Array<ClassHorizontalUnit>& enemy,
-						Array<Array<MapDetail>> mapData,
-						HashTable<int64, UnitMovePlan>& aiRoot,
-						Array<Array<Point>>& debugRoot,
-						Array<ClassAStar*>& list,
-						Array<Quad>& columnQuads,
-						Array<Quad>& rowQuads,
-						const int32 N,
-						const std::atomic<bool>& abort,
-						const std::atomic<bool>& pause,
-						HashTable<Point, const Unit*>& hsBuildingUnitForAstar
+	Array<ClassHorizontalUnit>& enemy,
+	Array<Array<MapDetail>> mapData,
+	HashTable<int64, UnitMovePlan>& aiRoot,
+	Array<Array<Point>>& debugRoot,
+	Array<ClassAStar*>& list,
+	Array<Quad>& columnQuads,
+	Array<Quad>& rowQuads,
+	const int32 N,
+	const std::atomic<bool>& abort,
+	const std::atomic<bool>& pause,
+	HashTable<Point, const Unit*>& hsBuildingUnitForAstar
 )
 {
+	constexpr int32 MaxAstarIterations = 100;
 	const auto targetSnapshot = target;
 	HashTable<int32, Unit*> htUnit;
 	// フラット化して高速アクセスに備える
@@ -368,62 +323,32 @@ int32 Battle::BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 	s3d::Optional<Size> endIndex = ToIndex(flatList[0]->getLastMergePos(), columnQuads, rowQuads);
 	if (endIndex.has_value() == false) return 0;
 
+	// --- 単一ユニットのケース ---
 	if (startIndex == endIndex)
 	{
-		//単一ユニットがこのケース
-		s3d::Optional<Size> startIndex = ToIndex(flatList[0]->GetNowPosiCenter(), columnQuads, rowQuads);
-		if (startIndex.has_value() == false) return 0;
-		s3d::Optional<Size> endIndex = ToIndex(flatList[0]->GetOrderPosiCenter(), columnQuads, rowQuads);
-		if (endIndex.has_value() == false) return 0;
-		ClassAStarManager classAStarManager(endIndex.value().x, endIndex.value().y);
-		Optional<ClassAStar*> startAstar
-			= classAStarManager.OpenOne(startIndex.value().x, startIndex.value().y, 0, nullptr, N);
+		// ... (この部分は変更なし、ブロッキングのままだがスコープが限定的なので許容)
+		s3d::Optional<Size> single_startIndex = ToIndex(flatList[0]->GetNowPosiCenter(), columnQuads, rowQuads);
+		if (!single_startIndex) return 0;
+		s3d::Optional<Size> single_endIndex = ToIndex(flatList[0]->GetOrderPosiCenter(), columnQuads, rowQuads);
+		if (!single_endIndex) return 0;
+		ClassAStarManager classAStarManager(single_endIndex->x, single_endIndex->y);
+		Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(single_startIndex->x, single_startIndex->y, 0, nullptr, N);
 		Array<Point> fullPath;
-
-		////移動経路取得
 		while (true)
 		{
-			try
+			if (abort || !startAstar.has_value()) { fullPath.clear(); break; }
+			classAStarManager.OpenAround(startAstar.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
+			startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+			classAStarManager.RemoveClassAStar(startAstar.value());
+			startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+			if (startAstar.has_value() && (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY()))
 			{
-				if (abort == true) break;
-
-				if (startAstar.has_value() == false)
-				{
-					fullPath.clear();
-					break;
-				}
-
-				classAStarManager.OpenAround(startAstar.value(),
-												mapData,
-												enemy,
-												target,
-												N,
-												hsBuildingUnitForAstar
-				);
-				startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-				classAStarManager.RemoveClassAStar(startAstar.value());
-				if (classAStarManager.GetListClassAStar().size() != 0)
-				{
-					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-				}
-
-				if (startAstar.has_value() == false)
-					continue;
-
-				//敵まで到達したか
-				if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-				{
-					startAstar.value()->GetRoot(fullPath);
-					fullPath.reverse();
-					break;
-				}
-			}
-			catch (const std::exception& e)
-			{
-				bhjdsvjhbsd(e);
+				startAstar.value()->GetRoot(fullPath);
+				fullPath.reverse();
+				break;
 			}
 		}
-		if (fullPath.size() != 0)
+		if (!fullPath.isEmpty())
 		{
 			UnitMovePlan plan;
 			plan.setPath(fullPath);
@@ -431,157 +356,125 @@ int32 Battle::BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 				std::scoped_lock lock(aiRootMutex);
 				aiRoot[flatList[0]->ID] = plan;
 			}
-			//debugRoot.push_back(fullPath);
 			htUnit[flatList[0]->ID]->moveState = moveState::Moving;
 		}
 		return 0;
 	}
 
-	ClassAStarManager astarToGoal(endIndex.value().x, endIndex.value().y);
-	Optional<ClassAStar*> startAstar2 = astarToGoal.OpenOne(startIndex.value().x, startIndex.value().y, 0, nullptr, N);
+	// --- 共有経路の段階的計算 ---
 	Array<Point> pathShare;
-	Stopwatch taskTimer;
-	taskTimer.restart();
+	bool sharedPathFound = false;
+	const int64 jobKey = flatList[0]->ID; // グループの代表IDをキーにする
 
-	while (true) {
-		//if (taskTimer.s() > 3) break;
-		if (abort) break;
-		if (!startAstar2.has_value()) { pathShare.clear(); break; }
-		astarToGoal.OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar, true);
+	std::shared_ptr<ClassAStarManager> job;
+	if (m_playerPathfindingJobs.contains(jobKey))
+	{
+		job = m_playerPathfindingJobs[jobKey];
+		if (job->GetEndX() != endIndex->x || job->GetEndY() != endIndex->y)
+		{
+			m_playerPathfindingJobs.erase(jobKey);
+			return 0; // Invalidate and retry next cycle
+		}
+	}
+	else
+	{
+		job = std::make_shared<ClassAStarManager>(endIndex->x, endIndex->y);
+		job->OpenOne(startIndex->x, startIndex->y, 0, nullptr, N);
+		m_playerPathfindingJobs[jobKey] = job;
+	}
+
+	Optional<ClassAStar*> startAstar2 = SearchMinScore(job->GetListClassAStar());
+	for (int32 step = 0; step < MaxAstarIterations; ++step)
+	{
+		if (abort || !startAstar2.has_value()) break;
+
+		job->OpenAround(startAstar2.value(), mapData, enemy, target, N, hsBuildingUnitForAstar, true);
 		startAstar2.value()->SetAStarStatus(AStarStatus::Closed);
-		astarToGoal.RemoveClassAStar(startAstar2.value());
-		if (astarToGoal.GetListClassAStar().size() != 0)
-			startAstar2 = SearchMinScore(astarToGoal.GetListClassAStar());
-		if (!startAstar2.has_value()) continue;
-		//敵まで到達したか、あるいはその時点で可能性のある道を行く
-		if ((startAstar2.value()->GetRow() == astarToGoal.GetEndX()
-			&& startAstar2.value()->GetCol() == astarToGoal.GetEndY())
-			|| taskTimer.s() > 3)
+		job->RemoveClassAStar(startAstar2.value());
+		startAstar2 = SearchMinScore(job->GetListClassAStar());
+
+		if (startAstar2.has_value() && (startAstar2.value()->GetRow() == job->GetEndX() && startAstar2.value()->GetCol() == job->GetEndY()))
 		{
 			startAstar2.value()->GetRoot(pathShare);
 			pathShare.reverse();
-			astarToGoal.Clear();
+			sharedPathFound = true;
 			break;
 		}
 	}
 
+	if (!sharedPathFound)
+	{
+		if (!startAstar2.has_value()) { // Search exhausted
+			m_playerPathfindingJobs.erase(jobKey);
+		}
+		return 0; // Path not ready, continue next time
+	}
+
+	m_playerPathfindingJobs.erase(jobKey); // Path found, clear job
+
+	// --- 共有経路が見つかったので、各ユニットの個別経路を計算 ---
 	for (Unit* unit : flatList)
 	{
+		// ... (firstPath と endPath の計算は元のブロッキング方式のまま) ...
 		Array<Point> firstPath;
 		{
 			s3d::Optional<Size> nowIndexFirstGoal = ToIndex(unit->getFirstMergePos(), columnQuads, rowQuads);
-			if (nowIndexFirstGoal.has_value() == false) continue;
+			if (!nowIndexFirstGoal) continue;
 			s3d::Optional<Size> nowIndex = ToIndex(unit->GetNowPosiCenter(), columnQuads, rowQuads);
-			if (nowIndex.has_value() == false) continue;
+			if (!nowIndex) continue;
 			if (nowIndexFirstGoal != nowIndex)
 			{
-				ClassAStarManager classAStarManager(nowIndexFirstGoal.value().x, nowIndexFirstGoal.value().y);
-				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+				ClassAStarManager classAStarManager(nowIndexFirstGoal->x, nowIndexFirstGoal->y);
+				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex->x, nowIndex->y, 0, nullptr, N);
 				while (true)
 				{
-					try
+					if (abort || !startAstar.has_value()) { firstPath.clear(); break; }
+					classAStarManager.OpenAround(startAstar.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
+					startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+					classAStarManager.RemoveClassAStar(startAstar.value());
+					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+					if (startAstar.has_value() && (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY()))
 					{
-						if (abort == true) break;
-
-						if (startAstar.has_value() == false)
-						{
-							firstPath.clear();
-							break;
-						}
-
-						classAStarManager.OpenAround(startAstar.value(),
-														mapData,
-														enemy,
-														target,
-														N, hsBuildingUnitForAstar
-						);
-						startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-						classAStarManager.RemoveClassAStar(startAstar.value());
-						if (classAStarManager.GetListClassAStar().size() != 0)
-						{
-							startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-						}
-
-						if (startAstar.has_value() == false)
-							continue;
-
-						//敵まで到達したか
-						if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-						{
-							startAstar.value()->GetRoot(firstPath);
-							firstPath.reverse();
-							break;
-						}
-					}
-					catch (const std::exception& e)
-					{
-						bhjdsvjhbsd(e);
+						startAstar.value()->GetRoot(firstPath);
+						firstPath.reverse();
+						break;
 					}
 				}
 			}
 		}
-
 		Array<Point> endPath;
 		{
 			s3d::Optional<Size> nowIndexEndGoal = ToIndex(unit->GetOrderPosiCenter(), columnQuads, rowQuads);
-			if (nowIndexEndGoal.has_value() == false) continue;
+			if (!nowIndexEndGoal) continue;
 			s3d::Optional<Size> nowIndex = ToIndex(unit->getLastMergePos(), columnQuads, rowQuads);
-			if (nowIndex.has_value() == false) continue;
+			if (!nowIndex) continue;
 			if (nowIndexEndGoal != nowIndex)
 			{
-				ClassAStarManager classAStarManager(nowIndexEndGoal.value().x, nowIndexEndGoal.value().y);
-				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex.value().x, nowIndex.value().y, 0, nullptr, N);
+				ClassAStarManager classAStarManager(nowIndexEndGoal->x, nowIndexEndGoal->y);
+				Optional<ClassAStar*> startAstar = classAStarManager.OpenOne(nowIndex->x, nowIndex->y, 0, nullptr, N);
 				while (true)
 				{
-					try
+					if (abort || !startAstar.has_value()) { endPath.clear(); break; }
+					classAStarManager.OpenAround(startAstar.value(), mapData, enemy, target, N, hsBuildingUnitForAstar);
+					startAstar.value()->SetAStarStatus(AStarStatus::Closed);
+					classAStarManager.RemoveClassAStar(startAstar.value());
+					startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
+					if (startAstar.has_value() && (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY()))
 					{
-						if (abort == true) break;
-
-						if (startAstar.has_value() == false)
-						{
-							endPath.clear();
-							break;
-						}
-
-						classAStarManager.OpenAround(startAstar.value(),
-														mapData,
-														enemy,
-														target,
-														N, hsBuildingUnitForAstar
-						);
-						startAstar.value()->SetAStarStatus(AStarStatus::Closed);
-						classAStarManager.RemoveClassAStar(startAstar.value());
-						if (classAStarManager.GetListClassAStar().size() != 0)
-						{
-							startAstar = SearchMinScore(classAStarManager.GetListClassAStar());
-						}
-
-						if (startAstar.has_value() == false)
-							continue;
-
-						//敵まで到達したか
-						if (startAstar.value()->GetRow() == classAStarManager.GetEndX() && startAstar.value()->GetCol() == classAStarManager.GetEndY())
-						{
-							startAstar.value()->GetRoot(endPath);
-							endPath.reverse();
-							break;
-						}
-					}
-					catch (const std::exception& e)
-					{
-						bhjdsvjhbsd(e);
+						startAstar.value()->GetRoot(endPath);
+						endPath.reverse();
+						break;
 					}
 				}
 			}
 		}
 
 		auto guifd = firstPath.append(pathShare).append(endPath);
-		//auto guifd = pathShare;
 
-		if (guifd.size() != 0)
+		if (!guifd.isEmpty())
 		{
 			UnitMovePlan plan;
-			guifd.pop_front(); // 最初の位置は現在地なので削除
+			guifd.pop_front();
 			plan.setPath(guifd);
 			{
 				std::scoped_lock lock(this->aiRootMutex);
@@ -590,8 +483,8 @@ int32 Battle::BattleMoveAStarMyUnitsKai(Array<ClassHorizontalUnit>& target,
 			debugRoot.push_back(guifd);
 			htUnit[unit->ID]->moveState = moveState::Moving;
 		}
-
 	}
+    return 1; // Indicate that work was done
 }
 
 int32 Battle::BattleMoveAStarMyUnits(Array<ClassHorizontalUnit>& target,
