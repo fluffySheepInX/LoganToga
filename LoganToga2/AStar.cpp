@@ -25,7 +25,7 @@ Optional<ClassAStar*> AStar::SearchMinScore(const Array<ClassAStar*>& ls) {
 	return targetClassAStar;
 }
 
-int32 AStar::BattleMoveAStar(std::mutex& unitListMutex,
+int32 AStar::BattleMoveAStar(
 	Array<ClassHorizontalUnit>& target,
 	Array<ClassHorizontalUnit>& enemy,
 	Array<Array<MapDetail>> mapData,
@@ -38,14 +38,14 @@ int32 AStar::BattleMoveAStar(std::mutex& unitListMutex,
 )
 {
 	static size_t unitIndexEnemy = 0;
-	constexpr size_t MaxUnitsPerFrame = 5;
+	constexpr size_t MaxUnitsPerFrame = 50;
 
 	size_t processed = 0;
 	Array<Unit*> flatList;
 
 	// --- フラット化：FlagMoveAI が立っている敵ユニットのみ抽出
 	{
-		std::scoped_lock lock(unitListMutex);
+		std::shared_lock lock(unitListRWMutex);
 		for (auto& group : enemy)
 		{
 			for (auto& unit : group.ListClassUnit)
@@ -101,7 +101,7 @@ int32 AStar::BattleMoveAStar(std::mutex& unitListMutex,
 
 		Array<ClassHorizontalUnit> snapshot;
 		{
-			std::scoped_lock lock(unitListMutex);
+			std::shared_lock lock(unitListRWMutex);
 			snapshot = target; // ディープコピー or シャローコピー
 		}
 
@@ -272,8 +272,21 @@ Array<Point> AStar::findPath(const Point& start,
 	return listRoot;
 }
 
+Unit* AStar::GetCUSafe(long ID, Array<ClassHorizontalUnit>& listOfAllUnit)
+{
+	std::shared_lock lock(unitListRWMutex);
+	for (auto& temp : listOfAllUnit)
+	{
+		for (auto& temptemp : temp.ListClassUnit)
+		{
+			if (temptemp.ID == ID)
+				return &temptemp;
+		}
+	}
+	return nullptr;
+}
 
-int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
+int32 AStar::BattleMoveAStarMyUnitsKai(
 	Array<ClassHorizontalUnit>& target,
 	Array<ClassHorizontalUnit>& enemy,
 	Array<Array<MapDetail>> mapData,
@@ -284,21 +297,22 @@ int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
 	MapTile& mapTile
 )
 {
-	HashTable<int32, Unit*> htUnit;
-	// フラット化して高速アクセスに備える
-	Array<Unit*> flatList;
+	Array<int32> flatList;
+	Array<ClassHorizontalUnit> snapshot;
 	{
-		std::scoped_lock lock(unitListMutex);
-		for (auto& group : target)
+		std::shared_lock lock(unitListRWMutex);
+		// 深いコピーを作成してからループ処理
+		snapshot = target;
+	}
+
+	for (auto& group : snapshot)
+	{
+		for (auto& unit : group.ListClassUnit)
 		{
-			for (auto& unit : group.ListClassUnit)
+			if (!unit.IsBattleEnable || unit.IsBuilding) continue;
+			if (unit.moveState == moveState::MoveAI)
 			{
-				if (!unit.IsBattleEnable || unit.IsBuilding) continue;
-				if (unit.moveState == moveState::MoveAI)
-				{
-					flatList.push_back(&unit);
-					htUnit.emplace(unit.ID, &unit);
-				}
+				flatList.push_back(unit.ID);
 			}
 		}
 	}
@@ -307,58 +321,63 @@ int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
 	if (abort) return 0;
 
 	// 共通経路(始まり合流地点→終わり合流地点)を算出
-	s3d::Optional<Size> startIndex = mapTile.ToIndex(flatList[0]->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
+	s3d::Optional<Size> startIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
 	if (startIndex.has_value() == false) return 0;
-	s3d::Optional<Size> endIndex = mapTile.ToIndex(flatList[0]->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
+	s3d::Optional<Size> endIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
 	if (endIndex.has_value() == false) return 0;
 
 	if (startIndex == endIndex)
 	{
 		//単一ユニットがこのケース
-		s3d::Optional<Size> startIndex = mapTile.ToIndex(flatList[0]->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+		s3d::Optional<Size> startIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
 		if (startIndex.has_value() == false) return 0;
-		s3d::Optional<Size> endIndex = mapTile.ToIndex(flatList[0]->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+		s3d::Optional<Size> endIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
 		if (endIndex.has_value() == false) return 0;
-		Array<Point> fullPath = findPath(startIndex.value(), endIndex.value(), mapData, enemy, target, mapTile, hsBuildingUnitForAstar, abort, true);
+		Array<Point> fullPath = findPath(startIndex.value(), endIndex.value(), mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
 		if (fullPath.size() != 0)
 		{
 			ClassUnitMovePlan plan;
 			plan.setPath(fullPath);
 			{
 				std::scoped_lock lock(aiRootMutex);
-				aiRoot[flatList[0]->ID] = plan;
+				aiRoot[GetCUSafe(flatList[0], snapshot)->ID] = plan;
 			}
 			//debugRoot.push_back(fullPath);
-			htUnit[flatList[0]->ID]->moveState = moveState::Moving;
+			auto huidfs = GetCUSafe(flatList[0], target);
+			{
+				std::shared_lock lock(unitListRWMutex);
+				huidfs->moveState = moveState::Moving;
+			}
+			//htUnit[->ID]->moveState = moveState::Moving;
 		}
 		return 0;
 	}
 
-	Array<Point> pathShare = findPath(startIndex.value(), endIndex.value(), mapData, enemy, target, mapTile, hsBuildingUnitForAstar, abort, true);
+	Array<Point> pathShare = findPath(startIndex.value(), endIndex.value(), mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
 
-	for (Unit* unit : flatList)
+	for (int32 unit : flatList)
 	{
 		Array<Point> firstPath;
 		{
-			s3d::Optional<Size> nowIndexFirstGoal = mapTile.ToIndex(unit->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
+			s3d::Optional<Size> nowIndexFirstGoal = mapTile.ToIndex(GetCUSafe(unit, snapshot)->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
 			if (nowIndexFirstGoal.has_value() == false) continue;
-			s3d::Optional<Size> nowIndex = mapTile.ToIndex(unit->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+			s3d::Optional<Size> nowIndex = mapTile.ToIndex(GetCUSafe(unit, snapshot)->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
 			if (nowIndex.has_value() == false) continue;
 			if (nowIndexFirstGoal != nowIndex)
 			{
-				firstPath = findPath(nowIndex.value(), nowIndexFirstGoal.value(), mapData, enemy, target, mapTile, hsBuildingUnitForAstar, abort, true);
+				firstPath = findPath(nowIndex.value(), nowIndexFirstGoal.value(), mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
 			}
 		}
 
 		Array<Point> endPath;
 		{
-			s3d::Optional<Size> nowIndexEndGoal = mapTile.ToIndex(unit->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+			s3d::Optional<Size> nowIndexEndGoal = mapTile.ToIndex(GetCUSafe(unit, snapshot)->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
 			if (nowIndexEndGoal.has_value() == false) continue;
-			s3d::Optional<Size> nowIndex = mapTile.ToIndex(unit->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
+			s3d::Optional<Size> nowIndex = mapTile.ToIndex(GetCUSafe(unit, snapshot)->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
 			if (nowIndex.has_value() == false) continue;
 			if (nowIndexEndGoal != nowIndex)
 			{
-				endPath = findPath(nowIndex.value(), nowIndexEndGoal.value(), mapData, enemy, target, mapTile, hsBuildingUnitForAstar, abort, true);
+				endPath = findPath(nowIndex.value(), nowIndexEndGoal.value(), mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
 			}
 		}
 
@@ -372,9 +391,16 @@ int32 AStar::BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
 			plan.setPath(guifd);
 			{
 				std::scoped_lock lock(aiRootMutex);
-				aiRoot[unit->ID] = plan;
+				aiRoot[GetCUSafe(unit, snapshot)->ID] = plan;
 			}
-			htUnit[unit->ID]->moveState = moveState::Moving;
+
+			auto huidfs = GetCUSafe(unit, target);
+			{
+				std::shared_lock lock(unitListRWMutex);
+				huidfs->moveState = moveState::Moving;
+			}
+
+			//htUnit[unit->ID]->moveState = moveState::Moving;
 		}
 
 	}

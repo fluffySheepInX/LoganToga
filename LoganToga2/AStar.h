@@ -32,9 +32,13 @@ public:
 	std::atomic<bool> changeUnitMember{ false };
 	std::mutex aiRootMutex;
 
+	std::shared_mutex unitListRWMutex;
+
+	Unit* GetCUSafe(long ID, Array<ClassHorizontalUnit>& listOfAllUnit);
+
 	Optional<ClassAStar*> SearchMinScore(const Array<ClassAStar*>& ls);
 
-	int32 BattleMoveAStar(std::mutex& unitListMutex,
+	int32 BattleMoveAStar(
 		Array<ClassHorizontalUnit>& target,
 		Array<ClassHorizontalUnit>& enemy,
 		Array<Array<MapDetail>> mapData,
@@ -46,7 +50,7 @@ public:
 		MapTile& mapTile
 	);
 
-	int32 BattleMoveAStarMyUnitsKai(std::mutex& unitListMutex,
+	int32 BattleMoveAStarMyUnitsKai(
 		Array<ClassHorizontalUnit>& target,
 		Array<ClassHorizontalUnit>& enemy,
 		Array<Array<MapDetail>> mapData,

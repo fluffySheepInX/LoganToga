@@ -16,7 +16,7 @@
 # include "280_ClassExecuteSkills.h" 
 
 #include "AStar.h"
-#include "SafeUnitManager.h"
+//#include "SafeUnitManager.h"
 
 class TestRunner; // Forward declaration for friending
 
@@ -71,7 +71,7 @@ private:
 	static constexpr int32 FORMATION_HORIZONTAL横列 = 1;
 	static constexpr int32 FORMATION_SQUARE正方 = 2;
 
-	mutable std::mutex unitDataMutex;  // ユニットデータ専用ミューテックス
+	//mutable std::mutex unitDataMutex;  // ユニットデータ専用ミューテックス
 	/// @brief 
 	SystemString ss;
 	/// @brief 

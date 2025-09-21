@@ -228,7 +228,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	, m_commonConfig{ commonConfig }
 	, ss{ argSS }
 	, tempSelectComRight{ dummyMenu() }
-	, unitTooltip{fontInfo.fontSkill}
+	, unitTooltip{ fontInfo.fontSkill }
 {
 	// Test mode constructor, skip file loading and initialization
 }
@@ -239,7 +239,7 @@ Battle001::Battle001(GameData& saveData, CommonConfig& commonConfig, SystemStrin
 	, m_commonConfig{ commonConfig }
 	, ss{ argSS }
 	, tempSelectComRight{ dummyMenu() }
-	, unitTooltip{fontInfo.fontSkill}
+	, unitTooltip{ fontInfo.fontSkill }
 {
 	const TOMLReader map_toml_reader{ PATHBASE + PATH_DEFAULT_GAME + U"/016_BattleMap/map001.toml" };
 	if (not map_toml_reader)
@@ -420,7 +420,7 @@ void Battle001::UnitRegister(
 
 		if (unit_template.IsBuilding)
 		{
-			std::scoped_lock lock(classBattleManage.unitListMutex);
+			std::shared_lock lock(aStar.unitListRWMutex);
 			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(unit_template));
 			hsBuildingUnitForAstar[unit_template.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
 			auto u = std::make_shared<Unit>(unit_template);
@@ -429,8 +429,8 @@ void Battle001::UnitRegister(
 	}
 
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
-		unit_list.push_back(std::move(new_horizontal_unit));
+		std::unique_lock lock(aStar.unitListRWMutex);
+		unit_list.push_back(new_horizontal_unit);
 	}
 }
 
@@ -518,6 +518,7 @@ void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visib
 	HashSet<Point> currentVisibleTiles;
 
 	// 新しく見える範囲を計算
+	//std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& units : classBattleManage.listOfAllUnit)
 	{
 		for (const auto& unit : units.ListClassUnit)
@@ -626,7 +627,7 @@ void Battle001::handleCameraInput()
 Array<Array<Unit*>> Battle001::GetMovableUnitGroups()
 {
 	Array<Array<Unit*>> groups;
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 	{
 		Array<Unit*> group;
@@ -709,7 +710,7 @@ void Battle001::setMergePos(const Array<Unit*>& units, void (Unit::* setter)(con
 Array<Unit*> Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, BattleFormation bf)
 {
 	Array<Unit*> result;
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
@@ -722,7 +723,7 @@ Array<Unit*> Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, Batt
 
 void Battle001::handleDenseFormation(Point end)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 		for (auto& unit : target.ListClassUnit)
 		{
@@ -736,7 +737,7 @@ void Battle001::handleDenseFormation(Point end)
 }
 void Battle001::handleHorizontalFormation(Point start, Point end)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	Array<Array<Unit*>> formationGroups;
 	formationGroups.push_back(getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::F));
 	formationGroups.push_back(getMovableUnits(classBattleManage.listOfAllUnit, BattleFormation::B));
@@ -776,7 +777,7 @@ void Battle001::handleSquareFormation(Point start, Point end)
 }
 void Battle001::setUnitsSelectedInRect(const RectF& selectionRect)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& target : classBattleManage.listOfAllUnit)
 	{
 		for (auto& unit : target.ListClassUnit)
@@ -969,12 +970,16 @@ void Battle001::initSkillUI()
 
 		//skill抽出
 		Array<Skill> all_skills;
-		for (auto& unit_group : classBattleManage.listOfAllUnit)
 		{
-			for (auto& unit : unit_group.ListClassUnit)
+
+			//std::shared_lock lock(aStar.unitListRWMutex);
+			for (auto& unit_group : classBattleManage.listOfAllUnit)
 			{
-				for (auto& skill : unit.arrSkill)
-					all_skills.push_back(skill);
+				for (auto& unit : unit_group.ListClassUnit)
+				{
+					for (auto& skill : unit.arrSkill)
+						all_skills.push_back(skill);
+				}
 			}
 		}
 
@@ -1063,7 +1068,7 @@ Co::Task<> Battle001::checkCancelSelectionByUIArea()
 	if (Cursor::PosF().y >= Scene::Size().y - underBarHeight)
 	{
 		longBuildSelectTragetId = -1;
-		std::scoped_lock lock(classBattleManage.unitListMutex);
+		std::shared_lock lock(aStar.unitListRWMutex);
 		for (auto& target : classBattleManage.listOfAllUnit)
 		{
 			for (auto& unit : target.ListClassUnit)
@@ -1183,7 +1188,7 @@ void Battle001::handleCarrierStoreCommand(Unit& unit)
 
 	// 味方ユニットから検索
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
+		std::shared_lock lock(aStar.unitListRWMutex);
 		for (auto& group : classBattleManage.listOfAllUnit)
 		{
 			for (auto& otherUnit : group.ListClassUnit)
@@ -1281,11 +1286,14 @@ void Battle001::handleBuildMenuSelectionA()
 	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
 	// 通常ユニットの処理
-	for (auto& loau : classBattleManage.listOfAllUnit)
 	{
-		for (auto& itemUnit : loau.ListClassUnit)
+		//std::shared_lock lock(aStar.unitListRWMutex);
+		for (auto& loau : classBattleManage.listOfAllUnit)
 		{
-			processUnitBuildMenuSelection(itemUnit);
+			for (auto& itemUnit : loau.ListClassUnit)
+			{
+				processUnitBuildMenuSelection(itemUnit);
+			}
 		}
 	}
 
@@ -1342,7 +1350,7 @@ Optional<long long> Battle001::findClickedBuildingId() const
 
 Optional<long long> Battle001::findClickedUnitId() const
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	//std::shared_lock lock(aStar.unitListRWMutex);
 	for (const auto& target : classBattleManage.listOfAllUnit)
 	{
 		for (const auto& unit : target.ListClassUnit)
@@ -1363,7 +1371,7 @@ Optional<long long> Battle001::findClickedUnitId() const
 
 void Battle001::deselectAll()
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& item : classBattleManage.listOfAllUnit)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
@@ -1391,7 +1399,7 @@ void Battle001::toggleUnitSelection(long long unit_id)
 	}
 
 	// 選択状態の一括更新
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& item : classBattleManage.listOfAllUnit)
 	{
 		for (auto& itemUnit : item.ListClassUnit)
@@ -1428,7 +1436,7 @@ void Battle001::toggleUnitSelection(long long unit_id)
 void Battle001::toggleBuildingSelection(long long building_id)
 {
 	// 全てのユニットの選択を解除
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& group : classBattleManage.listOfAllUnit)
 	{
 		for (auto& unit : group.ListClassUnit)
@@ -1538,7 +1546,7 @@ void Battle001::handleSkillUISelection()
 				flagDisplaySkillSetumei = true;
 				nowSelectSkillSetumei = U"";
 				//スキル説明を書く
-				std::scoped_lock lock(classBattleManage.unitListMutex);
+				std::shared_lock lock(aStar.unitListRWMutex);
 				for (auto& item : classBattleManage.listOfAllUnit)
 				{
 					if (!item.FlagBuilding &&
@@ -1606,13 +1614,16 @@ void Battle001::updateUnitHealthBars()
 			unit.bLiquidBarBattle.ChangePoint(unit.GetNowPosiCenter() + offset);
 		};
 
-	for (auto& group : classBattleManage.listOfAllUnit)
 	{
-		if (group.FlagBuilding || group.ListClassUnit.empty())
-			continue;
+		std::shared_lock lock(aStar.unitListRWMutex);
+		for (auto& group : classBattleManage.listOfAllUnit)
+		{
+			if (group.FlagBuilding || group.ListClassUnit.empty())
+				continue;
 
-		for (auto& unit : group.ListClassUnit)
-			updateBar(unit);
+			for (auto& unit : group.ListClassUnit)
+				updateBar(unit);
+		}
 	}
 
 	for (auto& group : classBattleManage.listOfAllEnemyUnit)
@@ -1624,6 +1635,7 @@ void Battle001::updateUnitHealthBars()
 			updateBar(unit);
 	}
 }
+
 /// @brief 移動処理更新、移動状態や目的地到達を管理　A*経路探索の結果に基づき、位置や移動ベクトルを計算・更新
 void Battle001::handleCompletedPlayerPath(Unit& unit, ClassUnitMovePlan& plan)
 {
@@ -1843,7 +1855,7 @@ void Battle001::handleUnitTooltip()
 		const auto t = camera.createTransformer();
 
 		// マウス位置のユニットを検索
-		std::scoped_lock lock(classBattleManage.unitListMutex);
+		std::shared_lock lock(aStar.unitListRWMutex);
 		for (auto& group : { classBattleManage.listOfAllUnit, classBattleManage.listOfAllEnemyUnit })
 		{
 			for (auto& unitGroup : group)
@@ -1999,7 +2011,7 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 
 void Battle001::SkillProcess(Array<ClassHorizontalUnit>& attacker_groups, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills)
 {
-	std::scoped_lock lock(classBattleManage.unitListMutex);
+	std::shared_lock lock(aStar.unitListRWMutex);
 	for (auto& unit_group : attacker_groups)
 	{
 		for (auto& unit : unit_group.ListClassUnit)
@@ -2323,7 +2335,7 @@ void Battle001::processBuildOnTilesWithMovement(const Array<Point>& tiles)
 
 	Unit* selectedUnitPtr = nullptr;
 	{
-		std::scoped_lock lock(classBattleManage.unitListMutex);
+		std::shared_lock lock(aStar.unitListRWMutex);
 		for (auto& group : classBattleManage.listOfAllUnit) {
 			for (auto& unit : group.ListClassUnit) {
 				if (unit.ID == longBuildSelectTragetId) {
@@ -2506,7 +2518,7 @@ void Battle001::startAsyncFogCalculation()
 				//TODO:全てのアクセスを mutex で保護する
 				Array<const Unit*> unitSnapshot;
 				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
+					std::shared_lock lock(aStar.unitListRWMutex);
 					for (auto& units : classBattleManage.listOfAllUnit)
 					{
 						for (const auto& unit : units.ListClassUnit)
@@ -2632,48 +2644,65 @@ void Battle001::setupInitialUnits()
 void Battle001::startAsyncTasks()
 {
 	aStar.taskAStarEnemy = Async([this]() {
-		while (!aStar.abortAStarEnemy)
-		{
-			if (!aStar.pauseAStarTaskEnemy)
+		try {
+			while (!aStar.abortAStarEnemy)
 			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+				if (!aStar.pauseAStarTaskEnemy)
 				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
-					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+					HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+					{
+		std::shared_lock lock(aStar.unitListRWMutex);
+						hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+					}
+					aStar.BattleMoveAStar(
+						
+						classBattleManage.listOfAllUnit,
+						classBattleManage.listOfAllEnemyUnit,
+						classBattleManage.classMapBattle.value().mapData,
+						aiRootEnemy,
+						aStar.abortAStarEnemy,
+						aStar.pauseAStarTaskEnemy, aStar.changeUnitMember, hsBuildingUnitForAstarSnapshot, mapTile);
 				}
-				aStar.BattleMoveAStar(
-					classBattleManage.unitListMutex,
-					classBattleManage.listOfAllUnit,
-					classBattleManage.listOfAllEnemyUnit,
-					classBattleManage.classMapBattle.value().mapData,
-					aiRootEnemy,
-					aStar.abortAStarEnemy,
-					aStar.pauseAStarTaskEnemy, aStar.changeUnitMember, hsBuildingUnitForAstarSnapshot, mapTile);
+				System::Sleep(1);
 			}
-			System::Sleep(1);
+			System::Sleep(1); // CPU過負荷防止
 		}
+		catch (const std::exception& e) {
+			std::cerr << "Thread exception: " << e.what() << std::endl;
+		}
+		catch (...) {
+			std::cerr << "Thread unknown exception" << std::endl;
+		}
+
 		});
 
 	aStar.taskAStarMyUnits = Async([this]() {
 		while (!aStar.abortAStarMyUnits)
 		{
-			if (!aStar.pauseAStarTaskMyUnits)
-			{
-				HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+			try {
+				if (!aStar.pauseAStarTaskMyUnits)
 				{
-					std::scoped_lock lock(classBattleManage.unitListMutex);
-					hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+					HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
+					{
+		std::shared_lock lock(aStar.unitListRWMutex);
+						hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
+					}
+					aStar.BattleMoveAStarMyUnitsKai(
+						classBattleManage.listOfAllUnit,
+						classBattleManage.listOfAllEnemyUnit,
+						classBattleManage.classMapBattle.value().mapData,
+						aiRootMy,
+						aStar.abortAStarMyUnits,
+						aStar.pauseAStarTaskMyUnits, hsBuildingUnitForAstarSnapshot, mapTile);
 				}
-				aStar.BattleMoveAStarMyUnitsKai(
-					classBattleManage.unitListMutex,
-					classBattleManage.listOfAllUnit,
-					classBattleManage.listOfAllEnemyUnit,
-					classBattleManage.classMapBattle.value().mapData,
-					aiRootMy,
-					aStar.abortAStarMyUnits,
-					aStar.pauseAStarTaskMyUnits, hsBuildingUnitForAstarSnapshot, mapTile);
+				System::Sleep(1); // CPU過負荷防止
 			}
-			System::Sleep(1); // CPU過負荷防止
+			catch (const std::exception& e) {
+				std::cerr << "Thread exception: " << e.what() << std::endl;
+			}
+			catch (...) {
+				std::cerr << "Thread unknown exception" << std::endl;
+			}
 		}
 		});
 
@@ -2953,7 +2982,7 @@ Co::Task<void> Battle001::mainLoop()
 				{
 					if (!itemUnit.arrYoyakuBuild.isEmpty())
 					{
-						Print << U"[HP_WATCH] Frame Start. Producing Unit ID: " << itemUnit.ID << U", HP: " << itemUnit.Hp;
+						//Print << U"[HP_WATCH] Frame Start. Producing Unit ID: " << itemUnit.ID << U", HP: " << itemUnit.Hp;
 						found_producing = true;
 						break;
 					}

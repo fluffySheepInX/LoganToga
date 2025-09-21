@@ -64,8 +64,11 @@ public:
 	// コピーコンストラクタ
 	Unit(const Unit& other) {
 		components.clear();
-		for (const auto& c : other.components) {
-			components.push_back(c->clone());
+		if (other.components.size() > 0)
+		{
+			for (const auto& c : other.components) {
+				components.push_back(c->clone());
+			}
 		}
 		cts = other.cts;
 		Formation = other.Formation;
