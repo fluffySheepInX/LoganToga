@@ -375,30 +375,21 @@ void Battle001::UnitRegister(
 	Array<ClassHorizontalUnit>& unit_list,
 	bool enemy)
 {
-	// 事前に容量を確保
-	unit_list.reserve(unit_list.size() + 1);
-
 	// 該当するユニットテンプレートを検索
 	const auto it = std::find_if(m_commonConfig.arrayInfoUnit.begin(), m_commonConfig.arrayInfoUnit.end(),
 		[&unitName](const auto& unit) { return unit.NameTag == unitName; });
 
-	if (it == m_commonConfig.arrayInfoUnit.end())
-	{
-		Print << U"Warning: Unit '{}' not found in unit templates"_fmt(unitName);
+	if (it == m_commonConfig.arrayInfoUnit.end() || num <= 0)
 		return;
-	}
 
-	if (num <= 0)
-	{
-		Print << U"Warning: Invalid unit count: {}"_fmt(num);
-		return;
-	}
-
-	Unit unit_template = *it; // 一度だけコピー
+	Unit base = *it;
 	ClassHorizontalUnit new_horizontal_unit;
+	new_horizontal_unit.ListClassUnit.reserve(num);
+	Array<std::tuple<Point, std::unique_ptr<Unit>, Unit*>> buildingCache;
 
 	for (size_t i = 0; i < num; i++)
 	{
+		Unit unit_template = base;
 		unit_template.ID = classBattleManage.getIDCount();
 		unit_template.initTilePos = Point{ col, row };
 		unit_template.colBuilding = col;
@@ -416,22 +407,31 @@ void Battle001::UnitRegister(
 		if (enemy)
 			unit_template.moveState = moveState::MoveAI;
 
-		new_horizontal_unit.ListClassUnit.push_back(unit_template);
-
 		if (unit_template.IsBuilding)
 		{
-			std::shared_lock lock(aStar.unitListRWMutex);
-			unitsForHsBuildingUnitForAstar.push_back(std::make_unique<Unit>(unit_template));
-			hsBuildingUnitForAstar[unit_template.initTilePos].push_back(unitsForHsBuildingUnitForAstar.back().get());
-			auto u = std::make_shared<Unit>(unit_template);
-			classBattleManage.hsMyUnitBuilding.insert(u);
+			auto uptr = std::make_unique<Unit>(unit_template);
+			Unit* raw = uptr.get();
+			buildingCache.emplace_back(unit_template.initTilePos, std::move(uptr), raw);
+			auto sharedPtr = std::make_shared<Unit>(unit_template);
+			classBattleManage.hsMyUnitBuilding.insert(sharedPtr);
 		}
+
+		new_horizontal_unit.ListClassUnit.push_back(std::move(unit_template));
 	}
 
 	{
 		std::unique_lock lock(aStar.unitListRWMutex);
-		unit_list.push_back(new_horizontal_unit);
+		unit_list.push_back(std::move(new_horizontal_unit));
+
+		// 建物関連一括反映
+		for (auto& [tilePos, uptr, raw] : buildingCache)
+		{
+			unitsForHsBuildingUnitForAstar.push_back(std::move(uptr));
+			hsBuildingUnitForAstar[tilePos].push_back(raw);
+		}
 	}
+
+	aStar.changeUnitMember.store(true);
 }
 
 /// @brief 指定した経過時間後に敵ユニットをマップ上にスポーン
