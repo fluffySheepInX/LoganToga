@@ -3442,8 +3442,9 @@ void Battle::drawBuildMenu() const
 				if (i == 0)
 				{
 					TextureAsset(uybuy.icon).resized(64).draw(baseX - 64, baseY + 4);
-					double progressRatio = Saturate(itemUnit.taskTimer.sF() / uybuy.buildTime); // 0.0 ～ 1.0 に制限
-					double gaugeRatio = Max(progressRatio, 0.1);
+					// itemUnit.progressTime is already calculated in updateBuildQueue and is the authoritative value.
+					double progressRatio = itemUnit.progressTime;
+					double gaugeRatio = Max(progressRatio, 0.0); // Use 0.0 instead of 0.1 to allow the bar to be empty.
 					double gaugeHeight = 64 * gaugeRatio;
 
 					RectF{ baseX - 64, baseY + 4, 64, gaugeHeight }
