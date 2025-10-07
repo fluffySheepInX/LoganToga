@@ -3473,11 +3473,11 @@ void Battle001::drawBuildMenu() const
 		}
 	}
 
+	Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
+
 	// 建築キューの描画
 	if (!arrYoyakuBuild.empty())
 	{
-		Rect(baseX - 64 - 6, baseY, 70, 328).drawFrame(4, 0, Palette::Black);
-
 		for (const auto& [i, buildItem] : Indexed(arrYoyakuBuild))
 		{
 			if (i == 0)
