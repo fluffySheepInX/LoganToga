@@ -1747,27 +1747,20 @@ void Battle::updateBuildQueue()
 			{
 				if (itemUnit.arrYoyakuBuild.isEmpty()) continue;
 
-				const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
-				auto tempBA = itemUnit.arrYoyakuBuild.front().result;
-				//int32 kuhukgiuy = itemUnit.arrYoyakuBuild.front().
-				const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
-				const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
-				const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
-
+				// Check if the current item is finished
 				if (itemUnit.progressTime >= 1.0)
 				{
+					// Store info before popping
+					auto tempBA = itemUnit.arrYoyakuBuild.front().result;
+					const int32 tempRowBuildingTarget = itemUnit.arrYoyakuBuild.front().rowBuildingTarget;
+					const int32 tempColBuildingTarget = itemUnit.arrYoyakuBuild.front().colBuildingTarget;
+					const int32 createCount = itemUnit.arrYoyakuBuild.front().createCount;
+
+					// Reset timer and remove from queue
 					itemUnit.taskTimer.reset();
 					itemUnit.arrYoyakuBuild.pop_front();
-					if (!itemUnit.arrYoyakuBuild.isEmpty())
-					{
-						itemUnit.progressTime = 0.0;
-						itemUnit.taskTimer.restart();
-					}
-					else
-					{
-						itemUnit.progressTime = -1.0;
-					}
 
+					// Queue the unit creation
 					if (tempBA.type == U"unit")
 					{
 						MyAnonymousClass yfyu;
@@ -1777,10 +1770,33 @@ void Battle::updateBuildQueue()
 						yfyu.count = createCount;
 						temo.push_back(yfyu);
 					}
+
+					// If there's a new item, start its timer
+					if (!itemUnit.arrYoyakuBuild.isEmpty())
+					{
+						itemUnit.progressTime = 0.0;
+						itemUnit.taskTimer.restart();
+					}
+					else
+					{
+						itemUnit.progressTime = -1.0;
+					}
 				}
 
-				// プログレス更新
-				itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
+				// If there is an item in the queue (either the old one or a new one), update its progress
+				if (!itemUnit.arrYoyakuBuild.isEmpty())
+				{
+					const double tempTime = itemUnit.arrYoyakuBuild.front().buildTime;
+					if (tempTime > 0.0)
+					{
+						itemUnit.progressTime = Min(itemUnit.taskTimer.sF() / tempTime, 1.0);
+					}
+					else
+					{
+						// If buildTime is 0 or negative, consider it an instant build.
+						itemUnit.progressTime = 1.0;
+					}
+				}
 			}
 		}
 	}
