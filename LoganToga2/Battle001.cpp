@@ -391,6 +391,8 @@ void Battle001::UnitRegister(
 	{
 		Unit unit_template = base;
 		unit_template.ID = classBattleManage.getIDCount();
+		// 追加: 召喚直後は最大体力で開始
+		unit_template.Hp = unit_template.HpMAX;
 		unit_template.initTilePos = Point{ col, row };
 		unit_template.colBuilding = col;
 		unit_template.rowBuilding = row;
@@ -1963,13 +1965,15 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 {
 	// 発動中もしくは死亡ユニットはスキップ
 	if (unit.FlagMovingSkill == true || unit.IsBattleEnable == false)
-	{
 		return;
-	}
 
 	// どのスキルを試行するか決定する
 	Array<Skill> skills_to_try;
-	auto manually_selected_skills = unit.arrSkill.filter([&](const Skill& itemSkill) { return nowSelectSkill.contains(itemSkill.nameTag); });
+	auto manually_selected_skills = unit.arrSkill.filter([&](const Skill& itemSkill)
+		{
+			return nowSelectSkill.contains(itemSkill.nameTag);
+		}
+	);
 
 	if (manually_selected_skills.size() > 0)
 	{
@@ -1986,22 +1990,16 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 	{
 		const auto attacker_pos = unit.GetNowPosiCenter();
 
-		// ターゲットグループを決定
-		Array<ClassHorizontalUnit> potential_targets;
-		if (skill.SkillType == SkillType::heal)
-		{
-			// This is not correct. It should be the unit's own group, not all attackers.
-			// This logic needs to be fixed later, but for now, I will preserve the original (buggy?) behavior.
-			// potential_targets = unit.parent_group; // This is a conceptual fix
-			potential_targets = classBattleManage.listOfAllUnit; // Preserving original behavior
-			potential_targets.shuffle();
-		}
-		else
-		{
-			potential_targets = target_groups;
-		}
+		// ターゲットグループを「参照」で決定（コピーしない）
+		Array<ClassHorizontalUnit>* potential_targets =
+			(skill.SkillType == SkillType::heal)
+			? &classBattleManage.listOfAllUnit   // 味方全体（コピーなし）
+			: &target_groups;                     // 敵グループ（参照）
 
-		if (tryActivateSkillOnTargetGroup(potential_targets, attacker_pos, unit, skill, executed_skills))
+		// シャッフルによる全体コピー・再配置はコストが大きいため撤廃
+		// 必要なら軽量にランダムサンプリングする実装へ置き換える
+
+		if (tryActivateSkillOnTargetGroup(*potential_targets, attacker_pos, unit, skill, executed_skills))
 		{
 			// スキルが発動したら、このユニットは一旦終了
 			return;
@@ -2090,6 +2088,8 @@ ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& t
 
 bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills)
 {
+	const bool isHeal = (skill.SkillType == SkillType::heal);
+
 	for (auto& target_group : target_groups)
 	{
 		for (auto& target_unit : target_group.ListClassUnit)
@@ -2100,6 +2100,20 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 			{
 				if (target_unit.mapTipObjectType == MapTipObjectType::WALL2) continue;
 				if (target_unit.mapTipObjectType == MapTipObjectType::GATE && target_unit.HPCastle <= 0) continue;
+			}
+
+			// 回復スキルは満タン対象をスキップ（弾生成・判定を抑制）
+			if (isHeal)
+			{
+				if (target_unit.IsBuilding)
+				{
+					// 建物の上限が未管理なら下限のみでもよいが、少なくとも 0 以下は除外
+					if (target_unit.HPCastle <= 0) continue;
+				}
+				else
+				{
+					if (target_unit.Hp >= target_unit.HpMAX) continue;
+				}
 			}
 
 			if (isTargetInRange(attacker, target_unit, skill))
@@ -2220,6 +2234,7 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 	double powerStr = 0;
 	double defStr = 0;
 
+	// 基礎パワー（術者側の攻撃/魔法）だけを計算
 	switch (ces.classSkill.SkillStrKind)
 	{
 	case SkillStrKind::attack:
@@ -2245,40 +2260,73 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 		break;
 	}
 
-	if (powerStr < defStr)
-	{
-		powerStr = 0;
-		defStr = 0;
-	}
+	const bool isHeal = (ces.classSkill.SkillType == SkillType::heal);
 
-	double damage = powerStr - defStr;
-	if (damage > 0 && ces.classSkill.SkillType != SkillType::heal)
+	if (!isHeal)
 	{
-		Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
-			<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
-			<< U" with Skill: " << ces.classSkill.nameTag;
-	}
+		// 被ダメージ時のみ、防御は「対象の Defense」を使う
+		defStr = (itemTarget.Defense) * Random(0.8, 1.2);
 
-	if (itemTarget.IsBuilding == true)
-	{
-		itemTarget.HPCastle = itemTarget.HPCastle - (powerStr)+(defStr);
+		// マイナスダメージにならないよう 0 切り上げ
+		if (powerStr < defStr)
+		{
+			powerStr = 0.0;
+			defStr = 0.0;
+		}
 	}
 	else
 	{
-		if (ces.classSkill.SkillType == SkillType::heal)
+		// 回復では防御を考慮しない（負の回復を避けるため 0 未満は 0）
+		if (powerStr < 0.0)
+			powerStr = 0.0;
+		defStr = 0.0;
+	}
+
+	// ログ（ダメ時のみ）
+	if (!isHeal)
+	{
+		const double damage = (powerStr - defStr);
+		if (damage > 0.0)
+		{
+			Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
+				<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
+				<< U" with Skill: " << ces.classSkill.nameTag;
+		}
+	}
+
+	// 適用
+	if (itemTarget.IsBuilding)
+	{
+		if (isHeal)
+		{
+			// 建物回復量の上限は不明なため、下限のみクランプ
+			itemTarget.HPCastle = itemTarget.HPCastle + powerStr;
+			if (itemTarget.HPCastle < 0.0) itemTarget.HPCastle = 0.0;
+		}
+		else
+		{
+			itemTarget.HPCastle = itemTarget.HPCastle - (powerStr - defStr);
+			if (itemTarget.HPCastle < 0.0) itemTarget.HPCastle = 0.0;
+		}
+	}
+	else
+	{
+		if (isHeal)
 		{
 			if (ces.classSkill.attr == U"mp")
 			{
-				itemTarget.Mp = itemTarget.Mp + (powerStr)+(defStr);
+				itemTarget.Mp = itemTarget.Mp + powerStr; // Mp の上限があればここでクランプ
 			}
-			else if (ces.classSkill.attr == U"hp")
+			else // 既定は HP 回復
 			{
-				itemTarget.Hp = itemTarget.Hp + (powerStr)+(defStr);
+				itemTarget.Hp = itemTarget.Hp + powerStr;
+				if (itemTarget.Hp > itemTarget.HpMAX) itemTarget.Hp = itemTarget.HpMAX;
 			}
 		}
 		else
 		{
-			itemTarget.Hp = itemTarget.Hp - (powerStr)+(defStr);
+			itemTarget.Hp = itemTarget.Hp - (powerStr - defStr);
+			if (itemTarget.Hp < 0.0) itemTarget.Hp = 0.0;
 		}
 	}
 }
@@ -2293,7 +2341,7 @@ bool Battle001::applySkillEffectAndRegisterHit(bool& bombCheck, Array<int32>& ar
 	//一体だけ当たったらそこで終了
 	if (loop_Battle_player_skills.classSkill.SkillBomb == SkillBomb::off)
 	{
-		bombCheck == true;
+		bombCheck = true;
 		return true;
 	}
 	return false;
@@ -2779,7 +2827,7 @@ void Battle001::updateGameSystems()
 	resourcePointTooltip.setCamera(camera);
 
 	handleUnitTooltip();
-	spawnTimedEnemy(classBattleManage, mapTile);
+	//spawnTimedEnemy(classBattleManage, mapTile);
 	updateResourceIncome();
 	updateBuildQueue();
 
@@ -3006,8 +3054,8 @@ Co::Task<void> Battle001::mainLoop()
 		updateGameSystems();
 		co_await handlePlayerInput();
 		updateAllUnits();
-		//processCombat();
-		//checkUnitDeaths();
+		processCombat();
+		checkUnitDeaths();
 
 		co_await Co::NextFrame();
 	}
