@@ -2438,6 +2438,16 @@ void Battle001::processUnitBuildQueue(Unit& itemUnit, Array<ProductionOrder>& pr
 			itemUnit.progressTime = 0.0;
 		}
 	}
+	else
+	{
+		// 通常の建築アクションで、タイマーが動いていなければ開始する（安全対策）
+		if (!itemUnit.taskTimer.isRunning())
+		{
+			itemUnit.taskTimer.restart();
+			itemUnit.progressTime = 0.0;
+		}
+	}
+
 
 	const double tempTime = buildAction.buildTime;
 	auto tempBA = buildAction.result;
