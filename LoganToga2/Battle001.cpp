@@ -1650,7 +1650,7 @@ void Battle001::handleCompletedPlayerPath(Unit& unit, ClassUnitMovePlan& plan)
 	if (unit.moveState == moveState::Moving)
 	{
 		// Final move adjustment
-		unit.nowPosiLeft += unit.vecMove * ((unit.Move + unit.cts.Speed) / 100.0);
+		unit.nowPosiLeft += unit.vecMove * ((unit.Move) / 100.0);
 
 		Vec2 toTarget = unit.GetOrderPosiCenter() - unit.GetNowPosiCenter();
 		if (toTarget.dot(unit.vecMove) <= 0 || toTarget.length() < 5.0)
@@ -1664,7 +1664,7 @@ void Battle001::handleCompletedPlayerPath(Unit& unit, ClassUnitMovePlan& plan)
 
 void Battle001::handlePlayerPathMovement(Unit& unit, ClassUnitMovePlan& plan)
 {
-	unit.nowPosiLeft += unit.vecMove * ((unit.Move + unit.cts.Speed) / 100.0);
+	unit.nowPosiLeft += unit.vecMove * ((unit.Move) / 100.0);
 
 	bool waypointReached = false;
 	if (auto currentTarget = plan.getCurrentTarget())
@@ -2288,9 +2288,9 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 		const double damage = (powerStr - defStr);
 		if (damage > 0.0)
 		{
-			Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
-				<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
-				<< U" with Skill: " << ces.classSkill.nameTag;
+			//Print << U"[DAMAGE_LOG] Target: " << itemTarget.Name << U" (ID:" << itemTarget.ID << U", HP:" << itemTarget.Hp << U")"
+			//	<< U" takes " << damage << U" damage from Attacker: " << ces.classUnit->Name << U" (ID:" << ces.classUnit->ID << U")"
+			//	<< U" with Skill: " << ces.classSkill.nameTag;
 		}
 	}
 
@@ -2827,7 +2827,7 @@ void Battle001::updateGameSystems()
 	resourcePointTooltip.setCamera(camera);
 
 	handleUnitTooltip();
-	//spawnTimedEnemy(classBattleManage, mapTile);
+	spawnTimedEnemy(classBattleManage, mapTile);
 	updateResourceIncome();
 	updateBuildQueue();
 
@@ -3723,6 +3723,108 @@ void Battle001::draw() const
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight(mapTile);
+
+		for (auto& skill : m_Battle_player_skills)
+		{
+			for (auto& acb : skill.ArrayClassBullet)
+			{
+				if (skill.classSkill.image == U"")
+				{
+					Circle{ acb.NowPosition.x,acb.NowPosition.y,30 }.draw();
+					continue;
+				}
+
+				if (skill.classSkill.SkillForceRay == SkillForceRay::on)
+				{
+					Line{ acb.StartPosition, acb.NowPosition }.draw(skill.classSkill.rayStrokeThickness, ColorF{ skill.classSkill.ray[1], skill.classSkill.ray[2], skill.classSkill.ray[3], skill.classSkill.ray[0] });
+				}
+
+				if (skill.classSkill.SkillD360 == SkillD360::on)
+				{
+					if (skill.classSkill.SkillCenter == SkillCenter::end)
+					{
+						const Texture texture = TextureAsset(skill.classSkill.image + U".png");
+						texture
+							.resized(skill.classSkill.w, skill.classSkill.h)
+							.rotatedAt(texture.resized(skill.classSkill.w, skill.classSkill.h).region().bottomCenter(), acb.radian + Math::ToRadians(90))
+							.drawAt(acb.NowPosition);
+					}
+					else
+					{
+						TextureAsset(skill.classSkill.image + U".png")
+							.resized(skill.classSkill.w, skill.classSkill.h)
+							.rotated(acb.lifeTime * 10)
+							.drawAt(acb.NowPosition);
+					}
+					continue;
+				}
+
+				if (acb.degree == 0 || acb.degree == 90 || acb.degree == 180 || acb.degree == 270)
+				{
+					TextureAsset(skill.classSkill.image + U"N.png")
+						.resized(skill.classSkill.w, skill.classSkill.h)
+						.rotated(acb.radian + Math::ToRadians(90))
+						.drawAt(acb.NowPosition);
+					continue;
+				}
+
+				TextureAsset(skill.classSkill.image + U"NW.png")
+					.resized(skill.classSkill.w, skill.classSkill.h)
+					.rotated(acb.radian + Math::ToRadians(135))
+					.drawAt(acb.NowPosition);
+			}
+		}
+		for (auto& skill : m_Battle_enemy_skills)
+		{
+			for (auto& acb : skill.ArrayClassBullet)
+			{
+				if (skill.classSkill.image == U"")
+				{
+					Circle{ acb.NowPosition.x,acb.NowPosition.y,30 }.draw();
+					continue;
+				}
+
+				if (skill.classSkill.SkillForceRay == SkillForceRay::on)
+				{
+					Line{ acb.StartPosition, acb.NowPosition }.draw(skill.classSkill.rayStrokeThickness, ColorF{ skill.classSkill.ray[1], skill.classSkill.ray[2], skill.classSkill.ray[3], skill.classSkill.ray[0] });
+				}
+
+				if (skill.classSkill.SkillD360 == SkillD360::on)
+				{
+					if (skill.classSkill.SkillCenter == SkillCenter::end)
+					{
+						const Texture texture = TextureAsset(skill.classSkill.image + U".png");
+						texture
+							.resized(skill.classSkill.w, skill.classSkill.h)
+							.rotatedAt(texture.resized(skill.classSkill.w, skill.classSkill.h).region().bottomCenter(), acb.radian + Math::ToRadians(90))
+							.drawAt(acb.NowPosition);
+					}
+					else
+					{
+						TextureAsset(skill.classSkill.image + U".png")
+							.resized(skill.classSkill.w, skill.classSkill.h)
+							.rotated(acb.lifeTime * 10)
+							.drawAt(acb.NowPosition);
+					}
+					continue;
+				}
+
+				if (acb.degree == 0 || acb.degree == 90 || acb.degree == 180 || acb.degree == 270)
+				{
+					TextureAsset(skill.classSkill.image + U"N.png")
+						.resized(skill.classSkill.w, skill.classSkill.h)
+						.rotated(acb.radian + Math::ToRadians(90))
+						.drawAt(acb.NowPosition);
+					continue;
+				}
+
+				TextureAsset(skill.classSkill.image + U"NW.png")
+					.resized(skill.classSkill.w, skill.classSkill.h)
+					.rotated(acb.radian + Math::ToRadians(135))
+					.drawAt(acb.NowPosition);
+			}
+		}
+
 	}
 
 	drawHUD();

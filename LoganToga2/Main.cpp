@@ -264,6 +264,10 @@ void Init(CommonConfig& commonConfig)
 			{
 				cu.plus_speed_time = Parse<double>(value[U"plus_speed_time"].get<String>());
 			}
+			if (value.hasElement(U"delay") == true)
+			{
+				cu.Delay = Parse<double>(value[U"delay"].get<String>());
+			}
 			cu.nameTag = value[U"name_tag"].get<String>();
 			cu.name = value[U"name"].get<String>();
 			cu.range = Parse<int32>(value[U"range"].get<String>());

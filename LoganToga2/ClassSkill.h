@@ -162,6 +162,7 @@ public:
 	int32 damageRangeAdjust = 0;
 	int32 rangeMin = 0;
 	double speed = 0;
+	double Delay = 0.0;
 	std::pair<s3d::String, int32> gunDelay;
 	String pairNext;
 	String next;
