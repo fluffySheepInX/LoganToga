@@ -58,6 +58,7 @@ int32 AStar::BattleMoveAStar(
 	}
 
 	const size_t total = flatList.size();
+	//ここでエラーになる原因を後で探る
 	if (total == 0)
 		return 0;
 
@@ -133,37 +134,81 @@ int32 AStar::BattleMoveAStar(
 
 		bool flagGetEscapeRange = false;
 		Vec2 retreatTargetPos;
-		// ユニットが持つ退却範囲(escape_range)に入られた場合、敵から離れるように移動する
-		if (unit.Escape_range >= 1)
-		{
-			Circle cCheck = Circle(unit.GetNowPosiCenter(), unit.Escape_range);
-			Circle cCheck2 = Circle(minElement->second.GetNowPosiCenter(), 1);
-			if (cCheck.intersects(cCheck2) == true)
-			{
-				// 敵とは反対方向の座標を計算
-				double angle = atan2(minElement->second.GetNowPosiCenter().y - unit.GetNowPosiCenter().y,
-					minElement->second.GetNowPosiCenter().x - unit.GetNowPosiCenter().x);
-				double xC, yC;
-				// 反対方向に進むために角度を180度反転
-				angle += Math::Pi;
-				xC = unit.GetNowPosiCenter().x + RETREAT_DISTANCE * cos(angle);
-				yC = unit.GetNowPosiCenter().y + RETREAT_DISTANCE * sin(angle);
 
-				//TODO 画面端だとタイル外となるので、調整
-				retreatTargetPos = Vec2(xC, yC);
+
+		// ★ 間合い関連の計算準備 -------------------------------
+		const Vec2 unitPos = unit.GetNowPosiCenter();
+		const Vec2 targetPos = minElement->second.GetNowPosiCenter();
+		const double dist = unitPos.distanceFrom(targetPos);
+
+		// 間合い維持のデフォルト値（必要に応じて調整）
+		constexpr double DEFAULT_PREFERRED_RANGE = 260.0;   // 望ましい距離（ワールド座標）
+		constexpr double DEFAULT_RANGE_BAND = 80.0;    // ヒステリシス幅（±40の帯）
+
+		// Unit に専用プロパティがあればそれを使う。無ければデフォルト。
+		const double preferred = (unit.MaintainRange > 0.0) ? unit.MaintainRange : DEFAULT_PREFERRED_RANGE;
+		const double band = (unit.MaintainRangeBand > 0.0) ? unit.MaintainRangeBand : DEFAULT_RANGE_BAND;
+		const double minKeep = Max(0.0, preferred - band * 0.5);
+		const double maxKeep = preferred + band * 0.5;
+
+		Optional<Vec2> approachTargetPos; // 遠すぎの時の目標座標
+
+		// ユニットが持つ退却範囲(escape_range)に入られた場合、敵から離れるように移動する
+		// 既存の Escape_range を尊重しつつ、間合い維持を一般化
+		if (unit.Escape_range >= 1) {
+			Circle cCheck = Circle(unitPos, unit.Escape_range);
+			Circle cCheck2 = Circle(targetPos, 1);
+			if (cCheck.intersects(cCheck2) == true) {
+				// 近すぎ: 反対方向に下がる
+				double angle = atan2(targetPos.y - unitPos.y, targetPos.x - unitPos.x);
+				angle += Math::Pi;
+				const double desired = Max(minKeep, static_cast<double>(unit.Escape_range));
+				retreatTargetPos = unitPos + Vec2(cos(angle), sin(angle)) * (desired);
 				flagGetEscapeRange = true;
 			}
 		}
 
+		// Escape_range 以外でも「間合い」で近すぎ/遠すぎを判定
+		if (!flagGetEscapeRange) {
+			if (dist < minKeep) {
+				// 近すぎ → 反対方向に下がって「minKeep」まで離れる
+				Vec2 dir = (unitPos - targetPos);
+				if (dir.isZero()) dir = Vec2{ 1, 0 };
+				dir = dir.setLength(minKeep);
+				retreatTargetPos = targetPos + dir;
+				flagGetEscapeRange = true;
+			}
+			else if (dist > maxKeep) {
+				// 遠すぎ → 近づくが「preferred」に収束する座標を目標にする
+				Vec2 dir = (targetPos - unitPos);
+				if (dir.isZero()) dir = Vec2{ 1, 0 };
+				// 今より (dist - preferred) だけ近づく位置
+				const double moveLen = (dist - preferred);
+				approachTargetPos = unitPos + dir.setLength(moveLen);
+			}
+			else {
+				// 帯域内 → 移動不要（既に Moving/MovingEnd ならそのまま、そうでなければ静止）
+				if (unit.moveState != moveState::Moving && unit.moveState != moveState::MovingEnd)
+					continue;
+			}
+		}
+
 		if ((unit.moveState == moveState::Moving || unit.moveState == moveState::MovingEnd)
-			&& flagGetEscapeRange == false)
+			&& flagGetEscapeRange == false && !approachTargetPos.has_value())
 			continue;
 
-		//最寄りの敵のマップチップを取得
+		// 最終目標タイルを決定（撤退・接近・直接）
 		s3d::Optional<Size> nowIndexEnemy;
-		nowIndexEnemy = flagGetEscapeRange
-			? mapTile.ToIndex(retreatTargetPos, mapTile.columnQuads, mapTile.rowQuads)
-			: mapTile.ToIndex(minElement->second.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+		if (flagGetEscapeRange) {
+			nowIndexEnemy = mapTile.ToIndex(retreatTargetPos, mapTile.columnQuads, mapTile.rowQuads);
+		}
+		else if (approachTargetPos.has_value()) {
+			nowIndexEnemy = mapTile.ToIndex(approachTargetPos.value(), mapTile.columnQuads, mapTile.rowQuads);
+		}
+		else {
+			nowIndexEnemy = mapTile.ToIndex(targetPos, mapTile.columnQuads, mapTile.rowQuads);
+		}
+
 		if (nowIndexEnemy.has_value() == false) continue;
 		if (nowIndexEnemy.value() == nowIndex.value()) continue;
 

@@ -182,6 +182,8 @@ public:
 		arrYoyakuBuild = other.arrYoyakuBuild;
 		tempIsBuildSelectTragetBuildAction = other.tempIsBuildSelectTragetBuildAction;
 		requiresMovement = other.requiresMovement;
+		MaintainRange = other.MaintainRange;
+		MaintainRangeBand = other.MaintainRangeBand;
 	}
 	Unit& operator=(const Unit& other)
 	{
@@ -334,6 +336,10 @@ public:
 	int32 colResourceTarget = -1;
 	bool requiresMovement = false;  // 移動が必要な建築かどうか
 	long long ID = 0;
+
+
+	int32 MaintainRange = 260.0;
+	int32 MaintainRangeBand = 80.0;
 
 	/// @brief 建築メニューなどを表示するかどうかのフラグ
 	bool pressedUnit = false;

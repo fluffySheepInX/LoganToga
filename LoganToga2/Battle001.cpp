@@ -3,6 +3,40 @@
 #include <ranges>
 #include <vector>
 
+// ファイル先頭の include 群の下あたり（この cpp 内のどこでも可）に追加
+namespace {
+	// unitID -> (skillTag -> readyAtSeconds)
+	HashTable<long long, HashTable<String, double>> gSkillReadyAtSec;
+
+	// Delay=1 を speed=60 で約 2 秒にするための係数
+	constexpr double kAttackDelayBaseTicks = 120.0; // 秒換算すると 120/speed
+
+	inline double getUnitAttackSpeed(const Unit& u) {
+		// 速度 0 防止
+		return Max(1.0, (u.Speed));
+	}
+
+	inline double calcCooldownSec(const Unit& u, const Skill& s) {
+		const double delayUnit = Max(0.0, s.Delay); // 未設定や負は 0 扱い
+		const double base = kAttackDelayBaseTicks / getUnitAttackSpeed(u);
+		return delayUnit * base;
+	}
+
+	inline bool isSkillReady(const Unit& u, const Skill& s) {
+		const double now = Scene::Time();
+		if (const auto itU = gSkillReadyAtSec.find(u.ID); itU != gSkillReadyAtSec.end()) {
+			if (const auto itS = itU->second.find(s.nameTag); itS != itU->second.end()) {
+				return now >= itS->second;
+			}
+		}
+		return true;
+	}
+
+	inline void commitCooldown(const Unit& u, const Skill& s) {
+		gSkillReadyAtSec[u.ID][s.nameTag] = Scene::Time() + calcCooldownSec(u, s);
+	}
+}
+
 template<typename DrawFunc>
 void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc)
 {
@@ -1988,6 +2022,11 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 	// スキルを試行
 	for (auto& skill : skills_to_try)
 	{
+		// 追加: クールタイム未終了ならスキップ
+		if (!isSkillReady(unit, skill)) {
+			continue;
+		}
+
 		const auto attacker_pos = unit.GetNowPosiCenter();
 
 		// ターゲットグループを「参照」で決定（コピーしない）
@@ -2120,6 +2159,7 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 			{
 				ClassExecuteSkills new_skill_execution = createSkillExecution(attacker, target_unit, skill);
 				executed_skills.push_back(new_skill_execution);
+				commitCooldown(attacker, skill);
 				return true; // スキル発動成功
 			}
 		}
@@ -2127,6 +2167,48 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 	return false; // 適切なターゲットが見つからなかった
 }
 
+/// @brief 弾（スキル弾道）の当たり判定とヒット処理を行う
+/// @param bullet        現在処理中の弾。位置や移動ベクトルなどを保持（in/out）
+/// @param executedSkill 弾を生成したスキル実行情報。スキル設定（サイズ、速度、貫通可否など）を参照（in）
+/// @param targetUnits   当たり判定対象のユニット群（敵または味方のグループ一覧）（in）
+/// @param isBomb        ヒット後に「非貫通（1体ヒットで終了）」なら true を返すフラグ（out）
+///
+/// 処理の流れ
+/// 1) 弾の当たり判定円を作成
+///    - 中心: bullet.NowPosition
+///    - 半径: executedSkill.classSkill.w / 2.0（スキルで定義された見た目幅をヒット半径として利用）
+///
+/// 2) 対象ユニット群（targetUnits）を走査し、各ユニットに対して当たり判定
+///    - 非戦闘状態（!IsBattleEnable）のユニットはスキップ
+///    - 建物のうち壁（MapTipObjectType::WALL2）はスキップ（その他の建物は対象）
+///    - 衝突判定用ターゲット中心:
+///      ・通常ユニット: Unit::GetNowPosiCenter()
+///      ・建物: mapTile.ToTileBottomCenter(タイル座標, mapTile.N) からタイル厚み分だけ上方向補正（-(25 + 15)）
+///    - ターゲットの当たり判定円:
+///      ・中心: 上記 targetPos
+///      ・半径: targetUnit.yokoUnit / 2.0（見た目横幅の半分をヒット半径として使用）
+///
+/// 3) 弾円とターゲット円が交差したらヒット処理
+///    - applySkillEffectAndRegisterHit(...) を呼び出し、ダメージ/回復などスキル効果を適用
+///      ・術者の FlagMovingSkill を解除
+///      ・ダメージ/回復計算を実施（CalucDamage）
+///      ・「非貫通（SkillBomb::off）」のスキルであれば bombCheck を true に設定
+///    - 本メソッド内の bulletsToRemove は互換用のダミー（上位で実弾削除を行うため、ここでは使用しない）
+///
+/// 4) 非貫通スキルなら以降のチェックを打ち切り
+///    - isBomb が true になった時点で
+///      ・同一グループ内のループを抜ける
+///      ・他グループの判定も打ち切る（最初の被弾で終了）
+///
+/// 注意点
+/// - 実際の弾の削除は上位の updateAndCheckCollisions() 側で、isBomb を見て行われる設計
+/// - 建物の当たり判定は yokoUnit/2.0 を共用。必要なら建物専用の半径や形状に差し替え可能
+/// - 壁(WALL2)はスキップする一方、他の建物は当たり判定対象（拠点などを撃てる）
+///
+/// 設計意図
+/// - 見た目に近い円当たり判定で軽量に衝突判定を行う
+/// - 最初の被弾で止まる（非貫通）/貫通する（複数ヒット）を isBomb で上位へ伝搬
+/// - ヒット処理の副作用（ダメージ、状態更新）は applySkillEffectAndRegisterHit に委譲
 void Battle001::handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, bool& isBomb)
 {
 	Circle bulletHitbox{ bullet.NowPosition, executedSkill.classSkill.w / 2.0 };
@@ -2332,7 +2414,33 @@ void Battle001::CalucDamage(Unit& itemTarget, double strTemp, ClassExecuteSkills
 }
 bool Battle001::applySkillEffectAndRegisterHit(bool& bombCheck, Array<int32>& arrayNo, ClassBullets& target, ClassExecuteSkills& loop_Battle_player_skills, Unit& itemTarget)
 {
-	loop_Battle_player_skills.classUnit->FlagMovingSkill = false;
+	// 術者を安全に引き直す（ID から検索）
+	auto findUnitById = [&](long long uid) -> Unit*
+		{
+			std::shared_lock lock(aStar.unitListRWMutex);
+			for (auto& grp : classBattleManage.listOfAllUnit)
+				for (auto& u : grp.ListClassUnit)
+					if (u.ID == uid) return &u;
+
+			for (auto& grp : classBattleManage.listOfAllEnemyUnit)
+				for (auto& u : grp.ListClassUnit)
+					if (u.ID == uid) return &u;
+
+			for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+				if (sp->ID == uid) return sp.get();
+			for (const auto& sp : classBattleManage.hsEnemyUnitBuilding)
+				if (sp->ID == uid) return sp.get();
+
+			return nullptr;
+		};
+
+	if (Unit* attacker = findUnitById(loop_Battle_player_skills.UnitID))
+	{
+		attacker->FlagMovingSkill = false;
+		// 以降の計算でも安全に使えるよう、ポインタを再バインド
+		loop_Battle_player_skills.classUnit = attacker;
+	}
+	// 見つからない場合はフラグ解除をスキップ（ダメージ計算は術者参照が必要なので下で再バインドできないなら無理に触らない）
 
 	CalucDamage(itemTarget, loop_Battle_player_skills.classSkill.str, loop_Battle_player_skills);
 
@@ -2709,11 +2817,11 @@ void Battle001::startAsyncTasks()
 				{
 					HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
 					{
-		std::shared_lock lock(aStar.unitListRWMutex);
+						std::shared_lock lock(aStar.unitListRWMutex);
 						hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
 					}
 					aStar.BattleMoveAStar(
-						
+
 						classBattleManage.listOfAllUnit,
 						classBattleManage.listOfAllEnemyUnit,
 						classBattleManage.classMapBattle.value().mapData,
@@ -2742,7 +2850,7 @@ void Battle001::startAsyncTasks()
 				{
 					HashTable<Point, Array<Unit*>> hsBuildingUnitForAstarSnapshot;
 					{
-		std::shared_lock lock(aStar.unitListRWMutex);
+						std::shared_lock lock(aStar.unitListRWMutex);
 						hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
 					}
 					aStar.BattleMoveAStarMyUnitsKai(
@@ -2770,6 +2878,9 @@ void Battle001::startAsyncTasks()
 
 Co::Task<void> Battle001::start()
 {
+	// シーン開始時にクールタイムを初期化
+	gSkillReadyAtSec.clear();
+
 	registerTextureAssets();
 
 	/// modでカスタマイズ出来るようにあえて配列を使う
@@ -2997,13 +3108,19 @@ void Battle001::checkUnitDeaths()
 		{
 			if (itemUnit.isValidBuilding())
 			{
-				if (itemUnit.HPCastle <= 0)
+				if (itemUnit.HPCastle <= 0) {
 					itemUnit.IsBattleEnable = false;
+					// 追加: クールタイムエントリを掃除
+					gSkillReadyAtSec.erase(itemUnit.ID);
+				}
 			}
 			else
 			{
-				if (itemUnit.Hp <= 0)
+				if (itemUnit.Hp <= 0) {
 					itemUnit.IsBattleEnable = false;
+					// 追加: クールタイムエントリを掃除
+					gSkillReadyAtSec.erase(itemUnit.ID);
+				}
 			}
 		}
 	}
@@ -3013,18 +3130,23 @@ void Battle001::checkUnitDeaths()
 		{
 			if (itemUnit.isValidBuilding())
 			{
-				if (itemUnit.HPCastle <= 0)
+				if (itemUnit.HPCastle <= 0) {
 					itemUnit.IsBattleEnable = false;
+					// 追加: クールタイムエントリを掃除
+					gSkillReadyAtSec.erase(itemUnit.ID);
+				}
 			}
 			else
 			{
-				if (itemUnit.Hp <= 0)
+				if (itemUnit.Hp <= 0) {
 					itemUnit.IsBattleEnable = false;
+					// 追加: クールタイムエントリを掃除
+					gSkillReadyAtSec.erase(itemUnit.ID);
+				}
 			}
 		}
 	}
 }
-
 
 Co::Task<void> Battle001::mainLoop()
 {
@@ -3149,6 +3271,7 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 
 				for (const auto& u : item.ListClassUnit)
 				{
+					if (u.IsBuilding) continue;
 					if (!u.IsBattleEnable) continue;
 
 					const Vec2 center = u.GetNowPosiCenter();
