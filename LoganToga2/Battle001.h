@@ -105,6 +105,8 @@ private:
 	/// @param classBattleManage 全ての敵ユニットのリストなど、バトル管理に関する情報を持つクラス。
 	/// @param mapTile マップのサイズやタイル情報を持つクラス。
 	void spawnTimedEnemy(ClassBattle& classBattleManage, MapTile mapTile);
+	void spawnTimedEnemyEni(ClassBattle& classBattleManage, MapTile mapTile);
+	void spawnTimedEnemySkirmisher(ClassBattle& classBattleManage, MapTile mapTile);
 	/// @brief ユニットを指定された位置に登録します。
 	/// @param classBattleManage バトル管理用のClassBattleオブジェクト。
 	/// @param mapTile ユニットを配置するマップタイル。

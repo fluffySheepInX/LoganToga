@@ -365,21 +365,67 @@ int32 AStar::BattleMoveAStarMyUnitsKai(
 	if (flatList.size() == 0) return 0;
 	if (abort) return 0;
 
-	// 共通経路(始まり合流地点→終わり合流地点)を算出
-	s3d::Optional<Size> startIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
-	if (startIndex.has_value() == false) return 0;
-	s3d::Optional<Size> endIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
-	if (endIndex.has_value() == false) return 0;
+	// 合流座標から共通経路を作る前に、
+	// 未設定(=ToIndexがnone)のケースをフォールバック処理
+	auto toIdx = [&](const Unit* u, bool useOrder)->Optional<Size>
+		{
+			return useOrder
+				? mapTile.ToIndex(u->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads)
+				: mapTile.ToIndex(u->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
+		};
+	// まずは first/lastMergePos を試す
+	Optional<Size> startIndex = mapTile.ToIndex(
+		GetCUSafe(flatList[0], snapshot)->getFirstMergePos(), mapTile.columnQuads, mapTile.rowQuads);
+	Optional<Size> endIndex = mapTile.ToIndex(
+		GetCUSafe(flatList[0], snapshot)->getLastMergePos(), mapTile.columnQuads, mapTile.rowQuads);
 
+	// 共通経路(始まり合流地点→終わり合流地点)を算出
+	// フォールバック: 合流座標が無い場合は各ユニットを個別に「Now -> Order」で経路作成
+	if (!startIndex || !endIndex)
+	{
+		for (int32 id : flatList)
+		{
+			Unit* uSnap = GetCUSafe(id, snapshot);
+			Unit* uLive = GetCUSafe(id, target);
+			if (!uSnap || !uLive) continue;
+
+			auto sIdx = toIdx(uSnap, false);
+			auto eIdx = toIdx(uSnap, true);
+			if (!sIdx || !eIdx || (*sIdx == *eIdx)) continue;
+
+			Array<Point> fullPath = findPath(sIdx.value(), eIdx.value(),
+				mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
+			if (!fullPath.isEmpty())
+			{
+				ClassUnitMovePlan plan;
+				// 現在地点は先頭に含まれるので取り除く
+				fullPath.pop_front();
+				plan.setPath(fullPath);
+				{
+					std::scoped_lock lock(aiRootMutex);
+					aiRoot[uLive->ID] = plan;
+				}
+				{
+					std::shared_lock lock(unitListRWMutex);
+					uLive->moveState = moveState::Moving;
+				}
+			}
+		}
+		return 0;
+	}
+
+	// ここから従来処理（合流開始==合流終了なら単体扱い）
 	if (startIndex == endIndex)
 	{
-		//単一ユニットがこのケース
-		s3d::Optional<Size> startIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-		if (startIndex.has_value() == false) return 0;
-		s3d::Optional<Size> endIndex = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetOrderPosiCenter(), mapTile.columnQuads, mapTile.rowQuads);
-		if (endIndex.has_value() == false) return 0;
-		Array<Point> fullPath = findPath(startIndex.value(), endIndex.value(), mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
-		if (fullPath.size() != 0)
+		Optional<Size> sIdx = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetNowPosiCenter(),
+											  mapTile.columnQuads, mapTile.rowQuads);
+		Optional<Size> eIdx = mapTile.ToIndex(GetCUSafe(flatList[0], snapshot)->GetOrderPosiCenter(),
+											  mapTile.columnQuads, mapTile.rowQuads);
+		if (!sIdx || !eIdx) return 0;
+
+		Array<Point> fullPath = findPath(sIdx.value(), eIdx.value(),
+			mapData, enemy, snapshot, mapTile, hsBuildingUnitForAstar, abort, true);
+		if (!fullPath.isEmpty())
 		{
 			ClassUnitMovePlan plan;
 			plan.setPath(fullPath);
@@ -387,13 +433,11 @@ int32 AStar::BattleMoveAStarMyUnitsKai(
 				std::scoped_lock lock(aiRootMutex);
 				aiRoot[GetCUSafe(flatList[0], snapshot)->ID] = plan;
 			}
-			//debugRoot.push_back(fullPath);
-			auto huidfs = GetCUSafe(flatList[0], target);
+			auto uLive = GetCUSafe(flatList[0], target);
 			{
 				std::shared_lock lock(unitListRWMutex);
-				huidfs->moveState = moveState::Moving;
+				uLive->moveState = moveState::Moving;
 			}
-			//htUnit[->ID]->moveState = moveState::Moving;
 		}
 		return 0;
 	}

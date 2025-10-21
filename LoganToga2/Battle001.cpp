@@ -3,7 +3,6 @@
 #include <ranges>
 #include <vector>
 
-// ファイル先頭の include 群の下あたり（この cpp 内のどこでも可）に追加
 namespace {
 	// unitID -> (skillTag -> readyAtSeconds)
 	HashTable<long long, HashTable<String, double>> gSkillReadyAtSec;
@@ -34,6 +33,150 @@ namespace {
 
 	inline void commitCooldown(const Unit& u, const Skill& s) {
 		gSkillReadyAtSec[u.ID][s.nameTag] = Scene::Time() + calcCooldownSec(u, s);
+	}
+
+	// unitID -> (skillTag -> 残回数)。設定が無ければ無制限扱い
+	HashTable<long long, HashTable<String, int32>> gSkillUsesLeft;
+
+	inline bool hasUsesLeft(const Unit& u, const Skill& s) {
+		if (const auto itU = gSkillUsesLeft.find(u.ID); itU != gSkillUsesLeft.end()) {
+			if (const auto itS = itU->second.find(s.nameTag); itS != itU->second.end()) {
+				return (itS->second > 0);
+			}
+		}
+		return true; // 未設定は無制限
+	}
+
+	inline void consumeUse(const Unit& u, const Skill& s) {
+		if (auto itU = gSkillUsesLeft.find(u.ID); itU != gSkillUsesLeft.end()) {
+			if (auto itS = itU->second.find(s.nameTag); itS != itU->second.end() && itS->second > 0) {
+				--(itS->second);
+			}
+		}
+	}
+
+	// ユニット毎・スキル毎に回数を設定するヘルパ
+	inline void setSkillUses(Unit& u, const String& skillTag, int32 uses) {
+		gSkillUsesLeft[u.ID][skillTag] = Max(0, uses);
+	}
+
+	inline void applyMaintainRangeForSkill(Unit& u, const Skill& s)
+	{
+		// 近接: 接敵を目指す
+		const bool isMelee = (s.range <= 80); // 近接の目安。必要ならスキルにフラグを追加
+		if (isMelee)
+		{
+			const int32 keep = Max(0, static_cast<int32>(s.range) - 10);         // 射程-10px 目安
+			const int32 band = Clamp(static_cast<int32>(s.range * 0.25), 8, 20); // 8〜20px の狭い帯
+			u.MaintainRange = keep;
+			u.MaintainRangeBand = band;
+			return;
+		}
+
+		// 射撃: 射程の少し手前を維持（振れ幅を持たせてスパイク移動を抑制）
+		const int32 sweetSpot = static_cast<int32>(Max(0.0, s.range - 40.0)); // マージン40
+		const int32 band = Clamp(static_cast<int32>(s.range * 0.35), 60, 200);
+		u.MaintainRange = sweetSpot;
+		u.MaintainRangeBand = band;
+	}
+
+	// Skill.Special >= 0 だけ、使用回数を初期化（-1 などは無制限としてスキップ）
+	inline void initSkillUsesFromSpecial(Unit& u)
+	{
+		for (const auto& s : u.arrSkill)
+		{
+			if (s.Special >= 0)
+			{
+				setSkillUses(u, s.nameTag, s.Special);
+			}
+		}
+	}
+
+	inline bool isCombatSkill(const Skill& s)
+	{
+		// 必要に応じて Support を除外するなど調整
+		//return (s.SkillType != SkillType::heal);
+		return (s.SkillType == SkillType::missile);
+	}
+
+	inline double getRemainingCooldownSec(const Unit& u, const Skill& s) {
+		const double now = Scene::Time();
+		if (const auto itU = gSkillReadyAtSec.find(u.ID); itU != gSkillReadyAtSec.end()) {
+			if (const auto itS = itU->second.find(s.nameTag); itS != itU->second.end()) {
+				return Max(0.0, itS->second - now);
+			}
+		}
+		return 0.0;
+	}
+
+	// これを超える長いCDならフォールバックを許可（調整用）
+	constexpr double kFallbackMeleeAfterCDSec = 4.0;
+
+	// 変更: 「最優先に残弾あり＆短CD中」はその最優先スキルのレンジを維持
+	inline void applyMaintainRangeByPreferredAvailableSkill(Unit& u)
+	{
+		// sortKey 昇順で抽出
+		Array<Skill> sorted = u.arrSkill.sorted_by([](const Skill& a, const Skill& b) {
+			return a.sortKey < b.sortKey;
+		});
+
+		// 最優先の戦闘スキル（missile）を取得
+		const Skill* top = nullptr;
+		for (const auto& s : sorted) {
+			if (isCombatSkill(s)) { top = &s; break; }
+		}
+
+		// 追加: 最優先に残弾があり、CD中かつ残CDが閾値以下なら待機＝そのレンジを維持
+		if (top && hasUsesLeft(u, *top) && !isSkillReady(u, *top)) {
+			if (getRemainingCooldownSec(u, *top) <= kFallbackMeleeAfterCDSec) {
+				applyMaintainRangeForSkill(u, *top);
+				return;
+			}
+		}
+
+		// 既存: 第1パス（使用可＆CD明け）
+		for (const auto& s : sorted) {
+			if (!isCombatSkill(s)) continue;
+			if (hasUsesLeft(u, s) && isSkillReady(u, s)) {
+				applyMaintainRangeForSkill(u, s);
+				return;
+			}
+		}
+		// 既存: 第2パス（使用可）
+		for (const auto& s : sorted) {
+			if (!isCombatSkill(s)) continue;
+			if (hasUsesLeft(u, s)) {
+				applyMaintainRangeForSkill(u, s);
+				return;
+			}
+		}
+		// 見つからなければ現状維持
+	}
+
+}
+namespace {
+	// hard 仕様: 1ターン=0.01秒。例の「speed=800 で 8ドット/ターン」に一致
+	constexpr double kHardTurnSeconds = 0.01;
+
+	struct HitIntervalState {
+		Vec2 lastPos;
+		double accum = 0.0; // 直近判定からの移動距離（ドット）
+	};
+
+	// (No, RushNo) -> 状態
+	HashTable<uint64, HitIntervalState> gHitIntervalState;
+
+	inline uint64 makeBulletKey(const ClassBullets& b) noexcept
+	{
+		return (static_cast<uint64>(static_cast<uint32>(b.No)) << 32)
+			| static_cast<uint32>(b.RushNo);
+	}
+
+	// 距離閾値 = speed[dot/sec] * 0.01[sec] * hard[turn]
+	inline double computeHitIntervalDistance(const Skill& s) noexcept
+	{
+		if (s.hard <= 0) return 0.0;
+		return s.speed * kHardTurnSeconds * s.hard;
 	}
 }
 
@@ -453,6 +596,9 @@ void Battle001::UnitRegister(
 		}
 
 		new_horizontal_unit.ListClassUnit.push_back(std::move(unit_template));
+
+		// Skill.Special を使用回数として初期化
+		initSkillUsesFromSpecial(new_horizontal_unit.ListClassUnit.back());
 	}
 
 	{
@@ -504,12 +650,111 @@ void Battle001::spawnTimedEnemy(ClassBattle& classBattleManage, MapTile mapTile)
 			break;
 		}
 
-		UnitRegister(classBattleManage, mapTile, U"sniperP99", x, y, 1,
-			classBattleManage.listOfAllEnemyUnit, true);
+		if (RandomBool(0.5))
+		{
+			UnitRegister(classBattleManage, mapTile, U"sniperP99", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
+		else
+		{
+			UnitRegister(classBattleManage, mapTile, U"sniperP99-near", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
 
 		stopwatchGameTime.restart();
 	}
 }
+void Battle001::spawnTimedEnemyEni(ClassBattle& classBattleManage, MapTile mapTile)
+{
+	if (stopwatchGameTime.sF() >= ENEMY_SPAWN_INTERVAL)
+	{
+		const auto edge = static_cast<SpawnEdge>(Random(0, 3));
+		int32 x = 0, y = 0;
+
+		switch (edge)
+		{
+		case SpawnEdge::Left:
+			x = 0;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Right:
+			x = mapTile.N - 1;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Top:
+			x = Random(0, mapTile.N - 1);
+			y = 0;
+			break;
+		case SpawnEdge::Bottom:
+			x = Random(0, mapTile.N - 1);
+			y = mapTile.N - 1;
+			break;
+		default:
+			x = 0;
+			y = 0;
+			break;
+		}
+
+		if (RandomBool(0.5))
+		{
+			UnitRegister(classBattleManage, mapTile, U"LineInfantryEni", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
+		else
+		{
+			UnitRegister(classBattleManage, mapTile, U"LineInfantryEni", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
+
+		stopwatchGameTime.restart();
+	}
+}
+void Battle001::spawnTimedEnemySkirmisher(ClassBattle& classBattleManage, MapTile mapTile)
+{
+	if (stopwatchGameTime.sF() >= ENEMY_SPAWN_INTERVAL)
+	{
+		const auto edge = static_cast<SpawnEdge>(Random(0, 3));
+		int32 x = 0, y = 0;
+
+		switch (edge)
+		{
+		case SpawnEdge::Left:
+			x = 0;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Right:
+			x = mapTile.N - 1;
+			y = Random(0, mapTile.N - 1);
+			break;
+		case SpawnEdge::Top:
+			x = Random(0, mapTile.N - 1);
+			y = 0;
+			break;
+		case SpawnEdge::Bottom:
+			x = Random(0, mapTile.N - 1);
+			y = mapTile.N - 1;
+			break;
+		default:
+			x = 0;
+			y = 0;
+			break;
+		}
+
+		if (RandomBool(0.5))
+		{
+			UnitRegister(classBattleManage, mapTile, U"SkirmisherEni", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
+		else
+		{
+			UnitRegister(classBattleManage, mapTile, U"SkirmisherEni", x, y, 1,
+				classBattleManage.listOfAllEnemyUnit, true);
+		}
+
+		stopwatchGameTime.restart();
+	}
+}
+
 /// @brief ユニットの視界範囲に基づいて、マップ上の可視性を更新します。
 /// @param vis 可視性情報を格納するグリッドへの参照。
 /// @param units 可視性を計算するユニットの配列。
@@ -750,7 +995,9 @@ Array<Unit*> Battle001::getMovableUnits(Array<ClassHorizontalUnit>& source, Batt
 	for (auto& target : source)
 		for (auto& unit : target.ListClassUnit)
 		{
-			if (unit.Formation == bf && unit.moveState == moveState::FlagMoveCalc && unit.IsBattleEnable == true)
+			if (unit.Formation == bf
+				&& unit.moveState == moveState::FlagMoveCalc
+				&& unit.IsBattleEnable == true)
 				result.push_back(&unit);
 		}
 
@@ -763,6 +1010,14 @@ void Battle001::handleDenseFormation(Point end)
 	for (auto& target : classBattleManage.listOfAllUnit)
 		for (auto& unit : target.ListClassUnit)
 		{
+			// 建物・非戦闘ユニットは除外
+			if (!unit.IsBattleEnable || unit.IsBuilding)
+				continue;
+
+			// 選択（移動対象）フラグが立っているユニットのみ密集移動
+			if (unit.moveState != moveState::FlagMoveCalc)
+				continue;
+
 			unit.orderPosiLeft =
 				end.movedBy(
 					Random(-RANDOM_MOVE_RANGE, RANDOM_MOVE_RANGE),
@@ -826,6 +1081,7 @@ void Battle001::setUnitsSelectedInRect(const RectF& selectionRect)
 			if (inRect)
 			{
 				unit.moveState = moveState::FlagMoveCalc;
+				unit.IsSelect = true; // 追加: 視覚的にも選択状態に
 				is移動指示 = true;
 			}
 		}
@@ -852,7 +1108,8 @@ void Battle001::issueMoveOrder(Point start, Point end)
 	}
 
 	is移動指示 = false;
-
+	// 追加: 移動命令発行を A* に通知（新規ユニット/新規オーダを確実に拾わせる）
+	aStar.changeUnitMember.store(true);
 	aStar.abortAStarMyUnits = false;
 }
 
@@ -1413,6 +1670,9 @@ void Battle001::deselectAll()
 		for (auto& itemUnit : item.ListClassUnit)
 		{
 			itemUnit.IsSelect = false;
+			// 追加: 範囲選択の残りを確実に解除
+			if (itemUnit.moveState == moveState::FlagMoveCalc)
+				itemUnit.moveState = moveState::None;
 		}
 	}
 	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
@@ -1424,6 +1684,8 @@ void Battle001::deselectAll()
 	}
 	IsBuildMenuHome = false;
 	longBuildSelectTragetId = -1;
+	// 追加: 移動指示状態も解除
+	is移動指示 = false;
 }
 
 void Battle001::toggleUnitSelection(long long unit_id)
@@ -1451,14 +1713,24 @@ void Battle001::toggleUnitSelection(long long unit_id)
 				if (newSelectState)
 				{
 					longBuildSelectTragetId = itemUnit.ID;
+					// 追加: 左クリック選択でも移動対象になるようにフラグを立てる
+					itemUnit.moveState = moveState::FlagMoveCalc;
+					is移動指示 = true;
 				}
 				else
 				{
 					longBuildSelectTragetId = -1;
+					// 追加: 解除時に FlagMoveCalc を戻す（選択解除の意図を反映）
+					if (itemUnit.moveState == moveState::FlagMoveCalc)
+						itemUnit.moveState = moveState::None;
 				}
 			}
 			else
 			{
+				// その他のユニットは選択解除
+				// 追加: 他ユニットの FlagMoveCalc も整理（誤爆防止）
+				if (itemUnit.moveState == moveState::FlagMoveCalc)
+					itemUnit.moveState = moveState::None;
 				// その他のユニットは選択解除
 				newSelectState = false;
 			}
@@ -1761,16 +2033,28 @@ void Battle001::updatePlayerUnitMovements()
 		for (auto& unit : item.ListClassUnit)
 		{
 			if (unit.IsBuilding || !unit.IsBattleEnable ||
-				(unit.moveState != moveState::Moving && unit.moveState != moveState::MovingEnd && unit.moveState != moveState::None))
+				(unit.moveState != moveState::Moving
+					&& unit.moveState != moveState::MovingEnd
+					&& unit.moveState != moveState::None
+					&& unit.moveState != moveState::MoveAI))
 			{
 				continue;
 			}
 
 			std::scoped_lock lock(aStar.aiRootMutex);
-			if (!aiRootMy.contains(unit.ID)) continue;
+			// 追加: 経路が未生成ならトリガを再送して様子見（フレームまたぎで生成される）
+			if (!aiRootMy.contains(unit.ID))
+			{
+				if (unit.moveState == moveState::MoveAI)
+				{
+					aStar.changeUnitMember.store(true);
+				}
+				continue;
+			}
 
 			auto& plan = aiRootMy.at(unit.ID);
 
+			//A案
 			if (plan.isPathCompleted())
 			{
 				handleCompletedPlayerPath(unit, plan);
@@ -2001,6 +2285,9 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 	if (unit.FlagMovingSkill == true || unit.IsBattleEnable == false)
 		return;
 
+	// 追加: 現在使用可能な最優先スキルに基づき維持距離を再設定（射撃→近接の自動切替）
+	applyMaintainRangeByPreferredAvailableSkill(unit);
+
 	// どのスキルを試行するか決定する
 	Array<Skill> skills_to_try;
 	auto manually_selected_skills = unit.arrSkill.filter([&](const Skill& itemSkill)
@@ -2009,21 +2296,61 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 		}
 	);
 
-	if (manually_selected_skills.size() > 0)
+	const bool isManual = (manually_selected_skills.size() > 0);
+	if (isManual)
 	{
 		skills_to_try = manually_selected_skills;
 	}
 	else
 	{
 		// 昇順（小さい値から大きい値へ）
-		skills_to_try = unit.arrSkill.sorted_by([](const auto& item1, const auto& item2) { return  item1.sortKey < item2.sortKey; });
+		skills_to_try = unit.arrSkill
+			.sorted_by([](const auto& item1, const auto& item2)
+				{ return  item1.sortKey < item2.sortKey; });
+	}
+
+	// 追加: 自動時のみ「最優先が残弾ありCD中なら待機」を判定
+	if (!isManual)
+	{
+		// sortKey 最小の戦闘スキル＝最優先
+		Array<Skill> sorted = unit.arrSkill.sorted_by([](const Skill& a, const Skill& b) {
+			return a.sortKey < b.sortKey;
+		});
+		auto itTop = std::find_if(sorted.begin(), sorted.end(), [](const Skill& s) { return isCombatSkill(s); });
+		if (itTop != sorted.end())
+		{
+			const Skill& top = *itTop;
+			// 残弾あり＆CD中
+			if (hasUsesLeft(unit, top) && !isSkillReady(unit, top))
+			{
+				// 短いCDなら待機（＝発動試行せず復帰を待つ）
+				const double remain = getRemainingCooldownSec(unit, top);
+				if (remain <= kFallbackMeleeAfterCDSec)
+				{
+					// MaintainRange は applyMaintainRangeByPreferredAvailableSkill() が
+					// 「CD中は hasUsesLeft の第2パス」で最優先スキルの値を適用済み
+					return;
+				}
+				// 長いCDなら以下でフォールバック（近接など）を試す
+			}
+		}
 	}
 
 	// スキルを試行
-	for (auto& skill : skills_to_try)
+	for (size_t i = 0; i < skills_to_try.size(); ++i)
 	{
-		// 追加: クールタイム未終了ならスキップ
+		auto& skill = skills_to_try[i];
+
+		if (!hasUsesLeft(unit, skill)) {
+			continue;
+		}
+
+		// クールダウン中の扱い
 		if (!isSkillReady(unit, skill)) {
+			//// 自動運用かつ「最優先スキル」なら、以降のスキルを試さず待機
+			//if (!isManual && i == 0) {
+			//	return;
+			//}
 			continue;
 		}
 
@@ -2100,7 +2427,17 @@ ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& t
 			bullet.OrderPosition = target.GetNowPosiCenter();
 		}
 
-		bullet.duration = (skill.speed == 0) ? 2.5 : ((skill.range + skill.speed - 1) / skill.speed);
+		// 変更: throw は「距離 / 速度」で飛翔時間を決める
+		if (skill.MoveType == MoveType::thr)
+		{
+			const double dist = (bullet.OrderPosition - bullet.StartPosition).length();
+			bullet.duration = (skill.speed > 0) ? (dist / skill.speed) : 2.5;
+		}
+		else
+		{
+			// 既存の計算を維持
+			bullet.duration = (skill.speed == 0) ? 2.5 : ((skill.range + skill.speed - 1) / skill.speed);
+		}
 		bullet.lifeTime = 0;
 
 		const Vec2 move_vec = bullet.OrderPosition - bullet.NowPosition;
@@ -2160,6 +2497,10 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 				ClassExecuteSkills new_skill_execution = createSkillExecution(attacker, target_unit, skill);
 				executed_skills.push_back(new_skill_execution);
 				commitCooldown(attacker, skill);
+				consumeUse(attacker, skill);
+				// 変更点: 「発動スキル」ではなく「現時点で最優先の使用可能スキル」に合わせて維持距離を更新
+				applyMaintainRangeByPreferredAvailableSkill(attacker);
+
 				return true; // スキル発動成功
 			}
 		}
@@ -2253,31 +2594,130 @@ void Battle001::handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& 
 void Battle001::updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, Array<ClassHorizontalUnit>& friendlyUnits)
 {
 	Array<int32> bulletsToRemove;
-	bool isHeal = executedSkill.classSkill.SkillType == SkillType::heal;
+	Array<uint64> keysToErase; // 状態掃除用
+	const bool isHeal = executedSkill.classSkill.SkillType == SkillType::heal;
 
 	for (auto& bullet : executedSkill.ArrayClassBullet)
 	{
-		// Update bullet lifetime and position
+		// 寿命と移動更新
 		bullet.lifeTime += Scene::DeltaTime();
 		if (bullet.lifeTime > bullet.duration)
 		{
 			bulletsToRemove.push_back(bullet.No);
 			continue;
 		}
-		bullet.NowPosition += bullet.MoveVec * executedSkill.classSkill.speed * Scene::DeltaTime();
 
-		// Determine target group
-		Array<ClassHorizontalUnit>& currentTargetGroup = isHeal ? friendlyUnits : targetUnits;
+		// 位置更新
+		const Vec2 prevPos = bullet.NowPosition;
 
-		bool isBomb = false; // Does the skill stop after one hit?
-		handleBulletCollision(bullet, executedSkill, currentTargetGroup, isBomb);
-		if (isBomb)
+		if (executedSkill.classSkill.MoveType == MoveType::thr)
 		{
-			bulletsToRemove.push_back(bullet.No);
+			// t: 0→1
+			const double t = Saturate(bullet.lifeTime / Max(0.0001, bullet.duration));
+			// 直線補間
+			const Vec2 flat = bullet.StartPosition + (bullet.OrderPosition - bullet.StartPosition) * t;
+
+			// 山の高さ = 距離 * (heightRatio)
+			const double dist = (bullet.OrderPosition - bullet.StartPosition).length();
+			const double heightRatio = (executedSkill.classSkill.height == 0)
+				? 0.5
+				: (static_cast<double>(executedSkill.classSkill.height) / 100.0);
+			const double arcHeight = dist * heightRatio;
+
+			// 放物線オフセット: peak at t=0.5
+			const double s = (2.0 * t - 1.0);
+			const double yOffset = arcHeight * (1.0 - (s * s)); // 0→peak→0
+
+			// アイソメ画面では「上」は -Y 方向に持ち上げる
+			bullet.NowPosition = flat.movedBy(0, -yOffset);
+		}
+		else
+		{
+			// 既存の直線移動
+			bullet.NowPosition += bullet.MoveVec * executedSkill.classSkill.speed * Scene::DeltaTime();
+		}
+
+		// 判定間隔の計算（hard>=1 のときだけ距離間隔で判定）
+		const bool piercing = (executedSkill.classSkill.hard >= 1);
+		bool allowHitCheck = true;
+		const uint64 key = makeBulletKey(bullet);
+
+		if (piercing)
+		{
+			const double threshold = computeHitIntervalDistance(executedSkill.classSkill);
+			if (threshold <= 0.0)
+			{
+				allowHitCheck = true;
+			}
+			else
+			{
+				if (auto it = gHitIntervalState.find(key); it == gHitIntervalState.end())
+				{
+					// 生成直後は lastPos 初期化のみ（最初の閾値到達までは判定しない）
+					gHitIntervalState[key] = HitIntervalState{ bullet.NowPosition, 0.0 };
+					allowHitCheck = false;
+				}
+				else
+				{
+					auto& st = it->second;
+					st.accum += (bullet.NowPosition - st.lastPos).length();
+					st.lastPos = bullet.NowPosition;
+
+					if (st.accum >= threshold)
+					{
+						allowHitCheck = true;
+						st.accum = 0.0; // 次の閾値へ
+					}
+					else
+					{
+						allowHitCheck = false;
+					}
+				}
+			}
+		}
+
+		//もし「着弾のみで判定」にしたい場合は、以下のように throw の途中判定を抑止できます:
+		if (executedSkill.classSkill.MoveType == MoveType::thr
+			&& bullet.lifeTime < bullet.duration) {
+			allowHitCheck = false;
+		}
+
+		// 当たり判定
+		if (allowHitCheck)
+		{
+			Array<ClassHorizontalUnit>& currentTargetGroup = isHeal ? friendlyUnits : targetUnits;
+
+			bool isBomb = false; // 非貫通時のみ true になり、弾を消す契機になる
+			handleBulletCollision(bullet, executedSkill, currentTargetGroup, isBomb);
+
+			// 非貫通でヒット済みなら削除
+			if (isBomb)
+			{
+				bulletsToRemove.push_back(bullet.No);
+			}
 		}
 	}
 
-	// Remove bullets that have expired or hit their target (if they are not piercing)
+	// 削除予定の弾に紐づく間隔状態を掃除
+	if (!bulletsToRemove.isEmpty())
+	{
+		Array<uint64> toErase;
+		for (const auto& kv : gHitIntervalState)
+		{
+			const uint64 key = kv.first;
+			const int32 noUpper = static_cast<int32>(key >> 32);
+			if (bulletsToRemove.contains(noUpper))
+			{
+				toErase.push_back(key);
+			}
+		}
+		for (const auto key : toErase)
+		{
+			gHitIntervalState.erase(key);
+		}
+	}
+
+	// 弾を削除
 	executedSkill.ArrayClassBullet.remove_if([&](const ClassBullets& b) {
 		return bulletsToRemove.contains(b.No);
 	});
@@ -2304,10 +2744,40 @@ void Battle001::processSkillEffects()
 		updateAndCheckCollisions(executedSkill, classBattleManage.listOfAllEnemyUnit, classBattleManage.listOfAllUnit);
 	}
 
-	// Remove skill executions that have no more bullets
-	m_Battle_player_skills.remove_if([](const ClassExecuteSkills& s) { return s.ArrayClassBullet.isEmpty(); });
-	m_Battle_enemy_skills.remove_if([](const ClassExecuteSkills& s) { return s.ArrayClassBullet.isEmpty(); });
-	m_Battle_neutral_skills.remove_if([](const ClassExecuteSkills& s) { return s.ArrayClassBullet.isEmpty(); });
+	// 変更点: 弾が空になったスキルは術者の FlagMovingSkill を確実に解除してから破棄
+	auto clearEnded = [&](Array<ClassExecuteSkills>& list)
+		{
+			auto findUnitById = [&](long long uid) -> Unit*
+				{
+					std::shared_lock lock(aStar.unitListRWMutex);
+					for (auto& grp : classBattleManage.listOfAllUnit)
+						for (auto& u : grp.ListClassUnit)
+							if (u.ID == uid) return &u;
+					for (auto& grp : classBattleManage.listOfAllEnemyUnit)
+						for (auto& u : grp.ListClassUnit)
+							if (u.ID == uid) return &u;
+					for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+						if (sp->ID == uid) return sp.get();
+					for (const auto& sp : classBattleManage.hsEnemyUnitBuilding)
+						if (sp->ID == uid) return sp.get();
+					return nullptr;
+				};
+
+			list.remove_if([&](const ClassExecuteSkills& s)
+			{
+				if (!s.ArrayClassBullet.isEmpty())
+					return false;
+
+				if (Unit* caster = findUnitById(s.UnitID))
+					caster->FlagMovingSkill = false; // ヒット不発でも解除
+
+				return true;
+			});
+		};
+
+	clearEnded(m_Battle_player_skills);
+	clearEnded(m_Battle_enemy_skills);
+	clearEnded(m_Battle_neutral_skills);
 }
 
 
@@ -2445,10 +2915,10 @@ bool Battle001::applySkillEffectAndRegisterHit(bool& bombCheck, Array<int32>& ar
 	CalucDamage(itemTarget, loop_Battle_player_skills.classSkill.str, loop_Battle_player_skills);
 
 	//消滅
-	arrayNo.push_back(target.No);
 	//一体だけ当たったらそこで終了
-	if (loop_Battle_player_skills.classSkill.SkillBomb == SkillBomb::off)
+	if (loop_Battle_player_skills.classSkill.hard <= 0)
 	{
+		arrayNo.push_back(target.No);
 		bombCheck = true;
 		return true;
 	}
@@ -2805,6 +3275,7 @@ void Battle001::setupInitialUnits()
 			}
 		}
 	}
+
 }
 
 void Battle001::startAsyncTasks()
@@ -2821,7 +3292,6 @@ void Battle001::startAsyncTasks()
 						hsBuildingUnitForAstarSnapshot = hsBuildingUnitForAstar;
 					}
 					aStar.BattleMoveAStar(
-
 						classBattleManage.listOfAllUnit,
 						classBattleManage.listOfAllEnemyUnit,
 						classBattleManage.classMapBattle.value().mapData,
@@ -2880,6 +3350,8 @@ Co::Task<void> Battle001::start()
 {
 	// シーン開始時にクールタイムを初期化
 	gSkillReadyAtSec.clear();
+	gHitIntervalState.clear();
+	gSkillUsesLeft.clear();
 
 	registerTextureAssets();
 
@@ -2938,7 +3410,9 @@ void Battle001::updateGameSystems()
 	resourcePointTooltip.setCamera(camera);
 
 	handleUnitTooltip();
-	spawnTimedEnemy(classBattleManage, mapTile);
+	//spawnTimedEnemy(classBattleManage, mapTile);
+	//spawnTimedEnemyEni(classBattleManage, mapTile);
+	spawnTimedEnemySkirmisher(classBattleManage, mapTile);
 	updateResourceIncome();
 	updateBuildQueue();
 
@@ -3112,6 +3586,14 @@ void Battle001::checkUnitDeaths()
 					itemUnit.IsBattleEnable = false;
 					// 追加: クールタイムエントリを掃除
 					gSkillReadyAtSec.erase(itemUnit.ID);
+					gSkillUsesLeft.erase(itemUnit.ID);
+					if (itemUnit.IsSelect || longBuildSelectTragetId == itemUnit.ID)
+					{
+						IsBuildSelectTraget = false;
+						IsBuildMenuHome = false;
+						itemUnit.IsSelect = false;
+						longBuildSelectTragetId = -1;
+					}
 				}
 			}
 			else
@@ -3120,6 +3602,14 @@ void Battle001::checkUnitDeaths()
 					itemUnit.IsBattleEnable = false;
 					// 追加: クールタイムエントリを掃除
 					gSkillReadyAtSec.erase(itemUnit.ID);
+					gSkillUsesLeft.erase(itemUnit.ID);
+					if (itemUnit.IsSelect || longBuildSelectTragetId == itemUnit.ID)
+					{
+						IsBuildSelectTraget = false;
+						IsBuildMenuHome = false;
+						itemUnit.IsSelect = false;
+						longBuildSelectTragetId = -1;
+					}
 				}
 			}
 		}
@@ -3134,6 +3624,7 @@ void Battle001::checkUnitDeaths()
 					itemUnit.IsBattleEnable = false;
 					// 追加: クールタイムエントリを掃除
 					gSkillReadyAtSec.erase(itemUnit.ID);
+					gSkillUsesLeft.erase(itemUnit.ID);
 				}
 			}
 			else
@@ -3142,6 +3633,7 @@ void Battle001::checkUnitDeaths()
 					itemUnit.IsBattleEnable = false;
 					// 追加: クールタイムエントリを掃除
 					gSkillReadyAtSec.erase(itemUnit.ID);
+					gSkillUsesLeft.erase(itemUnit.ID);
 				}
 			}
 		}

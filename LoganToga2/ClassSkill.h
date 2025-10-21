@@ -39,9 +39,15 @@ public:
 			&& (damageRangeAdjust == other.damageRangeAdjust)
 			&& (rangeMin == other.rangeMin)
 			&& (speed == other.speed)
+			&& (hard == other.hard)
 			&& (gunDelay == other.gunDelay)
 			&& (pairNext == other.pairNext)
 			&& (next == other.next)
+			&& (rayStrokeThickness == other.rayStrokeThickness)
+			&& (plus_speed == other.plus_speed)
+			&& (plus_speed_time == other.plus_speed_time)
+			&& (Delay == other.Delay)
+			&& (Special == other.Special)
 			&& (randomSpace == other.randomSpace)
 			&& (offset == other.offset)
 			&& (ray == other.ray)
@@ -60,6 +66,7 @@ public:
 			image = other.image;
 			icon = other.icon;
 			fkey = other.fkey;
+			Special = other.Special;
 			sortKey = other.sortKey;
 			SkillType = other.SkillType;
 			MoveType = other.MoveType;
@@ -86,6 +93,7 @@ public:
 			damageRangeAdjust = other.damageRangeAdjust;
 			rangeMin = other.rangeMin;
 			speed = other.speed;
+			hard = other.hard;
 			gunDelay = other.gunDelay;
 			pairNext = other.pairNext;
 			next = other.next;
@@ -116,6 +124,7 @@ public:
 	Array<s3d::String> icon;
 	std::pair<s3d::String, int32> fkey;
 	int32 sortKey = 0;
+	int32 Special = -1;
 	SkillType SkillType = SkillType::sword;
 
 	/// <summary>
@@ -163,6 +172,7 @@ public:
 	int32 rangeMin = 0;
 	double speed = 0;
 	double Delay = 0.0;
+	int32 hard = 0;
 	std::pair<s3d::String, int32> gunDelay;
 	String pairNext;
 	String next;

@@ -44,6 +44,8 @@ void Init(CommonConfig& commonConfig)
 				cu.visionRadius = Parse<int32>(value[U"visionRadius"].getString());
 			if (value.hasElement(U"classBuild") == true)
 				cu.classBuild = value[U"classBuild"].getString();
+			if (value.hasElement(U"MaintainRange") == true)
+				cu.MaintainRange = Parse<double>(value[U"MaintainRange"].get<String>());
 			cu.Attack = Parse<int32>(value[U"attack"].getString());
 			cu.Defense = Parse<int32>(value[U"defense"].getString());
 			cu.Magic = Parse<int32>(value[U"magic"].getString());
@@ -118,6 +120,8 @@ void Init(CommonConfig& commonConfig)
 		Array<Skill> arrayClassSkill;
 		for (const auto& [key, value] : skillData[U"Skill"]) {
 			Skill cu;
+			if (value.hasElement(U"special") == true)
+				cu.Special = Parse<int32>(value[U"special"].get<String>());
 			if (value.hasElement(U"sortkey") == true)
 				cu.sortKey = Parse<int32>(value[U"sortkey"].get<String>());
 			if (value.hasElement(U"help") == true)
