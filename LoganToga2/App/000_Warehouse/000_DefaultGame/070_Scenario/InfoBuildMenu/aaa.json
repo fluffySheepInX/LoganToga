@@ -71,7 +71,7 @@
             "name": "ケッテンクラート産出",
             "description": "ケッテンクラート",
             "icon": "kettenkrad-export.png",
-            "createCount": "5",
+            "createCount": "1",
             "cost": {
                 "wood": 15
             },
@@ -93,7 +93,7 @@
             "name": "ブレンガン・キャリアー産出",
             "description": "ブレンガン・キャリアー",
             "icon": "adsfsdfaasdfsda.png",
-            "createCount": "5",
+            "createCount": "1",
             "cost": {
                 "wood": 15
             },

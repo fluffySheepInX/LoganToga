@@ -7,6 +7,9 @@ namespace {
 	// unitID -> (skillTag -> readyAtSeconds)
 	HashTable<long long, HashTable<String, double>> gSkillReadyAtSec;
 
+	// 建物の最大HP（スポーン時点の HPCastle）を保持して割合表示に使用
+	HashTable<long long, double> gBuildingMaxHP;
+
 	// Delay=1 を speed=60 で約 2 秒にするための係数
 	constexpr double kAttackDelayBaseTicks = 120.0; // 秒換算すると 120/speed
 
@@ -177,6 +180,20 @@ namespace {
 	{
 		if (s.hard <= 0) return 0.0;
 		return s.speed * kHardTurnSeconds * s.hard;
+	}
+}
+namespace {
+	// --- 30分サバイバル設定 ---
+	constexpr double kSurvivalDurationSec = 30.0 * 60.0; // 30分
+	static Stopwatch gSurvivalTimer;     // サバイバル用ストップウォッチ
+	static bool gSurvivalStarted = false;
+	static bool gSurvivalEnded = false;
+
+	inline String formatTimeMMSS(double seconds) {
+		const int32 total = Max(0, static_cast<int32>(Ceil(seconds)));
+		const int32 mm = (total / 60);
+		const int32 ss = (total % 60);
+		return U"{:02}:{:02}"_fmt(mm, ss);
 	}
 }
 
@@ -568,7 +585,6 @@ void Battle001::UnitRegister(
 	{
 		Unit unit_template = base;
 		unit_template.ID = classBattleManage.getIDCount();
-		// 追加: 召喚直後は最大体力で開始
 		unit_template.Hp = unit_template.HpMAX;
 		unit_template.initTilePos = Point{ col, row };
 		unit_template.colBuilding = col;
@@ -592,6 +608,15 @@ void Battle001::UnitRegister(
 			Unit* raw = uptr.get();
 			buildingCache.emplace_back(unit_template.initTilePos, std::move(uptr), raw);
 			auto sharedPtr = std::make_shared<Unit>(unit_template);
+			{
+				Vec2 bottom = mapTile.ToTileBottomCenter(Point(sharedPtr->colBuilding, sharedPtr->rowBuilding), mapTile.N)
+					.movedBy(0, -mapTile.TileThickness);
+				Vec2 barTopLeft = bottom.movedBy(-(LIQUID_BAR_WIDTH / 2.0), 6.0);
+				sharedPtr->bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(barTopLeft.x, barTopLeft.y, LIQUID_BAR_WIDTH, LIQUID_BAR_HEIGHT));
+
+				// 建物の最大HP（比率計算用）を記録（0 回避）
+				gBuildingMaxHP[sharedPtr->ID] = Max<double>(1.0, sharedPtr->HPCastle);
+			}
 			classBattleManage.hsMyUnitBuilding.insert(sharedPtr);
 		}
 
@@ -822,6 +847,33 @@ void Battle001::refreshFogOfWar(const ClassBattle& classBattleManage, Grid<Visib
 					{
 						currentVisibleTiles.insert(targetTile);
 					}
+				}
+			}
+		}
+	}
+
+	// 味方建物も視界ソースにする
+	for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+	{
+		if (!sp || !sp->IsBattleEnable) continue;
+
+		const Vec2 unitPos = sp->GetNowPosiCenter();
+		const auto unitIndex = mapTile.ToIndex(unitPos, mapTile.columnQuads, mapTile.rowQuads);
+		if (!unitIndex) continue;
+
+		const Point centerTile = unitIndex.value();
+		const int32 visionRadius = sp->visionRadius;
+
+		for (int dy = -visionRadius; dy <= visionRadius; ++dy)
+		{
+			for (int dx = -visionRadius; dx <= visionRadius; ++dx)
+			{
+				const Point targetTile = centerTile + Point{ dx, dy };
+				if (InRange(targetTile.x, 0, mapTile.N - 1)
+					&& InRange(targetTile.y, 0, mapTile.N - 1)
+					&& targetTile.manhattanDistanceFrom(centerTile) <= visionRadius)
+				{
+					currentVisibleTiles.insert(targetTile);
 				}
 			}
 		}
@@ -1261,10 +1313,12 @@ void Battle001::initSkillUI()
 		const ScopedRenderTarget2D target{ renderTextureSkill.clear(ColorF{ 0.8, 0.8, 0.8,0.5 }) };
 		const ScopedRenderStates2D blend{ MakeBlendState() };
 
+		// クリック判定テーブルを初期化（再初期化時のゴミ残り防止）
+		htSkill.clear();
+
 		//skill抽出
 		Array<Skill> all_skills;
 		{
-
 			//std::shared_lock lock(aStar.unitListRWMutex);
 			for (auto& unit_group : classBattleManage.listOfAllUnit)
 			{
@@ -1276,22 +1330,41 @@ void Battle001::initSkillUI()
 			}
 		}
 
-		// ソート
+		// ソート（昇順）
 		all_skills.sort_by([](const Skill& a, const Skill& b)
 			{
 				return a.sortKey < b.sortKey;
 			});
-		all_skills.erase(std::unique(all_skills.begin(), all_skills.end()), all_skills.end());
 
-		for (const auto&& [i, skill] : Indexed(all_skills))
+		// nameTag でユニーク化（描画とクリック対象を一致させる）
+		HashSet<String> seen;
+		Array<Skill> unique_skills;
+		unique_skills.reserve(all_skills.size());
+		for (const auto& s : all_skills)
+		{
+			if (s.nameTag.isEmpty())
+			{
+				continue; // 無名はスキップ
+			}
+			if (!seen.contains(s.nameTag))
+			{
+				seen.insert(s.nameTag);
+				unique_skills.push_back(s);
+			}
+		}
+
+		for (const auto&& [i, skill] : Indexed(unique_skills))
 		{
 			Rect rectSkill;
 			rectSkill.x = ((i % 10) * 32) + 4;
 			rectSkill.y = ((i / 10) * 32) + 4;
 			rectSkill.w = 32;
 			rectSkill.h = 32;
+
+			// クリック判定用に nameTag -> Rect を登録
 			htSkill.emplace(skill.nameTag, rectSkill);
 
+			// 複数アイコン対応（後ろの方が上に来る）
 			for (auto& icon : skill.icon.reversed())
 			{
 				TextureAsset(icon.trimmed()).resized(32).draw(rectSkill.x, rectSkill.y);
@@ -1382,6 +1455,13 @@ Co::Task<> Battle001::checkCancelSelectionByUIArea()
 }
 void Battle001::processUnitBuildMenuSelection(Unit& itemUnit)
 {
+	// メニュー非表示時は無視（隠れたクリック誤爆防止）
+	if (!IsBuildMenuHome) return;
+
+	// “ビルド対象”に指定された 1 体のみ処理（多重キュー投入防止）
+	if (longBuildSelectTragetId != -1
+		&& itemUnit.ID != longBuildSelectTragetId) return;
+
 	if (itemUnit.IsSelect == false) return;
 
 	for (auto& hbm : sortedArrayBuildMenu)
@@ -1462,6 +1542,86 @@ void Battle001::processUnitBuildMenuSelection(Unit& itemUnit)
 		}
 
 	}
+	//if (itemUnit.IsSelect == false) return;
+
+	//for (auto& hbm : sortedArrayBuildMenu)
+	//{
+	//	Array<String> resSp = hbm.first.split('-');
+	//	if (resSp[0] != itemUnit.classBuild) continue;
+
+	//	if (hbm.second.rectHantei.leftClicked())
+	//	{
+	//		if (hbm.second.isMove == true)
+	//		{
+	//			IsBuildSelectTraget = true;
+	//			itemUnit.tempIsBuildSelectTragetBuildAction = hbm.second;
+	//			tempSelectComRight = hbm.second;
+	//			itemUnit.tempSelectComRight = tempSelectComRight;
+	//			return;
+	//		}
+
+	//		if (hbm.second.category == U"Carrier")
+	//		{
+	//			handleCarrierStoreCommand(itemUnit);
+	//			continue;
+	//		}
+
+	//		if (hbm.second.category == U"releaseAll")
+	//		{
+	//			handleCarrierReleaseCommand(itemUnit);
+	//			continue;
+	//		}
+
+	//		// 設置位置の取得
+	//		if (const auto& index = mapTile.ToIndex(
+	//			itemUnit.GetNowPosiCenter(), mapTile.columnQuads, mapTile.rowQuads))
+	//		{
+	//			hbm.second.rowBuildingTarget = index->y;
+	//			hbm.second.colBuildingTarget = index->x;
+	//			itemUnit.currentTask = UnitTask::None;
+	//		}
+	//		else
+	//		{
+	//			//現在選択ユニットはマップ外にいる……
+	//		}
+
+	//		IsBuildSelectTraget = false;
+
+	//		//Battle::updateBuildQueueで作る
+	//		if (itemUnit.taskTimer.isRunning() == false)
+	//		{
+	//			itemUnit.taskTimer.restart();
+	//			itemUnit.progressTime = 0.0;
+	//		}
+	//		itemUnit.arrYoyakuBuild.push_back(hbm.second);
+	//		// 回数制限の更新と再描画
+	//		if (hbm.second.buildCount > 0)
+	//		{
+	//			hbm.second.buildCount--;
+	//			//キーだけ渡して該当のrenderだけ更新するように
+	//			//renB();
+	//		}
+	//	}
+	//	else if (hbm.second.rectHantei.mouseOver())
+	//	{
+	//		nowSelectBuildSetumei = U"~~~Unit Or Build~~~\r\n" + hbm.second.description;
+	//		rectSetumei = { Scene::Size().x - renderTextureBuildMenuEmpty.size().x,
+	//			Scene::Size().y - underBarHeight - renderTextureBuildMenuEmpty.size().y,
+	//			320, 0 };
+	//		rectSetumei.h = fontInfo.fontSkill(nowSelectBuildSetumei).region().h;
+	//		while (!fontInfo.fontSkill(nowSelectBuildSetumei).draw(rectSetumei.stretched(-12), Color(0.0, 0.0)))
+	//		{
+	//			rectSetumei.h += 12;
+	//		}
+	//		rectSetumei.y -= rectSetumei.h;
+	//		break;
+	//	}
+	//	else
+	//	{
+	//		nowSelectBuildSetumei.clear();
+	//	}
+
+	//}
 }
 
 void Battle001::handleCarrierStoreCommand(Unit& unit)
@@ -1576,34 +1736,80 @@ void Battle001::handleCarrierReleaseCommand(Unit& unit)
 /// @brief 建築予約をするのが本質
 void Battle001::handleBuildMenuSelectionA()
 {
+	// メニューを表示していないときはクリック処理を無効化
+	if (!IsBuildMenuHome)
+		return;
+
 	const Transformer2D transformer{ Mat3x2::Identity(), Mat3x2::Translate(Scene::Size().x - 328, Scene::Size().y - 328 - 30) };
 
-	// 通常ユニットの処理
+	// “ビルド対象”に指定された 1 体だけ処理する
+	Unit* targetUnit = nullptr;
+
+	// 通常ユニットの中から ID 一致を探す
 	{
-		//std::shared_lock lock(aStar.unitListRWMutex);
 		for (auto& loau : classBattleManage.listOfAllUnit)
 		{
 			for (auto& itemUnit : loau.ListClassUnit)
 			{
-				processUnitBuildMenuSelection(itemUnit);
+				if (itemUnit.ID == longBuildSelectTragetId)
+				{
+					targetUnit = &itemUnit;
+					break;
+				}
 			}
+			if (targetUnit) break;
 		}
 	}
 
-	// 建物ユニットの処理
-	Array<std::shared_ptr<Unit>> buildings;
-	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	// 見つからなければ建物から探す
+	if (!targetUnit)
 	{
-		for (const auto& item : group)
+		for (const auto& group : { classBattleManage.hsMyUnitBuilding })
 		{
-			buildings.push_back(item);
+			for (const auto& item : group)
+			{
+				if (item->ID == longBuildSelectTragetId)
+				{
+					targetUnit = item.get();
+					break;
+				}
+			}
+			if (targetUnit) break;
 		}
 	}
 
-	for (const auto& unitBuildings : buildings)
+	// 対象が見つかった場合のみクリック処理実行
+	if (targetUnit)
 	{
-		processUnitBuildMenuSelection(*unitBuildings);
+		processUnitBuildMenuSelection(*targetUnit);
 	}
+
+	//// 通常ユニットの処理
+	//{
+	//	//std::shared_lock lock(aStar.unitListRWMutex);
+	//	for (auto& loau : classBattleManage.listOfAllUnit)
+	//	{
+	//		for (auto& itemUnit : loau.ListClassUnit)
+	//		{
+	//			processUnitBuildMenuSelection(itemUnit);
+	//		}
+	//	}
+	//}
+
+	//// 建物ユニットの処理
+	//Array<std::shared_ptr<Unit>> buildings;
+	//for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+	//{
+	//	for (const auto& item : group)
+	//	{
+	//		buildings.push_back(item);
+	//	}
+	//}
+
+	//for (const auto& unitBuildings : buildings)
+	//{
+	//	processUnitBuildMenuSelection(*unitBuildings);
+	//}
 }
 
 Optional<long long> Battle001::findClickedBuildingId() const
@@ -1941,6 +2147,34 @@ void Battle001::updateUnitHealthBars()
 
 		for (auto& unit : group.ListClassUnit)
 			updateBar(unit);
+	}
+
+	// 建物の HP バー（HPCastle）を更新して建物の真下に配置
+	auto updateBuildingBar = [&](const std::shared_ptr<Unit>& sp)
+		{
+			if (!sp) return;
+			Unit& b = *sp;
+
+			// 比率（スポーン時の HPCastle を MaxHP とする）
+			const double maxHP = (gBuildingMaxHP.contains(b.ID) ? gBuildingMaxHP[b.ID] : Max<double>(1.0, b.HPCastle));
+			const double ratio = (maxHP > 0.0) ? Saturate(b.HPCastle / maxHP) : 0.0;
+
+			// 位置：建物スプライトの底辺下に表示
+			Vec2 bottom = mapTile.ToTileBottomCenter(Point(b.colBuilding, b.rowBuilding), mapTile.N)
+				.movedBy(0, -mapTile.TileThickness);
+			Vec2 barTopLeft = bottom.movedBy(-(LIQUID_BAR_WIDTH / 2.0), 6.0);
+
+			b.bLiquidBarBattle.update(ratio);
+			b.bLiquidBarBattle.ChangePoint(barTopLeft);
+		};
+
+	for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+	{
+		updateBuildingBar(sp);
+	}
+	for (const auto& sp : classBattleManage.hsEnemyUnitBuilding)
+	{
+		updateBuildingBar(sp);
 	}
 }
 
@@ -3163,6 +3397,11 @@ void Battle001::startAsyncFogCalculation()
 								unitSnapshot.push_back(&unit);
 						}
 					}
+
+					// 建物を追加
+					for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+						if (sp && sp->IsBattleEnable)
+							unitSnapshot.push_back(sp.get());
 				}
 
 				// スナップショットを使って安全に計算
@@ -3270,7 +3509,20 @@ void Battle001::setupInitialUnits()
 					.asPolygon()
 					.centroid()
 					.movedBy(-(unit_template.yokoUnit / 2), -(unit_template.TakasaUnit / 2));
+
+				// 建物 HP バー初期化（真下に配置）
+				{
+					Vec2 bottom = mapTile.ToTileBottomCenter(Point(unit_template.colBuilding, unit_template.rowBuilding), mapTile.N)
+						.movedBy(0, -mapTile.TileThickness);
+					Vec2 barTopLeft = bottom.movedBy(-(LIQUID_BAR_WIDTH / 2.0), 6.0);
+					unit_template.bLiquidBarBattle = GameUIToolkit::LiquidBarBattle(Rect(barTopLeft.x, barTopLeft.y, LIQUID_BAR_WIDTH, LIQUID_BAR_HEIGHT));
+				}
+
 				auto building_unit_ptr = std::make_shared<Unit>(unit_template);
+
+				// 最大HPを保持（0 回避）
+				gBuildingMaxHP[building_unit_ptr->ID] = Max<double>(1.0, building_unit_ptr->HPCastle);
+
 				classBattleManage.hsMyUnitBuilding.insert(building_unit_ptr);
 			}
 		}
@@ -3379,6 +3631,11 @@ Co::Task<void> Battle001::start()
 	stopwatchFinance.restart();
 	stopwatchGameTime.restart();
 
+	// --- サバイバルタイマー開始 ---
+	gSurvivalTimer.restart();
+	gSurvivalStarted = true;
+	gSurvivalEnded = false;
+
 	startAsyncTasks();
 
 	co_await mainLoop().pausedWhile([&]
@@ -3406,6 +3663,29 @@ Co::Task<void> Battle001::start()
 }
 void Battle001::updateGameSystems()
 {
+	// 一時停止（スペース）時はサバイバル時間を止める
+	if (gSurvivalStarted && !gSurvivalEnded)
+	{
+		if (KeySpace.pressed()) {
+			gSurvivalTimer.pause();
+		}
+		else {
+			// 走っていなければ再開（pause→resume）
+			if (!gSurvivalTimer.isRunning()) {
+				gSurvivalTimer.resume();
+			}
+		}
+
+		// 残り時間チェック → 0でゲームを終了
+		const double remain = kSurvivalDurationSec - gSurvivalTimer.sF();
+		if (remain <= 0.0) {
+			gSurvivalEnded = true;
+			shouldExit = true; // シーンのメインループも抜ける
+			System::Exit();    // アプリ終了
+			return;
+		}
+	}
+
 	camera.update();
 	resourcePointTooltip.setCamera(camera);
 
@@ -3744,6 +4024,9 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 				TextureAsset(u->ImageName).size()
 			)
 			.drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
+
+		// 建物 HP バー（ユニットと同じ見た目で、色だけ建物用）
+		u->bLiquidBarBattle.draw(ColorF{ 0.5, 0.1, 1.0 }, ColorF{ 0.7, 0.05, 0.05 }, ColorF{ 0.9, 0.5, 0.1 });
 	}
 }
 /// @brief カメラビュー内のユニットを描画します。
@@ -3751,7 +4034,16 @@ void Battle001::drawBuildings(const RectF& cameraView, const ClassBattle& classB
 /// @param classBattleManage ユニット情報を管理するClassBattleオブジェクト。
 void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattleManage) const
 {
-	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB)
+	auto isTileVisible = [&](const Vec2& worldPos) -> bool
+		{
+			if (const auto idx = mapTile.ToIndex(worldPos, mapTile.columnQuads, mapTile.rowQuads))
+			{
+				return (visibilityMap[*idx] == Visibility::Visible);
+			}
+			return false; // マップ外などは非表示扱い
+		};
+
+	auto drawGroup = [&](const Array<ClassHorizontalUnit>& group, const String& ringA, const String& ringB, bool cullByFog)
 		{
 			/// 範囲選択が本質の処理では、forループからHashTableへの置き換えは意味がない
 			/// 範囲選択は「連続した領域内のすべての要素」を対象とするため、
@@ -3767,6 +4059,14 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 					if (!u.IsBattleEnable) continue;
 
 					const Vec2 center = u.GetNowPosiCenter();
+
+					// 敵ユニットのみ霧でカリング
+					if (cullByFog)
+					{
+						if (!isTileVisible(center))
+							continue;
+					}
+
 					// ユニットの見た目サイズに応じて範囲を広げてチェック
 					const double size = u.TakasaUnit; // もしくは画像サイズ
 					const RectF unitRect(center.movedBy(-size / 2, -size / 2), size, size);
@@ -3808,8 +4108,8 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 			}
 		};
 
-	drawGroup(classBattleManage.listOfAllUnit, U"ringA.png", U"ringB.png");
-	drawGroup(classBattleManage.listOfAllEnemyUnit, U"ringA_E.png", U"ringB_E.png");
+	drawGroup(classBattleManage.listOfAllUnit, U"ringA.png", U"ringB.png", false);
+	drawGroup(classBattleManage.listOfAllEnemyUnit, U"ringA_E.png", U"ringB_E.png", true);
 }
 /// @brief リソースポイントをカメラビュー内に描画します。
 /// @param cameraView 描画範囲を指定するカメラの矩形領域。
@@ -4317,28 +4617,129 @@ void Battle001::drawHUD() const
 
 	// ユニット情報ツールチップの描画
 	unitTooltip.draw();
+
+	// --- 残り時間（右上） ---
+	{
+		const double elapsed = (gSurvivalStarted ? gSurvivalTimer.sF() : 0.0);
+		const double remain = Max(0.0, kSurvivalDurationSec - elapsed);
+		const String label = U"残り時間 " + formatTimeMMSS(remain);
+
+		const auto region = fontInfo.fontSystem(label).region();
+		const int32 x = Scene::Size().x - region.w - 16;
+		const int32 y = 8;
+
+		RectF{ x - 8, y - 6, region.w + 16, region.h + 12 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.6 });
+		fontInfo.fontSystem(label).draw(x, y, Palette::White);
+	}
 }
 
+// 影描画専用ヘルパを追加（drawUnits / drawBuildings と同じスコープ付近に置く）
+void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBattleManage) const
+{
+	constexpr double kSquashY = 1.25;           // 縦潰し率
+	constexpr double kRotateDeg = 35.0;         // 影の寝かせ角（光源が斜め上から来る想定）
+	constexpr Vec2   kOffset{ 20, -10 };         // 足から伸びる方向オフセット（右下方向）
+	constexpr ColorF kShadowColor{ 0.0, 0.0, 0.0, 0.82 };
+
+	auto getFacingRad = [](const Unit& u, const Vec2& center) -> double {
+		if (!u.vecMove.isZero()) return Math::Atan2(u.vecMove.y, u.vecMove.x);
+		Vec2 toOrder = (u.GetOrderPosiCenter() - center);
+		if (!toOrder.isZero()) return Math::Atan2(toOrder.y, toOrder.x);
+		return 0.0;
+		};
+
+	auto isTileVisible = [&](const Vec2& worldPos) -> bool
+		{
+			if (const auto idx = mapTile.ToIndex(worldPos, mapTile.columnQuads, mapTile.rowQuads))
+			{
+				return (visibilityMap[*idx] == Visibility::Visible);
+			}
+			return false; // マップ外などは非表示扱い
+		};
+
+	auto drawUnitShadowGroup = [&](const Array<ClassHorizontalUnit>& groups, bool cullByFog) {
+		for (const auto& gh : groups) {
+			for (const auto& u : gh.ListClassUnit) {
+				if (u.IsBuilding || !u.IsBattleEnable) continue;
+
+				const Vec2 center = u.GetNowPosiCenter();
+				// 敵ユニットのみ霧でカリング
+				if (cullByFog)
+				{
+					if (!isTileVisible(center))
+						continue;
+				}
+
+				const double logicalHalfH = u.TakasaUnit * 0.5;
+
+				// ユニット矩形（可視判定）
+				RectF unitRect(center.movedBy(-u.yokoUnit / 2.0, -logicalHalfH),
+							   u.yokoUnit, u.TakasaUnit);
+				if (!cameraView.intersects(unitRect)) continue;
+
+				// 足位置（本体中心基準で下端）
+				// 画像の高さと TakasaUnit が異なるなら Texture の高さで再算出する:
+				const Texture& tex = TextureAsset(u.ImageName);
+				const Vec2 footAnchor = center.movedBy(0, tex.size().y * 0.5); // 本体描画が center 基準なので底辺 = center + (高さ/2)
+
+				// 影行列（足位置を pivot にして潰し→回転→オフセット）
+				const ScopedColorMul2D mul{ kShadowColor };
+				const Transformer2D xf{
+					Mat3x2::Scale(1.0, kSquashY, footAnchor)
+					* Mat3x2::Rotate(Math::ToRadians(kRotateDeg), footAnchor)
+				};
+
+				// 影本体（底辺を footAnchor に揃える）
+				tex.draw(Arg::bottomCenter = footAnchor);
+			}
+		}
+		};
+
+	auto drawBuildingShadowSet = [&](const HashSet<std::shared_ptr<Unit>>& buildings) {
+		for (const auto& sp : buildings) {
+			const Unit& b = *sp;
+			if (!b.IsBattleEnable) continue;
+
+			Vec2 basePos = mapTile.ToTileBottomCenter(Point(b.colBuilding, b.rowBuilding), mapTile.N)
+				.movedBy(0, -mapTile.TileThickness);
+
+			if (!cameraView.intersects(basePos)) continue;
+
+			const Texture& tex = TextureAsset(b.ImageName);
+			const Vec2 footAnchor = basePos; // 建物は already bottomCenter で描画している前提
+
+			const ScopedColorMul2D mul{ kShadowColor };
+			const Transformer2D xf{
+				Mat3x2::Scale(1.0, kSquashY, footAnchor)
+				* Mat3x2::Translate(kOffset)
+			};
+
+			tex.draw(Arg::bottomCenter = footAnchor);
+		}
+		};
+
+	drawUnitShadowGroup(classBattleManage.listOfAllUnit, false);
+	drawUnitShadowGroup(classBattleManage.listOfAllEnemyUnit, true);
+	drawBuildingShadowSet(classBattleManage.hsMyUnitBuilding);
+	drawBuildingShadowSet(classBattleManage.hsEnemyUnitBuilding);
+}
 void Battle001::draw() const
 {
 	FsScene::draw();
-
 	{
-		// 2D カメラによる座標変換を適用する
 		const auto tr = camera.createTransformer();
-		// 乗算済みアルファ用のブレンドステートを適用する
 		const ScopedRenderStates2D blend{ BlendState::Premultiplied };
 		const RectF cameraView = getCameraView(camera, mapTile);
 
+		// 背景や地形
 		drawTileMap(cameraView, mapTile, classBattleManage);
 		drawFog(cameraView, mapTile, visibilityMap);
-		drawBuildings(cameraView, classBattleManage, mapTile);
-		drawUnits(cameraView, classBattleManage);
 		drawResourcePoints(cameraView, classBattleManage, mapTile);
 		resourcePointTooltip.draw();
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight(mapTile);
 
+		// 弾など既存描画（省略）...
 		for (auto& skill : m_Battle_player_skills)
 		{
 			for (auto& acb : skill.ArrayClassBullet)
@@ -4440,7 +4841,55 @@ void Battle001::draw() const
 			}
 		}
 
+		// 影 → 本体の順
+		drawShadows(cameraView, classBattleManage);
+		drawBuildings(cameraView, classBattleManage, mapTile);
+		drawUnits(cameraView, classBattleManage);
 	}
-
 	drawHUD();
 }
+
+//void Battle001::draw() const
+//{
+//	FsScene::draw();
+//
+//	{
+//		// 2D カメラによる座標変換を適用する
+//		const auto tr = camera.createTransformer();
+//		// 乗算済みアルファ用のブレンドステートを適用する
+//		const ScopedRenderStates2D blend{ BlendState::Premultiplied };
+//		const RectF cameraView = getCameraView(camera, mapTile);
+//
+//		drawTileMap(cameraView, mapTile, classBattleManage);
+//		drawFog(cameraView, mapTile, visibilityMap);
+//
+//		drawResourcePoints(cameraView, classBattleManage, mapTile);
+//		resourcePointTooltip.draw();
+//		drawSelectionRectangleOrArrow();
+//		drawBuildTargetHighlight(mapTile);
+//
+//		// --- 影パス（半透明の黒／Yつぶし＋オフセット） ---
+//		{
+//			// ピボットはマップ中心。第二引数は mapTile.N を渡す（N/2 は誤り）
+//			const Vec2 pivot = mapTile.ToTileBottomCenter(Point(mapTile.N / 2, mapTile.N / 2), mapTile.N);
+//
+//			// スクリーン見かけのオフセットを一定にしたいならスケールで割る
+//			const Vec2 offset = Vec2{ 16, 12 } / camera.getScale();
+//			const double squashY = 0.36;
+//
+//			const ScopedColorMul2D toBlack{ ColorF(0, 0, 0, 1.0) };
+//			const Transformer2D xf{ Mat3x2::Scale(1.0, squashY, pivot) * Mat3x2::Translate(offset) };
+//
+//			drawBuildings(cameraView, classBattleManage, mapTile);
+//			drawUnits(cameraView, classBattleManage);
+//		}
+//
+//		// --- 本体パス（通常描画） ---
+//		drawBuildings(cameraView, classBattleManage, mapTile);
+//		drawUnits(cameraView, classBattleManage);
+//	}
+//
+//
+//
+//	drawHUD();
+//}

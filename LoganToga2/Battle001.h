@@ -169,6 +169,7 @@ private:
 	void drawBuildDescription() const;
 	void drawBuildMenu() const;
 	void drawResourcesUI() const;
+	void drawShadows(const RectF& cameraView, const ClassBattle& classBattleManage) const;
 	void createRenderTex();
 	Color GetDominantColor(const String imageName, HashTable<String, Color>& data);
 	void DrawMiniMap(const Grid<Visibility>& map, const RectF& cameraRect) const;

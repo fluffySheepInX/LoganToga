@@ -37,7 +37,31 @@ void Init(CommonConfig& commonConfig)
 					}
 				}
 			}
-			cu.Hp = Parse<int32>(value[U"hp"].getString());
+			if (value.hasElement(U"hp") == true)
+			{
+				if (value.hasElement(U"hp_castle") == true)
+				{
+					if (Parse<int32>(value[U"hp"].getString()) != 0)
+					{
+						cu.Hp = Parse<int32>(value[U"hp"].getString());
+					}
+					else
+					{
+						cu.HPCastle = Parse<int32>(value[U"hp_castle"].getString());
+					}
+				}
+				else
+				{
+					cu.Hp = Parse<int32>(value[U"hp"].getString());
+				}
+			}
+			else
+			{
+				if (value.hasElement(U"hp_castle") == true)
+				{
+					cu.HPCastle = Parse<int32>(value[U"hp_castle"].getString());
+				}
+			}
 			cu.Mp = Parse<int32>(value[U"mp"].getString());
 			cu.HpMAX = cu.Hp;
 			if (value.hasElement(U"visionRadius") == true)
@@ -52,8 +76,10 @@ void Init(CommonConfig& commonConfig)
 			cu.MagDef = Parse<int32>(value[U"magDef"].getString());
 			cu.Speed = Parse<double>(value[U"speed"].getString());
 			cu.Price = Parse<int32>(value[U"price"].getString());
-			cu.Move = Parse<double>(value[U"move"].getString());
-			cu.Escape_range = Parse<int32>(value[U"escape_range"].getString());
+			if (value.hasElement(U"move") == true)
+				cu.Move = Parse<double>(value[U"move"].getString());
+			if (value.hasElement(U"escape_range") == true)
+				cu.Escape_range = Parse<int32>(value[U"escape_range"].getString());
 			if (value.hasElement(U"help") == true)
 			{
 				cu.Help = (value[U"help"].getString());
@@ -84,7 +110,9 @@ void Init(CommonConfig& commonConfig)
 				cu.Formation = BattleFormation::F;
 			}
 			cu.Race = (value[U"race"].getString());
-			String sNa = value[U"skill"].getString();
+			String sNa = U"";
+			if (value.hasElement(U"skill") == true)
+				sNa = value[U"skill"].getString();
 			if (sNa.contains(',') == true)
 			{
 				cu.SkillName = sNa.split(',');
