@@ -196,6 +196,177 @@ namespace {
 		return U"{:02}:{:02}"_fmt(mm, ss);
 	}
 }
+namespace {
+	// シンプルなスポーン定義
+	struct SpawnRule {
+		String unit;         // ユニット名（NameTag）
+		double intervalSec;  // 何秒ごとに出すか
+		int32  count;        // 1回で何体出すか（基本1）
+	};
+
+	// フェーズ定義（開始〜終了の絶対秒、ルール配列）
+	struct PhaseDef {
+		String name;
+		double startSec;
+		double endSec;
+		Array<SpawnRule> rules;
+	};
+
+	Array<PhaseDef> gPhaseSchedule;
+	HashTable<String, Stopwatch> gSpawnClocks; // unit名ごとの独立タイマー
+	String gActivePhase;                       // 現在フェーズ名（切替検知用）
+
+	inline Point pickEdgeSpawnTile(const MapTile& mapTile)
+	{
+		const int edge = Random(0, 3);
+		switch (edge)
+		{
+		case 0:  return Point(0, Random(0, mapTile.N - 1));             // Left
+		case 1:  return Point(mapTile.N - 1, Random(0, mapTile.N - 1));  // Right
+		case 2:  return Point(Random(0, mapTile.N - 1), 0);              // Top
+		case 3:  return Point(Random(0, mapTile.N - 1), mapTile.N - 1);  // Bottom
+		}
+		return Point(0, 0);
+	}
+
+	inline const PhaseDef* findCurrentPhase(double nowSec)
+	{
+		for (const auto& p : gPhaseSchedule)
+		{
+			if (nowSec >= p.startSec && nowSec < p.endSec)
+				return &p;
+		}
+		return nullptr;
+	}
+
+	// とりあえずのデフォルト（後でここをいじるだけで調整可能）
+	inline void initDefaultPhaseSchedule()
+	{
+		gPhaseSchedule.clear();
+
+		// 0:00〜2:30 静寂期
+		gPhaseSchedule.push_back(PhaseDef{
+			U"0 静寂期", 0.0, 150.0,
+			{
+				{ U"sniperP99",       8.0, 1 },
+				{ U"sniperP99-near", 12.0, 1 },
+			}
+		});
+
+		// 2:30〜5:00 選択期
+		gPhaseSchedule.push_back(PhaseDef{
+			U"1 選択期", 150.0, 300.0,
+			{
+				{ U"LineInfantryEni",  9.0, 1 },
+				{ U"SkirmisherEni",   12.0, 1 },
+			}
+		});
+
+		// 5:00〜6:00 制圧期（少し密）
+		gPhaseSchedule.push_back(PhaseDef{
+			U"2 制圧期", 300.0, 360.0,
+			{
+				{ U"LineInfantryEni",  6.0, 1 },
+				{ U"SkirmisherEni",    9.0, 1 },
+			}
+		});
+
+		// 6:00〜7:30 不穏期（バリエーション増）
+		gPhaseSchedule.push_back(PhaseDef{
+			U"3 不穏期", 360.0, 450.0,
+			{
+				{ U"LineInfantryEni",  7.5, 1 },
+				{ U"SkirmisherEni",   10.0, 1 },
+			}
+		});
+
+		// 7:30〜11:00 破壊期（密度アップ）
+		gPhaseSchedule.push_back(PhaseDef{
+			U"4 破壊期", 450.0, 660.0,
+			{
+				{ U"SkirmisherEni",    7.0, 1 },
+				{ U"LineInfantryEni",  8.5, 1 },
+			}
+		});
+
+		gActivePhase.clear();
+		gSpawnClocks.clear();
+	}
+
+	// 実スポーン処理（毎フレーム呼び出し）
+	inline void spawnEnemiesByPhaseImpl(Battle001& self, ClassBattle& classBattleManage, const MapTile& mapTile, double nowSec)
+	{
+		const PhaseDef* phase = findCurrentPhase(nowSec);
+		if (!phase) return;
+
+		// フェーズが切り替わったらタイマーリセット
+		if (gActivePhase != phase->name)
+		{
+			gSpawnClocks.clear();
+			gActivePhase = phase->name;
+		}
+
+		for (const auto& r : phase->rules)
+		{
+			auto& sw = gSpawnClocks[r.unit];
+			if (!sw.isRunning())
+				sw.restart();
+
+			if (sw.sF() >= r.intervalSec)
+			{
+				for (int i = 0; i < r.count; ++i)
+				{
+					const Point tile = pickEdgeSpawnTile(mapTile);
+					self.UnitRegister(classBattleManage, mapTile, r.unit, tile.x, tile.y, 1,
+						classBattleManage.listOfAllEnemyUnit, true);
+				}
+				sw.restart();
+			}
+		}
+	}
+}
+namespace {
+	// 画面座標で塗る、縦グラデーション背景
+	inline void drawBackgroundGradient()
+	{
+		// 上:やや青み / 下:暗め 例
+		RectF{ 0, 0, Scene::Width(), Scene::Height() }
+		.draw(Arg::top = ColorF{ 0.07, 0.10, 0.14 }, Arg::bottom = ColorF{ 0.02, 0.02, 0.03 });
+	}
+
+	// パターン画像のパララックス背景（カメラに対して遅く動く）
+	inline void drawParallaxPattern(const Camera2D& cam, const String& assetName = U"bg_pattern.png", double scale = 0.75, double parallax = 0.02)
+	{
+		if (!TextureAsset::IsRegistered(assetName)) return;
+
+		const Texture tex = TextureAsset(assetName);
+		const double stepX = tex.width() * scale;
+		const double stepY = tex.height() * scale;
+
+		if (stepX <= 0 || stepY <= 0) return;
+
+		// カメラ中心に応じて緩やかに流れる
+		const Vec2 scroll = cam.getCenter() * parallax;
+		auto mod = [](double a, double m) { double r = std::fmod(a, m); return (r < 0 ? r + m : r); };
+		const double ox = mod(scroll.x, stepX);
+		const double oy = mod(scroll.y, stepY);
+
+		// 画面を埋めるようにタイル描画
+		const int32 cols = static_cast<int32>(Scene::Width() / stepX) + 3;
+		const int32 rows = static_cast<int32>(Scene::Height() / stepY) + 3;
+
+		const TextureRegion scaled = tex.scaled(scale);
+		for (int32 iy = -1; iy < rows; ++iy)
+		{
+			for (int32 ix = -1; ix < cols; ++ix)
+			{
+				const double x = ix * stepX - ox;
+				const double y = iy * stepY - oy;
+				scaled.draw(x, y);
+			}
+		}
+	}
+}
 
 template<typename DrawFunc>
 void forEachVisibleTile(const RectF& cameraView, const MapTile& mapTile, DrawFunc drawFunc)
@@ -3636,6 +3807,9 @@ Co::Task<void> Battle001::start()
 	gSurvivalStarted = true;
 	gSurvivalEnded = false;
 
+	// 追加: フェーズスケジュール初期化
+	initDefaultPhaseSchedule();
+
 	startAsyncTasks();
 
 	co_await mainLoop().pausedWhile([&]
@@ -3690,9 +3864,9 @@ void Battle001::updateGameSystems()
 	resourcePointTooltip.setCamera(camera);
 
 	handleUnitTooltip();
-	//spawnTimedEnemy(classBattleManage, mapTile);
-	//spawnTimedEnemyEni(classBattleManage, mapTile);
-	spawnTimedEnemySkirmisher(classBattleManage, mapTile);
+	// 追加: フェーズ定義に基づくスポーン
+	spawnEnemiesByPhaseImpl(*this, classBattleManage, mapTile, gSurvivalTimer.sF());
+
 	updateResourceIncome();
 	updateBuildQueue();
 
@@ -4726,6 +4900,14 @@ void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBat
 void Battle001::draw() const
 {
 	FsScene::draw();
+
+	//背景レイヤ（画面座標）
+	drawBackgroundGradient();
+	//パターン背景（bg_pattern.png）
+	drawParallaxPattern(camera);
+	//（簡易ビネット）
+	RectF{ 0,0, Scene::Width(), Scene::Height() }.draw(ColorF{ 0,0,0,0.5 });
+
 	{
 		const auto tr = camera.createTransformer();
 		const ScopedRenderStates2D blend{ BlendState::Premultiplied };
@@ -4739,7 +4921,7 @@ void Battle001::draw() const
 		drawSelectionRectangleOrArrow();
 		drawBuildTargetHighlight(mapTile);
 
-		// 弾など既存描画（省略）...
+		// 弾など既存描画
 		for (auto& skill : m_Battle_player_skills)
 		{
 			for (auto& acb : skill.ArrayClassBullet)
@@ -4848,48 +5030,3 @@ void Battle001::draw() const
 	}
 	drawHUD();
 }
-
-//void Battle001::draw() const
-//{
-//	FsScene::draw();
-//
-//	{
-//		// 2D カメラによる座標変換を適用する
-//		const auto tr = camera.createTransformer();
-//		// 乗算済みアルファ用のブレンドステートを適用する
-//		const ScopedRenderStates2D blend{ BlendState::Premultiplied };
-//		const RectF cameraView = getCameraView(camera, mapTile);
-//
-//		drawTileMap(cameraView, mapTile, classBattleManage);
-//		drawFog(cameraView, mapTile, visibilityMap);
-//
-//		drawResourcePoints(cameraView, classBattleManage, mapTile);
-//		resourcePointTooltip.draw();
-//		drawSelectionRectangleOrArrow();
-//		drawBuildTargetHighlight(mapTile);
-//
-//		// --- 影パス（半透明の黒／Yつぶし＋オフセット） ---
-//		{
-//			// ピボットはマップ中心。第二引数は mapTile.N を渡す（N/2 は誤り）
-//			const Vec2 pivot = mapTile.ToTileBottomCenter(Point(mapTile.N / 2, mapTile.N / 2), mapTile.N);
-//
-//			// スクリーン見かけのオフセットを一定にしたいならスケールで割る
-//			const Vec2 offset = Vec2{ 16, 12 } / camera.getScale();
-//			const double squashY = 0.36;
-//
-//			const ScopedColorMul2D toBlack{ ColorF(0, 0, 0, 1.0) };
-//			const Transformer2D xf{ Mat3x2::Scale(1.0, squashY, pivot) * Mat3x2::Translate(offset) };
-//
-//			drawBuildings(cameraView, classBattleManage, mapTile);
-//			drawUnits(cameraView, classBattleManage);
-//		}
-//
-//		// --- 本体パス（通常描画） ---
-//		drawBuildings(cameraView, classBattleManage, mapTile);
-//		drawUnits(cameraView, classBattleManage);
-//	}
-//
-//
-//
-//	drawHUD();
-//}

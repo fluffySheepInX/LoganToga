@@ -375,6 +375,8 @@
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="docs\GameDesign_Timeline.md" />
+    <None Include="docs\Phase1_Refactor_Plan.md" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\shot.mp3" />
@@ -408,6 +410,7 @@
     <ClInclude Include="ClassSkill.h" />
     <ClInclude Include="ClassUnit.h" />
     <ClInclude Include="ClassUnitMovePlan.h" />
+    <ClInclude Include="Combat\Trajectory.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="EnumSkill.h" />
     <ClInclude Include="Game.hpp" />
@@ -427,6 +430,9 @@
     <ClInclude Include="libs\Gaussian.hpp" />
     <ClInclude Include="MapTile.h" />
     <ClInclude Include="SafeUnitManager.h" />
+    <ClInclude Include="Services\CooldownService.h" />
+    <ClInclude Include="Services\ProjectileHitService.h" />
+    <ClInclude Include="Services\UsageService.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Test\TestRunner.h" />
     <ClInclude Include="UnitTooltip.h" />

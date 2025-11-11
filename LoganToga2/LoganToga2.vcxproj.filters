@@ -822,6 +822,8 @@
     <None Include="App\engine\shader\glsl\quad_warp.frag">
       <Filter>Resource Files\engine\shader\glsl</Filter>
     </None>
+    <None Include="docs\Phase1_Refactor_Plan.md" />
+    <None Include="docs\GameDesign_Timeline.md" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -969,6 +971,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UnitTooltip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\CooldownService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\UsageService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\ProjectileHitService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\Trajectory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
