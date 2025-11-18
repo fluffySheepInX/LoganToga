@@ -336,6 +336,32 @@ void Init(CommonConfig& commonConfig)
 				}
 			}
 
+			if (value.hasElement(U"homing") == true)
+			{
+				String tempHoming = value[U"homing"].get<String>();
+				if (tempHoming == U"on")
+				{
+					cu.homing = true;
+				}
+			}
+			if (value.hasElement(U"start_degree") == true)
+			{
+				cu.startDegree = Parse<double>(value[U"start_degree"].get<String>());
+			}
+			if (value.hasElement(U"start_degree_type") == true)
+			{
+				cu.startDegreeType = Parse<int32>(value[U"start_degree_type"].get<String>());
+			}
+			if (cu.MoveType == MoveType::swing) {
+				// 角度用
+				cu.arcDeg = cu.range; // JSON range を arc に転用
+				// 距離用（別途項目を追加できるなら "reach" を使う）
+				cu.reachDist = cu.rangeMin; // 暫定値
+			}
+			else {
+				cu.arcDeg = 0.0;
+				cu.reachDist = cu.range;
+			}
 			arrayClassSkill.push_back(std::move(cu));
 		}
 
@@ -537,7 +563,7 @@ void Main()
 		TestRunner runner;
 		runner.run();
 		// Tests finished, wait for user to close window.
-		while(System::Update());
+		while (System::Update());
 	}
 	else
 	{

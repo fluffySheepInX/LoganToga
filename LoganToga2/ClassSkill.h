@@ -56,7 +56,13 @@ public:
 			&& (rushRandomDegree == other.rushRandomDegree)
 			&& (SkillForceRay == other.SkillForceRay)
 			&& (radian == other.radian)
-			&& (degree == other.degree);
+			&& (degree == other.degree)
+			&& (startDegree == other.startDegree)
+			&& (startDegreeType == other.startDegreeType)
+			&& (homing == other.homing)
+			&& (arcDeg == other.arcDeg)
+			&& (reachDist == other.reachDist)
+			;
 	}
 	Skill& operator=(const Skill& other) {
 		if (this != &other) {
@@ -107,6 +113,11 @@ public:
 			SkillForceRay = other.SkillForceRay;
 			radian = other.radian;
 			degree = other.degree;
+			startDegree = other.startDegree;
+			startDegreeType = other.startDegreeType;
+			homing = other.homing;
+			arcDeg = other.arcDeg;
+			reachDist = other.reachDist;
 		}
 		return *this;
 	}
@@ -189,4 +200,10 @@ public:
 
 	float radian = 0;
 	float degree = 0;
+
+	bool homing = false;
+	double startDegree = 0;
+	int32 startDegreeType = 0;
+	double arcDeg = 0.0;       // swing専用（JSONの range を arcDeg に読む運用に変更可能）
+	double reachDist = 0.0;    // 近接到達距離（range 距離部を分離する場合）
 };

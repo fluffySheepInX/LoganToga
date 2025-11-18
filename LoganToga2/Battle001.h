@@ -152,6 +152,8 @@ private:
 	void calculateFogFromUnits(Grid<Visibility>& visMap, const Array<const Unit*>& units);
 	ClassMapBattle GetClassMapBattle(ClassMap classMap, CommonConfig& commonConfig);
 
+	Unit* selectSwingTarget(Unit& attacker, Array<ClassHorizontalUnit>& targetGroups, const Skill& skill);
+
 	const Size miniMapSize = Size(200, 200);
 	const Vec2 miniMapPosition = Scene::Size() - miniMapSize - Vec2(20, 20);
 	struct MinimapCol { Color color; int32 x; int32 y; };

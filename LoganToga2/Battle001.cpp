@@ -6,7 +6,8 @@
 namespace {
 	// unitID -> (skillTag -> readyAtSeconds)
 	HashTable<long long, HashTable<String, double>> gSkillReadyAtSec;
-
+	// 追加: スイング1回あたりの「既に当てたターゲット」を保存（No,RushNo 単位）
+	HashTable<uint64, HashSet<long long>> gSwingHitOnce;
 	// 建物の最大HP（スポーン時点の HPCastle）を保持して割合表示に使用
 	HashTable<long long, double> gBuildingMaxHP;
 
@@ -248,8 +249,7 @@ namespace {
 		gPhaseSchedule.push_back(PhaseDef{
 			U"0 静寂期", 0.0, 150.0,
 			{
-				{ U"sniperP99",       8.0, 1 },
-				{ U"sniperP99-near", 12.0, 1 },
+				{ U"Conscript",       8.0, 1 },
 			}
 		});
 
@@ -2684,6 +2684,33 @@ static bool NearlyEqual(double a, double b)
 	return abs(a - b) < DBL_EPSILON;
 }
 
+Unit* Battle001::selectSwingTarget(Unit& attacker, Array<ClassHorizontalUnit>& targetGroups, const Skill& skill)
+{
+	Unit* best = nullptr;
+	double bestDistSq = DBL_MAX;
+	const Vec2 center = attacker.GetNowPosiCenter();
+
+	for (auto& g : targetGroups) {
+		for (auto& t : g.ListClassUnit) {
+			if (!t.IsBattleEnable) continue;
+			if (t.IsBuilding && t.mapTipObjectType == MapTipObjectType::WALL2) continue;
+			const double d2 = center.distanceFromSq(t.GetNowPosiCenter());
+			// 到達距離判定（reachDist or skill.range を距離として使う）
+			const double reach = (skill.MoveType == MoveType::swing)
+				? (skill.reachDist > 0 ? skill.reachDist : 80.0)
+				: skill.range;
+			const double maxDist = (attacker.yokoUnit * 0.5) + reach + (t.yokoUnit * 0.5);
+			if (d2 <= maxDist * maxDist) {
+				if (d2 < bestDistSq) {
+					bestDistSq = d2;
+					best = &t;
+				}
+			}
+		}
+	}
+	return best;
+}
+
 void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit>& target_groups, Array<ClassExecuteSkills>& executed_skills)
 {
 	// 発動中もしくは死亡ユニットはスキップ
@@ -2702,17 +2729,9 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 	);
 
 	const bool isManual = (manually_selected_skills.size() > 0);
-	if (isManual)
-	{
-		skills_to_try = manually_selected_skills;
-	}
-	else
-	{
-		// 昇順（小さい値から大きい値へ）
-		skills_to_try = unit.arrSkill
-			.sorted_by([](const auto& item1, const auto& item2)
-				{ return  item1.sortKey < item2.sortKey; });
-	}
+	skills_to_try = isManual
+		? manually_selected_skills
+		: unit.arrSkill.sorted_by([](const Skill& a, const Skill& b) { return a.sortKey < b.sortKey; });
 
 	// 追加: 自動時のみ「最優先が残弾ありCD中なら待機」を判定
 	if (!isManual)
@@ -2741,10 +2760,47 @@ void Battle001::findAndExecuteSkillForUnit(Unit& unit, Array<ClassHorizontalUnit
 		}
 	}
 
+	// =========== 追加: swing 専用即時処理 ===========
+	auto executeSwing = [&](Skill& skill) {
+		// クールダウン / 使用回数チェック
+		if (!hasUsesLeft(unit, skill) || !isSkillReady(unit, skill))
+			return false;
+
+		const Vec2 center = unit.GetNowPosiCenter();
+		const double radius = Max<double>(skill.range, skill.w); // 半径基準
+		// 対象グループ（敵側前提）
+		for (auto& tg : target_groups) {
+			for (auto& target : tg.ListClassUnit) {
+				if (!target.IsBattleEnable) continue;
+				if (target.IsBuilding && target.mapTipObjectType == MapTipObjectType::WALL2) continue;
+				const double distSq = center.distanceFromSq(target.GetNowPosiCenter());
+				if (distSq <= radius * radius) {
+					// 1 体ずつ直接ダメージ適用（CalucDamage 利用）
+					ClassExecuteSkills fake;
+					fake.classSkill = skill;
+					fake.classUnit = &unit;
+					CalucDamage(target, skill.str, fake);
+				}
+			}
+		}
+		commitCooldown(unit, skill);
+		consumeUse(unit, skill);
+		applyMaintainRangeByPreferredAvailableSkill(unit);
+		unit.FlagMovingSkill = false;
+		return true;
+		};
+	// ================================================
+
 	// スキルを試行
 	for (size_t i = 0; i < skills_to_try.size(); ++i)
 	{
 		auto& skill = skills_to_try[i];
+
+		//// swing は飛翔体を生成せず、ここで個別 AoE を適用
+		//if (skill.MoveType == MoveType::swing) {
+		//	if (executeSwing(skill)) return;
+		//	continue;
+		//}
 
 		if (!hasUsesLeft(unit, skill)) {
 			continue;
@@ -2814,6 +2870,35 @@ ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& t
 	executed_skill.classUnit = &attacker;
 	executed_skill.classUnitHealTarget = const_cast<Unit*>(&target); // Original code did this, needs review
 
+	if (skill.MoveType == MoveType::swing) {
+		ClassBullets b;
+		b.No = classBattleManage.getBattleIDCount();
+		b.RushNo = 0;
+		b.StartPosition = attacker.GetNowPosiCenter();
+		b.NowPosition = b.StartPosition;
+		const Vec2 v = (target.GetNowPosiCenter() - b.StartPosition);
+		double baseDeg = ToDegrees(Math::Atan2(v.y, v.x));
+		// startDegreeType==6 で左右反転
+		double offset = skill.startDegree;
+		if (skill.startDegreeType == 6) {
+			bool right = (v.x >= 0);
+			offset = right ? Abs(offset) : -Abs(offset);
+		}
+		double startDeg = baseDeg + offset;
+		b.initDegree = static_cast<float>(startDeg);
+		b.degree = b.initDegree;
+		b.radian = Math::ToRadians(startDeg);
+
+		// 角速度 (deg/sec)
+		double degPerSec = Max(1.0, skill.speed * 0.6); // 60fps換算調整
+		double arc = (skill.arcDeg > 0 ? skill.arcDeg : skill.range); // arcDeg 未使用なら range
+		b.lifeTime = 0.0;
+		b.duration = Max(0.05, arc / degPerSec);
+		executed_skill.ArrayClassBullet << b;
+		return executed_skill;
+	}
+
+	//ここから従来の line/throw 等
 	for (int i = 0; i < rush_count; ++i)
 	{
 		ClassBullets bullet;
@@ -2869,6 +2954,17 @@ ClassExecuteSkills Battle001::createSkillExecution(Unit& attacker, const Unit& t
 
 bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target_groups, const Vec2& attacker_pos, Unit& attacker, Skill& skill, Array<ClassExecuteSkills>& executed_skills)
 {
+	if (skill.MoveType == MoveType::swing) {
+		Unit* target = selectSwingTarget(attacker, target_groups, skill);
+		if (!target) return false;
+		ClassExecuteSkills ex = createSkillExecution(attacker, *target, skill);
+		executed_skills.push_back(ex);
+		commitCooldown(attacker, skill);
+		consumeUse(attacker, skill);
+		applyMaintainRangeByPreferredAvailableSkill(attacker);
+		return true;
+	}
+
 	const bool isHeal = (skill.SkillType == SkillType::heal);
 
 	for (auto& target_group : target_groups)
@@ -2959,13 +3055,27 @@ void Battle001::handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& 
 {
 	Circle bulletHitbox{ bullet.NowPosition, executedSkill.classSkill.w / 2.0 };
 
+	if (executedSkill.classSkill.MoveType == MoveType::swing)
+	{
+		// 画像の「末端（先端）」が術者中心から伸びる想定
+		const double reach = Max(0.0, static_cast<double>(executedSkill.classSkill.h)) * 0.5; // だいたい画像高さの半分
+		const Vec2 tip = bullet.NowPosition + Vec2(Math::Cos(bullet.radian), Math::Sin(bullet.radian)) * reach;
+		const double radius = Max(4.0, static_cast<double>(executedSkill.classSkill.w) * 0.5); // 幅をヒット半径の目安に
+		bulletHitbox = Circle{ tip, radius };
+	}
+	else
+	{
+		bulletHitbox = Circle{ bullet.NowPosition, executedSkill.classSkill.w / 2.0 };
+	}
+
+	const uint64 bkey = makeBulletKey(bullet);
+	auto& swingHitSet = gSwingHitOnce[bkey]; // 空なら自動生成
+
 	for (auto& targetGroup : targetUnits)
 	{
 		for (auto& targetUnit : targetGroup.ListClassUnit)
 		{
 			if (!targetUnit.IsBattleEnable) continue;
-
-			// Skip walls, but not other buildings
 			if (targetUnit.IsBuilding && targetUnit.mapTipObjectType == MapTipObjectType::WALL2) continue;
 
 			Vec2 targetPos = targetUnit.GetNowPosiCenter();
@@ -2979,32 +3089,62 @@ void Battle001::handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& 
 
 			if (bulletHitbox.intersects(targetHitbox))
 			{
+				// 追加: swing は同一ターゲットに一度だけ
+				if (executedSkill.classSkill.MoveType == MoveType::swing) {
+					if (swingHitSet.contains(targetUnit.ID)) {
+						continue;
+					}
+				}
+
 				Array<int32> bulletsToRemove; // Legacy parameter, might be removable later
-				if (applySkillEffectAndRegisterHit(isBomb, bulletsToRemove, bullet, executedSkill, targetUnit))
-				{
-					// isBomb is set inside applySkillEffectAndRegisterHit
-					return; // Exit after first hit if not a bomb
+				const bool hit = applySkillEffectAndRegisterHit(isBomb, bulletsToRemove, bullet, executedSkill, targetUnit);
+
+				if (executedSkill.classSkill.MoveType == MoveType::swing) {
+					// 記録して次へ（弾は消さない）
+					swingHitSet.insert(targetUnit.ID);
+					isBomb = false; // スイングは最後まで振る
+					continue;
+				}
+
+				if (hit) {
+					// 非スイングは従来通り
+					return;
 				}
 			}
 		}
 
 		if (isBomb)
 		{
-			break; // Stop checking other groups if it's a non-piercing skill
+			break;
 		}
 	}
 }
 
-
 void Battle001::updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, Array<ClassHorizontalUnit>& friendlyUnits)
 {
 	Array<int32> bulletsToRemove;
-	Array<uint64> keysToErase; // 状態掃除用
+	Array<uint64> keysToErase;
 	const bool isHeal = executedSkill.classSkill.SkillType == SkillType::heal;
+
+	// Unit 検索の安全ヘルパ
+	auto findUnitById = [&](long long uid) -> Unit*
+		{
+			std::shared_lock lock(aStar.unitListRWMutex);
+			for (auto& grp : classBattleManage.listOfAllUnit)
+				for (auto& u : grp.ListClassUnit)
+					if (u.ID == uid) return &u;
+			for (auto& grp : classBattleManage.listOfAllEnemyUnit)
+				for (auto& u : grp.ListClassUnit)
+					if (u.ID == uid) return &u;
+			for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+				if (sp->ID == uid) return sp.get();
+			for (const auto& sp : classBattleManage.hsEnemyUnitBuilding)
+				if (sp->ID == uid) return sp.get();
+			return nullptr;
+		};
 
 	for (auto& bullet : executedSkill.ArrayClassBullet)
 	{
-		// 寿命と移動更新
 		bullet.lifeTime += Scene::DeltaTime();
 		if (bullet.lifeTime > bullet.duration)
 		{
@@ -3012,98 +3152,124 @@ void Battle001::updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Arra
 			continue;
 		}
 
-		// 位置更新
-		const Vec2 prevPos = bullet.NowPosition;
-
-		if (executedSkill.classSkill.MoveType == MoveType::thr)
+		// --- swing: 角度で進行し、術者に追従 ---
+		if (executedSkill.classSkill.MoveType == MoveType::swing)
 		{
-			// t: 0→1
+			Unit* caster = findUnitById(executedSkill.UnitID);
+			if (!caster || !caster->IsBattleEnable)
+			{
+				bulletsToRemove.push_back(bullet.No);
+				continue;
+			}
+
+			// homing
+			if (executedSkill.classSkill.homing) {
+				bullet.NowPosition = caster->GetNowPosiCenter();
+			}
+			else if (bullet.lifeTime == 0.0) {
+				bullet.NowPosition = caster->GetNowPosiCenter();
+			}
+
+			// 回転方向: 右向きなら時計回り(-)、左向きなら反時計(+)
+			double dirSign = +1.0;
+			if (executedSkill.classSkill.startDegreeType == 6) {
+				bool facingRight = false;
+				if (!caster->vecMove.isZero()) {
+					facingRight = (caster->vecMove.x >= 0);
+				}
+				else {
+					Vec2 toOrder = (caster->GetOrderPosiCenter() - caster->GetNowPosiCenter());
+					facingRight = toOrder.isZero() ? true : (toOrder.x >= 0);
+				}
+				dirSign = (facingRight ? -1.0 : +1.0);
+			}
+
+			// 開始角から arc を dirSign 方向へ等速回転
 			const double t = Saturate(bullet.lifeTime / Max(0.0001, bullet.duration));
-			// 直線補間
-			const Vec2 flat = bullet.StartPosition + (bullet.OrderPosition - bullet.StartPosition) * t;
+			const double swingArc = (executedSkill.classSkill.arcDeg > 0.0
+				? executedSkill.classSkill.arcDeg
+				: static_cast<double>(executedSkill.classSkill.range));
+			const double curDeg = static_cast<double>(bullet.initDegree) + dirSign * swingArc * t;
+			bullet.degree = static_cast<float>(curDeg);
+			bullet.radian = Math::ToRadians(curDeg);
 
-			// 山の高さ = 距離 * (heightRatio)
-			const double dist = (bullet.OrderPosition - bullet.StartPosition).length();
-			const double heightRatio = (executedSkill.classSkill.height == 0)
-				? 0.5
-				: (static_cast<double>(executedSkill.classSkill.height) / 100.0);
-			const double arcHeight = dist * heightRatio;
-
-			// 放物線オフセット: peak at t=0.5
-			const double s = (2.0 * t - 1.0);
-			const double yOffset = arcHeight * (1.0 - (s * s)); // 0→peak→0
-
-			// アイソメ画面では「上」は -Y 方向に持ち上げる
-			bullet.NowPosition = flat.movedBy(0, -yOffset);
+			// 毎フレーム判定
+			Array<ClassHorizontalUnit>& currentTargetGroup = isHeal ? friendlyUnits : targetUnits;
+			bool isBomb = false;
+			handleBulletCollision(bullet, executedSkill, currentTargetGroup, isBomb);
+			continue;
 		}
 		else
 		{
-			// 既存の直線移動
-			bullet.NowPosition += bullet.MoveVec * executedSkill.classSkill.speed * Scene::DeltaTime();
-		}
-
-		// 判定間隔の計算（hard>=1 のときだけ距離間隔で判定）
-		const bool piercing = (executedSkill.classSkill.hard >= 1);
-		bool allowHitCheck = true;
-		const uint64 key = makeBulletKey(bullet);
-
-		if (piercing)
-		{
-			const double threshold = computeHitIntervalDistance(executedSkill.classSkill);
-			if (threshold <= 0.0)
+			// 従来の移動
+			if (executedSkill.classSkill.MoveType == MoveType::thr)
 			{
-				allowHitCheck = true;
+				const double t = Saturate(bullet.lifeTime / Max(0.0001, bullet.duration));
+				const Vec2 flat = bullet.StartPosition + (bullet.OrderPosition - bullet.StartPosition) * t;
+
+				const double dist = (bullet.OrderPosition - bullet.StartPosition).length();
+				const double heightRatio = (executedSkill.classSkill.height == 0)
+					? 0.5
+					: (static_cast<double>(executedSkill.classSkill.height) / 100.0);
+				const double arcHeight = dist * heightRatio;
+
+				const double s = (2.0 * t - 1.0);
+				const double yOffset = arcHeight * (1.0 - (s * s));
+				bullet.NowPosition = flat.movedBy(0, -yOffset);
 			}
 			else
 			{
-				if (auto it = gHitIntervalState.find(key); it == gHitIntervalState.end())
-				{
-					// 生成直後は lastPos 初期化のみ（最初の閾値到達までは判定しない）
-					gHitIntervalState[key] = HitIntervalState{ bullet.NowPosition, 0.0 };
-					allowHitCheck = false;
-				}
+				bullet.NowPosition += bullet.MoveVec * executedSkill.classSkill.speed * Scene::DeltaTime();
+			}
+		}
+
+		// 判定間隔（貫通時）: swing は距離ベースと相性悪いので毎フレーム許可
+		bool allowHitCheck = (executedSkill.classSkill.MoveType == MoveType::swing);
+
+		if (!allowHitCheck)
+		{
+			const bool piercing = (executedSkill.classSkill.hard >= 1);
+			const uint64 key = makeBulletKey(bullet);
+
+			if (piercing)
+			{
+				const double threshold = computeHitIntervalDistance(executedSkill.classSkill);
+				if (threshold <= 0.0) allowHitCheck = true;
 				else
 				{
-					auto& st = it->second;
-					st.accum += (bullet.NowPosition - st.lastPos).length();
-					st.lastPos = bullet.NowPosition;
-
-					if (st.accum >= threshold)
+					if (auto it = gHitIntervalState.find(key); it == gHitIntervalState.end())
 					{
-						allowHitCheck = true;
-						st.accum = 0.0; // 次の閾値へ
+						gHitIntervalState[key] = HitIntervalState{ bullet.NowPosition, 0.0 };
+						allowHitCheck = false;
 					}
 					else
 					{
-						allowHitCheck = false;
+						auto& st = it->second;
+						st.accum += (bullet.NowPosition - st.lastPos).length();
+						st.lastPos = bullet.NowPosition;
+						if (st.accum >= threshold) { allowHitCheck = true; st.accum = 0.0; }
+						else allowHitCheck = false;
 					}
 				}
 			}
+			else allowHitCheck = true;
 		}
 
-		//もし「着弾のみで判定」にしたい場合は、以下のように throw の途中判定を抑止できます:
 		if (executedSkill.classSkill.MoveType == MoveType::thr
-			&& bullet.lifeTime < bullet.duration) {
+			&& bullet.lifeTime < bullet.duration)
+		{
 			allowHitCheck = false;
 		}
 
-		// 当たり判定
 		if (allowHitCheck)
 		{
 			Array<ClassHorizontalUnit>& currentTargetGroup = isHeal ? friendlyUnits : targetUnits;
-
-			bool isBomb = false; // 非貫通時のみ true になり、弾を消す契機になる
+			bool isBomb = false;
 			handleBulletCollision(bullet, executedSkill, currentTargetGroup, isBomb);
-
-			// 非貫通でヒット済みなら削除
-			if (isBomb)
-			{
-				bulletsToRemove.push_back(bullet.No);
-			}
+			if (isBomb) bulletsToRemove.push_back(bullet.No);
 		}
 	}
 
-	// 削除予定の弾に紐づく間隔状態を掃除
 	if (!bulletsToRemove.isEmpty())
 	{
 		Array<uint64> toErase;
@@ -3111,22 +3277,156 @@ void Battle001::updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Arra
 		{
 			const uint64 key = kv.first;
 			const int32 noUpper = static_cast<int32>(key >> 32);
-			if (bulletsToRemove.contains(noUpper))
-			{
-				toErase.push_back(key);
-			}
+			if (bulletsToRemove.contains(noUpper)) toErase.push_back(key);
 		}
-		for (const auto key : toErase)
+		// 追加: swing のヒット済み集合も掃除
+		Array<uint64> toEraseSwing;
+		for (const auto& kv : gSwingHitOnce)
 		{
-			gHitIntervalState.erase(key);
+			const uint64 key = kv.first;
+			const int32 noUpper = static_cast<int32>(key >> 32);
+			if (bulletsToRemove.contains(noUpper)) toEraseSwing.push_back(key);
 		}
+		for (const auto key : toEraseSwing) gSwingHitOnce.erase(key);
+		for (const auto key : toErase) gHitIntervalState.erase(key);
 	}
 
-	// 弾を削除
 	executedSkill.ArrayClassBullet.remove_if([&](const ClassBullets& b) {
 		return bulletsToRemove.contains(b.No);
 	});
 }
+
+//void Battle001::updateAndCheckCollisions(ClassExecuteSkills& executedSkill, Array<ClassHorizontalUnit>& targetUnits, Array<ClassHorizontalUnit>& friendlyUnits)
+//{
+//	Array<int32> bulletsToRemove;
+//	Array<uint64> keysToErase; // 状態掃除用
+//	const bool isHeal = executedSkill.classSkill.SkillType == SkillType::heal;
+//
+//	for (auto& bullet : executedSkill.ArrayClassBullet)
+//	{
+//		// 寿命と移動更新
+//		bullet.lifeTime += Scene::DeltaTime();
+//		if (bullet.lifeTime > bullet.duration)
+//		{
+//			bulletsToRemove.push_back(bullet.No);
+//			continue;
+//		}
+//
+//		// 位置更新
+//		const Vec2 prevPos = bullet.NowPosition;
+//
+//		if (executedSkill.classSkill.MoveType == MoveType::thr)
+//		{
+//			// t: 0→1
+//			const double t = Saturate(bullet.lifeTime / Max(0.0001, bullet.duration));
+//			// 直線補間
+//			const Vec2 flat = bullet.StartPosition + (bullet.OrderPosition - bullet.StartPosition) * t;
+//
+//			// 山の高さ = 距離 * (heightRatio)
+//			const double dist = (bullet.OrderPosition - bullet.StartPosition).length();
+//			const double heightRatio = (executedSkill.classSkill.height == 0)
+//				? 0.5
+//				: (static_cast<double>(executedSkill.classSkill.height) / 100.0);
+//			const double arcHeight = dist * heightRatio;
+//
+//			// 放物線オフセット: peak at t=0.5
+//			const double s = (2.0 * t - 1.0);
+//			const double yOffset = arcHeight * (1.0 - (s * s)); // 0→peak→0
+//
+//			// アイソメ画面では「上」は -Y 方向に持ち上げる
+//			bullet.NowPosition = flat.movedBy(0, -yOffset);
+//		}
+//		else
+//		{
+//			// 既存の直線移動
+//			bullet.NowPosition += bullet.MoveVec * executedSkill.classSkill.speed * Scene::DeltaTime();
+//		}
+//
+//		// 判定間隔の計算（hard>=1 のときだけ距離間隔で判定）
+//		const bool piercing = (executedSkill.classSkill.hard >= 1);
+//		bool allowHitCheck = true;
+//		const uint64 key = makeBulletKey(bullet);
+//
+//		if (piercing)
+//		{
+//			const double threshold = computeHitIntervalDistance(executedSkill.classSkill);
+//			if (threshold <= 0.0)
+//			{
+//				allowHitCheck = true;
+//			}
+//			else
+//			{
+//				if (auto it = gHitIntervalState.find(key); it == gHitIntervalState.end())
+//				{
+//					// 生成直後は lastPos 初期化のみ（最初の閾値到達までは判定しない）
+//					gHitIntervalState[key] = HitIntervalState{ bullet.NowPosition, 0.0 };
+//					allowHitCheck = false;
+//				}
+//				else
+//				{
+//					auto& st = it->second;
+//					st.accum += (bullet.NowPosition - st.lastPos).length();
+//					st.lastPos = bullet.NowPosition;
+//
+//					if (st.accum >= threshold)
+//					{
+//						allowHitCheck = true;
+//						st.accum = 0.0; // 次の閾値へ
+//					}
+//					else
+//					{
+//						allowHitCheck = false;
+//					}
+//				}
+//			}
+//		}
+//
+//		//もし「着弾のみで判定」にしたい場合は、以下のように throw の途中判定を抑止できます:
+//		if (executedSkill.classSkill.MoveType == MoveType::thr
+//			&& bullet.lifeTime < bullet.duration) {
+//			allowHitCheck = false;
+//		}
+//
+//		// 当たり判定
+//		if (allowHitCheck)
+//		{
+//			Array<ClassHorizontalUnit>& currentTargetGroup = isHeal ? friendlyUnits : targetUnits;
+//
+//			bool isBomb = false; // 非貫通時のみ true になり、弾を消す契機になる
+//			handleBulletCollision(bullet, executedSkill, currentTargetGroup, isBomb);
+//
+//			// 非貫通でヒット済みなら削除
+//			if (isBomb)
+//			{
+//				bulletsToRemove.push_back(bullet.No);
+//			}
+//		}
+//	}
+//
+//	// 削除予定の弾に紐づく間隔状態を掃除
+//	if (!bulletsToRemove.isEmpty())
+//	{
+//		Array<uint64> toErase;
+//		for (const auto& kv : gHitIntervalState)
+//		{
+//			const uint64 key = kv.first;
+//			const int32 noUpper = static_cast<int32>(key >> 32);
+//			if (bulletsToRemove.contains(noUpper))
+//			{
+//				toErase.push_back(key);
+//			}
+//		}
+//		for (const auto key : toErase)
+//		{
+//			gHitIntervalState.erase(key);
+//		}
+//	}
+//
+//	// 弾を削除
+//	executedSkill.ArrayClassBullet.remove_if([&](const ClassBullets& b) {
+//		return bulletsToRemove.contains(b.No);
+//	});
+//}
 
 void Battle001::processSkillEffects()
 {
@@ -3544,6 +3844,10 @@ void Battle001::updateBuildQueue()
 	{
 		UnitRegister(classBattleManage, mapTile, order.spawn, order.tempColBuildingTarget, order.tempRowBuildingTarget, order.count, classBattleManage.listOfAllUnit, false);
 	}
+	if (productionList.size() > 0)
+	{
+		initSkillUI();
+	}
 }
 
 void Battle001::startAsyncFogCalculation()
@@ -3655,12 +3959,12 @@ void Battle001::setupInitialUnits()
 {
 	//初期ユニット
 	{
-		UnitRegister(classBattleManage, mapTile, U"LineInfantryM14",
-			10,
-			10,
-			3,
-			classBattleManage.listOfAllUnit, false
-		);
+		//UnitRegister(classBattleManage, mapTile, U"LineInfantryM14",
+		//	10,
+		//	10,
+		//	3,
+		//	classBattleManage.listOfAllUnit, false
+		//);
 	}
 
 	//初期ユニット-建物
