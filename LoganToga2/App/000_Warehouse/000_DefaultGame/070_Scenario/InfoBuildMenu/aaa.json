@@ -3,7 +3,7 @@
     {
       "id": "000",
       "name": "傭兵-若人",
-      "description": "汎用舞台！",
+      "description": "汎用部隊傭兵-若人",
       "icon": "keisou-chipGene006.png",
       "createCount": "3",
       "cost": {
@@ -19,6 +19,74 @@
         {
           "type": "unit",
           "spawn": "NewbieMercenary"
+        }
+      ]
+    },
+    {
+      "id": "001",
+      "name": "工兵",
+      "description": "工兵",
+      "icon": "keisou-chipGene006.png",
+      "createCount": "3",
+      "cost": {
+        "wood": 15
+      },
+      "buildTime": 0.5,
+      "category": "unit",
+      "requires": [
+        "none"
+      ],
+      "isMove": "False",
+      "result": [
+        {
+          "type": "unit",
+          "spawn": "NewbieKouhei"
+        }
+      ]
+    },
+    {
+      "id": "002",
+      "name": "軽装歩兵",
+      "description": "軽装歩兵",
+      "icon": "keisou-chipGene006.png",
+      "createCount": "3",
+      "cost": {
+        "wood": 15
+      },
+      "buildTime": 0.5,
+      "category": "unit",
+      "requires": [
+        "none"
+      ],
+      "isMove": "False",
+      "result": [
+        {
+          "type": "unit",
+          "spawn": "NewbieRightSo"
+        }
+      ]
+    }
+  ],
+  "NewbieMercenary": [
+    {
+      "id": "000",
+      "name": "ラミィ小規模歩兵詰所",
+      "description": "ラミィ小規模歩兵詰所",
+      "icon": "keisou-hohei.png",
+      "createCount": "1",
+      "cost": {
+        "wood": 15
+      },
+      "buildTime": 6.0,
+      "category": "unitProduct",
+      "requires": [
+        "none"
+      ],
+      "isMove": "True",
+      "result": [
+        {
+          "type": "unit",
+          "spawn": "LineInfantryM14Tumejo"
         }
       ]
     }
@@ -183,10 +251,10 @@
   "keisouHohei": [
     {
       "id": "keisouHohei000",
-      "name": "軽装歩兵産出",
-      "description": "びううｙぐゆｙぎゅゆｇ",
+      "name": "ライフル銃兵産出",
+      "description": "ライフル銃兵産出",
       "icon": "keisou-chipGene006.png",
-      "createCount": "5",
+      "createCount": "3",
       "cost": {
         "wood": 15
       },

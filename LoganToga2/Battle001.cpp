@@ -775,9 +775,9 @@ void Battle001::UnitRegister(
 
 		if (unit_template.IsBuilding)
 		{
-			auto uptr = std::make_unique<Unit>(unit_template);
-			Unit* raw = uptr.get();
-			buildingCache.emplace_back(unit_template.initTilePos, std::move(uptr), raw);
+			//auto uptr = std::make_unique<Unit>(unit_template);
+			//Unit* raw = uptr.get();
+			//buildingCache.emplace_back(unit_template.initTilePos, std::move(uptr), raw);
 			auto sharedPtr = std::make_shared<Unit>(unit_template);
 			{
 				Vec2 bottom = mapTile.ToTileBottomCenter(Point(sharedPtr->colBuilding, sharedPtr->rowBuilding), mapTile.N)
@@ -789,6 +789,7 @@ void Battle001::UnitRegister(
 				gBuildingMaxHP[sharedPtr->ID] = Max<double>(1.0, sharedPtr->HPCastle);
 			}
 			classBattleManage.hsMyUnitBuilding.insert(sharedPtr);
+			hsBuildingUnitForAstar[sharedPtr->initTilePos].push_back(sharedPtr.get());
 		}
 
 		new_horizontal_unit.ListClassUnit.push_back(std::move(unit_template));
@@ -801,12 +802,12 @@ void Battle001::UnitRegister(
 		std::unique_lock lock(aStar.unitListRWMutex);
 		unit_list.push_back(std::move(new_horizontal_unit));
 
-		// 建物関連一括反映
-		for (auto& [tilePos, uptr, raw] : buildingCache)
-		{
-			unitsForHsBuildingUnitForAstar.push_back(std::move(uptr));
-			hsBuildingUnitForAstar[tilePos].push_back(raw);
-		}
+		//// 建物関連一括反映
+		//for (auto& [tilePos, uptr, raw] : buildingCache)
+		//{
+		//	unitsForHsBuildingUnitForAstar.push_back(std::move(uptr));
+		//	hsBuildingUnitForAstar[tilePos].push_back(raw);
+		//}
 	}
 
 	aStar.changeUnitMember.store(true);
@@ -1933,20 +1934,17 @@ void Battle001::handleBuildMenuSelectionA()
 	}
 
 	// 見つからなければ建物から探す
-	if (!targetUnit)
+	for (const auto& group : { classBattleManage.hsMyUnitBuilding })
 	{
-		for (const auto& group : { classBattleManage.hsMyUnitBuilding })
+		for (const auto& item : group)
 		{
-			for (const auto& item : group)
+			if (item->ID == longBuildSelectTragetId)
 			{
-				if (item->ID == longBuildSelectTragetId)
-				{
-					targetUnit = item.get();
-					break;
-				}
+				targetUnit = item.get();
+				break;
 			}
-			if (targetUnit) break;
 		}
+		if (targetUnit) break;
 	}
 
 	// 対象が見つかった場合のみクリック処理実行
