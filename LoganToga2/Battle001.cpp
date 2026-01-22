@@ -2965,6 +2965,53 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 
 	const bool isHeal = (skill.SkillType == SkillType::heal);
 
+	// --- 追加: 対象ユニット群と同一側の建物集合を先にチェック ---
+	const HashSet<std::shared_ptr<Unit>>* buildingsToCheck = nullptr;
+	if (&target_groups == &classBattleManage.listOfAllUnit)
+	{
+		buildingsToCheck = &classBattleManage.hsMyUnitBuilding;
+	}
+	else if (&target_groups == &classBattleManage.listOfAllEnemyUnit)
+	{
+		buildingsToCheck = &classBattleManage.hsEnemyUnitBuilding;
+	}
+	if (buildingsToCheck)
+	{
+		for (const auto& sp : *buildingsToCheck)
+		{
+			if (!sp || !sp->IsBattleEnable) continue;
+
+			// 建物側のフィルタ（壁や壊れた門は除外、回復は HPCastle<=0 を除外）
+			if (!isHeal)
+			{
+				if (sp->mapTipObjectType == MapTipObjectType::WALL2) continue;
+				if (sp->mapTipObjectType == MapTipObjectType::GATE && sp->HPCastle <= 0) continue;
+			}
+			else
+			{
+				if (sp->HPCastle <= 0) continue;
+			}
+
+			// 建物の当たり中心（既存の描画/当たり判定に合わせる）
+			Vec2 targetPos = mapTile.ToTileBottomCenter(Point(sp->colBuilding, sp->rowBuilding), mapTile.N)
+				.movedBy(0, -mapTile.TileThickness);
+
+			const double distSq = attacker_pos.distanceFromSq(targetPos);
+			const double range_with_radii = (attacker.yokoUnit / 2.0) + skill.range + (sp->yokoUnit / 2.0);
+
+			if (distSq <= range_with_radii * range_with_radii)
+			{
+				// 建物に対してスキル実行
+				ClassExecuteSkills new_skill_execution = createSkillExecution(attacker, *sp, skill);
+				executed_skills.push_back(new_skill_execution);
+				commitCooldown(attacker, skill);
+				consumeUse(attacker, skill);
+				applyMaintainRangeByPreferredAvailableSkill(attacker);
+				return true;
+			}
+		}
+	}
+	// --- 建物チェックここまで ---
 	for (auto& target_group : target_groups)
 	{
 		for (auto& target_unit : target_group.ListClassUnit)
@@ -2997,7 +3044,7 @@ bool Battle001::tryActivateSkillOnTargetGroup(Array<ClassHorizontalUnit>& target
 				executed_skills.push_back(new_skill_execution);
 				commitCooldown(attacker, skill);
 				consumeUse(attacker, skill);
-				// 変更点: 「発動スキル」ではなく「現時点で最優先の使用可能スキル」に合わせて維持距離を更新
+				// 「発動スキル」ではなく「現時点で最優先の使用可能スキル」に合わせて維持距離を更新
 				applyMaintainRangeByPreferredAvailableSkill(attacker);
 
 				return true; // スキル発動成功
@@ -3069,6 +3116,58 @@ void Battle001::handleBulletCollision(ClassBullets& bullet, ClassExecuteSkills& 
 	const uint64 bkey = makeBulletKey(bullet);
 	auto& swingHitSet = gSwingHitOnce[bkey]; // 空なら自動生成
 
+	// targetUnits が参照している配列に応じて建物集合を決定
+	const HashSet<std::shared_ptr<Unit>>* buildingsToCheck = nullptr;
+	if (&targetUnits == &classBattleManage.listOfAllUnit)
+	{
+		buildingsToCheck = &classBattleManage.hsMyUnitBuilding;
+	}
+	else if (&targetUnits == &classBattleManage.listOfAllEnemyUnit)
+	{
+		buildingsToCheck = &classBattleManage.hsEnemyUnitBuilding;
+	}
+	// 先に建物群をチェックしてヒット処理（弾の性質によってはそのまま継続）
+	if (buildingsToCheck)
+	{
+		for (const auto& sp : *buildingsToCheck)
+		{
+			if (!sp || !sp->IsBattleEnable) continue;
+
+			// 建物の当たり判定中心を決定（底辺中心＋補正）
+			Vec2 targetPos = mapTile.ToTileBottomCenter(Point(sp->colBuilding, sp->rowBuilding), mapTile.N)
+				.movedBy(0, -mapTile.TileThickness);
+
+			Circle targetHitbox{ targetPos, sp->yokoUnit / 2.0 };
+
+			if (bulletHitbox.intersects(targetHitbox))
+			{
+				// swing は同一ターゲットを1回だけヒットさせる
+				if (executedSkill.classSkill.MoveType == MoveType::swing)
+				{
+					if (swingHitSet.contains(sp->ID))
+						continue;
+				}
+
+				Array<int32> dummyArray;
+				const bool hit = applySkillEffectAndRegisterHit(isBomb, dummyArray, bullet, executedSkill, *sp);
+
+				if (executedSkill.classSkill.MoveType == MoveType::swing)
+				{
+					// 記録して次へ（弾は消さない）
+					swingHitSet.insert(sp->ID);
+					isBomb = false; // スイングは最後まで振る
+					continue;
+				}
+
+				if (hit)
+				{
+					// 非スイングでヒットかつ非貫通なら処理を終了（呼び元で弾削除へ）
+					return;
+				}
+			}
+		}
+	}
+	// --- ここまで建物チェック ---
 	for (auto& targetGroup : targetUnits)
 	{
 		for (auto& targetUnit : targetGroup.ListClassUnit)
@@ -3997,6 +4096,8 @@ void Battle001::setupInitialUnits()
 				gBuildingMaxHP[building_unit_ptr->ID] = Max<double>(1.0, building_unit_ptr->HPCastle);
 
 				classBattleManage.hsMyUnitBuilding.insert(building_unit_ptr);
+				// 追加：A* の建物索引に反映（UnitRegister と同様の登録）
+				hsBuildingUnitForAstar[building_unit_ptr->initTilePos].push_back(building_unit_ptr.get());
 			}
 		}
 	}
@@ -4096,7 +4197,7 @@ Co::Task<void> Battle001::start()
 	//始点設定
 	camera.jumpTo(
 		mapTile.ToTileBottomCenter(
-			Point(10, 10),
+			Point(mapTile.N / 2, mapTile.N / 2),
 			mapTile.N),
 		camera.getTargetScale());
 	resourcePointTooltip.setCamera(camera);
@@ -4394,6 +4495,32 @@ void Battle001::checkUnitDeaths()
 			}
 		}
 	}
+
+	// 追加: プレイヤー側のすべての建物が破壊されているかチェックしてゲームオーバーにする（最も簡単な実装）
+	{
+		// 建物集合を走査し、まだ生きている建物があれば生存とみなす
+		bool anyPlayerBuildingAlive = false;
+		std::shared_lock lock(aStar.unitListRWMutex); // 保護（可能なら）
+		for (const auto& sp : classBattleManage.hsMyUnitBuilding)
+		{
+			if (!sp) continue;
+			// IsBattleEnable が true かつ HPCastle が正であれば生存と判定
+			if (sp->IsBattleEnable && sp->HPCastle > 0.0)
+			{
+				anyPlayerBuildingAlive = true;
+				break;
+			}
+		}
+
+		if (!anyPlayerBuildingAlive)
+		{
+			// 簡易ゲームオーバー処理：メインループを抜けてアプリ終了
+			Print << U"[GAME OVER] All player buildings destroyed.";
+			shouldExit = true;
+			System::Exit(); // 既存のサバイバル終了処理と同様の扱い
+			return;
+		}
+	}
 }
 
 Co::Task<void> Battle001::mainLoop()
@@ -4553,17 +4680,18 @@ void Battle001::drawUnits(const RectF& cameraView, const ClassBattle& classBattl
 						continue;
 
 					if (!u.IsBuilding)
-						TextureAsset(ringA).drawAt(center.movedBy(0, RING_OFFSET_Y1));
+						TextureAsset(ringA).resized(size).drawAt(center.movedBy(0, RING_OFFSET_Y1));
 
-					TextureAsset(u.ImageName).draw(Arg::center = center);
+					TextureAsset(u.ImageName).resized(size).draw(Arg::center = center);
 
 					if (u.IsSelect)
 						TextureAsset(u.ImageName)
+						.resized(size)
 						.draw(Arg::center = center)
 						.drawFrame(BUILDING_FRAME_THICKNESS, Palette::Red);
 
 					if (!u.IsBuilding)
-						TextureAsset(ringB).drawAt(center.movedBy(0, RING_OFFSET_Y2));
+						TextureAsset(ringB).resized(size).drawAt(center.movedBy(0, RING_OFFSET_Y2));
 
 					if (!u.IsBuilding)
 					{
@@ -5113,7 +5241,8 @@ void Battle001::drawHUD() const
 void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBattleManage) const
 {
 	constexpr double kSquashY = 1.25;           // 縦潰し率
-	constexpr double kRotateDeg = 35.0;         // 影の寝かせ角（光源が斜め上から来る想定）
+	//constexpr double kRotateDeg = 35.0;         // 影の寝かせ角（光源が斜め上から来る想定）
+	constexpr double kRotateDeg = 90.0;         // 影の寝かせ角（光源が斜め上から来る想定）
 	constexpr Vec2   kOffset{ 20, -10 };         // 足から伸びる方向オフセット（右下方向）
 	constexpr ColorF kShadowColor{ 0.0, 0.0, 0.0, 0.82 };
 
@@ -5156,7 +5285,7 @@ void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBat
 				// 足位置（本体中心基準で下端）
 				// 画像の高さと TakasaUnit が異なるなら Texture の高さで再算出する:
 				const Texture& tex = TextureAsset(u.ImageName);
-				const Vec2 footAnchor = center.movedBy(0, tex.size().y * 0.5); // 本体描画が center 基準なので底辺 = center + (高さ/2)
+				const Vec2 footAnchor = center.movedBy(0, logicalHalfH * 0.5); // 本体描画が center 基準なので底辺 = center + (高さ/2)
 
 				// 影行列（足位置を pivot にして潰し→回転→オフセット）
 				const ScopedColorMul2D mul{ kShadowColor };
@@ -5166,7 +5295,7 @@ void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBat
 				};
 
 				// 影本体（底辺を footAnchor に揃える）
-				tex.draw(Arg::bottomCenter = footAnchor);
+				tex.resized(logicalHalfH).draw(Arg::bottomCenter = footAnchor);
 			}
 		}
 		};
@@ -5176,8 +5305,10 @@ void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBat
 			const Unit& b = *sp;
 			if (!b.IsBattleEnable) continue;
 
+			//Vec2 basePos = mapTile.ToTileBottomCenter(Point(b.colBuilding, b.rowBuilding), mapTile.N)
+			//	.movedBy(0, -mapTile.TileThickness);
 			Vec2 basePos = mapTile.ToTileBottomCenter(Point(b.colBuilding, b.rowBuilding), mapTile.N)
-				.movedBy(0, -mapTile.TileThickness);
+				.movedBy(0, -mapTile.TileThickness-5);
 
 			if (!cameraView.intersects(basePos)) continue;
 
@@ -5185,9 +5316,13 @@ void Battle001::drawShadows(const RectF& cameraView, const ClassBattle& classBat
 			const Vec2 footAnchor = basePos; // 建物は already bottomCenter で描画している前提
 
 			const ScopedColorMul2D mul{ kShadowColor };
+			//const Transformer2D xf{
+			//	Mat3x2::Scale(1.0, kSquashY, footAnchor)
+			//	* Mat3x2::Translate(kOffset)
+			//};
 			const Transformer2D xf{
-				Mat3x2::Scale(1.0, kSquashY, footAnchor)
-				* Mat3x2::Translate(kOffset)
+					Mat3x2::Scale(1.0, 1.0, footAnchor)
+					* Mat3x2::Rotate(Math::ToRadians(0), footAnchor)
 			};
 
 			tex.draw(Arg::bottomCenter = footAnchor);

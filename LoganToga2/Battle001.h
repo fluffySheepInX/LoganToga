@@ -182,7 +182,7 @@ private:
 	bool IsBuildMenuHome = false;
 
 	GameData& m_saveData;
-	Camera2D camera{ Vec2{0,0 },1.0,CameraControl::Wheel };
+	Camera2D camera{ Vec2{0,0 },2.0,CameraControl::Wheel };
 	struct stOfFont {
 		const Font font{ FontMethod::MSDF,48, Typeface::Bold };
 		const Font fontSkill{ 12 };
