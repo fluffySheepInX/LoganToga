@@ -888,5 +888,9 @@
     <ClInclude Include="BattleCommandUi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BattleSessionEnemyAI.ipp" />
+    <ClInclude Include="BattleSessionFormation.ipp" />
+    <ClInclude Include="BattleSceneCamera.ipp" />
+    <ClInclude Include="BattleScenePause.ipp" />
   </ItemGroup>
 </Project>

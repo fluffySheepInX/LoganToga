@@ -8,6 +8,7 @@ void BattleRenderer::draw(const BattleState& state, const BattleConfigData& conf
 		drawSquads(state);
 		drawObstacles(config, gameData);
 		drawConstructionPreview(state, config, gameData);
+		drawPendingConstructionOrders(state, config, gameData);
 		drawResourcePoints(state, gameData);
 		drawBuildings(state, gameData);
 		drawAttackEffects(state);

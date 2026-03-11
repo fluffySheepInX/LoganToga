@@ -343,7 +343,11 @@
     <ClInclude Include="BattleModel.h" />
     <ClInclude Include="BattleRenderer.h" />
     <ClInclude Include="BattleScene.h" />
+    <ClInclude Include="BattleSceneCamera.ipp" />
+    <ClInclude Include="BattleScenePause.ipp" />
     <ClInclude Include="BattleSession.h" />
+    <ClInclude Include="BattleSessionEnemyAI.ipp" />
+    <ClInclude Include="BattleSessionFormation.ipp" />
     <ClInclude Include="BattleSessionInternal.h" />
     <ClInclude Include="BattleState.h" />
     <ClInclude Include="FixedStepClock.h" />

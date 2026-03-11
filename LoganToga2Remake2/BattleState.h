@@ -110,6 +110,14 @@ struct AttackVisualEffect
 	int32 totalFrames = 0;
 };
 
+struct PendingConstructionOrder
+{
+	int32 workerUnitId = -1;
+	UnitArchetype archetype = UnitArchetype::Barracks;
+	Vec2 position = Vec2::Zero();
+	int32 reservedCost = 0;
+};
+
 struct BattleState
 {
 	RectF worldBounds{ 0, 0, 1280, 720 };
@@ -118,6 +126,7 @@ struct BattleState
 	Array<ResourcePointState> resourcePoints;
 	Array<SquadState> squads;
 	Array<AttackVisualEffect> attackVisualEffects;
+	Array<PendingConstructionOrder> pendingConstructionOrders;
 	bool isSelecting = false;
 	Vec2 selectionStart = Vec2::Zero();
 	RectF selectionRect{ 0, 0, 0, 0 };
@@ -134,6 +143,8 @@ struct BattleState
 	double enemyIncomeTimer = 0.0;
 	double enemySpawnTimer = 0.0;
 	double enemyAiDecisionTimer = 0.0;
+	String statusMessage;
+	double statusMessageTimer = 0.0;
 	FormationType playerFormation = FormationType::Line;
 	Optional<Owner> winner;
 

@@ -14,6 +14,7 @@ public:
 	[[nodiscard]] BattleState& state() noexcept;
 	[[nodiscard]] const BattleConfigData& config() const noexcept;
 	[[nodiscard]] Array<int32> getSelectedPlayerUnitIds() const;
+	[[nodiscard]] Optional<int32> findSelectedPlayerWorkerId() const;
 	[[nodiscard]] Optional<int32> findPlayerUnitAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findPlayerBuildingAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findEnemyAt(const Vec2& position) const;
@@ -31,15 +32,17 @@ private:
 	void updateProduction(double deltaTime);
 	void updateEnemyAI(double deltaTime);
 	void updateMovement(double deltaTime);
+	void updateConstructionOrders();
 	void updateResourcePoints(double deltaTime);
 	void updateCombat();
 	void cleanupDeadUnits();
 	void updateVictoryState();
 	void assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, FormationType formation, const Vec2& facingDirection);
+	void cancelPendingConstructionOrders(const Array<int32>& unitIds, bool refundReservedCost);
 	void removeUnitsFromSquads(const Array<int32>& unitIds);
 	void cleanupSquads();
-	[[nodiscard]] bool tryPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position);
-	[[nodiscard]] bool canPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position) const;
+	[[nodiscard]] bool tryPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position, Optional<int32> builderUnitId = none, bool chargeCost = true);
+	[[nodiscard]] bool canPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position, Optional<int32> ignoredUnitId = none) const;
 	int32 spawnUnit(Owner owner, UnitArchetype archetype, const Vec2& position);
 
 	[[nodiscard]] BuildingState* findProductionBuilding(Owner owner, UnitArchetype producerArchetype);

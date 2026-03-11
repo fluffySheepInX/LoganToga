@@ -25,8 +25,9 @@ struct SetPlayerFormationCommand
 	FormationType formation = FormationType::Line;
 };
 
-struct PlaceBuildingCommand
+struct IssueConstructionOrderCommand
 {
+	int32 workerUnitId = -1;
 	UnitArchetype archetype = UnitArchetype::Barracks;
 	Vec2 position = Vec2::Zero();
 };
@@ -37,4 +38,4 @@ struct AttackUnitCommand
 	int32 targetUnitId = -1;
 };
 
-using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, PlaceBuildingCommand>;
+using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, IssueConstructionOrderCommand>;

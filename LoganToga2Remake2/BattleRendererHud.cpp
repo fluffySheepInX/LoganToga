@@ -16,6 +16,8 @@ namespace
 			return U"A";
 		case UnitArchetype::Barracks:
 			return U"B";
+		case UnitArchetype::Turret:
+			return U"T";
 		case UnitArchetype::Base:
 			return U"H";
 		default:
@@ -35,6 +37,8 @@ namespace
 			return ColorF{ 0.86, 0.56, 0.22 };
 		case UnitArchetype::Barracks:
 			return ColorF{ 0.56, 0.42, 0.74 };
+		case UnitArchetype::Turret:
+			return ColorF{ 0.78, 0.42, 0.30 };
 		case UnitArchetype::Base:
 			return ColorF{ 0.35, 0.60, 0.66 };
 		default:
@@ -42,9 +46,35 @@ namespace
 		}
 	}
 
+	[[nodiscard]] String GetCommandKindLabel(const CommandKind kind)
+	{
+		switch (kind)
+		{
+		case CommandKind::Construction:
+			return U"Build";
+		case CommandKind::Production:
+		default:
+			return U"Queue";
+		}
+	}
+
+	[[nodiscard]] ColorF GetConstructionAvailabilityColor(const CommandIconEntry& command)
+	{
+		if (command.kind != CommandKind::Construction)
+		{
+			return GetCommandIconColor(command.archetype);
+		}
+
+		return command.isEnabled
+			? ColorF{ 0.30, 0.88, 0.48 }
+			: ColorF{ 0.96, 0.34, 0.30 };
+	}
+
 	void DrawCommandTooltip(const CommandPanelLayout& layout, const CommandIconLayout& icon, const GameData& gameData)
 	{
-		const ColorF accentColor = GetCommandIconColor(icon.command.archetype);
+		const ColorF accentColor = (icon.command.kind == CommandKind::Construction)
+			? GetConstructionAvailabilityColor(icon.command)
+			: GetCommandIconColor(icon.command.archetype);
 		const double tooltipWidth = 236.0;
 		const double tooltipHeight = 86.0;
 		const RectF tooltipRect{
@@ -57,7 +87,7 @@ namespace
 		RoundRect{ tooltipRect, 9 }.draw(ColorF{ 0.03, 0.05, 0.08, 0.96 });
 		RoundRect{ tooltipRect, 9 }.drawFrame(2, 0, accentColor);
 		gameData.smallFont(GetArchetypeLabel(icon.command.archetype)).draw(tooltipRect.x + 12, tooltipRect.y + 10, Palette::White);
-		gameData.smallFont(s3d::Format(U"Click / ", icon.command.slot, U"   @", GetArchetypeLabel(icon.command.producer))).draw(tooltipRect.x + 12, tooltipRect.y + 30, ColorF{ 0.84, 0.88, 0.94 });
+		gameData.smallFont(s3d::Format(GetCommandKindLabel(icon.command.kind), U" / ", icon.command.slot, U"   @", GetArchetypeLabel(icon.command.sourceArchetype))).draw(tooltipRect.x + 12, tooltipRect.y + 30, ColorF{ 0.84, 0.88, 0.94 });
 		gameData.smallFont(s3d::Format(U"Cost: ", icon.command.cost, U"G")).draw(tooltipRect.x + 12, tooltipRect.y + 50, Palette::Gold);
 		gameData.smallFont(icon.command.statusText).draw(
 			tooltipRect.x + 12,
@@ -69,6 +99,8 @@ namespace
 	{
 		const double alpha = command.isEnabled ? 1.0 : 0.30;
 		const ColorF iconColor{ GetCommandIconColor(command.archetype).r, GetCommandIconColor(command.archetype).g, GetCommandIconColor(command.archetype).b, alpha };
+		const ColorF availabilityColor = GetConstructionAvailabilityColor(command);
+		const ColorF availabilityAlphaColor{ availabilityColor.r, availabilityColor.g, availabilityColor.b, command.isEnabled ? 0.95 : 0.85 };
 		const RectF animatedRect = isPressed
 			? RectF{ rect.x + 2, rect.y + 3, rect.w - 4, rect.h - 4 }
 			: (isHovered ? RectF{ rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2 } : rect);
@@ -77,9 +109,16 @@ namespace
 			: ColorF{ 0.10, 0.11, 0.15, 0.96 };
 		const ColorF fillColor = command.isEnabled ? backgroundColor : ColorF{ 0.08, 0.09, 0.12, 0.94 };
 		const ColorF textColor{ 1.0, 1.0, 1.0, alpha };
-		const ColorF goldColor{ 1.0, 0.84, 0.0, alpha };
+		const ColorF goldColor = (command.kind == CommandKind::Construction)
+			? ColorF{ availabilityColor.r, availabilityColor.g, availabilityColor.b, alpha }
+			: ColorF{ 1.0, 0.84, 0.0, alpha };
 		RoundRect{ animatedRect, 10 }.draw(fillColor);
 		RoundRect{ animatedRect, 10 }.drawFrame(isHovered ? 4 : 2, 0, iconColor);
+		if (command.kind == CommandKind::Construction)
+		{
+			RoundRect{ animatedRect, 10 }.drawFrame(2, 0, availabilityAlphaColor);
+			RectF{ animatedRect.x + 8, animatedRect.bottomY() - 10, animatedRect.w - 16, 5 }.draw(availabilityAlphaColor);
+		}
 
 		Circle{ animatedRect.x + 18, animatedRect.y + 18, 13 }.draw(iconColor);
 		gameData.smallFont(Format(command.slot)).drawAt(animatedRect.x + 18, animatedRect.y + 18, textColor);
@@ -92,7 +131,7 @@ namespace
 
 	void DrawCommandSection(const CommandPanelLayout& layout, const GameData& gameData)
 	{
-		if (layout.productionIcons.isEmpty())
+		if (layout.commandIcons.isEmpty())
 		{
 			return;
 		}
@@ -100,9 +139,9 @@ namespace
 		const Vec2 cursorScreenPos = Cursor::PosF();
 		const CommandIconLayout* hoveredIcon = nullptr;
 
-		gameData.smallFont(U"PRODUCTION").draw(layout.panelRect.x + 16, layout.panelRect.y + 26, ColorF{ 0.82, 0.86, 0.92 });
+		gameData.smallFont(layout.sectionLabel).draw(layout.panelRect.x + 16, layout.panelRect.y + 26, ColorF{ 0.82, 0.86, 0.92 });
 
-		for (const auto& icon : layout.productionIcons)
+		for (const auto& icon : layout.commandIcons)
 		{
 			const bool isHovered = icon.rect.intersects(cursorScreenPos);
 			const bool isPressed = isHovered && MouseL.pressed() && icon.command.isEnabled;
@@ -200,6 +239,14 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		RoundRect{ layout->panelRect, 12 }.drawFrame(2, 0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
 		gameData.uiFont(layout->title).draw(layout->panelRect.x + 16, layout->panelRect.y + 8, Palette::White);
 		DrawCommandSection(*layout, gameData);
+	}
+
+	if (!state.statusMessage.isEmpty())
+	{
+		const RectF messageRect{ Arg::center(Scene::CenterF().movedBy(0, -220)), 420, 42 };
+		RoundRect{ messageRect, 10 }.draw(ColorF{ 0.10, 0.05, 0.05, 0.90 });
+		RoundRect{ messageRect, 10 }.drawFrame(2, 0, ColorF{ 0.96, 0.42, 0.36, 0.95 });
+		gameData.smallFont(state.statusMessage).drawAt(messageRect.center(), Palette::White);
 	}
 
 	if (state.winner)

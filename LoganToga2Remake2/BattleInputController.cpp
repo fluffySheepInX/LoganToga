@@ -91,7 +91,17 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 	{
 		if (command->isEnabled)
 		{
-			session.trySpawnPlayerUnit(command->archetype);
+			auto& state = session.state();
+			if (command->kind == CommandKind::Construction)
+			{
+				state.pendingConstructionArchetype = command->archetype;
+				state.isSelecting = false;
+				state.selectionRect = RectF{ 0, 0, 0, 0 };
+			}
+			else
+			{
+				session.trySpawnPlayerUnit(command->archetype);
+			}
 		}
 	}
 

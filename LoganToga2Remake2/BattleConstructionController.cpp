@@ -1,5 +1,21 @@
 ﻿#include "BattleConstructionController.h"
 
+namespace
+{
+	[[nodiscard]] bool HasSelectedWorker(const BattleState& state)
+	{
+		for (const auto& unit : state.units)
+		{
+			if (unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && (unit.archetype == UnitArchetype::Worker))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
 bool BattleConstructionController::isConstructionSlotTriggered(const int32 slot)
 {
 	switch (slot)
@@ -27,7 +43,10 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 
 		if (MouseL.down())
 		{
-			session.enqueue(PlaceBuildingCommand{ *state.pendingConstructionArchetype, state.buildingPreviewPosition });
+			if (const auto workerUnitId = session.findSelectedPlayerWorkerId())
+			{
+				session.enqueue(IssueConstructionOrderCommand{ *workerUnitId, *state.pendingConstructionArchetype, state.buildingPreviewPosition });
+			}
 			state.pendingConstructionArchetype.reset();
 			state.isSelecting = false;
 			state.selectionRect = RectF{ 0, 0, 0, 0 };
@@ -39,7 +58,7 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 
 	for (const auto& slot : session.config().playerConstructionSlots)
 	{
-		if (isConstructionSlotTriggered(slot.slot))
+		if (isConstructionSlotTriggered(slot.slot) && HasSelectedWorker(state))
 		{
 			state.pendingConstructionArchetype = slot.archetype;
 			state.buildingPreviewPosition = cursorWorldPos;

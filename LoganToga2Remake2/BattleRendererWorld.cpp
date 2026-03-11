@@ -1,5 +1,31 @@
 ﻿#include "BattleRenderer.h"
 
+namespace
+{
+	void DrawWorkerDecoration(const UnitState& unit, const BattleState& state)
+	{
+		const double helmetRadius = unit.radius * 0.72;
+		const Vec2 helmetCenter = unit.position.movedBy(0, -unit.radius * 0.40);
+		Circle{ helmetCenter, helmetRadius }.draw(ColorF{ 0.96, 0.82, 0.20, 0.96 });
+		RectF{ helmetCenter.x - (helmetRadius * 0.9), helmetCenter.y + (helmetRadius * 0.2), helmetRadius * 1.8, helmetRadius * 0.42 }.draw(ColorF{ 0.72, 0.56, 0.12, 0.96 });
+		RectF{ unit.position.x - (unit.radius * 0.75), unit.position.y + (unit.radius * 0.18), unit.radius * 1.5, unit.radius * 0.34 }.draw(ColorF{ 0.28, 0.24, 0.18, 0.88 });
+
+		const Vec2 toolHandleStart = unit.position.movedBy(unit.radius * 0.48, -unit.radius * 0.08);
+		const Vec2 toolHandleEnd = unit.position.movedBy(unit.radius * 1.18, -unit.radius * 0.88);
+		Line{ toolHandleStart, toolHandleEnd }.draw(3, ColorF{ 0.84, 0.88, 0.94, 0.96 });
+		RectF{ toolHandleEnd.x - (unit.radius * 0.34), toolHandleEnd.y - (unit.radius * 0.18), unit.radius * 0.72, unit.radius * 0.28 }.draw(ColorF{ 0.58, 0.62, 0.70, 0.96 });
+
+		if (!(unit.isSelected && state.pendingConstructionArchetype))
+		{
+			return;
+		}
+
+		Circle{ unit.position, unit.radius + 8 }.drawFrame(2.5, ColorF{ 1.0, 0.84, 0.24, 0.92 });
+		RectF{ Arg::center(unit.position), unit.radius * 3.4, unit.radius * 3.4 }.drawFrame(1.5, ColorF{ 1.0, 0.90, 0.42, 0.40 });
+		Line{ unit.position.movedBy(unit.radius * 0.9, -unit.radius * 0.7), state.buildingPreviewPosition }.draw(1.5, ColorF{ 1.0, 0.86, 0.32, 0.28 });
+	}
+}
+
 void BattleRenderer::drawSquads(const BattleState& state) const
 {
 	for (const auto& squad : state.squads)
@@ -78,6 +104,27 @@ void BattleRenderer::drawConstructionPreview(const BattleState& state, const Bat
 	Circle{ position, definition->radius }.draw(ColorF{ 0.85, 0.9, 1.0, 0.18 });
 	Circle{ position, definition->radius }.drawFrame(2, Palette::Skyblue);
 	gameData.smallFont(s3d::Format(U"Place ", GetArchetypeLabel(*state.pendingConstructionArchetype))).drawAt(position.movedBy(0, -definition->radius - 16), Palette::Skyblue);
+}
+
+void BattleRenderer::drawPendingConstructionOrders(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
+{
+	for (const auto& order : state.pendingConstructionOrders)
+	{
+		const auto* worker = state.findUnit(order.workerUnitId);
+		const auto* definition = FindUnitDefinition(config, order.archetype);
+		if (!(worker && worker->isAlive && definition))
+		{
+			continue;
+		}
+
+		const ColorF accentColor{ 1.0, 0.86, 0.28, 0.92 };
+		Line{ worker->position, order.position }.draw(2.0, ColorF{ accentColor, 0.45 });
+		Circle{ worker->position, worker->radius + 10 }.drawFrame(2, accentColor);
+		Circle{ order.position, definition->radius }.draw(ColorF{ accentColor, 0.10 });
+		Circle{ order.position, definition->radius }.drawFrame(2.5, accentColor);
+		RectF{ Arg::center(order.position), definition->radius * 2.4, definition->radius * 2.4 }.drawFrame(1.5, ColorF{ accentColor, 0.42 });
+		gameData.smallFont(s3d::Format(U"BUILD ", GetArchetypeLabel(order.archetype))).drawAt(order.position.movedBy(0, -definition->radius - 16), Palette::Yellow);
+	}
 }
 
 void BattleRenderer::drawResourcePoints(const BattleState& state, const GameData& gameData) const
@@ -174,6 +221,10 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 
 		const ColorF color = GetOwnerColor(unit.owner);
 		Circle{ unit.position, unit.radius }.draw(color);
+		if (unit.archetype == UnitArchetype::Worker)
+		{
+			DrawWorkerDecoration(unit, state);
+		}
 
 		if (IsBuildingArchetype(unit.archetype))
 		{

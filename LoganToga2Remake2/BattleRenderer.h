@@ -13,6 +13,7 @@ private:
 	void drawSquads(const BattleState& state) const;
 	void drawObstacles(const BattleConfigData& config, const GameData& gameData) const;
 	void drawConstructionPreview(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const;
+	void drawPendingConstructionOrders(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const;
 	void drawResourcePoints(const BattleState& state, const GameData& gameData) const;
 	void drawBuildings(const BattleState& state, const GameData& gameData) const;
 	void drawAttackEffects(const BattleState& state) const;

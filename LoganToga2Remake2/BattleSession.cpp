@@ -13,6 +13,12 @@ void BattleSession::enqueue(BattleCommand command)
 
 void BattleSession::update(const double deltaTime)
 {
+	m_state.statusMessageTimer = Max(m_state.statusMessageTimer - deltaTime, 0.0);
+	if (m_state.statusMessageTimer <= 0.0)
+	{
+		m_state.statusMessage.clear();
+	}
+
 	if (m_state.winner)
 	{
 		return;
@@ -23,6 +29,7 @@ void BattleSession::update(const double deltaTime)
 	updateProduction(deltaTime);
 	updateEnemyAI(deltaTime);
 	updateMovement(deltaTime);
+	updateConstructionOrders();
 	updateResourcePoints(deltaTime);
 	updateCombat();
 	cleanupDeadUnits();
@@ -56,6 +63,19 @@ Array<int32> BattleSession::getSelectedPlayerUnitIds() const
 	}
 
 	return selected;
+}
+
+Optional<int32> BattleSession::findSelectedPlayerWorkerId() const
+{
+	for (const auto& unit : m_state.units)
+	{
+		if (unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && (unit.archetype == UnitArchetype::Worker))
+		{
+			return unit.id;
+		}
+	}
+
+	return none;
 }
 
 Optional<int32> BattleSession::findPlayerUnitAt(const Vec2& position) const
@@ -167,10 +187,12 @@ void BattleSession::processCommands()
 			}
 			else if constexpr (std::is_same_v<T, MoveUnitsCommand>)
 			{
+				cancelPendingConstructionOrders(value.unitIds, true);
 				assignFormationMove(value.unitIds, value.destination, value.formation, value.facingDirection);
 			}
 			else if constexpr (std::is_same_v<T, AttackUnitCommand>)
 			{
+				cancelPendingConstructionOrders(value.unitIds, true);
 				removeUnitsFromSquads(value.unitIds);
 
 				for (const auto unitId : value.unitIds)
@@ -191,9 +213,51 @@ void BattleSession::processCommands()
 			{
 				m_state.playerFormation = value.formation;
 			}
-			else if constexpr (std::is_same_v<T, PlaceBuildingCommand>)
+			else if constexpr (std::is_same_v<T, IssueConstructionOrderCommand>)
 			{
-				[[maybe_unused]] const bool placed = tryPlaceBuilding(Owner::Player, value.archetype, value.position);
+				const auto* worker = m_state.findUnit(value.workerUnitId);
+				if (!(worker && worker->isAlive && (worker->owner == Owner::Player) && (worker->archetype == UnitArchetype::Worker)))
+				{
+					m_state.statusMessage = U"No worker available";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				const int32 reservedCost = getUnitCost(value.archetype);
+				if (reservedCost <= 0)
+				{
+					m_state.statusMessage = U"Construction unavailable";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				if (m_state.playerGold < reservedCost)
+				{
+					m_state.statusMessage = U"Not enough gold";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				const Vec2 clampedPosition = ClampToWorld(m_state.worldBounds, value.position, getUnitDefinition(value.archetype).radius);
+				if (!canPlaceBuilding(Owner::Player, value.archetype, clampedPosition, value.workerUnitId))
+				{
+					m_state.statusMessage = U"Build blocked at target";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				cancelPendingConstructionOrders(Array<int32>{ value.workerUnitId }, true);
+				m_state.playerGold -= reservedCost;
+				m_state.pendingConstructionOrders << PendingConstructionOrder{ value.workerUnitId, value.archetype, clampedPosition, reservedCost };
+
+				removeUnitsFromSquads(Array<int32>{ value.workerUnitId });
+				if (auto* builder = m_state.findUnit(value.workerUnitId))
+				{
+					builder->order.type = UnitOrderType::Move;
+					builder->order.targetUnitId.reset();
+					builder->order.targetPoint = clampedPosition;
+					builder->moveTarget = clampedPosition;
+				}
 			}
 		}, command);
 	}
