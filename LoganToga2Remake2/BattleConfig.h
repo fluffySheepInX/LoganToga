@@ -27,7 +27,14 @@ struct InitialUnitPlacement
 struct ProductionSlot
 {
 	int32 slot = 1;
+	UnitArchetype producer = UnitArchetype::Base;
 	UnitArchetype archetype = UnitArchetype::Soldier;
+};
+
+struct ConstructionSlot
+{
+	int32 slot = 4;
+	UnitArchetype archetype = UnitArchetype::Barracks;
 };
 
 struct EnemySpawnConfig
@@ -56,9 +63,26 @@ struct WorldConfig
 struct HudConfig
 {
 	String title = U"LoganToga2 Remake Prototype";
-	String controls = U"L drag: select / R click: move or attack / 1-2: queue / X: cancel";
+	String controls = U"L drag: select / R click: move or attack / Q-W: formation / 1-3: queue / 4: build / X: cancel";
 	String escapeHint = U"Esc: back to title";
 	String winHint = U"Enter: title / R: retry";
+};
+
+struct ObstacleConfig
+{
+	String label = U"Obstacle";
+	RectF rect{ 0, 0, 96, 96 };
+	bool blocksMovement = true;
+};
+
+struct ResourcePointConfig
+{
+	String label = U"Resource";
+	Vec2 position = Vec2::Zero();
+	double radius = 42.0;
+	int32 incomeAmount = 10;
+	double captureTime = 2.0;
+	Owner owner = Owner::Neutral;
 };
 
 struct BattleConfigData
@@ -71,6 +95,9 @@ struct BattleConfigData
 	Array<UnitDefinition> unitDefinitions;
 	Array<InitialUnitPlacement> initialUnits;
 	Array<ProductionSlot> playerProductionSlots;
+	Array<ConstructionSlot> playerConstructionSlots;
+	Array<ObstacleConfig> obstacles;
+	Array<ResourcePointConfig> resourcePoints;
 	EnemySpawnConfig enemySpawn;
 };
 
@@ -93,6 +120,10 @@ struct BattleConfigData
 	if (normalized == U"base")
 	{
 		return UnitArchetype::Base;
+	}
+	if (normalized == U"barracks")
+	{
+		return UnitArchetype::Barracks;
 	}
 	if (normalized == U"worker")
 	{
@@ -120,6 +151,10 @@ struct BattleConfigData
 	if (normalized == U"enemy")
 	{
 		return Owner::Enemy;
+	}
+	if (normalized == U"neutral")
+	{
+		return Owner::Neutral;
 	}
 
 	throw Error{ U"Unknown owner: " + value };
@@ -176,8 +211,38 @@ struct BattleConfigData
 	{
 		ProductionSlot slot;
 		slot.slot = table[U"slot"].get<int32>();
+		slot.producer = ParseUnitArchetype(table[U"producer"].get<String>());
 		slot.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
 		config.playerProductionSlots << slot;
+	}
+
+	for (const auto& table : toml[U"player_construction"].tableArrayView())
+	{
+		ConstructionSlot slot;
+		slot.slot = table[U"slot"].get<int32>();
+		slot.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
+		config.playerConstructionSlots << slot;
+	}
+
+	for (const auto& table : toml[U"obstacles"].tableArrayView())
+	{
+		ObstacleConfig obstacle;
+		obstacle.label = table[U"label"].get<String>();
+		obstacle.rect = RectF{ table[U"x"].get<double>(), table[U"y"].get<double>(), table[U"width"].get<double>(), table[U"height"].get<double>() };
+		obstacle.blocksMovement = table[U"blocks_movement"].get<bool>();
+		config.obstacles << obstacle;
+	}
+
+	for (const auto& table : toml[U"resource_points"].tableArrayView())
+	{
+		ResourcePointConfig resourcePoint;
+		resourcePoint.label = table[U"label"].get<String>();
+		resourcePoint.position = Vec2{ table[U"x"].get<double>(), table[U"y"].get<double>() };
+		resourcePoint.radius = table[U"radius"].get<double>();
+		resourcePoint.incomeAmount = table[U"income_amount"].get<int32>();
+		resourcePoint.captureTime = table[U"capture_time"].get<double>();
+		resourcePoint.owner = ParseOwner(table[U"owner"].get<String>());
+		config.resourcePoints << resourcePoint;
 	}
 
 	config.enemySpawn.interval = toml[U"enemy_spawn"][U"interval"].get<double>();

@@ -4,6 +4,7 @@
 
 enum class Owner
 {
+	Neutral,
 	Player,
 	Enemy
 };
@@ -11,6 +12,7 @@ enum class Owner
 enum class UnitArchetype
 {
 	Base,
+	Barracks,
 	Worker,
 	Soldier,
 	Archer
@@ -21,6 +23,12 @@ enum class UnitOrderType
 	Idle,
 	Move,
 	AttackTarget
+};
+
+enum class FormationType
+{
+	Line,
+	Column
 };
 
 struct UnitOrder
@@ -48,6 +56,8 @@ struct UnitState
 	bool canMove = true;
 	bool isSelected = false;
 	bool isAlive = true;
+	Optional<int32> squadId;
+	Vec2 formationOffset = Vec2::Zero();
 	UnitOrder order;
 };
 
@@ -61,7 +71,31 @@ struct ProductionQueueItem
 struct BuildingState
 {
 	int32 unitId = -1;
+	bool isConstructed = true;
+	double constructionRemaining = 0.0;
+	double constructionTotal = 0.0;
 	Array<ProductionQueueItem> productionQueue;
+};
+
+struct ResourcePointState
+{
+	String label = U"Resource";
+	Vec2 position = Vec2::Zero();
+	double radius = 42.0;
+	int32 incomeAmount = 10;
+	double captureTime = 2.0;
+	Owner owner = Owner::Neutral;
+	Optional<Owner> capturingOwner;
+	double captureProgress = 0.0;
+};
+
+struct SquadState
+{
+	int32 id = -1;
+	Owner owner = Owner::Player;
+	FormationType formation = FormationType::Line;
+	Vec2 destination = Vec2::Zero();
+	Array<int32> unitIds;
 };
 
 struct BattleState
@@ -69,15 +103,21 @@ struct BattleState
 	RectF worldBounds{ 0, 0, 1280, 720 };
 	Array<UnitState> units;
 	Array<BuildingState> buildings;
+	Array<ResourcePointState> resourcePoints;
+	Array<SquadState> squads;
 	bool isSelecting = false;
 	Vec2 selectionStart = Vec2::Zero();
 	RectF selectionRect{ 0, 0, 0, 0 };
+	Optional<UnitArchetype> pendingConstructionArchetype;
+	Vec2 buildingPreviewPosition = Vec2::Zero();
 	int32 nextUnitId = 1;
+	int32 nextSquadId = 1;
 	int32 playerGold = 200;
 	int32 enemyGold = 200;
 	double playerIncomeTimer = 0.0;
 	double enemyIncomeTimer = 0.0;
 	double enemySpawnTimer = 0.0;
+	FormationType playerFormation = FormationType::Line;
 	Optional<Owner> winner;
 
 	[[nodiscard]] UnitState* findUnit(const int32 id)
@@ -147,6 +187,18 @@ struct MoveUnitsCommand
 {
 	Array<int32> unitIds;
 	Vec2 destination = Vec2::Zero();
+	FormationType formation = FormationType::Line;
+};
+
+struct SetPlayerFormationCommand
+{
+	FormationType formation = FormationType::Line;
+};
+
+struct PlaceBuildingCommand
+{
+	UnitArchetype archetype = UnitArchetype::Barracks;
+	Vec2 position = Vec2::Zero();
 };
 
 struct AttackUnitCommand
@@ -155,7 +207,7 @@ struct AttackUnitCommand
 	int32 targetUnitId = -1;
 };
 
-using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand>;
+using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, PlaceBuildingCommand>;
 
 [[nodiscard]] inline Vec2 ClampToWorld(const RectF& bounds, const Vec2& position, const double radius)
 {
@@ -170,9 +222,36 @@ using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectComma
 	return (lhs.owner != rhs.owner);
 }
 
+[[nodiscard]] inline bool IsBuildingArchetype(const UnitArchetype archetype)
+{
+	return (archetype == UnitArchetype::Base)
+		|| (archetype == UnitArchetype::Barracks);
+}
+
 [[nodiscard]] inline ColorF GetOwnerColor(const Owner owner)
 {
-	return (owner == Owner::Player) ? ColorF{ 0.25, 0.75, 1.0 } : ColorF{ 1.0, 0.38, 0.32 };
+	switch (owner)
+	{
+	case Owner::Player:
+		return ColorF{ 0.25, 0.75, 1.0 };
+	case Owner::Enemy:
+		return ColorF{ 1.0, 0.38, 0.32 };
+	default:
+		return ColorF{ 0.75, 0.78, 0.84 };
+	}
+}
+
+[[nodiscard]] inline String GetFormationLabel(const FormationType formation)
+{
+	switch (formation)
+	{
+	case FormationType::Line:
+		return U"LINE";
+	case FormationType::Column:
+		return U"COLUMN";
+	default:
+		return U"FORMATION";
+	}
 }
 
 [[nodiscard]] inline String GetArchetypeLabel(const UnitArchetype archetype)
@@ -181,6 +260,8 @@ using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectComma
 	{
 	case UnitArchetype::Base:
 		return U"BASE";
+	case UnitArchetype::Barracks:
+		return U"BARRACKS";
 	case UnitArchetype::Worker:
 		return U"WORKER";
 	case UnitArchetype::Soldier:

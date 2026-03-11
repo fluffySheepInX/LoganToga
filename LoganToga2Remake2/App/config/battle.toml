@@ -13,7 +13,7 @@ enemy_amount = 20
 
 [hud]
 title = "LoganToga2 Remake Prototype"
-controls = "L drag: select / R click: move or attack / 1-2: queue / X: cancel"
+controls = "L drag: select / R click: move or attack / Q-W: formation / 1-3: queue / 4: build / X: cancel"
 escape_hint = "Esc: back to title"
 win_hint = "Enter: title / R: retry"
 
@@ -36,6 +36,19 @@ attack_power = 0
 hp = 300
 cost = 0
 production_time = 0.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "barracks"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 180
+cost = 120
+production_time = 6.0
 can_move = false
 aggro_range = 0.0
 
@@ -109,6 +122,12 @@ x = 210.0
 y = 530.0
 
 [[initial_units]]
+owner = "player"
+archetype = "worker"
+x = 150.0
+y = 580.0
+
+[[initial_units]]
 owner = "enemy"
 archetype = "soldier"
 x = 1020.0
@@ -126,10 +145,78 @@ archetype = "archer"
 x = 980.0
 y = 200.0
 
+[[initial_units]]
+owner = "enemy"
+archetype = "barracks"
+x = 1060.0
+y = 150.0
+
 [[player_production]]
 slot = 1
-archetype = "soldier"
+producer = "base"
+archetype = "worker"
 
 [[player_production]]
 slot = 2
+producer = "barracks"
+archetype = "soldier"
+
+[[player_production]]
+slot = 3
+producer = "barracks"
 archetype = "archer"
+
+[[player_construction]]
+slot = 4
+archetype = "barracks"
+
+[[obstacles]]
+label = "North Ridge"
+x = 470.0
+y = 170.0
+width = 180.0
+height = 48.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Central Ruin"
+x = 580.0
+y = 300.0
+width = 120.0
+height = 120.0
+blocks_movement = true
+
+[[obstacles]]
+label = "South Ridge"
+x = 700.0
+y = 520.0
+width = 180.0
+height = 48.0
+blocks_movement = true
+
+[[resource_points]]
+label = "North Mine"
+owner = "neutral"
+x = 560.0
+y = 240.0
+radius = 46.0
+income_amount = 8
+capture_time = 1.8
+
+[[resource_points]]
+label = "Central Mine"
+owner = "neutral"
+x = 640.0
+y = 360.0
+radius = 52.0
+income_amount = 12
+capture_time = 2.2
+
+[[resource_points]]
+label = "South Mine"
+owner = "neutral"
+x = 720.0
+y = 500.0
+radius = 46.0
+income_amount = 8
+capture_time = 1.8

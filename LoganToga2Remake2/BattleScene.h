@@ -35,8 +35,15 @@ public:
 			}
 		}
 
-		handleSelectionInput();
-		handleCommandInput();
+		handleFormationInput();
+		handleConstructionInput();
+
+		if (!m_session.state().pendingConstructionArchetype)
+		{
+			handleSelectionInput();
+			handleCommandInput();
+		}
+
 		handleProductionInput();
 
 		const size_t fixedSteps = m_clock.beginFrame();
@@ -64,6 +71,19 @@ private:
 			return Key1.down();
 		case 2:
 			return Key2.down();
+		case 3:
+			return Key3.down();
+		default:
+			return false;
+		}
+	}
+
+	[[nodiscard]] static bool isConstructionSlotTriggered(const int32 slot)
+	{
+		switch (slot)
+		{
+		case 4:
+			return Key4.down();
 		default:
 			return false;
 		}
@@ -100,6 +120,58 @@ private:
 		}
 	}
 
+	void handleConstructionInput()
+	{
+		auto& state = m_session.state();
+
+		if (state.pendingConstructionArchetype)
+		{
+			state.buildingPreviewPosition = Cursor::PosF();
+
+			if (MouseR.down())
+			{
+				state.pendingConstructionArchetype.reset();
+				return;
+			}
+
+			if (MouseL.down())
+			{
+				m_session.enqueue(PlaceBuildingCommand{ *state.pendingConstructionArchetype, state.buildingPreviewPosition });
+				state.pendingConstructionArchetype.reset();
+				state.isSelecting = false;
+				state.selectionRect = RectF{ 0, 0, 0, 0 };
+				return;
+			}
+
+			return;
+		}
+
+		for (const auto& slot : m_session.config().playerConstructionSlots)
+		{
+			if (isConstructionSlotTriggered(slot.slot))
+			{
+				state.pendingConstructionArchetype = slot.archetype;
+				state.buildingPreviewPosition = Cursor::PosF();
+				state.isSelecting = false;
+				state.selectionRect = RectF{ 0, 0, 0, 0 };
+				break;
+			}
+		}
+	}
+
+	void handleFormationInput()
+	{
+		if (KeyQ.down())
+		{
+			m_session.enqueue(SetPlayerFormationCommand{ FormationType::Line });
+		}
+
+		if (KeyW.down())
+		{
+			m_session.enqueue(SetPlayerFormationCommand{ FormationType::Column });
+		}
+	}
+
 	void handleCommandInput()
 	{
 		if (!MouseR.down())
@@ -119,7 +191,7 @@ private:
 			return;
 		}
 
-		m_session.enqueue(MoveUnitsCommand{ selectedIds, Cursor::PosF() });
+		m_session.enqueue(MoveUnitsCommand{ selectedIds, Cursor::PosF(), m_session.state().playerFormation });
 	}
 
 	void handleProductionInput()

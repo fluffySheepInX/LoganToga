@@ -3,9 +3,29 @@
 void BattleRenderer::draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
 {
 	drawWorld(state);
+	drawSquads(state);
+	drawObstacles(config, gameData);
+	drawConstructionPreview(state, config, gameData);
+	drawResourcePoints(state, gameData);
 	drawBuildings(state, gameData);
 	drawUnits(state, gameData);
 	drawHud(state, config, gameData);
+}
+
+void BattleRenderer::drawSquads(const BattleState& state) const
+{
+	for (const auto& squad : state.squads)
+	{
+		for (const auto unitId : squad.unitIds)
+		{
+			if (const auto* unit = state.findUnit(unitId))
+			{
+				Line{ unit->position, squad.destination + unit->formationOffset }.draw(1, ColorF{ GetOwnerColor(squad.owner), 0.2 });
+			}
+		}
+
+		Circle{ squad.destination, 8 }.drawFrame(2, GetOwnerColor(squad.owner));
+	}
 }
 
 void BattleRenderer::drawWorld(const BattleState& state) const
@@ -28,17 +48,80 @@ void BattleRenderer::drawWorld(const BattleState& state) const
 	}
 }
 
+void BattleRenderer::drawObstacles(const BattleConfigData& config, const GameData& gameData) const
+{
+	for (const auto& obstacle : config.obstacles)
+	{
+		obstacle.rect.draw(ColorF{ 0.24, 0.20, 0.18 });
+		obstacle.rect.drawFrame(2, ColorF{ 0.45, 0.36, 0.30 });
+		gameData.smallFont(obstacle.label).drawAt(obstacle.rect.center().movedBy(0, -6), ColorF{ 0.95, 0.88, 0.76 });
+	}
+}
+
+void BattleRenderer::drawConstructionPreview(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
+{
+	if (!state.pendingConstructionArchetype)
+	{
+		return;
+	}
+
+	const auto* definition = FindUnitDefinition(config, *state.pendingConstructionArchetype);
+	if (!definition)
+	{
+		return;
+	}
+
+	const Vec2 position = state.buildingPreviewPosition;
+	Circle{ position, definition->radius }.draw(ColorF{ 0.85, 0.9, 1.0, 0.18 });
+	Circle{ position, definition->radius }.drawFrame(2, Palette::Skyblue);
+	gameData.smallFont(s3d::Format(U"Place ", GetArchetypeLabel(*state.pendingConstructionArchetype))).drawAt(position.movedBy(0, -definition->radius - 16), Palette::Skyblue);
+}
+
+void BattleRenderer::drawResourcePoints(const BattleState& state, const GameData& gameData) const
+{
+	for (const auto& resourcePoint : state.resourcePoints)
+	{
+		const ColorF ownerColor = GetOwnerColor(resourcePoint.owner);
+		Circle{ resourcePoint.position, resourcePoint.radius }.draw(ColorF{ ownerColor, 0.16 });
+		Circle{ resourcePoint.position, resourcePoint.radius }.drawFrame(3, ownerColor);
+
+		if (resourcePoint.capturingOwner)
+		{
+			const double progress = (resourcePoint.captureTime > 0.0)
+				? Clamp(resourcePoint.captureProgress / resourcePoint.captureTime, 0.0, 1.0)
+				: 1.0;
+			const RectF barBack{ resourcePoint.position.x - 28, resourcePoint.position.y + resourcePoint.radius + 10, 56, 5 };
+			barBack.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
+			RectF{ barBack.pos, barBack.w * progress, barBack.h }.draw(GetOwnerColor(*resourcePoint.capturingOwner));
+		}
+
+		gameData.smallFont(s3d::Format(resourcePoint.label, U" (+", resourcePoint.incomeAmount, U")")).drawAt(resourcePoint.position.movedBy(0, -resourcePoint.radius - 14), Palette::White);
+	}
+}
+
 void BattleRenderer::drawBuildings(const BattleState& state, const GameData& gameData) const
 {
 	for (const auto& building : state.buildings)
 	{
 		const auto* unit = state.findUnit(building.unitId);
-		if (!(unit && unit->isAlive && (unit->archetype == UnitArchetype::Base)))
+		if (!(unit && unit->isAlive && IsBuildingArchetype(unit->archetype)))
 		{
 			continue;
 		}
 
 		Circle{ unit->position, unit->radius + 16 }.draw(ColorF{ GetOwnerColor(unit->owner), 0.12 });
+
+		if (!building.isConstructed)
+		{
+			const double progress = (building.constructionTotal > 0.0)
+				? (1.0 - (building.constructionRemaining / building.constructionTotal))
+				: 1.0;
+			const RectF barBack{ unit->position.x - 30, unit->position.y + unit->radius + 16, 60, 6 };
+			barBack.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
+			RectF{ barBack.pos, barBack.w * Clamp(progress, 0.0, 1.0), barBack.h }.draw(ColorF{ 0.58, 0.77, 1.0 });
+			gameData.smallFont(U"Constructing").drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
+			continue;
+		}
 
 		if (building.productionQueue.isEmpty())
 		{
@@ -52,7 +135,7 @@ void BattleRenderer::drawBuildings(const BattleState& state, const GameData& gam
 		const RectF barBack{ unit->position.x - 26, unit->position.y + unit->radius + 16, 52, 6 };
 		barBack.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
 		RectF{ barBack.pos, barBack.w * Clamp(progress, 0.0, 1.0), barBack.h }.draw(ColorF{ 0.95, 0.82, 0.28 });
-		gameData.smallFont(U"{} x{}"_fmt(GetArchetypeLabel(currentItem.archetype), building.productionQueue.size())).drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
+		gameData.smallFont(s3d::Format(GetArchetypeLabel(currentItem.archetype), U" x", building.productionQueue.size())).drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
 	}
 }
 
@@ -68,7 +151,7 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		const ColorF color = GetOwnerColor(unit.owner);
 		Circle{ unit.position, unit.radius }.draw(color);
 
-		if (unit.archetype == UnitArchetype::Base)
+		if (IsBuildingArchetype(unit.archetype))
 		{
 			Circle{ unit.position, unit.radius + 10 }.drawFrame(4, color);
 		}
@@ -89,6 +172,17 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 
 void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
 {
+	int32 playerResourceIncome = 0;
+	int32 playerResourceCount = 0;
+	for (const auto& resourcePoint : state.resourcePoints)
+	{
+		if (resourcePoint.owner == Owner::Player)
+		{
+			playerResourceIncome += resourcePoint.incomeAmount;
+			++playerResourceCount;
+		}
+	}
+
 	String productionText;
 	for (const auto& slot : config.playerProductionSlots)
 	{
@@ -98,31 +192,54 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		}
 
 		const int32 cost = FindUnitDefinition(config, slot.archetype) ? FindUnitDefinition(config, slot.archetype)->cost : 0;
-		productionText += U"{}: {} ({}G)"_fmt(slot.slot, GetArchetypeLabel(slot.archetype), cost);
+		productionText += s3d::Format(slot.slot, U": ", GetArchetypeLabel(slot.archetype), U" @", GetArchetypeLabel(slot.producer), U" (", cost, U"G)");
+	}
+
+	String constructionText = U"Build: none";
+	for (const auto& slot : config.playerConstructionSlots)
+	{
+		const int32 cost = FindUnitDefinition(config, slot.archetype) ? FindUnitDefinition(config, slot.archetype)->cost : 0;
+		constructionText = s3d::Format(U"Build: ", slot.slot, U": ", GetArchetypeLabel(slot.archetype), U" (", cost, U"G)");
+		break;
 	}
 
 	String queueText = U"Queue: idle";
 	for (const auto& building : state.buildings)
 	{
 		const auto* unit = state.findUnit(building.unitId);
-		if (unit && unit->isAlive && (unit->owner == Owner::Player) && (unit->archetype == UnitArchetype::Base))
+		if (unit && unit->isAlive && (unit->owner == Owner::Player))
 		{
+			if (!building.isConstructed)
+			{
+				queueText = s3d::Format(U"Build: ", GetArchetypeLabel(unit->archetype), U" (", building.constructionRemaining, U"s)");
+				break;
+			}
+
 			if (!building.productionQueue.isEmpty())
 			{
 				const auto& currentItem = building.productionQueue.front();
-				queueText = U"Queue: {} x{} ({:.1f}s)"_fmt(GetArchetypeLabel(currentItem.archetype), building.productionQueue.size(), currentItem.remainingTime);
+				queueText = s3d::Format(U"Queue: ", GetArchetypeLabel(currentItem.archetype), U" @", GetArchetypeLabel(unit->archetype), U" x", building.productionQueue.size(), U" (", currentItem.remainingTime, U"s)");
+				break;
 			}
-			break;
 		}
 	}
 
-	RoundRect{ 16, 16, 440, 170, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+	RoundRect{ 16, 16, 480, 216, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);
 	gameData.smallFont(config.hud.controls).draw(28, 66, Palette::White);
 	gameData.smallFont(productionText).draw(28, 88, Palette::White);
-	gameData.smallFont(queueText).draw(28, 110, Palette::White);
-	gameData.smallFont(config.hud.escapeHint).draw(28, 132, Palette::White);
-	gameData.smallFont(U"Gold: {}"_fmt(state.playerGold)).draw(28, 154, Palette::Gold);
+	gameData.smallFont(constructionText).draw(28, 110, Palette::White);
+	gameData.smallFont(queueText).draw(28, 132, Palette::White);
+	const String formationText = U"Formation: Q="
+		+ GetFormationLabel(FormationType::Line)
+		+ U" / W="
+		+ GetFormationLabel(FormationType::Column)
+		+ U" / Current="
+		+ GetFormationLabel(state.playerFormation);
+	gameData.smallFont(formationText).draw(28, 154, Palette::White);
+	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, 176, Palette::White);
+	gameData.smallFont(config.hud.escapeHint).draw(28, 198, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 220, Palette::Gold);
 
 	if (state.winner)
 	{

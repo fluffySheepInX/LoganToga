@@ -117,6 +117,10 @@
   <ItemGroup>
     <ClCompile Include="BattleRenderer.cpp" />
     <ClCompile Include="BattleSession.cpp" />
+    <ClCompile Include="BattleSessionCombat.cpp" />
+    <ClCompile Include="BattleSessionEconomy.cpp" />
+    <ClCompile Include="BattleSessionMovement.cpp" />
+    <ClCompile Include="BattleSessionWorld.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -333,6 +337,7 @@
     <ClInclude Include="BattleRenderer.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleSession.h" />
+    <ClInclude Include="BattleSessionInternal.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="Remake2Common.h" />

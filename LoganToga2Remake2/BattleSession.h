@@ -29,13 +29,20 @@ private:
 	void updateProduction(double deltaTime);
 	void updateEnemyAI();
 	void updateMovement(double deltaTime);
+	void updateResourcePoints(double deltaTime);
 	void updateCombat();
 	void cleanupDeadUnits();
 	void updateVictoryState();
+	void assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, FormationType formation);
+	void removeUnitsFromSquads(const Array<int32>& unitIds);
+	void cleanupSquads();
+	[[nodiscard]] bool tryPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position);
+	[[nodiscard]] bool canPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position) const;
 	int32 spawnUnit(Owner owner, UnitArchetype archetype, const Vec2& position);
 
-	[[nodiscard]] BuildingState* findProductionBuilding(Owner owner);
-	[[nodiscard]] const BuildingState* findProductionBuilding(Owner owner) const;
+	[[nodiscard]] BuildingState* findProductionBuilding(Owner owner, UnitArchetype producerArchetype);
+	[[nodiscard]] const BuildingState* findProductionBuilding(Owner owner, UnitArchetype producerArchetype) const;
+	[[nodiscard]] const ProductionSlot* findProductionSlot(UnitArchetype archetype) const;
 	[[nodiscard]] bool tryQueueUnitProduction(Owner owner, UnitArchetype archetype);
 	[[nodiscard]] Vec2 getProductionSpawnPoint(const UnitState& buildingUnit, UnitArchetype archetype) const;
 	[[nodiscard]] UnitState makeUnit(int32 id, Owner owner, UnitArchetype archetype, const Vec2& position) const;
