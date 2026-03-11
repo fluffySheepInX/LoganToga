@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4B04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Core">
+      <UniqueIdentifier>{68F0A0D1-257E-4A08-B8C5-A819A390944D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Battle">
+      <UniqueIdentifier>{555A64A2-C3C4-4D0A-A54D-4807A4C781BA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scenes">
+      <UniqueIdentifier>{9115E3D0-D055-4828-9228-61F2DCA77344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Render">
+      <UniqueIdentifier>{5F221A04-D6D5-4461-BCA6-9CAFCB3550DA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Battle\BattleSession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Scenes\BattleScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\BattleRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Game.h">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Battle\BattleState.h">
+      <Filter>Header Files\Battle</Filter>
+    </ClInclude>
+    <ClInclude Include="Battle\Commands.h">
+      <Filter>Header Files\Battle</Filter>
+    </ClInclude>
+    <ClInclude Include="Battle\BattleSession.h">
+      <Filter>Header Files\Battle</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenes\BattleScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\BattleRenderer.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

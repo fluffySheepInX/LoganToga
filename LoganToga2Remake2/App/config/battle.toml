@@ -1,0 +1,135 @@
+[economy]
+player_gold = 200
+enemy_gold = 200
+
+[world]
+width = 1280.0
+height = 720.0
+
+[income]
+interval = 1.0
+player_amount = 20
+enemy_amount = 20
+
+[hud]
+title = "LoganToga2 Remake Prototype"
+controls = "L drag: select / R click: move or attack / 1-2: queue / X: cancel"
+escape_hint = "Esc: back to title"
+win_hint = "Enter: title / R: retry"
+
+[enemy_spawn]
+interval = 4.0
+basic_archetype = "soldier"
+advanced_archetype = "archer"
+advanced_probability = 0.4
+x = 1130.0
+y = 170.0
+random_y_offset = 50.0
+
+[[units]]
+archetype = "base"
+radius = 28.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 300
+cost = 0
+production_time = 0.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "worker"
+radius = 10.0
+move_speed = 85.0
+attack_range = 18.0
+attack_cooldown = 1.0
+attack_power = 4
+hp = 28
+cost = 40
+production_time = 1.2
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "soldier"
+radius = 12.0
+move_speed = 92.0
+attack_range = 24.0
+attack_cooldown = 0.7
+attack_power = 8
+hp = 48
+cost = 60
+production_time = 1.6
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "archer"
+radius = 11.0
+move_speed = 82.0
+attack_range = 120.0
+attack_cooldown = 1.0
+attack_power = 6
+hp = 34
+cost = 80
+production_time = 2.0
+can_move = true
+aggro_range = 220.0
+
+[[initial_units]]
+owner = "player"
+archetype = "base"
+x = 110.0
+y = 540.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "base"
+x = 1170.0
+y = 180.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 180.0
+y = 500.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 200.0
+y = 560.0
+
+[[initial_units]]
+owner = "player"
+archetype = "archer"
+x = 210.0
+y = 530.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 1020.0
+y = 170.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 1040.0
+y = 230.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "archer"
+x = 980.0
+y = 200.0
+
+[[player_production]]
+slot = 1
+archetype = "soldier"
+
+[[player_production]]
+slot = 2
+archetype = "archer"
