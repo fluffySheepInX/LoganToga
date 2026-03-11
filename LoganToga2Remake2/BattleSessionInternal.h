@@ -53,6 +53,14 @@ namespace BattleSessionInternal
 		return currentPosition;
 	}
 
+	[[nodiscard]] inline Vec2 ResolveNavigationWaypoint(const Vec2& currentPosition, const Vec2& strategicDestination, const double radius, const Array<ObstacleConfig>& obstacles)
+	{
+		(void)currentPosition;
+		(void)radius;
+		(void)obstacles;
+		return strategicDestination;
+	}
+
 	[[nodiscard]] inline int32 MakeFormationColumnCount(const int32 count)
 	{
 		int32 columns = 1;

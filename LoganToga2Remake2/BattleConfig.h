@@ -47,6 +47,15 @@ struct EnemySpawnConfig
 	double randomYOffset = 50.0;
 };
 
+struct EnemyAiConfig
+{
+	double decisionInterval = 0.4;
+	int32 assaultUnitThreshold = 4;
+	double defenseRadius = 240.0;
+	double rallyDistance = 120.0;
+	double baseAssaultLockRadius = 180.0;
+};
+
 struct IncomeConfig
 {
 	double interval = 1.0;
@@ -99,6 +108,7 @@ struct BattleConfigData
 	Array<ObstacleConfig> obstacles;
 	Array<ResourcePointConfig> resourcePoints;
 	EnemySpawnConfig enemySpawn;
+	EnemyAiConfig enemyAI;
 };
 
 [[nodiscard]] inline const UnitDefinition* FindUnitDefinition(const BattleConfigData& config, const UnitArchetype archetype)
@@ -124,6 +134,10 @@ struct BattleConfigData
 	if (normalized == U"barracks")
 	{
 		return UnitArchetype::Barracks;
+	}
+	if (normalized == U"turret")
+	{
+		return UnitArchetype::Turret;
 	}
 	if (normalized == U"worker")
 	{
@@ -251,6 +265,11 @@ struct BattleConfigData
 	config.enemySpawn.advancedProbability = toml[U"enemy_spawn"][U"advanced_probability"].get<double>();
 	config.enemySpawn.position = Vec2{ toml[U"enemy_spawn"][U"x"].get<double>(), toml[U"enemy_spawn"][U"y"].get<double>() };
 	config.enemySpawn.randomYOffset = toml[U"enemy_spawn"][U"random_y_offset"].get<double>();
+	config.enemyAI.decisionInterval = toml[U"enemy_ai"][U"decision_interval"].getOr<double>(config.enemyAI.decisionInterval);
+	config.enemyAI.assaultUnitThreshold = toml[U"enemy_ai"][U"assault_unit_threshold"].getOr<int32>(config.enemyAI.assaultUnitThreshold);
+	config.enemyAI.defenseRadius = toml[U"enemy_ai"][U"defense_radius"].getOr<double>(config.enemyAI.defenseRadius);
+	config.enemyAI.rallyDistance = toml[U"enemy_ai"][U"rally_distance"].getOr<double>(config.enemyAI.rallyDistance);
+	config.enemyAI.baseAssaultLockRadius = toml[U"enemy_ai"][U"base_assault_lock_radius"].getOr<double>(config.enemyAI.baseAssaultLockRadius);
 
 	return config;
 }

@@ -21,7 +21,7 @@ void BattleSession::update(const double deltaTime)
 	processCommands();
 	updateEconomy(deltaTime);
 	updateProduction(deltaTime);
-	updateEnemyAI();
+	updateEnemyAI(deltaTime);
 	updateMovement(deltaTime);
 	updateResourcePoints(deltaTime);
 	updateCombat();

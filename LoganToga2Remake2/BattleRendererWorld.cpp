@@ -142,6 +142,27 @@ void BattleRenderer::drawBuildings(const BattleState& state, const GameData& gam
 	}
 }
 
+void BattleRenderer::drawAttackEffects(const BattleState& state) const
+{
+	for (const auto& effect : state.attackVisualEffects)
+	{
+		if ((effect.framesRemaining <= 0) || (effect.totalFrames <= 0))
+		{
+			continue;
+		}
+
+		const double t = Clamp(static_cast<double>(effect.framesRemaining) / effect.totalFrames, 0.0, 1.0);
+		const ColorF ownerColor = GetOwnerColor(effect.owner);
+		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
+		const ColorF coreColor{ 1.0, 0.95, 0.82, 0.35 + (0.55 * t) };
+
+		Line{ effect.start, effect.end }.draw(6, beamColor);
+		Line{ effect.start, effect.end }.draw(2.5, coreColor);
+		Circle{ effect.start, 7.0 + (4.0 * t) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.25 + (0.45 * t) });
+		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
+	}
+}
+
 void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
 {
 	for (const auto& unit : state.units)

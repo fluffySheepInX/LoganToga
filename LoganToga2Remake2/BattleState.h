@@ -13,6 +13,7 @@ enum class UnitArchetype
 {
 	Base,
 	Barracks,
+	Turret,
 	Worker,
 	Soldier,
 	Archer
@@ -99,6 +100,16 @@ struct SquadState
 	Array<int32> unitIds;
 };
 
+struct AttackVisualEffect
+{
+	Vec2 start = Vec2::Zero();
+	Vec2 end = Vec2::Zero();
+	Owner owner = Owner::Player;
+	UnitArchetype sourceArchetype = UnitArchetype::Soldier;
+	int32 framesRemaining = 0;
+	int32 totalFrames = 0;
+};
+
 struct BattleState
 {
 	RectF worldBounds{ 0, 0, 1280, 720 };
@@ -106,6 +117,7 @@ struct BattleState
 	Array<BuildingState> buildings;
 	Array<ResourcePointState> resourcePoints;
 	Array<SquadState> squads;
+	Array<AttackVisualEffect> attackVisualEffects;
 	bool isSelecting = false;
 	Vec2 selectionStart = Vec2::Zero();
 	RectF selectionRect{ 0, 0, 0, 0 };
@@ -121,6 +133,7 @@ struct BattleState
 	double playerIncomeTimer = 0.0;
 	double enemyIncomeTimer = 0.0;
 	double enemySpawnTimer = 0.0;
+	double enemyAiDecisionTimer = 0.0;
 	FormationType playerFormation = FormationType::Line;
 	Optional<Owner> winner;
 
@@ -193,7 +206,8 @@ struct BattleState
 [[nodiscard]] inline bool IsBuildingArchetype(const UnitArchetype archetype)
 {
 	return (archetype == UnitArchetype::Base)
-		|| (archetype == UnitArchetype::Barracks);
+		|| (archetype == UnitArchetype::Barracks)
+		|| (archetype == UnitArchetype::Turret);
 }
 
 [[nodiscard]] inline ColorF GetOwnerColor(const Owner owner)
@@ -232,6 +246,8 @@ struct BattleState
 		return U"BASE";
 	case UnitArchetype::Barracks:
 		return U"BARRACKS";
+	case UnitArchetype::Turret:
+		return U"TURRET";
 	case UnitArchetype::Worker:
 		return U"WORKER";
 	case UnitArchetype::Soldier:

@@ -4,9 +4,22 @@ void BattleSession::updateCombat()
 {
 	struct DamageEvent
 	{
+		Vec2 sourcePosition = Vec2::Zero();
 		int32 targetId = -1;
 		int32 damage = 0;
+		Owner owner = Owner::Player;
+		UnitArchetype sourceArchetype = UnitArchetype::Soldier;
 	};
+
+	for (auto& effect : m_state.attackVisualEffects)
+	{
+		effect.framesRemaining = Max(effect.framesRemaining - 1, 0);
+	}
+
+	m_state.attackVisualEffects.remove_if([](const AttackVisualEffect& effect)
+	{
+		return (effect.framesRemaining <= 0);
+	});
 
 	Array<DamageEvent> damageEvents;
 
@@ -50,7 +63,7 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		damageEvents << DamageEvent{ target->id, unit.attackPower };
+		damageEvents << DamageEvent{ unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
 		unit.attackCooldownRemaining = unit.attackCooldown;
 	}
 
@@ -58,6 +71,18 @@ void BattleSession::updateCombat()
 	{
 		if (auto* target = m_state.findUnit(event.targetId))
 		{
+			if (event.sourceArchetype == UnitArchetype::Turret)
+			{
+				m_state.attackVisualEffects << AttackVisualEffect{
+					.start = event.sourcePosition,
+					.end = target->position,
+					.owner = event.owner,
+					.sourceArchetype = event.sourceArchetype,
+					.framesRemaining = 5,
+					.totalFrames = 5,
+				};
+			}
+
 			target->hp -= event.damage;
 			if (target->hp <= 0)
 			{

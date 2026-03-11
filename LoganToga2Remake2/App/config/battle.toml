@@ -14,7 +14,7 @@ enemy_amount = 20
 [hud]
 title = "LoganToga2 Remake Prototype"
 controls = "L drag: pan / R click: move or attack / Q-W: formation / 1-3: queue / 4: build / X: cancel"
-escape_hint = "Esc: back to title"
+escape_hint = "Esc: pause menu"
 win_hint = "Enter: title / R: retry"
 
 [enemy_spawn]
@@ -25,6 +25,13 @@ advanced_probability = 0.4
 x = 1130.0
 y = 170.0
 random_y_offset = 50.0
+
+[enemy_ai]
+decision_interval = 0.4
+assault_unit_threshold = 4
+defense_radius = 240.0
+rally_distance = 120.0
+base_assault_lock_radius = 180.0
 
 [[units]]
 archetype = "base"
@@ -38,6 +45,19 @@ cost = 0
 production_time = 0.0
 can_move = false
 aggro_range = 0.0
+
+[[units]]
+archetype = "turret"
+radius = 18.0
+move_speed = 0.0
+attack_range = 170.0
+attack_cooldown = 1.1
+attack_power = 10
+hp = 140
+cost = 140
+production_time = 0.0
+can_move = false
+aggro_range = 220.0
 
 [[units]]
 archetype = "barracks"
@@ -102,6 +122,30 @@ owner = "enemy"
 archetype = "base"
 x = 1170.0
 y = 180.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 92.0
+y = 458.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 92.0
+y = 622.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 1188.0
+y = 94.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 1188.0
+y = 266.0
 
 [[initial_units]]
 owner = "player"

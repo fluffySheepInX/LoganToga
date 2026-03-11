@@ -29,7 +29,7 @@ private:
 	void processCommands();
 	void updateEconomy(double deltaTime);
 	void updateProduction(double deltaTime);
-	void updateEnemyAI();
+	void updateEnemyAI(double deltaTime);
 	void updateMovement(double deltaTime);
 	void updateResourcePoints(double deltaTime);
 	void updateCombat();

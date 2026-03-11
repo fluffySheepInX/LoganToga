@@ -10,6 +10,7 @@ void BattleRenderer::draw(const BattleState& state, const BattleConfigData& conf
 		drawConstructionPreview(state, config, gameData);
 		drawResourcePoints(state, gameData);
 		drawBuildings(state, gameData);
+		drawAttackEffects(state);
 		drawUnits(state, gameData);
 	}
 

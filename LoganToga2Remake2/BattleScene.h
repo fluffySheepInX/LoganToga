@@ -25,11 +25,17 @@ private:
 	FixedStepClock m_clock;
 	BattleInputController m_inputController;
 	BattleConstructionController m_constructionController;
+	bool m_isPaused = false;
+	int32 m_pauseMenuIndex = 0;
 
 	[[nodiscard]] Vec2 screenToWorld(const Vec2& screenPosition) const;
 	[[nodiscard]] Vec2 clampCameraCenter(const Vec2& desiredCenter) const;
 	[[nodiscard]] bool updateCameraPan();
 	void resetCameraPan();
+	void clearTransientInputState();
+	void togglePause();
+	void updatePauseMenu();
+	void drawPauseMenu() const;
 	[[nodiscard]] static bool isProductionSlotTriggered(int32 slot);
 	void handleProductionInput();
 };
