@@ -1,44 +1,6 @@
 ﻿#pragma once
 
-#include "Remake2Common.h"
-
-enum class Owner
-{
-	Neutral,
-	Player,
-	Enemy
-};
-
-enum class UnitArchetype
-{
-	Base,
-	Barracks,
-	Turret,
-	Worker,
-	Soldier,
-	Archer
-};
-
-enum class UnitOrderType
-{
-	Idle,
-	Move,
-	AttackTarget
-};
-
-enum class FormationType
-{
-	Line,
-	Column,
-	Square
-};
-
-struct UnitOrder
-{
-	UnitOrderType type = UnitOrderType::Idle;
-	Vec2 targetPoint = Vec2::Zero();
-	Optional<int32> targetUnitId;
-};
+#include "BattleStateHelpers.h"
 
 struct UnitState
 {
@@ -47,6 +9,10 @@ struct UnitState
 	UnitArchetype archetype = UnitArchetype::Soldier;
 	Vec2 position = Vec2::Zero();
 	Vec2 moveTarget = Vec2::Zero();
+	Array<Vec2> pathPoints;
+	int32 pathIndex = 0;
+	Vec2 pathDestination = Vec2::Zero();
+	bool pathDirty = false;
 	double radius = 12.0;
 	double moveSpeed = 80.0;
 	double attackRange = 24.0;
@@ -202,71 +168,3 @@ struct BattleState
 	}
 };
 
-[[nodiscard]] inline Vec2 ClampToWorld(const RectF& bounds, const Vec2& position, const double radius)
-{
-	return {
-		Clamp(position.x, bounds.leftX() + radius, bounds.rightX() - radius),
-		Clamp(position.y, bounds.topY() + radius, bounds.bottomY() - radius)
-	};
-}
-
-[[nodiscard]] inline bool IsEnemy(const UnitState& lhs, const UnitState& rhs)
-{
-	return (lhs.owner != rhs.owner);
-}
-
-[[nodiscard]] inline bool IsBuildingArchetype(const UnitArchetype archetype)
-{
-	return (archetype == UnitArchetype::Base)
-		|| (archetype == UnitArchetype::Barracks)
-		|| (archetype == UnitArchetype::Turret);
-}
-
-[[nodiscard]] inline ColorF GetOwnerColor(const Owner owner)
-{
-	switch (owner)
-	{
-	case Owner::Player:
-		return ColorF{ 0.25, 0.75, 1.0 };
-	case Owner::Enemy:
-		return ColorF{ 1.0, 0.38, 0.32 };
-	default:
-		return ColorF{ 0.75, 0.78, 0.84 };
-	}
-}
-
-[[nodiscard]] inline String GetFormationLabel(const FormationType formation)
-{
-	switch (formation)
-	{
-	case FormationType::Line:
-		return U"CLUSTER";
-	case FormationType::Column:
-		return U"ROW";
-	case FormationType::Square:
-		return U"SQUARE";
-	default:
-		return U"FORMATION";
-	}
-}
-
-[[nodiscard]] inline String GetArchetypeLabel(const UnitArchetype archetype)
-{
-	switch (archetype)
-	{
-	case UnitArchetype::Base:
-		return U"BASE";
-	case UnitArchetype::Barracks:
-		return U"BARRACKS";
-	case UnitArchetype::Turret:
-		return U"TURRET";
-	case UnitArchetype::Worker:
-		return U"WORKER";
-	case UnitArchetype::Soldier:
-		return U"SOLDIER";
-	case UnitArchetype::Archer:
-		return U"ARCHER";
-	default:
-		return U"UNIT";
-	}
-}

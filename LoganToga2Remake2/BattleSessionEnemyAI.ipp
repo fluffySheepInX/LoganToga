@@ -30,38 +30,12 @@
 			&& (unit.archetype != UnitArchetype::Worker);
 	}
 
-	[[nodiscard]] const UnitState* FindOwnerBuilding(const BattleState& state, const Owner owner, const UnitArchetype archetype)
-	{
-		for (const auto& unit : state.units)
-		{
-			if (unit.isAlive && (unit.owner == owner) && (unit.archetype == archetype))
-			{
-				return &unit;
-			}
-		}
-
-		return nullptr;
-	}
-
 	[[nodiscard]] bool IsBaseDefenseTurret(const UnitState& unit, const UnitState& base, const double lockRadius)
 	{
 		return unit.isAlive
 			&& (unit.owner == base.owner)
 			&& (unit.archetype == UnitArchetype::Turret)
 			&& (unit.position.distanceFrom(base.position) <= lockRadius);
-	}
-
-	[[nodiscard]] bool CanAssaultBase(const BattleState& state, const UnitState& base, const EnemyAiConfig& config)
-	{
-		for (const auto& unit : state.units)
-		{
-			if (IsBaseDefenseTurret(unit, base, config.baseAssaultLockRadius))
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	void ConsiderStrategicTarget(EnemyAiStrategicTarget& bestTarget, const double score, const Vec2& position, const Optional<int32>& unitId = none)
@@ -98,31 +72,32 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 
 	m_state.enemyAiDecisionTimer = 0.0;
 
-	const UnitState* enemyBase = FindOwnerBuilding(m_state, Owner::Enemy, UnitArchetype::Base);
-	const UnitState* enemyBarracks = FindOwnerBuilding(m_state, Owner::Enemy, UnitArchetype::Barracks);
-	const UnitState* playerBase = FindOwnerBuilding(m_state, Owner::Player, UnitArchetype::Base);
+	const UnitState* enemyBase = findOwnerUnitByArchetype(Owner::Enemy, UnitArchetype::Base);
+	const UnitState* enemyBarracks = findOwnerUnitByArchetype(Owner::Enemy, UnitArchetype::Barracks);
+	const UnitState* playerBase = findOwnerUnitByArchetype(Owner::Player, UnitArchetype::Base);
 	const Vec2 enemyAnchor = enemyBarracks ? enemyBarracks->position : (enemyBase ? enemyBase->position : m_state.worldBounds.center());
-	const bool canAssaultPlayerBase = playerBase && CanAssaultBase(m_state, *playerBase, m_config.enemyAI);
+	const bool canAssaultPlayerBase = playerBase && !hasBaseDefenseTurret(*playerBase, m_config.enemyAI.baseAssaultLockRadius);
 
 	const UnitState* defenseTarget = nullptr;
 	double defenseTargetDistance = m_config.enemyAI.defenseRadius;
-	for (const auto& candidate : m_state.units)
+	for (const auto candidateIndex : getOwnerUnitIndices(Owner::Player))
 	{
+		const auto& candidate = m_state.units[candidateIndex];
 		if (!candidate.isAlive || (candidate.owner != Owner::Player) || IsBuildingArchetype(candidate.archetype))
 		{
 			continue;
 		}
 
 		double nearestAssetDistance = candidate.position.distanceFrom(enemyAnchor);
-		for (const auto& building : m_state.buildings)
+		for (const auto buildingIndex : getOwnerBuildingIndices(Owner::Enemy))
 		{
-			const auto* unit = m_state.findUnit(building.unitId);
-			if (!(unit && unit->isAlive && (unit->owner == Owner::Enemy)))
+			const auto& unit = m_state.units[buildingIndex];
+			if (!(unit.isAlive && (unit.owner == Owner::Enemy)))
 			{
 				continue;
 			}
 
-			nearestAssetDistance = Min(nearestAssetDistance, candidate.position.distanceFrom(unit->position));
+			nearestAssetDistance = Min(nearestAssetDistance, candidate.position.distanceFrom(unit.position));
 		}
 
 		for (const auto& resourcePoint : m_state.resourcePoints)
@@ -158,8 +133,9 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	}
 
 	int32 enemyCombatUnits = 0;
-	for (const auto& unit : m_state.units)
+	for (const auto index : getOwnerUnitIndices(Owner::Enemy))
 	{
+		const auto& unit = m_state.units[index];
 		if (IsEnemyCombatUnit(unit))
 		{
 			++enemyCombatUnits;
@@ -167,8 +143,9 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	}
 
 	EnemyAiStrategicTarget strategicTarget;
-	for (const auto& candidate : m_state.units)
+	for (const auto candidateIndex : getOwnerBuildingIndices(Owner::Player))
 	{
+		const auto& candidate = m_state.units[candidateIndex];
 		if (!candidate.isAlive || (candidate.owner != Owner::Player) || !IsBuildingArchetype(candidate.archetype))
 		{
 			continue;
@@ -211,8 +188,9 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		? MakeOffsetToward(enemyAnchor, strategicTarget.position, m_config.enemyAI.rallyDistance)
 		: enemyAnchor;
 
-	for (auto& unit : m_state.units)
+	for (const auto unitIndex : getOwnerUnitIndices(Owner::Enemy))
 	{
+		auto& unit = m_state.units[unitIndex];
 		if (!unit.isAlive || (unit.owner != Owner::Enemy) || !unit.canMove)
 		{
 			continue;

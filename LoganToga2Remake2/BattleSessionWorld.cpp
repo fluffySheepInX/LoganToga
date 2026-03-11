@@ -55,7 +55,7 @@ void BattleSession::updateConstructionOrders()
 	for (size_t index = 0; index < m_state.pendingConstructionOrders.size();)
 	{
 		const PendingConstructionOrder order = m_state.pendingConstructionOrders[index];
-		auto* worker = m_state.findUnit(order.workerUnitId);
+		auto* worker = findCachedUnit(order.workerUnitId);
 		if (!(worker && worker->isAlive && (worker->owner == Owner::Player) && (worker->archetype == UnitArchetype::Worker)))
 		{
 			m_state.playerGold += order.reservedCost;
@@ -79,6 +79,7 @@ void BattleSession::updateConstructionOrders()
 			worker->order.targetUnitId.reset();
 			worker->order.targetPoint = worker->position;
 			worker->moveTarget = worker->position;
+			BattleSessionInternal::ClearNavigationPath(*worker);
 			m_state.pendingConstructionOrders.remove_at(index);
 			continue;
 		}
@@ -90,6 +91,7 @@ void BattleSession::updateConstructionOrders()
 			worker->order.targetUnitId.reset();
 			worker->order.targetPoint = worker->position;
 			worker->moveTarget = worker->position;
+			BattleSessionInternal::ClearNavigationPath(*worker);
 			m_state.statusMessage = GetConstructionFailureReason(*this, order.archetype, order.position, order.workerUnitId);
 			m_state.statusMessageTimer = 2.0;
 			m_state.pendingConstructionOrders.remove_at(index);
@@ -200,9 +202,11 @@ void BattleSession::cleanupDeadUnits()
 
 	m_state.buildings.remove_if([this](const BuildingState& building)
 	{
-		const auto* unit = m_state.findUnit(building.unitId);
+		const auto* unit = findCachedUnit(building.unitId);
 		return !(unit && unit->isAlive);
 	});
+
+	invalidateUnitIndex();
 
 	cleanupSquads();
 }
@@ -250,7 +254,7 @@ bool BattleSession::tryPlaceBuilding(const Owner owner, const UnitArchetype arch
 	{
 		if (builderUnitId)
 		{
-			const auto* builder = m_state.findUnit(*builderUnitId);
+			const auto* builder = findCachedUnit(*builderUnitId);
 			if (!(builder && builder->isAlive && (builder->owner == Owner::Player) && (builder->archetype == UnitArchetype::Worker)))
 			{
 				return false;
@@ -349,6 +353,7 @@ int32 BattleSession::spawnUnit(const Owner owner, const UnitArchetype archetype,
 {
 	const int32 id = m_state.nextUnitId++;
 	m_state.units << makeUnit(id, owner, archetype, position);
+	invalidateUnitIndex();
 	if (IsBuildingArchetype(archetype))
 	{
 		m_state.buildings << BuildingState{ id };

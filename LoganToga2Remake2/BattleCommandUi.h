@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "BattleConfig.h"
+#include "BattleState.h"
 
 enum class CommandKind
 {

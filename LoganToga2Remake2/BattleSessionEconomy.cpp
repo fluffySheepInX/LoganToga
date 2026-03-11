@@ -9,7 +9,7 @@ bool BattleSession::cancelLastPlayerProduction()
 {
 	for (auto& building : m_state.buildings)
 	{
-		const auto* unit = m_state.findUnit(building.unitId);
+		const auto* unit = findCachedUnit(building.unitId);
 		if (!(unit && unit->isAlive && (unit->owner == Owner::Player) && !building.productionQueue.isEmpty()))
 		{
 			continue;
@@ -85,7 +85,7 @@ void BattleSession::updateProduction(const double deltaTime)
 			continue;
 		}
 
-		const auto* buildingUnit = m_state.findUnit(building.unitId);
+		const auto* buildingUnit = findCachedUnit(building.unitId);
 		if (!(buildingUnit && buildingUnit->isAlive))
 		{
 			continue;
@@ -109,7 +109,7 @@ BuildingState* BattleSession::findProductionBuilding(const Owner owner, const Un
 {
 	for (auto& building : m_state.buildings)
 	{
-		if (const auto* unit = m_state.findUnit(building.unitId))
+		if (const auto* unit = findCachedUnit(building.unitId))
 		{
 			if (unit->isAlive && (unit->owner == owner) && (unit->archetype == producerArchetype) && building.isConstructed)
 			{
@@ -125,7 +125,7 @@ const BuildingState* BattleSession::findProductionBuilding(const Owner owner, co
 {
 	for (const auto& building : m_state.buildings)
 	{
-		if (const auto* unit = m_state.findUnit(building.unitId))
+		if (const auto* unit = findCachedUnit(building.unitId))
 		{
 			if (unit->isAlive && (unit->owner == owner) && (unit->archetype == producerArchetype) && building.isConstructed)
 			{

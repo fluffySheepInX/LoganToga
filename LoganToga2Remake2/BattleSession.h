@@ -1,6 +1,10 @@
 ﻿#pragma once
 
+#include <unordered_map>
+
+#include "BattleCommands.h"
 #include "BattleConfig.h"
+#include "BattleState.h"
 
 class BattleSession
 {
@@ -20,6 +24,7 @@ public:
 	[[nodiscard]] Optional<int32> findPlayerUnitAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findPlayerBuildingAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findEnemyAt(const Vec2& position) const;
+	[[nodiscard]] Optional<int32> findEnemyNear(const Vec2& position, double snapRadius) const;
 	bool trySpawnPlayerUnit(UnitArchetype archetype);
 	bool cancelLastPlayerProduction();
 
@@ -27,6 +32,13 @@ private:
 	BattleConfigData m_config;
 	BattleState m_state;
 	Array<BattleCommand> m_pendingCommands;
+	mutable std::unordered_map<int32, size_t> m_unitIndexById;
+	mutable bool m_unitIndexDirty = true;
+	mutable Array<size_t> m_playerUnitIndices;
+	mutable Array<size_t> m_enemyUnitIndices;
+	mutable Array<size_t> m_playerBuildingIndices;
+	mutable Array<size_t> m_enemyBuildingIndices;
+	mutable bool m_frameUnitCacheDirty = true;
 
 	void setupInitialState();
 	void processCommands();
@@ -58,4 +70,14 @@ private:
 	[[nodiscard]] double getProductionTime(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] double getAggroRange(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source) const;
+	[[nodiscard]] const UnitState* tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const;
+	void invalidateUnitIndex() noexcept;
+	void rebuildUnitIndex() const;
+	void rebuildFrameUnitCache() const;
+	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;
+	[[nodiscard]] const Array<size_t>& getOwnerBuildingIndices(Owner owner) const;
+	[[nodiscard]] const UnitState* findOwnerUnitByArchetype(Owner owner, UnitArchetype archetype) const;
+	[[nodiscard]] bool hasBaseDefenseTurret(const UnitState& base, double lockRadius) const;
+	[[nodiscard]] UnitState* findCachedUnit(int32 id);
+	[[nodiscard]] const UnitState* findCachedUnit(int32 id) const;
 };

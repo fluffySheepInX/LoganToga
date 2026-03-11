@@ -39,6 +39,7 @@
 			unit->order.targetUnitId.reset();
 			unit->order.targetPoint = destination + unit->formationOffset;
 			unit->moveTarget = unit->order.targetPoint;
+			BattleSessionInternal::InvalidateNavigationPath(*unit);
 		}
 	}
 }

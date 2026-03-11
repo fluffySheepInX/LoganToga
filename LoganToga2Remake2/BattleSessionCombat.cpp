@@ -1,5 +1,7 @@
 ﻿#include "BattleSession.h"
 
+#include "BattleSessionInternal.h"
+
 namespace
 {
 	[[nodiscard]] int32 GetAttackEffectFrames(const UnitArchetype archetype)
@@ -18,6 +20,48 @@ namespace
 			return 4;
 		}
 	}
+}
+
+const UnitState* BattleSession::tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const
+{
+	const auto& candidateIndices = (source.owner == Owner::Player)
+		? getOwnerUnitIndices(Owner::Enemy)
+		: getOwnerUnitIndices(Owner::Player);
+	const UnitState* inRangeTarget = nullptr;
+	double nearestDistance = Math::Inf;
+
+	for (const auto index : candidateIndices)
+	{
+		const auto& candidate = m_state.units[index];
+		if (!candidate.isAlive || !IsEnemy(source, candidate))
+		{
+			continue;
+		}
+
+		const double distance = source.position.distanceFrom(candidate.position);
+		if (distance > BattleSessionInternal::GetEffectiveAttackRange(source, candidate))
+		{
+			continue;
+		}
+
+		if (distance < nearestDistance)
+		{
+			nearestDistance = distance;
+			inRangeTarget = &candidate;
+		}
+	}
+
+	if (inRangeTarget)
+	{
+		order.type = UnitOrderType::AttackTarget;
+		order.targetUnitId = inRangeTarget->id;
+		order.targetPoint = inRangeTarget->position;
+		return inRangeTarget;
+	}
+
+	order.type = UnitOrderType::Idle;
+	order.targetUnitId.reset();
+	return nullptr;
 }
 
 void BattleSession::updateCombat()
@@ -43,6 +87,7 @@ void BattleSession::updateCombat()
 	});
 
 	Array<DamageEvent> damageEvents;
+	damageEvents.reserve(m_state.units.size());
 
 	for (auto& unit : m_state.units)
 	{
@@ -55,12 +100,10 @@ void BattleSession::updateCombat()
 
 		if ((unit.order.type == UnitOrderType::AttackTarget) && unit.order.targetUnitId)
 		{
-			target = m_state.findUnit(*unit.order.targetUnitId);
+			target = findCachedUnit(*unit.order.targetUnitId);
 			if (!(target && target->isAlive && IsEnemy(unit, *target)))
 			{
-				target = nullptr;
-				unit.order.type = UnitOrderType::Idle;
-				unit.order.targetUnitId.reset();
+				target = tryReacquireCombatTarget(unit, unit.order);
 			}
 		}
 
@@ -74,7 +117,7 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		if (unit.position.distanceFrom(target->position) > unit.attackRange)
+		if (unit.position.distanceFrom(target->position) > BattleSessionInternal::GetEffectiveAttackRange(unit, *target))
 		{
 			continue;
 		}
@@ -90,7 +133,7 @@ void BattleSession::updateCombat()
 
 	for (const auto& event : damageEvents)
 	{
-		if (auto* target = m_state.findUnit(event.targetId))
+		if (auto* target = findCachedUnit(event.targetId))
 		{
 			const int32 effectFrames = GetAttackEffectFrames(event.sourceArchetype);
 			m_state.attackVisualEffects << AttackVisualEffect{

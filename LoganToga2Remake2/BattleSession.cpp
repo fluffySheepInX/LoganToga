@@ -1,4 +1,5 @@
 ﻿#include "BattleSession.h"
+#include "BattleSessionInternal.h"
 
 BattleSession::BattleSession()
 	: BattleSession{ LoadBattleConfig(U"config/battle.toml") }
@@ -17,6 +18,7 @@ void BattleSession::reset(const BattleConfigData& config)
 	m_config = config;
 	m_state = BattleState{};
 	m_pendingCommands.clear();
+	invalidateUnitIndex();
 	setupInitialState();
 }
 
@@ -27,6 +29,8 @@ void BattleSession::enqueue(BattleCommand command)
 
 void BattleSession::update(const double deltaTime)
 {
+	rebuildUnitIndex();
+
 	m_state.statusMessageTimer = Max(m_state.statusMessageTimer - deltaTime, 0.0);
 	if (m_state.statusMessageTimer <= 0.0)
 	{
@@ -57,7 +61,149 @@ const BattleState& BattleSession::state() const noexcept
 
 BattleState& BattleSession::state() noexcept
 {
+	invalidateUnitIndex();
 	return m_state;
+}
+
+void BattleSession::invalidateUnitIndex() noexcept
+{
+	m_unitIndexDirty = true;
+	m_frameUnitCacheDirty = true;
+}
+
+void BattleSession::rebuildUnitIndex() const
+{
+	if (!m_unitIndexDirty)
+	{
+		return;
+	}
+
+	m_unitIndexById.clear();
+	m_unitIndexById.reserve(m_state.units.size());
+	for (size_t index = 0; index < m_state.units.size(); ++index)
+	{
+		m_unitIndexById.emplace(m_state.units[index].id, index);
+	}
+
+	m_unitIndexDirty = false;
+}
+
+void BattleSession::rebuildFrameUnitCache() const
+{
+	if (!m_frameUnitCacheDirty)
+	{
+		return;
+	}
+
+	m_playerUnitIndices.clear();
+	m_enemyUnitIndices.clear();
+	m_playerBuildingIndices.clear();
+	m_enemyBuildingIndices.clear();
+	m_playerUnitIndices.reserve(m_state.units.size());
+	m_enemyUnitIndices.reserve(m_state.units.size());
+	m_playerBuildingIndices.reserve(m_state.buildings.size());
+	m_enemyBuildingIndices.reserve(m_state.buildings.size());
+
+	for (size_t index = 0; index < m_state.units.size(); ++index)
+	{
+		const auto& unit = m_state.units[index];
+		Array<size_t>* ownerIndices = nullptr;
+		Array<size_t>* ownerBuildingIndices = nullptr;
+
+		if (unit.owner == Owner::Player)
+		{
+			ownerIndices = &m_playerUnitIndices;
+			ownerBuildingIndices = &m_playerBuildingIndices;
+		}
+		else if (unit.owner == Owner::Enemy)
+		{
+			ownerIndices = &m_enemyUnitIndices;
+			ownerBuildingIndices = &m_enemyBuildingIndices;
+		}
+
+		if (!ownerIndices)
+		{
+			continue;
+		}
+
+		ownerIndices->push_back(index);
+		if (IsBuildingArchetype(unit.archetype))
+		{
+			ownerBuildingIndices->push_back(index);
+		}
+	}
+
+	m_frameUnitCacheDirty = false;
+}
+
+const Array<size_t>& BattleSession::getOwnerUnitIndices(const Owner owner) const
+{
+	rebuildFrameUnitCache();
+	return (owner == Owner::Enemy) ? m_enemyUnitIndices : m_playerUnitIndices;
+}
+
+const Array<size_t>& BattleSession::getOwnerBuildingIndices(const Owner owner) const
+{
+	rebuildFrameUnitCache();
+	return (owner == Owner::Enemy) ? m_enemyBuildingIndices : m_playerBuildingIndices;
+}
+
+const UnitState* BattleSession::findOwnerUnitByArchetype(const Owner owner, const UnitArchetype archetype) const
+{
+	const auto& candidateIndices = IsBuildingArchetype(archetype)
+		? getOwnerBuildingIndices(owner)
+		: getOwnerUnitIndices(owner);
+
+	for (const auto index : candidateIndices)
+	{
+		const auto& unit = m_state.units[index];
+		if (unit.isAlive && (unit.owner == owner) && (unit.archetype == archetype))
+		{
+			return &unit;
+		}
+	}
+
+	return nullptr;
+}
+
+bool BattleSession::hasBaseDefenseTurret(const UnitState& base, const double lockRadius) const
+{
+	for (const auto index : getOwnerBuildingIndices(base.owner))
+	{
+		const auto& unit = m_state.units[index];
+		if (unit.isAlive
+			&& (unit.archetype == UnitArchetype::Turret)
+			&& (unit.position.distanceFrom(base.position) <= lockRadius))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+UnitState* BattleSession::findCachedUnit(const int32 id)
+{
+	rebuildUnitIndex();
+	const auto it = m_unitIndexById.find(id);
+	if ((it == m_unitIndexById.end()) || (it->second >= m_state.units.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_state.units[it->second];
+}
+
+const UnitState* BattleSession::findCachedUnit(const int32 id) const
+{
+	rebuildUnitIndex();
+	const auto it = m_unitIndexById.find(id);
+	if ((it == m_unitIndexById.end()) || (it->second >= m_state.units.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_state.units[it->second];
 }
 
 const BattleConfigData& BattleSession::config() const noexcept
@@ -67,9 +213,12 @@ const BattleConfigData& BattleSession::config() const noexcept
 
 Array<int32> BattleSession::getSelectedPlayerUnitIds() const
 {
+	const auto& playerUnitIndices = getOwnerUnitIndices(Owner::Player);
 	Array<int32> selected;
-	for (const auto& unit : m_state.units)
+	selected.reserve(playerUnitIndices.size());
+	for (const auto index : playerUnitIndices)
 	{
+		const auto& unit = m_state.units[index];
 		if (unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && !IsBuildingArchetype(unit.archetype))
 		{
 			selected << unit.id;
@@ -81,8 +230,9 @@ Array<int32> BattleSession::getSelectedPlayerUnitIds() const
 
 Optional<int32> BattleSession::findSelectedPlayerWorkerId() const
 {
-	for (const auto& unit : m_state.units)
+	for (const auto index : getOwnerUnitIndices(Owner::Player))
 	{
+		const auto& unit = m_state.units[index];
 		if (unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && (unit.archetype == UnitArchetype::Worker))
 		{
 			return unit.id;
@@ -94,14 +244,16 @@ Optional<int32> BattleSession::findSelectedPlayerWorkerId() const
 
 Optional<int32> BattleSession::findPlayerUnitAt(const Vec2& position) const
 {
-	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
+	const auto& playerUnitIndices = getOwnerUnitIndices(Owner::Player);
+	for (auto it = playerUnitIndices.rbegin(); it != playerUnitIndices.rend(); ++it)
 	{
-		if (it->isAlive
-			&& (it->owner == Owner::Player)
-			&& !IsBuildingArchetype(it->archetype)
-			&& Circle{ it->position, it->radius + 4 }.intersects(position))
+		const auto& unit = m_state.units[*it];
+		if (unit.isAlive
+			&& (unit.owner == Owner::Player)
+			&& !IsBuildingArchetype(unit.archetype)
+			&& Circle{ unit.position, unit.radius + 4 }.intersects(position))
 		{
-			return it->id;
+			return unit.id;
 		}
 	}
 
@@ -110,14 +262,16 @@ Optional<int32> BattleSession::findPlayerUnitAt(const Vec2& position) const
 
 Optional<int32> BattleSession::findPlayerBuildingAt(const Vec2& position) const
 {
-	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
+	const auto& playerBuildingIndices = getOwnerBuildingIndices(Owner::Player);
+	for (auto it = playerBuildingIndices.rbegin(); it != playerBuildingIndices.rend(); ++it)
 	{
-		if (it->isAlive
-			&& (it->owner == Owner::Player)
-			&& IsBuildingArchetype(it->archetype)
-			&& Circle{ it->position, it->radius + 4 }.intersects(position))
+		const auto& unit = m_state.units[*it];
+		if (unit.isAlive
+			&& (unit.owner == Owner::Player)
+			&& IsBuildingArchetype(unit.archetype)
+			&& Circle{ unit.position, unit.radius + 4 }.intersects(position))
 		{
-			return it->id;
+			return unit.id;
 		}
 	}
 
@@ -126,15 +280,48 @@ Optional<int32> BattleSession::findPlayerBuildingAt(const Vec2& position) const
 
 Optional<int32> BattleSession::findEnemyAt(const Vec2& position) const
 {
-	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
+	const auto& enemyUnitIndices = getOwnerUnitIndices(Owner::Enemy);
+	for (auto it = enemyUnitIndices.rbegin(); it != enemyUnitIndices.rend(); ++it)
 	{
-		if (it->isAlive && (it->owner == Owner::Enemy) && Circle{ it->position, it->radius + 4 }.intersects(position))
+		const auto& unit = m_state.units[*it];
+		if (unit.isAlive && (unit.owner == Owner::Enemy) && Circle{ unit.position, unit.radius + 4 }.intersects(position))
 		{
-			return it->id;
+			return unit.id;
 		}
 	}
 
 	return none;
+}
+
+Optional<int32> BattleSession::findEnemyNear(const Vec2& position, const double snapRadius) const
+{
+	const auto& enemyUnitIndices = getOwnerUnitIndices(Owner::Enemy);
+	Optional<int32> nearestId;
+	double nearestDistance = Math::Inf;
+
+	for (auto it = enemyUnitIndices.rbegin(); it != enemyUnitIndices.rend(); ++it)
+	{
+		const auto& unit = m_state.units[*it];
+		if (!unit.isAlive || (unit.owner != Owner::Enemy))
+		{
+			continue;
+		}
+
+		const double expandedRadius = (unit.radius + snapRadius);
+		if (!Circle{ unit.position, expandedRadius }.intersects(position))
+		{
+			continue;
+		}
+
+		const double distanceToSurface = Max(position.distanceFrom(unit.position) - unit.radius, 0.0);
+		if (distanceToSurface < nearestDistance)
+		{
+			nearestDistance = distanceToSurface;
+			nearestId = unit.id;
+		}
+	}
+
+	return nearestId;
 }
 
 void BattleSession::setupInitialState()
@@ -211,7 +398,7 @@ void BattleSession::processCommands()
 
 				for (const auto unitId : value.unitIds)
 				{
-					if (auto* unit = m_state.findUnit(unitId))
+					if (auto* unit = findCachedUnit(unitId))
 					{
 						if (!unit->isAlive)
 						{
@@ -220,6 +407,7 @@ void BattleSession::processCommands()
 
 						unit->order.type = UnitOrderType::AttackTarget;
 						unit->order.targetUnitId = value.targetUnitId;
+						BattleSessionInternal::ClearNavigationPath(*unit);
 					}
 				}
 			}
@@ -229,7 +417,7 @@ void BattleSession::processCommands()
 			}
 			else if constexpr (std::is_same_v<T, IssueConstructionOrderCommand>)
 			{
-				const auto* worker = m_state.findUnit(value.workerUnitId);
+				const auto* worker = findCachedUnit(value.workerUnitId);
 				if (!(worker && worker->isAlive && (worker->owner == Owner::Player) && (worker->archetype == UnitArchetype::Worker)))
 				{
 					m_state.statusMessage = U"No worker available";
@@ -265,12 +453,13 @@ void BattleSession::processCommands()
 				m_state.pendingConstructionOrders << PendingConstructionOrder{ value.workerUnitId, value.archetype, clampedPosition, reservedCost };
 
 				removeUnitsFromSquads(Array<int32>{ value.workerUnitId });
-				if (auto* builder = m_state.findUnit(value.workerUnitId))
+				if (auto* builder = findCachedUnit(value.workerUnitId))
 				{
 					builder->order.type = UnitOrderType::Move;
 					builder->order.targetUnitId.reset();
 					builder->order.targetPoint = clampedPosition;
 					builder->moveTarget = clampedPosition;
+					BattleSessionInternal::InvalidateNavigationPath(*builder);
 				}
 			}
 		}, command);

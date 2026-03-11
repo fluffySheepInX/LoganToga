@@ -6,6 +6,7 @@ namespace
 {
 	constexpr double CommandDragThreshold = 12.0;
 	constexpr double SelectionDragThreshold = 12.0;
+	constexpr double AttackClickSnapRadius = 20.0;
 
 	void clearSelection(BattleState& state)
 	{
@@ -201,6 +202,10 @@ void BattleInputController::handleCommandInput(BattleSession& session, const Vec
 	if (!isDragCommand)
 	{
 		if (const auto targetUnitId = session.findEnemyAt(destination))
+		{
+			session.enqueue(AttackUnitCommand{ selectedIds, *targetUnitId });
+		}
+		else if (const auto targetUnitId = session.findEnemyNear(destination, AttackClickSnapRadius))
 		{
 			session.enqueue(AttackUnitCommand{ selectedIds, *targetUnitId });
 		}
