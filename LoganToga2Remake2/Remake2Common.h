@@ -15,6 +15,7 @@ using s3d::Key1;
 using s3d::Key2;
 using s3d::Key3;
 using s3d::Key4;
+using s3d::Key5;
 using s3d::KeyEnter;
 using s3d::KeyEscape;
 using s3d::KeyQ;

@@ -6,6 +6,12 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_clock{ 1.0 / 60.0 }
 {
+	if (!getData().runState.isActive)
+	{
+		BeginNewRun(getData().runState);
+	}
+
+	m_session.reset(BuildBattleConfigForRun(getData().baseBattleConfig, getData().runState, getData().rewardCards));
 	m_camera.jumpTo(m_session.state().worldBounds.center(), 1.0);
 }
 
@@ -14,14 +20,34 @@ void BattleScene::update()
 	if (m_session.state().winner)
 	{
 		m_isPaused = false;
+		auto& runState = getData().runState;
+		const bool playerWon = (*m_session.state().winner == Owner::Player);
+		const bool hasNextBattle = playerWon && ((runState.currentBattleIndex + 1) < runState.totalBattles);
 		if (KeyEnter.down())
 		{
-			changeScene(U"Title");
+			if (hasNextBattle)
+			{
+				runState.pendingRewardCardIds = BuildRewardCardChoices(runState, getData().rewardCards);
+				changeScene(U"Reward");
+			}
+			else
+			{
+				if (playerWon)
+				{
+					runState.isCleared = true;
+				}
+				else
+				{
+					runState.isFailed = true;
+				}
+				changeScene(U"Title");
+			}
 			return;
 		}
 
 		if (KeyR.down())
 		{
+			BeginNewRun(runState);
 			changeScene(U"Battle");
 			return;
 		}

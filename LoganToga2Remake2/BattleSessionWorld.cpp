@@ -296,8 +296,8 @@ bool BattleSession::tryPlaceBuilding(const Owner owner, const UnitArchetype arch
 	if (auto* building = m_state.findBuildingByUnitId(buildingUnitId))
 	{
 		building->isConstructed = false;
-		building->constructionRemaining = getProductionTime(archetype);
-		building->constructionTotal = getProductionTime(archetype);
+		building->constructionRemaining = getProductionTime(owner, archetype);
+		building->constructionTotal = getProductionTime(owner, archetype);
 	}
 
 	return true;
@@ -374,6 +374,15 @@ UnitState BattleSession::makeUnit(const int32 id, const Owner owner, const UnitA
 	unit.hp = definition.hp;
 	unit.maxHp = definition.hp;
 	unit.canMove = definition.canMove;
+	if ((owner == Owner::Player) && FindPlayerUnitModifier(m_config, archetype))
+	{
+		const auto& modifier = *FindPlayerUnitModifier(m_config, archetype);
+		unit.moveSpeed += modifier.moveSpeedDelta;
+		unit.attackRange += modifier.attackRangeDelta;
+		unit.attackPower += modifier.attackPowerDelta;
+		unit.hp += modifier.hpDelta;
+		unit.maxHp += modifier.hpDelta;
+	}
 
 	return unit;
 }

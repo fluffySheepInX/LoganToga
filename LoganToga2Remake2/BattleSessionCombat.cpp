@@ -1,9 +1,30 @@
 ﻿#include "BattleSession.h"
 
+namespace
+{
+	[[nodiscard]] int32 GetAttackEffectFrames(const UnitArchetype archetype)
+	{
+		switch (archetype)
+		{
+		case UnitArchetype::Worker:
+			return 5;
+		case UnitArchetype::Soldier:
+			return 6;
+		case UnitArchetype::Archer:
+			return 9;
+		case UnitArchetype::Turret:
+			return 5;
+		default:
+			return 4;
+		}
+	}
+}
+
 void BattleSession::updateCombat()
 {
 	struct DamageEvent
 	{
+		int32 sourceUnitId = -1;
 		Vec2 sourcePosition = Vec2::Zero();
 		int32 targetId = -1;
 		int32 damage = 0;
@@ -63,7 +84,7 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		damageEvents << DamageEvent{ unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
+		damageEvents << DamageEvent{ unit.id, unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
 		unit.attackCooldownRemaining = unit.attackCooldown;
 	}
 
@@ -71,17 +92,16 @@ void BattleSession::updateCombat()
 	{
 		if (auto* target = m_state.findUnit(event.targetId))
 		{
-			if (event.sourceArchetype == UnitArchetype::Turret)
-			{
-				m_state.attackVisualEffects << AttackVisualEffect{
-					.start = event.sourcePosition,
-					.end = target->position,
-					.owner = event.owner,
-					.sourceArchetype = event.sourceArchetype,
-					.framesRemaining = 5,
-					.totalFrames = 5,
-				};
-			}
+			const int32 effectFrames = GetAttackEffectFrames(event.sourceArchetype);
+			m_state.attackVisualEffects << AttackVisualEffect{
+				.sourceUnitId = event.sourceUnitId,
+				.start = event.sourcePosition,
+				.end = target->position,
+				.owner = event.owner,
+				.sourceArchetype = event.sourceArchetype,
+				.framesRemaining = effectFrames,
+				.totalFrames = effectFrames,
+			};
 
 			target->hp -= event.damage;
 			if (target->hp <= 0)

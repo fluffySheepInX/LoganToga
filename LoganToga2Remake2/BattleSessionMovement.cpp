@@ -91,7 +91,7 @@ void BattleSession::updateMovement(const double deltaTime)
 const UnitState* BattleSession::findNearestEnemy(const UnitState& source) const
 {
 	const UnitState* nearest = nullptr;
-	double nearestDistance = getAggroRange(source.archetype);
+	double nearestDistance = getAggroRange(source.owner, source.archetype);
 
 	for (const auto& candidate : m_state.units)
 	{

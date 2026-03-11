@@ -176,6 +176,11 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	String productionText;
 	for (const auto& slot : config.playerProductionSlots)
 	{
+		if (!ContainsArchetype(config.playerAvailableProductionArchetypes, slot.archetype))
+		{
+			continue;
+		}
+
 		if (!productionText.isEmpty())
 		{
 			productionText += U" / ";
@@ -188,10 +193,18 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	String constructionText = U"Build: none";
 	for (const auto& slot : config.playerConstructionSlots)
 	{
+		if (!ContainsArchetype(config.playerAvailableConstructionArchetypes, slot.archetype))
+		{
+			continue;
+		}
+
 		const int32 cost = FindUnitDefinition(config, slot.archetype) ? FindUnitDefinition(config, slot.archetype)->cost : 0;
 		constructionText = s3d::Format(U"Build: ", slot.slot, U": ", GetArchetypeLabel(slot.archetype), U" (", cost, U"G)");
 		break;
 	}
+	const String runText = gameData.runState.isActive
+		? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
+		: U"Run: inactive";
 
 	String queueText = U"Queue: idle";
 	for (const auto& building : state.buildings)
@@ -214,7 +227,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		}
 	}
 
-	RoundRect{ 16, 16, 480, 216, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+	RoundRect{ 16, 16, 480, 242, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);
 	gameData.smallFont(config.hud.controls).draw(28, 66, Palette::White);
 	gameData.smallFont(productionText).draw(28, 88, Palette::White);
@@ -231,7 +244,8 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	gameData.smallFont(formationText).draw(28, 154, Palette::White);
 	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, 176, Palette::White);
 	gameData.smallFont(config.hud.escapeHint).draw(28, 198, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 220, Palette::Gold);
+	gameData.smallFont(runText).draw(28, 220, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 242, Palette::Gold);
 
 	if (const auto layout = BuildCommandPanelLayout(state, config))
 	{
@@ -252,7 +266,19 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	if (state.winner)
 	{
 		const String label = (*state.winner == Owner::Player) ? U"PLAYER WIN" : U"ENEMY WIN";
+		String winHint = config.hud.winHint;
+		if (gameData.runState.isActive)
+		{
+			if ((*state.winner == Owner::Player) && ((gameData.runState.currentBattleIndex + 1) < gameData.runState.totalBattles))
+			{
+				winHint = U"Enter: choose reward / R: new run";
+			}
+			else
+			{
+				winHint = U"Enter: title / R: new run";
+			}
+		}
 		gameData.titleFont(label).drawAt(Scene::CenterF().movedBy(0, -30), Palette::White);
-		gameData.smallFont(config.hud.winHint).drawAt(Scene::CenterF().movedBy(0, 18), Palette::White);
+		gameData.smallFont(winHint).drawAt(Scene::CenterF().movedBy(0, 18), Palette::White);
 	}
 }

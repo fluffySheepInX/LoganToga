@@ -157,6 +157,11 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 		return false;
 	}
 
+	if ((owner == Owner::Player) && !ContainsArchetype(m_config.playerAvailableProductionArchetypes, archetype))
+	{
+		return false;
+	}
+
 	const auto* slot = findProductionSlot(archetype);
 	if (!slot)
 	{
@@ -182,7 +187,8 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 	}
 
 	gold -= cost;
-	building->productionQueue << ProductionQueueItem{ archetype, getProductionTime(archetype), getProductionTime(archetype) };
+	const double productionTime = getProductionTime(owner, archetype);
+	building->productionQueue << ProductionQueueItem{ archetype, productionTime, productionTime };
 	return true;
 }
 
@@ -214,12 +220,24 @@ int32 BattleSession::getUnitCost(const UnitArchetype archetype) const
 	return getUnitDefinition(archetype).cost;
 }
 
-double BattleSession::getProductionTime(const UnitArchetype archetype) const
+double BattleSession::getProductionTime(const Owner owner, const UnitArchetype archetype) const
 {
-	return getUnitDefinition(archetype).productionTime;
+	double productionTime = getUnitDefinition(archetype).productionTime;
+	if ((owner == Owner::Player) && FindPlayerUnitModifier(m_config, archetype))
+	{
+		productionTime = Max(0.2, productionTime - FindPlayerUnitModifier(m_config, archetype)->productionTimeDelta);
+	}
+
+	return productionTime;
 }
 
-double BattleSession::getAggroRange(const UnitArchetype archetype) const
+double BattleSession::getAggroRange(const Owner owner, const UnitArchetype archetype) const
 {
-	return getUnitDefinition(archetype).aggroRange;
+	double aggroRange = getUnitDefinition(archetype).aggroRange;
+	if ((owner == Owner::Player) && FindPlayerUnitModifier(m_config, archetype))
+	{
+		aggroRange += FindPlayerUnitModifier(m_config, archetype)->attackRangeDelta;
+	}
+
+	return aggroRange;
 }

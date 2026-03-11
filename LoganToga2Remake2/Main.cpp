@@ -1,5 +1,6 @@
 ﻿#include "GameData.h"
 #include "BattleScene.h"
+#include "RewardScene.h"
 #include "TitleScene.h"
 
 void Main()
@@ -12,6 +13,7 @@ void Main()
 	App manager;
 	manager.add<TitleScene>(U"Title");
 	manager.add<BattleScene>(U"Battle");
+	manager.add<RewardScene>(U"Reward");
 
 	while (System::Update())
 	{

@@ -46,19 +46,6 @@ struct CommandPanelLayout
 	return false;
 }
 
-inline void AppendUniqueArchetype(Array<UnitArchetype>& archetypes, const UnitArchetype archetype)
-{
-	for (const auto current : archetypes)
-	{
-		if (current == archetype)
-		{
-			return;
-		}
-	}
-
-	archetypes << archetype;
-}
-
 [[nodiscard]] inline Array<UnitArchetype> CollectSelectedBuildingArchetypes(const BattleState& state)
 {
 	Array<UnitArchetype> archetypes;
@@ -83,6 +70,11 @@ inline void AppendUniqueArchetype(Array<UnitArchetype>& archetypes, const UnitAr
 
 	for (const auto& slot : config.playerProductionSlots)
 	{
+		if (!ContainsArchetype(config.playerAvailableProductionArchetypes, slot.archetype))
+		{
+			continue;
+		}
+
 		bool isAvailable = false;
 		for (const auto producer : selectedBuildings)
 		{
@@ -147,6 +139,11 @@ inline void AppendUniqueArchetype(Array<UnitArchetype>& archetypes, const UnitAr
 	Array<CommandIconEntry> commands;
 	for (const auto& slot : config.playerConstructionSlots)
 	{
+		if (!ContainsArchetype(config.playerAvailableConstructionArchetypes, slot.archetype))
+		{
+			continue;
+		}
+
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = definition ? definition->cost : 0;
 		const bool hasEnoughGold = (state.playerGold >= cost);

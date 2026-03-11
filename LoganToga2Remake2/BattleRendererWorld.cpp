@@ -2,16 +2,137 @@
 
 namespace
 {
-	void DrawWorkerDecoration(const UnitState& unit, const BattleState& state)
+	[[nodiscard]] bool IsMeleeAttackArchetype(const UnitArchetype archetype)
+	{
+		return (archetype == UnitArchetype::Worker)
+			|| (archetype == UnitArchetype::Soldier);
+	}
+
+	[[nodiscard]] double GetAttackAnimationProgress(const AttackVisualEffect& effect)
+	{
+		if (effect.totalFrames <= 0)
+		{
+			return 0.0;
+		}
+
+		return Clamp(1.0 - (static_cast<double>(effect.framesRemaining) / effect.totalFrames), 0.0, 1.0);
+	}
+
+	[[nodiscard]] double GetThrustAmount(const double progress)
+	{
+		return (progress <= 0.5) ? (progress * 2.0) : ((1.0 - progress) * 2.0);
+	}
+
+	[[nodiscard]] Vec2 GetMeleeAttackOffset(const UnitArchetype archetype, const Vec2& attackVector, const double progress)
+	{
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return Vec2::Zero();
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const double thrust = GetThrustAmount(progress);
+		const double offsetDistance = (archetype == UnitArchetype::Worker) ? 5.0 : 7.0;
+		return (direction * offsetDistance * thrust);
+	}
+
+	[[nodiscard]] Vec2 GetUnitRenderOffset(const UnitState& unit, const BattleState& state)
+	{
+		for (const auto& effect : state.attackVisualEffects)
+		{
+			if ((effect.sourceUnitId != unit.id)
+				|| !IsMeleeAttackArchetype(effect.sourceArchetype)
+				|| (effect.framesRemaining <= 0)
+				|| (effect.totalFrames <= 0))
+			{
+				continue;
+			}
+
+			return GetMeleeAttackOffset(unit.archetype, effect.end - effect.start, GetAttackAnimationProgress(effect));
+		}
+
+		return Vec2::Zero();
+	}
+
+	void DrawThrustAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const Vec2 side{ -direction.y, direction.x };
+		const double animationProgress = (1.0 - t);
+		const double thrust = GetThrustAmount(animationProgress);
+		const double baseLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 13.0 : 18.0;
+		const double peakLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 24.0 : 32.0;
+		const double tipLength = baseLength + ((peakLength - baseLength) * thrust);
+		const double lineWidth = (effect.sourceArchetype == UnitArchetype::Worker) ? 3.0 : 4.0;
+		const double headLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 6.0 : 8.0;
+		const double headWidth = (effect.sourceArchetype == UnitArchetype::Worker) ? 4.0 : 5.0;
+		const double frontOffset = (effect.sourceArchetype == UnitArchetype::Worker) ? 10.0 : 14.0;
+		const Vec2 lungeOffset = GetMeleeAttackOffset(effect.sourceArchetype, attackVector, animationProgress);
+		const Vec2 origin = effect.start + lungeOffset + (direction * frontOffset);
+		const Vec2 shaftEnd = origin + (direction * tipLength);
+		const Vec2 headBase = shaftEnd - (direction * headLength);
+		const ColorF shaftColor = (effect.sourceArchetype == UnitArchetype::Worker)
+			? ColorF{ 0.96, 0.84, 0.36, 0.90 }
+			: ColorF{ ownerColor.r, ownerColor.g, ownerColor.b, 0.92 };
+		const ColorF tipColor{ 1.0, 0.96, 0.84, 0.95 };
+
+		Line{ origin, shaftEnd }.draw(lineWidth + 2.0, ColorF{ 0.05, 0.07, 0.10, 0.35 + (0.25 * thrust) });
+		Line{ origin, shaftEnd }.draw(lineWidth, shaftColor);
+		Line{ headBase + (side * headWidth), shaftEnd }.draw(lineWidth - 0.5, tipColor);
+		Line{ headBase - (side * headWidth), shaftEnd }.draw(lineWidth - 0.5, tipColor);
+		Circle{ shaftEnd, 1.5 + (2.5 * thrust) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.45 + (0.30 * thrust) });
+	}
+
+	void DrawArrowAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const Vec2 side{ -direction.y, direction.x };
+		const double progress = (1.0 - t);
+		const Vec2 arrowPos = effect.start + (attackVector * progress);
+		const Vec2 tailPos = arrowPos - (direction * 18.0);
+		const Vec2 headBase = arrowPos - (direction * 7.0);
+		const ColorF trailColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.28 + (0.32 * progress) };
+		const ColorF arrowColor{ 0.96, 0.92, 0.78, 0.94 };
+
+		Line{ tailPos, arrowPos }.draw(2.5, trailColor);
+		Line{ tailPos, arrowPos }.draw(1.2, arrowColor);
+		Line{ headBase + (side * 4.0), arrowPos }.draw(1.4, arrowColor);
+		Line{ headBase - (side * 4.0), arrowPos }.draw(1.4, arrowColor);
+	}
+
+	void DrawBeamAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
+		const ColorF coreColor{ 1.0, 0.95, 0.82, 0.35 + (0.55 * t) };
+
+		Line{ effect.start, effect.end }.draw(6, beamColor);
+		Line{ effect.start, effect.end }.draw(2.5, coreColor);
+		Circle{ effect.start, 7.0 + (4.0 * t) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.25 + (0.45 * t) });
+		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
+	}
+
+	void DrawWorkerDecoration(const UnitState& unit, const BattleState& state, const Vec2& renderPosition)
 	{
 		const double helmetRadius = unit.radius * 0.72;
-		const Vec2 helmetCenter = unit.position.movedBy(0, -unit.radius * 0.40);
+		const Vec2 helmetCenter = renderPosition.movedBy(0, -unit.radius * 0.40);
 		Circle{ helmetCenter, helmetRadius }.draw(ColorF{ 0.96, 0.82, 0.20, 0.96 });
 		RectF{ helmetCenter.x - (helmetRadius * 0.9), helmetCenter.y + (helmetRadius * 0.2), helmetRadius * 1.8, helmetRadius * 0.42 }.draw(ColorF{ 0.72, 0.56, 0.12, 0.96 });
-		RectF{ unit.position.x - (unit.radius * 0.75), unit.position.y + (unit.radius * 0.18), unit.radius * 1.5, unit.radius * 0.34 }.draw(ColorF{ 0.28, 0.24, 0.18, 0.88 });
+		RectF{ renderPosition.x - (unit.radius * 0.75), renderPosition.y + (unit.radius * 0.18), unit.radius * 1.5, unit.radius * 0.34 }.draw(ColorF{ 0.28, 0.24, 0.18, 0.88 });
 
-		const Vec2 toolHandleStart = unit.position.movedBy(unit.radius * 0.48, -unit.radius * 0.08);
-		const Vec2 toolHandleEnd = unit.position.movedBy(unit.radius * 1.18, -unit.radius * 0.88);
+		const Vec2 toolHandleStart = renderPosition.movedBy(unit.radius * 0.48, -unit.radius * 0.08);
+		const Vec2 toolHandleEnd = renderPosition.movedBy(unit.radius * 1.18, -unit.radius * 0.88);
 		Line{ toolHandleStart, toolHandleEnd }.draw(3, ColorF{ 0.84, 0.88, 0.94, 0.96 });
 		RectF{ toolHandleEnd.x - (unit.radius * 0.34), toolHandleEnd.y - (unit.radius * 0.18), unit.radius * 0.72, unit.radius * 0.28 }.draw(ColorF{ 0.58, 0.62, 0.70, 0.96 });
 
@@ -20,9 +141,9 @@ namespace
 			return;
 		}
 
-		Circle{ unit.position, unit.radius + 8 }.drawFrame(2.5, ColorF{ 1.0, 0.84, 0.24, 0.92 });
-		RectF{ Arg::center(unit.position), unit.radius * 3.4, unit.radius * 3.4 }.drawFrame(1.5, ColorF{ 1.0, 0.90, 0.42, 0.40 });
-		Line{ unit.position.movedBy(unit.radius * 0.9, -unit.radius * 0.7), state.buildingPreviewPosition }.draw(1.5, ColorF{ 1.0, 0.86, 0.32, 0.28 });
+		Circle{ renderPosition, unit.radius + 8 }.drawFrame(2.5, ColorF{ 1.0, 0.84, 0.24, 0.92 });
+		RectF{ Arg::center(renderPosition), unit.radius * 3.4, unit.radius * 3.4 }.drawFrame(1.5, ColorF{ 1.0, 0.90, 0.42, 0.40 });
+		Line{ renderPosition.movedBy(unit.radius * 0.9, -unit.radius * 0.7), state.buildingPreviewPosition }.draw(1.5, ColorF{ 1.0, 0.86, 0.32, 0.28 });
 	}
 }
 
@@ -200,13 +321,31 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 
 		const double t = Clamp(static_cast<double>(effect.framesRemaining) / effect.totalFrames, 0.0, 1.0);
 		const ColorF ownerColor = GetOwnerColor(effect.owner);
-		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
-		const ColorF coreColor{ 1.0, 0.95, 0.82, 0.35 + (0.55 * t) };
 
-		Line{ effect.start, effect.end }.draw(6, beamColor);
-		Line{ effect.start, effect.end }.draw(2.5, coreColor);
-		Circle{ effect.start, 7.0 + (4.0 * t) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.25 + (0.45 * t) });
-		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
+		switch (effect.sourceArchetype)
+		{
+		case UnitArchetype::Archer:
+			DrawArrowAttackEffect(effect, t, ownerColor);
+			break;
+		case UnitArchetype::Turret:
+		default:
+			DrawBeamAttackEffect(effect, t, ownerColor);
+			break;
+		}
+	}
+}
+
+void BattleRenderer::drawMeleeAttackEffects(const BattleState& state) const
+{
+	for (const auto& effect : state.attackVisualEffects)
+	{
+		if ((effect.framesRemaining <= 0) || (effect.totalFrames <= 0) || !IsMeleeAttackArchetype(effect.sourceArchetype))
+		{
+			continue;
+		}
+
+		const double t = Clamp(static_cast<double>(effect.framesRemaining) / effect.totalFrames, 0.0, 1.0);
+		DrawThrustAttackEffect(effect, t, GetOwnerColor(effect.owner));
 	}
 }
 
@@ -219,28 +358,35 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 			continue;
 		}
 
+		const Vec2 renderPosition = unit.position + GetUnitRenderOffset(unit, state);
 		const ColorF color = GetOwnerColor(unit.owner);
-		Circle{ unit.position, unit.radius }.draw(color);
+		if (unit.isSelected && (unit.attackRange > 0.0))
+		{
+			Circle{ renderPosition, unit.attackRange }.draw(ColorF{ 1.0, 0.64, 0.18, 0.08 });
+			Circle{ renderPosition, unit.attackRange }.drawFrame(1.5, ColorF{ 1.0, 0.68, 0.22, 0.30 });
+		}
+
+		Circle{ renderPosition, unit.radius }.draw(color);
 		if (unit.archetype == UnitArchetype::Worker)
 		{
-			DrawWorkerDecoration(unit, state);
+			DrawWorkerDecoration(unit, state, renderPosition);
 		}
 
 		if (IsBuildingArchetype(unit.archetype))
 		{
-			Circle{ unit.position, unit.radius + 10 }.drawFrame(4, color);
+			Circle{ renderPosition, unit.radius + 10 }.drawFrame(4, color);
 		}
 
 		if (unit.isSelected)
 		{
-			Circle{ unit.position, unit.radius + 5 }.drawFrame(2, Palette::Yellow);
+			Circle{ renderPosition, unit.radius + 5 }.drawFrame(2, Palette::Yellow);
 		}
 
 		const double hpRate = (unit.maxHp > 0) ? (static_cast<double>(unit.hp) / unit.maxHp) : 0.0;
-		const RectF barBack{ unit.position.x - 18, unit.position.y - unit.radius - 14, 36, 5 };
+		const RectF barBack{ renderPosition.x - 18, renderPosition.y - unit.radius - 14, 36, 5 };
 		barBack.draw(ColorF{ 0.1 });
 		RectF{ barBack.pos, 36 * hpRate, barBack.h }.draw(ColorF{ 0.3, 0.95, 0.45 });
 
-		gameData.smallFont(GetArchetypeLabel(unit.archetype)).drawAt(unit.position.movedBy(0, unit.radius + 10), Palette::White);
+		gameData.smallFont(GetArchetypeLabel(unit.archetype)).drawAt(renderPosition.movedBy(0, unit.radius + 10), Palette::White);
 	}
 }

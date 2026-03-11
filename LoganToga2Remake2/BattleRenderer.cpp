@@ -13,6 +13,7 @@ void BattleRenderer::draw(const BattleState& state, const BattleConfigData& conf
 		drawBuildings(state, gameData);
 		drawAttackEffects(state);
 		drawUnits(state, gameData);
+		drawMeleeAttackEffects(state);
 	}
 
 	drawHud(state, config, gameData);

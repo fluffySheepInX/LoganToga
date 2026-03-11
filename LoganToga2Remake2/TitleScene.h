@@ -10,8 +10,9 @@ public:
 
 	void update() override
 	{
-		if (KeyEnter.down() || SimpleGUI::Button(U"Battle Start", Vec2{ 530, 420 }, 220))
+		if (KeyEnter.down() || SimpleGUI::Button(U"Start Run", Vec2{ 530, 420 }, 220))
 		{
+			BeginNewRun(getData().runState);
 			changeScene(U"Battle");
 		}
 	}
@@ -24,10 +25,10 @@ public:
 
 		const auto& data = getData();
 		data.titleFont(U"LoganToga2Remake2").drawAt(Scene::CenterF().movedBy(0, -170), Palette::White);
-		data.uiFont(U"OpenSiv3D の SceneManager で再構成した起動版").drawAt(Scene::CenterF().movedBy(0, -100), ColorF{ 0.75, 0.86, 1.0 });
-		data.smallFont(U"・タイトル -> 戦闘 の遷移を SceneManager で管理").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
-		data.smallFont(U"・戦闘ロジックは LoganToga2Remake から移植").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
-		data.smallFont(U"・勝敗後は Title に戻るか、その場で再戦可能").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
-		data.smallFont(U"Enter でも開始できます").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+		data.uiFont(U"RTS run prototype").drawAt(Scene::CenterF().movedBy(0, -100), ColorF{ 0.75, 0.86, 1.0 });
+		data.smallFont(U"・3-5 battles per run").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
+		data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
+		data.smallFont(U"・Lose once and the run ends").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
+		data.smallFont(U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
 	}
 };

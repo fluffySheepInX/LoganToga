@@ -22,6 +22,8 @@ bool BattleConstructionController::isConstructionSlotTriggered(const int32 slot)
 	{
 	case 4:
 		return Key4.down();
+	case 5:
+		return Key5.down();
 	default:
 		return false;
 	}
@@ -58,6 +60,11 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 
 	for (const auto& slot : session.config().playerConstructionSlots)
 	{
+		if (!ContainsArchetype(session.config().playerAvailableConstructionArchetypes, slot.archetype))
+		{
+			continue;
+		}
+
 		if (isConstructionSlotTriggered(slot.slot) && HasSelectedWorker(state))
 		{
 			state.pendingConstructionArchetype = slot.archetype;

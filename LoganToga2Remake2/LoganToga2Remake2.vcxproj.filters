@@ -799,6 +799,7 @@
       <Filter>Resource Files\engine\shader\glsl</Filter>
     </None>
     <None Include="App\config\battle.toml" />
+    <None Include="App\config\cards.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -892,5 +893,26 @@
     <ClInclude Include="BattleSessionFormation.ipp" />
     <ClInclude Include="BattleSceneCamera.ipp" />
     <ClInclude Include="BattleScenePause.ipp" />
+    <ClInclude Include="RunData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RewardScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunCardLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunCardLogic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunBattleBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunCardPresentation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

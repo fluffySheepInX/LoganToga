@@ -1,0 +1,112 @@
+﻿#pragma once
+
+#include "RunCardLogic.h"
+
+inline void AppendEnemyProgressionUnits(BattleConfigData& config, const EnemyProgressionConfig& progression)
+{
+	int32 unitIndex = 0;
+	const auto appendUnits = [&](const UnitArchetype archetype, const int32 count)
+	{
+		for (int32 index = 0; index < count; ++index, ++unitIndex)
+		{
+			const double xOffset = 90.0 + (unitIndex * 24.0);
+			const double yOffset = (unitIndex % 2 == 0) ? 50.0 : -50.0;
+			config.initialUnits << InitialUnitPlacement{
+				.owner = Owner::Enemy,
+				.archetype = archetype,
+				.position = Vec2{
+					config.enemySpawn.position.x - xOffset,
+					config.enemySpawn.position.y + yOffset
+				}
+			};
+		}
+	};
+
+	appendUnits(config.enemySpawn.basicArchetype, progression.extraBasicUnits);
+	appendUnits(config.enemySpawn.advancedArchetype, progression.extraAdvancedUnits);
+}
+
+inline void ReplaceEnemyInitialUnits(BattleConfigData& config, const EnemyProgressionConfig& progression)
+{
+	config.initialUnits.remove_if([](const InitialUnitPlacement& placement)
+	{
+		return placement.owner == Owner::Enemy;
+	});
+
+	for (const auto& placement : progression.enemyInitialUnits)
+	{
+		config.initialUnits << placement;
+	}
+}
+
+inline void ApplyUnitStatBonus(PlayerUnitModifier& modifier, const RewardCardDefinition& card)
+{
+	switch (card.statType)
+	{
+	case RewardCardStatType::HP:
+		modifier.hpDelta += static_cast<int32>(card.value);
+		break;
+	case RewardCardStatType::AttackPower:
+		modifier.attackPowerDelta += static_cast<int32>(card.value);
+		break;
+	case RewardCardStatType::MoveSpeed:
+		modifier.moveSpeedDelta += card.value;
+		break;
+	case RewardCardStatType::AttackRange:
+		modifier.attackRangeDelta += card.value;
+		break;
+	case RewardCardStatType::ProductionTime:
+		modifier.productionTimeDelta += card.value;
+		break;
+	default:
+		break;
+	}
+}
+
+[[nodiscard]] inline BattleConfigData BuildBattleConfigForRun(const BattleConfigData& baseConfig, const RunState& runState, const Array<RewardCardDefinition>& cards)
+{
+	BattleConfigData config = baseConfig;
+	ResolvePlayerUnlocks(runState, cards, config.playerAvailableProductionArchetypes, config.playerAvailableConstructionArchetypes);
+
+	for (const auto& selectedId : runState.selectedCardIds)
+	{
+		const auto* card = FindRewardCardDefinition(cards, selectedId);
+		if (!(card && (card->effectType == RewardCardEffectType::UnitStatBonus)))
+		{
+			continue;
+		}
+
+		auto* modifier = FindPlayerUnitModifier(config, card->targetArchetype);
+		if (!modifier)
+		{
+			config.playerUnitModifiers << PlayerUnitModifier{ .archetype = card->targetArchetype };
+			modifier = &config.playerUnitModifiers.back();
+		}
+
+		ApplyUnitStatBonus(*modifier, *card);
+	}
+
+	const int32 battleNumber = runState.currentBattleIndex + 1;
+	config.hud.title = s3d::Format(baseConfig.hud.title, U"  RUN ", battleNumber, U"/", runState.totalBattles);
+	if (const auto* progression = FindEnemyProgressionConfig(baseConfig, battleNumber))
+	{
+		config.enemyGold += progression->goldBonus;
+		config.income.enemyAmount += progression->incomeBonus;
+		if (progression->spawnInterval > 0.0)
+		{
+			config.enemySpawn.interval = progression->spawnInterval;
+		}
+		if (progression->assaultUnitThreshold > 0)
+		{
+			config.enemyAI.assaultUnitThreshold = progression->assaultUnitThreshold;
+		}
+		if (progression->replaceEnemyInitialUnits && !progression->enemyInitialUnits.isEmpty())
+		{
+			ReplaceEnemyInitialUnits(config, *progression);
+		}
+
+		AppendEnemyProgressionUnits(config, *progression);
+	}
+
+	return config;
+}

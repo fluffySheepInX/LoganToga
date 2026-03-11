@@ -102,6 +102,7 @@ struct SquadState
 
 struct AttackVisualEffect
 {
+	int32 sourceUnitId = -1;
 	Vec2 start = Vec2::Zero();
 	Vec2 end = Vec2::Zero();
 	Owner owner = Owner::Player;

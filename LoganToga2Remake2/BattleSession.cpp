@@ -1,8 +1,22 @@
 ﻿#include "BattleSession.h"
 
 BattleSession::BattleSession()
-	: m_config{ LoadBattleConfig(U"config/battle.toml") }
+	: BattleSession{ LoadBattleConfig(U"config/battle.toml") }
+
 {
+}
+
+BattleSession::BattleSession(const BattleConfigData& config)
+	: m_config{ config }
+{
+	setupInitialState();
+}
+
+void BattleSession::reset(const BattleConfigData& config)
+{
+	m_config = config;
+	m_state = BattleState{};
+	m_pendingCommands.clear();
 	setupInitialState();
 }
 

@@ -17,6 +17,7 @@ private:
 	void drawResourcePoints(const BattleState& state, const GameData& gameData) const;
 	void drawBuildings(const BattleState& state, const GameData& gameData) const;
 	void drawAttackEffects(const BattleState& state) const;
+	void drawMeleeAttackEffects(const BattleState& state) const;
 	void drawUnits(const BattleState& state, const GameData& gameData) const;
 	void drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const;
 };

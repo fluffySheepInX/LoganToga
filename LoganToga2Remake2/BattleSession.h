@@ -6,7 +6,9 @@ class BattleSession
 {
 public:
 	BattleSession();
+	explicit BattleSession(const BattleConfigData& config);
 
+	void reset(const BattleConfigData& config);
 	void enqueue(BattleCommand command);
 	void update(double deltaTime);
 
@@ -53,7 +55,7 @@ private:
 	[[nodiscard]] UnitState makeUnit(int32 id, Owner owner, UnitArchetype archetype, const Vec2& position) const;
 	[[nodiscard]] const UnitDefinition& getUnitDefinition(UnitArchetype archetype) const;
 	[[nodiscard]] int32 getUnitCost(UnitArchetype archetype) const;
-	[[nodiscard]] double getProductionTime(UnitArchetype archetype) const;
-	[[nodiscard]] double getAggroRange(UnitArchetype archetype) const;
+	[[nodiscard]] double getProductionTime(Owner owner, UnitArchetype archetype) const;
+	[[nodiscard]] double getAggroRange(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source) const;
 };

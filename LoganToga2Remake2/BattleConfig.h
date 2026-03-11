@@ -17,6 +17,16 @@ struct UnitDefinition
 	double aggroRange = 170.0;
 };
 
+struct PlayerUnitModifier
+{
+	UnitArchetype archetype = UnitArchetype::Soldier;
+	int32 hpDelta = 0;
+	int32 attackPowerDelta = 0;
+	double moveSpeedDelta = 0.0;
+	double attackRangeDelta = 0.0;
+	double productionTimeDelta = 0.0;
+};
+
 struct InitialUnitPlacement
 {
 	Owner owner = Owner::Player;
@@ -94,6 +104,19 @@ struct ResourcePointConfig
 	Owner owner = Owner::Neutral;
 };
 
+struct EnemyProgressionConfig
+{
+	int32 battle = 1;
+	int32 goldBonus = 0;
+	int32 incomeBonus = 0;
+	double spawnInterval = 0.0;
+	int32 assaultUnitThreshold = 0;
+	int32 extraBasicUnits = 0;
+	int32 extraAdvancedUnits = 0;
+	bool replaceEnemyInitialUnits = false;
+	Array<InitialUnitPlacement> enemyInitialUnits;
+};
+
 struct BattleConfigData
 {
 	int32 playerGold = 200;
@@ -105,11 +128,36 @@ struct BattleConfigData
 	Array<InitialUnitPlacement> initialUnits;
 	Array<ProductionSlot> playerProductionSlots;
 	Array<ConstructionSlot> playerConstructionSlots;
+	Array<PlayerUnitModifier> playerUnitModifiers;
+	Array<UnitArchetype> playerAvailableProductionArchetypes;
+	Array<UnitArchetype> playerAvailableConstructionArchetypes;
 	Array<ObstacleConfig> obstacles;
 	Array<ResourcePointConfig> resourcePoints;
+	Array<EnemyProgressionConfig> enemyProgression;
 	EnemySpawnConfig enemySpawn;
 	EnemyAiConfig enemyAI;
 };
+
+[[nodiscard]] inline bool ContainsArchetype(const Array<UnitArchetype>& archetypes, const UnitArchetype archetype)
+{
+	for (const auto current : archetypes)
+	{
+		if (current == archetype)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+inline void AppendUniqueArchetype(Array<UnitArchetype>& archetypes, const UnitArchetype archetype)
+{
+	if (!ContainsArchetype(archetypes, archetype))
+	{
+		archetypes << archetype;
+	}
+}
 
 [[nodiscard]] inline const UnitDefinition* FindUnitDefinition(const BattleConfigData& config, const UnitArchetype archetype)
 {
@@ -118,6 +166,45 @@ struct BattleConfigData
 		if (definition.archetype == archetype)
 		{
 			return &definition;
+		}
+	}
+
+	return nullptr;
+}
+
+[[nodiscard]] inline const EnemyProgressionConfig* FindEnemyProgressionConfig(const BattleConfigData& config, const int32 battle)
+{
+	for (const auto& progression : config.enemyProgression)
+	{
+		if (progression.battle == battle)
+		{
+			return &progression;
+		}
+	}
+
+	return nullptr;
+}
+
+[[nodiscard]] inline const PlayerUnitModifier* FindPlayerUnitModifier(const BattleConfigData& config, const UnitArchetype archetype)
+{
+	for (const auto& modifier : config.playerUnitModifiers)
+	{
+		if (modifier.archetype == archetype)
+		{
+			return &modifier;
+		}
+	}
+
+	return nullptr;
+}
+
+[[nodiscard]] inline PlayerUnitModifier* FindPlayerUnitModifier(BattleConfigData& config, const UnitArchetype archetype)
+{
+	for (auto& modifier : config.playerUnitModifiers)
+	{
+		if (modifier.archetype == archetype)
+		{
+			return &modifier;
 		}
 	}
 
@@ -228,6 +315,7 @@ struct BattleConfigData
 		slot.producer = ParseUnitArchetype(table[U"producer"].get<String>());
 		slot.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
 		config.playerProductionSlots << slot;
+		AppendUniqueArchetype(config.playerAvailableProductionArchetypes, slot.archetype);
 	}
 
 	for (const auto& table : toml[U"player_construction"].tableArrayView())
@@ -236,6 +324,7 @@ struct BattleConfigData
 		slot.slot = table[U"slot"].get<int32>();
 		slot.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
 		config.playerConstructionSlots << slot;
+		AppendUniqueArchetype(config.playerAvailableConstructionArchetypes, slot.archetype);
 	}
 
 	for (const auto& table : toml[U"obstacles"].tableArrayView())
@@ -270,6 +359,28 @@ struct BattleConfigData
 	config.enemyAI.defenseRadius = toml[U"enemy_ai"][U"defense_radius"].getOr<double>(config.enemyAI.defenseRadius);
 	config.enemyAI.rallyDistance = toml[U"enemy_ai"][U"rally_distance"].getOr<double>(config.enemyAI.rallyDistance);
 	config.enemyAI.baseAssaultLockRadius = toml[U"enemy_ai"][U"base_assault_lock_radius"].getOr<double>(config.enemyAI.baseAssaultLockRadius);
+
+	for (const auto& table : toml[U"enemy_progression"].tableArrayView())
+	{
+		EnemyProgressionConfig progression;
+		progression.battle = table[U"battle"].get<int32>();
+		progression.goldBonus = table[U"gold_bonus"].getOr<int32>(0);
+		progression.incomeBonus = table[U"income_bonus"].getOr<int32>(0);
+		progression.spawnInterval = table[U"spawn_interval"].getOr<double>(0.0);
+		progression.assaultUnitThreshold = table[U"assault_unit_threshold"].getOr<int32>(0);
+		progression.extraBasicUnits = table[U"extra_basic_units"].getOr<int32>(0);
+		progression.extraAdvancedUnits = table[U"extra_advanced_units"].getOr<int32>(0);
+		progression.replaceEnemyInitialUnits = table[U"replace_enemy_initial_units"].getOr<bool>(false);
+		for (const auto& unitTable : table[U"enemy_initial_units"].tableArrayView())
+		{
+			InitialUnitPlacement placement;
+			placement.owner = Owner::Enemy;
+			placement.archetype = ParseUnitArchetype(unitTable[U"archetype"].get<String>());
+			placement.position = Vec2{ unitTable[U"x"].get<double>(), unitTable[U"y"].get<double>() };
+			progression.enemyInitialUnits << placement;
+		}
+		config.enemyProgression << progression;
+	}
 
 	return config;
 }
