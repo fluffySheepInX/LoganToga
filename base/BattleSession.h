@@ -14,6 +14,8 @@ public:
 	[[nodiscard]] BattleState& state() noexcept;
 	[[nodiscard]] const BattleConfigData& config() const noexcept;
 	[[nodiscard]] Array<int32> getSelectedPlayerUnitIds() const;
+	[[nodiscard]] Optional<int32> findPlayerUnitAt(const Vec2& position) const;
+	[[nodiscard]] Optional<int32> findPlayerBuildingAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findEnemyAt(const Vec2& position) const;
 	bool trySpawnPlayerUnit(UnitArchetype archetype);
 	bool cancelLastPlayerProduction();
@@ -33,7 +35,7 @@ private:
 	void updateCombat();
 	void cleanupDeadUnits();
 	void updateVictoryState();
-	void assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, FormationType formation);
+	void assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, FormationType formation, const Vec2& facingDirection);
 	void removeUnitsFromSquads(const Array<int32>& unitIds);
 	void cleanupSquads();
 	[[nodiscard]] bool tryPlaceBuilding(Owner owner, UnitArchetype archetype, const Vec2& position);

@@ -885,5 +885,8 @@
     <ClInclude Include="BattleInputController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BattleCommandUi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

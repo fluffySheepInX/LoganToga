@@ -6,7 +6,7 @@
 class BattleRenderer
 {
 public:
-	void draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const;
+	void draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera) const;
 
 private:
 	void drawWorld(const BattleState& state) const;

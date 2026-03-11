@@ -338,6 +338,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleCommands.h" />
+    <ClInclude Include="BattleCommandUi.h" />
     <ClInclude Include="BattleConfig.h" />
     <ClInclude Include="BattleModel.h" />
     <ClInclude Include="BattleRenderer.h" />
