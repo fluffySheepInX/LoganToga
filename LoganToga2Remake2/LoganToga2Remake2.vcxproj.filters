@@ -150,6 +150,12 @@
     <ClCompile Include="BattleRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BattleRendererHud.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleRendererWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="BattleSessionEconomy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -160,6 +166,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BattleSessionCombat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleConstructionController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleInputController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -856,6 +871,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BattleSessionInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleCommands.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleConstructionController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleInputController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

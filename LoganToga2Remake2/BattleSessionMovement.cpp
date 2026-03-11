@@ -95,7 +95,7 @@ void BattleSession::updateMovement(const double deltaTime)
 	}
 }
 
-void BattleSession::assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, const FormationType formation)
+void BattleSession::assignFormationMove(const Array<int32>& unitIds, const Vec2& destination, const FormationType formation, const Vec2& facingDirection)
 {
 	removeUnitsFromSquads(unitIds);
 
@@ -116,7 +116,7 @@ void BattleSession::assignFormationMove(const Array<int32>& unitIds, const Vec2&
 		return;
 	}
 
-	const Array<Vec2> offsets = BattleSessionInternal::MakeFormationOffsets(movableUnitIds, m_state, destination, formation);
+	const Array<Vec2> offsets = BattleSessionInternal::MakeFormationOffsets(movableUnitIds, m_state, destination, formation, facingDirection);
 	const int32 squadId = m_state.nextSquadId++;
 	SquadState squad;
 	squad.id = squadId;

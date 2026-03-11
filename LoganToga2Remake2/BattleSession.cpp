@@ -58,6 +58,38 @@ Array<int32> BattleSession::getSelectedPlayerUnitIds() const
 	return selected;
 }
 
+Optional<int32> BattleSession::findPlayerUnitAt(const Vec2& position) const
+{
+	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
+	{
+		if (it->isAlive
+			&& (it->owner == Owner::Player)
+			&& !IsBuildingArchetype(it->archetype)
+			&& Circle{ it->position, it->radius + 4 }.intersects(position))
+		{
+			return it->id;
+		}
+	}
+
+	return none;
+}
+
+Optional<int32> BattleSession::findPlayerBuildingAt(const Vec2& position) const
+{
+	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
+	{
+		if (it->isAlive
+			&& (it->owner == Owner::Player)
+			&& IsBuildingArchetype(it->archetype)
+			&& Circle{ it->position, it->radius + 4 }.intersects(position))
+		{
+			return it->id;
+		}
+	}
+
+	return none;
+}
+
 Optional<int32> BattleSession::findEnemyAt(const Vec2& position) const
 {
 	for (auto it = m_state.units.rbegin(); it != m_state.units.rend(); ++it)
@@ -135,7 +167,7 @@ void BattleSession::processCommands()
 			}
 			else if constexpr (std::is_same_v<T, MoveUnitsCommand>)
 			{
-				assignFormationMove(value.unitIds, value.destination, value.formation);
+				assignFormationMove(value.unitIds, value.destination, value.formation, value.facingDirection);
 			}
 			else if constexpr (std::is_same_v<T, AttackUnitCommand>)
 			{

@@ -116,6 +116,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BattleRenderer.cpp" />
+    <ClCompile Include="BattleRendererHud.cpp" />
+    <ClCompile Include="BattleRendererWorld.cpp" />
     <ClCompile Include="BattleSession.cpp" />
     <ClCompile Include="BattleSessionCombat.cpp" />
     <ClCompile Include="BattleSessionEconomy.cpp" />
@@ -126,6 +128,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="BattleConstructionController.cpp" />
+    <ClCompile Include="BattleInputController.cpp" />
+    <ClCompile Include="BattleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\engine\texture\box-shadow\128.png" />
@@ -332,17 +337,21 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BattleCommands.h" />
     <ClInclude Include="BattleConfig.h" />
     <ClInclude Include="BattleModel.h" />
     <ClInclude Include="BattleRenderer.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleSession.h" />
     <ClInclude Include="BattleSessionInternal.h" />
+    <ClInclude Include="BattleState.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="Remake2Common.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="BattleConstructionController.h" />
+    <ClInclude Include="BattleInputController.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">
