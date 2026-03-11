@@ -4,11 +4,13 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_clock{ 1.0 / 60.0 }
 {
-	m_cameraCenter = m_session.state().worldBounds.center();
+	m_camera.jumpTo(m_session.state().worldBounds.center(), 1.0);
 }
 
 void BattleScene::update()
 {
+	m_camera.update();
+
 	if (KeyEscape.down())
 	{
 		changeScene(U"Title");
@@ -58,21 +60,21 @@ void BattleScene::update()
 
 void BattleScene::draw() const
 {
-	m_renderer.draw(m_session.state(), m_session.config(), getData(), m_cameraCenter);
+	m_renderer.draw(m_session.state(), m_session.config(), getData(), m_camera);
 }
 
 Vec2 BattleScene::screenToWorld(const Vec2& screenPosition) const
 {
-	return screenPosition + (m_cameraCenter - Scene::CenterF());
+	return ((screenPosition - Scene::CenterF()) / m_camera.getScale()) + m_camera.getCenter();
 }
 
 Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 {
 	const RectF& worldBounds = m_session.state().worldBounds;
-	const Vec2 halfViewport = (Scene::Size() * 0.5);
+	const Vec2 halfViewport = ((Scene::Size() * 0.5) / m_camera.getScale());
 	Vec2 clamped = desiredCenter;
 
-	if (worldBounds.w <= Scene::Width())
+	if (worldBounds.w <= (halfViewport.x * 2.0))
 	{
 		clamped.x = worldBounds.center().x;
 	}
@@ -81,7 +83,7 @@ Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 		clamped.x = Clamp(clamped.x, worldBounds.leftX() + halfViewport.x, worldBounds.rightX() - halfViewport.x);
 	}
 
-	if (worldBounds.h <= Scene::Height())
+	if (worldBounds.h <= (halfViewport.y * 2.0))
 	{
 		clamped.y = worldBounds.center().y;
 	}
@@ -98,13 +100,13 @@ bool BattleScene::updateCameraPan()
 	if (MouseL.down())
 	{
 		m_cameraPanStartCursor = Cursor::PosF();
-		m_cameraPanStartCenter = m_cameraCenter;
+		m_cameraPanStartCenter = m_camera.getCenter();
 		m_isCameraPanning = false;
 	}
 
 	if (m_cameraPanStartCursor && MouseL.pressed())
 	{
-		const Vec2 dragDelta = (*m_cameraPanStartCursor - Cursor::PosF());
+		const Vec2 dragDelta = (*m_cameraPanStartCursor - Cursor::PosF()) / m_camera.getScale();
 		if (dragDelta.lengthSq() >= 16.0)
 		{
 			m_isCameraPanning = true;
@@ -112,7 +114,9 @@ bool BattleScene::updateCameraPan()
 
 		if (m_isCameraPanning)
 		{
-			m_cameraCenter = clampCameraCenter(m_cameraPanStartCenter + dragDelta);
+			const Vec2 nextCenter = clampCameraCenter(m_cameraPanStartCenter + dragDelta);
+			m_camera.setTargetCenter(nextCenter);
+			m_camera.jumpTo(nextCenter, m_camera.getScale());
 		}
 	}
 

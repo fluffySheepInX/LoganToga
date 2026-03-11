@@ -1,9 +1,9 @@
 ﻿#include "BattleRenderer.h"
 
-void BattleRenderer::draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Vec2& cameraCenter) const
+void BattleRenderer::draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera) const
 {
 	{
-		const s3d::Transformer2D transformer{ s3d::Mat3x2::Translate(Scene::CenterF() - cameraCenter) };
+		const auto transformer = camera.createTransformer();
 		drawWorld(state);
 		drawSquads(state);
 		drawObstacles(config, gameData);

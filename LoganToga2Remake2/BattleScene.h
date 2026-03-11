@@ -17,7 +17,7 @@ public:
 
 private:
 	BattleSession m_session;
-	Vec2 m_cameraCenter = Vec2::Zero();
+	Camera2D m_camera{ Vec2::Zero(), 1.0, (CameraControl::WASDKeys | CameraControl::UpDownKeys | CameraControl::Wheel) };
 	Optional<Vec2> m_cameraPanStartCursor;
 	Vec2 m_cameraPanStartCenter = Vec2::Zero();
 	bool m_isCameraPanning = false;
