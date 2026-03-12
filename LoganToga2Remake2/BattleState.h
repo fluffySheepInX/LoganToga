@@ -18,6 +18,7 @@ struct UnitState
 	double attackRange = 24.0;
 	double attackCooldown = 0.7;
 	double attackCooldownRemaining = 0.0;
+	double movementDistanceLastFrame = 0.0;
 	int32 attackPower = 8;
 	int32 hp = 40;
 	int32 maxHp = 40;

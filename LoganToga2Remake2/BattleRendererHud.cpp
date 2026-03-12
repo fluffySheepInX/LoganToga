@@ -16,10 +16,14 @@ namespace
 			return U"A";
 		case UnitArchetype::Barracks:
 			return U"B";
+		case UnitArchetype::Stable:
+			return U"L";
 		case UnitArchetype::Turret:
 			return U"T";
 		case UnitArchetype::Base:
 			return U"H";
+		case UnitArchetype::Spinner:
+			return U"O";
 		default:
 			return U"?";
 		}
@@ -37,10 +41,14 @@ namespace
 			return ColorF{ 0.86, 0.56, 0.22 };
 		case UnitArchetype::Barracks:
 			return ColorF{ 0.56, 0.42, 0.74 };
+		case UnitArchetype::Stable:
+			return ColorF{ 0.64, 0.54, 0.28 };
 		case UnitArchetype::Turret:
 			return ColorF{ 0.78, 0.42, 0.30 };
 		case UnitArchetype::Base:
 			return ColorF{ 0.35, 0.60, 0.66 };
+		case UnitArchetype::Spinner:
+			return ColorF{ 0.92, 0.80, 0.26 };
 		default:
 			return ColorF{ 0.45, 0.48, 0.55 };
 		}

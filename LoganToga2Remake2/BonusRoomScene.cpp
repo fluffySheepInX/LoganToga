@@ -1,4 +1,5 @@
 ﻿#include "BonusRoomScene.h"
+#include "ContinueRunSave.h"
 
 BonusRoomScene::BonusRoomScene(const SceneBase::InitData& init)
 	: SceneBase{ init } {}
@@ -98,6 +99,7 @@ void BonusRoomScene::updateSelection()
 	if (SimpleGUI::Button(U"Back to Title", Vec2{ 40, 40 }, 180) || KeyEscape.down())
 	{
 		ResetBonusRoomSceneState(progress);
+		ClearContinueRunSave();
 		changeScene(U"Title");
 	}
 }
@@ -116,6 +118,7 @@ void BonusRoomScene::updateGallery()
 	{
 		ResetBonusRoomSceneState(progress);
 		progress.sceneMode = BonusRoomSceneMode::Gallery;
+		ClearContinueRunSave();
 		changeScene(U"Title");
 		return;
 	}
@@ -144,6 +147,10 @@ void BonusRoomScene::updateViewer()
 	if ((progress.activePageIndex > 0) && SimpleGUI::Button(U"Prev", Vec2{ 320, 640 }, 160))
 	{
 		--progress.activePageIndex;
+		if (progress.sceneMode == BonusRoomSceneMode::Selection)
+		{
+			SaveContinueRun(getData(), ContinueResumeScene::BonusRoom);
+		}
 		return;
 	}
 
@@ -156,6 +163,10 @@ void BonusRoomScene::updateViewer()
 		if (hasNextPage)
 		{
 			++progress.activePageIndex;
+			if (progress.sceneMode == BonusRoomSceneMode::Selection)
+			{
+				SaveContinueRun(getData(), ContinueResumeScene::BonusRoom);
+			}
 		}
 		else
 		{
@@ -239,6 +250,10 @@ void BonusRoomScene::openRoom(const String& roomId)
 	progress.activeRoomId = roomId;
 	progress.activePageIndex = 0;
 	MarkBonusRoomViewed(progress, roomId);
+	if (progress.sceneMode == BonusRoomSceneMode::Selection)
+	{
+		SaveContinueRun(getData(), ContinueResumeScene::BonusRoom);
+	}
 }
 
 void BonusRoomScene::closeRoom()
@@ -249,6 +264,11 @@ void BonusRoomScene::closeRoom()
 	if (progress.sceneMode == BonusRoomSceneMode::Selection)
 	{
 		progress.pendingRoomIds.clear();
+		ClearContinueRunSave();
 		changeScene(U"Title");
+	}
+	else
+	{
+		ClearContinueRunSave();
 	}
 }

@@ -4,6 +4,21 @@
 
 namespace
 {
+	[[nodiscard]] bool IsMovingAttackArchetype(const UnitArchetype archetype)
+	{
+		return (archetype == UnitArchetype::Spinner);
+	}
+
+	[[nodiscard]] int32 GetMovingAttackDamage(const UnitState& attacker, const UnitState& target)
+	{
+		if (IsBuildingArchetype(target.archetype))
+		{
+			return Max(1, attacker.attackPower / 3);
+		}
+
+		return attacker.attackPower;
+	}
+
 	[[nodiscard]] int32 GetAttackEffectFrames(const UnitArchetype archetype)
 	{
 		switch (archetype)
@@ -14,6 +29,8 @@ namespace
 			return 6;
 		case UnitArchetype::Archer:
 			return 9;
+		case UnitArchetype::Spinner:
+			return 8;
 		case UnitArchetype::Turret:
 			return 5;
 		default:
@@ -97,6 +114,42 @@ void BattleSession::updateCombat()
 	{
 		if (!unit.isAlive)
 		{
+			continue;
+		}
+
+		if (IsMovingAttackArchetype(unit.archetype))
+		{
+			if ((unit.attackCooldownRemaining > 0.0) || (unit.movementDistanceLastFrame <= 0.1))
+			{
+				continue;
+			}
+
+			gatherNearbyOpponentIndices(unit, unit.attackRange + unit.radius + m_spatialQueryCellSize, m_nearbyOpponentIndicesScratch);
+			bool didHit = false;
+			for (const auto index : m_nearbyOpponentIndicesScratch)
+			{
+				const auto& candidate = m_state.units[index];
+				if (!candidate.isAlive || !IsEnemy(unit, candidate))
+				{
+					continue;
+				}
+
+				const Vec2 delta = (candidate.position - unit.position);
+				const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(unit, candidate);
+				if (delta.lengthSq() > (attackRange * attackRange))
+				{
+					continue;
+				}
+
+				damageEvents << DamageEvent{ unit.id, unit.position, candidate.id, GetMovingAttackDamage(unit, candidate), unit.owner, unit.archetype };
+				didHit = true;
+			}
+
+			if (didHit)
+			{
+				unit.attackCooldownRemaining = unit.attackCooldown;
+			}
+
 			continue;
 		}
 

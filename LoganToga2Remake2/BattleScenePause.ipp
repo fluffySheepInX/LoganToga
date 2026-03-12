@@ -90,6 +90,7 @@ void BattleScene::updatePauseMenu()
 		changeScene(U"Battle");
 		break;
 	case 2:
+		SaveContinueRun(getData(), ContinueResumeScene::Battle);
 		changeScene(U"Title");
 		break;
 	default:

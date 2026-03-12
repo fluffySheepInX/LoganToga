@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameData.h"
+#include "ContinueRunSave.h"
 
 class TitleScene : public SceneBase
 {
@@ -11,17 +12,36 @@ public:
 	void update() override
 	{
 		auto& data = getData();
-		if (KeyEnter.down() || isButtonClicked(getMenuButtonRect(120)))
+		const bool hasContinue = HasContinueRunSave();
+		const double continueButtonOffset = 120;
+		const double startButtonOffset = hasContinue ? 172 : 120;
+		const double bonusButtonOffset = hasContinue ? 224 : 172;
+		const double debugButtonOffset = hasContinue ? 276 : 224;
+
+		if (hasContinue && (KeyEnter.down() || isButtonClicked(getMenuButtonRect(continueButtonOffset))))
+		{
+			ContinueResumeScene resumeScene = ContinueResumeScene::Battle;
+			if (LoadContinueRun(data, resumeScene))
+			{
+				changeScene(GetContinueResumeSceneName(resumeScene));
+				return;
+			}
+
+			ClearContinueRunSave();
+		}
+
+		if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getMenuButtonRect(startButtonOffset)))
 		{
 			BeginNewRun(data.runState, false);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
+			SaveContinueRun(data, ContinueResumeScene::Battle);
 			changeScene(U"Battle");
 			return;
 		}
 
 		auto& bonusRoomProgress = data.bonusRoomProgress;
 		const Array<const BonusRoomDefinition*> viewedRooms = CollectViewedBonusRooms(data.bonusRooms, bonusRoomProgress);
-		if (!viewedRooms.isEmpty() && isButtonClicked(getMenuButtonRect(172)))
+		if (!viewedRooms.isEmpty() && isButtonClicked(getMenuButtonRect(bonusButtonOffset)))
 		{
 			ResetBonusRoomSceneState(bonusRoomProgress);
 			bonusRoomProgress.sceneMode = BonusRoomSceneMode::Gallery;
@@ -49,10 +69,11 @@ public:
 		}
 
 #ifdef _DEBUG
-		if (isButtonClicked(getMenuButtonRect(224)))
+		if (isButtonClicked(getMenuButtonRect(debugButtonOffset)))
 		{
 			BeginNewRun(data.runState, true);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
+			SaveContinueRun(data, ContinueResumeScene::Battle);
 			changeScene(U"Battle");
 			return;
 		}
@@ -66,20 +87,34 @@ public:
 		getPanelRect().drawFrame(2, ColorF{ 0.3, 0.45, 0.7 });
 
 		const auto& data = getData();
+		const bool hasContinue = HasContinueRunSave();
+		const auto continuePreview = hasContinue ? LoadContinueRunPreview() : Optional<ContinueRunPreview>{};
+		const double continueButtonOffset = 120;
+		const double startButtonOffset = hasContinue ? 172 : 120;
+		const double bonusButtonOffset = hasContinue ? 224 : 172;
+		const double debugButtonOffset = hasContinue ? 276 : 224;
 		data.titleFont(U"LoganToga2Remake2").drawAt(Scene::CenterF().movedBy(0, -170), Palette::White);
 		data.uiFont(U"RTS run prototype").drawAt(Scene::CenterF().movedBy(0, -100), ColorF{ 0.75, 0.86, 1.0 });
 		data.smallFont(U"・3-5 battles per run").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
 		data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
 		data.smallFont(U"・Lose once and the run ends").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
 		data.smallFont(s3d::Format(U"・Viewed bonus rooms: ", data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(Scene::CenterF().movedBy(0, 76), Palette::White);
-		data.smallFont(U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+		data.smallFont(hasContinue ? U"Press Enter to continue the saved run" : U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+		if (hasContinue)
+		{
+			drawButton(getMenuButtonRect(continueButtonOffset), U"Continue", data.uiFont, true);
+			if (continuePreview)
+			{
+				drawContinuePreview(*continuePreview, data);
+			}
+		}
 		if (!data.bonusRoomProgress.viewedRoomIds.isEmpty())
 		{
-			data.smallFont(U"Bonus Rooms can be revisited from this menu").drawAt(Scene::CenterF().movedBy(0, 144), ColorF{ 1.0, 0.88, 0.55 });
-			drawButton(getMenuButtonRect(172), U"Bonus Rooms", data.uiFont);
+			data.smallFont(U"Bonus Rooms can be revisited from this menu").drawAt(Scene::CenterF().movedBy(0, hasContinue ? 156 : 144), ColorF{ 1.0, 0.88, 0.55 });
+			drawButton(getMenuButtonRect(bonusButtonOffset), U"Bonus Rooms", data.uiFont);
 		}
 
-		drawButton(getMenuButtonRect(120), U"Start Run", data.uiFont);
+		drawButton(getMenuButtonRect(startButtonOffset), hasContinue ? U"New Run" : U"Start Run", data.uiFont);
 
 		const s3d::Size resolutionSize = GetWindowResolutionSize(data.displaySettings.resolutionPreset);
 		data.smallFont(U"解像度").draw(getResolutionLabelPos(), Palette::White);
@@ -101,11 +136,55 @@ public:
 
 #ifdef _DEBUG
 		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
-		drawButton(getMenuButtonRect(224), U"Debug Full Unlock", data.uiFont, true);
+		drawButton(getMenuButtonRect(debugButtonOffset), U"Debug Full Unlock", data.uiFont, true);
 #endif
 	}
 
 private:
+	[[nodiscard]] static RectF getContinuePreviewRect()
+	{
+		return RectF{ Scene::CenterF().movedBy(156, 118), 308, 92 };
+	}
+
+	[[nodiscard]] static String getContinuePreviewHeadline(const ContinueRunPreview& preview)
+	{
+		switch (preview.resumeScene)
+		{
+		case ContinueResumeScene::Reward:
+			return s3d::Format(U"Reward after battle ", preview.currentBattleIndex + 1, U"/", preview.totalBattles);
+		case ContinueResumeScene::BonusRoom:
+			return U"Bonus Room after clear";
+		case ContinueResumeScene::Battle:
+		default:
+			return s3d::Format(U"Battle ", preview.currentBattleIndex + 1, U"/", preview.totalBattles);
+		}
+	}
+
+	[[nodiscard]] static String getContinuePreviewDetail(const ContinueRunPreview& preview)
+	{
+		switch (preview.resumeScene)
+		{
+		case ContinueResumeScene::Reward:
+			return s3d::Format(U"Reward choices: ", preview.pendingRewardCardCount);
+		case ContinueResumeScene::BonusRoom:
+			return preview.isCleared ? U"Run cleared" : U"Clear reward available";
+		case ContinueResumeScene::Battle:
+		default:
+			return U"Resume from battle start checkpoint";
+		}
+	}
+
+	static void drawContinuePreview(const ContinueRunPreview& preview, const GameData& data)
+	{
+		const RectF rect = getContinuePreviewRect();
+		rect.draw(ColorF{ 0.09, 0.12, 0.18, 0.96 });
+		rect.drawFrame(2, ColorF{ 0.42, 0.60, 0.92 });
+		data.smallFont(U"CONTINUE").draw(rect.x + 14, rect.y + 10, ColorF{ 0.82, 0.90, 1.0 });
+		data.smallFont(getContinuePreviewHeadline(preview)).draw(rect.x + 14, rect.y + 32, Palette::White);
+		data.smallFont(getContinuePreviewDetail(preview)).draw(rect.x + 14, rect.y + 52, ColorF{ 0.86, 0.90, 0.96 });
+		data.smallFont(s3d::Format(U"Cards selected: ", preview.selectedCardCount)).draw(rect.x + 14, rect.y + 72, Palette::Gold);
+	}
+
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect)
 	{
 		return rect.mouseOver() && MouseL.down();

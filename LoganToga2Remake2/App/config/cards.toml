@@ -52,6 +52,15 @@ target_archetype = "archer"
 repeatable = false
 
 [[cards]]
+id = "spinner_unlock_1"
+name = "Whirl Stable"
+description = "Unlock Spinner production and Stable construction"
+rarity = "epic"
+effect_type = "production_unlock"
+target_archetype = "spinner"
+repeatable = false
+
+[[cards]]
 id = "turret_unlock_1"
 name = "Siege Blueprints"
 description = "Unlock Turret construction"

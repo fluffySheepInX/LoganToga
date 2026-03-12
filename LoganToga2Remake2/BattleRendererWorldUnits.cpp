@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererWorldMeleeHelpers.h"
 
+#include <cmath>
+
 namespace
 {
 	[[nodiscard]] Vec2 GetUnitRenderOffset(const UnitState& unit, const BattleState& state)
@@ -42,6 +44,35 @@ namespace
 		RectF{ Arg::center(renderPosition), unit.radius * 3.4, unit.radius * 3.4 }.drawFrame(1.5, ColorF{ 1.0, 0.90, 0.42, 0.40 });
 		Line{ renderPosition.movedBy(unit.radius * 0.9, -unit.radius * 0.7), state.buildingPreviewPosition }.draw(1.5, ColorF{ 1.0, 0.86, 0.32, 0.28 });
 	}
+
+	void DrawSpinnerDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		const double spinRate = (unit.movementDistanceLastFrame > 0.1) ? 14.0 : 4.5;
+		const double baseAngle = (Scene::Time() * spinRate);
+		Circle{ renderPosition, unit.radius * 0.62 }.draw(ColorF{ 0.12, 0.14, 0.20, 0.92 });
+		Circle{ renderPosition, unit.radius * 0.26 }.draw(ColorF{ 0.98, 0.88, 0.34, 0.95 });
+
+		for (int32 bladeIndex = 0; bladeIndex < 3; ++bladeIndex)
+		{
+			const double angle = baseAngle + ((Math::TwoPi / 3.0) * bladeIndex);
+			const Vec2 direction{ std::cos(angle), std::sin(angle) };
+			const Vec2 side{ -direction.y, direction.x };
+			const Vec2 bladeStart = renderPosition + (direction * (unit.radius * 0.15));
+			const Vec2 bladeEnd = renderPosition + (direction * (unit.radius * 1.18));
+			const ColorF bladeColor = (unit.movementDistanceLastFrame > 0.1)
+				? ColorF{ 1.0, 0.92, 0.52, 0.94 }
+				: ColorF{ 0.82, 0.84, 0.90, 0.88 };
+
+			Quad{
+				bladeStart + (side * (unit.radius * 0.18)),
+				bladeEnd + (side * (unit.radius * 0.10)),
+				bladeEnd - (side * (unit.radius * 0.10)),
+				bladeStart - (side * (unit.radius * 0.18))
+			}.draw(bladeColor);
+		}
+
+		Circle{ renderPosition, unit.radius + 2.5 }.drawFrame(1.4, ColorF{ 1.0, 0.92, 0.58, 0.32 });
+	}
 }
 
 void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
@@ -65,6 +96,10 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		if (unit.archetype == UnitArchetype::Worker)
 		{
 			DrawWorkerDecoration(unit, state, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::Spinner)
+		{
+			DrawSpinnerDecoration(unit, renderPosition);
 		}
 
 		if (IsBuildingArchetype(unit.archetype))

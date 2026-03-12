@@ -49,6 +49,21 @@ can_move = false
 aggro_range = 0.0
 
 [[units]]
+archetype = "stable"
+description = "回転騎兵を送り出す専用厩舎。遊びの起点になる。"
+flavor_text = "勢いで押し込む兵は、ここから飛び出す。"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 170
+cost = 130
+production_time = 5.5
+can_move = false
+aggro_range = 0.0
+
+[[units]]
 archetype = "turret"
 description = "足を止めて迎撃する防衛施設。前線の支え向き。"
 flavor_text = "据えれば静かに仕事をする。"
@@ -121,6 +136,21 @@ cost = 80
 production_time = 2.0
 can_move = true
 aggro_range = 220.0
+
+[[units]]
+archetype = "spinner"
+description = "走りながら周囲を削る回転騎兵。深く考えず突っ込ませやすい。"
+flavor_text = "止まると並、走れば楽しい。"
+radius = 13.0
+move_speed = 118.0
+attack_range = 22.0
+attack_cooldown = 0.75
+attack_power = 6
+hp = 40
+cost = 90
+production_time = 2.2
+can_move = true
+aggro_range = 200.0
 
 [[initial_units]]
 owner = "player"
@@ -221,16 +251,25 @@ slot = 3
 producer = "barracks"
 archetype = "archer"
 
-[[player_construction]]
+[[player_production]]
 slot = 4
-archetype = "barracks"
+producer = "stable"
+archetype = "spinner"
 
 [[player_construction]]
 slot = 5
+archetype = "barracks"
+
+[[player_construction]]
+slot = 6
+archetype = "stable"
+
+[[player_construction]]
+slot = 7
 archetype = "turret"
 
 [[turret_upgrades]]
-slot = 6
+slot = 8
 type = "power"
 label = "POWER"
 glyph = "P"
@@ -242,7 +281,7 @@ attack_cooldown_delta = 0.0
 unlocked_by_default = true
 
 [[turret_upgrades]]
-slot = 7
+slot = 9
 type = "rapid"
 label = "RAPID"
 glyph = "R"
@@ -254,7 +293,7 @@ attack_cooldown_delta = -0.28
 unlocked_by_default = true
 
 [[turret_upgrades]]
-slot = 8
+slot = 0
 type = "dual"
 label = "DUAL"
 glyph = "D"

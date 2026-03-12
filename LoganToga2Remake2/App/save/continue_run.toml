@@ -1,0 +1,16 @@
+﻿schemaVersion = 1
+hasContinue = true
+resumeScene = "Battle"
+runIsActive = true
+runUseDebugFullUnlocks = false
+runCurrentBattleIndex = 0
+runTotalBattles = 3
+runIsFailed = false
+runIsCleared = false
+runSelectedCardIds = []
+runPendingRewardCardIds = []
+bonusViewedRoomIds = []
+bonusPendingRoomIds = []
+bonusActiveRoomId = ""
+bonusActivePageIndex = 0
+bonusSceneMode = "Selection"

@@ -13,6 +13,10 @@
 	{
 		return UnitArchetype::Barracks;
 	}
+	if (normalized == U"stable")
+	{
+		return UnitArchetype::Stable;
+	}
 	if (normalized == U"turret")
 	{
 		return UnitArchetype::Turret;
@@ -28,6 +32,10 @@
 	if (normalized == U"archer")
 	{
 		return UnitArchetype::Archer;
+	}
+	if ((normalized == U"spinner") || (normalized == U"top_rider"))
+	{
+		return UnitArchetype::Spinner;
 	}
 
 	throw Error{ U"Unknown unit archetype: " + value };

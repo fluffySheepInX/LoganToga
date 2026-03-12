@@ -60,6 +60,7 @@ void BattleSession::updateMovement(const double deltaTime)
 		}
 
 		unit.attackCooldownRemaining = Max(unit.attackCooldownRemaining - deltaTime, 0.0);
+		unit.movementDistanceLastFrame = 0.0;
 
 		if (!unit.canMove)
 		{
@@ -83,6 +84,10 @@ void BattleSession::updateMovement(const double deltaTime)
 				{
 					strategicDestination = target->position;
 					stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *target) - 2.0, 1.0);
+					if (unit.archetype == UnitArchetype::Spinner)
+					{
+						stopDistance = 1.0;
+					}
 					unit.order.targetPoint = strategicDestination;
 				}
 				else
@@ -94,6 +99,10 @@ void BattleSession::updateMovement(const double deltaTime)
 						{
 							strategicDestination = engagedTarget->position;
 							stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *engagedTarget) - 2.0, 1.0);
+							if (unit.archetype == UnitArchetype::Spinner)
+							{
+								stopDistance = 1.0;
+							}
 						}
 					}
 					else
@@ -111,6 +120,10 @@ void BattleSession::updateMovement(const double deltaTime)
 					{
 						strategicDestination = engagedTarget->position;
 						stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *engagedTarget) - 2.0, 1.0);
+						if (unit.archetype == UnitArchetype::Spinner)
+						{
+							stopDistance = 1.0;
+						}
 					}
 				}
 				else
@@ -168,6 +181,7 @@ void BattleSession::updateMovement(const double deltaTime)
 
 		nextPosition = ClampToWorld(m_state.worldBounds, nextPosition, unit.radius);
 		unit.position = BattleSessionInternal::ResolveObstacleMove(unit.position, nextPosition, unit.radius, m_config.obstacles);
+		unit.movementDistanceLastFrame = unit.position.distanceFrom(currentPosition);
 		if (useNavigationPath && (unit.position.distanceFrom(currentPosition) <= 0.01))
 		{
 			unit.pathDirty = true;

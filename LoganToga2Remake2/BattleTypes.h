@@ -13,10 +13,12 @@ enum class UnitArchetype
 {
 	Base,
 	Barracks,
+	Stable,
 	Turret,
 	Worker,
 	Soldier,
-	Archer
+	Archer,
+	Spinner
 };
 
 enum class UnitOrderType

@@ -28,6 +28,22 @@
 	return false;
 }
 
+inline void ApplyPlayerUnlockCard(const RewardCardDefinition& card, Array<UnitArchetype>& productionArchetypes, Array<UnitArchetype>& constructionArchetypes)
+{
+	if (card.effectType == RewardCardEffectType::ProductionUnlock)
+	{
+		AppendUniqueArchetype(productionArchetypes, card.targetArchetype);
+		if (card.targetArchetype == UnitArchetype::Spinner)
+		{
+			AppendUniqueArchetype(constructionArchetypes, UnitArchetype::Stable);
+		}
+	}
+	else if (card.effectType == RewardCardEffectType::ConstructionUnlock)
+	{
+		AppendUniqueArchetype(constructionArchetypes, card.targetArchetype);
+	}
+}
+
 inline void BeginNewRun(RunState& runState, const bool useDebugFullUnlocks)
 {
 	runState.isActive = true;
@@ -77,14 +93,7 @@ inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCar
 	{
 		for (const auto& card : cards)
 		{
-			if (card.effectType == RewardCardEffectType::ProductionUnlock)
-			{
-				AppendUniqueArchetype(productionArchetypes, card.targetArchetype);
-			}
-			else if (card.effectType == RewardCardEffectType::ConstructionUnlock)
-			{
-				AppendUniqueArchetype(constructionArchetypes, card.targetArchetype);
-			}
+			ApplyPlayerUnlockCard(card, productionArchetypes, constructionArchetypes);
 		}
 	}
 
@@ -96,14 +105,7 @@ inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCar
 			continue;
 		}
 
-		if (card->effectType == RewardCardEffectType::ProductionUnlock)
-		{
-			AppendUniqueArchetype(productionArchetypes, card->targetArchetype);
-		}
-		else if (card->effectType == RewardCardEffectType::ConstructionUnlock)
-		{
-			AppendUniqueArchetype(constructionArchetypes, card->targetArchetype);
-		}
+		ApplyPlayerUnlockCard(*card, productionArchetypes, constructionArchetypes);
 	}
 }
 

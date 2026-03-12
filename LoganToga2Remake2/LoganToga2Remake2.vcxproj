@@ -380,6 +380,7 @@
     <ClInclude Include="BattleTypes.h" />
     <ClInclude Include="BonusRoomData.h" />
     <ClInclude Include="BonusRoomScene.h" />
+    <ClInclude Include="ContinueRunSave.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="Remake2Common.h" />

@@ -20,6 +20,7 @@ template <class TUnitState>
 {
 	return (archetype == UnitArchetype::Base)
 		|| (archetype == UnitArchetype::Barracks)
+		|| (archetype == UnitArchetype::Stable)
 		|| (archetype == UnitArchetype::Turret);
 }
 
@@ -59,6 +60,8 @@ template <class TUnitState>
 		return U"BASE";
 	case UnitArchetype::Barracks:
 		return U"BARRACKS";
+	case UnitArchetype::Stable:
+		return U"STABLE";
 	case UnitArchetype::Turret:
 		return U"TURRET";
 	case UnitArchetype::Worker:
@@ -67,6 +70,8 @@ template <class TUnitState>
 		return U"SOLDIER";
 	case UnitArchetype::Archer:
 		return U"ARCHER";
+	case UnitArchetype::Spinner:
+		return U"SPINNER";
 	default:
 		return U"UNIT";
 	}

@@ -1,4 +1,5 @@
 ﻿#include "BattleScene.h"
+#include "ContinueRunSave.h"
 
 #include "BattleScenePause.ipp"
 
@@ -31,6 +32,7 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 	const Vec2 initialCameraCenter = clampCameraCenter(GetInitialCameraCenter(m_session.state()));
 	m_camera.setTargetCenter(initialCameraCenter);
 	m_camera.jumpTo(initialCameraCenter, 1.0);
+	SaveContinueRun(getData(), ContinueResumeScene::Battle);
 }
 
 void BattleScene::update()
@@ -38,14 +40,16 @@ void BattleScene::update()
 	if (m_session.state().winner)
 	{
 		m_isPaused = false;
-		auto& runState = getData().runState;
+		auto& data = getData();
+		auto& runState = data.runState;
 		const bool playerWon = (*m_session.state().winner == Owner::Player);
 		const bool hasNextBattle = playerWon && ((runState.currentBattleIndex + 1) < runState.totalBattles);
 		if (KeyEnter.down())
 		{
 			if (hasNextBattle)
 			{
-				runState.pendingRewardCardIds = BuildRewardCardChoices(runState, getData().rewardCards);
+				runState.pendingRewardCardIds = BuildRewardCardChoices(runState, data.rewardCards);
+				SaveContinueRun(data, ContinueResumeScene::Reward);
 				changeScene(U"Reward");
 			}
 			else
@@ -54,12 +58,14 @@ void BattleScene::update()
 				{
 					runState.isCleared = true;
 					runState.isActive = false;
-					if (PrepareBonusRoomSelection(getData().bonusRoomProgress, getData().bonusRooms))
+					if (PrepareBonusRoomSelection(data.bonusRoomProgress, data.bonusRooms))
 					{
+						SaveContinueRun(data, ContinueResumeScene::BonusRoom);
 						changeScene(U"BonusRoom");
 					}
 					else
 					{
+						ClearContinueRunSave();
 						changeScene(U"Title");
 					}
 				}
@@ -67,7 +73,8 @@ void BattleScene::update()
 				{
 					runState.isFailed = true;
 					runState.isActive = false;
-					ResetBonusRoomSceneState(getData().bonusRoomProgress);
+					ResetBonusRoomSceneState(data.bonusRoomProgress);
+					ClearContinueRunSave();
 					changeScene(U"Title");
 				}
 			}
@@ -77,6 +84,8 @@ void BattleScene::update()
 		if (KeyR.down())
 		{
 			BeginNewRun(runState);
+			ResetBonusRoomSceneState(data.bonusRoomProgress);
+			SaveContinueRun(data, ContinueResumeScene::Battle);
 			changeScene(U"Battle");
 			return;
 		}
@@ -169,6 +178,10 @@ bool BattleScene::isCommandSlotTriggered(const int32 slot)
 		return Key7.down();
 	case 8:
 		return Key8.down();
+	case 9:
+		return Key9.down();
+	case 0:
+		return Key0.down();
 	default:
 		return false;
 	}

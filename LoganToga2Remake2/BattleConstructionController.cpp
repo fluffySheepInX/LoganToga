@@ -20,10 +20,12 @@ bool BattleConstructionController::isConstructionSlotTriggered(const int32 slot)
 {
 	switch (slot)
 	{
-	case 4:
-		return Key4.down();
 	case 5:
 		return Key5.down();
+	case 6:
+		return Key6.down();
+	case 7:
+		return Key7.down();
 	default:
 		return false;
 	}

@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererWorldMeleeHelpers.h"
 
+#include <cmath>
+
 namespace
 {
 	void DrawThrustAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
@@ -70,6 +72,25 @@ namespace
 		Circle{ effect.start, 7.0 + (4.0 * t) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.25 + (0.45 * t) });
 		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
 	}
+
+	void DrawSpinAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const double progress = (1.0 - t);
+		const double radius = 12.0 + (10.0 * progress);
+		const double baseAngle = (progress * Math::TwoPi * 2.5);
+		const ColorF trailColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.24 + (0.38 * t) };
+		const ColorF coreColor{ 1.0, 0.92, 0.56, 0.35 + (0.45 * t) };
+
+		for (int32 bladeIndex = 0; bladeIndex < 3; ++bladeIndex)
+		{
+			const double angle = baseAngle + ((Math::TwoPi / 3.0) * bladeIndex);
+			const Vec2 direction{ std::cos(angle), std::sin(angle) };
+			Line{ effect.start + (direction * (radius * 0.28)), effect.start + (direction * radius) }.draw(3.2, trailColor);
+		}
+
+		Circle{ effect.start, radius * 0.82 }.drawFrame(2.0, trailColor);
+		Circle{ effect.start, 4.0 + (3.0 * t) }.draw(coreColor);
+	}
 }
 
 void BattleRenderer::drawAttackEffects(const BattleState& state) const
@@ -88,6 +109,9 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 		{
 		case UnitArchetype::Archer:
 			DrawArrowAttackEffect(effect, t, ownerColor);
+			break;
+		case UnitArchetype::Spinner:
+			DrawSpinAttackEffect(effect, t, ownerColor);
 			break;
 		case UnitArchetype::Turret:
 		default:

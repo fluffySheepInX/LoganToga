@@ -993,5 +993,8 @@
     <ClInclude Include="BonusRoomScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ContinueRunSave.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

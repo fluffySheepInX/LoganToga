@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameData.h"
+#include "ContinueRunSave.h"
 
 class RewardScene : public SceneBase
 {
@@ -20,6 +21,7 @@ public:
 		if (runState.pendingRewardCardIds.isEmpty())
 		{
 			++runState.currentBattleIndex;
+			SaveContinueRun(getData(), ContinueResumeScene::Battle);
 			changeScene(U"Battle");
 			return;
 		}
@@ -106,6 +108,7 @@ private:
 
 		ApplyRewardCardChoice(runState, data.rewardCards, runState.pendingRewardCardIds[index]);
 		++runState.currentBattleIndex;
+		SaveContinueRun(data, ContinueResumeScene::Battle);
 		changeScene(U"Battle");
 	}
 };
