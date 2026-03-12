@@ -33,6 +33,13 @@ enum class FormationType
 	Square
 };
 
+enum class TurretUpgradeType
+{
+	Power,
+	Rapid,
+	Dual
+};
+
 struct UnitOrder
 {
 	UnitOrderType type = UnitOrderType::Idle;

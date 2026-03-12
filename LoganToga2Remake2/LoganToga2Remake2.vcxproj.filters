@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -154,6 +154,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BattleRendererWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleRendererWorldEffects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleRendererWorldStructures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleRendererWorldUnits.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BattleSessionEconomy.cpp">
@@ -809,6 +818,7 @@
     </None>
     <None Include="App\config\battle.toml" />
     <None Include="App\config\cards.toml" />
+    <None Include="App\config\bonus_rooms.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -866,6 +876,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BattleRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleRendererWorldMeleeHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FixedStepClock.h">
@@ -953,5 +966,23 @@
     <ClInclude Include="BattleSessionConstruction.ipp" />
     <ClInclude Include="BattleSessionResourcePoints.ipp" />
     <ClInclude Include="BattleSessionLifecycle.ipp" />
+    <ClInclude Include="BattleSessionNavigationTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionNavigationGrid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionNavigationPathfinding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionNavigationWaypoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BonusRoomData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BonusRoomScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

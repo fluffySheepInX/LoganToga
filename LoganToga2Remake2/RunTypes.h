@@ -13,7 +13,8 @@ enum class RewardCardEffectType
 {
 	UnitStatBonus,
 	ProductionUnlock,
-	ConstructionUnlock
+	ConstructionUnlock,
+	TurretUpgradeUnlock
 };
 
 enum class RewardCardStatType
@@ -33,6 +34,7 @@ struct RewardCardDefinition
 	RewardCardRarity rarity = RewardCardRarity::Common;
 	RewardCardEffectType effectType = RewardCardEffectType::UnitStatBonus;
 	UnitArchetype targetArchetype = UnitArchetype::Soldier;
+	Optional<TurretUpgradeType> targetTurretUpgradeType;
 	RewardCardStatType statType = RewardCardStatType::HP;
 	double value = 0.0;
 	bool repeatable = false;

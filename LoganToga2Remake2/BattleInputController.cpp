@@ -99,6 +99,13 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 				state.isSelecting = false;
 				state.selectionRect = RectF{ 0, 0, 0, 0 };
 			}
+			else if (command->kind == CommandKind::Upgrade)
+			{
+				if (command->turretUpgradeType)
+				{
+					session.tryUpgradeSelectedTurret(*command->turretUpgradeType);
+				}
+			}
 			else
 			{
 				session.trySpawnPlayerUnit(command->archetype);

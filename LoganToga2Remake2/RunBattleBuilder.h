@@ -67,6 +67,7 @@ inline void ApplyUnitStatBonus(PlayerUnitModifier& modifier, const RewardCardDef
 {
 	BattleConfigData config = baseConfig;
 	ResolvePlayerUnlocks(runState, cards, config.playerAvailableProductionArchetypes, config.playerAvailableConstructionArchetypes);
+	ResolvePlayerTurretUpgradeUnlocks(runState, cards, config.playerAvailableTurretUpgrades);
 
 	for (const auto& selectedId : runState.selectedCardIds)
 	{

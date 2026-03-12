@@ -36,6 +36,6 @@ private:
 	void togglePause();
 	void updatePauseMenu();
 	void drawPauseMenu() const;
-	[[nodiscard]] static bool isProductionSlotTriggered(int32 slot);
+	[[nodiscard]] static bool isCommandSlotTriggered(int32 slot);
 	void handleProductionInput();
 };

@@ -43,6 +43,7 @@ struct BuildingState
 	double constructionRemaining = 0.0;
 	double constructionTotal = 0.0;
 	Array<ProductionQueueItem> productionQueue;
+	Optional<TurretUpgradeType> turretUpgrade;
 };
 
 struct ResourcePointState

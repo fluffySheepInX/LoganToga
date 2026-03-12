@@ -71,3 +71,18 @@ template <class TUnitState>
 		return U"UNIT";
 	}
 }
+
+[[nodiscard]] inline String GetTurretUpgradeLabel(const TurretUpgradeType type)
+{
+	switch (type)
+	{
+	case TurretUpgradeType::Power:
+		return U"POWER";
+	case TurretUpgradeType::Rapid:
+		return U"RAPID";
+	case TurretUpgradeType::Dual:
+		return U"DUAL";
+	default:
+		return U"UPGRADE";
+	}
+}

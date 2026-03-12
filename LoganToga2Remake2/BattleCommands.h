@@ -38,4 +38,10 @@ struct AttackUnitCommand
 	int32 targetUnitId = -1;
 };
 
-using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, IssueConstructionOrderCommand>;
+struct IssueTurretUpgradeCommand
+{
+	int32 turretUnitId = -1;
+	TurretUpgradeType type = TurretUpgradeType::Power;
+};
+
+using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, IssueConstructionOrderCommand, IssueTurretUpgradeCommand>;

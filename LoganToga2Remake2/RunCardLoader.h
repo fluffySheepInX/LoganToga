@@ -36,6 +36,10 @@
 	{
 		return RewardCardEffectType::ConstructionUnlock;
 	}
+	if (normalized == U"turret_upgrade_unlock")
+	{
+		return RewardCardEffectType::TurretUpgradeUnlock;
+	}
 
 	throw Error{ U"Unknown reward card effect type: " + value };
 }
@@ -84,9 +88,16 @@
 		card.description = table[U"description"].get<String>();
 		card.rarity = ParseRewardCardRarity(table[U"rarity"].get<String>());
 		card.effectType = ParseRewardCardEffectType(table[U"effect_type"].get<String>());
-		card.targetArchetype = ParseUnitArchetype(table[U"target_archetype"].get<String>());
 		card.repeatable = table[U"repeatable"].getOr<bool>(false);
 		card.value = table[U"value"].getOr<double>(0.0);
+		if (card.effectType == RewardCardEffectType::TurretUpgradeUnlock)
+		{
+			card.targetTurretUpgradeType = ParseTurretUpgradeType(table[U"target_turret_upgrade"].get<String>());
+		}
+		else
+		{
+			card.targetArchetype = ParseUnitArchetype(table[U"target_archetype"].get<String>());
+		}
 		if (card.effectType == RewardCardEffectType::UnitStatBonus)
 		{
 			card.statType = ParseRewardCardStatType(table[U"stat"].get<String>());

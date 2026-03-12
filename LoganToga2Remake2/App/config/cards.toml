@@ -61,6 +61,15 @@ target_archetype = "turret"
 repeatable = false
 
 [[cards]]
+id = "turret_dual_upgrade_unlock_1"
+name = "Twin Mechanism"
+description = "Unlock Dual turret upgrade"
+rarity = "epic"
+effect_type = "turret_upgrade_unlock"
+target_turret_upgrade = "dual"
+repeatable = false
+
+[[cards]]
 id = "soldier_elite_1"
 name = "Elite Infantry"
 description = "Soldier HP +20"

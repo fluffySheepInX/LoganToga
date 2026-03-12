@@ -21,11 +21,13 @@ public:
 	[[nodiscard]] const BattleConfigData& config() const noexcept;
 	[[nodiscard]] Array<int32> getSelectedPlayerUnitIds() const;
 	[[nodiscard]] Optional<int32> findSelectedPlayerWorkerId() const;
+	[[nodiscard]] Optional<int32> findSelectedPlayerTurretId() const;
 	[[nodiscard]] Optional<int32> findPlayerUnitAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findPlayerBuildingAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findEnemyAt(const Vec2& position) const;
 	[[nodiscard]] Optional<int32> findEnemyNear(const Vec2& position, double snapRadius) const;
 	bool trySpawnPlayerUnit(UnitArchetype archetype);
+	bool tryUpgradeSelectedTurret(TurretUpgradeType type);
 	bool cancelLastPlayerProduction();
 
 private:

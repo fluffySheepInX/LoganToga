@@ -1,0 +1,114 @@
+﻿#include "BattleRendererWorldMeleeHelpers.h"
+
+namespace
+{
+	void DrawThrustAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const Vec2 side{ -direction.y, direction.x };
+		const double animationProgress = (1.0 - t);
+		const double thrust = BattleRendererWorldInternal::GetThrustAmount(animationProgress);
+		const double baseLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 13.0 : 18.0;
+		const double peakLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 24.0 : 32.0;
+		const double tipLength = baseLength + ((peakLength - baseLength) * thrust);
+		const double lineWidth = (effect.sourceArchetype == UnitArchetype::Worker) ? 3.0 : 4.0;
+		const double headLength = (effect.sourceArchetype == UnitArchetype::Worker) ? 6.0 : 8.0;
+		const double headWidth = (effect.sourceArchetype == UnitArchetype::Worker) ? 4.0 : 5.0;
+		const double frontOffset = (effect.sourceArchetype == UnitArchetype::Worker) ? 10.0 : 14.0;
+		const Vec2 lungeOffset = BattleRendererWorldInternal::GetMeleeAttackOffset(effect.sourceArchetype, attackVector, animationProgress);
+		const Vec2 origin = effect.start + lungeOffset + (direction * frontOffset);
+		const Vec2 shaftEnd = origin + (direction * tipLength);
+		const Vec2 headBase = shaftEnd - (direction * headLength);
+		const ColorF shaftColor = (effect.sourceArchetype == UnitArchetype::Worker)
+			? ColorF{ 0.96, 0.84, 0.36, 0.90 }
+			: ColorF{ ownerColor.r, ownerColor.g, ownerColor.b, 0.92 };
+		const ColorF tipColor{ 1.0, 0.96, 0.84, 0.95 };
+
+		Line{ origin, shaftEnd }.draw(lineWidth + 2.0, ColorF{ 0.05, 0.07, 0.10, 0.35 + (0.25 * thrust) });
+		Line{ origin, shaftEnd }.draw(lineWidth, shaftColor);
+		Line{ headBase + (side * headWidth), shaftEnd }.draw(lineWidth - 0.5, tipColor);
+		Line{ headBase - (side * headWidth), shaftEnd }.draw(lineWidth - 0.5, tipColor);
+		Circle{ shaftEnd, 1.5 + (2.5 * thrust) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.45 + (0.30 * thrust) });
+	}
+
+	void DrawArrowAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const Vec2 side{ -direction.y, direction.x };
+		const double progress = (1.0 - t);
+		const Vec2 arrowPos = effect.start + (attackVector * progress);
+		const Vec2 tailPos = arrowPos - (direction * 18.0);
+		const Vec2 headBase = arrowPos - (direction * 7.0);
+		const ColorF trailColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.28 + (0.32 * progress) };
+		const ColorF arrowColor{ 0.96, 0.92, 0.78, 0.94 };
+
+		Line{ tailPos, arrowPos }.draw(2.5, trailColor);
+		Line{ tailPos, arrowPos }.draw(1.2, arrowColor);
+		Line{ headBase + (side * 4.0), arrowPos }.draw(1.4, arrowColor);
+		Line{ headBase - (side * 4.0), arrowPos }.draw(1.4, arrowColor);
+	}
+
+	void DrawBeamAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
+		const ColorF coreColor{ 1.0, 0.95, 0.82, 0.35 + (0.55 * t) };
+
+		Line{ effect.start, effect.end }.draw(6, beamColor);
+		Line{ effect.start, effect.end }.draw(2.5, coreColor);
+		Circle{ effect.start, 7.0 + (4.0 * t) }.draw(ColorF{ 1.0, 0.92, 0.72, 0.25 + (0.45 * t) });
+		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
+	}
+}
+
+void BattleRenderer::drawAttackEffects(const BattleState& state) const
+{
+	for (const auto& effect : state.attackVisualEffects)
+	{
+		if ((effect.framesRemaining <= 0) || (effect.totalFrames <= 0))
+		{
+			continue;
+		}
+
+		const double t = Clamp(static_cast<double>(effect.framesRemaining) / effect.totalFrames, 0.0, 1.0);
+		const ColorF ownerColor = GetOwnerColor(effect.owner);
+
+		switch (effect.sourceArchetype)
+		{
+		case UnitArchetype::Archer:
+			DrawArrowAttackEffect(effect, t, ownerColor);
+			break;
+		case UnitArchetype::Turret:
+		default:
+			DrawBeamAttackEffect(effect, t, ownerColor);
+			break;
+		}
+	}
+}
+
+void BattleRenderer::drawMeleeAttackEffects(const BattleState& state) const
+{
+	for (const auto& effect : state.attackVisualEffects)
+	{
+		if ((effect.framesRemaining <= 0)
+			|| (effect.totalFrames <= 0)
+			|| !BattleRendererWorldInternal::IsMeleeAttackArchetype(effect.sourceArchetype))
+		{
+			continue;
+		}
+
+		const double t = Clamp(static_cast<double>(effect.framesRemaining) / effect.totalFrames, 0.0, 1.0);
+		DrawThrustAttackEffect(effect, t, GetOwnerColor(effect.owner));
+	}
+}

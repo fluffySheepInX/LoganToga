@@ -45,6 +45,29 @@ inline void BeginNewRun(RunState& runState)
 	BeginNewRun(runState, runState.useDebugFullUnlocks);
 }
 
+inline void ResolvePlayerTurretUpgradeUnlocks(const RunState& runState, const Array<RewardCardDefinition>& cards, Array<TurretUpgradeType>& upgradeTypes)
+{
+	if (runState.useDebugFullUnlocks)
+	{
+		for (const auto& card : cards)
+		{
+			if ((card.effectType == RewardCardEffectType::TurretUpgradeUnlock) && card.targetTurretUpgradeType)
+			{
+				AppendUniqueTurretUpgradeType(upgradeTypes, *card.targetTurretUpgradeType);
+			}
+		}
+	}
+
+	for (const auto& selectedId : runState.selectedCardIds)
+	{
+		const auto* card = FindRewardCardDefinition(cards, selectedId);
+		if ((card && (card->effectType == RewardCardEffectType::TurretUpgradeUnlock)) && card->targetTurretUpgradeType)
+		{
+			AppendUniqueTurretUpgradeType(upgradeTypes, *card->targetTurretUpgradeType);
+		}
+	}
+}
+
 inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCardDefinition>& cards, Array<UnitArchetype>& productionArchetypes, Array<UnitArchetype>& constructionArchetypes)
 {
 	productionArchetypes = { UnitArchetype::Worker, UnitArchetype::Soldier };
@@ -101,6 +124,15 @@ inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCar
 	if ((card.effectType == RewardCardEffectType::ConstructionUnlock) && ContainsArchetype(constructionArchetypes, card.targetArchetype))
 	{
 		return false;
+	}
+	if (card.effectType == RewardCardEffectType::TurretUpgradeUnlock)
+	{
+		Array<TurretUpgradeType> turretUpgradeTypes;
+		ResolvePlayerTurretUpgradeUnlocks(runState, allCards, turretUpgradeTypes);
+		if (card.targetTurretUpgradeType && ContainsTurretUpgradeType(turretUpgradeTypes, *card.targetTurretUpgradeType))
+		{
+			return false;
+		}
 	}
 
 	return true;

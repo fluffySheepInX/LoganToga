@@ -6,7 +6,8 @@
 enum class CommandKind
 {
 	Production,
-	Construction
+	Construction,
+	Upgrade
 };
 
 struct CommandIconEntry
@@ -18,6 +19,11 @@ struct CommandIconEntry
 	int32 cost = 0;
 	bool isEnabled = true;
 	String statusText = U"READY";
+	String displayLabel;
+	String glyphText;
+	String descriptionText;
+	String flavorText;
+	Optional<TurretUpgradeType> turretUpgradeType;
 };
 
 struct CommandIconLayout
@@ -64,6 +70,39 @@ struct CommandPanelLayout
 	return archetypes;
 }
 
+[[nodiscard]] inline Optional<int32> FindSingleSelectedPlayerTurretId(const BattleState& state)
+{
+	int32 selectedCount = 0;
+	Optional<int32> turretId;
+
+	for (const auto& unit : state.units)
+	{
+		if (!(unit.isAlive && unit.isSelected && (unit.owner == Owner::Player)))
+		{
+			continue;
+		}
+
+		++selectedCount;
+		if (unit.archetype == UnitArchetype::Turret)
+		{
+			turretId = unit.id;
+		}
+	}
+
+	if ((selectedCount != 1) || !turretId)
+	{
+		return none;
+	}
+
+	const auto* building = state.findBuildingByUnitId(*turretId);
+	if (!(building && building->isConstructed))
+	{
+		return none;
+	}
+
+	return turretId;
+}
+
 [[nodiscard]] inline Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, const BattleConfigData& config)
 {
 	const Array<UnitArchetype> selectedBuildings = CollectSelectedBuildingArchetypes(state);
@@ -93,6 +132,8 @@ struct CommandPanelLayout
 
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = definition ? definition->cost : 0;
+		const String descriptionText = definition ? definition->description : U"";
+		const String flavorText = definition ? definition->flavorText : U"";
 		bool hasProducer = false;
 		for (const auto& building : state.buildings)
 		{
@@ -124,7 +165,82 @@ struct CommandPanelLayout
 			statusText = U"NOT ENOUGH GOLD";
 		}
 
-		commands << CommandIconEntry{ CommandKind::Production, slot.slot, slot.producer, slot.archetype, cost, isEnabled, statusText };
+		commands << CommandIconEntry{
+			CommandKind::Production,
+			slot.slot,
+			slot.producer,
+			slot.archetype,
+			cost,
+			isEnabled,
+			statusText,
+			U"",
+			U"",
+			descriptionText,
+			flavorText,
+			none
+		};
+	}
+
+	return commands;
+}
+
+[[nodiscard]] inline Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, const BattleConfigData& config)
+{
+	const auto turretId = FindSingleSelectedPlayerTurretId(state);
+	if (!turretId)
+	{
+		return {};
+	}
+
+	const auto* building = state.findBuildingByUnitId(*turretId);
+	if (!building)
+	{
+		return {};
+	}
+
+	Array<CommandIconEntry> commands;
+	for (const auto& definition : config.turretUpgradeDefinitions)
+	{
+		const bool isUnlocked = ContainsTurretUpgradeType(config.playerAvailableTurretUpgrades, definition.type);
+		const bool alreadyUpgraded = building->turretUpgrade.has_value();
+		const bool hasEnoughGold = (state.playerGold >= definition.cost);
+		const bool isEnabled = (!state.winner) && isUnlocked && !alreadyUpgraded && (definition.cost > 0) && hasEnoughGold;
+		String statusText = U"READY";
+		if (state.winner)
+		{
+			statusText = U"BATTLE ENDED";
+		}
+		else if (!isUnlocked)
+		{
+			statusText = U"LOCKED";
+		}
+		else if (alreadyUpgraded)
+		{
+			statusText = U"UPGRADED";
+		}
+		else if (definition.cost <= 0)
+		{
+			statusText = U"UNAVAILABLE";
+		}
+		else if (!hasEnoughGold)
+		{
+			statusText = U"NOT ENOUGH GOLD";
+		}
+
+		commands << CommandIconEntry{
+			CommandKind::Upgrade,
+			definition.slot,
+			UnitArchetype::Turret,
+			UnitArchetype::Turret,
+			definition.cost,
+			isEnabled,
+			statusText,
+			definition.label,
+			definition.glyph,
+			definition.description,
+			definition.flavorText,
+			definition.type
+		};
 	}
 
 	return commands;
@@ -147,6 +263,8 @@ struct CommandPanelLayout
 
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = definition ? definition->cost : 0;
+		const String descriptionText = definition ? definition->description : U"";
+		const String flavorText = definition ? definition->flavorText : U"";
 		const bool hasEnoughGold = (state.playerGold >= cost);
 		const bool isEnabled = (!state.winner) && (cost > 0) && hasEnoughGold;
 		String statusText = U"READY";
@@ -163,7 +281,20 @@ struct CommandPanelLayout
 			statusText = U"NOT ENOUGH GOLD";
 		}
 
-		commands << CommandIconEntry{ CommandKind::Construction, slot.slot, UnitArchetype::Worker, slot.archetype, cost, isEnabled, statusText };
+		commands << CommandIconEntry{
+			CommandKind::Construction,
+			slot.slot,
+			UnitArchetype::Worker,
+			slot.archetype,
+			cost,
+			isEnabled,
+			statusText,
+			U"",
+			U"",
+			descriptionText,
+			flavorText,
+			none
+		};
 	}
 
 	return commands;
@@ -173,6 +304,10 @@ struct CommandPanelLayout
 {
 	Array<CommandIconEntry> commands = CollectProductionCommands(state, config);
 	for (const auto& command : CollectConstructionCommands(state, config))
+	{
+		commands << command;
+	}
+	for (const auto& command : CollectTurretUpgradeCommands(state, config))
 	{
 		commands << command;
 	}
@@ -201,16 +336,23 @@ struct CommandPanelLayout
 {
 	bool hasProduction = false;
 	bool hasConstruction = false;
+	bool hasUpgrade = false;
 
 	for (const auto& command : commands)
 	{
 		hasProduction |= (command.kind == CommandKind::Production);
 		hasConstruction |= (command.kind == CommandKind::Construction);
+		hasUpgrade |= (command.kind == CommandKind::Upgrade);
 	}
 
-	if (hasProduction && hasConstruction)
+	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade)) >= 2)
 	{
 		return U"COMMANDS";
+	}
+
+	if (hasUpgrade)
+	{
+		return U"UPGRADES";
 	}
 
 	if (hasConstruction)

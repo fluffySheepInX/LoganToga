@@ -52,6 +52,25 @@
 	throw Error{ U"Unknown owner: " + value };
 }
 
+[[nodiscard]] inline TurretUpgradeType ParseTurretUpgradeType(const String& value)
+{
+	const String normalized = value.lowercased();
+	if (normalized == U"power")
+	{
+		return TurretUpgradeType::Power;
+	}
+	if ((normalized == U"rapid") || (normalized == U"speed"))
+	{
+		return TurretUpgradeType::Rapid;
+	}
+	if ((normalized == U"dual") || (normalized == U"hybrid") || (normalized == U"both"))
+	{
+		return TurretUpgradeType::Dual;
+	}
+
+	throw Error{ U"Unknown turret upgrade type: " + value };
+}
+
 [[nodiscard]] inline BattleConfigData LoadBattleConfig(const String& path)
 {
 	const TOMLReader toml{ path };
@@ -77,6 +96,8 @@
 	{
 		UnitDefinition definition;
 		definition.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
+		definition.description = table[U"description"].getOr<String>(U"");
+		definition.flavorText = table[U"flavor_text"].getOr<String>(U"");
 		definition.radius = table[U"radius"].get<double>();
 		definition.moveSpeed = table[U"move_speed"].get<double>();
 		definition.attackRange = table[U"attack_range"].get<double>();
@@ -118,6 +139,26 @@
 		AppendUniqueArchetype(config.playerAvailableConstructionArchetypes, slot.archetype);
 	}
 
+	for (const auto& table : toml[U"turret_upgrades"].tableArrayView())
+	{
+		TurretUpgradeDefinition definition;
+		definition.type = ParseTurretUpgradeType(table[U"type"].get<String>());
+		definition.slot = table[U"slot"].getOr<int32>(definition.slot);
+		definition.label = table[U"label"].get<String>();
+		definition.glyph = table[U"glyph"].get<String>();
+		definition.description = table[U"description"].getOr<String>(U"");
+		definition.flavorText = table[U"flavor_text"].getOr<String>(U"");
+		definition.cost = table[U"cost"].getOr<int32>(definition.cost);
+		definition.attackPowerDelta = table[U"attack_power_delta"].getOr<int32>(0);
+		definition.attackCooldownDelta = table[U"attack_cooldown_delta"].getOr<double>(0.0);
+		definition.unlockedByDefault = table[U"unlocked_by_default"].getOr<bool>(definition.unlockedByDefault);
+		config.turretUpgradeDefinitions << definition;
+		if (definition.unlockedByDefault)
+		{
+			AppendUniqueTurretUpgradeType(config.playerAvailableTurretUpgrades, definition.type);
+		}
+	}
+
 	for (const auto& table : toml[U"obstacles"].tableArrayView())
 	{
 		ObstacleConfig obstacle;
@@ -150,6 +191,7 @@
 	config.enemyAI.defenseRadius = toml[U"enemy_ai"][U"defense_radius"].getOr<double>(config.enemyAI.defenseRadius);
 	config.enemyAI.rallyDistance = toml[U"enemy_ai"][U"rally_distance"].getOr<double>(config.enemyAI.rallyDistance);
 	config.enemyAI.baseAssaultLockRadius = toml[U"enemy_ai"][U"base_assault_lock_radius"].getOr<double>(config.enemyAI.baseAssaultLockRadius);
+	config.enemyAI.usePathfindingForAttackTarget = toml[U"enemy_ai"][U"use_pathfinding_for_attack_target"].getOr<bool>(config.enemyAI.usePathfindingForAttackTarget);
 
 	for (const auto& table : toml[U"enemy_progression"].tableArrayView())
 	{

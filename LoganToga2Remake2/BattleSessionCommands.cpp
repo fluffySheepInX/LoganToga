@@ -115,8 +115,74 @@ void BattleSession::processCommands()
 					BattleSessionInternal::InvalidateNavigationPath(*builder);
 				}
 			}
+			else if constexpr (std::is_same_v<T, IssueTurretUpgradeCommand>)
+			{
+				auto* turret = findCachedUnit(value.turretUnitId);
+				if (!(turret && turret->isAlive && (turret->owner == Owner::Player) && (turret->archetype == UnitArchetype::Turret)))
+				{
+					m_state.statusMessage = U"No turret selected";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				auto* building = m_state.findBuildingByUnitId(value.turretUnitId);
+				if (!(building && building->isConstructed))
+				{
+					m_state.statusMessage = U"Turret offline";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				if (building->turretUpgrade)
+				{
+					m_state.statusMessage = U"Turret already upgraded";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				const auto* definition = FindTurretUpgradeDefinition(m_config, value.type);
+				if (!definition)
+				{
+					m_state.statusMessage = U"Upgrade unavailable";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				if (!ContainsTurretUpgradeType(m_config.playerAvailableTurretUpgrades, value.type))
+				{
+					m_state.statusMessage = U"Upgrade locked";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				if (m_state.playerGold < definition->cost)
+				{
+					m_state.statusMessage = U"Not enough gold";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				m_state.playerGold -= definition->cost;
+				turret->attackPower += definition->attackPowerDelta;
+				turret->attackCooldown = Max(0.15, turret->attackCooldown + definition->attackCooldownDelta);
+				turret->attackCooldownRemaining = Min(turret->attackCooldownRemaining, turret->attackCooldown);
+				building->turretUpgrade = value.type;
+				m_state.statusMessage = GetTurretUpgradeLabel(value.type) + U" upgrade complete";
+				m_state.statusMessageTimer = 1.5;
+			}
 		}, command);
 	}
 
 	m_pendingCommands.clear();
+}
+
+bool BattleSession::tryUpgradeSelectedTurret(const TurretUpgradeType type)
+{
+	if (const auto turretId = findSelectedPlayerTurretId())
+	{
+		enqueue(IssueTurretUpgradeCommand{ *turretId, type });
+		return true;
+	}
+
+	return false;
 }

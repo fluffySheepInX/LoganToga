@@ -5,6 +5,8 @@
 struct UnitDefinition
 {
 	UnitArchetype archetype = UnitArchetype::Soldier;
+	String description;
+	String flavorText;
 	double radius = 12.0;
 	double moveSpeed = 80.0;
 	double attackRange = 24.0;
@@ -47,6 +49,20 @@ struct ConstructionSlot
 	UnitArchetype archetype = UnitArchetype::Barracks;
 };
 
+struct TurretUpgradeDefinition
+{
+	TurretUpgradeType type = TurretUpgradeType::Power;
+	int32 slot = 6;
+	String label = U"POWER";
+	String glyph = U"P";
+	String description;
+	String flavorText;
+	int32 cost = 100;
+	int32 attackPowerDelta = 0;
+	double attackCooldownDelta = 0.0;
+	bool unlockedByDefault = true;
+};
+
 struct EnemySpawnConfig
 {
 	double interval = 4.0;
@@ -64,6 +80,7 @@ struct EnemyAiConfig
 	double defenseRadius = 240.0;
 	double rallyDistance = 120.0;
 	double baseAssaultLockRadius = 180.0;
+	bool usePathfindingForAttackTarget = false;
 };
 
 struct IncomeConfig
@@ -128,9 +145,11 @@ struct BattleConfigData
 	Array<InitialUnitPlacement> initialUnits;
 	Array<ProductionSlot> playerProductionSlots;
 	Array<ConstructionSlot> playerConstructionSlots;
+	Array<TurretUpgradeDefinition> turretUpgradeDefinitions;
 	Array<PlayerUnitModifier> playerUnitModifiers;
 	Array<UnitArchetype> playerAvailableProductionArchetypes;
 	Array<UnitArchetype> playerAvailableConstructionArchetypes;
+	Array<TurretUpgradeType> playerAvailableTurretUpgrades;
 	Array<ObstacleConfig> obstacles;
 	Array<ResourcePointConfig> resourcePoints;
 	Array<EnemyProgressionConfig> enemyProgression;

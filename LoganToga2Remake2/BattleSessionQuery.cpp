@@ -31,6 +31,40 @@ Optional<int32> BattleSession::findSelectedPlayerWorkerId() const
 	return none;
 }
 
+Optional<int32> BattleSession::findSelectedPlayerTurretId() const
+{
+	int32 selectedCount = 0;
+	Optional<int32> turretId;
+
+	for (const auto index : getOwnerUnitIndices(Owner::Player))
+	{
+		const auto& unit = m_state.units[index];
+		if (!(unit.isAlive && unit.isSelected && (unit.owner == Owner::Player)))
+		{
+			continue;
+		}
+
+		++selectedCount;
+		if (unit.archetype == UnitArchetype::Turret)
+		{
+			turretId = unit.id;
+		}
+	}
+
+	if ((selectedCount != 1) || !turretId)
+	{
+		return none;
+	}
+
+	const auto* building = m_state.findBuildingByUnitId(*turretId);
+	if (!(building && building->isConstructed))
+	{
+		return none;
+	}
+
+	return turretId;
+}
+
 Optional<int32> BattleSession::findPlayerUnitAt(const Vec2& position) const
 {
 	const auto& playerUnitIndices = getOwnerUnitIndices(Owner::Player);

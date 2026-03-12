@@ -53,12 +53,23 @@ void BattleScene::update()
 				if (playerWon)
 				{
 					runState.isCleared = true;
+					runState.isActive = false;
+					if (PrepareBonusRoomSelection(getData().bonusRoomProgress, getData().bonusRooms))
+					{
+						changeScene(U"BonusRoom");
+					}
+					else
+					{
+						changeScene(U"Title");
+					}
 				}
 				else
 				{
 					runState.isFailed = true;
+					runState.isActive = false;
+					ResetBonusRoomSceneState(getData().bonusRoomProgress);
+					changeScene(U"Title");
 				}
-				changeScene(U"Title");
 			}
 			return;
 		}
@@ -138,7 +149,7 @@ void BattleScene::draw() const
 
 #include "BattleSceneCamera.ipp"
 
-bool BattleScene::isProductionSlotTriggered(const int32 slot)
+bool BattleScene::isCommandSlotTriggered(const int32 slot)
 {
 	switch (slot)
 	{
@@ -148,6 +159,16 @@ bool BattleScene::isProductionSlotTriggered(const int32 slot)
 		return Key2.down();
 	case 3:
 		return Key3.down();
+	case 4:
+		return Key4.down();
+	case 5:
+		return Key5.down();
+	case 6:
+		return Key6.down();
+	case 7:
+		return Key7.down();
+	case 8:
+		return Key8.down();
 	default:
 		return false;
 	}
@@ -162,9 +183,17 @@ void BattleScene::handleProductionInput()
 
 	for (const auto& slot : m_session.config().playerProductionSlots)
 	{
-		if (isProductionSlotTriggered(slot.slot))
+		if (isCommandSlotTriggered(slot.slot))
 		{
 			m_session.trySpawnPlayerUnit(slot.archetype);
+		}
+	}
+
+	for (const auto& upgrade : m_session.config().turretUpgradeDefinitions)
+	{
+		if (isCommandSlotTriggered(upgrade.slot))
+		{
+			m_session.tryUpgradeSelectedTurret(upgrade.type);
 		}
 	}
 }

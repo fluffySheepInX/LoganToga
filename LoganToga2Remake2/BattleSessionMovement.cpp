@@ -132,7 +132,12 @@ void BattleSession::updateMovement(const double deltaTime)
 			continue;
 		}
 
-		if (unit.order.type == UnitOrderType::Move)
+		const bool useNavigationPath = (unit.order.type == UnitOrderType::Move)
+			|| ((unit.order.type == UnitOrderType::AttackTarget)
+				&& (unit.owner == Owner::Enemy)
+				&& m_config.enemyAI.usePathfindingForAttackTarget);
+
+		if (useNavigationPath)
 		{
 			unit.moveTarget = BattleSessionInternal::ResolveNavigationWaypoint(navigationGrid, unit, strategicDestination);
 		}
@@ -163,7 +168,7 @@ void BattleSession::updateMovement(const double deltaTime)
 
 		nextPosition = ClampToWorld(m_state.worldBounds, nextPosition, unit.radius);
 		unit.position = BattleSessionInternal::ResolveObstacleMove(unit.position, nextPosition, unit.radius, m_config.obstacles);
-		if ((unit.order.type == UnitOrderType::Move) && (unit.position.distanceFrom(currentPosition) <= 0.01))
+		if (useNavigationPath && (unit.position.distanceFrom(currentPosition) <= 0.01))
 		{
 			unit.pathDirty = true;
 		}

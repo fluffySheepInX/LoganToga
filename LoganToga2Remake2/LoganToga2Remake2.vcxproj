@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -118,6 +118,9 @@
     <ClCompile Include="BattleRenderer.cpp" />
     <ClCompile Include="BattleRendererHud.cpp" />
     <ClCompile Include="BattleRendererWorld.cpp" />
+    <ClCompile Include="BattleRendererWorldEffects.cpp" />
+    <ClCompile Include="BattleRendererWorldStructures.cpp" />
+    <ClCompile Include="BattleRendererWorldUnits.cpp" />
     <ClCompile Include="BattleSession.cpp" />
     <ClCompile Include="BattleSessionCache.cpp" />
     <ClCompile Include="BattleSessionCombat.cpp" />
@@ -185,6 +188,7 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="App\config\battle.toml" />
+    <None Include="App\config\bonus_rooms.toml" />
     <None Include="App\config\cards.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
@@ -349,6 +353,7 @@
     <ClInclude Include="BattleConfigTypes.h" />
     <ClInclude Include="BattleModel.h" />
     <ClInclude Include="BattleRenderer.h" />
+    <ClInclude Include="BattleRendererWorldMeleeHelpers.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleSceneCamera.ipp" />
     <ClInclude Include="BattleScenePause.ipp" />
@@ -362,10 +367,16 @@
     <ClInclude Include="BattleSessionInternal.h" />
     <ClInclude Include="BattleSessionLifecycle.ipp" />
     <ClInclude Include="BattleSessionNavigation.h" />
+    <ClInclude Include="BattleSessionNavigationGrid.h" />
+    <ClInclude Include="BattleSessionNavigationPathfinding.h" />
+    <ClInclude Include="BattleSessionNavigationTypes.h" />
+    <ClInclude Include="BattleSessionNavigationWaypoint.h" />
     <ClInclude Include="BattleSessionResourcePoints.ipp" />
     <ClInclude Include="BattleState.h" />
     <ClInclude Include="BattleStateHelpers.h" />
     <ClInclude Include="BattleTypes.h" />
+    <ClInclude Include="BonusRoomData.h" />
+    <ClInclude Include="BonusRoomScene.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="Remake2Common.h" />

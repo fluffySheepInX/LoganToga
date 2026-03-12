@@ -13,14 +13,29 @@ public:
 		if (KeyEnter.down() || SimpleGUI::Button(U"Start Run", Vec2{ 530, 420 }, 220))
 		{
 			BeginNewRun(getData().runState, false);
+			ResetBonusRoomSceneState(getData().bonusRoomProgress);
 			changeScene(U"Battle");
+			return;
+		}
+
+		auto& data = getData();
+		auto& bonusRoomProgress = data.bonusRoomProgress;
+		const Array<const BonusRoomDefinition*> viewedRooms = CollectViewedBonusRooms(data.bonusRooms, bonusRoomProgress);
+		if (!viewedRooms.isEmpty() && SimpleGUI::Button(U"Bonus Rooms", Vec2{ 530, 472 }, 220))
+		{
+			ResetBonusRoomSceneState(bonusRoomProgress);
+			bonusRoomProgress.sceneMode = BonusRoomSceneMode::Gallery;
+			changeScene(U"BonusRoom");
+			return;
 		}
 
 #ifdef _DEBUG
-		if (SimpleGUI::Button(U"Debug Full Unlock", Vec2{ 530, 472 }, 220))
+		if (SimpleGUI::Button(U"Debug Full Unlock", Vec2{ 530, 524 }, 220))
 		{
-			BeginNewRun(getData().runState, true);
+			BeginNewRun(data.runState, true);
+			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			changeScene(U"Battle");
+			return;
 		}
 #endif
 	}
@@ -37,10 +52,15 @@ public:
 		data.smallFont(U"・3-5 battles per run").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
 		data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
 		data.smallFont(U"・Lose once and the run ends").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
+		data.smallFont(s3d::Format(U"・Viewed bonus rooms: ", data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(Scene::CenterF().movedBy(0, 76), Palette::White);
 		data.smallFont(U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+		if (!data.bonusRoomProgress.viewedRoomIds.isEmpty())
+		{
+			data.smallFont(U"Bonus Rooms can be revisited from this menu").drawAt(Scene::CenterF().movedBy(0, 144), ColorF{ 1.0, 0.88, 0.55 });
+		}
 
 #ifdef _DEBUG
-		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 150), ColorF{ 1.0, 0.75, 0.45 });
+		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
 #endif
 	}
 };

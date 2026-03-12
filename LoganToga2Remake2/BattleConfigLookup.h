@@ -23,11 +23,45 @@ inline void AppendUniqueArchetype(Array<UnitArchetype>& archetypes, const UnitAr
 	}
 }
 
+[[nodiscard]] inline bool ContainsTurretUpgradeType(const Array<TurretUpgradeType>& upgrades, const TurretUpgradeType type)
+{
+	for (const auto current : upgrades)
+	{
+		if (current == type)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+inline void AppendUniqueTurretUpgradeType(Array<TurretUpgradeType>& upgrades, const TurretUpgradeType type)
+{
+	if (!ContainsTurretUpgradeType(upgrades, type))
+	{
+		upgrades << type;
+	}
+}
+
 [[nodiscard]] inline const UnitDefinition* FindUnitDefinition(const BattleConfigData& config, const UnitArchetype archetype)
 {
 	for (const auto& definition : config.unitDefinitions)
 	{
 		if (definition.archetype == archetype)
+		{
+			return &definition;
+		}
+	}
+
+	return nullptr;
+}
+
+[[nodiscard]] inline const TurretUpgradeDefinition* FindTurretUpgradeDefinition(const BattleConfigData& config, const TurretUpgradeType type)
+{
+	for (const auto& definition : config.turretUpgradeDefinitions)
+	{
+		if (definition.type == type)
 		{
 			return &definition;
 		}
