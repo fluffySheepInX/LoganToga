@@ -186,6 +186,151 @@ namespace
 			DrawCommandTooltip(layout, *hoveredIcon, gameData);
 		}
 	}
+
+	struct QueueDisplayTarget
+	{
+		const BuildingState* building = nullptr;
+		const UnitState* unit = nullptr;
+	};
+
+	[[nodiscard]] Optional<QueueDisplayTarget> FindQueueDisplayTarget(const BattleState& state)
+	{
+		for (const auto& unit : state.units)
+		{
+			if (!(unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && IsBuildingArchetype(unit.archetype)))
+			{
+				continue;
+			}
+
+			if (const auto* building = state.findBuildingByUnitId(unit.id))
+			{
+				return QueueDisplayTarget{ building, &unit };
+			}
+		}
+
+		for (const auto& unit : state.units)
+		{
+			if (!(unit.isAlive && (unit.owner == Owner::Player) && IsBuildingArchetype(unit.archetype)))
+			{
+				continue;
+			}
+
+			const auto* building = state.findBuildingByUnitId(unit.id);
+			if (!(building && (!building->isConstructed || !building->productionQueue.isEmpty())))
+			{
+				continue;
+			}
+
+			return QueueDisplayTarget{ building, &unit };
+		}
+
+		return none;
+	}
+
+	void DrawQueueIcon(const RectF& iconRect, const UnitArchetype archetype, const GameData& gameData, const bool compact = false, const double alpha = 1.0)
+	{
+		const ColorF baseColor = GetCommandIconColor(archetype);
+		const ColorF iconColor{ baseColor.r, baseColor.g, baseColor.b, alpha };
+		const ColorF backgroundColor{ 0.08, 0.10, 0.14, 0.96 * alpha };
+		const RectF frameRect{ iconRect.x, iconRect.y, iconRect.w, iconRect.h };
+		frameRect.draw(backgroundColor);
+		frameRect.drawFrame(2.0, iconColor);
+
+		const double circleRadius = compact ? 12.0 : 18.0;
+		Circle{ frameRect.center(), circleRadius }.draw(iconColor);
+		if (compact)
+		{
+			gameData.smallFont(GetCommandIconGlyph(archetype)).drawAt(frameRect.center(), Palette::White);
+		}
+		else
+		{
+			gameData.uiFont(GetCommandIconGlyph(archetype)).drawAt(frameRect.center().movedBy(0.0, -1.0), Palette::White);
+		}
+	}
+
+	void DrawQueuePanel(const RectF& panelRect, const QueueDisplayTarget& target, const GameData& gameData)
+	{
+		const RectF contentRect{ panelRect.x + 14.0, panelRect.y + 34.0, panelRect.w - 28.0, panelRect.h - 48.0 };
+		const RectF primaryIconRect{ contentRect.x, contentRect.y, 58.0, 58.0 };
+		const RectF detailRect{ contentRect.x + 70.0, contentRect.y, contentRect.w - 70.0, 88.0 };
+		const bool isConstructing = !target.building->isConstructed;
+		const bool hasQueuedUnit = !target.building->productionQueue.isEmpty();
+		const UnitArchetype primaryArchetype = hasQueuedUnit ? target.building->productionQueue.front().archetype : target.unit->archetype;
+
+		panelRect.draw(ColorF{ 0.02, 0.04, 0.08, 0.82 });
+		panelRect.drawFrame(2.0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
+		gameData.uiFont(U"QUEUE").draw(panelRect.x + 14.0, panelRect.y + 6.0, Palette::White);
+		gameData.smallFont(GetArchetypeLabel(target.unit->archetype)).draw(panelRect.x + 112.0, panelRect.y + 11.0, ColorF{ 0.76, 0.82, 0.92 });
+
+		DrawQueueIcon(primaryIconRect, primaryArchetype, gameData);
+
+		String titleText = U"Idle";
+		String subtitleText = U"No queued units";
+		double progress = 0.0;
+		String progressText;
+		ColorF progressColor{ 0.30, 0.72, 0.98 };
+
+		if (isConstructing)
+		{
+			titleText = U"Constructing";
+			subtitleText = GetArchetypeLabel(target.unit->archetype);
+			if (target.building->constructionTotal > 0.0)
+			{
+				progress = Clamp(1.0 - (target.building->constructionRemaining / target.building->constructionTotal), 0.0, 1.0);
+			}
+			progressText = s3d::Format(target.building->constructionRemaining, U"s");
+			progressColor = ColorF{ 0.84, 0.62, 0.24 };
+		}
+		else if (hasQueuedUnit)
+		{
+			const auto& currentItem = target.building->productionQueue.front();
+			titleText = GetArchetypeLabel(currentItem.archetype);
+			subtitleText = s3d::Format(U"@ ", GetArchetypeLabel(target.unit->archetype), U" / ", target.building->productionQueue.size(), U" in queue");
+			if (currentItem.totalTime > 0.0)
+			{
+				progress = Clamp(1.0 - (currentItem.remainingTime / currentItem.totalTime), 0.0, 1.0);
+			}
+			progressText = s3d::Format(currentItem.remainingTime, U"s");
+		}
+		else
+		{
+			subtitleText = s3d::Format(U"Select ", GetArchetypeLabel(target.unit->archetype), U" and queue a unit");
+		}
+
+		gameData.smallFont(titleText).draw(detailRect.x, detailRect.y + 4.0, Palette::White);
+		gameData.smallFont(subtitleText).draw(detailRect.x, detailRect.y + 24.0, ColorF{ 0.74, 0.80, 0.88 });
+
+		const RectF barRect{ detailRect.x, detailRect.y + 54.0, detailRect.w, 10.0 };
+		barRect.draw(ColorF{ 0.08, 0.10, 0.14, 0.96 });
+		if (progress > 0.0)
+		{
+			RectF{ barRect.x, barRect.y, barRect.w * progress, barRect.h }.draw(progressColor);
+		}
+		barRect.drawFrame(1.5, ColorF{ 0.30, 0.38, 0.48, 0.95 });
+		if (!progressText.isEmpty())
+		{
+			gameData.smallFont(progressText).draw(detailRect.x, detailRect.y + 68.0, ColorF{ 0.96, 0.97, 0.99 });
+		}
+
+		const double smallIconTop = primaryIconRect.bottomY() + 10.0;
+		const double smallIconSize = 34.0;
+		const double smallIconGap = 8.0;
+		const int32 additionalCount = hasQueuedUnit ? Max(static_cast<int32>(target.building->productionQueue.size()) - 1, 0) : 0;
+		const int32 visibleCount = Min(additionalCount, 3);
+		for (int32 index = 0; index < visibleCount; ++index)
+		{
+			const RectF iconRect{ primaryIconRect.x + 12.0, smallIconTop + ((smallIconSize + smallIconGap) * index), smallIconSize, smallIconSize };
+			DrawQueueIcon(iconRect, target.building->productionQueue[index + 1].archetype, gameData, true);
+		}
+
+		if (additionalCount > visibleCount)
+		{
+			const RectF overflowRect{ primaryIconRect.x + 6.0, smallIconTop + ((smallIconSize + smallIconGap) * visibleCount), 46.0, 24.0 };
+			overflowRect.draw(ColorF{ 0.08, 0.10, 0.14, 0.96 });
+			overflowRect.drawFrame(2.0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
+			gameData.smallFont(s3d::Format(U"+", additionalCount - visibleCount)).drawAt(overflowRect.center(), Palette::White);
+		}
+	}
 }
 
 void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
@@ -233,34 +378,14 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	const String runText = gameData.runState.isActive
 		? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
 		: U"Run: inactive";
+	const auto commandLayout = BuildCommandPanelLayout(state, config);
+	const auto queueTarget = FindQueueDisplayTarget(state);
 
-	String queueText = U"Queue: idle";
-	for (const auto& building : state.buildings)
-	{
-		const auto* unit = state.findUnit(building.unitId);
-		if (unit && unit->isAlive && (unit->owner == Owner::Player))
-		{
-			if (!building.isConstructed)
-			{
-				queueText = s3d::Format(U"Build: ", GetArchetypeLabel(unit->archetype), U" (", building.constructionRemaining, U"s)");
-				break;
-			}
-
-			if (!building.productionQueue.isEmpty())
-			{
-				const auto& currentItem = building.productionQueue.front();
-				queueText = s3d::Format(U"Queue: ", GetArchetypeLabel(currentItem.archetype), U" @", GetArchetypeLabel(unit->archetype), U" x", building.productionQueue.size(), U" (", currentItem.remainingTime, U"s)");
-				break;
-			}
-		}
-	}
-
-	RoundRect{ 16, 16, 480, 242, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+	RoundRect{ 16, 16, 480, 220, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);
 	gameData.smallFont(config.hud.controls).draw(28, 66, Palette::White);
 	gameData.smallFont(productionText).draw(28, 88, Palette::White);
 	gameData.smallFont(constructionText).draw(28, 110, Palette::White);
-	gameData.smallFont(queueText).draw(28, 132, Palette::White);
 	const String formationText = U"Formation: Q="
 		+ GetFormationLabel(FormationType::Line)
 		+ U" / W="
@@ -269,18 +394,26 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		+ GetFormationLabel(FormationType::Square)
 		+ U" / Current="
 		+ GetFormationLabel(state.playerFormation);
-	gameData.smallFont(formationText).draw(28, 154, Palette::White);
-	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, 176, Palette::White);
-	gameData.smallFont(config.hud.escapeHint).draw(28, 198, Palette::White);
-	gameData.smallFont(runText).draw(28, 220, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 242, Palette::Gold);
+	gameData.smallFont(formationText).draw(28, 132, Palette::White);
+	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, 154, Palette::White);
+	gameData.smallFont(config.hud.escapeHint).draw(28, 176, Palette::White);
+	gameData.smallFont(runText).draw(28, 198, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 220, Palette::Gold);
 
-	if (const auto layout = BuildCommandPanelLayout(state, config))
+	if (queueTarget)
 	{
-		RoundRect{ layout->panelRect, 12 }.draw(ColorF{ 0.02, 0.04, 0.08, 0.82 });
-		RoundRect{ layout->panelRect, 12 }.drawFrame(2, 0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
-		gameData.uiFont(layout->title).draw(layout->panelRect.x + 16, layout->panelRect.y + 8, Palette::White);
-		DrawCommandSection(*layout, gameData);
+		const RectF queuePanelRect = commandLayout
+			? RectF{ Max(16.0, commandLayout->panelRect.x - 242.0 - 12.0), commandLayout->panelRect.y, 242.0, 212.0 }
+			: RectF{ Scene::Width() - 242.0 - 16.0, Scene::Height() - 212.0 - 16.0, 242.0, 212.0 };
+		DrawQueuePanel(queuePanelRect, *queueTarget, gameData);
+	}
+
+	if (commandLayout)
+	{
+		RoundRect{ commandLayout->panelRect, 12 }.draw(ColorF{ 0.02, 0.04, 0.08, 0.82 });
+		RoundRect{ commandLayout->panelRect, 12 }.drawFrame(2, 0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
+		gameData.uiFont(commandLayout->title).draw(commandLayout->panelRect.x + 16, commandLayout->panelRect.y + 8, Palette::White);
+		DrawCommandSection(*commandLayout, gameData);
 	}
 
 	if (!state.statusMessage.isEmpty())

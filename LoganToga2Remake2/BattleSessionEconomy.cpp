@@ -7,6 +7,9 @@ bool BattleSession::trySpawnPlayerUnit(const UnitArchetype archetype)
 
 bool BattleSession::cancelLastPlayerProduction()
 {
+	BuildingState* selectedBuilding = nullptr;
+	BuildingState* fallbackBuilding = nullptr;
+
 	for (auto& building : m_state.buildings)
 	{
 		const auto* unit = findCachedUnit(building.unitId);
@@ -15,13 +18,31 @@ bool BattleSession::cancelLastPlayerProduction()
 			continue;
 		}
 
-		const UnitArchetype archetype = building.productionQueue.back().archetype;
-		building.productionQueue.pop_back();
-		m_state.playerGold += getUnitCost(archetype);
-		return true;
+		if (unit->isSelected)
+		{
+			if ((!selectedBuilding) || (building.productionQueue.size() < selectedBuilding->productionQueue.size()))
+			{
+				selectedBuilding = &building;
+			}
+		}
+
+		if ((!fallbackBuilding) || (building.productionQueue.size() < fallbackBuilding->productionQueue.size()))
+		{
+			fallbackBuilding = &building;
+		}
 	}
 
-	return false;
+	BuildingState* targetBuilding = selectedBuilding ? selectedBuilding : fallbackBuilding;
+	if (!targetBuilding)
+	{
+		return false;
+	}
+
+	const UnitArchetype archetype = targetBuilding->productionQueue.back().archetype;
+	targetBuilding->productionQueue.pop_back();
+	m_state.playerGold += getUnitCost(archetype);
+	return true;
+
 }
 
 void BattleSession::updateEconomy(const double deltaTime)
@@ -107,34 +128,62 @@ void BattleSession::updateProduction(const double deltaTime)
 
 BuildingState* BattleSession::findProductionBuilding(const Owner owner, const UnitArchetype producerArchetype)
 {
+	BuildingState* selectedBuilding = nullptr;
+	BuildingState* fallbackBuilding = nullptr;
+
 	for (auto& building : m_state.buildings)
 	{
 		if (const auto* unit = findCachedUnit(building.unitId))
 		{
 			if (unit->isAlive && (unit->owner == owner) && (unit->archetype == producerArchetype) && building.isConstructed)
 			{
-				return &building;
+				if ((owner == Owner::Player) && unit->isSelected)
+				{
+					if ((!selectedBuilding) || (building.productionQueue.size() < selectedBuilding->productionQueue.size()))
+					{
+						selectedBuilding = &building;
+					}
+				}
+
+				if ((!fallbackBuilding) || (building.productionQueue.size() < fallbackBuilding->productionQueue.size()))
+				{
+					fallbackBuilding = &building;
+				}
 			}
 		}
 	}
 
-	return nullptr;
+	return selectedBuilding ? selectedBuilding : fallbackBuilding;
 }
 
 const BuildingState* BattleSession::findProductionBuilding(const Owner owner, const UnitArchetype producerArchetype) const
 {
+	const BuildingState* selectedBuilding = nullptr;
+	const BuildingState* fallbackBuilding = nullptr;
+
 	for (const auto& building : m_state.buildings)
 	{
 		if (const auto* unit = findCachedUnit(building.unitId))
 		{
 			if (unit->isAlive && (unit->owner == owner) && (unit->archetype == producerArchetype) && building.isConstructed)
 			{
-				return &building;
+				if ((owner == Owner::Player) && unit->isSelected)
+				{
+					if ((!selectedBuilding) || (building.productionQueue.size() < selectedBuilding->productionQueue.size()))
+					{
+						selectedBuilding = &building;
+					}
+				}
+
+				if ((!fallbackBuilding) || (building.productionQueue.size() < fallbackBuilding->productionQueue.size()))
+				{
+					fallbackBuilding = &building;
+				}
 			}
 		}
 	}
 
-	return nullptr;
+	return selectedBuilding ? selectedBuilding : fallbackBuilding;
 }
 
 const ProductionSlot* BattleSession::findProductionSlot(const UnitArchetype archetype) const
