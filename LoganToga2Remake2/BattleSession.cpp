@@ -69,6 +69,18 @@ void BattleSession::invalidateUnitIndex() noexcept
 {
 	m_unitIndexDirty = true;
 	m_frameUnitCacheDirty = true;
+	m_spatialQueryCacheDirty = true;
+	m_navigationGridDirty = true;
+}
+
+void BattleSession::invalidateSpatialQueryCache() noexcept
+{
+	m_spatialQueryCacheDirty = true;
+}
+
+void BattleSession::invalidateNavigationGrid() noexcept
+{
+	m_navigationGridDirty = true;
 }
 
 void BattleSession::rebuildUnitIndex() const
@@ -134,6 +146,134 @@ void BattleSession::rebuildFrameUnitCache() const
 	}
 
 	m_frameUnitCacheDirty = false;
+}
+
+void BattleSession::rebuildSpatialQueryCache() const
+{
+	if (!m_spatialQueryCacheDirty)
+	{
+		return;
+	}
+
+	m_spatialQueryBounds = m_state.worldBounds;
+	m_spatialQueryColumns = Max(1, static_cast<int32>(std::ceil(m_spatialQueryBounds.w / m_spatialQueryCellSize)));
+	m_spatialQueryRows = Max(1, static_cast<int32>(std::ceil(m_spatialQueryBounds.h / m_spatialQueryCellSize)));
+
+	const int32 cellCount = (m_spatialQueryColumns * m_spatialQueryRows);
+	m_playerSpatialUnitIndices.clear();
+	m_enemySpatialUnitIndices.clear();
+	m_playerSpatialUnitIndices.resize(cellCount);
+	m_enemySpatialUnitIndices.resize(cellCount);
+
+	for (size_t index = 0; index < m_state.units.size(); ++index)
+	{
+		const auto& unit = m_state.units[index];
+		if (!unit.isAlive)
+		{
+			continue;
+		}
+
+		const int32 cellX = Clamp(static_cast<int32>((unit.position.x - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
+		const int32 cellY = Clamp(static_cast<int32>((unit.position.y - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
+		const int32 cellIndex = (cellY * m_spatialQueryColumns) + cellX;
+
+		if (unit.owner == Owner::Player)
+		{
+			m_playerSpatialUnitIndices[cellIndex] << index;
+		}
+		else if (unit.owner == Owner::Enemy)
+		{
+			m_enemySpatialUnitIndices[cellIndex] << index;
+		}
+	}
+
+	m_spatialQueryCacheDirty = false;
+}
+
+void BattleSession::rebuildNavigationGrid() const
+{
+	if (!m_navigationGridDirty)
+	{
+		return;
+	}
+
+	double maxMoverRadius = 12.0;
+	for (const auto& definition : m_config.unitDefinitions)
+	{
+		if (definition.canMove)
+		{
+			maxMoverRadius = Max(maxMoverRadius, definition.radius);
+		}
+	}
+
+	m_navigationGridBounds = m_state.worldBounds;
+	m_navigationGridCellSize = Max(maxMoverRadius * 2.0, 24.0);
+	m_navigationGridColumns = Max(1, static_cast<int32>(std::ceil(m_navigationGridBounds.w / m_navigationGridCellSize)));
+	m_navigationGridRows = Max(1, static_cast<int32>(std::ceil(m_navigationGridBounds.h / m_navigationGridCellSize)));
+	m_navigationGridBlocked.resize(m_navigationGridColumns * m_navigationGridRows);
+
+	const double clearanceRadius = (maxMoverRadius + 2.0);
+	for (int32 y = 0; y < m_navigationGridRows; ++y)
+	{
+		for (int32 x = 0; x < m_navigationGridColumns; ++x)
+		{
+			const int32 index = (y * m_navigationGridColumns) + x;
+			const Vec2 center{
+				Min(m_navigationGridBounds.leftX() + ((x + 0.5) * m_navigationGridCellSize), m_navigationGridBounds.rightX() - (m_navigationGridCellSize * 0.5)),
+				Min(m_navigationGridBounds.topY() + ((y + 0.5) * m_navigationGridCellSize), m_navigationGridBounds.bottomY() - (m_navigationGridCellSize * 0.5))
+			};
+
+			bool blocked = BattleSessionInternal::IsBlockedByObstacle(center, clearanceRadius, m_config.obstacles);
+			if (!blocked)
+			{
+				for (const auto& unit : m_state.units)
+				{
+					if (!unit.isAlive || !IsBuildingArchetype(unit.archetype))
+					{
+						continue;
+					}
+
+					if (BattleSessionInternal::IntersectsBuilding(center, clearanceRadius, unit))
+					{
+						blocked = true;
+						break;
+					}
+				}
+			}
+
+			m_navigationGridBlocked[index] = blocked ? 1 : 0;
+		}
+	}
+
+	m_navigationGridDirty = false;
+}
+
+void BattleSession::gatherNearbyOpponentIndices(const UnitState& source, const double searchRadius, Array<size_t>& indices) const
+{
+	rebuildSpatialQueryCache();
+	indices.clear();
+
+	const auto& spatialCells = (source.owner == Owner::Enemy)
+		? m_playerSpatialUnitIndices
+		: m_enemySpatialUnitIndices;
+
+	const double clampedRadius = Max(searchRadius, 0.0);
+	const int32 minCellX = Clamp(static_cast<int32>(((source.position.x - clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
+	const int32 maxCellX = Clamp(static_cast<int32>(((source.position.x + clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
+	const int32 minCellY = Clamp(static_cast<int32>(((source.position.y - clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
+	const int32 maxCellY = Clamp(static_cast<int32>(((source.position.y + clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
+
+	for (int32 y = minCellY; y <= maxCellY; ++y)
+	{
+		for (int32 x = minCellX; x <= maxCellX; ++x)
+		{
+			const auto& cellIndices = spatialCells[(y * m_spatialQueryColumns) + x];
+			for (const auto index : cellIndices)
+			{
+				indices << index;
+			}
+		}
+	}
 }
 
 const Array<size_t>& BattleSession::getOwnerUnitIndices(const Owner owner) const

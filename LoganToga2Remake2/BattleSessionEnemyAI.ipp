@@ -64,6 +64,8 @@
 
 void BattleSession::updateEnemyAI(const double deltaTime)
 {
+	invalidateSpatialQueryCache();
+
 	m_state.enemyAiDecisionTimer += deltaTime;
 	if (m_state.enemyAiDecisionTimer < m_config.enemyAI.decisionInterval)
 	{

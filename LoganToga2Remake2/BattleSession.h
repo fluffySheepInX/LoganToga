@@ -39,6 +39,20 @@ private:
 	mutable Array<size_t> m_playerBuildingIndices;
 	mutable Array<size_t> m_enemyBuildingIndices;
 	mutable bool m_frameUnitCacheDirty = true;
+	mutable RectF m_spatialQueryBounds{ 0, 0, 0, 0 };
+	mutable double m_spatialQueryCellSize = 128.0;
+	mutable int32 m_spatialQueryColumns = 1;
+	mutable int32 m_spatialQueryRows = 1;
+	mutable Array<Array<size_t>> m_playerSpatialUnitIndices;
+	mutable Array<Array<size_t>> m_enemySpatialUnitIndices;
+	mutable Array<size_t> m_nearbyOpponentIndicesScratch;
+	mutable bool m_spatialQueryCacheDirty = true;
+	mutable RectF m_navigationGridBounds{ 0, 0, 0, 0 };
+	mutable double m_navigationGridCellSize = 24.0;
+	mutable int32 m_navigationGridColumns = 1;
+	mutable int32 m_navigationGridRows = 1;
+	mutable Array<char> m_navigationGridBlocked;
+	mutable bool m_navigationGridDirty = true;
 
 	void setupInitialState();
 	void processCommands();
@@ -72,8 +86,13 @@ private:
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source) const;
 	[[nodiscard]] const UnitState* tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const;
 	void invalidateUnitIndex() noexcept;
+	void invalidateSpatialQueryCache() noexcept;
+	void invalidateNavigationGrid() noexcept;
 	void rebuildUnitIndex() const;
 	void rebuildFrameUnitCache() const;
+	void rebuildSpatialQueryCache() const;
+	void rebuildNavigationGrid() const;
+	void gatherNearbyOpponentIndices(const UnitState& source, double searchRadius, Array<size_t>& indices) const;
 	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;
 	[[nodiscard]] const Array<size_t>& getOwnerBuildingIndices(Owner owner) const;
 	[[nodiscard]] const UnitState* findOwnerUnitByArchetype(Owner owner, UnitArchetype archetype) const;

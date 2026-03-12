@@ -200,13 +200,13 @@ void BattleSession::cleanupDeadUnits()
 		return !unit.isAlive && !IsBuildingArchetype(unit.archetype);
 	});
 
+	invalidateUnitIndex();
+
 	m_state.buildings.remove_if([this](const BuildingState& building)
 	{
 		const auto* unit = findCachedUnit(building.unitId);
 		return !(unit && unit->isAlive);
 	});
-
-	invalidateUnitIndex();
 
 	cleanupSquads();
 }

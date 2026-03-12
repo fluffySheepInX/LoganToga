@@ -24,13 +24,13 @@ namespace
 
 const UnitState* BattleSession::tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const
 {
-	const auto& candidateIndices = (source.owner == Owner::Player)
-		? getOwnerUnitIndices(Owner::Enemy)
-		: getOwnerUnitIndices(Owner::Player);
-	const UnitState* inRangeTarget = nullptr;
-	double nearestDistance = Math::Inf;
+	const double searchRadius = Max(getAggroRange(source.owner, source.archetype), source.attackRange + m_spatialQueryCellSize);
+	gatherNearbyOpponentIndices(source, searchRadius, m_nearbyOpponentIndicesScratch);
 
-	for (const auto index : candidateIndices)
+	const UnitState* inRangeTarget = nullptr;
+	double nearestDistanceSq = Math::Inf;
+
+	for (const auto index : m_nearbyOpponentIndicesScratch)
 	{
 		const auto& candidate = m_state.units[index];
 		if (!candidate.isAlive || !IsEnemy(source, candidate))
@@ -38,15 +38,17 @@ const UnitState* BattleSession::tryReacquireCombatTarget(const UnitState& source
 			continue;
 		}
 
-		const double distance = source.position.distanceFrom(candidate.position);
-		if (distance > BattleSessionInternal::GetEffectiveAttackRange(source, candidate))
+		const Vec2 delta = (candidate.position - source.position);
+		const double distanceSq = delta.lengthSq();
+		const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(source, candidate);
+		if (distanceSq > (attackRange * attackRange))
 		{
 			continue;
 		}
 
-		if (distance < nearestDistance)
+		if (distanceSq < nearestDistanceSq)
 		{
-			nearestDistance = distance;
+			nearestDistanceSq = distanceSq;
 			inRangeTarget = &candidate;
 		}
 	}
@@ -66,6 +68,8 @@ const UnitState* BattleSession::tryReacquireCombatTarget(const UnitState& source
 
 void BattleSession::updateCombat()
 {
+	invalidateSpatialQueryCache();
+
 	struct DamageEvent
 	{
 		int32 sourceUnitId = -1;
@@ -117,7 +121,9 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		if (unit.position.distanceFrom(target->position) > BattleSessionInternal::GetEffectiveAttackRange(unit, *target))
+		const Vec2 delta = (target->position - unit.position);
+		const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(unit, *target);
+		if (delta.lengthSq() > (attackRange * attackRange))
 		{
 			continue;
 		}

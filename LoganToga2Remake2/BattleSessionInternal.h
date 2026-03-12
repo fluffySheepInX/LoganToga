@@ -109,29 +109,6 @@ namespace BattleSessionInternal
 		return (position.distanceFrom(building.position) < (radius + building.radius + 2.0));
 	}
 
-	[[nodiscard]] inline bool IsPathCellBlocked(const BattleState& state, const UnitState& mover, const Vec2& position, const Array<ObstacleConfig>& obstacles)
-	{
-		if (IsBlockedByObstacle(position, mover.radius + 2.0, obstacles))
-		{
-			return true;
-		}
-
-		for (const auto& unit : state.units)
-		{
-			if (!unit.isAlive || (unit.id == mover.id) || !IsBuildingArchetype(unit.archetype))
-			{
-				continue;
-			}
-
-			if (IntersectsBuilding(position, mover.radius + 2.0, unit))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	[[nodiscard]] inline int32 GetNavigationGridIndex(const NavigationGrid& grid, const int32 x, const int32 y)
 	{
 		return (y * grid.columns) + x;
@@ -158,25 +135,14 @@ namespace BattleSessionInternal
 		};
 	}
 
-	[[nodiscard]] inline NavigationGrid BuildNavigationGrid(const BattleState& state, const UnitState& mover, const Array<ObstacleConfig>& obstacles)
+	[[nodiscard]] inline NavigationGrid MakeNavigationGrid(const RectF& bounds, const double cellSize, const int32 columns, const int32 rows, const Array<char>& blocked)
 	{
 		NavigationGrid grid;
-		grid.bounds = state.worldBounds;
-		grid.cellSize = Max(mover.radius * 2.0, 24.0);
-		grid.columns = Max(1, static_cast<int32>(std::ceil((grid.bounds.rightX() - grid.bounds.leftX()) / grid.cellSize)));
-		grid.rows = Max(1, static_cast<int32>(std::ceil((grid.bounds.bottomY() - grid.bounds.topY()) / grid.cellSize)));
-		grid.blocked.resize(grid.columns * grid.rows);
-
-		for (int32 y = 0; y < grid.rows; ++y)
-		{
-			for (int32 x = 0; x < grid.columns; ++x)
-			{
-				const int32 index = GetNavigationGridIndex(grid, x, y);
-				const Vec2 center = GetNavigationCellCenter(grid, NavigationGridCell{ x, y });
-				grid.blocked[index] = IsPathCellBlocked(state, mover, center, obstacles) ? 1 : 0;
-			}
-		}
-
+		grid.bounds = bounds;
+		grid.cellSize = cellSize;
+		grid.columns = columns;
+		grid.rows = rows;
+		grid.blocked = blocked;
 		return grid;
 	}
 
@@ -232,10 +198,10 @@ namespace BattleSessionInternal
 		return (std::abs(to.x - from.x) + std::abs(to.y - from.y));
 	}
 
-	[[nodiscard]] inline Array<Vec2> BuildNavigationPath(const BattleState& state, const UnitState& mover, const Vec2& destination, const Array<ObstacleConfig>& obstacles)
+	[[nodiscard]] inline Array<Vec2> BuildNavigationPath(const NavigationGrid& sharedGrid, const UnitState& mover, const Vec2& destination)
 	{
-		const Vec2 clampedDestination = ClampToWorld(state.worldBounds, destination, mover.radius);
-		NavigationGrid grid = BuildNavigationGrid(state, mover, obstacles);
+		const Vec2 clampedDestination = ClampToWorld(sharedGrid.bounds, destination, mover.radius);
+		NavigationGrid grid = sharedGrid;
 
 		const int32 startIndex = GetNavigationGridIndex(grid, MakeNavigationGridCell(grid, mover.position).x, MakeNavigationGridCell(grid, mover.position).y);
 		const int32 desiredGoalIndex = GetNavigationGridIndex(grid, MakeNavigationGridCell(grid, clampedDestination).x, MakeNavigationGridCell(grid, clampedDestination).y);
@@ -250,7 +216,7 @@ namespace BattleSessionInternal
 		SetNavigationCellBlocked(grid, goalIndex, false);
 		if (startIndex == goalIndex)
 		{
-			if (!IsPathCellBlocked(state, mover, clampedDestination, obstacles))
+			if (!IsNavigationCellBlocked(sharedGrid, desiredGoalIndex))
 			{
 				return { clampedDestination };
 			}
@@ -315,7 +281,7 @@ namespace BattleSessionInternal
 					reversedPath.remove_at(0);
 				}
 
-				if (!IsPathCellBlocked(state, mover, clampedDestination, obstacles))
+				if (!IsNavigationCellBlocked(sharedGrid, desiredGoalIndex))
 				{
 					if (reversedPath.isEmpty() || (reversedPath.back().distanceFrom(clampedDestination) > 4.0))
 					{
@@ -361,15 +327,15 @@ namespace BattleSessionInternal
 		return { clampedDestination };
 	}
 
-	[[nodiscard]] inline Vec2 ResolveNavigationWaypoint(const BattleState& state, UnitState& mover, const Vec2& strategicDestination, const Array<ObstacleConfig>& obstacles)
+	[[nodiscard]] inline Vec2 ResolveNavigationWaypoint(const NavigationGrid& sharedGrid, UnitState& mover, const Vec2& strategicDestination)
 	{
-		const Vec2 clampedDestination = ClampToWorld(state.worldBounds, strategicDestination, mover.radius);
+		const Vec2 clampedDestination = ClampToWorld(sharedGrid.bounds, strategicDestination, mover.radius);
 		if (mover.pathDirty
 			|| (mover.pathPoints.isEmpty())
 			|| (mover.pathIndex >= mover.pathPoints.size())
 			|| (mover.pathDestination.distanceFrom(clampedDestination) > 8.0))
 		{
-			mover.pathPoints = BuildNavigationPath(state, mover, clampedDestination, obstacles);
+			mover.pathPoints = BuildNavigationPath(sharedGrid, mover, clampedDestination);
 			mover.pathIndex = 0;
 			mover.pathDestination = clampedDestination;
 			mover.pathDirty = false;

@@ -42,6 +42,16 @@ namespace
 
 void BattleSession::updateMovement(const double deltaTime)
 {
+	invalidateSpatialQueryCache();
+	rebuildNavigationGrid();
+
+	const auto navigationGrid = BattleSessionInternal::MakeNavigationGrid(
+		m_navigationGridBounds,
+		m_navigationGridCellSize,
+		m_navigationGridColumns,
+		m_navigationGridRows,
+		m_navigationGridBlocked);
+
 	for (auto& unit : m_state.units)
 	{
 		if (!unit.isAlive)
@@ -124,7 +134,7 @@ void BattleSession::updateMovement(const double deltaTime)
 
 		if (unit.order.type == UnitOrderType::Move)
 		{
-			unit.moveTarget = BattleSessionInternal::ResolveNavigationWaypoint(m_state, unit, strategicDestination, m_config.obstacles);
+			unit.moveTarget = BattleSessionInternal::ResolveNavigationWaypoint(navigationGrid, unit, strategicDestination);
 		}
 		else
 		{
