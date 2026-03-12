@@ -12,9 +12,17 @@ public:
 	{
 		if (KeyEnter.down() || SimpleGUI::Button(U"Start Run", Vec2{ 530, 420 }, 220))
 		{
-			BeginNewRun(getData().runState);
+			BeginNewRun(getData().runState, false);
 			changeScene(U"Battle");
 		}
+
+#ifdef _DEBUG
+		if (SimpleGUI::Button(U"Debug Full Unlock", Vec2{ 530, 472 }, 220))
+		{
+			BeginNewRun(getData().runState, true);
+			changeScene(U"Battle");
+		}
+#endif
 	}
 
 	void draw() const override
@@ -30,5 +38,9 @@ public:
 		data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
 		data.smallFont(U"・Lose once and the run ends").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
 		data.smallFont(U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+
+#ifdef _DEBUG
+		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 150), ColorF{ 1.0, 0.75, 0.45 });
+#endif
 	}
 };

@@ -28,9 +28,10 @@
 	return false;
 }
 
-inline void BeginNewRun(RunState& runState)
+inline void BeginNewRun(RunState& runState, const bool useDebugFullUnlocks)
 {
 	runState.isActive = true;
+	runState.useDebugFullUnlocks = useDebugFullUnlocks;
 	runState.currentBattleIndex = 0;
 	runState.totalBattles = Random(3, 5);
 	runState.isFailed = false;
@@ -39,10 +40,30 @@ inline void BeginNewRun(RunState& runState)
 	runState.pendingRewardCardIds.clear();
 }
 
+inline void BeginNewRun(RunState& runState)
+{
+	BeginNewRun(runState, runState.useDebugFullUnlocks);
+}
+
 inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCardDefinition>& cards, Array<UnitArchetype>& productionArchetypes, Array<UnitArchetype>& constructionArchetypes)
 {
 	productionArchetypes = { UnitArchetype::Worker, UnitArchetype::Soldier };
 	constructionArchetypes = { UnitArchetype::Barracks };
+
+	if (runState.useDebugFullUnlocks)
+	{
+		for (const auto& card : cards)
+		{
+			if (card.effectType == RewardCardEffectType::ProductionUnlock)
+			{
+				AppendUniqueArchetype(productionArchetypes, card.targetArchetype);
+			}
+			else if (card.effectType == RewardCardEffectType::ConstructionUnlock)
+			{
+				AppendUniqueArchetype(constructionArchetypes, card.targetArchetype);
+			}
+		}
+	}
 
 	for (const auto& selectedId : runState.selectedCardIds)
 	{

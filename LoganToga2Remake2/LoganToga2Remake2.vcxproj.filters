@@ -177,6 +177,15 @@
     <ClCompile Include="BattleScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BattleSessionCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSessionQuery.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSessionCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -929,5 +938,20 @@
     <ClInclude Include="RunCardPresentation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BattleSessionCollision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionCombatHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionNavigation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionFormationHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleSessionConstruction.ipp" />
+    <ClInclude Include="BattleSessionResourcePoints.ipp" />
+    <ClInclude Include="BattleSessionLifecycle.ipp" />
   </ItemGroup>
 </Project>

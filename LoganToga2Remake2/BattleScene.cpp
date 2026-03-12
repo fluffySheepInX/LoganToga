@@ -2,6 +2,22 @@
 
 #include "BattleScenePause.ipp"
 
+namespace
+{
+	[[nodiscard]] Vec2 GetInitialCameraCenter(const BattleState& state)
+	{
+		for (const auto& unit : state.units)
+		{
+			if ((unit.owner == Owner::Player) && (unit.archetype == UnitArchetype::Base))
+			{
+				return unit.position;
+			}
+		}
+
+		return state.worldBounds.center();
+	}
+}
+
 BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_clock{ 1.0 / 60.0 }
@@ -12,7 +28,9 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 	}
 
 	m_session.reset(BuildBattleConfigForRun(getData().baseBattleConfig, getData().runState, getData().rewardCards));
-	m_camera.jumpTo(m_session.state().worldBounds.center(), 1.0);
+	const Vec2 initialCameraCenter = clampCameraCenter(GetInitialCameraCenter(m_session.state()));
+	m_camera.setTargetCenter(initialCameraCenter);
+	m_camera.jumpTo(initialCameraCenter, 1.0);
 }
 
 void BattleScene::update()

@@ -41,6 +41,7 @@ struct RewardCardDefinition
 struct RunState
 {
 	bool isActive = false;
+	bool useDebugFullUnlocks = false;
 	int32 currentBattleIndex = 0;
 	int32 totalBattles = 3;
 	bool isFailed = false;
