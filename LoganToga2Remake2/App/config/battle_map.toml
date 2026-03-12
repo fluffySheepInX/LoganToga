@@ -1,0 +1,134 @@
+[[initial_units]]
+owner = "player"
+archetype = "base"
+x = 110.0
+y = 540.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "base"
+x = 1170.0
+y = 180.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 92.0
+y = 458.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 92.0
+y = 622.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 1188.0
+y = 94.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 1188.0
+y = 266.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 180.0
+y = 500.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 200.0
+y = 560.0
+
+[[initial_units]]
+owner = "player"
+archetype = "archer"
+x = 210.0
+y = 530.0
+
+[[initial_units]]
+owner = "player"
+archetype = "worker"
+x = 150.0
+y = 580.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 1020.0
+y = 170.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 1040.0
+y = 230.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "archer"
+x = 980.0
+y = 200.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "barracks"
+x = 1060.0
+y = 150.0
+
+[[obstacles]]
+label = "North Ridge"
+x = 470.0
+y = 170.0
+width = 180.0
+height = 48.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Central Ruin"
+x = 580.0
+y = 300.0
+width = 120.0
+height = 120.0
+blocks_movement = true
+
+[[obstacles]]
+label = "South Ridge"
+x = 700.0
+y = 520.0
+width = 180.0
+height = 48.0
+blocks_movement = true
+
+[[resource_points]]
+label = "North Mine"
+owner = "neutral"
+x = 560.0
+y = 240.0
+radius = 46.0
+income_amount = 8
+capture_time = 1.8
+
+[[resource_points]]
+label = "Central Mine"
+owner = "neutral"
+x = 640.0
+y = 360.0
+radius = 52.0
+income_amount = 12
+capture_time = 2.2
+
+[[resource_points]]
+label = "South Mine"
+owner = "neutral"
+x = 720.0
+y = 500.0
+radius = 46.0
+income_amount = 8
+capture_time = 1.8

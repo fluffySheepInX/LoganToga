@@ -1,0 +1,185 @@
+[[units]]
+archetype = "base"
+description = "本拠地。ここを失うと戦線が崩れる。"
+radius = 28.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 300
+cost = 0
+production_time = 0.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "stable"
+description = "回転騎兵を送り出す専用厩舎。遊びの起点になる。"
+flavor_text = "勢いで押し込む兵は、ここから飛び出す。"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 170
+cost = 130
+production_time = 5.5
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "turret"
+description = "足を止めて迎撃する防衛施設。前線の支え向き。"
+flavor_text = "据えれば静かに仕事をする。"
+radius = 18.0
+move_speed = 0.0
+attack_range = 170.0
+attack_cooldown = 1.1
+attack_power = 10
+hp = 140
+cost = 140
+production_time = 0.0
+can_move = false
+aggro_range = 220.0
+
+[[units]]
+archetype = "barracks"
+description = "兵士を呼べる生産拠点。戦線の継続に必要。"
+flavor_text = "粗末でも、ここが兵の集まる場所になる。"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 180
+cost = 120
+production_time = 6.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "worker"
+description = "建設と序盤の穴埋めを担う補助役。"
+radius = 10.0
+move_speed = 85.0
+attack_range = 18.0
+attack_cooldown = 1.0
+attack_power = 4
+hp = 28
+cost = 40
+production_time = 1.2
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "soldier"
+description = "低コストで前線維持に向く基本兵。"
+flavor_text = "派手さはないが、命令には素直だ。"
+radius = 12.0
+move_speed = 92.0
+attack_range = 24.0
+attack_cooldown = 0.7
+attack_power = 8
+hp = 48
+cost = 60
+production_time = 1.6
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "archer"
+description = "後衛から削る射撃兵。守りの後ろで活きる。"
+flavor_text = "一歩引いた位置から、確実に矢を重ねる。"
+radius = 11.0
+move_speed = 82.0
+attack_range = 120.0
+attack_cooldown = 1.0
+attack_power = 6
+hp = 34
+cost = 80
+production_time = 2.0
+can_move = true
+aggro_range = 220.0
+
+[[units]]
+archetype = "spinner"
+description = "走りながら周囲を削る回転騎兵。深く考えず突っ込ませやすい。"
+flavor_text = "止まると並、走れば楽しい。"
+radius = 13.0
+move_speed = 118.0
+attack_range = 22.0
+attack_cooldown = 0.75
+attack_power = 6
+hp = 40
+cost = 90
+production_time = 2.2
+can_move = true
+aggro_range = 200.0
+
+[[player_production]]
+slot = 1
+producer = "base"
+archetype = "worker"
+
+[[player_production]]
+slot = 2
+producer = "barracks"
+archetype = "soldier"
+
+[[player_production]]
+slot = 3
+producer = "barracks"
+archetype = "archer"
+
+[[player_production]]
+slot = 4
+producer = "stable"
+archetype = "spinner"
+
+[[player_construction]]
+slot = 5
+archetype = "barracks"
+
+[[player_construction]]
+slot = 6
+archetype = "stable"
+
+[[player_construction]]
+slot = 7
+archetype = "turret"
+
+[[turret_upgrades]]
+slot = 8
+type = "power"
+label = "POWER"
+glyph = "P"
+description = "威力のみ強化。重い一撃で前線を支える。"
+flavor_text = "少ない手数でも、撃てば違いが出る。"
+cost = 100
+attack_power_delta = 4
+attack_cooldown_delta = 0.0
+unlocked_by_default = true
+
+[[turret_upgrades]]
+slot = 9
+type = "rapid"
+label = "RAPID"
+glyph = "R"
+description = "連射のみ強化。継続迎撃に向く。"
+flavor_text = "細かく刻めば、押し返す時間が延びる。"
+cost = 100
+attack_power_delta = 0
+attack_cooldown_delta = -0.28
+unlocked_by_default = true
+
+[[turret_upgrades]]
+slot = 0
+type = "dual"
+label = "DUAL"
+glyph = "D"
+description = "威力と連射を両立した上位強化。"
+flavor_text = "大きな投資に見合うだけの制圧力を得る。"
+cost = 240
+attack_power_delta = 3
+attack_cooldown_delta = -0.22
+unlocked_by_default = false

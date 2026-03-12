@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -191,6 +191,10 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="App\config\battle.toml" />
+    <None Include="App\config\battle_core.toml" />
+    <None Include="App\config\battle_map.toml" />
+    <None Include="App\config\battle_progression.toml" />
+    <None Include="App\config\battle_units.toml" />
     <None Include="App\config\bonus_rooms.toml" />
     <None Include="App\config\cards.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />

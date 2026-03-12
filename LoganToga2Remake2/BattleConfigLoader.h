@@ -79,15 +79,24 @@
 	throw Error{ U"Unknown turret upgrade type: " + value };
 }
 
-[[nodiscard]] inline BattleConfigData LoadBattleConfig(const String& path)
+[[nodiscard]] inline String ResolveBattleConfigSourcePath(const String& rootPath, const String& relativePath)
 {
-	const TOMLReader toml{ path };
-	if (!toml)
+	const String directory = FileSystem::ParentPath(rootPath);
+	if (directory.isEmpty())
 	{
-		throw Error{ U"Failed to load battle config: " + path };
+		return relativePath;
 	}
 
-	BattleConfigData config;
+	if (directory.ends_with(U"/") || directory.ends_with(U"\\"))
+	{
+		return directory + relativePath;
+	}
+
+	return directory + U"/" + relativePath;
+}
+
+inline void LoadBattleCoreConfig(BattleConfigData& config, const TOMLReader& toml)
+{
 	config.playerGold = toml[U"economy"][U"player_gold"].get<int32>();
 	config.enemyGold = toml[U"economy"][U"enemy_gold"].get<int32>();
 	config.world.width = toml[U"world"][U"width"].get<double>();
@@ -99,6 +108,29 @@
 	config.hud.controls = toml[U"hud"][U"controls"].get<String>();
 	config.hud.escapeHint = toml[U"hud"][U"escape_hint"].get<String>();
 	config.hud.winHint = toml[U"hud"][U"win_hint"].get<String>();
+	config.enemySpawn.interval = toml[U"enemy_spawn"][U"interval"].get<double>();
+	config.enemySpawn.basicArchetype = ParseUnitArchetype(toml[U"enemy_spawn"][U"basic_archetype"].get<String>());
+	config.enemySpawn.advancedArchetype = ParseUnitArchetype(toml[U"enemy_spawn"][U"advanced_archetype"].get<String>());
+	config.enemySpawn.advancedProbability = toml[U"enemy_spawn"][U"advanced_probability"].get<double>();
+	config.enemySpawn.position = Vec2{ toml[U"enemy_spawn"][U"x"].get<double>(), toml[U"enemy_spawn"][U"y"].get<double>() };
+	config.enemySpawn.randomYOffset = toml[U"enemy_spawn"][U"random_y_offset"].get<double>();
+	config.enemyAI.decisionInterval = toml[U"enemy_ai"][U"decision_interval"].getOr<double>(config.enemyAI.decisionInterval);
+	config.enemyAI.assaultUnitThreshold = toml[U"enemy_ai"][U"assault_unit_threshold"].getOr<int32>(config.enemyAI.assaultUnitThreshold);
+	config.enemyAI.defenseRadius = toml[U"enemy_ai"][U"defense_radius"].getOr<double>(config.enemyAI.defenseRadius);
+	config.enemyAI.rallyDistance = toml[U"enemy_ai"][U"rally_distance"].getOr<double>(config.enemyAI.rallyDistance);
+	config.enemyAI.baseAssaultLockRadius = toml[U"enemy_ai"][U"base_assault_lock_radius"].getOr<double>(config.enemyAI.baseAssaultLockRadius);
+	config.enemyAI.usePathfindingForAttackTarget = toml[U"enemy_ai"][U"use_pathfinding_for_attack_target"].getOr<bool>(config.enemyAI.usePathfindingForAttackTarget);
+}
+
+inline void LoadBattleUnitConfig(BattleConfigData& config, const TOMLReader& toml)
+{
+	config.unitDefinitions.clear();
+	config.playerProductionSlots.clear();
+	config.playerConstructionSlots.clear();
+	config.turretUpgradeDefinitions.clear();
+	config.playerAvailableProductionArchetypes.clear();
+	config.playerAvailableConstructionArchetypes.clear();
+	config.playerAvailableTurretUpgrades.clear();
 
 	for (const auto& table : toml[U"units"].tableArrayView())
 	{
@@ -117,15 +149,6 @@
 		definition.canMove = table[U"can_move"].get<bool>();
 		definition.aggroRange = table[U"aggro_range"].get<double>();
 		config.unitDefinitions << definition;
-	}
-
-	for (const auto& table : toml[U"initial_units"].tableArrayView())
-	{
-		InitialUnitPlacement placement;
-		placement.owner = ParseOwner(table[U"owner"].get<String>());
-		placement.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
-		placement.position = Vec2{ table[U"x"].get<double>(), table[U"y"].get<double>() };
-		config.initialUnits << placement;
 	}
 
 	for (const auto& table : toml[U"player_production"].tableArrayView())
@@ -166,6 +189,22 @@
 			AppendUniqueTurretUpgradeType(config.playerAvailableTurretUpgrades, definition.type);
 		}
 	}
+}
+
+inline void LoadBattleMapConfig(BattleConfigData& config, const TOMLReader& toml)
+{
+	config.initialUnits.clear();
+	config.obstacles.clear();
+	config.resourcePoints.clear();
+
+	for (const auto& table : toml[U"initial_units"].tableArrayView())
+	{
+		InitialUnitPlacement placement;
+		placement.owner = ParseOwner(table[U"owner"].get<String>());
+		placement.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
+		placement.position = Vec2{ table[U"x"].get<double>(), table[U"y"].get<double>() };
+		config.initialUnits << placement;
+	}
 
 	for (const auto& table : toml[U"obstacles"].tableArrayView())
 	{
@@ -187,19 +226,11 @@
 		resourcePoint.owner = ParseOwner(table[U"owner"].get<String>());
 		config.resourcePoints << resourcePoint;
 	}
+}
 
-	config.enemySpawn.interval = toml[U"enemy_spawn"][U"interval"].get<double>();
-	config.enemySpawn.basicArchetype = ParseUnitArchetype(toml[U"enemy_spawn"][U"basic_archetype"].get<String>());
-	config.enemySpawn.advancedArchetype = ParseUnitArchetype(toml[U"enemy_spawn"][U"advanced_archetype"].get<String>());
-	config.enemySpawn.advancedProbability = toml[U"enemy_spawn"][U"advanced_probability"].get<double>();
-	config.enemySpawn.position = Vec2{ toml[U"enemy_spawn"][U"x"].get<double>(), toml[U"enemy_spawn"][U"y"].get<double>() };
-	config.enemySpawn.randomYOffset = toml[U"enemy_spawn"][U"random_y_offset"].get<double>();
-	config.enemyAI.decisionInterval = toml[U"enemy_ai"][U"decision_interval"].getOr<double>(config.enemyAI.decisionInterval);
-	config.enemyAI.assaultUnitThreshold = toml[U"enemy_ai"][U"assault_unit_threshold"].getOr<int32>(config.enemyAI.assaultUnitThreshold);
-	config.enemyAI.defenseRadius = toml[U"enemy_ai"][U"defense_radius"].getOr<double>(config.enemyAI.defenseRadius);
-	config.enemyAI.rallyDistance = toml[U"enemy_ai"][U"rally_distance"].getOr<double>(config.enemyAI.rallyDistance);
-	config.enemyAI.baseAssaultLockRadius = toml[U"enemy_ai"][U"base_assault_lock_radius"].getOr<double>(config.enemyAI.baseAssaultLockRadius);
-	config.enemyAI.usePathfindingForAttackTarget = toml[U"enemy_ai"][U"use_pathfinding_for_attack_target"].getOr<bool>(config.enemyAI.usePathfindingForAttackTarget);
+inline void LoadBattleProgressionConfig(BattleConfigData& config, const TOMLReader& toml)
+{
+	config.enemyProgression.clear();
 
 	for (const auto& table : toml[U"enemy_progression"].tableArrayView())
 	{
@@ -222,6 +253,54 @@
 		}
 		config.enemyProgression << progression;
 	}
+}
+
+[[nodiscard]] inline BattleConfigData LoadBattleConfig(const String& path)
+{
+	const TOMLReader toml{ path };
+	if (!toml)
+	{
+		throw Error{ U"Failed to load battle config: " + path };
+	}
+
+	const String coreSource = toml[U"sources"][U"core"].get<String>();
+	const String unitsSource = toml[U"sources"][U"units"].get<String>();
+	const String mapSource = toml[U"sources"][U"map"].get<String>();
+	const String progressionSource = toml[U"sources"][U"progression"].get<String>();
+
+	BattleConfigData config;
+
+	const String corePath = ResolveBattleConfigSourcePath(path, coreSource);
+	const TOMLReader coreToml{ corePath };
+	if (!coreToml)
+	{
+		throw Error{ U"Failed to load battle config core: " + corePath };
+	}
+	LoadBattleCoreConfig(config, coreToml);
+
+	const String unitsPath = ResolveBattleConfigSourcePath(path, unitsSource);
+	const TOMLReader unitsToml{ unitsPath };
+	if (!unitsToml)
+	{
+		throw Error{ U"Failed to load battle config units: " + unitsPath };
+	}
+	LoadBattleUnitConfig(config, unitsToml);
+
+	const String mapPath = ResolveBattleConfigSourcePath(path, mapSource);
+	const TOMLReader mapToml{ mapPath };
+	if (!mapToml)
+	{
+		throw Error{ U"Failed to load battle config map: " + mapPath };
+	}
+	LoadBattleMapConfig(config, mapToml);
+
+	const String progressionPath = ResolveBattleConfigSourcePath(path, progressionSource);
+	const TOMLReader progressionToml{ progressionPath };
+	if (!progressionToml)
+	{
+		throw Error{ U"Failed to load battle config progression: " + progressionPath };
+	}
+	LoadBattleProgressionConfig(config, progressionToml);
 
 	return config;
 }
