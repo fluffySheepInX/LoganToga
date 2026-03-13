@@ -101,6 +101,26 @@ inline void ApplyUnitStatBonus(PlayerUnitModifier& modifier, const RewardCardDef
 		{
 			config.enemyAI.assaultUnitThreshold = progression->assaultUnitThreshold;
 		}
+		if (progression->overrideEnemyAiMode)
+		{
+			config.enemyAI.mode = progression->enemyAiMode;
+		}
+		if (progression->stagingAssaultMinUnits > 0)
+		{
+			config.enemyAI.stagingAssaultMinUnits = progression->stagingAssaultMinUnits;
+		}
+		if (progression->stagingAssaultGatherRadius > 0.0)
+		{
+			config.enemyAI.stagingAssaultGatherRadius = progression->stagingAssaultGatherRadius;
+		}
+		if (progression->stagingAssaultMaxWait > 0.0)
+		{
+			config.enemyAI.stagingAssaultMaxWait = progression->stagingAssaultMaxWait;
+		}
+		if (progression->stagingAssaultCommitTime > 0.0)
+		{
+			config.enemyAI.stagingAssaultCommitTime = progression->stagingAssaultCommitTime;
+		}
 		if (progression->replaceEnemyInitialUnits && !progression->enemyInitialUnits.isEmpty())
 		{
 			ReplaceEnemyInitialUnits(config, *progression);

@@ -2,6 +2,16 @@
 
 void BattleSession::updateProduction(const double deltaTime)
 {
+	for (auto& effect : m_state.productionCompletionEffects)
+	{
+		effect.remainingTime = Max(effect.remainingTime - deltaTime, 0.0);
+	}
+
+	m_state.productionCompletionEffects.remove_if([](const ProductionCompletionEffect& effect)
+	{
+		return (effect.remainingTime <= 0.0);
+	});
+
 	for (auto& building : m_state.buildings)
 	{
 		if (!building.isConstructed)
@@ -38,6 +48,13 @@ void BattleSession::updateProduction(const double deltaTime)
 			const Vec2 spawnPosition = getProductionSpawnPoint(*buildingUnit, currentItem.archetype);
 			spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
 		}
+
+		m_state.productionCompletionEffects << ProductionCompletionEffect{
+			.unitId = building.unitId,
+			.remainingTime = 0.28,
+			.totalTime = 0.28,
+		};
+
 		building.productionQueue.remove_at(0);
 	}
 }

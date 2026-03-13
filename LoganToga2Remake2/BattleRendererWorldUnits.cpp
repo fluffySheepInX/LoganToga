@@ -4,6 +4,24 @@
 
 namespace
 {
+	[[nodiscard]] double GetBuildingProductionPulse(const int32 unitId)
+	{
+		return 0.5 + (0.5 * std::sin((Scene::Time() * 6.0) + (unitId * 0.8)));
+	}
+
+	[[nodiscard]] const ProductionCompletionEffect* FindProductionCompletionEffect(const BattleState& state, const int32 unitId)
+	{
+		for (const auto& effect : state.productionCompletionEffects)
+		{
+			if ((effect.unitId == unitId) && (effect.remainingTime > 0.0) && (effect.totalTime > 0.0))
+			{
+				return &effect;
+			}
+		}
+
+		return nullptr;
+	}
+
 	[[nodiscard]] Vec2 GetUnitRenderOffset(const UnitState& unit, const BattleState& state)
 	{
 		for (const auto& effect : state.attackVisualEffects)
@@ -20,6 +38,34 @@ namespace
 		}
 
 		return Vec2::Zero();
+	}
+
+	void DrawBuildingProductionDecoration(const UnitState& unit, const BuildingState& building, const Vec2& renderPosition, const ColorF& ownerColor)
+	{
+		if (!building.isConstructed || building.productionQueue.isEmpty())
+		{
+			return;
+		}
+
+		const double pulse = GetBuildingProductionPulse(unit.id);
+		const double radiusScale = 1.01 + (0.02 * pulse);
+		const double outerRadius = (unit.radius * radiusScale) + 8.0 + (pulse * 4.0);
+		const ColorF glowColor{ 1.0, 0.90, 0.44, 0.08 + (0.10 * pulse) };
+		const ColorF ringColor{ 1.0, 0.88, 0.40, 0.22 + (0.22 * pulse) };
+		const ColorF coreColor{ 1.0, 0.96, 0.82, 0.06 + (0.08 * pulse) };
+
+		Circle{ renderPosition, outerRadius }.draw(ColorF{ ownerColor, 0.04 + (0.05 * pulse) });
+		Circle{ renderPosition, outerRadius }.draw(glowColor);
+		Circle{ renderPosition, unit.radius * radiusScale }.draw(coreColor);
+		Circle{ renderPosition, unit.radius + 11.0 + (pulse * 2.8) }.drawFrame(2.2, ringColor);
+	}
+
+	void DrawBuildingProductionCompletionFlash(const UnitState& unit, const ProductionCompletionEffect& effect, const Vec2& renderPosition)
+	{
+		const double t = Clamp(effect.remainingTime / effect.totalTime, 0.0, 1.0);
+		const double progress = (1.0 - t);
+		Circle{ renderPosition, unit.radius + 10.0 + (progress * 18.0) }.drawFrame(3.2 - (1.4 * progress), ColorF{ 1.0, 0.90, 0.58, 0.55 * t });
+		Circle{ renderPosition, (unit.radius * (1.0 + (0.10 * t))) + 4.0 }.draw(ColorF{ 1.0, 0.96, 0.84, 0.10 * t });
 	}
 
 	void DrawWorkerDecoration(const UnitState& unit, const BattleState& state, const Vec2& renderPosition)
@@ -145,6 +191,9 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 
 		const Vec2 renderPosition = unit.position + GetUnitRenderOffset(unit, state);
 		const ColorF color = GetOwnerColor(unit.owner);
+		const BuildingState* building = IsBuildingArchetype(unit.archetype)
+			? state.findBuildingByUnitId(unit.id)
+			: nullptr;
 		if (unit.isSelected && (unit.attackRange > 0.0))
 		{
 			const ColorF rangeFill = (unit.archetype == UnitArchetype::Healer)
@@ -155,6 +204,16 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 				: ColorF{ 1.0, 0.68, 0.22, 0.30 };
 			Circle{ renderPosition, unit.attackRange }.draw(rangeFill);
 			Circle{ renderPosition, unit.attackRange }.drawFrame(1.5, rangeFrame);
+		}
+
+		if (building)
+		{
+			DrawBuildingProductionDecoration(unit, *building, renderPosition, color);
+
+			if (const auto* completionEffect = FindProductionCompletionEffect(state, unit.id))
+			{
+				DrawBuildingProductionCompletionFlash(unit, *completionEffect, renderPosition);
+			}
 		}
 
 		Circle{ renderPosition, unit.radius }.draw(color);

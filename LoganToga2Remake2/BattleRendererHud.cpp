@@ -44,6 +44,30 @@ namespace
 		}
 	}
 
+	[[nodiscard]] String GetEnemyAiModeLabel(const EnemyAiMode mode)
+	{
+		switch (mode)
+		{
+		case EnemyAiMode::StagingAssault:
+			return U"STAGING";
+		case EnemyAiMode::Default:
+		default:
+			return U"DEFAULT";
+		}
+	}
+
+	[[nodiscard]] ColorF GetEnemyAiDebugAccentColor(const EnemyAiMode mode)
+	{
+		switch (mode)
+		{
+		case EnemyAiMode::StagingAssault:
+			return ColorF{ 0.96, 0.62, 0.28 };
+		case EnemyAiMode::Default:
+		default:
+			return ColorF{ 0.36, 0.74, 0.98 };
+		}
+	}
+
 	void DrawFormationPanel(const BattleState& state, const GameData& gameData)
 	{
 		const FormationPanelLayout layout = BuildFormationPanelLayout(state);
@@ -72,6 +96,50 @@ namespace
 				.draw(button.button.isActive ? accentColor : ColorF{ accentColor.r, accentColor.g, accentColor.b, 0.45 });
 			gameData.smallFont(button.button.label).drawAt(animatedRect.center().movedBy(0, -2), Palette::White);
 		}
+	}
+
+	void DrawEnemyAiDebugPanel(const BattleState& state, const BattleConfigData& config, const GameData& gameData)
+	{
+		const auto layout = BuildEnemyAiDebugPanelLayout(state, config);
+		if (!layout)
+		{
+			return;
+		}
+
+		const Vec2 cursorScreenPos = Cursor::PosF();
+		const ColorF accentColor = GetEnemyAiDebugAccentColor(state.enemyAiResolvedMode);
+		RoundRect{ layout->panelRect, 12 }.draw(ColorF{ 0.02, 0.04, 0.08, 0.88 });
+		RoundRect{ layout->panelRect, 12 }.drawFrame(2, 0, accentColor);
+		gameData.smallFont(layout->title).draw(layout->panelRect.x + 16, layout->panelRect.y + 12, ColorF{ 0.90, 0.92, 0.96 });
+
+		for (const auto& button : layout->buttons)
+		{
+			const bool isHovered = button.rect.intersects(cursorScreenPos);
+			const bool isPressed = isHovered && MouseL.pressed();
+			const RectF animatedRect = isPressed
+				? RectF{ button.rect.x + 1, button.rect.y + 2, button.rect.w - 2, button.rect.h - 2 }
+				: (isHovered ? RectF{ button.rect.x - 1, button.rect.y - 1, button.rect.w + 2, button.rect.h + 2 } : button.rect);
+			const ColorF fillColor = button.button.isActive
+				? ColorF{ accentColor.r * 0.24 + 0.14, accentColor.g * 0.24 + 0.14, accentColor.b * 0.24 + 0.14, 0.98 }
+				: (isHovered ? ColorF{ 0.16, 0.18, 0.24, 0.98 } : ColorF{ 0.10, 0.11, 0.15, 0.96 });
+
+			RoundRect{ animatedRect, 8 }.draw(fillColor);
+			RoundRect{ animatedRect, 8 }.drawFrame(button.button.isActive ? 3.0 : 2.0, 0, accentColor);
+			gameData.smallFont(button.button.label).drawAt(animatedRect.center(), Palette::White);
+		}
+
+		const String overrideLabel = state.enemyAiDebugOverrideMode
+			? GetEnemyAiModeLabel(*state.enemyAiDebugOverrideMode)
+			: U"TOML";
+		const String targetLabel = state.enemyAiAssaultTargetUnitId
+			? Format(*state.enemyAiAssaultTargetUnitId)
+			: U"-";
+		const double infoBaseY = layout->panelRect.y + 88.0;
+		gameData.smallFont(U"F6: Panel  /  F7: Cycle").draw(layout->panelRect.x + 16, infoBaseY, ColorF{ 0.78, 0.82, 0.88 });
+		gameData.smallFont(U"Current: " + GetEnemyAiModeLabel(state.enemyAiResolvedMode)).draw(layout->panelRect.x + 16, infoBaseY + 22.0, Palette::White);
+		gameData.smallFont(U"TOML: " + GetEnemyAiModeLabel(config.enemyAI.mode) + U"  /  Override: " + overrideLabel).draw(layout->panelRect.x + 16, infoBaseY + 44.0, Palette::White);
+		gameData.smallFont(Format(U"Combat: ", state.enemyAiDebugCombatUnitCount, U"  /  Ready: ", state.enemyAiDebugReadyUnitCount)).draw(layout->panelRect.x + 16, infoBaseY + 66.0, Palette::White);
+		gameData.smallFont(Format(U"Stage: ", state.enemyAiStagingTimer, U"  /  Commit: ", state.enemyAiAssaultCommitTimer, U"  /  Target: ", targetLabel)).draw(layout->panelRect.x + 16, infoBaseY + 88.0, Palette::White);
 	}
 }
 
@@ -146,6 +214,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	gameData.smallFont(runText).draw(28, detailBaseY + 66.0, Palette::White);
 	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 88.0, Palette::Gold);
 	DrawFormationPanel(state, gameData);
+	DrawEnemyAiDebugPanel(state, config, gameData);
 
 	if (queueTarget)
 	{

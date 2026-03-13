@@ -75,14 +75,30 @@ struct EnemySpawnConfig
 	double randomYOffset = 50.0;
 };
 
+enum class EnemyAiMode
+{
+	Default,
+	StagingAssault
+};
+
 struct EnemyAiConfig
 {
+	EnemyAiMode mode = EnemyAiMode::Default;
 	double decisionInterval = 0.4;
 	int32 assaultUnitThreshold = 4;
 	double defenseRadius = 240.0;
 	double rallyDistance = 120.0;
 	double baseAssaultLockRadius = 180.0;
+	int32 stagingAssaultMinUnits = 5;
+	double stagingAssaultGatherRadius = 96.0;
+	double stagingAssaultMaxWait = 4.0;
+	double stagingAssaultCommitTime = 5.0;
 	bool usePathfindingForAttackTarget = false;
+};
+
+struct DebugConfig
+{
+	bool enableEnemyAiSwitcher = false;
 };
 
 struct IncomeConfig
@@ -130,6 +146,12 @@ struct EnemyProgressionConfig
 	int32 incomeBonus = 0;
 	double spawnInterval = 0.0;
 	int32 assaultUnitThreshold = 0;
+	bool overrideEnemyAiMode = false;
+	EnemyAiMode enemyAiMode = EnemyAiMode::Default;
+	int32 stagingAssaultMinUnits = 0;
+	double stagingAssaultGatherRadius = 0.0;
+	double stagingAssaultMaxWait = 0.0;
+	double stagingAssaultCommitTime = 0.0;
 	int32 extraBasicUnits = 0;
 	int32 extraAdvancedUnits = 0;
 	bool replaceEnemyInitialUnits = false;
@@ -142,6 +164,7 @@ struct BattleConfigData
 	int32 enemyGold = 200;
 	WorldConfig world;
 	IncomeConfig income;
+	DebugConfig debug;
 	HudConfig hud;
 	Array<UnitDefinition> unitDefinitions;
 	Array<InitialUnitPlacement> initialUnits;

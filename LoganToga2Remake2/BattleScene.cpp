@@ -104,6 +104,16 @@ void BattleScene::update()
 		return;
 	}
 
+	if (KeyF6.down())
+	{
+		m_session.toggleEnemyAiDebugPanel();
+	}
+
+	if (KeyF7.down())
+	{
+		m_session.cycleEnemyAiDebugMode();
+	}
+
 	m_camera.update();
 
 	const Vec2 cursorScreenPos = Cursor::PosF();

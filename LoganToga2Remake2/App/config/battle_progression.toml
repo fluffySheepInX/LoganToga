@@ -47,6 +47,11 @@ gold_bonus = 160
 income_bonus = 16
 spawn_interval = 3.4
 assault_unit_threshold = 3
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 4
+staging_assault_gather_radius = 88.0
+staging_assault_max_wait = 3.2
+staging_assault_commit_time = 4.5
 replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
@@ -95,6 +100,11 @@ gold_bonus = 240
 income_bonus = 24
 spawn_interval = 3.1
 assault_unit_threshold = 2
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 5
+staging_assault_gather_radius = 96.0
+staging_assault_max_wait = 3.8
+staging_assault_commit_time = 5.0
 replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
@@ -148,6 +158,11 @@ gold_bonus = 320
 income_bonus = 32
 spawn_interval = 2.8
 assault_unit_threshold = 2
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 6
+staging_assault_gather_radius = 110.0
+staging_assault_max_wait = 4.2
+staging_assault_commit_time = 5.6
 replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]

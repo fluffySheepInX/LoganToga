@@ -60,10 +60,44 @@
 
 		return from + (direction.normalized() * distance);
 	}
+
+	[[nodiscard]] int32 CountEnemyCombatUnitsNearPoint(const BattleState& state, const Vec2& point, const double radius)
+	{
+		int32 count = 0;
+		const double radiusSq = (radius * radius);
+		for (const auto& unit : state.units)
+		{
+			if (!IsEnemyCombatUnit(unit))
+			{
+				continue;
+			}
+
+			if ((unit.position - point).lengthSq() <= radiusSq)
+			{
+				++count;
+			}
+		}
+
+		return count;
+	}
 }
 
 void BattleSession::updateEnemyAI(const double deltaTime)
 {
+	const EnemyAiMode activeEnemyAiMode = m_state.enemyAiDebugOverrideMode
+		? *m_state.enemyAiDebugOverrideMode
+		: m_config.enemyAI.mode;
+	m_state.enemyAiResolvedMode = activeEnemyAiMode;
+
+	if (m_state.enemyAiAssaultCommitTimer > 0.0)
+	{
+		m_state.enemyAiAssaultCommitTimer = Max(0.0, m_state.enemyAiAssaultCommitTimer - deltaTime);
+		if (m_state.enemyAiAssaultCommitTimer <= 0.0)
+		{
+			m_state.enemyAiAssaultTargetUnitId.reset();
+		}
+	}
+
 	invalidateSpatialQueryCache();
 
 	m_state.enemyAiDecisionTimer += deltaTime;
@@ -184,11 +218,64 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		ConsiderStrategicTarget(strategicTarget, captureScore, captureTarget->position);
 	}
 
-	const bool shouldAssault = (enemyCombatUnits >= m_config.enemyAI.assaultUnitThreshold)
-		&& (strategicTarget.score > -Math::Inf);
-	const Vec2 rallyPoint = shouldAssault
+	const bool useStagingAssault = (activeEnemyAiMode == EnemyAiMode::StagingAssault);
+	const bool hasStrategicTarget = (strategicTarget.score > -Math::Inf);
+	const bool canStageAssault = useStagingAssault && !defenseTarget && hasStrategicTarget;
+	const Vec2 stagingRallyPoint = canStageAssault
 		? MakeOffsetToward(enemyAnchor, strategicTarget.position, m_config.enemyAI.rallyDistance)
 		: enemyAnchor;
+	const int32 stagingMinUnits = Max(1, (m_config.enemyAI.stagingAssaultMinUnits > 0)
+		? m_config.enemyAI.stagingAssaultMinUnits
+		: m_config.enemyAI.assaultUnitThreshold);
+	const int32 stagingReadyUnits = canStageAssault
+		? CountEnemyCombatUnitsNearPoint(m_state, stagingRallyPoint, m_config.enemyAI.stagingAssaultGatherRadius)
+		: 0;
+	m_state.enemyAiDebugCombatUnitCount = enemyCombatUnits;
+	m_state.enemyAiDebugReadyUnitCount = stagingReadyUnits;
+
+	if (useStagingAssault)
+	{
+		if ((m_state.enemyAiAssaultCommitTimer > 0.0) && hasStrategicTarget)
+		{
+			m_state.enemyAiAssaultDestination = strategicTarget.position;
+			m_state.enemyAiAssaultTargetUnitId = strategicTarget.unitId;
+		}
+
+		if (canStageAssault && (m_state.enemyAiAssaultCommitTimer <= 0.0) && (enemyCombatUnits >= stagingMinUnits))
+		{
+			m_state.enemyAiStagingTimer += m_config.enemyAI.decisionInterval;
+			if ((stagingReadyUnits >= stagingMinUnits) || (m_state.enemyAiStagingTimer >= m_config.enemyAI.stagingAssaultMaxWait))
+			{
+				m_state.enemyAiAssaultCommitTimer = m_config.enemyAI.stagingAssaultCommitTime;
+				m_state.enemyAiAssaultDestination = strategicTarget.position;
+				m_state.enemyAiAssaultTargetUnitId = strategicTarget.unitId;
+				m_state.enemyAiStagingTimer = 0.0;
+			}
+		}
+		else if ((m_state.enemyAiAssaultCommitTimer <= 0.0) || !canStageAssault)
+		{
+			m_state.enemyAiStagingTimer = 0.0;
+		}
+	}
+	else
+	{
+		m_state.enemyAiStagingTimer = 0.0;
+		m_state.enemyAiAssaultCommitTimer = 0.0;
+		m_state.enemyAiAssaultTargetUnitId.reset();
+	}
+
+	const bool shouldAssault = useStagingAssault
+		? (m_state.enemyAiAssaultCommitTimer > 0.0)
+		: ((enemyCombatUnits >= m_config.enemyAI.assaultUnitThreshold) && hasStrategicTarget);
+	const Vec2 rallyPoint = useStagingAssault
+		? stagingRallyPoint
+		: (shouldAssault ? MakeOffsetToward(enemyAnchor, strategicTarget.position, m_config.enemyAI.rallyDistance) : enemyAnchor);
+	const Vec2 assaultDestination = (useStagingAssault && (m_state.enemyAiAssaultCommitTimer > 0.0))
+		? m_state.enemyAiAssaultDestination
+		: strategicTarget.position;
+	const Optional<int32> assaultTargetUnitId = (useStagingAssault && (m_state.enemyAiAssaultCommitTimer > 0.0))
+		? m_state.enemyAiAssaultTargetUnitId
+		: strategicTarget.unitId;
 
 	for (const auto unitIndex : getOwnerUnitIndices(Owner::Enemy))
 	{
@@ -210,13 +297,18 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			decision.objective = EnemyAiObjectiveType::CaptureResource;
 			decision.strategicDestination = captureTarget->position;
 		}
+		else if (useStagingAssault && IsEnemyCombatUnit(unit) && !shouldAssault && canStageAssault)
+		{
+			decision.objective = EnemyAiObjectiveType::Rally;
+			decision.strategicDestination = rallyPoint;
+		}
 		else if (shouldAssault)
 		{
 			decision.objective = EnemyAiObjectiveType::Assault;
-			decision.strategicDestination = strategicTarget.position;
-			if (strategicTarget.unitId)
+			decision.strategicDestination = assaultDestination;
+			if (assaultTargetUnitId)
 			{
-				decision.targetUnitId = strategicTarget.unitId;
+				decision.targetUnitId = assaultTargetUnitId;
 			}
 		}
 		else if (captureTarget)
@@ -230,7 +322,8 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			decision.strategicDestination = rallyPoint;
 		}
 
-		if (!decision.targetUnitId)
+		const bool suppressNearbyTargetSelection = useStagingAssault && IsEnemyCombatUnit(unit) && !shouldAssault && canStageAssault;
+		if (!decision.targetUnitId && !suppressNearbyTargetSelection)
 		{
 			if (const UnitState* nearbyTarget = findNearestEnemy(unit))
 			{

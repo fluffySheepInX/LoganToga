@@ -53,6 +53,12 @@ namespace
 
 bool BattleInputController::isCursorOnCommandPanel(const BattleSession& session, const Vec2& cursorScreenPos) const
 {
+	const auto enemyAiDebugLayout = BuildEnemyAiDebugPanelLayout(session.state(), session.config());
+	if (enemyAiDebugLayout && enemyAiDebugLayout->panelRect.intersects(cursorScreenPos))
+	{
+		return true;
+	}
+
 	const auto formationLayout = BuildFormationPanelLayout(session.state());
 	if (formationLayout.panelRect.intersects(cursorScreenPos))
 	{
@@ -68,6 +74,30 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 	if (!MouseL.down())
 	{
 		return false;
+	}
+
+	const auto enemyAiDebugLayout = BuildEnemyAiDebugPanelLayout(session.state(), session.config());
+	if (enemyAiDebugLayout && enemyAiDebugLayout->panelRect.intersects(cursorScreenPos))
+	{
+		if (const auto selection = HitTestEnemyAiDebugModeButton(*enemyAiDebugLayout, cursorScreenPos))
+		{
+			switch (*selection)
+			{
+			case EnemyAiDebugModeSelection::Toml:
+				session.setEnemyAiDebugOverrideMode(none);
+				break;
+			case EnemyAiDebugModeSelection::Default:
+				session.setEnemyAiDebugOverrideMode(EnemyAiMode::Default);
+				break;
+			case EnemyAiDebugModeSelection::StagingAssault:
+				session.setEnemyAiDebugOverrideMode(EnemyAiMode::StagingAssault);
+				break;
+			default:
+				break;
+			}
+		}
+
+		return true;
 	}
 
 	const auto formationLayout = BuildFormationPanelLayout(session.state());

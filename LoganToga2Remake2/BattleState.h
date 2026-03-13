@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "BattleConfigTypes.h"
 #include "BattleStateHelpers.h"
 
 struct UnitState
@@ -84,6 +85,13 @@ struct AttackVisualEffect
 	double areaRadius = 0.0;
 };
 
+struct ProductionCompletionEffect
+{
+	int32 unitId = -1;
+	double remainingTime = 0.0;
+	double totalTime = 0.0;
+};
+
 struct PendingConstructionOrder
 {
 	int32 workerUnitId = -1;
@@ -100,6 +108,7 @@ struct BattleState
 	Array<ResourcePointState> resourcePoints;
 	Array<SquadState> squads;
 	Array<AttackVisualEffect> attackVisualEffects;
+	Array<ProductionCompletionEffect> productionCompletionEffects;
 	Array<PendingConstructionOrder> pendingConstructionOrders;
 	bool isSelecting = false;
 	Vec2 selectionStart = Vec2::Zero();
@@ -119,6 +128,15 @@ struct BattleState
 	double enemyIncomeTimer = 0.0;
 	double enemySpawnTimer = 0.0;
 	double enemyAiDecisionTimer = 0.0;
+	bool enemyAiDebugPanelVisible = false;
+	Optional<EnemyAiMode> enemyAiDebugOverrideMode;
+	EnemyAiMode enemyAiResolvedMode = EnemyAiMode::Default;
+	int32 enemyAiDebugCombatUnitCount = 0;
+	int32 enemyAiDebugReadyUnitCount = 0;
+	double enemyAiStagingTimer = 0.0;
+	double enemyAiAssaultCommitTimer = 0.0;
+	Vec2 enemyAiAssaultDestination = Vec2::Zero();
+	Optional<int32> enemyAiAssaultTargetUnitId;
 	String statusMessage;
 	double statusMessageTimer = 0.0;
 	FormationType playerFormation = FormationType::Line;

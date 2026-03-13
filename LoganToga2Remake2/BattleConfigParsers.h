@@ -80,6 +80,21 @@
 	throw Error{ U"Unknown owner: " + value };
 }
 
+[[nodiscard]] inline EnemyAiMode ParseEnemyAiMode(const String& value)
+{
+	const String normalized = value.lowercased();
+	if ((normalized == U"default") || (normalized == U"basic"))
+	{
+		return EnemyAiMode::Default;
+	}
+	if ((normalized == U"staging_assault") || (normalized == U"staging") || (normalized == U"group_assault"))
+	{
+		return EnemyAiMode::StagingAssault;
+	}
+
+	throw Error{ U"Unknown enemy AI mode: " + value };
+}
+
 [[nodiscard]] inline TurretUpgradeType ParseTurretUpgradeType(const String& value)
 {
 	const String normalized = value.lowercased();

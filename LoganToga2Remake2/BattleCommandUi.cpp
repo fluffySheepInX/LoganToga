@@ -120,6 +120,61 @@ Optional<CommandIconEntry> HitTestCommandIcon(const CommandPanelLayout& layout, 
 	return none;
 }
 
+Optional<EnemyAiDebugPanelLayout> BuildEnemyAiDebugPanelLayout(const BattleState& state, const BattleConfigData& config)
+{
+	if (!(config.debug.enableEnemyAiSwitcher && state.enemyAiDebugPanelVisible))
+	{
+		return none;
+	}
+
+	const bool useToml = !state.enemyAiDebugOverrideMode;
+	const bool useDefault = state.enemyAiDebugOverrideMode && (*state.enemyAiDebugOverrideMode == EnemyAiMode::Default);
+	const bool useStaging = state.enemyAiDebugOverrideMode && (*state.enemyAiDebugOverrideMode == EnemyAiMode::StagingAssault);
+	const Array<EnemyAiDebugModeButtonEntry> buttons = {
+		{ EnemyAiDebugModeSelection::Toml, U"TOML", useToml },
+		{ EnemyAiDebugModeSelection::Default, U"DEFAULT", useDefault },
+		{ EnemyAiDebugModeSelection::StagingAssault, U"STAGING", useStaging }
+	};
+
+	constexpr double ButtonWidth = 88.0;
+	constexpr double ButtonHeight = 34.0;
+	constexpr double Gap = 8.0;
+	const double panelWidth = 16 + (buttons.size() * ButtonWidth) + ((buttons.size() - 1) * Gap) + 16;
+	const double panelHeight = 182.0;
+
+	EnemyAiDebugPanelLayout layout;
+	layout.panelRect = RectF{ Scene::Width() - panelWidth - 16, 16, panelWidth, panelHeight };
+
+	const Vec2 origin = layout.panelRect.pos.movedBy(16, 42);
+	for (size_t index = 0; index < buttons.size(); ++index)
+	{
+		layout.buttons << EnemyAiDebugModeButtonLayout{
+			buttons[index],
+			RectF{
+				origin.x + ((ButtonWidth + Gap) * index),
+				origin.y,
+				ButtonWidth,
+				ButtonHeight
+			}
+		};
+	}
+
+	return layout;
+}
+
+Optional<EnemyAiDebugModeSelection> HitTestEnemyAiDebugModeButton(const EnemyAiDebugPanelLayout& layout, const Vec2& cursorScreenPos)
+{
+	for (const auto& button : layout.buttons)
+	{
+		if (button.rect.intersects(cursorScreenPos))
+		{
+			return button.button.selection;
+		}
+	}
+
+	return none;
+}
+
 FormationPanelLayout BuildFormationPanelLayout(const BattleState& state)
 {
 	const Array<FormationButtonEntry> buttons = {

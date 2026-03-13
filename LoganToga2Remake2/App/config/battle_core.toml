@@ -27,9 +27,17 @@ y = 170.0
 random_y_offset = 50.0
 
 [enemy_ai]
+mode = "default"
 decision_interval = 0.4
 assault_unit_threshold = 4
 defense_radius = 240.0
 rally_distance = 120.0
 base_assault_lock_radius = 180.0
+staging_assault_min_units = 5
+staging_assault_gather_radius = 96.0
+staging_assault_max_wait = 4.0
+staging_assault_commit_time = 5.0
 use_pathfinding_for_attack_target = true
+
+[debug]
+enable_enemy_ai_switcher = true

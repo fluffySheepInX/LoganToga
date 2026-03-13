@@ -29,6 +29,9 @@ public:
 	bool trySpawnPlayerUnit(UnitArchetype archetype);
 	bool tryUpgradeSelectedTurret(TurretUpgradeType type);
 	bool cancelLastPlayerProduction();
+	void toggleEnemyAiDebugPanel();
+	void cycleEnemyAiDebugMode();
+	void setEnemyAiDebugOverrideMode(const Optional<EnemyAiMode>& mode);
 
 private:
 	BattleConfigData m_config;
@@ -103,4 +106,5 @@ private:
 	[[nodiscard]] bool hasBaseDefenseTurret(const UnitState& base, double lockRadius) const;
 	[[nodiscard]] UnitState* findCachedUnit(int32 id);
 	[[nodiscard]] const UnitState* findCachedUnit(int32 id) const;
+	void resetEnemyAiAssaultState();
 };

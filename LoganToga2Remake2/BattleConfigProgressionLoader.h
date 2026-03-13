@@ -14,6 +14,15 @@ inline void LoadBattleProgressionConfig(BattleConfigData& config, const TOMLRead
 		progression.incomeBonus = table[U"income_bonus"].getOr<int32>(0);
 		progression.spawnInterval = table[U"spawn_interval"].getOr<double>(0.0);
 		progression.assaultUnitThreshold = table[U"assault_unit_threshold"].getOr<int32>(0);
+		if (const auto modeValue = table[U"enemy_ai_mode"].getOpt<String>())
+		{
+			progression.overrideEnemyAiMode = true;
+			progression.enemyAiMode = ParseEnemyAiMode(*modeValue);
+		}
+		progression.stagingAssaultMinUnits = table[U"staging_assault_min_units"].getOr<int32>(0);
+		progression.stagingAssaultGatherRadius = table[U"staging_assault_gather_radius"].getOr<double>(0.0);
+		progression.stagingAssaultMaxWait = table[U"staging_assault_max_wait"].getOr<double>(0.0);
+		progression.stagingAssaultCommitTime = table[U"staging_assault_commit_time"].getOr<double>(0.0);
 		progression.extraBasicUnits = table[U"extra_basic_units"].getOr<int32>(0);
 		progression.extraAdvancedUnits = table[U"extra_advanced_units"].getOr<int32>(0);
 		progression.replaceEnemyInitialUnits = table[U"replace_enemy_initial_units"].getOr<bool>(false);

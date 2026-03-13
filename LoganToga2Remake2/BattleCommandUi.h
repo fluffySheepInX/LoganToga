@@ -62,6 +62,33 @@ struct FormationPanelLayout
 	Array<FormationButtonLayout> buttons;
 };
 
+enum class EnemyAiDebugModeSelection
+{
+	Toml,
+	Default,
+	StagingAssault
+};
+
+struct EnemyAiDebugModeButtonEntry
+{
+	EnemyAiDebugModeSelection selection = EnemyAiDebugModeSelection::Toml;
+	String label;
+	bool isActive = false;
+};
+
+struct EnemyAiDebugModeButtonLayout
+{
+	EnemyAiDebugModeButtonEntry button;
+	RectF rect{ 0, 0, 0, 0 };
+};
+
+struct EnemyAiDebugPanelLayout
+{
+	String title = U"ENEMY AI DEBUG";
+	RectF panelRect{ 0, 0, 0, 0 };
+	Array<EnemyAiDebugModeButtonLayout> buttons;
+};
+
 [[nodiscard]] bool HasSelectedWorker(const BattleState& state);
 [[nodiscard]] Array<UnitArchetype> CollectSelectedBuildingArchetypes(const BattleState& state);
 [[nodiscard]] Optional<int32> FindSingleSelectedPlayerTurretId(const BattleState& state);
@@ -77,3 +104,5 @@ struct FormationPanelLayout
 [[nodiscard]] Optional<CommandIconEntry> HitTestCommandIcon(const CommandPanelLayout& layout, const Vec2& cursorScreenPos);
 [[nodiscard]] FormationPanelLayout BuildFormationPanelLayout(const BattleState& state);
 [[nodiscard]] Optional<FormationType> HitTestFormationButton(const FormationPanelLayout& layout, const Vec2& cursorScreenPos);
+[[nodiscard]] Optional<EnemyAiDebugPanelLayout> BuildEnemyAiDebugPanelLayout(const BattleState& state, const BattleConfigData& config);
+[[nodiscard]] Optional<EnemyAiDebugModeSelection> HitTestEnemyAiDebugModeButton(const EnemyAiDebugPanelLayout& layout, const Vec2& cursorScreenPos);
