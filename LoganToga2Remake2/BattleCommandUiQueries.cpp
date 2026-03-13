@@ -13,6 +13,22 @@ bool HasSelectedWorker(const BattleState& state)
 	return false;
 }
 
+namespace
+{
+	[[nodiscard]] bool HasSelectedPlayerArchetype(const BattleState& state, const UnitArchetype archetype)
+	{
+		for (const auto& unit : state.units)
+		{
+			if (unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && (unit.archetype == archetype))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
 Array<UnitArchetype> CollectSelectedBuildingArchetypes(const BattleState& state)
 {
 	Array<UnitArchetype> archetypes;
@@ -305,6 +321,46 @@ Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const Ba
 	};
 }
 
+Array<CommandIconEntry> CollectDetonateCommands(const BattleState& state, const BattleConfigData&)
+{
+	if (!HasSelectedPlayerArchetype(state, UnitArchetype::Goliath))
+	{
+		return {};
+	}
+
+	bool hasReadyGoliath = false;
+	for (const auto& unit : state.units)
+	{
+		if (!(unit.isAlive && unit.isSelected && (unit.owner == Owner::Player) && (unit.archetype == UnitArchetype::Goliath)))
+		{
+			continue;
+		}
+
+		if (!unit.isDetonating)
+		{
+			hasReadyGoliath = true;
+			break;
+		}
+	}
+
+	return {
+		CommandIconEntry{
+			CommandKind::Detonate,
+			7,
+			UnitArchetype::Goliath,
+			UnitArchetype::Goliath,
+			0,
+			!state.winner && hasReadyGoliath,
+			state.winner ? U"BATTLE ENDED" : (hasReadyGoliath ? U"READY" : U"ARMED"),
+			U"DETONATE",
+			U"!",
+			U"Self-destruct selected Goliaths after a short fuse.",
+			U"近づけて押すだけ。落とされても周囲を巻き込む。",
+			none
+		}
+	};
+}
+
 Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const BattleConfigData& config)
 {
 	Array<CommandIconEntry> commands = CollectProductionCommands(state, config);
@@ -317,6 +373,10 @@ Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const Ba
 		commands << command;
 	}
 	for (const auto& command : CollectRepairCommands(state, config))
+	{
+		commands << command;
+	}
+	for (const auto& command : CollectDetonateCommands(state, config))
 	{
 		commands << command;
 	}

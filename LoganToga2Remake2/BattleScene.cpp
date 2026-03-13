@@ -217,6 +217,9 @@ void BattleScene::handleProductionInput()
 				m_session.tryUpgradeSelectedTurret(*command.turretUpgradeType);
 			}
 			return;
+		case CommandKind::Detonate:
+			m_session.enqueue(IssueGoliathDetonationCommand{ m_session.getSelectedPlayerUnitIds() });
+			return;
 		default:
 			break;
 		}

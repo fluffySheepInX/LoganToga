@@ -116,6 +116,10 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 					session.tryUpgradeSelectedTurret(*command->turretUpgradeType);
 				}
 			}
+			else if (command->kind == CommandKind::Detonate)
+			{
+				session.enqueue(IssueGoliathDetonationCommand{ session.getSelectedPlayerUnitIds() });
+			}
 			else
 			{
 				session.trySpawnPlayerUnit(command->archetype);

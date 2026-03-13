@@ -76,6 +76,8 @@ template <class TUnitState>
 			return U"KATYUSHA";
 	case UnitArchetype::MachineGun:
 		return U"M-GUN";
+	case UnitArchetype::Goliath:
+		return U"GOLIATH";
 	case UnitArchetype::Healer:
 		return U"HEALER";
 	case UnitArchetype::Spinner:

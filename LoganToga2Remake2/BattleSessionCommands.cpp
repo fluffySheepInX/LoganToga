@@ -230,6 +230,44 @@ void BattleSession::processCommands()
 				m_state.statusMessage = U"Repair ordered";
 				m_state.statusMessageTimer = 1.5;
 			}
+			else if constexpr (std::is_same_v<T, IssueGoliathDetonationCommand>)
+			{
+				Array<int32> armedUnitIds;
+				for (const auto unitId : value.unitIds)
+				{
+					auto* unit = findCachedUnit(unitId);
+					if (!(unit && unit->isAlive && (unit->owner == Owner::Player) && (unit->archetype == UnitArchetype::Goliath)))
+					{
+						continue;
+					}
+
+					if (unit->isDetonating)
+					{
+						continue;
+					}
+
+					armedUnitIds << unitId;
+					unit->isDetonating = true;
+					unit->detonationFramesRemaining = 15;
+					unit->order.type = UnitOrderType::Idle;
+					unit->order.targetUnitId.reset();
+					unit->order.targetPoint = unit->position;
+					unit->moveTarget = unit->position;
+					BattleSessionInternal::ClearNavigationPath(*unit);
+				}
+
+				if (armedUnitIds.isEmpty())
+				{
+					m_state.statusMessage = U"No goliath ready";
+					m_state.statusMessageTimer = 1.5;
+					return;
+				}
+
+				cancelPendingConstructionOrders(armedUnitIds, true);
+				removeUnitsFromSquads(armedUnitIds);
+				m_state.statusMessage = (armedUnitIds.size() >= 2) ? U"Goliaths armed" : U"Goliath armed";
+				m_state.statusMessageTimer = 1.0;
+			}
 		}, command);
 	}
 

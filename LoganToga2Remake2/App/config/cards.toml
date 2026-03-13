@@ -61,6 +61,15 @@ target_archetype = "healer"
 repeatable = false
 
 [[cards]]
+id = "goliath_unlock_1"
+name = "Demolition Cart"
+description = "Unlock Goliath production"
+rarity = "rare"
+effect_type = "production_unlock"
+target_archetype = "goliath"
+repeatable = false
+
+[[cards]]
 id = "katyusha_unlock_1"
 name = "Rocket Rails"
 description = "Unlock Katyusha production"

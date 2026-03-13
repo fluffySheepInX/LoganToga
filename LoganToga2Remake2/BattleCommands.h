@@ -50,4 +50,9 @@ struct IssueRepairOrderCommand
 	int32 targetUnitId = -1;
 };
 
-using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, IssueConstructionOrderCommand, IssueTurretUpgradeCommand, IssueRepairOrderCommand>;
+struct IssueGoliathDetonationCommand
+{
+	Array<int32> unitIds;
+};
+
+using BattleCommand = std::variant<ClearSelectionCommand, SelectUnitsInRectCommand, MoveUnitsCommand, AttackUnitCommand, SetPlayerFormationCommand, IssueConstructionOrderCommand, IssueTurretUpgradeCommand, IssueRepairOrderCommand, IssueGoliathDetonationCommand>;

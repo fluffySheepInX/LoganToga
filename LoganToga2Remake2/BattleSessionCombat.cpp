@@ -10,6 +10,9 @@ namespace
 	constexpr double KatyushaBuildingBonus = 40.0;
 	constexpr double KatyushaDistancePenalty = 0.002;
 	constexpr double KatyushaBuildingDamageMultiplier = 0.6;
+	constexpr double GoliathExplosionRadius = 56.0;
+	constexpr int32 GoliathExplosionDamage = 95;
+	constexpr double GoliathBuildingDamageMultiplier = 1.68;
 
 	[[nodiscard]] bool IsMovingAttackArchetype(const UnitArchetype archetype)
 	{
@@ -156,6 +159,8 @@ namespace
 			return 11;
 		case UnitArchetype::MachineGun:
 			return 4;
+		case UnitArchetype::Goliath:
+			return 14;
 		case UnitArchetype::Healer:
 			return 7;
 		case UnitArchetype::Spinner:
@@ -165,6 +170,78 @@ namespace
 		default:
 			return 4;
 		}
+	}
+}
+
+void BattleSession::applyUnitHpDelta(UnitState& target, const int32 hpDelta)
+{
+	if (!target.isAlive)
+	{
+		return;
+	}
+
+	target.hp = Clamp(target.hp - hpDelta, 0, target.maxHp);
+	if ((hpDelta > 0) && (target.hp <= 0))
+	{
+		if (target.archetype == UnitArchetype::Goliath)
+		{
+			triggerGoliathExplosion(target);
+			return;
+		}
+
+		target.hp = 0;
+		target.isAlive = false;
+	}
+}
+
+void BattleSession::triggerGoliathExplosion(UnitState& unit)
+{
+	if (!unit.isAlive)
+	{
+		return;
+	}
+
+	const Vec2 explosionCenter = unit.position;
+	const int32 effectFrames = GetAttackEffectFrames(UnitArchetype::Goliath);
+	unit.hp = 0;
+	unit.isAlive = false;
+	unit.isSelected = false;
+	unit.isDetonating = false;
+	unit.detonationFramesRemaining = 0;
+	unit.order.type = UnitOrderType::Idle;
+	unit.order.targetUnitId.reset();
+	unit.order.targetPoint = explosionCenter;
+	unit.moveTarget = explosionCenter;
+	BattleSessionInternal::ClearNavigationPath(unit);
+
+	m_state.attackVisualEffects << AttackVisualEffect{
+		.sourceUnitId = unit.id,
+		.start = explosionCenter,
+		.end = explosionCenter,
+		.owner = unit.owner,
+		.sourceArchetype = UnitArchetype::Goliath,
+		.framesRemaining = effectFrames,
+		.totalFrames = effectFrames,
+		.areaRadius = GoliathExplosionRadius,
+	};
+
+	for (auto& target : m_state.units)
+	{
+		if (!target.isAlive || (target.owner == unit.owner) || (target.id == unit.id))
+		{
+			continue;
+		}
+
+		const double splashRadius = GoliathExplosionRadius + (target.radius * 0.35);
+		if (target.position.distanceFromSq(explosionCenter) > (splashRadius * splashRadius))
+		{
+			continue;
+		}
+
+		const int32 damage = IsBuildingArchetype(target.archetype)
+			? Max(1, static_cast<int32>(std::round(GoliathExplosionDamage * GoliathBuildingDamageMultiplier)))
+			: GoliathExplosionDamage;
+		applyUnitHpDelta(target, damage);
 	}
 }
 
@@ -245,6 +322,20 @@ void BattleSession::updateCombat()
 	{
 		if (!unit.isAlive)
 		{
+			continue;
+		}
+
+		if (unit.archetype == UnitArchetype::Goliath)
+		{
+			if (unit.isDetonating)
+			{
+				unit.detonationFramesRemaining = Max(unit.detonationFramesRemaining - 1, 0);
+				if (unit.detonationFramesRemaining <= 0)
+				{
+					triggerGoliathExplosion(unit);
+				}
+			}
+
 			continue;
 		}
 
@@ -423,12 +514,7 @@ void BattleSession::updateCombat()
 				}
 
 				const int32 hpDelta = GetKatyushaDamage(UnitState{ .attackPower = event.hpDelta }, target);
-				target.hp = Clamp(target.hp - hpDelta, 0, target.maxHp);
-				if ((hpDelta > 0) && (target.hp <= 0))
-				{
-					target.hp = 0;
-					target.isAlive = false;
-				}
+				applyUnitHpDelta(target, hpDelta);
 			}
 
 			continue;
@@ -436,12 +522,7 @@ void BattleSession::updateCombat()
 
 		if (auto* target = findCachedUnit(event.targetId))
 		{
-			target->hp = Clamp(target->hp - event.hpDelta, 0, target->maxHp);
-			if ((event.hpDelta > 0) && (target->hp <= 0))
-			{
-				target->hp = 0;
-				target->isAlive = false;
-			}
+			applyUnitHpDelta(*target, event.hpDelta);
 		}
 	}
 }

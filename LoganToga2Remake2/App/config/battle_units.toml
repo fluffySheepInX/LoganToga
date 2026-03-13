@@ -160,6 +160,21 @@ can_move = true
 aggro_range = 270.0
 
 [[units]]
+archetype = "goliath"
+description = "敵に近づいて爆ぜる使い切り特攻兵。撃ち落とされても周囲を巻き込む。"
+flavor_text = "止めても危ない。通しても危ない。"
+radius = 11.0
+move_speed = 96.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 48
+cost = 80
+production_time = 2.0
+can_move = true
+aggro_range = 150.0
+
+[[units]]
 archetype = "healer"
 description = "味方歩兵を自動回復する後方支援兵。建物は治せない。"
 flavor_text = "少し後ろに混ぜるだけで、前線が長く持つ。"
@@ -217,6 +232,11 @@ archetype = "sniper"
 slot = 6
 producer = "barracks"
 archetype = "katyusha"
+
+[[player_production]]
+slot = 7
+producer = "barracks"
+archetype = "goliath"
 
 [[player_production]]
 slot = 8

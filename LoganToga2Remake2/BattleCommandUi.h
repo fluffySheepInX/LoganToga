@@ -8,7 +8,8 @@ enum class CommandKind
 	Production,
 	Construction,
 	Upgrade,
-	Repair
+	Repair,
+	Detonate
 };
 
 struct CommandIconEntry
@@ -68,6 +69,7 @@ struct FormationPanelLayout
 [[nodiscard]] Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectConstructionCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const BattleConfigData& config);
+[[nodiscard]] Array<CommandIconEntry> CollectDetonateCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] String GetCommandPanelTitle(const BattleState& state);
 [[nodiscard]] String GetCommandSectionLabel(const Array<CommandIconEntry>& commands);

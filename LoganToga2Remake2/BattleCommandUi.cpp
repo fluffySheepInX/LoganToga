@@ -23,6 +23,7 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 	bool hasConstruction = false;
 	bool hasUpgrade = false;
 	bool hasRepair = false;
+	bool hasDetonate = false;
 
 	for (const auto& command : commands)
 	{
@@ -30,9 +31,10 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 		hasConstruction |= (command.kind == CommandKind::Construction);
 		hasUpgrade |= (command.kind == CommandKind::Upgrade);
 		hasRepair |= (command.kind == CommandKind::Repair);
+		hasDetonate |= (command.kind == CommandKind::Detonate);
 	}
 
-	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade) + static_cast<int32>(hasRepair)) >= 2)
+	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade) + static_cast<int32>(hasRepair) + static_cast<int32>(hasDetonate)) >= 2)
 	{
 		return U"COMMANDS";
 	}
@@ -45,6 +47,11 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 	if (hasRepair)
 	{
 		return U"REPAIR";
+	}
+
+	if (hasDetonate)
+	{
+		return U"SPECIAL";
 	}
 
 	if (hasConstruction)

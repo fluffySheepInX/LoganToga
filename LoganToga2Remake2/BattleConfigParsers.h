@@ -45,6 +45,10 @@
 	{
 		return UnitArchetype::MachineGun;
 	}
+	if ((normalized == U"goliath") || (normalized == U"demolition_cart") || (normalized == U"bomb_cart"))
+	{
+		return UnitArchetype::Goliath;
+	}
 	if ((normalized == U"healer") || (normalized == U"medic"))
 	{
 		return UnitArchetype::Healer;

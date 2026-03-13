@@ -83,6 +83,25 @@ namespace
 		Circle{ renderPosition, unit.radius + 2.0 }.drawFrame(1.2, ColorF{ 0.78, 0.90, 0.72, 0.36 });
 	}
 
+	void DrawGoliathDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		const RectF chassis{ renderPosition.x - (unit.radius * 0.78), renderPosition.y - (unit.radius * 0.42), unit.radius * 1.56, unit.radius * 0.92 };
+		chassis.draw(ColorF{ 0.26, 0.18, 0.14, 0.96 });
+		RectF{ renderPosition.x - (unit.radius * 0.24), renderPosition.y - (unit.radius * 0.86), unit.radius * 0.56, unit.radius * 0.48 }.draw(ColorF{ 0.96, 0.66, 0.24, 0.94 });
+		Circle{ renderPosition.movedBy(-(unit.radius * 0.56), unit.radius * 0.48), unit.radius * 0.22 }.draw(ColorF{ 0.12, 0.12, 0.16, 0.96 });
+		Circle{ renderPosition.movedBy(unit.radius * 0.58, unit.radius * 0.48), unit.radius * 0.22 }.draw(ColorF{ 0.12, 0.12, 0.16, 0.96 });
+		Line{ renderPosition.movedBy(unit.radius * 0.04, -(unit.radius * 0.58)), renderPosition.movedBy(unit.radius * 0.34, -(unit.radius * 1.12)) }.draw(2.0, ColorF{ 0.96, 0.84, 0.46, 0.96 });
+		Circle{ renderPosition.movedBy(unit.radius * 0.38, -(unit.radius * 1.18)), unit.radius * 0.12 }.draw(ColorF{ 1.0, 0.92, 0.64, 0.96 });
+
+		if (!unit.isDetonating)
+		{
+			return;
+		}
+
+		const double pulse = 0.5 + (0.5 * std::sin(Scene::Time() * 22.0));
+		Circle{ renderPosition, unit.radius + 5.0 + (pulse * 3.0) }.drawFrame(2.6, ColorF{ 1.0, 0.40, 0.22, 0.45 + (0.35 * pulse) });
+	}
+
 	void DrawSniperDecoration(const UnitState& unit, const Vec2& renderPosition)
 	{
 		RectF{ renderPosition.x - (unit.radius * 0.82), renderPosition.y - (unit.radius * 0.18), unit.radius * 1.64, unit.radius * 0.36 }.draw(ColorF{ 0.18, 0.16, 0.22, 0.96 });
@@ -158,6 +177,10 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		else if (unit.archetype == UnitArchetype::MachineGun)
 		{
 			DrawMachineGunDecoration(unit, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::Goliath)
+		{
+			DrawGoliathDecoration(unit, renderPosition);
 		}
 		else if (unit.archetype == UnitArchetype::Spinner)
 		{

@@ -127,6 +127,15 @@ namespace
 		Circle{ effect.end, 8.0 + (6.0 * (1.0 - t)) }.drawFrame(2.0, ColorF{ 0.76, 1.0, 0.86, 0.28 + (0.42 * t) });
 	}
 
+	void DrawGoliathExplosionEffect(const AttackVisualEffect& effect, const double t)
+	{
+		const double progress = (1.0 - t);
+		const double radius = Max(effect.areaRadius * (0.28 + (0.72 * progress)), 10.0);
+		Circle{ effect.end, radius }.drawFrame(4.0 - (2.0 * progress), ColorF{ 1.0, 0.50, 0.20, 0.30 + (0.42 * t) });
+		Circle{ effect.end, radius * 0.58 }.draw(ColorF{ 1.0, 0.84, 0.34, 0.10 + (0.14 * t) });
+		Circle{ effect.end, 12.0 + (18.0 * progress) }.draw(ColorF{ 1.0, 0.92, 0.66, 0.16 + (0.18 * t) });
+	}
+
 	void DrawSpinAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
 	{
 		const double progress = (1.0 - t);
@@ -161,6 +170,9 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 
 		switch (effect.sourceArchetype)
 		{
+		case UnitArchetype::Goliath:
+			DrawGoliathExplosionEffect(effect, t);
+			break;
 		case UnitArchetype::Healer:
 			DrawHealBeamEffect(effect, t);
 			break;

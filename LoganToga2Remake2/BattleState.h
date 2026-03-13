@@ -23,6 +23,8 @@ struct UnitState
 	int32 hp = 40;
 	int32 maxHp = 40;
 	bool canMove = true;
+	bool isDetonating = false;
+	int32 detonationFramesRemaining = 0;
 	bool isSelected = false;
 	bool isAlive = true;
 	Optional<int32> squadId;
@@ -79,6 +81,7 @@ struct AttackVisualEffect
 	UnitArchetype sourceArchetype = UnitArchetype::Soldier;
 	int32 framesRemaining = 0;
 	int32 totalFrames = 0;
+	double areaRadius = 0.0;
 };
 
 struct PendingConstructionOrder
