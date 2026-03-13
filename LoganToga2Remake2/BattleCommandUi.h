@@ -41,6 +41,26 @@ struct CommandPanelLayout
 	Array<CommandIconLayout> commandIcons;
 };
 
+struct FormationButtonEntry
+{
+	FormationType formation = FormationType::Line;
+	String label;
+	bool isActive = false;
+};
+
+struct FormationButtonLayout
+{
+	FormationButtonEntry button;
+	RectF rect{ 0, 0, 0, 0 };
+};
+
+struct FormationPanelLayout
+{
+	String title = U"FORMATION";
+	RectF panelRect{ 0, 0, 0, 0 };
+	Array<FormationButtonLayout> buttons;
+};
+
 [[nodiscard]] bool HasSelectedWorker(const BattleState& state);
 [[nodiscard]] Array<UnitArchetype> CollectSelectedBuildingArchetypes(const BattleState& state);
 [[nodiscard]] Optional<int32> FindSingleSelectedPlayerTurretId(const BattleState& state);
@@ -53,3 +73,5 @@ struct CommandPanelLayout
 [[nodiscard]] String GetCommandSectionLabel(const Array<CommandIconEntry>& commands);
 [[nodiscard]] Optional<CommandPanelLayout> BuildCommandPanelLayout(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Optional<CommandIconEntry> HitTestCommandIcon(const CommandPanelLayout& layout, const Vec2& cursorScreenPos);
+[[nodiscard]] FormationPanelLayout BuildFormationPanelLayout(const BattleState& state);
+[[nodiscard]] Optional<FormationType> HitTestFormationButton(const FormationPanelLayout& layout, const Vec2& cursorScreenPos);

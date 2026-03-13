@@ -4,9 +4,25 @@
 
 namespace
 {
+	constexpr double KatyushaSplashRadius = 54.0;
+	constexpr double KatyushaClusterScoreWeight = 1000.0;
+	constexpr double KatyushaBacklineBonus = 120.0;
+	constexpr double KatyushaBuildingBonus = 40.0;
+	constexpr double KatyushaDistancePenalty = 0.002;
+	constexpr double KatyushaBuildingDamageMultiplier = 0.6;
+
 	[[nodiscard]] bool IsMovingAttackArchetype(const UnitArchetype archetype)
 	{
 		return (archetype == UnitArchetype::Spinner);
+	}
+
+	[[nodiscard]] bool IsBacklinePriorityArchetype(const UnitArchetype archetype)
+	{
+		return (archetype == UnitArchetype::Archer)
+			|| (archetype == UnitArchetype::Sniper)
+			|| (archetype == UnitArchetype::Katyusha)
+			|| (archetype == UnitArchetype::MachineGun)
+			|| (archetype == UnitArchetype::Healer);
 	}
 
 	[[nodiscard]] const UnitState* FindHealTarget(const BattleState& state, const UnitState& source, const double searchRadius)
@@ -58,6 +74,72 @@ namespace
 		return attacker.attackPower;
 	}
 
+	[[nodiscard]] int32 GetKatyushaDamage(const UnitState& attacker, const UnitState& target)
+	{
+		if (IsBuildingArchetype(target.archetype))
+		{
+			return Max(1, static_cast<int32>(std::ceil(attacker.attackPower * KatyushaBuildingDamageMultiplier)));
+		}
+
+		return attacker.attackPower;
+	}
+
+	[[nodiscard]] const UnitState* FindBestKatyushaTarget(const BattleState& state, const UnitState& source, const Array<size_t>& candidateIndices)
+	{
+		const UnitState* bestTarget = nullptr;
+		double bestScore = -Math::Inf;
+
+		for (const auto candidateIndex : candidateIndices)
+		{
+			const auto& candidate = state.units[candidateIndex];
+			if (!candidate.isAlive || !IsEnemy(source, candidate))
+			{
+				continue;
+			}
+
+			const double distanceSq = source.position.distanceFromSq(candidate.position);
+			const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(source, candidate);
+			if (distanceSq > (attackRange * attackRange))
+			{
+				continue;
+			}
+
+			int32 affectedCount = 0;
+			for (const auto splashIndex : candidateIndices)
+			{
+				const auto& splashCandidate = state.units[splashIndex];
+				if (!splashCandidate.isAlive || !IsEnemy(source, splashCandidate))
+				{
+					continue;
+				}
+
+				const double splashRadius = KatyushaSplashRadius + (splashCandidate.radius * 0.35);
+				if (candidate.position.distanceFromSq(splashCandidate.position) <= (splashRadius * splashRadius))
+				{
+					++affectedCount;
+				}
+			}
+
+			double score = (affectedCount * KatyushaClusterScoreWeight) - (distanceSq * KatyushaDistancePenalty);
+			if (IsBacklinePriorityArchetype(candidate.archetype))
+			{
+				score += KatyushaBacklineBonus;
+			}
+			if (IsBuildingArchetype(candidate.archetype))
+			{
+				score += KatyushaBuildingBonus;
+			}
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestTarget = &candidate;
+			}
+		}
+
+		return bestTarget;
+	}
+
 	[[nodiscard]] int32 GetAttackEffectFrames(const UnitArchetype archetype)
 	{
 		switch (archetype)
@@ -68,6 +150,10 @@ namespace
 			return 6;
 		case UnitArchetype::Archer:
 			return 9;
+		case UnitArchetype::Katyusha:
+			return 18;
+		case UnitArchetype::Sniper:
+			return 11;
 		case UnitArchetype::MachineGun:
 			return 4;
 		case UnitArchetype::Healer:
@@ -135,7 +221,9 @@ void BattleSession::updateCombat()
 		int32 sourceUnitId = -1;
 		Vec2 sourcePosition = Vec2::Zero();
 		int32 targetId = -1;
+		Vec2 targetPosition = Vec2::Zero();
 		int32 hpDelta = 0;
+		double splashRadius = 0.0;
 		Owner owner = Owner::Player;
 		UnitArchetype sourceArchetype = UnitArchetype::Soldier;
 	};
@@ -184,7 +272,7 @@ void BattleSession::updateCombat()
 					continue;
 				}
 
-				combatEvents << CombatEvent{ unit.id, unit.position, candidate.id, GetMovingAttackDamage(unit, candidate), unit.owner, unit.archetype };
+				combatEvents << CombatEvent{ unit.id, unit.position, candidate.id, candidate.position, GetMovingAttackDamage(unit, candidate), 0.0, unit.owner, unit.archetype };
 				didHit = true;
 			}
 
@@ -206,7 +294,24 @@ void BattleSession::updateCombat()
 			const double searchRadius = Max(unit.attackRange, getAggroRange(unit.owner, unit.archetype));
 			if (const auto* target = FindHealTarget(m_state, unit, searchRadius))
 			{
-				combatEvents << CombatEvent{ unit.id, unit.position, target->id, -unit.attackPower, unit.owner, unit.archetype };
+				combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, -unit.attackPower, 0.0, unit.owner, unit.archetype };
+				unit.attackCooldownRemaining = unit.attackCooldown;
+			}
+
+			continue;
+		}
+
+		if (unit.archetype == UnitArchetype::Katyusha)
+		{
+			if (unit.attackCooldownRemaining > 0.0)
+			{
+				continue;
+			}
+
+			gatherNearbyOpponentIndices(unit, unit.attackRange + KatyushaSplashRadius + m_spatialQueryCellSize, m_nearbyOpponentIndicesScratch);
+			if (const auto* target = FindBestKatyushaTarget(m_state, unit, m_nearbyOpponentIndicesScratch))
+			{
+				combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, unit.attackPower, KatyushaSplashRadius, unit.owner, unit.archetype };
 				unit.attackCooldownRemaining = unit.attackCooldown;
 			}
 
@@ -247,7 +352,7 @@ void BattleSession::updateCombat()
 				continue;
 			}
 
-			combatEvents << CombatEvent{ unit.id, unit.position, target->id, -unit.attackPower, unit.owner, unit.archetype };
+			combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, -unit.attackPower, 0.0, unit.owner, unit.archetype };
 			unit.attackCooldownRemaining = unit.attackCooldown;
 			continue;
 		}
@@ -285,25 +390,52 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		combatEvents << CombatEvent{ unit.id, unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
+		combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, unit.attackPower, 0.0, unit.owner, unit.archetype };
 		unit.attackCooldownRemaining = unit.attackCooldown;
 	}
 
 	for (const auto& event : combatEvents)
 	{
+		const int32 effectFrames = GetAttackEffectFrames(event.sourceArchetype);
+		m_state.attackVisualEffects << AttackVisualEffect{
+			.sourceUnitId = event.sourceUnitId,
+			.start = event.sourcePosition,
+			.end = event.targetPosition,
+			.owner = event.owner,
+			.sourceArchetype = event.sourceArchetype,
+			.framesRemaining = effectFrames,
+			.totalFrames = effectFrames,
+		};
+
+		if (event.splashRadius > 0.0)
+		{
+			for (auto& target : m_state.units)
+			{
+				if (!target.isAlive || (target.owner == event.owner))
+				{
+					continue;
+				}
+
+				const double splashRadius = event.splashRadius + (target.radius * 0.35);
+				if (target.position.distanceFromSq(event.targetPosition) > (splashRadius * splashRadius))
+				{
+					continue;
+				}
+
+				const int32 hpDelta = GetKatyushaDamage(UnitState{ .attackPower = event.hpDelta }, target);
+				target.hp = Clamp(target.hp - hpDelta, 0, target.maxHp);
+				if ((hpDelta > 0) && (target.hp <= 0))
+				{
+					target.hp = 0;
+					target.isAlive = false;
+				}
+			}
+
+			continue;
+		}
+
 		if (auto* target = findCachedUnit(event.targetId))
 		{
-			const int32 effectFrames = GetAttackEffectFrames(event.sourceArchetype);
-			m_state.attackVisualEffects << AttackVisualEffect{
-				.sourceUnitId = event.sourceUnitId,
-				.start = event.sourcePosition,
-				.end = target->position,
-				.owner = event.owner,
-				.sourceArchetype = event.sourceArchetype,
-				.framesRemaining = effectFrames,
-				.totalFrames = effectFrames,
-			};
-
 			target->hp = Clamp(target->hp - event.hpDelta, 0, target->maxHp);
 			if ((event.hpDelta > 0) && (target->hp <= 0))
 			{

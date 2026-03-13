@@ -86,7 +86,7 @@ inline void ResolvePlayerTurretUpgradeUnlocks(const RunState& runState, const Ar
 
 inline void ResolvePlayerUnlocks(const RunState& runState, const Array<RewardCardDefinition>& cards, Array<UnitArchetype>& productionArchetypes, Array<UnitArchetype>& constructionArchetypes)
 {
-	productionArchetypes = { UnitArchetype::Worker, UnitArchetype::Soldier };
+	productionArchetypes = { UnitArchetype::Worker, UnitArchetype::Soldier, UnitArchetype::Sniper };
 	productionArchetypes << UnitArchetype::MachineGun;
 	constructionArchetypes = { UnitArchetype::Barracks };
 

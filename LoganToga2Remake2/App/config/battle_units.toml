@@ -115,6 +115,36 @@ can_move = true
 aggro_range = 220.0
 
 [[units]]
+archetype = "sniper"
+description = "超長射程で危険な後衛を抜く狙撃兵。数は要らないが、置くだけで相手の厚みを削れる。"
+flavor_text = "一発ずつ、危ない相手から黙らせる。"
+radius = 11.0
+move_speed = 74.0
+attack_range = 270.0
+attack_cooldown = 2.4
+attack_power = 24
+hp = 56
+cost = 130
+production_time = 3.2
+can_move = true
+aggro_range = 340.0
+
+[[units]]
+archetype = "katyusha"
+description = "自動でロケットを撃ち込み、密集した敵をまとめて削る後衛支援車両。単体処理は苦手。"
+flavor_text = "散らばれば軽い。固まれば危ない。"
+radius = 13.0
+move_speed = 60.0
+attack_range = 300.0
+attack_cooldown = 6.4
+attack_power = 18
+hp = 68
+cost = 170
+production_time = 4.8
+can_move = true
+aggro_range = 360.0
+
+[[units]]
 archetype = "machine_gun"
 description = "長射程を高速連射で維持する重射手。高価だが放っておいても前線を支える。"
 flavor_text = "弾は軽いが、撃ち続ければ相手は前に出づらい。"
@@ -177,6 +207,16 @@ producer = "barracks"
 archetype = "archer"
 cost = 160
 batch_count = 2
+
+[[player_production]]
+slot = 0
+producer = "barracks"
+archetype = "sniper"
+
+[[player_production]]
+slot = 6
+producer = "barracks"
+archetype = "katyusha"
 
 [[player_production]]
 slot = 8

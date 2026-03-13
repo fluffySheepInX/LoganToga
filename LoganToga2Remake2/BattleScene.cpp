@@ -106,8 +106,6 @@ void BattleScene::update()
 
 	m_camera.update();
 
-	m_inputController.handleFormationInput(m_session);
-
 	const Vec2 cursorScreenPos = Cursor::PosF();
 	const Vec2 constructionCursorWorldPos = screenToWorld(cursorScreenPos);
 	m_constructionController.handleInput(m_session, constructionCursorWorldPos);

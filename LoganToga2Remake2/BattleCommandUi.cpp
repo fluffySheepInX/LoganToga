@@ -112,3 +112,55 @@ Optional<CommandIconEntry> HitTestCommandIcon(const CommandPanelLayout& layout, 
 
 	return none;
 }
+
+FormationPanelLayout BuildFormationPanelLayout(const BattleState& state)
+{
+	const Array<FormationButtonEntry> buttons = {
+		{ FormationType::Line, GetFormationLabel(FormationType::Line), state.playerFormation == FormationType::Line },
+		{ FormationType::Column, GetFormationLabel(FormationType::Column), state.playerFormation == FormationType::Column },
+		{ FormationType::Square, GetFormationLabel(FormationType::Square), state.playerFormation == FormationType::Square }
+	};
+
+	constexpr double ButtonWidth = 102.0;
+	constexpr double ButtonHeight = 50.0;
+	constexpr double Gap = 8.0;
+	const double panelWidth = 16 + (buttons.size() * ButtonWidth) + ((buttons.size() - 1) * Gap) + 16;
+	const double panelHeight = 40 + ButtonHeight + 16;
+
+	FormationPanelLayout layout;
+	layout.panelRect = RectF{
+		16,
+		Scene::Height() - panelHeight - 16,
+		panelWidth,
+		panelHeight
+	};
+
+	const Vec2 origin = layout.panelRect.pos.movedBy(16, 40);
+	for (size_t index = 0; index < buttons.size(); ++index)
+	{
+		layout.buttons << FormationButtonLayout{
+			buttons[index],
+			RectF{
+				origin.x + ((ButtonWidth + Gap) * index),
+				origin.y,
+				ButtonWidth,
+				ButtonHeight
+			}
+		};
+	}
+
+	return layout;
+}
+
+Optional<FormationType> HitTestFormationButton(const FormationPanelLayout& layout, const Vec2& cursorScreenPos)
+{
+	for (const auto& button : layout.buttons)
+	{
+		if (button.rect.intersects(cursorScreenPos))
+		{
+			return button.button.formation;
+		}
+	}
+
+	return none;
+}

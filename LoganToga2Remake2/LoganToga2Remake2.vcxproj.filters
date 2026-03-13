@@ -76,6 +76,12 @@
     <ClInclude Include="BattleConstructionController.h" />
     <ClInclude Include="BattleInputController.h" />
     <ClInclude Include="BattleRendererHudInternal.h" />
+    <ClInclude Include="BattleConfigParsers.h" />
+    <ClInclude Include="BattleConfigPathResolver.h" />
+    <ClInclude Include="BattleConfigCoreLoader.h" />
+    <ClInclude Include="BattleConfigUnitLoader.h" />
+    <ClInclude Include="BattleConfigMapLoader.h" />
+    <ClInclude Include="BattleConfigProgressionLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

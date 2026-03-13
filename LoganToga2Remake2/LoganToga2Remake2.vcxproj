@@ -358,9 +358,15 @@
     <ClInclude Include="BattleCommands.h" />
     <ClInclude Include="BattleCommandUi.h" />
     <ClInclude Include="BattleConfig.h" />
+    <ClInclude Include="BattleConfigCoreLoader.h" />
     <ClInclude Include="BattleConfigLoader.h" />
     <ClInclude Include="BattleConfigLookup.h" />
+    <ClInclude Include="BattleConfigMapLoader.h" />
+    <ClInclude Include="BattleConfigParsers.h" />
+    <ClInclude Include="BattleConfigPathResolver.h" />
+    <ClInclude Include="BattleConfigProgressionLoader.h" />
     <ClInclude Include="BattleConfigTypes.h" />
+    <ClInclude Include="BattleConfigUnitLoader.h" />
     <ClInclude Include="BattleModel.h" />
     <ClInclude Include="BattleRenderer.h" />
     <ClInclude Include="BattleRendererHudInternal.h" />

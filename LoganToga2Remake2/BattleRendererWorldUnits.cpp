@@ -83,6 +83,29 @@ namespace
 		Circle{ renderPosition, unit.radius + 2.0 }.drawFrame(1.2, ColorF{ 0.78, 0.90, 0.72, 0.36 });
 	}
 
+	void DrawSniperDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		RectF{ renderPosition.x - (unit.radius * 0.82), renderPosition.y - (unit.radius * 0.18), unit.radius * 1.64, unit.radius * 0.36 }.draw(ColorF{ 0.18, 0.16, 0.22, 0.96 });
+		RectF{ renderPosition.x - (unit.radius * 0.22), renderPosition.y - (unit.radius * 0.42), unit.radius * 0.42, unit.radius * 0.16 }.draw(ColorF{ 0.76, 0.18, 0.26, 0.94 });
+		Circle{ renderPosition.movedBy(-(unit.radius * 0.10), -(unit.radius * 0.34)), unit.radius * 0.14 }.draw(ColorF{ 0.92, 0.20, 0.28, 0.96 });
+		RectF{ renderPosition.x - (unit.radius * 0.34), renderPosition.y + (unit.radius * 0.18), unit.radius * 0.78, unit.radius * 0.18 }.draw(ColorF{ 0.42, 0.36, 0.48, 0.94 });
+		Circle{ renderPosition, unit.radius + 2.2 }.drawFrame(1.2, ColorF{ 0.82, 0.60, 0.96, 0.34 });
+	}
+
+	void DrawKatyushaDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		RectF{ renderPosition.x - (unit.radius * 0.88), renderPosition.y - (unit.radius * 0.34), unit.radius * 1.76, unit.radius * 0.78 }.draw(ColorF{ 0.24, 0.26, 0.30, 0.94 });
+		RectF{ renderPosition.x - (unit.radius * 0.42), renderPosition.y - (unit.radius * 0.82), unit.radius * 0.92, unit.radius * 0.30 }.draw(ColorF{ 0.58, 0.24, 0.32, 0.96 });
+		for (int32 railIndex = 0; railIndex < 3; ++railIndex)
+		{
+			const double offsetY = (-0.34 + (railIndex * 0.22)) * unit.radius;
+			RectF{ renderPosition.x - (unit.radius * 0.22), renderPosition.y + offsetY, unit.radius * 1.12, unit.radius * 0.10 }.draw(ColorF{ 0.92, 0.82, 0.46, 0.94 });
+		}
+		Circle{ renderPosition.movedBy(-(unit.radius * 0.52), unit.radius * 0.44), unit.radius * 0.20 }.draw(ColorF{ 0.12, 0.12, 0.16, 0.96 });
+		Circle{ renderPosition.movedBy(unit.radius * 0.58, unit.radius * 0.44), unit.radius * 0.20 }.draw(ColorF{ 0.12, 0.12, 0.16, 0.96 });
+		Circle{ renderPosition, unit.radius + 2.4 }.drawFrame(1.2, ColorF{ 0.96, 0.58, 0.40, 0.34 });
+	}
+
 	void DrawHealerDecoration(const UnitState& unit, const Vec2& renderPosition)
 	{
 		Circle{ renderPosition, unit.radius * 0.76 }.draw(ColorF{ 0.92, 0.98, 1.0, 0.94 });
@@ -123,6 +146,14 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		else if (unit.archetype == UnitArchetype::Healer)
 		{
 			DrawHealerDecoration(unit, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::Sniper)
+		{
+			DrawSniperDecoration(unit, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::Katyusha)
+		{
+			DrawKatyushaDecoration(unit, renderPosition);
 		}
 		else if (unit.archetype == UnitArchetype::MachineGun)
 		{

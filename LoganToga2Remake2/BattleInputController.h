@@ -5,7 +5,6 @@
 class BattleInputController
 {
 public:
-	void handleFormationInput(BattleSession& session) const;
 	[[nodiscard]] bool isCursorOnCommandPanel(const BattleSession& session, const Vec2& cursorScreenPos) const;
 	[[nodiscard]] bool handleCommandPanelClick(BattleSession& session, const Vec2& cursorScreenPos) const;
 	void handleSelectionInput(BattleSession& session, const Vec2& cursorWorldPos, bool allowClickSelection) const;

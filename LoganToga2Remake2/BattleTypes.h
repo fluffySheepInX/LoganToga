@@ -18,6 +18,8 @@ enum class UnitArchetype
 	Worker,
 	Soldier,
 	Archer,
+		Sniper,
+		Katyusha,
 	MachineGun,
 	Healer,
 	Spinner

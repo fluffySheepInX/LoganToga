@@ -51,26 +51,14 @@ namespace
 	}
 }
 
-void BattleInputController::handleFormationInput(BattleSession& session) const
-{
-	if (KeyQ.down())
-	{
-		session.enqueue(SetPlayerFormationCommand{ FormationType::Line });
-	}
-
-	if (KeyW.down())
-	{
-		session.enqueue(SetPlayerFormationCommand{ FormationType::Column });
-	}
-
-	if (KeyE.down())
-	{
-		session.enqueue(SetPlayerFormationCommand{ FormationType::Square });
-	}
-}
-
 bool BattleInputController::isCursorOnCommandPanel(const BattleSession& session, const Vec2& cursorScreenPos) const
 {
+	const auto formationLayout = BuildFormationPanelLayout(session.state());
+	if (formationLayout.panelRect.intersects(cursorScreenPos))
+	{
+		return true;
+	}
+
 	const auto layout = BuildCommandPanelLayout(session.state(), session.config());
 	return layout && layout->panelRect.intersects(cursorScreenPos);
 }
@@ -80,6 +68,20 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 	if (!MouseL.down())
 	{
 		return false;
+	}
+
+	const auto formationLayout = BuildFormationPanelLayout(session.state());
+	if (formationLayout.panelRect.intersects(cursorScreenPos))
+	{
+		if (const auto formation = HitTestFormationButton(formationLayout, cursorScreenPos))
+		{
+			if (session.state().playerFormation != *formation)
+			{
+				session.enqueue(SetPlayerFormationCommand{ *formation });
+			}
+		}
+
+		return true;
 	}
 
 	const auto layout = BuildCommandPanelLayout(session.state(), session.config());

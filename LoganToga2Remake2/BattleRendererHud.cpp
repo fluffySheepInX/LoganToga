@@ -28,6 +28,51 @@ namespace
 
 		return lines;
 	}
+
+	ColorF GetFormationAccentColor(const FormationType formation)
+	{
+		switch (formation)
+		{
+		case FormationType::Line:
+			return ColorF{ 0.24, 0.68, 0.96 };
+		case FormationType::Column:
+			return ColorF{ 0.44, 0.84, 0.54 };
+		case FormationType::Square:
+			return ColorF{ 0.96, 0.72, 0.30 };
+		default:
+			return ColorF{ 0.72, 0.76, 0.84 };
+		}
+	}
+
+	void DrawFormationPanel(const BattleState& state, const GameData& gameData)
+	{
+		const FormationPanelLayout layout = BuildFormationPanelLayout(state);
+		const Vec2 cursorScreenPos = Cursor::PosF();
+
+		RoundRect{ layout.panelRect, 12 }.draw(ColorF{ 0.02, 0.04, 0.08, 0.82 });
+		RoundRect{ layout.panelRect, 12 }.drawFrame(2, 0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
+		gameData.smallFont(layout.title).draw(layout.panelRect.x + 16, layout.panelRect.y + 12, ColorF{ 0.82, 0.86, 0.92 });
+
+		for (const auto& button : layout.buttons)
+		{
+			const bool isHovered = button.rect.intersects(cursorScreenPos);
+			const bool isPressed = isHovered && MouseL.pressed();
+			const ColorF accentColor = GetFormationAccentColor(button.button.formation);
+			const RectF animatedRect = isPressed
+				? RectF{ button.rect.x + 2, button.rect.y + 3, button.rect.w - 4, button.rect.h - 4 }
+				: (isHovered ? RectF{ button.rect.x - 1, button.rect.y - 1, button.rect.w + 2, button.rect.h + 2 } : button.rect);
+			const ColorF fillColor = button.button.isActive
+				? ColorF{ accentColor.r * 0.30 + 0.12, accentColor.g * 0.30 + 0.12, accentColor.b * 0.30 + 0.12, 0.98 }
+				: (isHovered ? ColorF{ 0.16, 0.18, 0.24, 0.98 } : ColorF{ 0.10, 0.11, 0.15, 0.96 });
+			const double borderThickness = button.button.isActive ? 4.0 : (isHovered ? 3.0 : 2.0);
+
+			RoundRect{ animatedRect, 10 }.draw(fillColor);
+			RoundRect{ animatedRect, 10 }.drawFrame(borderThickness, 0, accentColor);
+			RectF{ animatedRect.x + 10, animatedRect.bottomY() - 10, animatedRect.w - 20, 4 }
+				.draw(button.button.isActive ? accentColor : ColorF{ accentColor.r, accentColor.g, accentColor.b, 0.45 });
+			gameData.smallFont(button.button.label).drawAt(animatedRect.center().movedBy(0, -2), Palette::White);
+		}
+	}
 }
 
 void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
@@ -68,7 +113,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	const double productionBaseY = 88.0;
 	const double lineStep = 22.0;
 	const double detailBaseY = productionBaseY + (lineStep * productionLines.size());
-	const double hudHeight = Max(220.0, detailBaseY + 132.0 - 16.0);
+	const double hudHeight = Max(220.0, detailBaseY + 110.0 - 16.0);
 
 	String constructionText = U"Build: none";
 	for (const auto& slot : config.playerConstructionSlots)
@@ -96,19 +141,11 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		gameData.smallFont(productionLines[index]).draw(28, productionBaseY + (lineStep * index), Palette::White);
 	}
 	gameData.smallFont(constructionText).draw(28, detailBaseY, Palette::White);
-	const String formationText = U"Formation: Q="
-		+ GetFormationLabel(FormationType::Line)
-		+ U" / W="
-		+ GetFormationLabel(FormationType::Column)
-		+ U" / E="
-		+ GetFormationLabel(FormationType::Square)
-		+ U" / Current="
-		+ GetFormationLabel(state.playerFormation);
-	gameData.smallFont(formationText).draw(28, detailBaseY + 22.0, Palette::White);
-	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY + 44.0, Palette::White);
-	gameData.smallFont(config.hud.escapeHint).draw(28, detailBaseY + 66.0, Palette::White);
-	gameData.smallFont(runText).draw(28, detailBaseY + 88.0, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 110.0, Palette::Gold);
+	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY + 22.0, Palette::White);
+	gameData.smallFont(config.hud.escapeHint).draw(28, detailBaseY + 44.0, Palette::White);
+	gameData.smallFont(runText).draw(28, detailBaseY + 66.0, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 88.0, Palette::Gold);
+	DrawFormationPanel(state, gameData);
 
 	if (queueTarget)
 	{

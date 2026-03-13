@@ -82,6 +82,29 @@ namespace
 		Circle{ tracerHead, 2.6 }.draw(coreColor);
 	}
 
+	void DrawRocketBarrageEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const double progress = (1.0 - t);
+		const Vec2 rocketHead = effect.start + (attackVector * progress);
+		const Vec2 rocketTail = rocketHead - (direction * 30.0);
+		const ColorF smokeColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.18 + (0.26 * t) };
+		const ColorF flameColor{ 1.0, 0.74, 0.34, 0.88 };
+		const ColorF rocketColor{ 0.94, 0.92, 0.86, 0.92 };
+
+		Line{ rocketTail, rocketHead }.draw(5.0, smokeColor);
+		Line{ rocketTail, rocketHead }.draw(2.4, rocketColor);
+		Circle{ rocketTail, 3.5 + (1.0 * t) }.draw(flameColor);
+		Circle{ effect.end, 18.0 + (26.0 * progress) }.drawFrame(3.0, ColorF{ 1.0, 0.68, 0.32, 0.24 + (0.42 * t) });
+		Circle{ effect.end, 8.0 + (12.0 * progress) }.draw(ColorF{ 1.0, 0.86, 0.54, 0.12 + (0.18 * t) });
+	}
+
 	void DrawBeamAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
 	{
 		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
@@ -142,6 +165,12 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 			DrawHealBeamEffect(effect, t);
 			break;
 		case UnitArchetype::MachineGun:
+			DrawTracerAttackEffect(effect, t, ownerColor);
+			break;
+		case UnitArchetype::Katyusha:
+			DrawRocketBarrageEffect(effect, t, ownerColor);
+			break;
+		case UnitArchetype::Sniper:
 			DrawTracerAttackEffect(effect, t, ownerColor);
 			break;
 		case UnitArchetype::Archer:

@@ -70,6 +70,10 @@ template <class TUnitState>
 		return U"SOLDIER";
 	case UnitArchetype::Archer:
 		return U"ARCHER";
+		case UnitArchetype::Sniper:
+			return U"SNIPER";
+		case UnitArchetype::Katyusha:
+			return U"KATYUSHA";
 	case UnitArchetype::MachineGun:
 		return U"M-GUN";
 	case UnitArchetype::Healer:
