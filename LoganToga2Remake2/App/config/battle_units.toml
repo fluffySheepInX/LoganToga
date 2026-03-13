@@ -6,7 +6,7 @@ move_speed = 0.0
 attack_range = 0.0
 attack_cooldown = 1.0
 attack_power = 0
-hp = 300
+hp = 480
 cost = 0
 production_time = 0.0
 can_move = false
@@ -21,7 +21,7 @@ move_speed = 0.0
 attack_range = 0.0
 attack_cooldown = 1.0
 attack_power = 0
-hp = 170
+hp = 300
 cost = 130
 production_time = 5.5
 can_move = false
@@ -34,9 +34,9 @@ flavor_text = "据えれば静かに仕事をする。"
 radius = 18.0
 move_speed = 0.0
 attack_range = 170.0
-attack_cooldown = 1.1
-attack_power = 10
-hp = 140
+attack_cooldown = 0.5
+attack_power = 17
+hp = 240
 cost = 140
 production_time = 0.0
 can_move = false
@@ -51,7 +51,7 @@ move_speed = 0.0
 attack_range = 0.0
 attack_cooldown = 1.0
 attack_power = 0
-hp = 180
+hp = 320
 cost = 120
 production_time = 6.0
 can_move = false
@@ -65,7 +65,7 @@ move_speed = 85.0
 attack_range = 18.0
 attack_cooldown = 1.0
 attack_power = 4
-hp = 28
+hp = 44
 cost = 40
 production_time = 1.2
 can_move = true
@@ -80,7 +80,7 @@ move_speed = 92.0
 attack_range = 24.0
 attack_cooldown = 0.7
 attack_power = 8
-hp = 48
+hp = 84
 cost = 60
 production_time = 1.6
 can_move = true
@@ -95,11 +95,26 @@ move_speed = 82.0
 attack_range = 120.0
 attack_cooldown = 1.0
 attack_power = 6
-hp = 34
+hp = 60
 cost = 80
 production_time = 2.0
 can_move = true
 aggro_range = 220.0
+
+[[units]]
+archetype = "machine_gun"
+description = "長射程を高速連射で維持する重射手。高価だが放っておいても前線を支える。"
+flavor_text = "弾は軽いが、撃ち続ければ相手は前に出づらい。"
+radius = 12.0
+move_speed = 70.0
+attack_range = 210.0
+attack_cooldown = 0.18
+attack_power = 4
+hp = 96
+cost = 1000
+production_time = 9.0
+can_move = true
+aggro_range = 270.0
 
 [[units]]
 archetype = "spinner"
@@ -110,7 +125,7 @@ move_speed = 118.0
 attack_range = 22.0
 attack_cooldown = 0.75
 attack_power = 6
-hp = 40
+hp = 72
 cost = 90
 production_time = 2.2
 can_move = true
@@ -125,16 +140,27 @@ archetype = "worker"
 slot = 2
 producer = "barracks"
 archetype = "soldier"
+cost = 120
+batch_count = 2
 
 [[player_production]]
 slot = 3
 producer = "barracks"
 archetype = "archer"
+cost = 160
+batch_count = 2
+
+[[player_production]]
+slot = 8
+producer = "barracks"
+archetype = "machine_gun"
 
 [[player_production]]
 slot = 4
 producer = "stable"
 archetype = "spinner"
+cost = 180
+batch_count = 2
 
 [[player_construction]]
 slot = 5

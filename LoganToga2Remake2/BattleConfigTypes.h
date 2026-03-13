@@ -41,6 +41,8 @@ struct ProductionSlot
 	int32 slot = 1;
 	UnitArchetype producer = UnitArchetype::Base;
 	UnitArchetype archetype = UnitArchetype::Soldier;
+	int32 cost = -1;
+	int32 batchCount = 1;
 };
 
 struct ConstructionSlot

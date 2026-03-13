@@ -1,4 +1,5 @@
 ﻿#include "BattleScene.h"
+#include "BattleCommandUi.h"
 #include "ContinueRunSave.h"
 
 #include "BattleScenePause.ipp"
@@ -194,19 +195,26 @@ void BattleScene::handleProductionInput()
 		m_session.cancelLastPlayerProduction();
 	}
 
-	for (const auto& slot : m_session.config().playerProductionSlots)
+	for (const auto& command : CollectCommandEntries(m_session.state(), m_session.config()))
 	{
-		if (isCommandSlotTriggered(slot.slot))
+		if (!isCommandSlotTriggered(command.slot) || !command.isEnabled)
 		{
-			m_session.trySpawnPlayerUnit(slot.archetype);
+			continue;
 		}
-	}
 
-	for (const auto& upgrade : m_session.config().turretUpgradeDefinitions)
-	{
-		if (isCommandSlotTriggered(upgrade.slot))
+		switch (command.kind)
 		{
-			m_session.tryUpgradeSelectedTurret(upgrade.type);
+		case CommandKind::Production:
+			m_session.trySpawnPlayerUnit(command.archetype);
+			return;
+		case CommandKind::Upgrade:
+			if (command.turretUpgradeType)
+			{
+				m_session.tryUpgradeSelectedTurret(*command.turretUpgradeType);
+			}
+			return;
+		default:
+			break;
 		}
 	}
 }

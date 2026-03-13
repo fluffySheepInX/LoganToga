@@ -33,6 +33,10 @@
 	{
 		return UnitArchetype::Archer;
 	}
+	if ((normalized == U"machine_gun") || (normalized == U"machinegun") || (normalized == U"mgun"))
+	{
+		return UnitArchetype::MachineGun;
+	}
 	if ((normalized == U"spinner") || (normalized == U"top_rider"))
 	{
 		return UnitArchetype::Spinner;
@@ -157,6 +161,8 @@ inline void LoadBattleUnitConfig(BattleConfigData& config, const TOMLReader& tom
 		slot.slot = table[U"slot"].get<int32>();
 		slot.producer = ParseUnitArchetype(table[U"producer"].get<String>());
 		slot.archetype = ParseUnitArchetype(table[U"archetype"].get<String>());
+		slot.cost = table[U"cost"].getOr<int32>(slot.cost);
+		slot.batchCount = Max(1, table[U"batch_count"].getOr<int32>(slot.batchCount));
 		config.playerProductionSlots << slot;
 		AppendUniqueArchetype(config.playerAvailableProductionArchetypes, slot.archetype);
 	}

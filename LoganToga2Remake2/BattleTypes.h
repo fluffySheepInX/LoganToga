@@ -18,6 +18,7 @@ enum class UnitArchetype
 	Worker,
 	Soldier,
 	Archer,
+	MachineGun,
 	Spinner
 };
 

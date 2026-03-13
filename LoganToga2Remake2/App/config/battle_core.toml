@@ -1,6 +1,6 @@
 [economy]
-player_gold = 200
-enemy_gold = 200
+player_gold = 260
+enemy_gold = 260
 
 [world]
 width = 2560.0
@@ -8,12 +8,12 @@ height = 1440.0
 
 [income]
 interval = 1.0
-player_amount = 20
-enemy_amount = 20
+player_amount = 24
+enemy_amount = 24
 
 [hud]
 title = "LoganToga2 Remake Prototype"
-controls = "L drag: pan / R click: move or attack / Q-W: formation / 1-3: queue / 4-5: build / 6-8: turret / X: cancel"
+controls = "L drag: pan / R click: move or attack / Q-W-E: formation / 1-0: command / X: cancel"
 escape_hint = "Esc: pause menu"
 win_hint = "Enter: title / R: retry"
 

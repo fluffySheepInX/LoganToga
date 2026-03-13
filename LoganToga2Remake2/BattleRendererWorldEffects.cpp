@@ -62,6 +62,26 @@ namespace
 		Line{ headBase - (side * 4.0), arrowPos }.draw(1.4, arrowColor);
 	}
 
+	void DrawTracerAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
+	{
+		const Vec2 attackVector = (effect.end - effect.start);
+		if (attackVector.lengthSq() <= 0.001)
+		{
+			return;
+		}
+
+		const Vec2 direction = attackVector.normalized();
+		const double progress = (1.0 - t);
+		const Vec2 tracerHead = effect.start + (attackVector * progress);
+		const Vec2 tracerTail = tracerHead - (direction * 26.0);
+		const ColorF trailColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.30 + (0.42 * t) };
+		const ColorF coreColor{ 1.0, 0.98, 0.84, 0.90 };
+
+		Line{ tracerTail, tracerHead }.draw(4.0, trailColor);
+		Line{ tracerTail, tracerHead }.draw(1.8, coreColor);
+		Circle{ tracerHead, 2.6 }.draw(coreColor);
+	}
+
 	void DrawBeamAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
 	{
 		const ColorF beamColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.25 + (0.60 * t) };
@@ -107,6 +127,9 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 
 		switch (effect.sourceArchetype)
 		{
+		case UnitArchetype::MachineGun:
+			DrawTracerAttackEffect(effect, t, ownerColor);
+			break;
 		case UnitArchetype::Archer:
 			DrawArrowAttackEffect(effect, t, ownerColor);
 			break;

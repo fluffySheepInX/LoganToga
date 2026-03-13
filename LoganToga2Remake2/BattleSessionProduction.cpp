@@ -136,7 +136,7 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 		return false;
 	}
 
-	const int32 cost = getUnitCost(archetype);
+	const int32 cost = (slot->cost > 0) ? slot->cost : getUnitCost(archetype);
 	if (cost <= 0)
 	{
 		return false;
@@ -150,7 +150,10 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 
 	gold -= cost;
 	const double productionTime = getProductionTime(owner, archetype);
-	building->productionQueue << ProductionQueueItem{ archetype, productionTime, productionTime };
+	for (int32 count = 0; count < slot->batchCount; ++count)
+	{
+		building->productionQueue << ProductionQueueItem{ archetype, productionTime, productionTime };
+	}
 	return true;
 }
 

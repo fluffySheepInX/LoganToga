@@ -29,6 +29,8 @@ namespace
 			return 6;
 		case UnitArchetype::Archer:
 			return 9;
+		case UnitArchetype::MachineGun:
+			return 4;
 		case UnitArchetype::Spinner:
 			return 8;
 		case UnitArchetype::Turret:

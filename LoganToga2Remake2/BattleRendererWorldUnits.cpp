@@ -73,6 +73,15 @@ namespace
 
 		Circle{ renderPosition, unit.radius + 2.5 }.drawFrame(1.4, ColorF{ 1.0, 0.92, 0.58, 0.32 });
 	}
+
+	void DrawMachineGunDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		RectF{ renderPosition.x - (unit.radius * 0.68), renderPosition.y - (unit.radius * 0.44), unit.radius * 1.36, unit.radius * 0.88 }.draw(ColorF{ 0.14, 0.18, 0.16, 0.94 });
+		RectF{ renderPosition.x - (unit.radius * 0.84), renderPosition.y + (unit.radius * 0.12), unit.radius * 1.06, unit.radius * 0.26 }.draw(ColorF{ 0.30, 0.36, 0.32, 0.96 });
+		RectF{ renderPosition.x + (unit.radius * 0.12), renderPosition.y - (unit.radius * 0.18), unit.radius * 1.08, unit.radius * 0.18 }.draw(ColorF{ 0.82, 0.86, 0.90, 0.96 });
+		Circle{ renderPosition.movedBy(-(unit.radius * 0.54), 0), unit.radius * 0.22 }.draw(ColorF{ 0.92, 0.78, 0.26, 0.96 });
+		Circle{ renderPosition, unit.radius + 2.0 }.drawFrame(1.2, ColorF{ 0.78, 0.90, 0.72, 0.36 });
+	}
 }
 
 void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
@@ -96,6 +105,10 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		if (unit.archetype == UnitArchetype::Worker)
 		{
 			DrawWorkerDecoration(unit, state, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::MachineGun)
+		{
+			DrawMachineGunDecoration(unit, renderPosition);
 		}
 		else if (unit.archetype == UnitArchetype::Spinner)
 		{
