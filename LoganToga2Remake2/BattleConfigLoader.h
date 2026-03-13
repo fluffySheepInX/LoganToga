@@ -37,6 +37,10 @@
 	{
 		return UnitArchetype::MachineGun;
 	}
+	if ((normalized == U"healer") || (normalized == U"medic"))
+	{
+		return UnitArchetype::Healer;
+	}
 	if ((normalized == U"spinner") || (normalized == U"top_rider"))
 	{
 		return UnitArchetype::Spinner;

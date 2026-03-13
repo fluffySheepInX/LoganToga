@@ -52,6 +52,15 @@ target_archetype = "archer"
 repeatable = false
 
 [[cards]]
+id = "healer_unlock_1"
+name = "Field Medics"
+description = "Unlock Healer production"
+rarity = "rare"
+effect_type = "production_unlock"
+target_archetype = "healer"
+repeatable = false
+
+[[cards]]
 id = "spinner_unlock_1"
 name = "Whirl Stable"
 description = "Unlock Spinner production and Stable construction"

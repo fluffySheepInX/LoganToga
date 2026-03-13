@@ -14,6 +14,8 @@ namespace BattleRendererHudInternal
 			return U"A";
 		case UnitArchetype::MachineGun:
 			return U"M";
+		case UnitArchetype::Healer:
+			return U"+";
 		case UnitArchetype::Barracks:
 			return U"B";
 		case UnitArchetype::Stable:
@@ -41,6 +43,8 @@ namespace BattleRendererHudInternal
 			return ColorF{ 0.86, 0.56, 0.22 };
 		case UnitArchetype::MachineGun:
 			return ColorF{ 0.42, 0.74, 0.56 };
+		case UnitArchetype::Healer:
+			return ColorF{ 0.46, 0.82, 0.92 };
 		case UnitArchetype::Barracks:
 			return ColorF{ 0.56, 0.42, 0.74 };
 		case UnitArchetype::Stable:

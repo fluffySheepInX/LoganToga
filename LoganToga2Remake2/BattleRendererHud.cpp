@@ -1,5 +1,35 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+namespace
+{
+	Array<String> BuildWrappedHudLines(const Array<String>& entries, const Font& font, const double maxWidth, const String& prefix)
+	{
+		Array<String> lines;
+		String currentLine = prefix;
+
+		for (size_t index = 0; index < entries.size(); ++index)
+		{
+			const String segment = ((currentLine == prefix) ? U"" : U" / ") + entries[index];
+			const String candidate = currentLine + segment;
+			if ((currentLine != prefix) && (font(candidate).region().w > maxWidth))
+			{
+				lines << currentLine;
+				currentLine = prefix + entries[index];
+				continue;
+			}
+
+			currentLine = candidate;
+		}
+
+		if (!currentLine.isEmpty())
+		{
+			lines << currentLine;
+		}
+
+		return lines;
+	}
+}
+
 void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
 {
 	int32 playerResourceIncome = 0;
@@ -13,7 +43,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		}
 	}
 
-	String productionText;
+	Array<String> productionEntries;
 	for (const auto& slot : config.playerProductionSlots)
 	{
 		if (!ContainsArchetype(config.playerAvailableProductionArchetypes, slot.archetype))
@@ -21,26 +51,24 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 			continue;
 		}
 
-		if (!productionText.isEmpty())
-		{
-			productionText += U" / ";
-		}
-
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = (slot.cost > 0)
 			? slot.cost
 			: (definition ? definition->cost : 0);
-		productionText += s3d::Format(
+		productionEntries << s3d::Format(
 			slot.slot,
 			U": ",
 			GetArchetypeLabel(slot.archetype),
 			(slot.batchCount >= 2) ? U" x" + Format(slot.batchCount) : U"",
-			U" @",
-			GetArchetypeLabel(slot.producer),
 			U" (",
 			cost,
 			U"G)");
 	}
+	const Array<String> productionLines = BuildWrappedHudLines(productionEntries, gameData.smallFont, 440.0, U"Production: ");
+	const double productionBaseY = 88.0;
+	const double lineStep = 22.0;
+	const double detailBaseY = productionBaseY + (lineStep * productionLines.size());
+	const double hudHeight = Max(220.0, detailBaseY + 132.0 - 16.0);
 
 	String constructionText = U"Build: none";
 	for (const auto& slot : config.playerConstructionSlots)
@@ -60,11 +88,14 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	const auto commandLayout = BuildCommandPanelLayout(state, config);
 	const auto queueTarget = BattleRendererHudInternal::FindQueueDisplayTarget(state);
 
-	RoundRect{ 16, 16, 480, 220, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+	RoundRect{ 16, 16, 480, hudHeight, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);
 	gameData.smallFont(config.hud.controls).draw(28, 66, Palette::White);
-	gameData.smallFont(productionText).draw(28, 88, Palette::White);
-	gameData.smallFont(constructionText).draw(28, 110, Palette::White);
+	for (size_t index = 0; index < productionLines.size(); ++index)
+	{
+		gameData.smallFont(productionLines[index]).draw(28, productionBaseY + (lineStep * index), Palette::White);
+	}
+	gameData.smallFont(constructionText).draw(28, detailBaseY, Palette::White);
 	const String formationText = U"Formation: Q="
 		+ GetFormationLabel(FormationType::Line)
 		+ U" / W="
@@ -73,11 +104,11 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		+ GetFormationLabel(FormationType::Square)
 		+ U" / Current="
 		+ GetFormationLabel(state.playerFormation);
-	gameData.smallFont(formationText).draw(28, 132, Palette::White);
-	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, 154, Palette::White);
-	gameData.smallFont(config.hud.escapeHint).draw(28, 176, Palette::White);
-	gameData.smallFont(runText).draw(28, 198, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, 220, Palette::Gold);
+	gameData.smallFont(formationText).draw(28, detailBaseY + 22.0, Palette::White);
+	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY + 44.0, Palette::White);
+	gameData.smallFont(config.hud.escapeHint).draw(28, detailBaseY + 66.0, Palette::White);
+	gameData.smallFont(runText).draw(28, detailBaseY + 88.0, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 110.0, Palette::Gold);
 
 	if (queueTarget)
 	{

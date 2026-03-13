@@ -9,6 +9,45 @@ namespace
 		return (archetype == UnitArchetype::Spinner);
 	}
 
+	[[nodiscard]] const UnitState* FindHealTarget(const BattleState& state, const UnitState& source, const double searchRadius)
+	{
+		const double searchRadiusSq = (searchRadius * searchRadius);
+		const UnitState* bestTarget = nullptr;
+		double bestHpRate = 1.0;
+		double nearestDistanceSq = Math::Inf;
+
+		for (const auto& candidate : state.units)
+		{
+			if (!candidate.isAlive
+				|| (candidate.owner != source.owner)
+				|| (candidate.id == source.id)
+				|| IsBuildingArchetype(candidate.archetype)
+				|| (candidate.hp >= candidate.maxHp)
+				|| (candidate.maxHp <= 0))
+			{
+				continue;
+			}
+
+			const Vec2 delta = (candidate.position - source.position);
+			const double distanceSq = delta.lengthSq();
+			if (distanceSq > searchRadiusSq)
+			{
+				continue;
+			}
+
+			const double hpRate = (static_cast<double>(candidate.hp) / candidate.maxHp);
+			if ((hpRate < bestHpRate)
+				|| ((hpRate == bestHpRate) && (distanceSq < nearestDistanceSq)))
+			{
+				bestHpRate = hpRate;
+				nearestDistanceSq = distanceSq;
+				bestTarget = &candidate;
+			}
+		}
+
+		return bestTarget;
+	}
+
 	[[nodiscard]] int32 GetMovingAttackDamage(const UnitState& attacker, const UnitState& target)
 	{
 		if (IsBuildingArchetype(target.archetype))
@@ -31,6 +70,8 @@ namespace
 			return 9;
 		case UnitArchetype::MachineGun:
 			return 4;
+		case UnitArchetype::Healer:
+			return 7;
 		case UnitArchetype::Spinner:
 			return 8;
 		case UnitArchetype::Turret:
@@ -89,12 +130,12 @@ void BattleSession::updateCombat()
 {
 	invalidateSpatialQueryCache();
 
-	struct DamageEvent
+	struct CombatEvent
 	{
 		int32 sourceUnitId = -1;
 		Vec2 sourcePosition = Vec2::Zero();
 		int32 targetId = -1;
-		int32 damage = 0;
+		int32 hpDelta = 0;
 		Owner owner = Owner::Player;
 		UnitArchetype sourceArchetype = UnitArchetype::Soldier;
 	};
@@ -109,8 +150,8 @@ void BattleSession::updateCombat()
 		return (effect.framesRemaining <= 0);
 	});
 
-	Array<DamageEvent> damageEvents;
-	damageEvents.reserve(m_state.units.size());
+	Array<CombatEvent> combatEvents;
+	combatEvents.reserve(m_state.units.size());
 
 	for (auto& unit : m_state.units)
 	{
@@ -143,12 +184,29 @@ void BattleSession::updateCombat()
 					continue;
 				}
 
-				damageEvents << DamageEvent{ unit.id, unit.position, candidate.id, GetMovingAttackDamage(unit, candidate), unit.owner, unit.archetype };
+				combatEvents << CombatEvent{ unit.id, unit.position, candidate.id, GetMovingAttackDamage(unit, candidate), unit.owner, unit.archetype };
 				didHit = true;
 			}
 
 			if (didHit)
 			{
+				unit.attackCooldownRemaining = unit.attackCooldown;
+			}
+
+			continue;
+		}
+
+		if (unit.archetype == UnitArchetype::Healer)
+		{
+			if (unit.attackCooldownRemaining > 0.0)
+			{
+				continue;
+			}
+
+			const double searchRadius = Max(unit.attackRange, getAggroRange(unit.owner, unit.archetype));
+			if (const auto* target = FindHealTarget(m_state, unit, searchRadius))
+			{
+				combatEvents << CombatEvent{ unit.id, unit.position, target->id, -unit.attackPower, unit.owner, unit.archetype };
 				unit.attackCooldownRemaining = unit.attackCooldown;
 			}
 
@@ -188,11 +246,11 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
-		damageEvents << DamageEvent{ unit.id, unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
+		combatEvents << CombatEvent{ unit.id, unit.position, target->id, unit.attackPower, unit.owner, unit.archetype };
 		unit.attackCooldownRemaining = unit.attackCooldown;
 	}
 
-	for (const auto& event : damageEvents)
+	for (const auto& event : combatEvents)
 	{
 		if (auto* target = findCachedUnit(event.targetId))
 		{
@@ -207,8 +265,8 @@ void BattleSession::updateCombat()
 				.totalFrames = effectFrames,
 			};
 
-			target->hp -= event.damage;
-			if (target->hp <= 0)
+			target->hp = Clamp(target->hp - event.hpDelta, 0, target->maxHp);
+			if ((event.hpDelta > 0) && (target->hp <= 0))
 			{
 				target->hp = 0;
 				target->isAlive = false;

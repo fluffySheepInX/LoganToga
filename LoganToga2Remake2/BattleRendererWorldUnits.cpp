@@ -82,6 +82,14 @@ namespace
 		Circle{ renderPosition.movedBy(-(unit.radius * 0.54), 0), unit.radius * 0.22 }.draw(ColorF{ 0.92, 0.78, 0.26, 0.96 });
 		Circle{ renderPosition, unit.radius + 2.0 }.drawFrame(1.2, ColorF{ 0.78, 0.90, 0.72, 0.36 });
 	}
+
+	void DrawHealerDecoration(const UnitState& unit, const Vec2& renderPosition)
+	{
+		Circle{ renderPosition, unit.radius * 0.76 }.draw(ColorF{ 0.92, 0.98, 1.0, 0.94 });
+		RectF{ renderPosition.x - (unit.radius * 0.20), renderPosition.y - (unit.radius * 0.70), unit.radius * 0.40, unit.radius * 1.40 }.draw(ColorF{ 0.36, 0.86, 0.70, 0.96 });
+		RectF{ renderPosition.x - (unit.radius * 0.70), renderPosition.y - (unit.radius * 0.20), unit.radius * 1.40, unit.radius * 0.40 }.draw(ColorF{ 0.36, 0.86, 0.70, 0.96 });
+		Circle{ renderPosition, unit.radius + 2.4 }.drawFrame(1.4, ColorF{ 0.54, 0.94, 0.78, 0.34 });
+	}
 }
 
 void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
@@ -97,14 +105,24 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		const ColorF color = GetOwnerColor(unit.owner);
 		if (unit.isSelected && (unit.attackRange > 0.0))
 		{
-			Circle{ renderPosition, unit.attackRange }.draw(ColorF{ 1.0, 0.64, 0.18, 0.08 });
-			Circle{ renderPosition, unit.attackRange }.drawFrame(1.5, ColorF{ 1.0, 0.68, 0.22, 0.30 });
+			const ColorF rangeFill = (unit.archetype == UnitArchetype::Healer)
+				? ColorF{ 0.40, 0.94, 0.74, 0.08 }
+				: ColorF{ 1.0, 0.64, 0.18, 0.08 };
+			const ColorF rangeFrame = (unit.archetype == UnitArchetype::Healer)
+				? ColorF{ 0.44, 0.98, 0.80, 0.30 }
+				: ColorF{ 1.0, 0.68, 0.22, 0.30 };
+			Circle{ renderPosition, unit.attackRange }.draw(rangeFill);
+			Circle{ renderPosition, unit.attackRange }.drawFrame(1.5, rangeFrame);
 		}
 
 		Circle{ renderPosition, unit.radius }.draw(color);
 		if (unit.archetype == UnitArchetype::Worker)
 		{
 			DrawWorkerDecoration(unit, state, renderPosition);
+		}
+		else if (unit.archetype == UnitArchetype::Healer)
+		{
+			DrawHealerDecoration(unit, renderPosition);
 		}
 		else if (unit.archetype == UnitArchetype::MachineGun)
 		{

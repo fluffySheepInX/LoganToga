@@ -93,6 +93,17 @@ namespace
 		Circle{ effect.end, 10.0 + (8.0 * (1.0 - t)) }.drawFrame(2.5, ColorF{ 1.0, 0.88, 0.58, 0.25 + (0.50 * t) });
 	}
 
+	void DrawHealBeamEffect(const AttackVisualEffect& effect, const double t)
+	{
+		const ColorF beamColor{ 0.38, 0.94, 0.78, 0.24 + (0.58 * t) };
+		const ColorF coreColor{ 0.92, 1.0, 0.96, 0.38 + (0.50 * t) };
+
+		Line{ effect.start, effect.end }.draw(5.0, beamColor);
+		Line{ effect.start, effect.end }.draw(2.0, coreColor);
+		Circle{ effect.start, 6.0 + (3.0 * t) }.draw(ColorF{ 0.82, 1.0, 0.90, 0.24 + (0.36 * t) });
+		Circle{ effect.end, 8.0 + (6.0 * (1.0 - t)) }.drawFrame(2.0, ColorF{ 0.76, 1.0, 0.86, 0.28 + (0.42 * t) });
+	}
+
 	void DrawSpinAttackEffect(const AttackVisualEffect& effect, const double t, const ColorF& ownerColor)
 	{
 		const double progress = (1.0 - t);
@@ -127,6 +138,9 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 
 		switch (effect.sourceArchetype)
 		{
+		case UnitArchetype::Healer:
+			DrawHealBeamEffect(effect, t);
+			break;
 		case UnitArchetype::MachineGun:
 			DrawTracerAttackEffect(effect, t, ownerColor);
 			break;
