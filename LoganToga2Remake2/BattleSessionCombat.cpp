@@ -213,6 +213,45 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
+		if ((unit.order.type == UnitOrderType::RepairTarget) && unit.order.targetUnitId)
+		{
+			const auto* target = findCachedUnit(*unit.order.targetUnitId);
+			const auto* building = target ? m_state.findBuildingByUnitId(*unit.order.targetUnitId) : nullptr;
+			if (!(target
+				&& target->isAlive
+				&& (target->owner == unit.owner)
+				&& (target->archetype == UnitArchetype::Turret)
+				&& building
+				&& building->isConstructed))
+			{
+				unit.order.type = UnitOrderType::Idle;
+				unit.order.targetUnitId.reset();
+				continue;
+			}
+
+			if (target->hp >= target->maxHp)
+			{
+				unit.order.type = UnitOrderType::Idle;
+				unit.order.targetUnitId.reset();
+				continue;
+			}
+
+			const double repairRange = (unit.radius + target->radius + 8.0);
+			if (unit.position.distanceFromSq(target->position) > (repairRange * repairRange))
+			{
+				continue;
+			}
+
+			if (unit.attackCooldownRemaining > 0.0)
+			{
+				continue;
+			}
+
+			combatEvents << CombatEvent{ unit.id, unit.position, target->id, -unit.attackPower, unit.owner, unit.archetype };
+			unit.attackCooldownRemaining = unit.attackCooldown;
+			continue;
+		}
+
 		const UnitState* target = nullptr;
 
 		if ((unit.order.type == UnitOrderType::AttackTarget) && unit.order.targetUnitId)

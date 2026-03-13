@@ -262,6 +262,49 @@ Array<CommandIconEntry> CollectConstructionCommands(const BattleState& state, co
 	return commands;
 }
 
+Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const BattleConfigData&)
+{
+	if (!HasSelectedWorker(state))
+	{
+		return {};
+	}
+
+	bool hasConstructedTurret = false;
+	bool hasDamagedTurret = false;
+	for (const auto& building : state.buildings)
+	{
+		const auto* unit = state.findUnit(building.unitId);
+		if (!(unit && unit->isAlive && (unit->owner == Owner::Player) && (unit->archetype == UnitArchetype::Turret) && building.isConstructed))
+		{
+			continue;
+		}
+
+		hasConstructedTurret = true;
+		if (unit->hp < unit->maxHp)
+		{
+			hasDamagedTurret = true;
+			break;
+		}
+	}
+
+	return {
+		CommandIconEntry{
+			CommandKind::Repair,
+			8,
+			UnitArchetype::Worker,
+			UnitArchetype::Turret,
+			0,
+			!state.winner && hasDamagedTurret,
+			state.winner ? U"BATTLE ENDED" : (!hasConstructedTurret ? U"NO TURRET" : (hasDamagedTurret ? U"READY" : U"FULL HP")),
+			U"REPAIR",
+			U"R",
+			U"After pressing this, click a damaged turret to repair it.",
+			U"先に命令してから、直したい砲台を選ぶ。",
+			none
+		}
+	};
+}
+
 Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const BattleConfigData& config)
 {
 	Array<CommandIconEntry> commands = CollectProductionCommands(state, config);
@@ -270,6 +313,10 @@ Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const Ba
 		commands << command;
 	}
 	for (const auto& command : CollectTurretUpgradeCommands(state, config))
+	{
+		commands << command;
+	}
+	for (const auto& command : CollectRepairCommands(state, config))
 	{
 		commands << command;
 	}

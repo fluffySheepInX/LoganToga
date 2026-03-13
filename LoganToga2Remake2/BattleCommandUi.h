@@ -7,7 +7,8 @@ enum class CommandKind
 {
 	Production,
 	Construction,
-	Upgrade
+	Upgrade,
+	Repair
 };
 
 struct CommandIconEntry
@@ -46,6 +47,7 @@ struct CommandPanelLayout
 [[nodiscard]] Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectConstructionCommands(const BattleState& state, const BattleConfigData& config);
+[[nodiscard]] Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] Array<CommandIconEntry> CollectCommandEntries(const BattleState& state, const BattleConfigData& config);
 [[nodiscard]] String GetCommandPanelTitle(const BattleState& state);
 [[nodiscard]] String GetCommandSectionLabel(const Array<CommandIconEntry>& commands);

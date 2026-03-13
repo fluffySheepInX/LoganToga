@@ -28,18 +28,31 @@ can_move = false
 aggro_range = 0.0
 
 [[units]]
+# ユニット種別。ここを turret にすると砲台定義として読み込まれる。
 archetype = "turret"
+# ゲーム内ヘルプやUIに出る説明文。性能には影響しない。
 description = "足を止めて迎撃する防衛施設。前線の支え向き。"
+# 雰囲気用テキスト。性能には影響しない。
 flavor_text = "据えれば静かに仕事をする。"
+# 当たり判定と占有サイズ。大きいほど置き場所や接触距離に影響する。
 radius = 18.0
+# 移動速度。タレットは動かないので通常は 0.0 のまま。
 move_speed = 0.0
+# 射程距離。大幅強化ならまずここを伸ばすと効きやすい。
 attack_range = 170.0
+# 攻撃間隔。小さいほど連射が速くなる。
 attack_cooldown = 0.5
-attack_power = 17
-hp = 240
+# 1発あたりの攻撃力。重い砲台にしたいならここを上げる。
+attack_power = 34
+# 耐久力。前線に置いて長持ちさせたいならここを上げる。
+hp = 540
+# 建設コスト。強化に合わせて重くしたい時に調整する。
 cost = 140
+# 生産時間。建設完了までの時間。建物なので 0.0 でも動作するが、建設処理側の値と合わせて調整する。
 production_time = 0.0
+# 移動可否。タレットは固定砲台なので false のまま。
 can_move = false
+# 敵を感知して戦闘開始する範囲。射程より少し長いと反応が良い。
 aggro_range = 220.0
 
 [[units]]
@@ -195,37 +208,67 @@ slot = 7
 archetype = "turret"
 
 [[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
 slot = 8
+# 強化種別ID。内部判定用なので既存値を維持する。
 type = "power"
+# UIラベル。表示名のみ。
 label = "POWER"
+# アイコン1文字。表示用のみ。
 glyph = "P"
+# 強化説明。性能には影響しない。
 description = "威力のみ強化。重い一撃で前線を支える。"
+# 雰囲気用テキスト。性能には影響しない。
 flavor_text = "少ない手数でも、撃てば違いが出る。"
+# 強化コスト。強化を強くするなら上げる候補。
 cost = 100
+# 威力の加算値。火力を大幅に上げたいならここを増やす。
 attack_power_delta = 4
+# 攻撃間隔の加算値。マイナスにすると連射が速くなる。
 attack_cooldown_delta = 0.0
+# 初期解放されているか。false なら進行で解放する前提。
 unlocked_by_default = true
 
 [[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
 slot = 9
+# 強化種別ID。内部判定用なので既存値を維持する。
 type = "rapid"
+# UIラベル。表示名のみ。
 label = "RAPID"
+# アイコン1文字。表示用のみ。
 glyph = "R"
+# 強化説明。性能には影響しない。
 description = "連射のみ強化。継続迎撃に向く。"
+# 雰囲気用テキスト。性能には影響しない。
 flavor_text = "細かく刻めば、押し返す時間が延びる。"
+# 強化コスト。強化を強くするなら上げる候補。
 cost = 100
+# 威力の加算値。rapid は通常 0 のまま。
 attack_power_delta = 0
+# 攻撃間隔の加算値。よりマイナスにするとさらに高速連射になる。
 attack_cooldown_delta = -0.28
+# 初期解放されているか。false なら進行で解放する前提。
 unlocked_by_default = true
 
 [[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
 slot = 0
+# 強化種別ID。内部判定用なので既存値を維持する。
 type = "dual"
+# UIラベル。表示名のみ。
 label = "DUAL"
+# アイコン1文字。表示用のみ。
 glyph = "D"
+# 強化説明。性能には影響しない。
 description = "威力と連射を両立した上位強化。"
+# 雰囲気用テキスト。性能には影響しない。
 flavor_text = "大きな投資に見合うだけの制圧力を得る。"
+# 強化コスト。強い複合強化にするほど高めにしやすい。
 cost = 240
+# 威力の加算値。dual を重火力寄りにしたいなら増やす。
 attack_power_delta = 3
+# 攻撃間隔の加算値。マイナス幅を増やすほど速射になる。
 attack_cooldown_delta = -0.22
+# 初期解放されているか。false なら進行で解放する前提。
 unlocked_by_default = false

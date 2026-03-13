@@ -2,6 +2,44 @@
 
 void BattleRenderer::drawConstructionPreview(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
 {
+	if (state.pendingRepairTargeting)
+	{
+		const Vec2 position = state.repairPreviewPosition;
+		const UnitState* hoveredTurret = nullptr;
+		for (const auto& building : state.buildings)
+		{
+			const auto* unit = state.findUnit(building.unitId);
+			if (!(unit && unit->isAlive && (unit->owner == Owner::Player) && (unit->archetype == UnitArchetype::Turret) && building.isConstructed))
+			{
+				continue;
+			}
+
+			if (Circle{ unit->position, unit->radius + 8.0 }.intersects(position))
+			{
+				hoveredTurret = unit;
+				break;
+			}
+		}
+
+		const bool canRepairHoveredTurret = (hoveredTurret && (hoveredTurret->hp < hoveredTurret->maxHp));
+		const ColorF accentColor = canRepairHoveredTurret
+			? ColorF{ 0.36, 0.94, 0.54, 0.95 }
+			: ColorF{ 0.96, 0.74, 0.24, 0.95 };
+		Circle{ position, 14 }.draw(ColorF{ accentColor, 0.16 });
+		Circle{ position, 14 }.drawFrame(2, accentColor);
+		Line{ position + Vec2{ -10, 0 }, position + Vec2{ 10, 0 } }.draw(2, accentColor);
+		Line{ position + Vec2{ 0, -10 }, position + Vec2{ 0, 10 } }.draw(2, accentColor);
+		gameData.smallFont(canRepairHoveredTurret ? U"Repair turret" : U"Select damaged turret").drawAt(position.movedBy(0, -28), accentColor);
+
+		if (hoveredTurret)
+		{
+			Circle{ hoveredTurret->position, hoveredTurret->radius + 10 }.draw(ColorF{ accentColor, 0.10 });
+			Circle{ hoveredTurret->position, hoveredTurret->radius + 10 }.drawFrame(2, accentColor);
+		}
+
+		return;
+	}
+
 	if (!state.pendingConstructionArchetype)
 	{
 		return;

@@ -22,15 +22,17 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 	bool hasProduction = false;
 	bool hasConstruction = false;
 	bool hasUpgrade = false;
+	bool hasRepair = false;
 
 	for (const auto& command : commands)
 	{
 		hasProduction |= (command.kind == CommandKind::Production);
 		hasConstruction |= (command.kind == CommandKind::Construction);
 		hasUpgrade |= (command.kind == CommandKind::Upgrade);
+		hasRepair |= (command.kind == CommandKind::Repair);
 	}
 
-	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade)) >= 2)
+	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade) + static_cast<int32>(hasRepair)) >= 2)
 	{
 		return U"COMMANDS";
 	}
@@ -38,6 +40,11 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 	if (hasUpgrade)
 	{
 		return U"UPGRADES";
+	}
+
+	if (hasRepair)
+	{
+		return U"REPAIR";
 	}
 
 	if (hasConstruction)

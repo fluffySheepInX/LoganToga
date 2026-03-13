@@ -66,6 +66,8 @@ namespace BattleRendererHudInternal
 		{
 		case CommandKind::Construction:
 			return U"Build";
+		case CommandKind::Repair:
+			return U"Repair";
 		case CommandKind::Upgrade:
 			return U"Upgrade";
 		case CommandKind::Production:
@@ -76,7 +78,7 @@ namespace BattleRendererHudInternal
 
 	ColorF GetCommandAvailabilityColor(const CommandIconEntry& command)
 	{
-		if ((command.kind != CommandKind::Construction) && (command.kind != CommandKind::Upgrade))
+		if ((command.kind != CommandKind::Construction) && (command.kind != CommandKind::Upgrade) && (command.kind != CommandKind::Repair))
 		{
 			return GetCommandIconColor(command.archetype);
 		}
@@ -90,7 +92,7 @@ namespace BattleRendererHudInternal
 	{
 		void DrawCommandTooltip(const CommandPanelLayout& layout, const CommandIconLayout& icon, const GameData& gameData)
 		{
-			const ColorF accentColor = ((icon.command.kind == CommandKind::Construction) || (icon.command.kind == CommandKind::Upgrade))
+			const ColorF accentColor = ((icon.command.kind == CommandKind::Construction) || (icon.command.kind == CommandKind::Upgrade) || (icon.command.kind == CommandKind::Repair))
 				? GetCommandAvailabilityColor(icon.command)
 				: GetCommandIconColor(icon.command.archetype);
 			const String titleText = icon.command.displayLabel.isEmpty() ? GetArchetypeLabel(icon.command.archetype) : icon.command.displayLabel;
@@ -153,12 +155,12 @@ namespace BattleRendererHudInternal
 				: ColorF{ 0.10, 0.11, 0.15, 0.96 };
 			const ColorF fillColor = command.isEnabled ? backgroundColor : ColorF{ 0.08, 0.09, 0.12, 0.94 };
 			const ColorF textColor{ 1.0, 1.0, 1.0, alpha };
-			const ColorF goldColor = (command.kind == CommandKind::Construction)
+			const ColorF goldColor = ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Repair))
 				? ColorF{ availabilityColor.r, availabilityColor.g, availabilityColor.b, alpha }
 				: ColorF{ 1.0, 0.84, 0.0, alpha };
 			RoundRect{ animatedRect, 10 }.draw(fillColor);
 			RoundRect{ animatedRect, 10 }.drawFrame(isHovered ? 4 : 2, 0, iconColor);
-			if ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Upgrade))
+			if ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Upgrade) || (command.kind == CommandKind::Repair))
 			{
 				RoundRect{ animatedRect, 10 }.drawFrame(2, 0, availabilityAlphaColor);
 				RectF{ animatedRect.x + 8, animatedRect.bottomY() - 10, animatedRect.w - 16, 5 }.draw(availabilityAlphaColor);

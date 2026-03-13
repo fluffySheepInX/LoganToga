@@ -27,7 +27,8 @@ enum class UnitOrderType
 {
 	Idle,
 	Move,
-	AttackTarget
+	AttackTarget,
+	RepairTarget
 };
 
 enum class FormationType

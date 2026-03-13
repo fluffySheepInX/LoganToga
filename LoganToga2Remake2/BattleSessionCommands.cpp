@@ -170,6 +170,66 @@ void BattleSession::processCommands()
 				m_state.statusMessage = GetTurretUpgradeLabel(value.type) + U" upgrade complete";
 				m_state.statusMessageTimer = 1.5;
 			}
+			else if constexpr (std::is_same_v<T, IssueRepairOrderCommand>)
+			{
+				auto* turret = findCachedUnit(value.targetUnitId);
+				if (!(turret && turret->isAlive && (turret->owner == Owner::Player) && (turret->archetype == UnitArchetype::Turret)))
+				{
+					m_state.statusMessage = U"No turret selected";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				auto* building = m_state.findBuildingByUnitId(value.targetUnitId);
+				if (!(building && building->isConstructed))
+				{
+					m_state.statusMessage = U"Turret offline";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				if (turret->hp >= turret->maxHp)
+				{
+					m_state.statusMessage = U"Turret already at full HP";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				Array<int32> workerIds;
+				for (const auto unitId : value.unitIds)
+				{
+					const auto* worker = findCachedUnit(unitId);
+					if (worker && worker->isAlive && (worker->owner == Owner::Player) && (worker->archetype == UnitArchetype::Worker))
+					{
+						workerIds << unitId;
+					}
+				}
+
+				if (workerIds.isEmpty())
+				{
+					m_state.statusMessage = U"No worker available";
+					m_state.statusMessageTimer = 2.0;
+					return;
+				}
+
+				cancelPendingConstructionOrders(workerIds, true);
+				removeUnitsFromSquads(workerIds);
+
+				for (const auto unitId : workerIds)
+				{
+					if (auto* worker = findCachedUnit(unitId))
+					{
+						worker->order.type = UnitOrderType::RepairTarget;
+						worker->order.targetUnitId = value.targetUnitId;
+						worker->order.targetPoint = turret->position;
+						worker->moveTarget = turret->position;
+						BattleSessionInternal::InvalidateNavigationPath(*worker);
+					}
+				}
+
+				m_state.statusMessage = U"Repair ordered";
+				m_state.statusMessageTimer = 1.5;
+			}
 		}, command);
 	}
 

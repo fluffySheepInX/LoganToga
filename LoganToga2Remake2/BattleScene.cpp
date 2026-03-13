@@ -112,7 +112,7 @@ void BattleScene::update()
 	const Vec2 constructionCursorWorldPos = screenToWorld(cursorScreenPos);
 	m_constructionController.handleInput(m_session, constructionCursorWorldPos);
 
-	if (!m_session.state().pendingConstructionArchetype)
+	if (!(m_session.state().pendingConstructionArchetype || m_session.state().pendingRepairTargeting))
 	{
 		const bool isCursorOnCommandPanel = m_inputController.isCursorOnCommandPanel(m_session, cursorScreenPos);
 		const bool handledCommandPanelClick = m_inputController.handleCommandPanelClick(m_session, cursorScreenPos);
@@ -206,6 +206,12 @@ void BattleScene::handleProductionInput()
 		{
 		case CommandKind::Production:
 			m_session.trySpawnPlayerUnit(command.archetype);
+			return;
+		case CommandKind::Repair:
+			m_session.state().pendingConstructionArchetype.reset();
+			m_session.state().pendingRepairTargeting = true;
+			m_session.state().isSelecting = false;
+			m_session.state().selectionRect = RectF{ 0, 0, 0, 0 };
 			return;
 		case CommandKind::Upgrade:
 			if (command.turretUpgradeType)

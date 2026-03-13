@@ -33,8 +33,11 @@ void BattleSession::updateProduction(const double deltaTime)
 			continue;
 		}
 
-		const Vec2 spawnPosition = getProductionSpawnPoint(*buildingUnit, currentItem.archetype);
-		spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
+		for (int32 count = 0; count < currentItem.batchCount; ++count)
+		{
+			const Vec2 spawnPosition = getProductionSpawnPoint(*buildingUnit, currentItem.archetype);
+			spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
+		}
 		building.productionQueue.remove_at(0);
 	}
 }
@@ -150,10 +153,7 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 
 	gold -= cost;
 	const double productionTime = getProductionTime(owner, archetype);
-	for (int32 count = 0; count < slot->batchCount; ++count)
-	{
-		building->productionQueue << ProductionQueueItem{ archetype, productionTime, productionTime };
-	}
+	building->productionQueue << ProductionQueueItem{ archetype, productionTime, productionTime, slot->batchCount, cost };
 	return true;
 }
 

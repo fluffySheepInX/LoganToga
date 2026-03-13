@@ -71,7 +71,7 @@ void BattleSession::updateMovement(const double deltaTime)
 		double stopDistance = 4.0;
 		const Vec2 currentPosition = unit.position;
 
-		if ((unit.order.type == UnitOrderType::Move) || (unit.order.type == UnitOrderType::AttackTarget))
+		if ((unit.order.type == UnitOrderType::Move) || (unit.order.type == UnitOrderType::AttackTarget) || (unit.order.type == UnitOrderType::RepairTarget))
 		{
 			strategicDestination = unit.order.targetPoint;
 		}
@@ -88,6 +88,34 @@ void BattleSession::updateMovement(const double deltaTime)
 					{
 						stopDistance = 1.0;
 					}
+		else if ((unit.order.type == UnitOrderType::RepairTarget) && unit.order.targetUnitId)
+		{
+			if (const auto* target = findCachedUnit(*unit.order.targetUnitId))
+			{
+				const auto* building = m_state.findBuildingByUnitId(*unit.order.targetUnitId);
+				if (target->isAlive
+					&& (target->owner == unit.owner)
+					&& (target->archetype == UnitArchetype::Turret)
+					&& building
+					&& building->isConstructed
+					&& (target->hp < target->maxHp))
+				{
+					strategicDestination = target->position;
+					stopDistance = (unit.radius + target->radius + 8.0);
+					unit.order.targetPoint = strategicDestination;
+				}
+				else
+				{
+					unit.order.type = UnitOrderType::Idle;
+					unit.order.targetUnitId.reset();
+				}
+			}
+			else
+			{
+				unit.order.type = UnitOrderType::Idle;
+				unit.order.targetUnitId.reset();
+			}
+		}
 					unit.order.targetPoint = strategicDestination;
 				}
 				else

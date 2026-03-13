@@ -96,7 +96,8 @@ namespace BattleRendererHudInternal
 		else if (hasQueuedUnit)
 		{
 			const auto& currentItem = target.building->productionQueue.front();
-			titleText = GetArchetypeLabel(currentItem.archetype);
+			titleText = GetArchetypeLabel(currentItem.archetype)
+				+ ((currentItem.batchCount >= 2) ? s3d::Format(U" x", currentItem.batchCount) : U"");
 			subtitleText = s3d::Format(U"@ ", GetArchetypeLabel(target.unit->archetype), U" / ", target.building->productionQueue.size(), U" in queue");
 			if (currentItem.totalTime > 0.0)
 			{

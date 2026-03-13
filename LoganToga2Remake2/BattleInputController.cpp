@@ -96,6 +96,14 @@ bool BattleInputController::handleCommandPanelClick(BattleSession& session, cons
 			if (command->kind == CommandKind::Construction)
 			{
 				state.pendingConstructionArchetype = command->archetype;
+				state.pendingRepairTargeting = false;
+				state.isSelecting = false;
+				state.selectionRect = RectF{ 0, 0, 0, 0 };
+			}
+			else if (command->kind == CommandKind::Repair)
+			{
+				state.pendingConstructionArchetype.reset();
+				state.pendingRepairTargeting = true;
 				state.isSelecting = false;
 				state.selectionRect = RectF{ 0, 0, 0, 0 };
 			}

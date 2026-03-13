@@ -35,6 +35,44 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 {
 	auto& state = session.state();
 
+	if (state.pendingRepairTargeting)
+	{
+		state.repairPreviewPosition = cursorWorldPos;
+
+		if (!HasSelectedWorker(state))
+		{
+			state.pendingRepairTargeting = false;
+			return;
+		}
+
+		if (MouseR.down())
+		{
+			state.pendingRepairTargeting = false;
+			return;
+		}
+
+		if (MouseL.down())
+		{
+			if (const auto buildingUnitId = session.findPlayerBuildingAt(cursorWorldPos))
+			{
+				if (const auto* buildingUnit = state.findUnit(*buildingUnitId);
+					buildingUnit && (buildingUnit->archetype == UnitArchetype::Turret))
+				{
+					session.enqueue(IssueRepairOrderCommand{ session.getSelectedPlayerUnitIds(), *buildingUnitId });
+					state.pendingRepairTargeting = false;
+					state.isSelecting = false;
+					state.selectionRect = RectF{ 0, 0, 0, 0 };
+					return;
+				}
+			}
+
+			state.statusMessage = U"Click a damaged turret";
+			state.statusMessageTimer = 1.5;
+		}
+
+		return;
+	}
+
 	if (state.pendingConstructionArchetype)
 	{
 		state.buildingPreviewPosition = cursorWorldPos;
@@ -70,6 +108,7 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 		if (isConstructionSlotTriggered(slot.slot) && HasSelectedWorker(state))
 		{
 			state.pendingConstructionArchetype = slot.archetype;
+			state.pendingRepairTargeting = false;
 			state.buildingPreviewPosition = cursorWorldPos;
 			state.isSelecting = false;
 			state.selectionRect = RectF{ 0, 0, 0, 0 };

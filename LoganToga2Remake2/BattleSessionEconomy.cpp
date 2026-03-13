@@ -38,9 +38,9 @@ bool BattleSession::cancelLastPlayerProduction()
 		return false;
 	}
 
-	const UnitArchetype archetype = targetBuilding->productionQueue.back().archetype;
+	const int32 refundCost = targetBuilding->productionQueue.back().queuedCost;
 	targetBuilding->productionQueue.pop_back();
-	m_state.playerGold += getUnitCost(archetype);
+	m_state.playerGold += refundCost;
 	return true;
 }
 

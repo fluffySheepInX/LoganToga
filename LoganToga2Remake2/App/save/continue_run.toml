@@ -2,9 +2,9 @@
 hasContinue = true
 resumeScene = "Battle"
 runIsActive = true
-runUseDebugFullUnlocks = true
+runUseDebugFullUnlocks = false
 runCurrentBattleIndex = 0
-runTotalBattles = 5
+runTotalBattles = 4
 runIsFailed = false
 runIsCleared = false
 runSelectedCardIds = []

@@ -35,6 +35,8 @@ struct ProductionQueueItem
 	UnitArchetype archetype = UnitArchetype::Soldier;
 	double remainingTime = 0.0;
 	double totalTime = 0.0;
+	int32 batchCount = 1;
+	int32 queuedCost = 0;
 };
 
 struct BuildingState
@@ -104,6 +106,8 @@ struct BattleState
 	Vec2 commandDragCurrent = Vec2::Zero();
 	Optional<UnitArchetype> pendingConstructionArchetype;
 	Vec2 buildingPreviewPosition = Vec2::Zero();
+	bool pendingRepairTargeting = false;
+	Vec2 repairPreviewPosition = Vec2::Zero();
 	int32 nextUnitId = 1;
 	int32 nextSquadId = 1;
 	int32 playerGold = 200;
