@@ -21,8 +21,10 @@ public:
 			return;
 		}
 
+		refreshContinueState();
+
 		auto& data = getData();
-		const bool hasContinue = HasContinueRunSave();
+		const bool hasContinue = m_hasContinue;
 		const double continueButtonOffset = 120;
 		const double tutorialButtonOffset = hasContinue ? 172 : 120;
 		const double startButtonOffset = hasContinue ? 224 : 172;
@@ -42,6 +44,7 @@ public:
 			}
 
 			ClearContinueRunSave();
+			refreshContinueState();
 		}
 
 		if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getMenuButtonRect(startButtonOffset)))
@@ -137,8 +140,8 @@ public:
 		getPanelRect().drawFrame(2, ColorF{ 0.3, 0.45, 0.7 });
 
 		const auto& data = getData();
-		const bool hasContinue = HasContinueRunSave();
-		const auto continuePreview = hasContinue ? LoadContinueRunPreview() : Optional<ContinueRunPreview>{};
+		const bool hasContinue = m_hasContinue;
+		const auto& continuePreview = m_continuePreview;
 		const double continueButtonOffset = 120;
 		const double tutorialButtonOffset = hasContinue ? 172 : 120;
 		const double startButtonOffset = hasContinue ? 224 : 172;
@@ -197,6 +200,27 @@ public:
 	}
 
 private:
+	Optional<ContinueRunPreview> m_continuePreview;
+	bool m_hasContinue = false;
+
+	void refreshContinueState()
+	{
+		if (!HasContinueRunSave())
+		{
+			m_continuePreview.reset();
+			m_hasContinue = false;
+			return;
+		}
+
+		m_continuePreview = LoadContinueRunPreview();
+		if (!m_continuePreview)
+		{
+			ClearContinueRunSave();
+		}
+
+		m_hasContinue = m_continuePreview.has_value();
+	}
+
 	[[nodiscard]] static RectF getContinuePreviewRect()
 	{
 		return RectF{ Scene::CenterF().movedBy(156, 118), 308, 92 };

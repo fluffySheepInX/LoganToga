@@ -79,11 +79,24 @@
 	void DrawBattleResultOverlay(const GameData& data, const BattleState& state)
 	{
 		const BattleResultOverlayContent content = BuildBattleResultOverlayContent(data, state);
+		const bool playerWon = state.winner && (*state.winner == Owner::Player);
+		const double pulse = (0.5 + (0.5 * Math::Sin(Scene::Time() * 6.0)));
 		const RectF panelRect{ Arg::center = Scene::CenterF().movedBy(0, -12), 760, 250 };
 
 		Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.36 });
-		RoundRect{ panelRect, 18 }.draw(ColorF{ 0.05, 0.07, 0.11, 0.95 });
-		RoundRect{ panelRect, 18 }.drawFrame(3, 0, ColorF{ 0.34, 0.48, 0.82, 0.98 });
+		if (!playerWon)
+		{
+			Scene::Rect().draw(ColorF{ 0.22, 0.02, 0.03, 0.18 + (0.10 * pulse) });
+			Scene::Rect().stretched(-16).drawFrame(10, 0, ColorF{ 0.92, 0.18, 0.18, 0.16 + (0.18 * pulse) });
+		}
+		const ColorF panelFillColor = playerWon
+			? ColorF{ 0.05, 0.07, 0.11, 0.95 }
+			: ColorF{ 0.11, 0.05, 0.07, 0.96 };
+		const ColorF panelFrameColor = playerWon
+			? ColorF{ 0.34, 0.48, 0.82, 0.98 }
+			: ColorF{ 0.80, 0.20, 0.24, 0.84 + (0.12 * pulse) };
+		RoundRect{ panelRect, 18 }.draw(panelFillColor);
+		RoundRect{ panelRect, 18 }.drawFrame(3, 0, panelFrameColor);
 		data.titleFont(content.title).drawAt(panelRect.center().movedBy(0, -76), content.titleColor);
 		data.uiFont(content.subtitle).drawAt(panelRect.center().movedBy(0, -28), Palette::White);
 		data.uiFont(content.enterAction).drawAt(panelRect.center().movedBy(0, 24), Palette::White);

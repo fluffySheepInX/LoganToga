@@ -1,0 +1,17 @@
+﻿schemaVersion = 1
+hasContinue = true
+resumeScene = "Battle"
+runIsActive = true
+runUseDebugFullUnlocks = true
+runCurrentBattleIndex = 1
+runTotalBattles = 3
+runIsFailed = false
+runIsCleared = false
+runMapProgressionBattles = [2, 3]
+runSelectedCardIds = ["archer_sight_1"]
+runPendingRewardCardIds = []
+bonusViewedRoomIds = []
+bonusPendingRoomIds = []
+bonusActiveRoomId = ""
+bonusActivePageIndex = 0
+bonusSceneMode = "Selection"

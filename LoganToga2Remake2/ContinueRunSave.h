@@ -149,6 +149,66 @@ inline void AppendTomlIntArrayLine(String& content, const String& key, const Arr
 	return values;
 }
 
+[[nodiscard]] inline bool IsContinueRunBattleRangeValid(const int32 currentBattleIndex, const int32 totalBattles)
+{
+	return (totalBattles >= 1) && (currentBattleIndex >= 0) && (currentBattleIndex < totalBattles);
+}
+
+[[nodiscard]] inline bool IsContinueRunPreviewValid(const ContinueRunPreview& preview)
+{
+	if (!IsContinueRunBattleRangeValid(preview.currentBattleIndex, preview.totalBattles))
+	{
+		return false;
+	}
+
+	if ((preview.selectedCardCount < 0) || (preview.pendingRewardCardCount < 0))
+	{
+		return false;
+	}
+
+	if (preview.isCleared && preview.isFailed)
+	{
+		return false;
+	}
+
+	if ((preview.resumeScene == ContinueResumeScene::Reward) && (preview.pendingRewardCardCount <= 0))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+[[nodiscard]] inline bool IsContinueRunStateValid(const RunState& runState, const BonusRoomProgress& bonusRoomProgress, const ContinueResumeScene resumeScene)
+{
+	if (!IsContinueRunBattleRangeValid(runState.currentBattleIndex, runState.totalBattles))
+	{
+		return false;
+	}
+
+	if (runState.isCleared && runState.isFailed)
+	{
+		return false;
+	}
+
+	if (bonusRoomProgress.activePageIndex < 0)
+	{
+		return false;
+	}
+
+	if ((resumeScene == ContinueResumeScene::Reward) && runState.pendingRewardCardIds.isEmpty())
+	{
+		return false;
+	}
+
+	if (resumeScene == ContinueResumeScene::BonusRoom)
+	{
+		return runState.isCleared && !runState.isFailed;
+	}
+
+	return runState.isActive && !runState.isCleared && !runState.isFailed;
+}
+
 [[nodiscard]] inline Optional<ContinueRunPreview> LoadContinueRunPreview()
 {
 	const TOMLReader toml{ GetContinueRunSavePath() };
@@ -178,6 +238,10 @@ inline void AppendTomlIntArrayLine(String& content, const String& key, const Arr
 		preview.isActive = toml[U"runIsActive"].get<bool>();
 		preview.isCleared = toml[U"runIsCleared"].get<bool>();
 		preview.isFailed = toml[U"runIsFailed"].get<bool>();
+		if (!IsContinueRunPreviewValid(preview))
+		{
+			return none;
+		}
 		return preview;
 	}
 	catch (const std::exception&)
@@ -270,10 +334,14 @@ inline bool LoadContinueRun(GameData& data, ContinueResumeScene& resumeScene)
 		bonusRoomProgress.sceneMode = (toml[U"bonusSceneMode"].get<String>() == U"Gallery")
 			? BonusRoomSceneMode::Gallery
 			: BonusRoomSceneMode::Selection;
+		resumeScene = ParseContinueResumeScene(toml[U"resumeScene"].get<String>());
+		if (!IsContinueRunStateValid(runState, bonusRoomProgress, resumeScene))
+		{
+			return false;
+		}
 
 		data.runState = runState;
 		data.bonusRoomProgress = bonusRoomProgress;
-		resumeScene = ParseContinueResumeScene(toml[U"resumeScene"].get<String>());
 		return true;
 	}
 	catch (const std::exception&)

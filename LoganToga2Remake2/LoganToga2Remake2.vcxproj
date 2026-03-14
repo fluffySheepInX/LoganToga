@@ -395,7 +395,9 @@
     <ClInclude Include="BattleSceneResult.ipp" />
     <ClInclude Include="BattleSession.h" />
     <ClInclude Include="BattleSessionCollision.h" />
+    <ClInclude Include="BattleSessionCombatEffects.ipp" />
     <ClInclude Include="BattleSessionCombatHelpers.h" />
+    <ClInclude Include="BattleSessionCombatTargeting.ipp" />
     <ClInclude Include="BattleSessionConstruction.ipp" />
     <ClInclude Include="BattleSessionEnemyAI.ipp" />
     <ClInclude Include="BattleSessionFormation.ipp" />
