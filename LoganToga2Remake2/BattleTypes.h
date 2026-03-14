@@ -48,6 +48,17 @@ enum class TurretUpgradeType
 	Dual
 };
 
+enum class TutorialPhase
+{
+	None,
+	MoveUnit,
+	BuildStructure,
+	PrepareDefense,
+	ProduceUnit,
+	DefendWave,
+	Completed
+};
+
 struct UnitOrder
 {
 	UnitOrderType type = UnitOrderType::Idle;

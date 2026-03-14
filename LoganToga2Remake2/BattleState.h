@@ -140,6 +140,13 @@ struct BattleState
 	String statusMessage;
 	double statusMessageTimer = 0.0;
 	FormationType playerFormation = FormationType::Line;
+	bool tutorialActive = false;
+	TutorialPhase tutorialPhase = TutorialPhase::None;
+	String tutorialObjective;
+	double tutorialPhaseTimer = 0.0;
+	Optional<int32> tutorialWorkerUnitId;
+	int32 tutorialProducedUnitCount = 0;
+	bool tutorialEnemyWaveStarted = false;
 	Optional<Owner> winner;
 
 	[[nodiscard]] UnitState* findUnit(const int32 id)

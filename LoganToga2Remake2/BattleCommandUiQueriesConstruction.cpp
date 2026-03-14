@@ -23,9 +23,19 @@ Array<CommandIconEntry> CollectConstructionCommands(const BattleState& state, co
 		return {};
 	}
 
+	if (state.tutorialActive && (state.tutorialPhase != TutorialPhase::BuildStructure))
+	{
+		return {};
+	}
+
 	Array<CommandIconEntry> commands;
 	for (const auto& slot : config.playerConstructionSlots)
 	{
+		if (state.tutorialActive && (slot.archetype != config.tutorial.requiredConstruction))
+		{
+			continue;
+		}
+
 		if (!ContainsArchetype(config.playerAvailableConstructionArchetypes, slot.archetype))
 		{
 			continue;

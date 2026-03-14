@@ -68,6 +68,75 @@ namespace
 		}
 	}
 
+	[[nodiscard]] String GetTutorialPhaseLabel(const TutorialPhase phase)
+	{
+		switch (phase)
+		{
+		case TutorialPhase::MoveUnit:
+			return U"STEP 1";
+		case TutorialPhase::BuildStructure:
+			return U"STEP 2";
+		case TutorialPhase::PrepareDefense:
+			return U"WARNING";
+		case TutorialPhase::ProduceUnit:
+			return U"STEP 3";
+		case TutorialPhase::DefendWave:
+			return U"STEP 4";
+		case TutorialPhase::Completed:
+			return U"DONE";
+		case TutorialPhase::None:
+		default:
+			return U"TUTORIAL";
+		}
+	}
+
+	[[nodiscard]] ColorF GetTutorialAccentColor(const TutorialPhase phase)
+	{
+		switch (phase)
+		{
+		case TutorialPhase::MoveUnit:
+			return ColorF{ 0.30, 0.74, 0.98 };
+		case TutorialPhase::BuildStructure:
+			return ColorF{ 0.38, 0.86, 0.54 };
+		case TutorialPhase::PrepareDefense:
+		case TutorialPhase::ProduceUnit:
+			return ColorF{ 0.96, 0.72, 0.30 };
+		case TutorialPhase::DefendWave:
+			return ColorF{ 0.96, 0.46, 0.38 };
+		case TutorialPhase::Completed:
+			return ColorF{ 0.88, 0.92, 0.98 };
+		case TutorialPhase::None:
+		default:
+			return ColorF{ 0.72, 0.80, 0.92 };
+		}
+	}
+
+	void DrawTutorialPanel(const BattleState& state, const GameData& gameData)
+	{
+		if (!state.tutorialActive)
+		{
+			return;
+		}
+
+		const RectF panelRect{ 512, 16, 470, 90 };
+		const ColorF accentColor = GetTutorialAccentColor(state.tutorialPhase);
+		RoundRect{ panelRect, 12 }.draw(ColorF{ 0.03, 0.05, 0.10, 0.88 });
+		RoundRect{ panelRect, 12 }.drawFrame(2, 0, accentColor);
+		gameData.smallFont(U"TUTORIAL  " + GetTutorialPhaseLabel(state.tutorialPhase)).draw(panelRect.x + 16, panelRect.y + 12, accentColor);
+
+		const Array<String> objectiveLines = BuildWrappedHudLines({ state.tutorialObjective }, gameData.smallFont, panelRect.w - 32.0, U"");
+		for (size_t index = 0; index < objectiveLines.size(); ++index)
+		{
+			gameData.smallFont(objectiveLines[index]).draw(panelRect.x + 16, panelRect.y + 34 + (index * 20), Palette::White);
+		}
+
+		if ((state.tutorialPhase == TutorialPhase::ProduceUnit) && (state.tutorialPhaseTimer > 0.0))
+		{
+			gameData.smallFont(U"Enemy arrival: " + Format(static_cast<int32>(Ceil(state.tutorialPhaseTimer))) + U"s")
+				.draw(panelRect.x + 16, panelRect.bottomY() - 22, ColorF{ 0.96, 0.86, 0.62 });
+		}
+	}
+
 	void DrawFormationPanel(const BattleState& state, const GameData& gameData)
 	{
 		const FormationPanelLayout layout = BuildFormationPanelLayout(state);
@@ -158,9 +227,11 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 
 	const double detailBaseY = 66.0;
 	const double hudHeight = 140.0;
-	const String runText = gameData.runState.isActive
-		? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
-		: U"Run: inactive";
+	const String runText = state.tutorialActive
+		? U"Mode: tutorial"
+		: (gameData.runState.isActive
+			? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
+			: U"Run: inactive");
 	const auto commandLayout = BuildCommandPanelLayout(state, config);
 	const auto queueTarget = BattleRendererHudInternal::FindQueueDisplayTarget(state);
 
@@ -169,6 +240,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY, Palette::White);
 	gameData.smallFont(runText).draw(28, detailBaseY + 22.0, Palette::White);
 	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 44.0, Palette::Gold);
+	DrawTutorialPanel(state, gameData);
 	DrawFormationPanel(state, gameData);
 	DrawEnemyAiDebugPanel(state, config, gameData);
 
@@ -200,7 +272,7 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	{
 		const String label = (*state.winner == Owner::Player) ? U"PLAYER WIN" : U"ENEMY WIN";
 		String winHint = config.hud.winHint;
-		if (gameData.runState.isActive)
+		if (!state.tutorialActive && gameData.runState.isActive)
 		{
 			if ((*state.winner == Owner::Player) && ((gameData.runState.currentBattleIndex + 1) < gameData.runState.totalBattles))
 			{

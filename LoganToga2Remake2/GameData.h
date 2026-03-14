@@ -11,6 +11,12 @@ enum class WindowResolutionPreset
 	Large,
 };
 
+enum class BattleLaunchMode
+{
+	Run,
+	Tutorial
+};
+
 struct DisplaySettings
 {
 	WindowResolutionPreset resolutionPreset = WindowResolutionPreset::Medium;
@@ -57,8 +63,10 @@ struct GameData
 	Font smallFont{ 16, Typeface::Medium };
 	DisplaySettings displaySettings;
 	BattleConfigData baseBattleConfig{ LoadBattleConfig(U"config/battle.toml") };
+	BattleConfigData tutorialBattleConfig{ LoadBattleConfig(U"config/battle_tutorial.toml") };
 	Array<RewardCardDefinition> rewardCards{ LoadRewardCardDefinitions(U"config/cards.toml") };
 	Array<BonusRoomDefinition> bonusRooms{ LoadBonusRoomDefinitions(U"config/bonus_rooms.toml") };
+	BattleLaunchMode battleLaunchMode = BattleLaunchMode::Run;
 	RunState runState;
 	BonusRoomProgress bonusRoomProgress;
 };

@@ -100,6 +100,9 @@ private:
 	void rebuildFrameUnitCache() const;
 	void rebuildSpatialQueryCache() const;
 	void rebuildNavigationGrid() const;
+	void updateTutorial(double deltaTime);
+	void beginTutorialPhase(TutorialPhase phase, double timer = 0.0);
+	void spawnTutorialEnemyWave();
 	void gatherNearbyUnitIndices(Owner owner, const Vec2& center, double searchRadius, Array<size_t>& indices) const;
 	void gatherNearbyOpponentIndices(const UnitState& source, double searchRadius, Array<size_t>& indices) const;
 	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;

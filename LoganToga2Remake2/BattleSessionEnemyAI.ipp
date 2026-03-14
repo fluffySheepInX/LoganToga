@@ -65,6 +65,11 @@
 
 void BattleSession::updateEnemyAI(const double deltaTime)
 {
+	if (m_state.tutorialActive && !m_state.tutorialEnemyWaveStarted)
+	{
+		return;
+	}
+
 	const EnemyAiMode activeEnemyAiMode = m_state.enemyAiDebugOverrideMode
 		? *m_state.enemyAiDebugOverrideMode
 		: m_config.enemyAI.mode;

@@ -125,6 +125,14 @@ bool BattleSession::tryPlaceBuilding(const Owner owner, const UnitArchetype arch
 		return false;
 	}
 
+	if ((owner == Owner::Player) && m_state.tutorialActive)
+	{
+		if ((m_state.tutorialPhase != TutorialPhase::BuildStructure) || (archetype != m_config.tutorial.requiredConstruction))
+		{
+			return false;
+		}
+	}
+
 	if (owner == Owner::Player)
 	{
 		if (builderUnitId)

@@ -18,12 +18,26 @@ namespace
 
 		return state.worldBounds.center();
 	}
+
+	[[nodiscard]] bool IsTutorialBattle(const GameData& data)
+	{
+		return data.battleLaunchMode == BattleLaunchMode::Tutorial;
+	}
 }
 
 BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_clock{ 1.0 / 60.0 }
 {
+	if (IsTutorialBattle(getData()))
+	{
+		m_session.reset(getData().tutorialBattleConfig);
+		const Vec2 initialCameraCenter = clampCameraCenter(GetInitialCameraCenter(m_session.state()));
+		m_camera.setTargetCenter(initialCameraCenter);
+		m_camera.jumpTo(initialCameraCenter, 1.0);
+		return;
+	}
+
 	if (!getData().runState.isActive)
 	{
 		BeginNewRun(getData().runState);
@@ -42,6 +56,24 @@ void BattleScene::update()
 	{
 		m_isPaused = false;
 		auto& data = getData();
+		if (IsTutorialBattle(data))
+		{
+			if (KeyEnter.down())
+			{
+				data.battleLaunchMode = BattleLaunchMode::Run;
+				changeScene(U"Title");
+				return;
+			}
+
+			if (KeyR.down())
+			{
+				changeScene(U"Battle");
+				return;
+			}
+
+			return;
+		}
+
 		auto& runState = data.runState;
 		const bool playerWon = (*m_session.state().winner == Owner::Player);
 		const bool hasNextBattle = playerWon && ((runState.currentBattleIndex + 1) < runState.totalBattles);

@@ -312,6 +312,9 @@
     <None Include="App\example\shader\hlsl\swirl.hlsl" />
     <None Include="App\example\shader\hlsl\terrain_forward.hlsl" />
     <None Include="App\example\shader\hlsl\terrain_normal.hlsl" />
+    <None Include="App\config\battle_tutorial.toml" />
+    <None Include="App\config\battle_tutorial_core.toml" />
+    <None Include="App\config\battle_tutorial_map.toml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="App\dll\soundtouch\COPYING.TXT" />

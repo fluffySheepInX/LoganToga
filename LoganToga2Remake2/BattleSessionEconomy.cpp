@@ -62,7 +62,10 @@ void BattleSession::updateEconomy(const double deltaTime)
 
 	m_state.playerIncomeTimer += deltaTime;
 	m_state.enemyIncomeTimer += deltaTime;
-	m_state.enemySpawnTimer += deltaTime;
+	if (!(m_state.tutorialActive && m_config.tutorial.enabled))
+	{
+		m_state.enemySpawnTimer += deltaTime;
+	}
 
 	if (m_state.playerIncomeTimer >= m_config.income.interval)
 	{
@@ -76,7 +79,7 @@ void BattleSession::updateEconomy(const double deltaTime)
 		m_state.enemyGold += (m_config.income.enemyAmount + enemyResourceIncome);
 	}
 
-	if (m_state.enemySpawnTimer >= m_config.enemySpawn.interval)
+	if (!(m_state.tutorialActive && m_config.tutorial.enabled) && (m_state.enemySpawnTimer >= m_config.enemySpawn.interval))
 	{
 		m_state.enemySpawnTimer -= m_config.enemySpawn.interval;
 		const UnitArchetype archetype = ((m_state.enemyGold >= getUnitCost(m_config.enemySpawn.advancedArchetype)) && RandomBool(m_config.enemySpawn.advancedProbability))

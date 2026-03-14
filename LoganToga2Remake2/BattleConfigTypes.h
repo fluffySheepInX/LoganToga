@@ -158,6 +158,25 @@ struct EnemyProgressionConfig
 	Array<InitialUnitPlacement> enemyInitialUnits;
 };
 
+struct TutorialConfig
+{
+	bool enabled = false;
+	Vec2 moveTarget = Vec2::Zero();
+	double moveTargetRadius = 72.0;
+	double prepareDelay = 1.8;
+	double enemyWaveDelay = 6.0;
+	UnitArchetype requiredConstruction = UnitArchetype::Barracks;
+	UnitArchetype requiredProduction = UnitArchetype::Soldier;
+	int32 requiredProductionCount = 1;
+	String objectiveMove = U"Step 1: Select the Worker and move it forward.";
+	String objectiveBuild = U"Step 2: Build a Barracks with the Worker.";
+	String objectivePrepare = U"Enemy movement detected. Prepare to defend.";
+	String objectiveProduce = U"Step 3: Produce a Soldier from the Barracks.";
+	String objectiveDefend = U"Step 4: Stop the incoming enemy wave.";
+	String objectiveComplete = U"Tutorial complete. Press Enter to return to title.";
+	Array<InitialUnitPlacement> enemyWaveUnits;
+};
+
 struct BattleConfigData
 {
 	int32 playerGold = 200;
@@ -180,4 +199,5 @@ struct BattleConfigData
 	Array<EnemyProgressionConfig> enemyProgression;
 	EnemySpawnConfig enemySpawn;
 	EnemyAiConfig enemyAI;
+	TutorialConfig tutorial;
 };

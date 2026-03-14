@@ -117,7 +117,14 @@ void BattleScene::updatePauseMenu()
 		changeScene(U"Battle");
 		break;
 	case 2:
-		SaveContinueRun(getData(), ContinueResumeScene::Battle);
+		if (getData().battleLaunchMode == BattleLaunchMode::Tutorial)
+		{
+			getData().battleLaunchMode = BattleLaunchMode::Run;
+		}
+		else
+		{
+			SaveContinueRun(getData(), ContinueResumeScene::Battle);
+		}
 		changeScene(U"Title");
 		break;
 	default:

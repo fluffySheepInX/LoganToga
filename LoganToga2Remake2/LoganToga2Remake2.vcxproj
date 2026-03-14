@@ -207,6 +207,9 @@
     <None Include="App\config\battle_core.toml" />
     <None Include="App\config\battle_map.toml" />
     <None Include="App\config\battle_progression.toml" />
+    <None Include="App\config\battle_tutorial.toml" />
+    <None Include="App\config\battle_tutorial_core.toml" />
+    <None Include="App\config\battle_tutorial_map.toml" />
     <None Include="App\config\battle_units.toml" />
     <None Include="App\config\bonus_rooms.toml" />
     <None Include="App\config\cards.toml" />

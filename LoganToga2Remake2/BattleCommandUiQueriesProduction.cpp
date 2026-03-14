@@ -2,11 +2,27 @@
 
 Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, const BattleConfigData& config)
 {
+	if (state.tutorialActive)
+	{
+		const bool productionPhase = (state.tutorialPhase == TutorialPhase::ProduceUnit)
+			|| (state.tutorialPhase == TutorialPhase::DefendWave)
+			|| (state.tutorialPhase == TutorialPhase::Completed);
+		if (!productionPhase)
+		{
+			return {};
+		}
+	}
+
 	const Array<UnitArchetype> selectedBuildings = CollectSelectedBuildingArchetypes(state);
 	Array<CommandIconEntry> commands;
 
 	for (const auto& slot : config.playerProductionSlots)
 	{
+		if (state.tutorialActive && (slot.archetype != config.tutorial.requiredProduction))
+		{
+			continue;
+		}
+
 		if (!ContainsArchetype(config.playerAvailableProductionArchetypes, slot.archetype))
 		{
 			continue;

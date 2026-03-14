@@ -36,4 +36,27 @@ inline void LoadBattleCoreConfig(BattleConfigData& config, const TOMLReader& tom
 	config.enemyAI.stagingAssaultMaxWait = toml[U"enemy_ai"][U"staging_assault_max_wait"].getOr<double>(config.enemyAI.stagingAssaultMaxWait);
 	config.enemyAI.stagingAssaultCommitTime = toml[U"enemy_ai"][U"staging_assault_commit_time"].getOr<double>(config.enemyAI.stagingAssaultCommitTime);
 	config.enemyAI.usePathfindingForAttackTarget = toml[U"enemy_ai"][U"use_pathfinding_for_attack_target"].getOr<bool>(config.enemyAI.usePathfindingForAttackTarget);
+	config.tutorial.enabled = toml[U"tutorial"][U"enabled"].getOr<bool>(config.tutorial.enabled);
+	config.tutorial.moveTarget = Vec2{
+		toml[U"tutorial"][U"move_target_x"].getOr<double>(config.tutorial.moveTarget.x),
+		toml[U"tutorial"][U"move_target_y"].getOr<double>(config.tutorial.moveTarget.y)
+	};
+	config.tutorial.moveTargetRadius = toml[U"tutorial"][U"move_target_radius"].getOr<double>(config.tutorial.moveTargetRadius);
+	config.tutorial.prepareDelay = toml[U"tutorial"][U"prepare_delay"].getOr<double>(config.tutorial.prepareDelay);
+	config.tutorial.enemyWaveDelay = toml[U"tutorial"][U"enemy_wave_delay"].getOr<double>(config.tutorial.enemyWaveDelay);
+	config.tutorial.requiredProductionCount = toml[U"tutorial"][U"required_production_count"].getOr<int32>(config.tutorial.requiredProductionCount);
+	if (const auto archetypeValue = toml[U"tutorial"][U"required_construction"].getOpt<String>())
+	{
+		config.tutorial.requiredConstruction = ParseUnitArchetype(*archetypeValue);
+	}
+	if (const auto archetypeValue = toml[U"tutorial"][U"required_production"].getOpt<String>())
+	{
+		config.tutorial.requiredProduction = ParseUnitArchetype(*archetypeValue);
+	}
+	config.tutorial.objectiveMove = toml[U"tutorial"][U"objective_move"].getOr<String>(config.tutorial.objectiveMove);
+	config.tutorial.objectiveBuild = toml[U"tutorial"][U"objective_build"].getOr<String>(config.tutorial.objectiveBuild);
+	config.tutorial.objectivePrepare = toml[U"tutorial"][U"objective_prepare"].getOr<String>(config.tutorial.objectivePrepare);
+	config.tutorial.objectiveProduce = toml[U"tutorial"][U"objective_produce"].getOr<String>(config.tutorial.objectiveProduce);
+	config.tutorial.objectiveDefend = toml[U"tutorial"][U"objective_defend"].getOr<String>(config.tutorial.objectiveDefend);
+	config.tutorial.objectiveComplete = toml[U"tutorial"][U"objective_complete"].getOr<String>(config.tutorial.objectiveComplete);
 }

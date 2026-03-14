@@ -49,6 +49,13 @@ void BattleSession::updateProduction(const double deltaTime)
 			spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
 		}
 
+		if (m_state.tutorialActive
+			&& (buildingUnit->owner == Owner::Player)
+			&& (currentItem.archetype == m_config.tutorial.requiredProduction))
+		{
+			m_state.tutorialProducedUnitCount += currentItem.batchCount;
+		}
+
 		m_state.productionCompletionEffects << ProductionCompletionEffect{
 			.unitId = building.unitId,
 			.remainingTime = 0.28,
@@ -137,6 +144,17 @@ bool BattleSession::tryQueueUnitProduction(const Owner owner, const UnitArchetyp
 	if (m_state.winner)
 	{
 		return false;
+	}
+
+	if ((owner == Owner::Player) && m_state.tutorialActive)
+	{
+		const bool productionPhase = (m_state.tutorialPhase == TutorialPhase::ProduceUnit)
+			|| (m_state.tutorialPhase == TutorialPhase::DefendWave)
+			|| (m_state.tutorialPhase == TutorialPhase::Completed);
+		if (!productionPhase || (archetype != m_config.tutorial.requiredProduction))
+		{
+			return false;
+		}
 	}
 
 	if ((owner == Owner::Player) && !ContainsArchetype(m_config.playerAvailableProductionArchetypes, archetype))

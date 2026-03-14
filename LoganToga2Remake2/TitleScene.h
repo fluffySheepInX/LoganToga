@@ -14,9 +14,10 @@ public:
 		auto& data = getData();
 		const bool hasContinue = HasContinueRunSave();
 		const double continueButtonOffset = 120;
-		const double startButtonOffset = hasContinue ? 172 : 120;
-		const double bonusButtonOffset = hasContinue ? 224 : 172;
-		const double debugButtonOffset = hasContinue ? 276 : 224;
+		const double tutorialButtonOffset = hasContinue ? 172 : 120;
+		const double startButtonOffset = hasContinue ? 224 : 172;
+		const double bonusButtonOffset = hasContinue ? 276 : 224;
+		const double debugButtonOffset = hasContinue ? 328 : 276;
 
 		if (hasContinue && (KeyEnter.down() || isButtonClicked(getMenuButtonRect(continueButtonOffset))))
 		{
@@ -32,9 +33,17 @@ public:
 
 		if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getMenuButtonRect(startButtonOffset)))
 		{
+			data.battleLaunchMode = BattleLaunchMode::Run;
 			BeginNewRun(data.runState, false);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
+			changeScene(U"Battle");
+			return;
+		}
+
+		if (isButtonClicked(getMenuButtonRect(tutorialButtonOffset)))
+		{
+			data.battleLaunchMode = BattleLaunchMode::Tutorial;
 			changeScene(U"Battle");
 			return;
 		}
@@ -71,6 +80,7 @@ public:
 #ifdef _DEBUG
 		if (isButtonClicked(getMenuButtonRect(debugButtonOffset)))
 		{
+			data.battleLaunchMode = BattleLaunchMode::Run;
 			BeginNewRun(data.runState, true);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
@@ -96,9 +106,10 @@ public:
 		const bool hasContinue = HasContinueRunSave();
 		const auto continuePreview = hasContinue ? LoadContinueRunPreview() : Optional<ContinueRunPreview>{};
 		const double continueButtonOffset = 120;
-		const double startButtonOffset = hasContinue ? 172 : 120;
-		const double bonusButtonOffset = hasContinue ? 224 : 172;
-		const double debugButtonOffset = hasContinue ? 276 : 224;
+		const double tutorialButtonOffset = hasContinue ? 172 : 120;
+		const double startButtonOffset = hasContinue ? 224 : 172;
+		const double bonusButtonOffset = hasContinue ? 276 : 224;
+		const double debugButtonOffset = hasContinue ? 328 : 276;
 		data.titleFont(U"LoganToga2Remake2").drawAt(Scene::CenterF().movedBy(0, -170), Palette::White);
 		data.uiFont(U"RTS run prototype").drawAt(Scene::CenterF().movedBy(0, -100), ColorF{ 0.75, 0.86, 1.0 });
 		data.smallFont(U"・3-5 battles per run").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
@@ -120,7 +131,9 @@ public:
 			drawButton(getMenuButtonRect(bonusButtonOffset), U"Bonus Rooms", data.uiFont);
 		}
 
+		drawButton(getMenuButtonRect(tutorialButtonOffset), U"Tutorial", data.uiFont, true);
 		drawButton(getMenuButtonRect(startButtonOffset), hasContinue ? U"New Run" : U"Start Run", data.uiFont);
+		data.smallFont(U"Move / Build / Produce / Defend").drawAt(Scene::CenterF().movedBy(0, tutorialButtonOffset + 28), ColorF{ 0.88, 0.92, 1.0 });
 
 		const s3d::Size resolutionSize = GetWindowResolutionSize(data.displaySettings.resolutionPreset);
 		data.smallFont(U"解像度").draw(getResolutionLabelPos(), Palette::White);
