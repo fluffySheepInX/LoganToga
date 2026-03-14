@@ -115,6 +115,12 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BalanceEditScene.Converters.cpp" />
+    <ClCompile Include="BalanceEditScene.cpp" />
+    <ClCompile Include="BalanceEditScene.Draw.cpp" />
+    <ClCompile Include="BalanceEditScene.Help.cpp" />
+    <ClCompile Include="BalanceEditScene.Input.cpp" />
+    <ClCompile Include="BalanceEditScene.Persistence.cpp" />
     <ClCompile Include="BattleCommandUi.cpp" />
     <ClCompile Include="BattleCommandUiQueries.cpp" />
     <ClCompile Include="BattleCommandUiQueriesConstruction.cpp" />
@@ -138,6 +144,9 @@
     <ClCompile Include="BattleSessionQuery.cpp" />
     <ClCompile Include="BattleSessionWorld.cpp" />
     <ClCompile Include="BonusRoomScene.cpp" />
+    <ClCompile Include="ContinueRunSave.cpp" />
+    <ClCompile Include="ContinueRunSave.Toml.cpp" />
+    <ClCompile Include="ContinueRunSave.Validation.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MapEditScene.Converters.cpp" />
     <ClCompile Include="MapEditScene.cpp" />
