@@ -74,5 +74,13 @@ struct GameData
 	BonusRoomProgress bonusRoomProgress;
 };
 
+inline void ReloadGameConfigData(GameData& data)
+{
+	data.baseBattleConfig = LoadBattleConfig(U"config/battle.toml");
+	data.tutorialBattleConfig = LoadBattleConfig(U"config/battle_tutorial.toml");
+	data.rewardCards = LoadRewardCardDefinitions(U"config/cards.toml");
+	data.bonusRooms = LoadBonusRoomDefinitions(U"config/bonus_rooms.toml");
+}
+
 using App = SceneManager<String, GameData>;
 using SceneBase = s3d::IScene<String, GameData>;

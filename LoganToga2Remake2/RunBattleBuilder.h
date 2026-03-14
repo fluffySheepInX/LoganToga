@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "BattleConfigMapLoader.h"
+#include "BattleConfigPathResolver.h"
 #include "RunCardLogic.h"
 
 inline void ApplyBattleProgressionMap(BattleConfigData& config, const EnemyProgressionConfig& progression)
@@ -17,6 +18,28 @@ inline void ApplyBattleProgressionMap(BattleConfigData& config, const EnemyProgr
 	}
 
 	LoadBattleMapConfig(config, mapToml);
+	if (HasTomlOverride(progression.mapSourcePath))
+	{
+		const String mapOverridePath = ResolveTomlOverridePath(progression.mapSourcePath);
+		const TOMLReader mapOverrideToml{ mapOverridePath };
+		if (!mapOverrideToml)
+		{
+			throw Error{ U"Failed to load battle map override config: " + mapOverridePath };
+		}
+
+		ApplyBattleMapConfigOverrides(config, mapOverrideToml);
+	}
+	if (HasTomlEditorOverride(progression.mapSourcePath))
+	{
+		const String mapEditorOverridePath = ResolveTomlEditorOverridePath(progression.mapSourcePath);
+		const TOMLReader mapEditorOverrideToml{ mapEditorOverridePath };
+		if (!mapEditorOverrideToml)
+		{
+			throw Error{ U"Failed to load battle map editor override config: " + mapEditorOverridePath };
+		}
+
+		ApplyBattleMapConfigOverrides(config, mapEditorOverrideToml);
+	}
 }
 
 [[nodiscard]] inline const EnemyProgressionConfig* FindBattleLayoutProgressionConfig(const BattleConfigData& baseConfig, const RunState& runState, const int32 battleNumber)

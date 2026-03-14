@@ -103,6 +103,7 @@
     <ClInclude Include="BonusRoomSceneViewer.ipp" />
     <ClInclude Include="BattleSessionCombatTargeting.ipp" />
     <ClInclude Include="BattleSessionCombatEffects.ipp" />
+    <ClInclude Include="BalanceEditScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

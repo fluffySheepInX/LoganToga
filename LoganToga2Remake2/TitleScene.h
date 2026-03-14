@@ -130,6 +130,15 @@ public:
 			});
 			return;
 		}
+
+		if (isButtonClicked(getBalanceEditButtonRect()))
+		{
+			RequestSceneTransition(data, U"BalanceEdit", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
+			return;
+		}
 #endif
 	}
 
@@ -193,8 +202,9 @@ public:
 #ifdef _DEBUG
 		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
 		drawButton(getMenuButtonRect(debugButtonOffset), U"Debug Full Unlock", data.uiFont, true);
-		drawButton(getTransitionPresetButtonRect(), U"Fade: " + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
 		drawButton(getMapEditButtonRect(), U"Map Edit", data.smallFont);
+		drawButton(getBalanceEditButtonRect(), U"Balance Edit", data.smallFont);
+		drawButton(getTransitionPresetButtonRect(), U"Fade: " + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
 #endif
 		DrawSceneTransitionOverlay(data);
 	}
@@ -305,6 +315,12 @@ private:
 	[[nodiscard]] static RectF getTransitionPresetButtonRect()
 	{
 		const RectF panel = getPanelRect();
-		return RectF{ panel.x + panel.w - 214, panel.y + 56, 192, 30 };
+		return RectF{ panel.x + panel.w - 214, panel.y + 94, 192, 30 };
+	}
+
+	[[nodiscard]] static RectF getBalanceEditButtonRect()
+	{
+		const RectF panel = getPanelRect();
+		return RectF{ panel.x + panel.w - 150, panel.y + 56, 128, 30 };
 	}
 };

@@ -1,6 +1,20 @@
 ﻿#pragma once
 
+#include "BattleConfigPathResolver.h"
 #include "RunTypes.h"
+
+[[nodiscard]] inline RewardCardDefinition* FindMutableRewardCardDefinition(Array<RewardCardDefinition>& cards, const String& id)
+{
+	for (auto& card : cards)
+	{
+		if (card.id == id)
+		{
+			return &card;
+		}
+	}
+
+	return nullptr;
+}
 
 [[nodiscard]] inline RewardCardRarity ParseRewardCardRarity(const String& value)
 {
@@ -71,6 +85,51 @@
 	throw Error{ U"Unknown reward card stat type: " + value };
 }
 
+inline void ApplyRewardCardDefinitionOverrides(Array<RewardCardDefinition>& cards, const TOMLReader& toml)
+{
+	if (!toml[U"cards"].isTableArray())
+	{
+		return;
+	}
+
+	for (const auto& table : toml[U"cards"].tableArrayView())
+	{
+		const String id = table[U"id"].get<String>();
+		auto* card = FindMutableRewardCardDefinition(cards, id);
+		if (!card)
+		{
+			cards << RewardCardDefinition{};
+			card = &cards.back();
+			card->id = id;
+		}
+
+		card->name = table[U"name"].getOr<String>(card->name);
+		card->description = table[U"description"].getOr<String>(card->description);
+		if (const auto rarityValue = table[U"rarity"].getOpt<String>())
+		{
+			card->rarity = ParseRewardCardRarity(*rarityValue);
+		}
+		if (const auto effectTypeValue = table[U"effect_type"].getOpt<String>())
+		{
+			card->effectType = ParseRewardCardEffectType(*effectTypeValue);
+		}
+		card->repeatable = table[U"repeatable"].getOr<bool>(card->repeatable);
+		card->value = table[U"value"].getOr<double>(card->value);
+		if (const auto archetypeValue = table[U"target_archetype"].getOpt<String>())
+		{
+			card->targetArchetype = ParseUnitArchetype(*archetypeValue);
+		}
+		if (const auto upgradeValue = table[U"target_turret_upgrade"].getOpt<String>())
+		{
+			card->targetTurretUpgradeType = ParseTurretUpgradeType(*upgradeValue);
+		}
+		if (const auto statValue = table[U"stat"].getOpt<String>())
+		{
+			card->statType = ParseRewardCardStatType(*statValue);
+		}
+	}
+}
+
 [[nodiscard]] inline Array<RewardCardDefinition> LoadRewardCardDefinitions(const String& path)
 {
 	const TOMLReader toml{ path };
@@ -103,6 +162,30 @@
 			card.statType = ParseRewardCardStatType(table[U"stat"].get<String>());
 		}
 		cards << card;
+	}
+
+	if (HasTomlOverride(path))
+	{
+		const String overridePath = ResolveTomlOverridePath(path);
+		const TOMLReader overrideToml{ overridePath };
+		if (!overrideToml)
+		{
+			throw Error{ U"Failed to load reward card override config: " + overridePath };
+		}
+
+		ApplyRewardCardDefinitionOverrides(cards, overrideToml);
+	}
+
+	if (HasTomlEditorOverride(path))
+	{
+		const String editorOverridePath = ResolveTomlEditorOverridePath(path);
+		const TOMLReader editorOverrideToml{ editorOverridePath };
+		if (!editorOverrideToml)
+		{
+			throw Error{ U"Failed to load reward card editor override config: " + editorOverridePath };
+		}
+
+		ApplyRewardCardDefinitionOverrides(cards, editorOverrideToml);
 	}
 
 	return cards;
