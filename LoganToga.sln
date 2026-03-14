@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.3.11520.95
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoganToga", "LoganToga\LoganToga.vcxproj", "{62F59482-1FED-4C0D-AE65-A7A1D1FD34D1}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoganToga2Remake2", "LoganToga2Remake2\LoganToga2Remake2.vcxproj", "{93809207-7695-4056-9C9A-159C2D35F507}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "base", "base\base.vcxproj", "{9F828214-F9B7-42A3-9629-B394802114A8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sample", "Sample\Sample.vcxproj", "{CEA3135E-1F42-47FE-A79D-53AC6033391C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,6 +60,12 @@ Global
 		{9F828214-F9B7-42A3-9629-B394802114A8}.Debug|x64.Build.0 = Debug|x64
 		{9F828214-F9B7-42A3-9629-B394802114A8}.Release|x64.ActiveCfg = Release|x64
 		{9F828214-F9B7-42A3-9629-B394802114A8}.Release|x64.Build.0 = Release|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.BattleDebug|x64.ActiveCfg = Release|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.BattleDebug|x64.Build.0 = Release|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.Debug|x64.ActiveCfg = Debug|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.Debug|x64.Build.0 = Debug|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.Release|x64.ActiveCfg = Release|x64
+		{CEA3135E-1F42-47FE-A79D-53AC6033391C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
