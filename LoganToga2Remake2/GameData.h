@@ -3,6 +3,7 @@
 #include "BonusRoomData.h"
 #include "Remake2Common.h"
 #include "RunData.h"
+#include "SceneTransitionTypes.h"
 
 enum class WindowResolutionPreset
 {
@@ -67,6 +68,8 @@ struct GameData
 	Array<RewardCardDefinition> rewardCards{ LoadRewardCardDefinitions(U"config/cards.toml") };
 	Array<BonusRoomDefinition> bonusRooms{ LoadBonusRoomDefinitions(U"config/bonus_rooms.toml") };
 	BattleLaunchMode battleLaunchMode = BattleLaunchMode::Run;
+	SceneTransitionSettings sceneTransitionSettings;
+	SceneTransitionState sceneTransition;
 	RunState runState;
 	BonusRoomProgress bonusRoomProgress;
 };

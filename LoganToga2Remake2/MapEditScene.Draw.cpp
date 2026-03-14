@@ -1,4 +1,6 @@
 ﻿#include "MapEditScene.h"
+#include "MenuButtonUi.h"
+#include "SceneTransition.h"
 
 void MapEditScene::draw() const
 {
@@ -18,6 +20,7 @@ void MapEditScene::draw() const
 	drawCanvas(canvasRect);
 	drawLeftPanel(leftPanel);
 	drawRightPanel(rightPanel);
+	DrawSceneTransitionOverlay(getData());
 }
 
 void MapEditScene::drawCanvas(const RectF& canvasRect) const
@@ -170,12 +173,5 @@ void MapEditScene::drawRightPanel(const RectF& panelRect) const
 
 void MapEditScene::drawButton(const RectF& rect, const String& label, const Font& font, const bool selected)
 {
-	const bool hovered = rect.mouseOver();
-	const ColorF fillColor = selected
-		? (hovered ? ColorF{ 0.34, 0.48, 0.76 } : ColorF{ 0.24, 0.38, 0.64 })
-		: (hovered ? ColorF{ 0.24, 0.29, 0.38 } : ColorF{ 0.18, 0.22, 0.29 });
-	const ColorF frameColor = hovered ? ColorF{ 0.82, 0.90, 1.0 } : ColorF{ 0.42, 0.56, 0.78 };
-	rect.draw(fillColor);
-	rect.drawFrame(2, frameColor);
-	font(label).drawAt(rect.center(), Palette::White);
+	DrawMenuButton(rect, label, font, selected);
 }

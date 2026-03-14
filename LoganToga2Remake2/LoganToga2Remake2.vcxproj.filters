@@ -93,6 +93,9 @@
     <ClInclude Include="BattleConfigMapLoader.h" />
     <ClInclude Include="BattleConfigProgressionLoader.h" />
     <ClInclude Include="MapEditScene.h" />
+    <ClInclude Include="MenuButtonUi.h" />
+    <ClInclude Include="SceneTransitionTypes.h" />
+    <ClInclude Include="SceneTransition.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

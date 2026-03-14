@@ -56,7 +56,7 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 			if (const auto buildingUnitId = session.findPlayerBuildingAt(cursorWorldPos))
 			{
 				if (const auto* buildingUnit = state.findUnit(*buildingUnitId);
-					buildingUnit && (buildingUnit->archetype == UnitArchetype::Turret))
+					buildingUnit && ((buildingUnit->archetype == UnitArchetype::Turret) || (buildingUnit->archetype == UnitArchetype::Base)))
 				{
 					session.enqueue(IssueRepairOrderCommand{ session.getSelectedPlayerUnitIds(), *buildingUnitId });
 					state.pendingRepairTargeting = false;
@@ -66,7 +66,7 @@ void BattleConstructionController::handleInput(BattleSession& session, const Vec
 				}
 			}
 
-			state.statusMessage = U"Click a damaged turret";
+			state.statusMessage = U"Click a damaged turret or base";
 			state.statusMessageTimer = 1.5;
 		}
 

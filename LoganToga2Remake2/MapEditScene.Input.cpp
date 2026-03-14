@@ -1,10 +1,22 @@
 ﻿#include "MapEditScene.h"
+#include "SceneTransition.h"
 
 void MapEditScene::update()
 {
+	if (UpdateSceneTransition(getData(), [this](const String& sceneName)
+	{
+		changeScene(sceneName);
+	}))
+	{
+		return;
+	}
+
 	if (KeyEscape.down())
 	{
-		changeScene(U"Title");
+		RequestSceneTransition(getData(), U"Title", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 		return;
 	}
 

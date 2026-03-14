@@ -2,6 +2,8 @@
 
 #include "GameData.h"
 #include "ContinueRunSave.h"
+#include "MenuButtonUi.h"
+#include "SceneTransition.h"
 
 class RewardScene : public SceneBase
 {
@@ -11,10 +13,21 @@ public:
 
 	void update() override
 	{
+		if (UpdateSceneTransition(getData(), [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		}))
+		{
+			return;
+		}
+
 		auto& runState = getData().runState;
 		if (!runState.isActive)
 		{
-			changeScene(U"Title");
+			RequestSceneTransition(getData(), U"Title", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 
@@ -22,14 +35,17 @@ public:
 		{
 			++runState.currentBattleIndex;
 			SaveContinueRun(getData(), ContinueResumeScene::Battle);
-			changeScene(U"Battle");
+			RequestSceneTransition(getData(), U"Battle", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 
 		for (int32 index = 0; index < static_cast<int32>(runState.pendingRewardCardIds.size()); ++index)
 		{
 			const RectF cardRect = getCardRect(index);
-			if (cardRect.intersects(Cursor::PosF()) && MouseL.down())
+			if (IsMenuButtonClicked(cardRect))
 			{
 				chooseCard(index);
 				return;
@@ -71,19 +87,34 @@ public:
 			}
 
 			const RectF cardRect = getCardRect(index);
-			const bool isHovered = cardRect.intersects(Cursor::PosF());
 			const ColorF rarityColor = GetRewardCardRarityColor(card->rarity);
-			const RectF drawRect = isHovered
-				? RectF{ cardRect.x, cardRect.y - 6, cardRect.w, cardRect.h + 6 }
-				: cardRect;
-			RoundRect{ drawRect, 18 }.draw(ColorF{ 0.10, 0.12, 0.18, 0.96 });
-			RoundRect{ drawRect, 18 }.drawFrame(isHovered ? 5 : 3, 0, rarityColor);
+			MenuButtonStyle cardStyle;
+			cardStyle.cornerRadius = 18.0;
+			cardStyle.hoverExpand = 3.0;
+			cardStyle.pressOffsetX = 1.0;
+			cardStyle.pressOffsetY = 3.0;
+			cardStyle.pressInsetX = 2.0;
+			cardStyle.pressInsetY = 5.0;
+			cardStyle.baseBorderThickness = 3.0;
+			cardStyle.hoverBorderThickness = 5.0;
+			cardStyle.fillColor = ColorF{ 0.10, 0.12, 0.18, 0.96 };
+			cardStyle.hoverFillColor = ColorF{ 0.14, 0.16, 0.23, 0.98 };
+			cardStyle.pressedFillColor = ColorF{ 0.09, 0.11, 0.17, 0.98 };
+			cardStyle.frameColor = ColorF{ rarityColor.r * 0.65, rarityColor.g * 0.65, rarityColor.b * 0.65, 0.90 };
+			cardStyle.hoverFrameColor = rarityColor;
+			cardStyle.drawAccent = false;
+			const auto visual = GetMenuButtonVisualState(cardRect, false, cardStyle);
+			const RectF drawRect = visual.drawRect;
+			RoundRect{ drawRect, 18 }.draw(visual.fillColor);
+			RoundRect{ drawRect, 18 }.drawFrame(visual.frameThickness, 0, visual.frameColor);
 			RectF{ drawRect.x, drawRect.y, drawRect.w, 14 }.draw(rarityColor);
 			data.uiFont(card->name).draw(drawRect.x + 18, drawRect.y + 28, Palette::White);
 			data.smallFont(GetRewardCardRarityLabel(card->rarity)).draw(drawRect.x + 18, drawRect.y + 64, rarityColor);
 			data.smallFont(card->description).draw(drawRect.x + 18, drawRect.y + 98, ColorF{ 0.90, 0.93, 0.98 });
 			data.smallFont(s3d::Format(U"Press ", index + 1)).draw(drawRect.x + 18, drawRect.bottomY() - 34, Palette::Yellow);
 		}
+
+		DrawSceneTransitionOverlay(data);
 	}
 
 private:
@@ -109,6 +140,9 @@ private:
 		ApplyRewardCardChoice(runState, data.rewardCards, runState.pendingRewardCardIds[index]);
 		++runState.currentBattleIndex;
 		SaveContinueRun(data, ContinueResumeScene::Battle);
-		changeScene(U"Battle");
+		RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 	}
 };

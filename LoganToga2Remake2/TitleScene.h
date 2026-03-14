@@ -2,6 +2,8 @@
 
 #include "GameData.h"
 #include "ContinueRunSave.h"
+#include "MenuButtonUi.h"
+#include "SceneTransition.h"
 
 class TitleScene : public SceneBase
 {
@@ -11,6 +13,14 @@ public:
 
 	void update() override
 	{
+		if (UpdateSceneTransition(getData(), [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		}))
+		{
+			return;
+		}
+
 		auto& data = getData();
 		const bool hasContinue = HasContinueRunSave();
 		const double continueButtonOffset = 120;
@@ -24,7 +34,10 @@ public:
 			ContinueResumeScene resumeScene = ContinueResumeScene::Battle;
 			if (LoadContinueRun(data, resumeScene))
 			{
-				changeScene(GetContinueResumeSceneName(resumeScene));
+				RequestSceneTransition(data, GetContinueResumeSceneName(resumeScene), [this](const String& sceneName)
+				{
+					changeScene(sceneName);
+				});
 				return;
 			}
 
@@ -37,14 +50,20 @@ public:
 			BeginNewRun(data.runState, false);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
-			changeScene(U"Battle");
+			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 
 		if (isButtonClicked(getMenuButtonRect(tutorialButtonOffset)))
 		{
 			data.battleLaunchMode = BattleLaunchMode::Tutorial;
-			changeScene(U"Battle");
+			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 
@@ -54,7 +73,10 @@ public:
 		{
 			ResetBonusRoomSceneState(bonusRoomProgress);
 			bonusRoomProgress.sceneMode = BonusRoomSceneMode::Gallery;
-			changeScene(U"BonusRoom");
+			RequestSceneTransition(data, U"BonusRoom", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 
@@ -84,13 +106,25 @@ public:
 			BeginNewRun(data.runState, true);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
-			changeScene(U"Battle");
+			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
+			return;
+		}
+
+		if (isButtonClicked(getTransitionPresetButtonRect()))
+		{
+			data.sceneTransitionSettings.preset = CycleSceneTransitionPreset(data.sceneTransitionSettings.preset);
 			return;
 		}
 
 		if (isButtonClicked(getMapEditButtonRect()))
 		{
-			changeScene(U"MapEdit");
+			RequestSceneTransition(data, U"MapEdit", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 #endif
@@ -156,8 +190,10 @@ public:
 #ifdef _DEBUG
 		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
 		drawButton(getMenuButtonRect(debugButtonOffset), U"Debug Full Unlock", data.uiFont, true);
+		drawButton(getTransitionPresetButtonRect(), U"Fade: " + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
 		drawButton(getMapEditButtonRect(), U"Map Edit", data.smallFont);
 #endif
+		DrawSceneTransitionOverlay(data);
 	}
 
 private:
@@ -207,20 +243,12 @@ private:
 
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect)
 	{
-		return rect.mouseOver() && MouseL.down();
+		return IsMenuButtonClicked(rect);
 	}
 
 	static void drawButton(const RectF& rect, const String& label, const Font& font, const bool selected = false)
 	{
-		const bool hovered = rect.mouseOver();
-		const ColorF fillColor = selected
-			? (hovered ? ColorF{ 0.34, 0.48, 0.76 } : ColorF{ 0.26, 0.38, 0.64 })
-			: (hovered ? ColorF{ 0.24, 0.29, 0.38 } : ColorF{ 0.18, 0.22, 0.29 });
-		const ColorF frameColor = hovered ? ColorF{ 0.78, 0.88, 1.0 } : ColorF{ 0.42, 0.56, 0.78 };
-
-		rect.draw(fillColor);
-		rect.drawFrame(2, frameColor);
-		font(label).drawAt(rect.center(), Palette::White);
+		DrawMenuButton(rect, label, font, selected);
 	}
 
 	[[nodiscard]] static RectF getPanelRect()
@@ -248,5 +276,11 @@ private:
 	{
 		const RectF panel = getPanelRect();
 		return RectF{ panel.x + panel.w - 150, panel.y + 18, 128, 30 };
+	}
+
+	[[nodiscard]] static RectF getTransitionPresetButtonRect()
+	{
+		const RectF panel = getPanelRect();
+		return RectF{ panel.x + panel.w - 214, panel.y + 56, 192, 30 };
 	}
 };

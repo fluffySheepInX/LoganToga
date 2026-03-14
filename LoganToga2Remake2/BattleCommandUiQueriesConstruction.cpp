@@ -87,20 +87,24 @@ Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const Ba
 		return {};
 	}
 
-	bool hasConstructedTurret = false;
-	bool hasDamagedTurret = false;
+	bool hasConstructedRepairTarget = false;
+	bool hasDamagedRepairTarget = false;
 	for (const auto& building : state.buildings)
 	{
 		const auto* unit = state.findUnit(building.unitId);
-		if (!(unit && unit->isAlive && (unit->owner == Owner::Player) && (unit->archetype == UnitArchetype::Turret) && building.isConstructed))
+		if (!(unit
+			&& unit->isAlive
+			&& (unit->owner == Owner::Player)
+			&& ((unit->archetype == UnitArchetype::Turret) || (unit->archetype == UnitArchetype::Base))
+			&& building.isConstructed))
 		{
 			continue;
 		}
 
-		hasConstructedTurret = true;
+		hasConstructedRepairTarget = true;
 		if (unit->hp < unit->maxHp)
 		{
-			hasDamagedTurret = true;
+			hasDamagedRepairTarget = true;
 			break;
 		}
 	}
@@ -112,12 +116,12 @@ Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const Ba
 			UnitArchetype::Worker,
 			UnitArchetype::Turret,
 			0,
-			!state.winner && hasDamagedTurret,
-			state.winner ? U"BATTLE ENDED" : (!hasConstructedTurret ? U"NO TURRET" : (hasDamagedTurret ? U"READY" : U"FULL HP")),
+			!state.winner && hasDamagedRepairTarget,
+			state.winner ? U"BATTLE ENDED" : (!hasConstructedRepairTarget ? U"NO TARGET" : (hasDamagedRepairTarget ? U"READY" : U"FULL HP")),
 			U"REPAIR",
 			U"R",
-			U"After pressing this, click a damaged turret to repair it.",
-			U"先に命令してから、直したい砲台を選ぶ。",
+			U"After pressing this, click a damaged turret or base to repair it.",
+			U"先に命令してから、傷んだ砲台か拠点を選ぶ。",
 			none
 		}
 	};

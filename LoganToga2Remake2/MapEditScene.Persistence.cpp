@@ -1,4 +1,5 @@
 ﻿#include "MapEditScene.h"
+#include "SceneTransition.h"
 
 String MapEditScene::resolveMapConfigPath(const String& battleConfigPath)
 {
@@ -78,5 +79,8 @@ void MapEditScene::startTestPlay()
 	BeginNewRun(data.runState, true);
 	ResetBonusRoomSceneState(data.bonusRoomProgress);
 	SaveContinueRun(data, ContinueResumeScene::Battle);
-	changeScene(U"Battle");
+	RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+	{
+		changeScene(sceneName);
+	});
 }

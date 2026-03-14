@@ -1,4 +1,6 @@
-﻿namespace
+﻿#include "MenuButtonUi.h"
+
+namespace
 {
 	constexpr int32 PauseMenuItemCount = 3;
 
@@ -114,7 +116,10 @@ void BattleScene::updatePauseMenu()
 		clearTransientInputState();
 		break;
 	case 1:
-		changeScene(U"Battle");
+		RequestSceneTransition(getData(), U"Battle", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 		break;
 	case 2:
 		if (getData().battleLaunchMode == BattleLaunchMode::Tutorial)
@@ -125,7 +130,10 @@ void BattleScene::updatePauseMenu()
 		{
 			SaveContinueRun(getData(), ContinueResumeScene::Battle);
 		}
-		changeScene(U"Title");
+		RequestSceneTransition(getData(), U"Title", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 		break;
 	default:
 		break;
@@ -182,14 +190,7 @@ void BattleScene::drawPauseMenu() const
 	for (int32 i = 0; i < labels.size(); ++i)
 	{
 		const RectF buttonRect = GetPauseMenuItemRect(i);
-		const bool isHovered = buttonRect.mouseOver();
-		const bool isSelected = (m_pauseMenuIndex == i);
-		const ColorF fillColor = isSelected
-			? ColorF{ 0.20, 0.28, 0.48, 0.98 }
-			: (isHovered ? ColorF{ 0.13, 0.18, 0.30, 0.98 } : ColorF{ 0.08, 0.11, 0.18, 0.96 });
-		RoundRect{ buttonRect, 10 }.draw(fillColor);
-		RoundRect{ buttonRect, 10 }.drawFrame(isSelected ? 3 : 2, 0, ColorF{ 0.55, 0.72, 1.0, 0.96 });
-		data.uiFont(labels[i]).drawAt(buttonRect.center(), Palette::White);
+		DrawMenuButton(buttonRect, labels[i], data.uiFont, m_pauseMenuIndex == i);
 	}
 
 	const double infoBaseY = panelRect.center().y + 112.0;

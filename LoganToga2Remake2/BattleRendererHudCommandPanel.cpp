@@ -172,12 +172,12 @@ namespace BattleRendererHudInternal
 			const ColorF goldColor = ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Repair) || (command.kind == CommandKind::Detonate))
 				? ColorF{ availabilityColor.r, availabilityColor.g, availabilityColor.b, alpha }
 				: ColorF{ 1.0, 0.84, 0.0, alpha };
+			const bool usesAvailabilityFrame = ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Upgrade) || (command.kind == CommandKind::Repair) || (command.kind == CommandKind::Detonate));
 			RoundRect{ animatedRect, 10 }.draw(fillColor);
 			RoundRect{ animatedRect, 10 }.drawFrame(isHovered ? 4 : 2, 0, iconColor);
-			if ((command.kind == CommandKind::Construction) || (command.kind == CommandKind::Upgrade) || (command.kind == CommandKind::Repair) || (command.kind == CommandKind::Detonate))
+			if (usesAvailabilityFrame)
 			{
-				RoundRect{ animatedRect, 10 }.drawFrame(2, 0, availabilityAlphaColor);
-				RectF{ animatedRect.x + 8, animatedRect.bottomY() - 10, animatedRect.w - 16, 5 }.draw(availabilityAlphaColor);
+				RoundRect{ animatedRect, 10 }.drawFrame(isHovered ? 3 : 2, 0, availabilityAlphaColor);
 			}
 
 			Circle{ animatedRect.x + 18, animatedRect.y + 18, 13 }.draw(iconColor);

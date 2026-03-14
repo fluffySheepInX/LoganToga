@@ -421,7 +421,7 @@ void BattleSession::updateCombat()
 			if (!(target
 				&& target->isAlive
 				&& (target->owner == unit.owner)
-				&& (target->archetype == UnitArchetype::Turret)
+				&& ((target->archetype == UnitArchetype::Turret) || (target->archetype == UnitArchetype::Base))
 				&& building
 				&& building->isConstructed))
 			{

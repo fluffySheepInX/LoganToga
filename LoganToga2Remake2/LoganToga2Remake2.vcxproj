@@ -411,6 +411,7 @@
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="MapEditScene.h" />
+    <ClInclude Include="MenuButtonUi.h" />
     <ClInclude Include="Remake2Common.h" />
     <ClInclude Include="RewardScene.h" />
     <ClInclude Include="RunBattleBuilder.h" />
@@ -419,6 +420,8 @@
     <ClInclude Include="RunCardPresentation.h" />
     <ClInclude Include="RunData.h" />
     <ClInclude Include="RunTypes.h" />
+    <ClInclude Include="SceneTransition.h" />
+    <ClInclude Include="SceneTransitionTypes.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="BattleConstructionController.h" />

@@ -1,6 +1,7 @@
 ﻿#include "BattleScene.h"
 #include "BattleCommandUi.h"
 #include "ContinueRunSave.h"
+#include "SceneTransition.h"
 
 #include "BattleScenePause.ipp"
 
@@ -52,6 +53,14 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 
 void BattleScene::update()
 {
+	if (UpdateSceneTransition(getData(), [this](const String& sceneName)
+	{
+		changeScene(sceneName);
+	}))
+	{
+		return;
+	}
+
 	if (m_session.state().winner)
 	{
 		m_isPaused = false;
@@ -61,13 +70,19 @@ void BattleScene::update()
 			if (KeyEnter.down())
 			{
 				data.battleLaunchMode = BattleLaunchMode::Run;
-				changeScene(U"Title");
+				RequestSceneTransition(data, U"Title", [this](const String& sceneName)
+				{
+					changeScene(sceneName);
+				});
 				return;
 			}
 
 			if (KeyR.down())
 			{
-				changeScene(U"Battle");
+				RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+				{
+					changeScene(sceneName);
+				});
 				return;
 			}
 
@@ -83,7 +98,10 @@ void BattleScene::update()
 			{
 				runState.pendingRewardCardIds = BuildRewardCardChoices(runState, data.rewardCards);
 				SaveContinueRun(data, ContinueResumeScene::Reward);
-				changeScene(U"Reward");
+				RequestSceneTransition(data, U"Reward", [this](const String& sceneName)
+				{
+					changeScene(sceneName);
+				});
 			}
 			else
 			{
@@ -94,12 +112,18 @@ void BattleScene::update()
 					if (PrepareBonusRoomSelection(data.bonusRoomProgress, data.bonusRooms))
 					{
 						SaveContinueRun(data, ContinueResumeScene::BonusRoom);
-						changeScene(U"BonusRoom");
+						RequestSceneTransition(data, U"BonusRoom", [this](const String& sceneName)
+						{
+							changeScene(sceneName);
+						});
 					}
 					else
 					{
 						ClearContinueRunSave();
-						changeScene(U"Title");
+						RequestSceneTransition(data, U"Title", [this](const String& sceneName)
+						{
+							changeScene(sceneName);
+						});
 					}
 				}
 				else
@@ -108,7 +132,10 @@ void BattleScene::update()
 					runState.isActive = false;
 					ResetBonusRoomSceneState(data.bonusRoomProgress);
 					ClearContinueRunSave();
-					changeScene(U"Title");
+					RequestSceneTransition(data, U"Title", [this](const String& sceneName)
+					{
+						changeScene(sceneName);
+					});
 				}
 			}
 			return;
@@ -119,7 +146,10 @@ void BattleScene::update()
 			BeginNewRun(runState);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
-			changeScene(U"Battle");
+			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+			{
+				changeScene(sceneName);
+			});
 			return;
 		}
 	}
@@ -195,6 +225,8 @@ void BattleScene::draw() const
 	{
 		drawPauseMenu();
 	}
+
+	DrawSceneTransitionOverlay(getData());
 }
 
 #include "BattleSceneCamera.ipp"

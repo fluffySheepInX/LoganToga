@@ -15,7 +15,7 @@ Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 	}
 	else
 	{
-		clamped.x = Clamp(clamped.x, worldBounds.leftX() + halfViewport.x, worldBounds.rightX() - halfViewport.x);
+		clamped.x = Clamp(clamped.x, worldBounds.leftX() - halfViewport.x, worldBounds.rightX() + halfViewport.x);
 	}
 
 	if (worldBounds.h <= (halfViewport.y * 2.0))
@@ -24,7 +24,7 @@ Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 	}
 	else
 	{
-		clamped.y = Clamp(clamped.y, worldBounds.topY() + halfViewport.y, worldBounds.bottomY() - halfViewport.y);
+		clamped.y = Clamp(clamped.y, worldBounds.topY() - halfViewport.y, worldBounds.bottomY() + halfViewport.y);
 	}
 
 	return clamped;

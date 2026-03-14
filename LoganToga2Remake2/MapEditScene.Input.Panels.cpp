@@ -1,4 +1,5 @@
 ﻿#include "MapEditScene.h"
+#include "SceneTransition.h"
 
 bool MapEditScene::handleLeftPanelInput()
 {
@@ -28,7 +29,10 @@ bool MapEditScene::handleLeftPanelInput()
 
 	if (isButtonClicked(getPanelButtonRect(panelRect, 3)))
 	{
-		changeScene(U"Title");
+		RequestSceneTransition(getData(), U"Title", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 		return true;
 	}
 

@@ -4,6 +4,7 @@
 #include "BattleConfigPathResolver.h"
 #include "ContinueRunSave.h"
 #include "GameData.h"
+#include "MenuButtonUi.h"
 
 class MapEditScene : public SceneBase
 {
@@ -55,7 +56,7 @@ private:
 
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect)
 	{
-		return rect.mouseOver() && MouseL.down();
+		return IsMenuButtonClicked(rect);
 	}
 
 	[[nodiscard]] static RectF getLeftPanelRect()
