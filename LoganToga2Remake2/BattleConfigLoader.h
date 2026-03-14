@@ -51,7 +51,7 @@
 	{
 		throw Error{ U"Failed to load battle config progression: " + progressionPath };
 	}
-	LoadBattleProgressionConfig(config, progressionToml);
+	LoadBattleProgressionConfig(config, progressionToml, progressionPath);
 
 	return config;
 }

@@ -86,26 +86,29 @@ void MapEditScene::drawLeftPanel(const RectF& panelRect) const
 {
 	const auto& data = getData();
 	data.uiFont(U"MAP EDIT").draw(panelRect.x + 16, panelRect.y + 14, Palette::White);
-	data.smallFont(U"_DEBUG only / Esc: Title / Del: Delete / Ctrl+S,F5: Save / R: Reload").draw(panelRect.x + 16, panelRect.y + 48, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Map").draw(panelRect.x + 16, panelRect.y + 48, Palette::White);
+	data.smallFont(getCurrentMapLabel()).draw(panelRect.x + 16, panelRect.y + 72, ColorF{ 0.92, 0.95, 1.0 });
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, U"Prev Map", data.smallFont);
+	drawButton(RectF{ panelRect.x + 24 + ((panelRect.w - 40) * 0.5), panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, U"Next Map", data.smallFont);
 
 	drawButton(getPanelButtonRect(panelRect, 0), U"Save", data.uiFont);
 	drawButton(getPanelButtonRect(panelRect, 1), U"Reload", data.uiFont);
 	drawButton(getPanelButtonRect(panelRect, 2), U"Test Play", data.uiFont, true);
 	drawButton(getPanelButtonRect(panelRect, 3), U"Back to Title", data.smallFont);
 
-	data.smallFont(U"Tool").draw(panelRect.x + 16, panelRect.y + 212, Palette::White);
+	data.smallFont(U"Tool").draw(panelRect.x + 16, panelRect.y + 268, Palette::White);
 	drawButton(getPanelButtonRect(panelRect, 4), U"Select", data.uiFont, m_tool == Tool::Select);
 	drawButton(getPanelButtonRect(panelRect, 5), U"Add Unit", data.uiFont, m_tool == Tool::AddUnit);
 	drawButton(getPanelButtonRect(panelRect, 6), U"Add Obstacle", data.smallFont, m_tool == Tool::AddObstacle);
 	drawButton(getPanelButtonRect(panelRect, 7), U"Add Resource", data.smallFont, m_tool == Tool::AddResource);
 
-	data.smallFont(U"Placement").draw(panelRect.x + 16, panelRect.y + 424, Palette::White);
-	data.smallFont(U"Unit Owner: {}"_fmt(toOwnerDisplayString(m_unitPlacementOwner))).draw(panelRect.x + 16, panelRect.y + 452, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 476, panelRect.w - 32, 28 }, U"Cycle Unit Owner", data.smallFont);
-	data.smallFont(U"Archetype: {}"_fmt(toUnitArchetypeDisplayString(m_unitPlacementArchetype))).draw(panelRect.x + 16, panelRect.y + 516, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 540, panelRect.w - 32, 28 }, U"Cycle Unit Archetype", data.smallFont);
-	data.smallFont(U"Resource Owner: {}"_fmt(toOwnerDisplayString(m_resourcePlacementOwner))).draw(panelRect.x + 16, panelRect.y + 580, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 604, panelRect.w - 32, 28 }, U"Cycle Resource Owner", data.smallFont);
+	data.smallFont(U"Placement").draw(panelRect.x + 16, panelRect.y + 480, Palette::White);
+	data.smallFont(U"Unit Owner: {}"_fmt(toOwnerDisplayString(m_unitPlacementOwner))).draw(panelRect.x + 16, panelRect.y + 508, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 532, panelRect.w - 32, 28 }, U"Cycle Unit Owner", data.smallFont);
+	data.smallFont(U"Archetype: {}"_fmt(toUnitArchetypeDisplayString(m_unitPlacementArchetype))).draw(panelRect.x + 16, panelRect.y + 572, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 596, panelRect.w - 32, 28 }, U"Cycle Unit Archetype", data.smallFont);
+	data.smallFont(U"Resource Owner: {}"_fmt(toOwnerDisplayString(m_resourcePlacementOwner))).draw(panelRect.x + 16, panelRect.y + 636, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 660, panelRect.w - 32, 28 }, U"Cycle Resource Owner", data.smallFont);
 }
 
 void MapEditScene::drawRightPanel(const RectF& panelRect) const

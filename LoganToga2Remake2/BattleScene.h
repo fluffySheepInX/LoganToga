@@ -36,6 +36,8 @@ private:
 	void togglePause();
 	void updatePauseMenu();
 	void drawPauseMenu() const;
+	[[nodiscard]] bool handleResultInput();
+	void updateActiveBattle();
 	[[nodiscard]] static bool isCommandSlotTriggered(int32 slot);
 	void handleProductionInput();
 };

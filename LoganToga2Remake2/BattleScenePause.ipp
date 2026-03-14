@@ -31,9 +31,13 @@ namespace
 		return lines;
 	}
 
-	[[nodiscard]] Array<String> GetPauseMenuLabels()
+	[[nodiscard]] Array<String> GetPauseMenuLabels(const bool isTutorialBattle)
 	{
-		return{ U"Resume", U"Retry", U"Back to Title" };
+		return{
+			U"Resume",
+			U"Restart Battle",
+			isTutorialBattle ? U"Return to Title" : U"Save & Return to Title"
+		};
 	}
 
 	[[nodiscard]] RectF GetPausePanelRect()
@@ -44,7 +48,7 @@ namespace
 	[[nodiscard]] RectF GetPauseMenuItemRect(const int32 index)
 	{
 		const RectF panelRect = GetPausePanelRect();
-		return RectF{ Arg::center(panelRect.center().movedBy(0, -46 + (index * 56))), 280, 44 };
+		return RectF{ Arg::center(panelRect.center().movedBy(0, -46 + (index * 56))), 380, 44 };
 	}
 }
 
@@ -145,7 +149,7 @@ void BattleScene::drawPauseMenu() const
 	const auto& data = getData();
 	const auto& config = m_session.config();
 	const RectF panelRect = GetPausePanelRect();
-	const Array<String> labels = GetPauseMenuLabels();
+	const Array<String> labels = GetPauseMenuLabels(data.battleLaunchMode == BattleLaunchMode::Tutorial);
 	Array<String> productionEntries;
 	for (const auto& slot : config.playerProductionSlots)
 	{

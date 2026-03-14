@@ -1,0 +1,176 @@
+﻿[[initial_units]]
+owner = "player"
+archetype = "base"
+x = 248.0
+y = 1188.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "base"
+x = 2298.0
+y = 252.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 172.0
+y = 1044.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 406.0
+y = 1264.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2122.0
+y = 156.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2368.0
+y = 420.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 332.0
+y = 1068.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 276.0
+y = 1028.0
+
+[[initial_units]]
+owner = "player"
+archetype = "archer"
+x = 284.0
+y = 1106.0
+
+[[initial_units]]
+owner = "player"
+archetype = "worker"
+x = 388.0
+y = 1146.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2148.0
+y = 286.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2196.0
+y = 344.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "archer"
+x = 2244.0
+y = 214.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "barracks"
+x = 2168.0
+y = 304.0
+
+[[obstacles]]
+label = "Central Tower"
+x = 1188.0
+y = 486.0
+width = 160.0
+height = 468.0
+blocks_movement = true
+
+[[obstacles]]
+label = "North Wall"
+x = 1018.0
+y = 318.0
+width = 248.0
+height = 72.0
+blocks_movement = true
+
+[[obstacles]]
+label = "South Wall"
+x = 1330.0
+y = 1058.0
+width = 248.0
+height = 72.0
+blocks_movement = true
+
+[[obstacles]]
+label = "West Debris"
+x = 650.0
+y = 698.0
+width = 144.0
+height = 120.0
+blocks_movement = true
+
+[[obstacles]]
+label = "East Debris"
+x = 1768.0
+y = 622.0
+width = 144.0
+height = 120.0
+blocks_movement = true
+
+[[obstacles]]
+label = "North Pocket"
+x = 1626.0
+y = 204.0
+width = 128.0
+height = 128.0
+blocks_movement = true
+
+[[obstacles]]
+label = "South Pocket"
+x = 844.0
+y = 1098.0
+width = 128.0
+height = 128.0
+blocks_movement = true
+
+[[resource_points]]
+label = "West Mine"
+owner = "neutral"
+x = 784.0
+y = 884.0
+radius = 44.0
+income_amount = 10
+capture_time = 1.8
+
+[[resource_points]]
+label = "East Mine"
+owner = "neutral"
+x = 1764.0
+y = 556.0
+radius = 44.0
+income_amount = 10
+capture_time = 1.8
+
+[[resource_points]]
+label = "North Cache"
+owner = "neutral"
+x = 1492.0
+y = 302.0
+radius = 40.0
+income_amount = 8
+capture_time = 1.7
+
+[[resource_points]]
+label = "South Cache"
+owner = "neutral"
+x = 1064.0
+y = 1138.0
+radius = 40.0
+income_amount = 8
+capture_time = 1.7
+

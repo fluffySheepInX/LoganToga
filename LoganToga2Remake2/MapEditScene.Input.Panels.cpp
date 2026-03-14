@@ -15,6 +15,26 @@ bool MapEditScene::handleLeftPanelInput()
 		return true;
 	}
 
+	if (isButtonClicked(RectF{ panelRect.x + 16, panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }))
+	{
+		if (!m_editableMaps.isEmpty())
+		{
+			const int32 nextIndex = (m_selectedMapIndex + static_cast<int32>(m_editableMaps.size()) - 1) % static_cast<int32>(m_editableMaps.size());
+			selectEditableMap(nextIndex);
+		}
+		return true;
+	}
+
+	if (isButtonClicked(RectF{ panelRect.x + 24 + ((panelRect.w - 40) * 0.5), panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }))
+	{
+		if (!m_editableMaps.isEmpty())
+		{
+			const int32 nextIndex = (m_selectedMapIndex + 1) % static_cast<int32>(m_editableMaps.size());
+			selectEditableMap(nextIndex);
+		}
+		return true;
+	}
+
 	if (isButtonClicked(getPanelButtonRect(panelRect, 1)))
 	{
 		reloadConfig();
@@ -64,21 +84,21 @@ bool MapEditScene::handleLeftPanelInput()
 		return true;
 	}
 
-	const RectF cycleUnitOwnerRect{ panelRect.x + 16, panelRect.y + 476, panelRect.w - 32, 28 };
+	const RectF cycleUnitOwnerRect{ panelRect.x + 16, panelRect.y + 532, panelRect.w - 32, 28 };
 	if (isButtonClicked(cycleUnitOwnerRect))
 	{
 		m_unitPlacementOwner = cycleUnitPlacementOwner(m_unitPlacementOwner);
 		return true;
 	}
 
-	const RectF cycleArchetypeRect{ panelRect.x + 16, panelRect.y + 540, panelRect.w - 32, 28 };
+	const RectF cycleArchetypeRect{ panelRect.x + 16, panelRect.y + 596, panelRect.w - 32, 28 };
 	if (isButtonClicked(cycleArchetypeRect))
 	{
 		m_unitPlacementArchetype = cycleUnitArchetype(m_unitPlacementArchetype);
 		return true;
 	}
 
-	const RectF cycleResourceOwnerRect{ panelRect.x + 16, panelRect.y + 604, panelRect.w - 32, 28 };
+	const RectF cycleResourceOwnerRect{ panelRect.x + 16, panelRect.y + 660, panelRect.w - 32, 28 };
 	if (isButtonClicked(cycleResourceOwnerRect))
 	{
 		m_resourcePlacementOwner = cycleResourceOwner(m_resourcePlacementOwner);

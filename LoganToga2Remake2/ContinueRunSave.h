@@ -95,6 +95,23 @@ struct ContinueRunPreview
 	return result;
 }
 
+[[nodiscard]] inline String BuildTomlIntArray(const Array<int32>& values)
+{
+	String result = U"[";
+	for (size_t index = 0; index < values.size(); ++index)
+	{
+		if (index > 0)
+		{
+			result += U", ";
+		}
+
+		result += Format(values[index]);
+	}
+
+	result += U"]";
+	return result;
+}
+
 inline void AppendTomlLine(String& content, const String& key, const String& value)
 {
 	content += key + U" = " + value + U"\n";
@@ -105,12 +122,28 @@ inline void AppendTomlStringArrayLine(String& content, const String& key, const 
 	AppendTomlLine(content, key, BuildTomlStringArray(values));
 }
 
+inline void AppendTomlIntArrayLine(String& content, const String& key, const Array<int32>& values)
+{
+	AppendTomlLine(content, key, BuildTomlIntArray(values));
+}
+
 [[nodiscard]] inline Array<String> ReadTomlStringArray(const TOMLReader& toml, const String& key)
 {
 	Array<String> values;
 	for (const auto& value : toml[key].arrayView())
 	{
 		values << value.get<String>();
+	}
+
+	return values;
+}
+
+[[nodiscard]] inline Array<int32> ReadTomlIntArray(const TOMLReader& toml, const String& key)
+{
+	Array<int32> values;
+	for (const auto& value : toml[key].arrayView())
+	{
+		values << value.get<int32>();
 	}
 
 	return values;
@@ -167,6 +200,7 @@ inline bool SaveContinueRun(const GameData& data, const ContinueResumeScene resu
 	AppendTomlLine(content, U"runTotalBattles", Format(data.runState.totalBattles));
 	AppendTomlLine(content, U"runIsFailed", data.runState.isFailed ? U"true" : U"false");
 	AppendTomlLine(content, U"runIsCleared", data.runState.isCleared ? U"true" : U"false");
+	AppendTomlIntArrayLine(content, U"runMapProgressionBattles", data.runState.mapProgressionBattles);
 	AppendTomlStringArrayLine(content, U"runSelectedCardIds", data.runState.selectedCardIds);
 	AppendTomlStringArrayLine(content, U"runPendingRewardCardIds", data.runState.pendingRewardCardIds);
 	AppendTomlStringArrayLine(content, U"bonusViewedRoomIds", data.bonusRoomProgress.viewedRoomIds);
@@ -220,6 +254,11 @@ inline bool LoadContinueRun(GameData& data, ContinueResumeScene& resumeScene)
 		runState.totalBattles = toml[U"runTotalBattles"].get<int32>();
 		runState.isFailed = toml[U"runIsFailed"].get<bool>();
 		runState.isCleared = toml[U"runIsCleared"].get<bool>();
+		runState.mapProgressionBattles = ReadTomlIntArray(toml, U"runMapProgressionBattles");
+		if (runState.mapProgressionBattles.isEmpty())
+		{
+			runState.mapProgressionBattles = BuildSequentialRunMapProgressionBattles(data.baseBattleConfig, runState.totalBattles);
+		}
 		runState.selectedCardIds = ReadTomlStringArray(toml, U"runSelectedCardIds");
 		runState.pendingRewardCardIds = ReadTomlStringArray(toml, U"runPendingRewardCardIds");
 

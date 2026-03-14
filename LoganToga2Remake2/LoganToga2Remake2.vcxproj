@@ -206,6 +206,10 @@
     <None Include="App\config\battle.toml" />
     <None Include="App\config\battle_core.toml" />
     <None Include="App\config\battle_map.toml" />
+    <None Include="App\config\battle_map_crossroads.toml" />
+    <None Include="App\config\battle_map_dual_lane.toml" />
+    <None Include="App\config\battle_map_fortress.toml" />
+    <None Include="App\config\battle_map_ridge.toml" />
     <None Include="App\config\battle_progression.toml" />
     <None Include="App\config\battle_tutorial.toml" />
     <None Include="App\config\battle_tutorial_core.toml" />
@@ -386,7 +390,9 @@
     <ClInclude Include="BattleRendererWorldMeleeHelpers.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleSceneCamera.ipp" />
+    <ClInclude Include="BattleSceneInput.ipp" />
     <ClInclude Include="BattleScenePause.ipp" />
+    <ClInclude Include="BattleSceneResult.ipp" />
     <ClInclude Include="BattleSession.h" />
     <ClInclude Include="BattleSessionCollision.h" />
     <ClInclude Include="BattleSessionCombatHelpers.h" />
@@ -407,6 +413,9 @@
     <ClInclude Include="BattleTypes.h" />
     <ClInclude Include="BonusRoomData.h" />
     <ClInclude Include="BonusRoomScene.h" />
+    <ClInclude Include="BonusRoomSceneGallery.ipp" />
+    <ClInclude Include="BonusRoomSceneSelection.ipp" />
+    <ClInclude Include="BonusRoomSceneViewer.ipp" />
     <ClInclude Include="ContinueRunSave.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />

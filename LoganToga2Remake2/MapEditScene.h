@@ -31,6 +31,12 @@ private:
 		int32 index = -1;
 	};
 
+	struct EditableMapEntry
+	{
+		String mapConfigPath;
+		String label;
+	};
+
 public:
 	explicit MapEditScene(const SceneBase::InitData& init);
 
@@ -41,6 +47,8 @@ private:
 	BattleConfigData m_config;
 	String m_battleConfigPath;
 	String m_mapConfigPath;
+	Array<EditableMapEntry> m_editableMaps;
+	int32 m_selectedMapIndex = 0;
 	Tool m_tool = Tool::Select;
 	Selection m_selection;
 	Optional<Vec2> m_dragOffset;
@@ -50,9 +58,12 @@ private:
 	String m_statusMessage = U"Ready";
 
 	[[nodiscard]] static String resolveMapConfigPath(const String& battleConfigPath);
+	[[nodiscard]] static Array<EditableMapEntry> loadEditableMaps(const String& battleConfigPath);
 	void reloadConfig();
 	void saveMap();
 	void startTestPlay();
+	void selectEditableMap(const int32 mapIndex);
+	[[nodiscard]] String getCurrentMapLabel() const;
 
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect)
 	{
@@ -121,7 +132,7 @@ private:
 
 	[[nodiscard]] static RectF getPanelButtonRect(const RectF& panelRect, const int32 index)
 	{
-		return RectF{ panelRect.x + 16, panelRect.y + 84 + (index * 42), panelRect.w - 32, 32 };
+		return RectF{ panelRect.x + 16, panelRect.y + 140 + (index * 42), panelRect.w - 32, 32 };
 	}
 
 	static void drawButton(const RectF& rect, const String& label, const Font& font, const bool selected = false);

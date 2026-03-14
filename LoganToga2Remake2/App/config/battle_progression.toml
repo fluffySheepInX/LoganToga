@@ -1,5 +1,6 @@
 [[enemy_progression]]
 battle = 2
+map_source = "battle_map_crossroads.toml"
 gold_bonus = 80
 income_bonus = 8
 spawn_interval = 3.7
@@ -8,41 +9,42 @@ replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "base"
-x = 1170.0
-y = 180.0
+x = 2298.0
+y = 252.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 94.0
+x = 2122.0
+y = 156.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 266.0
+x = 2368.0
+y = 420.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "barracks"
-x = 1060.0
-y = 150.0
+x = 2168.0
+y = 304.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1040.0
-y = 150.0
+x = 2096.0
+y = 310.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1020.0
-y = 220.0
+x = 2208.0
+y = 376.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 980.0
-y = 200.0
+x = 2246.0
+y = 212.0
 
 [[enemy_progression]]
 battle = 3
+map_source = "battle_map_dual_lane.toml"
 gold_bonus = 160
 income_bonus = 16
 spawn_interval = 3.4
@@ -56,46 +58,47 @@ replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "base"
-x = 1170.0
-y = 180.0
+x = 2336.0
+y = 708.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 94.0
+x = 2368.0
+y = 544.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 266.0
+x = 2368.0
+y = 872.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "barracks"
-x = 1060.0
-y = 150.0
+x = 2160.0
+y = 704.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1048.0
-y = 138.0
+x = 2204.0
+y = 628.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1034.0
-y = 220.0
+x = 2208.0
+y = 788.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 990.0
-y = 170.0
+x = 2268.0
+y = 590.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 972.0
-y = 232.0
+x = 2268.0
+y = 826.0
 
 [[enemy_progression]]
 battle = 4
+map_source = "battle_map_ridge.toml"
 gold_bonus = 240
 income_bonus = 24
 spawn_interval = 3.1
@@ -109,51 +112,52 @@ replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "base"
-x = 1170.0
-y = 180.0
+x = 2268.0
+y = 324.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 94.0
+x = 2104.0
+y = 188.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 266.0
+x = 2412.0
+y = 476.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1110.0
-y = 180.0
+x = 2208.0
+y = 520.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "barracks"
-x = 1056.0
-y = 130.0
+x = 2128.0
+y = 356.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1046.0
-y = 132.0
+x = 2120.0
+y = 436.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1038.0
-y = 228.0
+x = 2190.0
+y = 402.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 996.0
-y = 158.0
+x = 2194.0
+y = 250.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 980.0
-y = 236.0
+x = 2298.0
+y = 442.0
 
 [[enemy_progression]]
 battle = 5
+map_source = "battle_map_fortress.toml"
 gold_bonus = 320
 income_bonus = 32
 spawn_interval = 2.8
@@ -167,55 +171,55 @@ replace_enemy_initial_units = true
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "base"
-x = 1170.0
-y = 180.0
+x = 2308.0
+y = 228.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 94.0
+x = 2118.0
+y = 114.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1188.0
-y = 266.0
+x = 2418.0
+y = 398.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "turret"
-x = 1110.0
-y = 180.0
+x = 2198.0
+y = 468.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "barracks"
-x = 1056.0
-y = 130.0
+x = 2172.0
+y = 248.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1054.0
-y = 128.0
+x = 2148.0
+y = 316.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1046.0
-y = 184.0
+x = 2192.0
+y = 372.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "soldier"
-x = 1040.0
-y = 240.0
+x = 2240.0
+y = 430.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 998.0
-y = 150.0
+x = 2236.0
+y = 176.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 984.0
-y = 206.0
+x = 2286.0
+y = 344.0
 
 [[enemy_progression.enemy_initial_units]]
 archetype = "archer"
-x = 972.0
-y = 256.0
+x = 2332.0
+y = 442.0

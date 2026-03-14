@@ -4,6 +4,7 @@
 #include "SceneTransition.h"
 
 #include "BattleScenePause.ipp"
+#include "BattleSceneResult.ipp"
 
 namespace
 {
@@ -18,11 +19,6 @@ namespace
 		}
 
 		return state.worldBounds.center();
-	}
-
-	[[nodiscard]] bool IsTutorialBattle(const GameData& data)
-	{
-		return data.battleLaunchMode == BattleLaunchMode::Tutorial;
 	}
 }
 
@@ -41,7 +37,7 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 
 	if (!getData().runState.isActive)
 	{
-		BeginNewRun(getData().runState);
+		BeginNewRun(getData().runState, getData().baseBattleConfig);
 	}
 
 	m_session.reset(BuildBattleConfigForRun(getData().baseBattleConfig, getData().runState, getData().rewardCards));
@@ -61,97 +57,9 @@ void BattleScene::update()
 		return;
 	}
 
-	if (m_session.state().winner)
+	if (handleResultInput())
 	{
-		m_isPaused = false;
-		auto& data = getData();
-		if (IsTutorialBattle(data))
-		{
-			if (KeyEnter.down())
-			{
-				data.battleLaunchMode = BattleLaunchMode::Run;
-				RequestSceneTransition(data, U"Title", [this](const String& sceneName)
-				{
-					changeScene(sceneName);
-				});
-				return;
-			}
-
-			if (KeyR.down())
-			{
-				RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
-				{
-					changeScene(sceneName);
-				});
-				return;
-			}
-
-			return;
-		}
-
-		auto& runState = data.runState;
-		const bool playerWon = (*m_session.state().winner == Owner::Player);
-		const bool hasNextBattle = playerWon && ((runState.currentBattleIndex + 1) < runState.totalBattles);
-		if (KeyEnter.down())
-		{
-			if (hasNextBattle)
-			{
-				runState.pendingRewardCardIds = BuildRewardCardChoices(runState, data.rewardCards);
-				SaveContinueRun(data, ContinueResumeScene::Reward);
-				RequestSceneTransition(data, U"Reward", [this](const String& sceneName)
-				{
-					changeScene(sceneName);
-				});
-			}
-			else
-			{
-				if (playerWon)
-				{
-					runState.isCleared = true;
-					runState.isActive = false;
-					if (PrepareBonusRoomSelection(data.bonusRoomProgress, data.bonusRooms))
-					{
-						SaveContinueRun(data, ContinueResumeScene::BonusRoom);
-						RequestSceneTransition(data, U"BonusRoom", [this](const String& sceneName)
-						{
-							changeScene(sceneName);
-						});
-					}
-					else
-					{
-						ClearContinueRunSave();
-						RequestSceneTransition(data, U"Title", [this](const String& sceneName)
-						{
-							changeScene(sceneName);
-						});
-					}
-				}
-				else
-				{
-					runState.isFailed = true;
-					runState.isActive = false;
-					ResetBonusRoomSceneState(data.bonusRoomProgress);
-					ClearContinueRunSave();
-					RequestSceneTransition(data, U"Title", [this](const String& sceneName)
-					{
-						changeScene(sceneName);
-					});
-				}
-			}
-			return;
-		}
-
-		if (KeyR.down())
-		{
-			BeginNewRun(runState);
-			ResetBonusRoomSceneState(data.bonusRoomProgress);
-			SaveContinueRun(data, ContinueResumeScene::Battle);
-			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
-			{
-				changeScene(sceneName);
-			});
-			return;
-		}
+		return;
 	}
 
 	if (KeyEscape.down())
@@ -166,61 +74,16 @@ void BattleScene::update()
 		return;
 	}
 
-	if (KeyF6.down())
-	{
-		m_session.toggleEnemyAiDebugPanel();
-	}
-
-	if (KeyF7.down())
-	{
-		m_session.cycleEnemyAiDebugMode();
-	}
-
-	m_camera.update();
-
-	const Vec2 cursorScreenPos = Cursor::PosF();
-	const Vec2 constructionCursorWorldPos = screenToWorld(cursorScreenPos);
-	m_constructionController.handleInput(m_session, constructionCursorWorldPos);
-
-	if (!(m_session.state().pendingConstructionArchetype || m_session.state().pendingRepairTargeting))
-	{
-		const bool isCursorOnCommandPanel = m_inputController.isCursorOnCommandPanel(m_session, cursorScreenPos);
-		const bool handledCommandPanelClick = m_inputController.handleCommandPanelClick(m_session, cursorScreenPos);
-		if (isCursorOnCommandPanel)
-		{
-			resetCameraPan();
-		}
-
-		const Vec2 cursorWorldPos = screenToWorld(cursorScreenPos);
-		if (!isCursorOnCommandPanel)
-		{
-			const bool allowClickSelection = updateCameraPan();
-			m_inputController.handleSelectionInput(m_session, cursorWorldPos, allowClickSelection);
-			m_inputController.handleCommandInput(m_session, cursorWorldPos);
-		}
-		else if (handledCommandPanelClick)
-		{
-			m_session.state().isSelecting = false;
-			m_session.state().selectionRect = RectF{ 0, 0, 0, 0 };
-		}
-	}
-	else
-	{
-		resetCameraPan();
-	}
-
-	handleProductionInput();
-
-	const size_t fixedSteps = m_clock.beginFrame();
-	for (size_t i = 0; i < fixedSteps; ++i)
-	{
-		m_session.update(m_clock.stepSeconds());
-	}
+	updateActiveBattle();
 }
 
 void BattleScene::draw() const
 {
 	m_renderer.draw(m_session.state(), m_session.config(), getData(), m_camera);
+	if (m_session.state().winner)
+	{
+		DrawBattleResultOverlay(getData(), m_session.state());
+	}
 	if (m_isPaused)
 	{
 		drawPauseMenu();
@@ -230,72 +93,4 @@ void BattleScene::draw() const
 }
 
 #include "BattleSceneCamera.ipp"
-
-bool BattleScene::isCommandSlotTriggered(const int32 slot)
-{
-	switch (slot)
-	{
-	case 1:
-		return Key1.down();
-	case 2:
-		return Key2.down();
-	case 3:
-		return Key3.down();
-	case 4:
-		return Key4.down();
-	case 5:
-		return Key5.down();
-	case 6:
-		return Key6.down();
-	case 7:
-		return Key7.down();
-	case 8:
-		return Key8.down();
-	case 9:
-		return Key9.down();
-	case 0:
-		return Key0.down();
-	default:
-		return false;
-	}
-}
-
-void BattleScene::handleProductionInput()
-{
-	if (KeyX.down())
-	{
-		m_session.cancelLastPlayerProduction();
-	}
-
-	for (const auto& command : CollectCommandEntries(m_session.state(), m_session.config()))
-	{
-		if (!isCommandSlotTriggered(command.slot) || !command.isEnabled)
-		{
-			continue;
-		}
-
-		switch (command.kind)
-		{
-		case CommandKind::Production:
-			m_session.trySpawnPlayerUnit(command.archetype);
-			return;
-		case CommandKind::Repair:
-			m_session.state().pendingConstructionArchetype.reset();
-			m_session.state().pendingRepairTargeting = true;
-			m_session.state().isSelecting = false;
-			m_session.state().selectionRect = RectF{ 0, 0, 0, 0 };
-			return;
-		case CommandKind::Upgrade:
-			if (command.turretUpgradeType)
-			{
-				m_session.tryUpgradeSelectedTurret(*command.turretUpgradeType);
-			}
-			return;
-		case CommandKind::Detonate:
-			m_session.enqueue(IssueGoliathDetonationCommand{ m_session.getSelectedPlayerUnitIds() });
-			return;
-		default:
-			break;
-		}
-	}
-}
+#include "BattleSceneInput.ipp"

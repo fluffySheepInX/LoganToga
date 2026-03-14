@@ -1,6 +1,42 @@
 ﻿#pragma once
 
+#include "BattleConfigMapLoader.h"
 #include "RunCardLogic.h"
+
+inline void ApplyBattleProgressionMap(BattleConfigData& config, const EnemyProgressionConfig& progression)
+{
+	if (progression.mapSourcePath.isEmpty())
+	{
+		return;
+	}
+
+	const TOMLReader mapToml{ progression.mapSourcePath };
+	if (!mapToml)
+	{
+		throw Error{ U"Failed to load battle map override: " + progression.mapSourcePath };
+	}
+
+	LoadBattleMapConfig(config, mapToml);
+}
+
+[[nodiscard]] inline const EnemyProgressionConfig* FindBattleLayoutProgressionConfig(const BattleConfigData& baseConfig, const RunState& runState, const int32 battleNumber)
+{
+	if (battleNumber <= 1)
+	{
+		return FindEnemyProgressionConfig(baseConfig, battleNumber);
+	}
+
+	const int32 layoutIndex = battleNumber - 2;
+	if ((0 <= layoutIndex) && (layoutIndex < static_cast<int32>(runState.mapProgressionBattles.size())))
+	{
+		if (const auto* progression = FindEnemyProgressionConfig(baseConfig, runState.mapProgressionBattles[layoutIndex]))
+		{
+			return progression;
+		}
+	}
+
+	return FindEnemyProgressionConfig(baseConfig, battleNumber);
+}
 
 inline void AppendEnemyProgressionUnits(BattleConfigData& config, const EnemyProgressionConfig& progression)
 {
@@ -89,6 +125,18 @@ inline void ApplyUnitStatBonus(PlayerUnitModifier& modifier, const RewardCardDef
 
 	const int32 battleNumber = runState.currentBattleIndex + 1;
 	config.hud.title = s3d::Format(baseConfig.hud.title, U"  RUN ", battleNumber, U"/", runState.totalBattles);
+	const auto* layoutProgression = FindBattleLayoutProgressionConfig(baseConfig, runState, battleNumber);
+	if (layoutProgression)
+	{
+		ApplyBattleProgressionMap(config, *layoutProgression);
+		if (layoutProgression->replaceEnemyInitialUnits && !layoutProgression->enemyInitialUnits.isEmpty())
+		{
+			ReplaceEnemyInitialUnits(config, *layoutProgression);
+		}
+
+		AppendEnemyProgressionUnits(config, *layoutProgression);
+	}
+
 	if (const auto* progression = FindEnemyProgressionConfig(baseConfig, battleNumber))
 	{
 		config.enemyGold += progression->goldBonus;
@@ -121,12 +169,6 @@ inline void ApplyUnitStatBonus(PlayerUnitModifier& modifier, const RewardCardDef
 		{
 			config.enemyAI.stagingAssaultCommitTime = progression->stagingAssaultCommitTime;
 		}
-		if (progression->replaceEnemyInitialUnits && !progression->enemyInitialUnits.isEmpty())
-		{
-			ReplaceEnemyInitialUnits(config, *progression);
-		}
-
-		AppendEnemyProgressionUnits(config, *progression);
 	}
 
 	return config;

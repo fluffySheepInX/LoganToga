@@ -48,6 +48,7 @@ struct RunState
 	int32 totalBattles = 3;
 	bool isFailed = false;
 	bool isCleared = false;
+	Array<int32> mapProgressionBattles;
 	Array<String> selectedCardIds;
 	Array<String> pendingRewardCardIds;
 };

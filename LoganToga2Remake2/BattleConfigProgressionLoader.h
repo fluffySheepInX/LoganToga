@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include "BattleConfigParsers.h"
+#include "BattleConfigPathResolver.h"
 
-inline void LoadBattleProgressionConfig(BattleConfigData& config, const TOMLReader& toml)
+inline void LoadBattleProgressionConfig(BattleConfigData& config, const TOMLReader& toml, const String& sourcePath)
 {
 	config.enemyProgression.clear();
 
@@ -10,6 +11,10 @@ inline void LoadBattleProgressionConfig(BattleConfigData& config, const TOMLRead
 	{
 		EnemyProgressionConfig progression;
 		progression.battle = table[U"battle"].get<int32>();
+		if (const auto mapSource = table[U"map_source"].getOpt<String>())
+		{
+			progression.mapSourcePath = ResolveBattleConfigSourcePath(sourcePath, *mapSource);
+		}
 		progression.goldBonus = table[U"gold_bonus"].getOr<int32>(0);
 		progression.incomeBonus = table[U"income_bonus"].getOr<int32>(0);
 		progression.spawnInterval = table[U"spawn_interval"].getOr<double>(0.0);

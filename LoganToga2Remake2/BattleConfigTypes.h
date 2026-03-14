@@ -142,6 +142,7 @@ struct ResourcePointConfig
 struct EnemyProgressionConfig
 {
 	int32 battle = 1;
+	String mapSourcePath;
 	int32 goldBonus = 0;
 	int32 incomeBonus = 0;
 	double spawnInterval = 0.0;

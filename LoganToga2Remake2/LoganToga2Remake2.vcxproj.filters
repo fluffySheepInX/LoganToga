@@ -96,6 +96,11 @@
     <ClInclude Include="MenuButtonUi.h" />
     <ClInclude Include="SceneTransitionTypes.h" />
     <ClInclude Include="SceneTransition.h" />
+    <ClInclude Include="BattleSceneResult.ipp" />
+    <ClInclude Include="BattleSceneInput.ipp" />
+    <ClInclude Include="BonusRoomSceneSelection.ipp" />
+    <ClInclude Include="BonusRoomSceneGallery.ipp" />
+    <ClInclude Include="BonusRoomSceneViewer.ipp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
@@ -318,6 +323,10 @@
     <None Include="App\config\battle_tutorial.toml" />
     <None Include="App\config\battle_tutorial_core.toml" />
     <None Include="App\config\battle_tutorial_map.toml" />
+    <None Include="App\config\battle_map_crossroads.toml" />
+    <None Include="App\config\battle_map_dual_lane.toml" />
+    <None Include="App\config\battle_map_ridge.toml" />
+    <None Include="App\config\battle_map_fortress.toml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="App\dll\soundtouch\COPYING.TXT" />

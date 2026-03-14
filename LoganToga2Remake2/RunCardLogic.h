@@ -44,7 +44,38 @@ inline void ApplyPlayerUnlockCard(const RewardCardDefinition& card, Array<UnitAr
 	}
 }
 
-inline void BeginNewRun(RunState& runState, const bool useDebugFullUnlocks)
+[[nodiscard]] inline Array<int32> BuildSequentialRunMapProgressionBattles(const BattleConfigData& baseConfig, const int32 totalBattles)
+{
+	Array<int32> battles;
+	for (int32 battleNumber = 2; battleNumber <= totalBattles; ++battleNumber)
+	{
+		const auto* progression = FindEnemyProgressionConfig(baseConfig, battleNumber);
+		if (!(progression && !progression->mapSourcePath.isEmpty()))
+		{
+			continue;
+		}
+
+		battles << progression->battle;
+	}
+
+	return battles;
+}
+
+[[nodiscard]] inline Array<int32> BuildRandomizedRunMapProgressionBattles(const BattleConfigData& baseConfig, const int32 totalBattles)
+{
+	Array<int32> availableBattles = BuildSequentialRunMapProgressionBattles(baseConfig, totalBattles);
+	Array<int32> randomizedBattles;
+	while (!availableBattles.isEmpty())
+	{
+		const int32 index = Random(static_cast<int32>(availableBattles.size()) - 1);
+		randomizedBattles << availableBattles[index];
+		availableBattles.remove_at(index);
+	}
+
+	return randomizedBattles;
+}
+
+inline void BeginNewRun(RunState& runState, const BattleConfigData& baseConfig, const bool useDebugFullUnlocks)
 {
 	runState.isActive = true;
 	runState.useDebugFullUnlocks = useDebugFullUnlocks;
@@ -52,13 +83,14 @@ inline void BeginNewRun(RunState& runState, const bool useDebugFullUnlocks)
 	runState.totalBattles = Random(3, 5);
 	runState.isFailed = false;
 	runState.isCleared = false;
+	runState.mapProgressionBattles = BuildRandomizedRunMapProgressionBattles(baseConfig, runState.totalBattles);
 	runState.selectedCardIds.clear();
 	runState.pendingRewardCardIds.clear();
 }
 
-inline void BeginNewRun(RunState& runState)
+inline void BeginNewRun(RunState& runState, const BattleConfigData& baseConfig)
 {
-	BeginNewRun(runState, runState.useDebugFullUnlocks);
+	BeginNewRun(runState, baseConfig, runState.useDebugFullUnlocks);
 }
 
 inline void ResolvePlayerTurretUpgradeUnlocks(const RunState& runState, const Array<RewardCardDefinition>& cards, Array<TurretUpgradeType>& upgradeTypes)

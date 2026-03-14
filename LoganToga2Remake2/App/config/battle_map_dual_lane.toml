@@ -1,0 +1,168 @@
+[[initial_units]]
+owner = "player"
+archetype = "base"
+x = 220.0
+y = 728.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "base"
+x = 2336.0
+y = 708.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 192.0
+y = 560.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 192.0
+y = 896.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2368.0
+y = 544.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2368.0
+y = 872.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 326.0
+y = 644.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 332.0
+y = 814.0
+
+[[initial_units]]
+owner = "player"
+archetype = "archer"
+x = 286.0
+y = 724.0
+
+[[initial_units]]
+owner = "player"
+archetype = "worker"
+x = 392.0
+y = 724.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2204.0
+y = 628.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2208.0
+y = 788.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "archer"
+x = 2268.0
+y = 590.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "barracks"
+x = 2160.0
+y = 704.0
+
+[[obstacles]]
+label = "Top Lane Gate"
+x = 964.0
+y = 360.0
+width = 632.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Bottom Lane Gate"
+x = 964.0
+y = 984.0
+width = 632.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Center Pillar"
+x = 1216.0
+y = 536.0
+width = 128.0
+height = 368.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Top Left Rubble"
+x = 520.0
+y = 186.0
+width = 160.0
+height = 128.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Bottom Right Rubble"
+x = 1892.0
+y = 1120.0
+width = 160.0
+height = 128.0
+blocks_movement = true
+
+[[resource_points]]
+label = "Top Lane Mine"
+owner = "neutral"
+x = 1280.0
+y = 244.0
+radius = 46.0
+income_amount = 10
+capture_time = 1.8
+
+[[resource_points]]
+label = "Center Depot"
+owner = "neutral"
+x = 1280.0
+y = 720.0
+radius = 54.0
+income_amount = 12
+capture_time = 2.4
+
+[[resource_points]]
+label = "Bottom Lane Mine"
+owner = "neutral"
+x = 1280.0
+y = 1196.0
+radius = 46.0
+income_amount = 10
+capture_time = 1.8
+
+[[resource_points]]
+label = "West Stash"
+owner = "neutral"
+x = 676.0
+y = 720.0
+radius = 42.0
+income_amount = 8
+capture_time = 1.7
+
+[[resource_points]]
+label = "East Stash"
+owner = "neutral"
+x = 1884.0
+y = 720.0
+radius = 42.0
+income_amount = 8
+capture_time = 1.7

@@ -5,6 +5,11 @@ MapEditScene::MapEditScene(const SceneBase::InitData& init)
 	, m_battleConfigPath{ U"config/battle.toml" }
 	, m_mapConfigPath{ resolveMapConfigPath(m_battleConfigPath) }
 {
+	m_editableMaps = loadEditableMaps(m_battleConfigPath);
+	if (!m_editableMaps.isEmpty())
+	{
+		m_mapConfigPath = m_editableMaps.front().mapConfigPath;
+	}
 	reloadConfig();
 }
 

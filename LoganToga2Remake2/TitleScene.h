@@ -47,7 +47,7 @@ public:
 		if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getMenuButtonRect(startButtonOffset)))
 		{
 			data.battleLaunchMode = BattleLaunchMode::Run;
-			BeginNewRun(data.runState, false);
+			BeginNewRun(data.runState, data.baseBattleConfig, false);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
 			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
@@ -103,7 +103,7 @@ public:
 		if (isButtonClicked(getMenuButtonRect(debugButtonOffset)))
 		{
 			data.battleLaunchMode = BattleLaunchMode::Run;
-			BeginNewRun(data.runState, true);
+			BeginNewRun(data.runState, data.baseBattleConfig, true);
 			ResetBonusRoomSceneState(data.bonusRoomProgress);
 			SaveContinueRun(data, ContinueResumeScene::Battle);
 			RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
