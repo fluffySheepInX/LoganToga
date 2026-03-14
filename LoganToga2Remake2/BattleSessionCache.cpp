@@ -184,20 +184,20 @@ void BattleSession::rebuildNavigationGrid() const
 	m_navigationGridDirty = false;
 }
 
-void BattleSession::gatherNearbyOpponentIndices(const UnitState& source, const double searchRadius, Array<size_t>& indices) const
+void BattleSession::gatherNearbyUnitIndices(const Owner owner, const Vec2& center, const double searchRadius, Array<size_t>& indices) const
 {
 	rebuildSpatialQueryCache();
 	indices.clear();
 
-	const auto& spatialCells = (source.owner == Owner::Enemy)
-		? m_playerSpatialUnitIndices
-		: m_enemySpatialUnitIndices;
+	const auto& spatialCells = (owner == Owner::Enemy)
+		? m_enemySpatialUnitIndices
+		: m_playerSpatialUnitIndices;
 
 	const double clampedRadius = Max(searchRadius, 0.0);
-	const int32 minCellX = Clamp(static_cast<int32>(((source.position.x - clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
-	const int32 maxCellX = Clamp(static_cast<int32>(((source.position.x + clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
-	const int32 minCellY = Clamp(static_cast<int32>(((source.position.y - clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
-	const int32 maxCellY = Clamp(static_cast<int32>(((source.position.y + clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
+	const int32 minCellX = Clamp(static_cast<int32>(((center.x - clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
+	const int32 maxCellX = Clamp(static_cast<int32>(((center.x + clampedRadius) - m_spatialQueryBounds.leftX()) / m_spatialQueryCellSize), 0, m_spatialQueryColumns - 1);
+	const int32 minCellY = Clamp(static_cast<int32>(((center.y - clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
+	const int32 maxCellY = Clamp(static_cast<int32>(((center.y + clampedRadius) - m_spatialQueryBounds.topY()) / m_spatialQueryCellSize), 0, m_spatialQueryRows - 1);
 
 	for (int32 y = minCellY; y <= maxCellY; ++y)
 	{
@@ -210,6 +210,12 @@ void BattleSession::gatherNearbyOpponentIndices(const UnitState& source, const d
 			}
 		}
 	}
+}
+
+void BattleSession::gatherNearbyOpponentIndices(const UnitState& source, const double searchRadius, Array<size_t>& indices) const
+{
+	const Owner opponentOwner = (source.owner == Owner::Enemy) ? Owner::Player : Owner::Enemy;
+	gatherNearbyUnitIndices(opponentOwner, source.position, searchRadius, indices);
 }
 
 const Array<size_t>& BattleSession::getOwnerUnitIndices(const Owner owner) const

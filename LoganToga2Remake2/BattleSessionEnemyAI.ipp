@@ -61,25 +61,6 @@
 		return from + (direction.normalized() * distance);
 	}
 
-	[[nodiscard]] int32 CountEnemyCombatUnitsNearPoint(const BattleState& state, const Vec2& point, const double radius)
-	{
-		int32 count = 0;
-		const double radiusSq = (radius * radius);
-		for (const auto& unit : state.units)
-		{
-			if (!IsEnemyCombatUnit(unit))
-			{
-				continue;
-			}
-
-			if ((unit.position - point).lengthSq() <= radiusSq)
-			{
-				++count;
-			}
-		}
-
-		return count;
-	}
 }
 
 void BattleSession::updateEnemyAI(const double deltaTime)
@@ -227,9 +208,26 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	const int32 stagingMinUnits = Max(1, (m_config.enemyAI.stagingAssaultMinUnits > 0)
 		? m_config.enemyAI.stagingAssaultMinUnits
 		: m_config.enemyAI.assaultUnitThreshold);
-	const int32 stagingReadyUnits = canStageAssault
-		? CountEnemyCombatUnitsNearPoint(m_state, stagingRallyPoint, m_config.enemyAI.stagingAssaultGatherRadius)
-		: 0;
+	int32 stagingReadyUnits = 0;
+	if (canStageAssault)
+	{
+		const double gatherRadius = m_config.enemyAI.stagingAssaultGatherRadius;
+		const double gatherRadiusSq = (gatherRadius * gatherRadius);
+		gatherNearbyUnitIndices(Owner::Enemy, stagingRallyPoint, gatherRadius, m_nearbyUnitIndicesScratch);
+		for (const auto index : m_nearbyUnitIndicesScratch)
+		{
+			const auto& unit = m_state.units[index];
+			if (!IsEnemyCombatUnit(unit))
+			{
+				continue;
+			}
+
+			if (unit.position.distanceFromSq(stagingRallyPoint) <= gatherRadiusSq)
+			{
+				++stagingReadyUnits;
+			}
+		}
+	}
 	m_state.enemyAiDebugCombatUnitCount = enemyCombatUnits;
 	m_state.enemyAiDebugReadyUnitCount = stagingReadyUnits;
 

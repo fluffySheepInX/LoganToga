@@ -139,7 +139,13 @@
     <ClCompile Include="BattleSessionWorld.cpp" />
     <ClCompile Include="BonusRoomScene.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MapEditScene.Converters.cpp" />
     <ClCompile Include="MapEditScene.cpp" />
+    <ClCompile Include="MapEditScene.Draw.cpp" />
+    <ClCompile Include="MapEditScene.Input.Canvas.cpp" />
+    <ClCompile Include="MapEditScene.Input.cpp" />
+    <ClCompile Include="MapEditScene.Input.Panels.cpp" />
+    <ClCompile Include="MapEditScene.Persistence.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

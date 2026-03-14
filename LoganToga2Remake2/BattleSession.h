@@ -51,6 +51,7 @@ private:
 	mutable Array<Array<size_t>> m_playerSpatialUnitIndices;
 	mutable Array<Array<size_t>> m_enemySpatialUnitIndices;
 	mutable Array<size_t> m_nearbyOpponentIndicesScratch;
+	mutable Array<size_t> m_nearbyUnitIndicesScratch;
 	mutable bool m_spatialQueryCacheDirty = true;
 	mutable RectF m_navigationGridBounds{ 0, 0, 0, 0 };
 	mutable double m_navigationGridCellSize = 24.0;
@@ -99,6 +100,7 @@ private:
 	void rebuildFrameUnitCache() const;
 	void rebuildSpatialQueryCache() const;
 	void rebuildNavigationGrid() const;
+	void gatherNearbyUnitIndices(Owner owner, const Vec2& center, double searchRadius, Array<size_t>& indices) const;
 	void gatherNearbyOpponentIndices(const UnitState& source, double searchRadius, Array<size_t>& indices) const;
 	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;
 	[[nodiscard]] const Array<size_t>& getOwnerBuildingIndices(Owner owner) const;

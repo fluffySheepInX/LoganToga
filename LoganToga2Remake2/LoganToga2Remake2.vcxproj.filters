@@ -30,6 +30,12 @@
     <ClCompile Include="BattleCommandUiQueriesUpgrade.cpp" />
     <ClCompile Include="BattleCommandUiQueriesConstruction.cpp" />
     <ClCompile Include="MapEditScene.cpp" />
+    <ClCompile Include="MapEditScene.Persistence.cpp" />
+    <ClCompile Include="MapEditScene.Draw.cpp" />
+    <ClCompile Include="MapEditScene.Input.cpp" />
+    <ClCompile Include="MapEditScene.Converters.cpp" />
+    <ClCompile Include="MapEditScene.Input.Panels.cpp" />
+    <ClCompile Include="MapEditScene.Input.Canvas.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleCommands.h" />

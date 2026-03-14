@@ -15,25 +15,6 @@ namespace
 			return fallbackTarget;
 		}
 
-		for (const auto& candidate : state.units)
-		{
-			if (!candidate.isAlive || !IsEnemy(source, candidate))
-			{
-				continue;
-			}
-
-			const double distance = source.position.distanceFrom(candidate.position);
-			if (distance > BattleSessionInternal::GetEffectiveAttackRange(source, candidate))
-			{
-				continue;
-			}
-
-			order.type = UnitOrderType::AttackTarget;
-			order.targetUnitId = candidate.id;
-			order.targetPoint = candidate.position;
-			return &candidate;
-		}
-
 		order.type = UnitOrderType::Idle;
 		order.targetUnitId.reset();
 		return nullptr;
@@ -221,13 +202,14 @@ void BattleSession::updateMovement(const double deltaTime)
 
 const UnitState* BattleSession::findNearestEnemy(const UnitState& source) const
 {
-	const auto& candidateIndices = (source.owner == Owner::Player)
-		? getOwnerUnitIndices(Owner::Enemy)
-		: getOwnerUnitIndices(Owner::Player);
-	const UnitState* nearest = nullptr;
-	double nearestDistance = getAggroRange(source.owner, source.archetype);
+	const double searchRadius = getAggroRange(source.owner, source.archetype);
+	const double searchRadiusSq = (searchRadius * searchRadius);
+	gatherNearbyOpponentIndices(source, searchRadius, m_nearbyOpponentIndicesScratch);
 
-	for (const auto index : candidateIndices)
+	const UnitState* nearest = nullptr;
+	double nearestDistanceSq = searchRadiusSq;
+
+	for (const auto index : m_nearbyOpponentIndicesScratch)
 	{
 		const auto& candidate = m_state.units[index];
 		if (!candidate.isAlive || !IsEnemy(source, candidate))
@@ -235,10 +217,10 @@ const UnitState* BattleSession::findNearestEnemy(const UnitState& source) const
 			continue;
 		}
 
-		const double distance = source.position.distanceFrom(candidate.position);
-		if (distance <= nearestDistance)
+		const double distanceSq = source.position.distanceFromSq(candidate.position);
+		if (distanceSq <= nearestDistanceSq)
 		{
-			nearestDistance = distance;
+			nearestDistanceSq = distanceSq;
 			nearest = &candidate;
 		}
 	}

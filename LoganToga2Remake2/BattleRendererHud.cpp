@@ -156,45 +156,8 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		}
 	}
 
-	Array<String> productionEntries;
-	for (const auto& slot : config.playerProductionSlots)
-	{
-		if (!ContainsArchetype(config.playerAvailableProductionArchetypes, slot.archetype))
-		{
-			continue;
-		}
-
-		const auto* definition = FindUnitDefinition(config, slot.archetype);
-		const int32 cost = (slot.cost > 0)
-			? slot.cost
-			: (definition ? definition->cost : 0);
-		productionEntries << s3d::Format(
-			slot.slot,
-			U": ",
-			GetArchetypeLabel(slot.archetype),
-			(slot.batchCount >= 2) ? U" x" + Format(slot.batchCount) : U"",
-			U" (",
-			cost,
-			U"G)");
-	}
-	const Array<String> productionLines = BuildWrappedHudLines(productionEntries, gameData.smallFont, 440.0, U"Production: ");
-	const double productionBaseY = 88.0;
-	const double lineStep = 22.0;
-	const double detailBaseY = productionBaseY + (lineStep * productionLines.size());
-	const double hudHeight = Max(220.0, detailBaseY + 110.0 - 16.0);
-
-	String constructionText = U"Build: none";
-	for (const auto& slot : config.playerConstructionSlots)
-	{
-		if (!ContainsArchetype(config.playerAvailableConstructionArchetypes, slot.archetype))
-		{
-			continue;
-		}
-
-		const int32 cost = FindUnitDefinition(config, slot.archetype) ? FindUnitDefinition(config, slot.archetype)->cost : 0;
-		constructionText = s3d::Format(U"Build: ", slot.slot, U": ", GetArchetypeLabel(slot.archetype), U" (", cost, U"G)");
-		break;
-	}
+	const double detailBaseY = 66.0;
+	const double hudHeight = 140.0;
 	const String runText = gameData.runState.isActive
 		? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
 		: U"Run: inactive";
@@ -203,16 +166,9 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 
 	RoundRect{ 16, 16, 480, hudHeight, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);
-	gameData.smallFont(config.hud.controls).draw(28, 66, Palette::White);
-	for (size_t index = 0; index < productionLines.size(); ++index)
-	{
-		gameData.smallFont(productionLines[index]).draw(28, productionBaseY + (lineStep * index), Palette::White);
-	}
-	gameData.smallFont(constructionText).draw(28, detailBaseY, Palette::White);
-	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY + 22.0, Palette::White);
-	gameData.smallFont(config.hud.escapeHint).draw(28, detailBaseY + 44.0, Palette::White);
-	gameData.smallFont(runText).draw(28, detailBaseY + 66.0, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 88.0, Palette::Gold);
+	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY, Palette::White);
+	gameData.smallFont(runText).draw(28, detailBaseY + 22.0, Palette::White);
+	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 44.0, Palette::Gold);
 	DrawFormationPanel(state, gameData);
 	DrawEnemyAiDebugPanel(state, config, gameData);
 

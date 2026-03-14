@@ -28,15 +28,16 @@ namespace
 			|| (archetype == UnitArchetype::Healer);
 	}
 
-	[[nodiscard]] const UnitState* FindHealTarget(const BattleState& state, const UnitState& source, const double searchRadius)
+	[[nodiscard]] const UnitState* FindHealTarget(const BattleState& state, const UnitState& source, const Array<size_t>& candidateIndices, const double searchRadius)
 	{
 		const double searchRadiusSq = (searchRadius * searchRadius);
 		const UnitState* bestTarget = nullptr;
 		double bestHpRate = 1.0;
 		double nearestDistanceSq = Math::Inf;
 
-		for (const auto& candidate : state.units)
+		for (const auto candidateIndex : candidateIndices)
 		{
+			const auto& candidate = state.units[candidateIndex];
 			if (!candidate.isAlive
 				|| (candidate.owner != source.owner)
 				|| (candidate.id == source.id)
@@ -225,8 +226,11 @@ void BattleSession::triggerGoliathExplosion(UnitState& unit)
 		.areaRadius = GoliathExplosionRadius,
 	};
 
-	for (auto& target : m_state.units)
+	const Owner targetOwner = (unit.owner == Owner::Enemy) ? Owner::Player : Owner::Enemy;
+	gatherNearbyUnitIndices(targetOwner, explosionCenter, GoliathExplosionRadius + m_spatialQueryCellSize, m_nearbyUnitIndicesScratch);
+	for (const auto targetIndex : m_nearbyUnitIndicesScratch)
 	{
+		auto& target = m_state.units[targetIndex];
 		if (!target.isAlive || (target.owner == unit.owner) || (target.id == unit.id))
 		{
 			continue;
@@ -383,7 +387,8 @@ void BattleSession::updateCombat()
 			}
 
 			const double searchRadius = Max(unit.attackRange, getAggroRange(unit.owner, unit.archetype));
-			if (const auto* target = FindHealTarget(m_state, unit, searchRadius))
+			gatherNearbyUnitIndices(unit.owner, unit.position, searchRadius, m_nearbyUnitIndicesScratch);
+			if (const auto* target = FindHealTarget(m_state, unit, m_nearbyUnitIndicesScratch, searchRadius))
 			{
 				combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, -unit.attackPower, 0.0, unit.owner, unit.archetype };
 				unit.attackCooldownRemaining = unit.attackCooldown;
@@ -500,8 +505,11 @@ void BattleSession::updateCombat()
 
 		if (event.splashRadius > 0.0)
 		{
-			for (auto& target : m_state.units)
+			const Owner targetOwner = (event.owner == Owner::Enemy) ? Owner::Player : Owner::Enemy;
+			gatherNearbyUnitIndices(targetOwner, event.targetPosition, event.splashRadius + m_spatialQueryCellSize, m_nearbyUnitIndicesScratch);
+			for (const auto targetIndex : m_nearbyUnitIndicesScratch)
 			{
+				auto& target = m_state.units[targetIndex];
 				if (!target.isAlive || (target.owner == event.owner))
 				{
 					continue;
