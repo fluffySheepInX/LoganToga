@@ -1,116 +1,196 @@
-[[initial_units]]
+﻿[[initial_units]]
 owner = "player"
 archetype = "base"
-x = 110.0
-y = 540.0
+x = 145.2
+y = 1296.0
 
 [[initial_units]]
 owner = "enemy"
 archetype = "base"
-x = 1170.0
-y = 180.0
+x = 2411.3
+y = 116.7
 
 [[initial_units]]
 owner = "player"
 archetype = "turret"
-x = 92.0
-y = 458.0
+x = 130.7
+y = 1101.5
 
 [[initial_units]]
 owner = "player"
 archetype = "turret"
-x = 92.0
-y = 622.0
+x = 348.7
+y = 1335.8
 
 [[initial_units]]
 owner = "enemy"
 archetype = "turret"
-x = 1188.0
-y = 94.0
+x = 2228.9
+y = 69.4
 
 [[initial_units]]
 owner = "enemy"
 archetype = "turret"
-x = 1188.0
-y = 266.0
+x = 2471.5
+y = 294.1
 
 [[initial_units]]
 owner = "player"
 archetype = "soldier"
-x = 180.0
-y = 500.0
+x = 331.2
+y = 1083.7
 
 [[initial_units]]
 owner = "player"
 archetype = "soldier"
-x = 200.0
-y = 560.0
+x = 263.3
+y = 1045.3
 
 [[initial_units]]
 owner = "player"
 archetype = "archer"
-x = 210.0
-y = 530.0
+x = 262.7
+y = 1117.3
 
 [[initial_units]]
 owner = "player"
 archetype = "worker"
-x = 150.0
-y = 580.0
+x = 364.5
+y = 1170.8
 
 [[initial_units]]
 owner = "enemy"
 archetype = "soldier"
-x = 1020.0
-y = 170.0
+x = 2032.7
+y = 222.7
 
 [[initial_units]]
 owner = "enemy"
 archetype = "soldier"
-x = 1040.0
-y = 230.0
+x = 2087.9
+y = 163.2
 
 [[initial_units]]
 owner = "enemy"
 archetype = "archer"
-x = 980.0
-y = 200.0
+x = 2112.3
+y = 245.7
 
 [[initial_units]]
 owner = "enemy"
 archetype = "barracks"
-x = 1060.0
-y = 150.0
+x = 2280.2
+y = 234.4
 
 [[obstacles]]
 label = "North Ridge"
-x = 470.0
-y = 170.0
+x = 1278.8
+y = 943.6
 width = 180.0
 height = 48.0
 blocks_movement = true
 
 [[obstacles]]
 label = "Central Ruin"
-x = 580.0
-y = 300.0
+x = 1311.4
+y = 254.3
 width = 120.0
-height = 120.0
+height = 152.0
 blocks_movement = true
 
 [[obstacles]]
 label = "South Ridge"
-x = 700.0
-y = 520.0
+x = 1466.6
+y = 942.0
 width = 180.0
 height = 48.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 4"
+x = 359.9
+y = 524.3
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 5"
+x = 215.7
+y = 337.9
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 6"
+x = 134.9
+y = 123.4
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 7"
+x = 426.7
+y = 682.5
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 8"
+x = 570.9
+y = 886.5
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 9"
+x = 1777.1
+y = 46.1
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 10"
+x = 1868.5
+y = 228.9
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 11"
+x = 1963.4
+y = 397.7
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 12"
+x = 2072.4
+y = 520.8
+width = 96.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Obstacle 13"
+x = 2223.6
+y = 689.6
+width = 96.0
+height = 96.0
 blocks_movement = true
 
 [[resource_points]]
 label = "North Mine"
 owner = "neutral"
-x = 560.0
-y = 240.0
+x = 1066.4
+y = 771.0
 radius = 46.0
 income_amount = 8
 capture_time = 1.8
@@ -118,8 +198,8 @@ capture_time = 1.8
 [[resource_points]]
 label = "Central Mine"
 owner = "neutral"
-x = 640.0
-y = 360.0
+x = 1209.7
+y = 560.4
 radius = 52.0
 income_amount = 12
 capture_time = 2.2
@@ -127,8 +207,45 @@ capture_time = 2.2
 [[resource_points]]
 label = "South Mine"
 owner = "neutral"
-x = 720.0
-y = 500.0
+x = 1384.6
+y = 788.4
 radius = 46.0
 income_amount = 8
 capture_time = 1.8
+
+[[resource_points]]
+label = "Resource 4"
+owner = "neutral"
+x = 706.8
+y = 104.6
+radius = 42.0
+income_amount = 10
+capture_time = 2.0
+
+[[resource_points]]
+label = "Resource 5"
+owner = "neutral"
+x = 1684.4
+y = 1324.8
+radius = 42.0
+income_amount = 10
+capture_time = 2.0
+
+[[resource_points]]
+label = "Resource 6"
+owner = "neutral"
+x = 2197.8
+y = 1145.5
+radius = 42.0
+income_amount = 10
+capture_time = 2.0
+
+[[resource_points]]
+label = "Resource 7"
+owner = "neutral"
+x = 875.6
+y = 1258.0
+radius = 42.0
+income_amount = 10
+capture_time = 2.0
+

@@ -77,6 +77,12 @@ public:
 			changeScene(U"Battle");
 			return;
 		}
+
+		if (isButtonClicked(getMapEditButtonRect()))
+		{
+			changeScene(U"MapEdit");
+			return;
+		}
 #endif
 	}
 
@@ -137,6 +143,7 @@ public:
 #ifdef _DEBUG
 		data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
 		drawButton(getMenuButtonRect(debugButtonOffset), U"Debug Full Unlock", data.uiFont, true);
+		drawButton(getMapEditButtonRect(), U"Map Edit", data.smallFont);
 #endif
 	}
 
@@ -222,5 +229,11 @@ private:
 	[[nodiscard]] static RectF getResolutionButtonRect(const size_t index)
 	{
 		return RectF{ getResolutionLabelPos().movedBy(100 + (index * 108), -4), 96, 32 };
+	}
+
+	[[nodiscard]] static RectF getMapEditButtonRect()
+	{
+		const RectF panel = getPanelRect();
+		return RectF{ panel.x + panel.w - 150, panel.y + 18, 128, 30 };
 	}
 };
