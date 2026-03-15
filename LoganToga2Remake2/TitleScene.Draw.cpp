@@ -60,9 +60,15 @@ void TitleScene::draw() const
 	}
 
 	const ContinueRunSaveLocation saveLocation = GetContinueRunSaveLocation();
+	const RectF clearContinueButtonRect = getClearContinueRunButtonRect();
+	const RectF clearSettingsButtonRect = getClearSettingsButtonRect();
 	data.smallFont(U"セーブ保存先").draw(getSaveLocationLabelPos(), Palette::White);
 	data.smallFont(U"現在: " + GetContinueRunSaveLocationLabel(saveLocation)).draw(getSaveLocationLabelPos().movedBy(0, 24), ColorF{ 0.85, 0.92, 1.0 });
 	drawButton(getSaveLocationButtonRect(), U"Local ⇔ AppData", data.smallFont, true);
+	data.smallFont(U"データ管理").drawAt(Vec2{ Scene::CenterF().x, clearContinueButtonRect.y - 18 }, ColorF{ 0.90, 0.94, 1.0 });
+	drawButton(clearContinueButtonRect, U"セーブ削除", data.smallFont, hasContinue);
+	drawButton(clearSettingsButtonRect, U"設定初期化", data.smallFont, true);
+	data.smallFont(U"現在の保存先のみ削除 / 設定は既定値へ戻ります").drawAt(Vec2{ Scene::CenterF().x, clearContinueButtonRect.bottomY() + 18 }, ColorF{ 0.82, 0.88, 0.96 });
 
 #ifdef _DEBUG
 	data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
@@ -74,6 +80,11 @@ void TitleScene::draw() const
 	if (m_isQuickGuideOpen)
 	{
 		drawQuickGuide(data);
+	}
+
+	if (m_dataClearAction != DataClearAction::None)
+	{
+		drawDataClearDialog(m_dataClearAction, data);
 	}
 
 	if (m_isExitDialogOpen)
@@ -154,6 +165,25 @@ void TitleScene::drawQuickGuide(const GameData& data)
 	drawButton(getQuickGuideTutorialButtonRect(), U"Tutorial へ", data.uiFont, true);
 	drawButton(getQuickGuideCloseButtonRect(), U"閉じる", data.uiFont);
 	data.smallFont(U"Esc でも閉じられます").drawAt(panelRect.center().movedBy(0, 200), ColorF{ 0.80, 0.87, 0.95 });
+}
+
+void TitleScene::drawDataClearDialog(const DataClearAction action, const GameData& data)
+{
+	Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+
+	const RectF dialogRect = getDataClearDialogRect();
+	dialogRect.draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
+	dialogRect.drawFrame(2, ColorF{ 0.40, 0.58, 0.90, 0.98 });
+
+	const bool isContinueSave = (action == DataClearAction::ContinueRunSave);
+	data.uiFont(isContinueSave ? U"セーブデータを削除しますか？" : U"設定ファイルを初期化しますか？")
+		.drawAt(dialogRect.center().movedBy(0, -48), Palette::White);
+	data.smallFont(isContinueSave ? U"現在の保存先にある continue データを削除します" : U"解像度・フルスクリーン・音量を既定値へ戻します")
+		.drawAt(dialogRect.center().movedBy(0, -8), ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"この操作はタイトルメニューからすぐ反映されます").drawAt(dialogRect.center().movedBy(0, 24), ColorF{ 1.0, 0.86, 0.62 });
+	drawButton(getDataClearDialogYesButtonRect(), U"はい", data.uiFont, true);
+	drawButton(getDataClearDialogNoButtonRect(), U"いいえ", data.uiFont);
+	data.smallFont(U"Enter: はい / Esc: いいえ").drawAt(dialogRect.center().movedBy(0, 94), ColorF{ 0.80, 0.87, 0.95 });
 }
 
 void TitleScene::drawExitDialog(const GameData& data)

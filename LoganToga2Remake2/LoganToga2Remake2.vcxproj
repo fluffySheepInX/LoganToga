@@ -168,6 +168,9 @@
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="TitleScene.Draw.cpp" />
+    <ClCompile Include="WindowChromeAddon.cpp" />
+    <ClCompile Include="WindowChromeAddon.Draw.cpp" />
+    <ClCompile Include="WindowChromeAddon.Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\engine\texture\box-shadow\128.png" />
@@ -438,6 +441,7 @@
     <ClInclude Include="ContinueRunSave.h" />
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
+    <ClInclude Include="GameSettings.h" />
     <ClInclude Include="MapEditScene.h" />
     <ClInclude Include="MenuButtonUi.h" />
     <ClInclude Include="Remake2Common.h" />

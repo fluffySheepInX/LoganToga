@@ -6,3 +6,4 @@
 - For this codebase, use plain Rect-based custom UI for visible menu controls instead of SimpleGUI when button visibility is an issue。
 - For volume settings UI in LoganToga2Remake2, use WindowChromeAddon.
 - When adding new units in this codebase, ask the user whether the unit should be included in the initial unlock set.
+- For LoganToga2Remake2, persistent settings files should follow the existing Local/AppData save-location switch and be stored alongside the continue-run save data.

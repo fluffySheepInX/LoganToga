@@ -1,6 +1,7 @@
 ﻿#include "TitleScene.h"
 
 #include "AudioManager.h"
+#include "GameSettings.h"
 
 TitleScene::TitleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
@@ -32,6 +33,23 @@ void TitleScene::update()
 	if (m_isQuickGuideOpen)
 	{
 		updateQuickGuide();
+		return;
+	}
+
+	if (m_dataClearAction != DataClearAction::None)
+	{
+		if (KeyEnter.down() || isButtonClicked(getDataClearDialogYesButtonRect()))
+		{
+			executeDataClearAction();
+			m_dataClearAction = DataClearAction::None;
+			return;
+		}
+
+		if (KeyEscape.down() || isButtonClicked(getDataClearDialogNoButtonRect()))
+		{
+			m_dataClearAction = DataClearAction::None;
+		}
+
 		return;
 	}
 
@@ -132,14 +150,30 @@ void TitleScene::update()
 
 		data.displaySettings.resolutionPreset = preset;
 		ApplyDisplaySettings(data.displaySettings);
+		GameSettings::SetPersistedDisplaySettings(data.displaySettings);
 	}
 
 	if (isButtonClicked(getSaveLocationButtonRect()))
 	{
-		if (SetContinueRunSaveLocation(CycleContinueRunSaveLocation(GetContinueRunSaveLocation())))
+		const ContinueRunSaveLocation currentLocation = GetContinueRunSaveLocation();
+		const ContinueRunSaveLocation nextLocation = CycleContinueRunSaveLocation(currentLocation);
+		if (SetContinueRunSaveLocation(nextLocation))
 		{
+			GameSettings::MoveGameSettingsToLocation(currentLocation, nextLocation);
 			refreshContinueState();
 		}
+	}
+
+	if (hasContinue && isButtonClicked(getClearContinueRunButtonRect()))
+	{
+		m_dataClearAction = DataClearAction::ContinueRunSave;
+		return;
+	}
+
+	if (isButtonClicked(getClearSettingsButtonRect()))
+	{
+		m_dataClearAction = DataClearAction::GameSettings;
+		return;
 	}
 
 #ifdef _DEBUG
@@ -220,6 +254,38 @@ void TitleScene::refreshContinueState()
 	m_hasContinue = m_continuePreview.has_value();
 }
 
+void TitleScene::executeDataClearAction()
+{
+	auto& data = getData();
+
+	switch (m_dataClearAction)
+	{
+	case DataClearAction::ContinueRunSave:
+		ClearContinueRunSave();
+		data.runState = {};
+		data.bonusRoomProgress = {};
+		refreshContinueState();
+		return;
+
+	case DataClearAction::GameSettings:
+		if (GameSettings::ClearGameSettings())
+		{
+			const PersistentGameSettings settings = GameSettings::GetGameSettings();
+			data.displaySettings = settings.displaySettings;
+			ApplyDisplaySettings(data.displaySettings);
+			s3d::GlobalAudio::SetVolume(settings.masterVolume);
+			s3d::GlobalAudio::BusSetVolume(WindowChromeAddon::BgmBus, settings.bgmVolume);
+			s3d::GlobalAudio::BusSetVolume(WindowChromeAddon::SeBus, settings.seVolume);
+			Window::SetFullscreen(settings.fullscreen);
+		}
+		return;
+
+	case DataClearAction::None:
+	default:
+		return;
+	}
+}
+
 bool TitleScene::isButtonClicked(const RectF& rect)
 {
 	return IsMenuButtonClicked(rect);
@@ -258,6 +324,23 @@ RectF TitleScene::getQuickGuideCloseButtonRect()
 	return RectF{ Arg::center(panel.center().movedBy(120, 168)), 200, 40 };
 }
 
+RectF TitleScene::getDataClearDialogRect()
+{
+	return RectF{ Arg::center = Scene::CenterF(), 520, 210 };
+}
+
+RectF TitleScene::getDataClearDialogYesButtonRect()
+{
+	const RectF dialog = getDataClearDialogRect();
+	return RectF{ Arg::center(dialog.center().movedBy(-110, 62)), 160, 40 };
+}
+
+RectF TitleScene::getDataClearDialogNoButtonRect()
+{
+	const RectF dialog = getDataClearDialogRect();
+	return RectF{ Arg::center(dialog.center().movedBy(110, 62)), 160, 40 };
+}
+
 RectF TitleScene::getExitDialogRect()
 {
 	return RectF{ Arg::center = Scene::CenterF(), 420, 180 };
@@ -293,6 +376,18 @@ Vec2 TitleScene::getSaveLocationLabelPos()
 RectF TitleScene::getSaveLocationButtonRect()
 {
 	return RectF{ getSaveLocationLabelPos().movedBy(112, -4), 180, 32 };
+}
+
+RectF TitleScene::getClearContinueRunButtonRect()
+{
+	const RectF panel = getPanelRect();
+	return RectF{ Arg::center(panel.center().movedBy(-92, 212)), 170, 32 };
+}
+
+RectF TitleScene::getClearSettingsButtonRect()
+{
+	const RectF panel = getPanelRect();
+	return RectF{ Arg::center(panel.center().movedBy(92, 212)), 170, 32 };
 }
 
 RectF TitleScene::getMapEditButtonRect()

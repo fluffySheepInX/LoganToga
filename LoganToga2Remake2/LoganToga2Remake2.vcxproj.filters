@@ -51,6 +51,9 @@
     <ClCompile Include="TitleScene.Draw.cpp" />
     <ClCompile Include="BattleSessionTutorial.cpp" />
     <ClCompile Include="BattleSessionEnemyAiDebug.cpp" />
+    <ClCompile Include="WindowChromeAddon.cpp" />
+    <ClCompile Include="WindowChromeAddon.Input.cpp" />
+    <ClCompile Include="WindowChromeAddon.Draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleCommands.h" />
@@ -121,6 +124,7 @@
     <ClInclude Include="BalanceEditScene.h" />
     <ClInclude Include="WindowChromeAddon.h" />
     <ClInclude Include="AudioManager.h" />
+    <ClInclude Include="GameSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
