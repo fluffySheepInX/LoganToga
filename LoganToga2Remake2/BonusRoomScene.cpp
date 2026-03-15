@@ -1,4 +1,5 @@
 ﻿#include "BonusRoomScene.h"
+#include "AudioManager.h"
 #include "ContinueRunSave.h"
 #include "MenuButtonUi.h"
 #include "SceneTransition.h"
@@ -49,7 +50,10 @@ namespace
 }
 
 BonusRoomScene::BonusRoomScene(const SceneBase::InitData& init)
-	: SceneBase{ init } {}
+	: SceneBase{ init }
+{
+	PlayMenuBgm();
+}
 
 void BonusRoomScene::update()
 {

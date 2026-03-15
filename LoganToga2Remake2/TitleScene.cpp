@@ -1,8 +1,11 @@
 ﻿#include "TitleScene.h"
 
+#include "AudioManager.h"
+
 TitleScene::TitleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 {
+	PlayMenuBgm();
 }
 
 void TitleScene::update()

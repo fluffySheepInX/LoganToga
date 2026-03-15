@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AudioManager.h"
 #include "Remake2Common.h"
 
 struct MenuButtonStyle
@@ -42,7 +43,13 @@ struct MenuButtonVisualState
 
 [[nodiscard]] inline bool IsMenuButtonClicked(const RectF& rect)
 {
-	return rect.mouseOver() && MouseL.down();
+	if (rect.mouseOver() && MouseL.down())
+	{
+		PlayUiClickSe();
+		return true;
+	}
+
+	return false;
 }
 
 [[nodiscard]] inline MenuButtonVisualState GetMenuButtonVisualState(const RectF& rect, const bool selected = false, const MenuButtonStyle& style = {})

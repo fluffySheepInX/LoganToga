@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AudioManager.h"
 #include "GameData.h"
 #include "ContinueRunSave.h"
 #include "MenuButtonUi.h"
@@ -9,7 +10,10 @@ class RewardScene : public SceneBase
 {
 public:
 	explicit RewardScene(const SceneBase::InitData& init)
-		: SceneBase{ init } {}
+		: SceneBase{ init }
+	{
+		PlayMenuBgm();
+	}
 
 	void update() override
 	{

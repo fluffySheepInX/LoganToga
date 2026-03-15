@@ -1,4 +1,5 @@
 ﻿#include "BattleScene.h"
+#include "AudioManager.h"
 #include "BattleCommandUi.h"
 #include "ContinueRunSave.h"
 #include "SceneTransition.h"
@@ -26,6 +27,8 @@ BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_clock{ 1.0 / 60.0 }
 {
+	PlayBattleBgm();
+
 	if (IsTutorialBattle(getData()))
 	{
 		m_session.reset(getData().tutorialBattleConfig);

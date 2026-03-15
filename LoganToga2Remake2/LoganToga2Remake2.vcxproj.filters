@@ -120,6 +120,7 @@
     <ClInclude Include="BattleSessionCombatEffects.ipp" />
     <ClInclude Include="BalanceEditScene.h" />
     <ClInclude Include="WindowChromeAddon.h" />
+    <ClInclude Include="AudioManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
