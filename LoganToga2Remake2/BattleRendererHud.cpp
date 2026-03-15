@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+#include <unordered_map>
+
 namespace
 {
 	Array<String> BuildWrappedHudLines(const Array<String>& entries, const Font& font, const double maxWidth, const String& prefix)
@@ -233,7 +235,13 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 			? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
 			: U"Run: inactive");
 	const auto commandLayout = BuildCommandPanelLayout(state, config);
-	const auto queueTarget = BattleRendererHudInternal::FindQueueDisplayTarget(state);
+	std::unordered_map<int32, const BuildingState*> buildingsByUnitId;
+	buildingsByUnitId.reserve(state.buildings.size());
+	for (const auto& building : state.buildings)
+	{
+		buildingsByUnitId.try_emplace(building.unitId, &building);
+	}
+	const auto queueTarget = BattleRendererHudInternal::FindQueueDisplayTarget(state, buildingsByUnitId);
 
 	RoundRect{ 16, 16, 480, hudHeight, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
 	gameData.uiFont(config.hud.title).draw(28, 26, Palette::White);

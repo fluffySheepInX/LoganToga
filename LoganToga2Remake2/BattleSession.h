@@ -38,7 +38,9 @@ private:
 	BattleState m_state;
 	Array<BattleCommand> m_pendingCommands;
 	mutable std::unordered_map<int32, size_t> m_unitIndexById;
+	mutable std::unordered_map<int32, size_t> m_buildingIndexByUnitId;
 	mutable bool m_unitIndexDirty = true;
+	mutable bool m_buildingIndexDirty = true;
 	mutable Array<size_t> m_playerUnitIndices;
 	mutable Array<size_t> m_enemyUnitIndices;
 	mutable Array<size_t> m_playerBuildingIndices;
@@ -94,9 +96,11 @@ private:
 	void applyUnitHpDelta(UnitState& target, int32 hpDelta);
 	void triggerGoliathExplosion(UnitState& unit);
 	void invalidateUnitIndex() noexcept;
+	void invalidateBuildingIndex() noexcept;
 	void invalidateSpatialQueryCache() noexcept;
 	void invalidateNavigationGrid() noexcept;
 	void rebuildUnitIndex() const;
+	void rebuildBuildingIndex() const;
 	void rebuildFrameUnitCache() const;
 	void rebuildSpatialQueryCache() const;
 	void rebuildNavigationGrid() const;
@@ -108,8 +112,11 @@ private:
 	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;
 	[[nodiscard]] const Array<size_t>& getOwnerBuildingIndices(Owner owner) const;
 	[[nodiscard]] const UnitState* findOwnerUnitByArchetype(Owner owner, UnitArchetype archetype) const;
+	[[nodiscard]] const UnitState* findNearestIntrudingPlayerUnit(const Vec2& assetPosition, double defenseRadius, double& inOutDistanceSq) const;
 	[[nodiscard]] bool hasBaseDefenseTurret(const UnitState& base, double lockRadius) const;
 	[[nodiscard]] UnitState* findCachedUnit(int32 id);
 	[[nodiscard]] const UnitState* findCachedUnit(int32 id) const;
+	[[nodiscard]] BuildingState* findCachedBuilding(int32 unitId);
+	[[nodiscard]] const BuildingState* findCachedBuilding(int32 unitId) const;
 	void resetEnemyAiAssaultState();
 };

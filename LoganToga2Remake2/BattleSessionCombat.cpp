@@ -129,7 +129,7 @@ void BattleSession::updateCombat()
 		if ((unit.order.type == UnitOrderType::RepairTarget) && unit.order.targetUnitId)
 		{
 			const auto* target = findCachedUnit(*unit.order.targetUnitId);
-			const auto* building = target ? m_state.findBuildingByUnitId(*unit.order.targetUnitId) : nullptr;
+			const auto* building = target ? findCachedBuilding(*unit.order.targetUnitId) : nullptr;
 			if (!(target
 				&& target->isAlive
 				&& (target->owner == unit.owner)
@@ -165,6 +165,11 @@ void BattleSession::updateCombat()
 			continue;
 		}
 
+		if (unit.attackCooldownRemaining > 0.0)
+		{
+			continue;
+		}
+
 		const UnitState* target = nullptr;
 
 		if ((unit.order.type == UnitOrderType::AttackTarget) && unit.order.targetUnitId)
@@ -189,11 +194,6 @@ void BattleSession::updateCombat()
 		const Vec2 delta = (target->position - unit.position);
 		const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(unit, *target);
 		if (delta.lengthSq() > (attackRange * attackRange))
-		{
-			continue;
-		}
-
-		if (unit.attackCooldownRemaining > 0.0)
 		{
 			continue;
 		}

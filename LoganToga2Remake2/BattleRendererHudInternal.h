@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <unordered_map>
+
 #include "BattleRenderer.h"
 #include "BattleCommandUi.h"
 
@@ -17,6 +19,6 @@ namespace BattleRendererHudInternal
 		const UnitState* unit = nullptr;
 	};
 
-	[[nodiscard]] Optional<QueueDisplayTarget> FindQueueDisplayTarget(const BattleState& state);
+	[[nodiscard]] Optional<QueueDisplayTarget> FindQueueDisplayTarget(const BattleState& state, const std::unordered_map<int32, const BuildingState*>& buildingsByUnitId);
 	void DrawQueuePanel(const RectF& panelRect, const QueueDisplayTarget& target, const GameData& gameData);
 }

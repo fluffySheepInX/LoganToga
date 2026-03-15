@@ -133,6 +133,7 @@ struct BattleState
 	EnemyAiMode enemyAiResolvedMode = EnemyAiMode::Default;
 	int32 enemyAiDebugCombatUnitCount = 0;
 	int32 enemyAiDebugReadyUnitCount = 0;
+	int32 enemyAiSearchPhase = 0;
 	double enemyAiStagingTimer = 0.0;
 	double enemyAiAssaultCommitTimer = 0.0;
 	Vec2 enemyAiAssaultDestination = Vec2::Zero();

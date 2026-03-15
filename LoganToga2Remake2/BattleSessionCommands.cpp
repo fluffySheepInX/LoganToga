@@ -125,7 +125,7 @@ void BattleSession::processCommands()
 					return;
 				}
 
-				auto* building = m_state.findBuildingByUnitId(value.turretUnitId);
+				auto* building = findCachedBuilding(value.turretUnitId);
 				if (!(building && building->isConstructed))
 				{
 					m_state.statusMessage = U"Turret offline";
@@ -180,7 +180,7 @@ void BattleSession::processCommands()
 					return;
 				}
 
-				auto* building = m_state.findBuildingByUnitId(value.targetUnitId);
+				auto* building = findCachedBuilding(value.targetUnitId);
 				if (!(building && building->isConstructed))
 				{
 					m_state.statusMessage = U"Turret offline";

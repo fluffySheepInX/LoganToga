@@ -56,7 +56,7 @@ Optional<int32> BattleSession::findSelectedPlayerTurretId() const
 		return none;
 	}
 
-	const auto* building = m_state.findBuildingByUnitId(*turretId);
+	const auto* building = findCachedBuilding(*turretId);
 	if (!(building && building->isConstructed))
 	{
 		return none;

@@ -1,5 +1,8 @@
 ﻿namespace
 {
+	constexpr int32 EnemyAiSearchGroupCountLight = 2;
+	constexpr int32 EnemyAiSearchGroupCountHeavy = 4;
+
 	enum class EnemyAiObjectiveType
 	{
 		Rally,
@@ -61,6 +64,57 @@
 		return from + (direction.normalized() * distance);
 	}
 
+	[[nodiscard]] int32 GetDefenseResponderLimit(const EnemyAiConfig& config, const int32 enemyCombatUnits)
+	{
+		const int32 desiredLimit = Max(2, config.assaultUnitThreshold + 1);
+		return Min(enemyCombatUnits, desiredLimit);
+	}
+
+	[[nodiscard]] bool HasSameEnemyOrder(const UnitState& unit, const EnemyAiDecision& decision)
+	{
+		const UnitOrderType desiredOrderType = decision.targetUnitId
+			? UnitOrderType::AttackTarget
+			: UnitOrderType::Move;
+		const double positionToleranceSq = (12.0 * 12.0);
+		return (unit.order.type == desiredOrderType)
+			&& (unit.order.targetUnitId == decision.targetUnitId)
+			&& (unit.order.targetPoint.distanceFromSq(decision.strategicDestination) <= positionToleranceSq)
+			&& (unit.moveTarget.distanceFromSq(decision.strategicDestination) <= positionToleranceSq);
+	}
+
+	[[nodiscard]] int32 GetEnemyAiSearchGroupCount(const int32 enemyCombatUnits)
+	{
+		return (enemyCombatUnits >= 8)
+			? EnemyAiSearchGroupCountHeavy
+			: EnemyAiSearchGroupCountLight;
+	}
+
+}
+
+const UnitState* BattleSession::findNearestIntrudingPlayerUnit(const Vec2& assetPosition, const double defenseRadius, double& inOutDistanceSq) const
+{
+	gatherNearbyUnitIndices(Owner::Player, assetPosition, defenseRadius, m_nearbyUnitIndicesScratch);
+
+	const UnitState* nearest = nullptr;
+	for (const auto candidateIndex : m_nearbyUnitIndicesScratch)
+	{
+		const auto& candidate = m_state.units[candidateIndex];
+		if (!candidate.isAlive || (candidate.owner != Owner::Player) || IsBuildingArchetype(candidate.archetype))
+		{
+			continue;
+		}
+
+		const double distanceSq = candidate.position.distanceFromSq(assetPosition);
+		if (distanceSq > inOutDistanceSq)
+		{
+			continue;
+		}
+
+		inOutDistanceSq = distanceSq;
+		nearest = &candidate;
+	}
+
+	return nearest;
 }
 
 void BattleSession::updateEnemyAI(const double deltaTime)
@@ -84,8 +138,6 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		}
 	}
 
-	invalidateSpatialQueryCache();
-
 	m_state.enemyAiDecisionTimer += deltaTime;
 	if (m_state.enemyAiDecisionTimer < m_config.enemyAI.decisionInterval)
 	{
@@ -101,39 +153,37 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	const bool canAssaultPlayerBase = playerBase && !hasBaseDefenseTurret(*playerBase, m_config.enemyAI.baseAssaultLockRadius);
 
 	const UnitState* defenseTarget = nullptr;
-	double defenseTargetDistance = m_config.enemyAI.defenseRadius;
-	for (const auto candidateIndex : getOwnerUnitIndices(Owner::Player))
+	double defenseTargetDistanceSq = (m_config.enemyAI.defenseRadius * m_config.enemyAI.defenseRadius);
+	if (enemyBase)
 	{
-		const auto& candidate = m_state.units[candidateIndex];
-		if (!candidate.isAlive || (candidate.owner != Owner::Player) || IsBuildingArchetype(candidate.archetype))
+		if (const UnitState* candidate = findNearestIntrudingPlayerUnit(enemyBase->position, m_config.enemyAI.defenseRadius, defenseTargetDistanceSq))
+		{
+			defenseTarget = candidate;
+		}
+	}
+	for (const auto buildingIndex : getOwnerBuildingIndices(Owner::Enemy))
+	{
+		const auto& unit = m_state.units[buildingIndex];
+		if (!(unit.isAlive && (unit.owner == Owner::Enemy)))
 		{
 			continue;
 		}
 
-		double nearestAssetDistance = candidate.position.distanceFrom(enemyAnchor);
-		for (const auto buildingIndex : getOwnerBuildingIndices(Owner::Enemy))
+		if (const UnitState* candidate = findNearestIntrudingPlayerUnit(unit.position, m_config.enemyAI.defenseRadius, defenseTargetDistanceSq))
 		{
-			const auto& unit = m_state.units[buildingIndex];
-			if (!(unit.isAlive && (unit.owner == Owner::Enemy)))
-			{
-				continue;
-			}
-
-			nearestAssetDistance = Min(nearestAssetDistance, candidate.position.distanceFrom(unit.position));
+			defenseTarget = candidate;
+		}
+	}
+	for (const auto& resourcePoint : m_state.resourcePoints)
+	{
+		if (resourcePoint.owner != Owner::Enemy)
+		{
+			continue;
 		}
 
-		for (const auto& resourcePoint : m_state.resourcePoints)
+		if (const UnitState* candidate = findNearestIntrudingPlayerUnit(resourcePoint.position, m_config.enemyAI.defenseRadius, defenseTargetDistanceSq))
 		{
-			if (resourcePoint.owner == Owner::Enemy)
-			{
-				nearestAssetDistance = Min(nearestAssetDistance, candidate.position.distanceFrom(resourcePoint.position));
-			}
-		}
-
-		if (nearestAssetDistance <= defenseTargetDistance)
-		{
-			defenseTargetDistance = nearestAssetDistance;
-			defenseTarget = &candidate;
+			defenseTarget = candidate;
 		}
 	}
 
@@ -161,6 +211,47 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		if (IsEnemyCombatUnit(unit))
 		{
 			++enemyCombatUnits;
+		}
+	}
+	const int32 searchGroupCount = GetEnemyAiSearchGroupCount(enemyCombatUnits);
+	const int32 currentSearchPhase = (m_state.enemyAiSearchPhase % searchGroupCount);
+	m_state.enemyAiSearchPhase = ((currentSearchPhase + 1) % searchGroupCount);
+
+	Array<size_t> defenseResponderIndices;
+	if (defenseTarget)
+	{
+		const int32 defenseResponderLimit = GetDefenseResponderLimit(m_config.enemyAI, enemyCombatUnits);
+		Array<double> defenseResponderDistanceSq;
+		defenseResponderIndices.reserve(defenseResponderLimit);
+		defenseResponderDistanceSq.reserve(defenseResponderLimit);
+
+		for (const auto index : getOwnerUnitIndices(Owner::Enemy))
+		{
+			const auto& unit = m_state.units[index];
+			if (!IsEnemyCombatUnit(unit))
+			{
+				continue;
+			}
+
+			const double distanceSq = unit.position.distanceFromSq(defenseTarget->position);
+			size_t insertIndex = 0;
+			while ((insertIndex < defenseResponderDistanceSq.size()) && (defenseResponderDistanceSq[insertIndex] <= distanceSq))
+			{
+				++insertIndex;
+			}
+
+			if (insertIndex >= static_cast<size_t>(defenseResponderLimit))
+			{
+				continue;
+			}
+
+			defenseResponderDistanceSq.insert(defenseResponderDistanceSq.begin() + static_cast<ptrdiff_t>(insertIndex), distanceSq);
+			defenseResponderIndices.insert(defenseResponderIndices.begin() + static_cast<ptrdiff_t>(insertIndex), index);
+			if (defenseResponderIndices.size() > static_cast<size_t>(defenseResponderLimit))
+			{
+				defenseResponderDistanceSq.pop_back();
+				defenseResponderIndices.pop_back();
+			}
 		}
 	}
 
@@ -289,7 +380,7 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		}
 
 		EnemyAiDecision decision;
-		if (defenseTarget)
+		if (defenseTarget && defenseResponderIndices.contains(unitIndex))
 		{
 			decision.objective = EnemyAiObjectiveType::Defend;
 			decision.strategicDestination = defenseTarget->position;
@@ -328,14 +419,36 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		const bool suppressNearbyTargetSelection = useStagingAssault && IsEnemyCombatUnit(unit) && !shouldAssault && canStageAssault;
 		if (!decision.targetUnitId && !suppressNearbyTargetSelection)
 		{
-			if (const UnitState* nearbyTarget = findNearestEnemy(unit))
+			if ((unit.order.type == UnitOrderType::AttackTarget) && unit.order.targetUnitId)
 			{
-				if (!((nearbyTarget->archetype == UnitArchetype::Base) && !canAssaultPlayerBase))
+				if (const UnitState* currentTarget = findCachedUnit(*unit.order.targetUnitId))
 				{
-					decision.targetUnitId = nearbyTarget->id;
-					decision.strategicDestination = nearbyTarget->position;
+					if (currentTarget->isAlive
+						&& IsEnemy(unit, *currentTarget)
+						&& !((currentTarget->archetype == UnitArchetype::Base) && !canAssaultPlayerBase))
+					{
+						decision.targetUnitId = currentTarget->id;
+						decision.strategicDestination = currentTarget->position;
+					}
 				}
 			}
+
+			if (!decision.targetUnitId && ((unit.id % searchGroupCount) == currentSearchPhase))
+			{
+				if (const UnitState* nearbyTarget = findNearestEnemy(unit))
+				{
+					if (!((nearbyTarget->archetype == UnitArchetype::Base) && !canAssaultPlayerBase))
+					{
+						decision.targetUnitId = nearbyTarget->id;
+						decision.strategicDestination = nearbyTarget->position;
+					}
+				}
+			}
+		}
+
+		if (HasSameEnemyOrder(unit, decision))
+		{
+			continue;
 		}
 
 		if (decision.targetUnitId)
@@ -352,5 +465,6 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		}
 
 		unit.moveTarget = unit.order.targetPoint;
+		BattleSessionInternal::InvalidateNavigationPath(unit);
 	}
 }

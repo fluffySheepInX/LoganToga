@@ -180,7 +180,7 @@ bool BattleSession::tryPlaceBuilding(const Owner owner, const UnitArchetype arch
 		gold -= cost;
 	}
 	const int32 buildingUnitId = spawnUnit(owner, archetype, clampedPosition);
-	if (auto* building = m_state.findBuildingByUnitId(buildingUnitId))
+	if (auto* building = findCachedBuilding(buildingUnitId))
 	{
 		building->isConstructed = false;
 		building->constructionRemaining = getProductionTime(owner, archetype);

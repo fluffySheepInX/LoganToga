@@ -19,6 +19,23 @@ namespace
 		order.targetUnitId.reset();
 		return nullptr;
 	}
+
+	void ApplyAttackPursuitTarget(const UnitState& unit, const UnitState& target, Vec2& strategicDestination, double& stopDistance)
+	{
+		strategicDestination = target.position;
+		stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, target) - 2.0, 1.0);
+		if (unit.archetype == UnitArchetype::Spinner)
+		{
+			stopDistance = 1.0;
+		}
+	}
+
+	[[nodiscard]] bool ShouldReacquireAttackTargetNow(const UnitState& unit)
+	{
+		const double reacquireRadius = Max(36.0, unit.radius + 16.0);
+		return (unit.attackCooldownRemaining <= 0.0)
+			|| (unit.position.distanceFromSq(unit.order.targetPoint) <= (reacquireRadius * reacquireRadius));
+	}
 }
 
 void BattleSession::updateMovement(const double deltaTime)
@@ -63,17 +80,46 @@ void BattleSession::updateMovement(const double deltaTime)
 			{
 				if (target->isAlive && IsEnemy(unit, *target))
 				{
-					strategicDestination = target->position;
-					stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *target) - 2.0, 1.0);
-					if (unit.archetype == UnitArchetype::Spinner)
+					ApplyAttackPursuitTarget(unit, *target, strategicDestination, stopDistance);
+					unit.order.targetPoint = strategicDestination;
+				}
+				else if (ShouldReacquireAttackTargetNow(unit))
+				{
+					if (const auto* nextTarget = findNearestEnemy(unit))
 					{
-						stopDistance = 1.0;
+						const auto* engagedTarget = TryReacquireAttackTarget(m_state, unit, unit.order, nextTarget);
+						if (engagedTarget)
+						{
+							ApplyAttackPursuitTarget(unit, *engagedTarget, strategicDestination, stopDistance);
+						}
 					}
+					else
+					{
+						TryReacquireAttackTarget(m_state, unit, unit.order, nullptr);
+					}
+				}
+			}
+			else if (ShouldReacquireAttackTargetNow(unit))
+			{
+				if (const auto* nextTarget = findNearestEnemy(unit))
+				{
+					const auto* engagedTarget = TryReacquireAttackTarget(m_state, unit, unit.order, nextTarget);
+					if (engagedTarget)
+					{
+						ApplyAttackPursuitTarget(unit, *engagedTarget, strategicDestination, stopDistance);
+					}
+				}
+				else
+				{
+					TryReacquireAttackTarget(m_state, unit, unit.order, nullptr);
+				}
+			}
+		}
 		else if ((unit.order.type == UnitOrderType::RepairTarget) && unit.order.targetUnitId)
 		{
 			if (const auto* target = findCachedUnit(*unit.order.targetUnitId))
 			{
-				const auto* building = m_state.findBuildingByUnitId(*unit.order.targetUnitId);
+				const auto* building = findCachedBuilding(*unit.order.targetUnitId);
 				if (target->isAlive
 					&& (target->owner == unit.owner)
 					&& (target->archetype == UnitArchetype::Turret)
@@ -95,50 +141,6 @@ void BattleSession::updateMovement(const double deltaTime)
 			{
 				unit.order.type = UnitOrderType::Idle;
 				unit.order.targetUnitId.reset();
-			}
-		}
-					unit.order.targetPoint = strategicDestination;
-				}
-				else
-				{
-					if (const auto* nextTarget = findNearestEnemy(unit))
-					{
-						const auto* engagedTarget = TryReacquireAttackTarget(m_state, unit, unit.order, nextTarget);
-						if (engagedTarget)
-						{
-							strategicDestination = engagedTarget->position;
-							stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *engagedTarget) - 2.0, 1.0);
-							if (unit.archetype == UnitArchetype::Spinner)
-							{
-								stopDistance = 1.0;
-							}
-						}
-					}
-					else
-					{
-						TryReacquireAttackTarget(m_state, unit, unit.order, nullptr);
-					}
-				}
-			}
-			else
-			{
-				if (const auto* nextTarget = findNearestEnemy(unit))
-				{
-					const auto* engagedTarget = TryReacquireAttackTarget(m_state, unit, unit.order, nextTarget);
-					if (engagedTarget)
-					{
-						strategicDestination = engagedTarget->position;
-						stopDistance = Max(BattleSessionInternal::GetEffectiveAttackRange(unit, *engagedTarget) - 2.0, 1.0);
-						if (unit.archetype == UnitArchetype::Spinner)
-						{
-							stopDistance = 1.0;
-						}
-					}
-				}
-				else
-				{
-					TryReacquireAttackTarget(m_state, unit, unit.order, nullptr);
-				}
 			}
 		}
 

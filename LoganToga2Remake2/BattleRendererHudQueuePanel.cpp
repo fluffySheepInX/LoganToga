@@ -1,8 +1,10 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+#include <unordered_map>
+
 namespace BattleRendererHudInternal
 {
-	Optional<QueueDisplayTarget> FindQueueDisplayTarget(const BattleState& state)
+	Optional<QueueDisplayTarget> FindQueueDisplayTarget(const BattleState& state, const std::unordered_map<int32, const BuildingState*>& buildingsByUnitId)
 	{
 		for (const auto& unit : state.units)
 		{
@@ -11,9 +13,10 @@ namespace BattleRendererHudInternal
 				continue;
 			}
 
-			if (const auto* building = state.findBuildingByUnitId(unit.id))
+			const auto buildingIt = buildingsByUnitId.find(unit.id);
+			if (buildingIt != buildingsByUnitId.end())
 			{
-				return QueueDisplayTarget{ building, &unit };
+				return QueueDisplayTarget{ buildingIt->second, &unit };
 			}
 		}
 
@@ -24,7 +27,8 @@ namespace BattleRendererHudInternal
 				continue;
 			}
 
-			const auto* building = state.findBuildingByUnitId(unit.id);
+			const auto buildingIt = buildingsByUnitId.find(unit.id);
+			const auto* building = (buildingIt != buildingsByUnitId.end()) ? buildingIt->second : nullptr;
 			if (!(building && (!building->isConstructed || !building->productionQueue.isEmpty())))
 			{
 				continue;

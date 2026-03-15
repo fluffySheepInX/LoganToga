@@ -92,6 +92,7 @@ void BattleSession::reset(const BattleConfigData& config)
 	m_state = BattleState{};
 	m_pendingCommands.clear();
 	invalidateUnitIndex();
+	invalidateBuildingIndex();
 	setupInitialState();
 }
 
@@ -136,6 +137,7 @@ const BattleState& BattleSession::state() const noexcept
 BattleState& BattleSession::state() noexcept
 {
 	invalidateUnitIndex();
+	invalidateBuildingIndex();
 	return m_state;
 }
 

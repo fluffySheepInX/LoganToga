@@ -1,12 +1,14 @@
 ﻿void BattleSession::cleanupDeadUnits()
 {
 	Array<int32> deadUnitIds;
+	bool hadDeadBuilding = false;
 	for (auto& unit : m_state.units)
 	{
 		if (!unit.isAlive)
 		{
 			unit.isSelected = false;
 			deadUnitIds << unit.id;
+			hadDeadBuilding = hadDeadBuilding || IsBuildingArchetype(unit.archetype);
 		}
 	}
 
@@ -24,6 +26,12 @@
 		const auto* unit = findCachedUnit(building.unitId);
 		return !(unit && unit->isAlive);
 	});
+
+	if (hadDeadBuilding)
+	{
+		invalidateBuildingIndex();
+		invalidateNavigationGrid();
+	}
 
 	cleanupSquads();
 }
@@ -68,6 +76,8 @@ int32 BattleSession::spawnUnit(const Owner owner, const UnitArchetype archetype,
 	if (IsBuildingArchetype(archetype))
 	{
 		m_state.buildings << BuildingState{ id };
+		invalidateBuildingIndex();
+		invalidateNavigationGrid();
 	}
 	return id;
 }

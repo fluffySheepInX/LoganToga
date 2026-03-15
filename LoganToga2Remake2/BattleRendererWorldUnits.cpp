@@ -1,6 +1,7 @@
 ﻿#include "BattleRendererWorldMeleeHelpers.h"
 
 #include <cmath>
+#include <unordered_map>
 
 namespace
 {
@@ -9,35 +10,14 @@ namespace
 		return 0.5 + (0.5 * std::sin((Scene::Time() * 6.0) + (unitId * 0.8)));
 	}
 
-	[[nodiscard]] const ProductionCompletionEffect* FindProductionCompletionEffect(const BattleState& state, const int32 unitId)
+	[[nodiscard]] Vec2 GetUnitRenderOffset(const UnitState& unit, const AttackVisualEffect* effect)
 	{
-		for (const auto& effect : state.productionCompletionEffects)
+		if (!effect)
 		{
-			if ((effect.unitId == unitId) && (effect.remainingTime > 0.0) && (effect.totalTime > 0.0))
-			{
-				return &effect;
-			}
+			return Vec2::Zero();
 		}
 
-		return nullptr;
-	}
-
-	[[nodiscard]] Vec2 GetUnitRenderOffset(const UnitState& unit, const BattleState& state)
-	{
-		for (const auto& effect : state.attackVisualEffects)
-		{
-			if ((effect.sourceUnitId != unit.id)
-				|| !BattleRendererWorldInternal::IsMeleeAttackArchetype(effect.sourceArchetype)
-				|| (effect.framesRemaining <= 0)
-				|| (effect.totalFrames <= 0))
-			{
-				continue;
-			}
-
-			return BattleRendererWorldInternal::GetMeleeAttackOffset(unit.archetype, effect.end - effect.start, BattleRendererWorldInternal::GetAttackAnimationProgress(effect));
-		}
-
-		return Vec2::Zero();
+		return BattleRendererWorldInternal::GetMeleeAttackOffset(unit.archetype, effect->end - effect->start, BattleRendererWorldInternal::GetAttackAnimationProgress(*effect));
 	}
 
 	void DrawBuildingProductionDecoration(const UnitState& unit, const BuildingState& building, const Vec2& renderPosition, const ColorF& ownerColor)
@@ -182,6 +162,39 @@ namespace
 
 void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
 {
+	std::unordered_map<int32, const AttackVisualEffect*> meleeEffectsByUnitId;
+	meleeEffectsByUnitId.reserve(state.attackVisualEffects.size());
+	for (const auto& effect : state.attackVisualEffects)
+	{
+		if (!BattleRendererWorldInternal::IsMeleeAttackArchetype(effect.sourceArchetype)
+			|| (effect.framesRemaining <= 0)
+			|| (effect.totalFrames <= 0))
+		{
+			continue;
+		}
+
+		meleeEffectsByUnitId.try_emplace(effect.sourceUnitId, &effect);
+	}
+
+	std::unordered_map<int32, const ProductionCompletionEffect*> completionEffectsByUnitId;
+	completionEffectsByUnitId.reserve(state.productionCompletionEffects.size());
+	for (const auto& effect : state.productionCompletionEffects)
+	{
+		if ((effect.remainingTime <= 0.0) || (effect.totalTime <= 0.0))
+		{
+			continue;
+		}
+
+		completionEffectsByUnitId.try_emplace(effect.unitId, &effect);
+	}
+
+	std::unordered_map<int32, const BuildingState*> buildingsByUnitId;
+	buildingsByUnitId.reserve(state.buildings.size());
+	for (const auto& building : state.buildings)
+	{
+		buildingsByUnitId.try_emplace(building.unitId, &building);
+	}
+
 	for (const auto& unit : state.units)
 	{
 		if (!unit.isAlive)
@@ -189,11 +202,12 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 			continue;
 		}
 
-		const Vec2 renderPosition = unit.position + GetUnitRenderOffset(unit, state);
+		const auto meleeEffectIt = meleeEffectsByUnitId.find(unit.id);
+		const AttackVisualEffect* meleeEffect = (meleeEffectIt != meleeEffectsByUnitId.end()) ? meleeEffectIt->second : nullptr;
+		const Vec2 renderPosition = unit.position + GetUnitRenderOffset(unit, meleeEffect);
 		const ColorF color = GetOwnerColor(unit.owner);
-		const BuildingState* building = IsBuildingArchetype(unit.archetype)
-			? state.findBuildingByUnitId(unit.id)
-			: nullptr;
+		const auto buildingIt = buildingsByUnitId.find(unit.id);
+		const BuildingState* building = (buildingIt != buildingsByUnitId.end()) ? buildingIt->second : nullptr;
 		if (unit.isSelected && (unit.attackRange > 0.0))
 		{
 			const ColorF rangeFill = (unit.archetype == UnitArchetype::Healer)
@@ -210,9 +224,10 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		{
 			DrawBuildingProductionDecoration(unit, *building, renderPosition, color);
 
-			if (const auto* completionEffect = FindProductionCompletionEffect(state, unit.id))
+			const auto completionEffectIt = completionEffectsByUnitId.find(unit.id);
+			if (completionEffectIt != completionEffectsByUnitId.end())
 			{
-				DrawBuildingProductionCompletionFlash(unit, *completionEffect, renderPosition);
+				DrawBuildingProductionCompletionFlash(unit, *completionEffectIt->second, renderPosition);
 			}
 		}
 

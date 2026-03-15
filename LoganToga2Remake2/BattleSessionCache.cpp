@@ -6,7 +6,11 @@ void BattleSession::invalidateUnitIndex() noexcept
 	m_unitIndexDirty = true;
 	m_frameUnitCacheDirty = true;
 	m_spatialQueryCacheDirty = true;
-	m_navigationGridDirty = true;
+}
+
+void BattleSession::invalidateBuildingIndex() noexcept
+{
+	m_buildingIndexDirty = true;
 }
 
 void BattleSession::invalidateSpatialQueryCache() noexcept
@@ -34,6 +38,23 @@ void BattleSession::rebuildUnitIndex() const
 	}
 
 	m_unitIndexDirty = false;
+}
+
+void BattleSession::rebuildBuildingIndex() const
+{
+	if (!m_buildingIndexDirty)
+	{
+		return;
+	}
+
+	m_buildingIndexByUnitId.clear();
+	m_buildingIndexByUnitId.reserve(m_state.buildings.size());
+	for (size_t index = 0; index < m_state.buildings.size(); ++index)
+	{
+		m_buildingIndexByUnitId.emplace(m_state.buildings[index].unitId, index);
+	}
+
+	m_buildingIndexDirty = false;
 }
 
 void BattleSession::rebuildFrameUnitCache() const
@@ -274,6 +295,30 @@ UnitState* BattleSession::findCachedUnit(const int32 id)
 	}
 
 	return &m_state.units[it->second];
+}
+
+BuildingState* BattleSession::findCachedBuilding(const int32 unitId)
+{
+	rebuildBuildingIndex();
+	const auto it = m_buildingIndexByUnitId.find(unitId);
+	if ((it == m_buildingIndexByUnitId.end()) || (it->second >= m_state.buildings.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_state.buildings[it->second];
+}
+
+const BuildingState* BattleSession::findCachedBuilding(const int32 unitId) const
+{
+	rebuildBuildingIndex();
+	const auto it = m_buildingIndexByUnitId.find(unitId);
+	if ((it == m_buildingIndexByUnitId.end()) || (it->second >= m_state.buildings.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_state.buildings[it->second];
 }
 
 const UnitState* BattleSession::findCachedUnit(const int32 id) const

@@ -2,28 +2,39 @@
 {
 	for (auto& resourcePoint : m_state.resourcePoints)
 	{
+		const double captureRadiusSq = (resourcePoint.radius * resourcePoint.radius);
 		bool playerPresent = false;
 		bool enemyPresent = false;
 
-		for (const auto& unit : m_state.units)
+		gatherNearbyUnitIndices(Owner::Player, resourcePoint.position, resourcePoint.radius, m_nearbyUnitIndicesScratch);
+		for (const auto unitIndex : m_nearbyUnitIndicesScratch)
 		{
+			const auto& unit = m_state.units[unitIndex];
 			if (!unit.isAlive || IsBuildingArchetype(unit.archetype))
 			{
 				continue;
 			}
 
-			if (!Circle{ resourcePoint.position, resourcePoint.radius }.intersects(unit.position))
+			if (unit.position.distanceFromSq(resourcePoint.position) <= captureRadiusSq)
+			{
+				playerPresent = true;
+				break;
+			}
+		}
+
+		gatherNearbyUnitIndices(Owner::Enemy, resourcePoint.position, resourcePoint.radius, m_nearbyUnitIndicesScratch);
+		for (const auto unitIndex : m_nearbyUnitIndicesScratch)
+		{
+			const auto& unit = m_state.units[unitIndex];
+			if (!unit.isAlive || IsBuildingArchetype(unit.archetype))
 			{
 				continue;
 			}
 
-			if (unit.owner == Owner::Player)
-			{
-				playerPresent = true;
-			}
-			else if (unit.owner == Owner::Enemy)
+			if (unit.position.distanceFromSq(resourcePoint.position) <= captureRadiusSq)
 			{
 				enemyPresent = true;
+				break;
 			}
 		}
 
