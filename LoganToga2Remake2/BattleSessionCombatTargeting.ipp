@@ -84,62 +84,6 @@
 		return attacker.attackPower;
 	}
 
-	[[nodiscard]] const UnitState* FindBestKatyushaTarget(const BattleState& state, const UnitState& source, const Array<size_t>& candidateIndices)
-	{
-		const UnitState* bestTarget = nullptr;
-		double bestScore = -Math::Inf;
-
-		for (const auto candidateIndex : candidateIndices)
-		{
-			const auto& candidate = state.units[candidateIndex];
-			if (!candidate.isAlive || !IsEnemy(source, candidate))
-			{
-				continue;
-			}
-
-			const double distanceSq = source.position.distanceFromSq(candidate.position);
-			const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(source, candidate);
-			if (distanceSq > (attackRange * attackRange))
-			{
-				continue;
-			}
-
-			int32 affectedCount = 0;
-			for (const auto splashIndex : candidateIndices)
-			{
-				const auto& splashCandidate = state.units[splashIndex];
-				if (!splashCandidate.isAlive || !IsEnemy(source, splashCandidate))
-				{
-					continue;
-				}
-
-				const double splashRadius = KatyushaSplashRadius + (splashCandidate.radius * 0.35);
-				if (candidate.position.distanceFromSq(splashCandidate.position) <= (splashRadius * splashRadius))
-				{
-					++affectedCount;
-				}
-			}
-
-			double score = (affectedCount * KatyushaClusterScoreWeight) - (distanceSq * KatyushaDistancePenalty);
-			if (IsBacklinePriorityArchetype(candidate.archetype))
-			{
-				score += KatyushaBacklineBonus;
-			}
-			if (IsBuildingArchetype(candidate.archetype))
-			{
-				score += KatyushaBuildingBonus;
-			}
-
-			if (score > bestScore)
-			{
-				bestScore = score;
-				bestTarget = &candidate;
-			}
-		}
-
-		return bestTarget;
-	}
-
 	[[nodiscard]] int32 GetAttackEffectFrames(const UnitArchetype archetype)
 	{
 		switch (archetype)
@@ -168,6 +112,72 @@
 			return 4;
 		}
 	}
+}
+
+const UnitState* BattleSession::findBestKatyushaTarget(const UnitState& source) const
+{
+	const double searchRadius = source.attackRange + KatyushaSplashRadius + m_spatialQueryCellSize;
+	gatherNearbyOpponentIndices(source, searchRadius, m_nearbyOpponentIndicesScratch);
+
+	Array<size_t> inRangeCandidateIndices;
+	inRangeCandidateIndices.reserve(m_nearbyOpponentIndicesScratch.size());
+	for (const auto candidateIndex : m_nearbyOpponentIndicesScratch)
+	{
+		const auto& candidate = m_state.units[candidateIndex];
+		if (!candidate.isAlive || !IsEnemy(source, candidate))
+		{
+			continue;
+		}
+
+		const double distanceSq = source.position.distanceFromSq(candidate.position);
+		const double attackRange = BattleSessionInternal::GetEffectiveAttackRange(source, candidate);
+		if (distanceSq <= (attackRange * attackRange))
+		{
+			inRangeCandidateIndices << candidateIndex;
+		}
+	}
+
+	const UnitState* bestTarget = nullptr;
+	double bestScore = -Math::Inf;
+	for (const auto candidateIndex : inRangeCandidateIndices)
+	{
+		const auto& candidate = m_state.units[candidateIndex];
+		gatherNearbyUnitIndices(candidate.owner, candidate.position, KatyushaSplashRadius + m_spatialQueryCellSize, m_nearbyUnitIndicesScratch);
+
+		int32 affectedCount = 0;
+		for (const auto splashIndex : m_nearbyUnitIndicesScratch)
+		{
+			const auto& splashCandidate = m_state.units[splashIndex];
+			if (!splashCandidate.isAlive || !IsEnemy(source, splashCandidate))
+			{
+				continue;
+			}
+
+			const double splashRadius = KatyushaSplashRadius + (splashCandidate.radius * 0.35);
+			if (candidate.position.distanceFromSq(splashCandidate.position) <= (splashRadius * splashRadius))
+			{
+				++affectedCount;
+			}
+		}
+
+		double score = (affectedCount * KatyushaClusterScoreWeight) - (source.position.distanceFromSq(candidate.position) * KatyushaDistancePenalty);
+		if (IsBacklinePriorityArchetype(candidate.archetype))
+		{
+			score += KatyushaBacklineBonus;
+		}
+		if (IsBuildingArchetype(candidate.archetype))
+		{
+			score += KatyushaBuildingBonus;
+		}
+
+		if (score > bestScore)
+		{
+			bestScore = score;
+			bestTarget = &candidate;
+		}
+	}
+
+	return bestTarget;
 }
 
 const UnitState* BattleSession::tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const

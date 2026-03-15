@@ -116,8 +116,7 @@ void BattleSession::updateCombat()
 				continue;
 			}
 
-			gatherNearbyOpponentIndices(unit, unit.attackRange + KatyushaSplashRadius + m_spatialQueryCellSize, m_nearbyOpponentIndicesScratch);
-			if (const auto* target = FindBestKatyushaTarget(m_state, unit, m_nearbyOpponentIndicesScratch))
+			if (const auto* target = findBestKatyushaTarget(unit))
 			{
 				combatEvents << CombatEvent{ unit.id, unit.position, target->id, target->position, unit.attackPower, KatyushaSplashRadius, unit.owner, unit.archetype };
 				unit.attackCooldownRemaining = unit.attackCooldown;

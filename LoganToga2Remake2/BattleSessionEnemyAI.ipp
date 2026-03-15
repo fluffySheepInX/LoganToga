@@ -218,6 +218,7 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	m_state.enemyAiSearchPhase = ((currentSearchPhase + 1) % searchGroupCount);
 
 	Array<size_t> defenseResponderIndices;
+	std::unordered_set<size_t> defenseResponderIndexSet;
 	if (defenseTarget)
 	{
 		const int32 defenseResponderLimit = GetDefenseResponderLimit(m_config.enemyAI, enemyCombatUnits);
@@ -252,6 +253,12 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 				defenseResponderDistanceSq.pop_back();
 				defenseResponderIndices.pop_back();
 			}
+		}
+
+		defenseResponderIndexSet.reserve(defenseResponderIndices.size());
+		for (const auto index : defenseResponderIndices)
+		{
+			defenseResponderIndexSet.insert(index);
 		}
 	}
 
@@ -380,7 +387,7 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		}
 
 		EnemyAiDecision decision;
-		if (defenseTarget && defenseResponderIndices.contains(unitIndex))
+		if (defenseTarget && (defenseResponderIndexSet.find(unitIndex) != defenseResponderIndexSet.end()))
 		{
 			decision.objective = EnemyAiObjectiveType::Defend;
 			decision.strategicDestination = defenseTarget->position;

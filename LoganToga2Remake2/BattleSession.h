@@ -92,6 +92,7 @@ private:
 	[[nodiscard]] double getProductionTime(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] double getAggroRange(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source) const;
+	[[nodiscard]] const UnitState* findBestKatyushaTarget(const UnitState& source) const;
 	[[nodiscard]] const UnitState* tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const;
 	void applyUnitHpDelta(UnitState& target, int32 hpDelta);
 	void triggerGoliathExplosion(UnitState& unit);
