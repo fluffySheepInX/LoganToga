@@ -16,6 +16,21 @@ void BalanceEditScene::handleCoreInput()
 	applyEditedState(changed);
 }
 
+void BalanceEditScene::handleCardInput()
+{
+	auto* card = getSelectedCardDefinition();
+	if (!card)
+	{
+		return;
+	}
+
+	bool changed = false;
+	changed = handleDoubleRowInput(0, card->value, 0.1, 1.0, -9999.0, 9999.0) || changed;
+	changed = handleCardRarityInput(1, card->rarity) || changed;
+	changed = handleCardRepeatableInput(2, card->repeatable) || changed;
+	applyEditedState(changed);
+}
+
 void BalanceEditScene::handleUnitInput()
 {
 	auto* unit = getSelectedUnitDefinition();
@@ -52,6 +67,22 @@ bool BalanceEditScene::handleUnitListInput()
 		}
 
 		m_selectedUnitIndex = static_cast<int32>(index);
+		return true;
+	}
+
+	return false;
+}
+
+bool BalanceEditScene::handleCardListInput()
+{
+	for (size_t index = 0; index < m_editCards.size(); ++index)
+	{
+		if (!isButtonClicked(getCardButtonRect(static_cast<int32>(index))))
+		{
+			continue;
+		}
+
+		m_selectedCardIndex = static_cast<int32>(index);
 		return true;
 	}
 
@@ -113,6 +144,57 @@ bool BalanceEditScene::handleIntRowInput(const int32 rowIndex, int32& value, con
 		value = Max(minValue, value + largeStep);
 	}
 	return value != originalValue;
+}
+
+bool BalanceEditScene::handleCardRarityInput(const int32 rowIndex, RewardCardRarity& rarity)
+{
+	const auto buttons = getAdjustmentButtonRects(getEditorRowRect(rowIndex));
+	const RewardCardRarity original = rarity;
+	if (isButtonClicked(buttons.minusLarge) || isButtonClicked(buttons.minusSmall))
+	{
+		switch (rarity)
+		{
+		case RewardCardRarity::Common:
+			rarity = RewardCardRarity::Epic;
+			break;
+		case RewardCardRarity::Rare:
+			rarity = RewardCardRarity::Common;
+			break;
+		case RewardCardRarity::Epic:
+		default:
+			rarity = RewardCardRarity::Rare;
+			break;
+		}
+	}
+	if (isButtonClicked(buttons.plusSmall) || isButtonClicked(buttons.plusLarge))
+	{
+		switch (rarity)
+		{
+		case RewardCardRarity::Common:
+			rarity = RewardCardRarity::Rare;
+			break;
+		case RewardCardRarity::Rare:
+			rarity = RewardCardRarity::Epic;
+			break;
+		case RewardCardRarity::Epic:
+		default:
+			rarity = RewardCardRarity::Common;
+			break;
+		}
+	}
+	return rarity != original;
+}
+
+bool BalanceEditScene::handleCardRepeatableInput(const int32 rowIndex, bool& repeatable)
+{
+	const auto buttons = getAdjustmentButtonRects(getEditorRowRect(rowIndex));
+	if (!(isButtonClicked(buttons.minusLarge) || isButtonClicked(buttons.minusSmall) || isButtonClicked(buttons.plusSmall) || isButtonClicked(buttons.plusLarge)))
+	{
+		return false;
+	}
+
+	repeatable = !repeatable;
+	return true;
 }
 
 bool BalanceEditScene::handleDoubleRowInput(const int32 rowIndex, double& value, const double smallStep, const double largeStep, const double minValue, const double maxValue)

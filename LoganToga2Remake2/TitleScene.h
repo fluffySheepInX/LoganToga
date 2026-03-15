@@ -4,6 +4,7 @@
 #include "ContinueRunSave.h"
 #include "MenuButtonUi.h"
 #include "SceneTransition.h"
+#include "TitleUiLayout.h"
 
 class TitleScene : public SceneBase
 {
@@ -32,6 +33,13 @@ private:
 	void executeDataClearAction();
 
 	[[nodiscard]] static RectF getContinuePreviewRect();
+	[[nodiscard]] static RectF getContinueButtonRect();
+	[[nodiscard]] static RectF getTutorialButtonRect(bool hasContinue);
+	[[nodiscard]] static RectF getQuickGuideButtonRect(bool hasContinue);
+	[[nodiscard]] static RectF getStartButtonRect(bool hasContinue);
+	[[nodiscard]] static RectF getBonusButtonRect(bool hasContinue);
+	[[nodiscard]] static RectF getDebugButtonRect(bool hasContinue);
+	[[nodiscard]] static RectF getTitleUiEditorButtonRect();
 	[[nodiscard]] static String getContinuePreviewHeadline(const ContinueRunPreview& preview);
 	[[nodiscard]] static String getContinuePreviewDetail(const ContinueRunPreview& preview);
 	static void drawContinuePreview(const ContinueRunPreview& preview, const GameData& data);

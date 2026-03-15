@@ -3,7 +3,7 @@
 bool BalanceEditScene::saveEditorOverrides() const
 {
 	FileSystem::CreateDirectories(U"config");
-	return saveCoreEditorOverride() && saveUnitsEditorOverride();
+	return saveCoreEditorOverride() && saveUnitsEditorOverride() && saveCardsEditorOverride();
 }
 
 bool BalanceEditScene::clearEditorOverrides() const
@@ -17,6 +17,10 @@ bool BalanceEditScene::clearEditorOverrides() const
 	{
 		success = success && FileSystem::Remove(getUnitsEditorOverridePath());
 	}
+	if (FileSystem::Exists(getCardsEditorOverridePath()))
+	{
+		success = success && FileSystem::Remove(getCardsEditorOverridePath());
+	}
 	return success;
 }
 
@@ -25,8 +29,10 @@ bool BalanceEditScene::clearAllOverrides() const
 	bool success = true;
 	success = removeFileIfExists(getCoreOverridePath()) && success;
 	success = removeFileIfExists(getUnitsOverridePath()) && success;
+	success = removeFileIfExists(getCardsOverridePath()) && success;
 	success = removeFileIfExists(getCoreEditorOverridePath()) && success;
 	success = removeFileIfExists(getUnitsEditorOverridePath()) && success;
+	success = removeFileIfExists(getCardsEditorOverridePath()) && success;
 	return success;
 }
 
@@ -99,6 +105,22 @@ bool BalanceEditScene::saveUnitsEditorOverride() const
 	return writeTextFile(getUnitsEditorOverridePath(), content);
 }
 
+bool BalanceEditScene::saveCardsEditorOverride() const
+{
+	String content;
+	for (const auto& card : m_editCards)
+	{
+		content += U"[[cards]]\n";
+		appendTomlLine(content, U"id", quoteTomlString(card.id));
+		appendTomlLine(content, U"value", Format(card.value));
+		appendTomlLine(content, U"rarity", quoteTomlString(toRewardCardRarityTomlString(card.rarity)));
+		appendTomlLine(content, U"repeatable", card.repeatable ? U"true" : U"false");
+		content += U"\n";
+	}
+
+	return writeTextFile(getCardsEditorOverridePath(), content);
+}
+
 String BalanceEditScene::getCoreEditorOverridePath()
 {
 	return ResolveTomlEditorOverridePath(U"config/battle_core.toml");
@@ -117,4 +139,14 @@ String BalanceEditScene::getUnitsEditorOverridePath()
 String BalanceEditScene::getUnitsOverridePath()
 {
 	return ResolveTomlOverridePath(U"config/battle_units.toml");
+}
+
+String BalanceEditScene::getCardsEditorOverridePath()
+{
+	return ResolveTomlEditorOverridePath(U"config/cards.toml");
+}
+
+String BalanceEditScene::getCardsOverridePath()
+{
+	return ResolveTomlOverridePath(U"config/cards.toml");
 }

@@ -6,6 +6,7 @@
 #include "MapEditScene.h"
 #include "RewardScene.h"
 #include "TitleScene.h"
+#include "TitleUiEditorScene.h"
 #include "WindowChromeAddon.h"
 
 void Main()
@@ -31,6 +32,7 @@ void Main()
 	manager.add<BonusRoomScene>(U"BonusRoom");
 	manager.add<MapEditScene>(U"MapEdit");
 	manager.add<RewardScene>(U"Reward");
+	manager.add<TitleUiEditorScene>(U"TitleUiEditor");
 
 	while (System::Update())
 	{

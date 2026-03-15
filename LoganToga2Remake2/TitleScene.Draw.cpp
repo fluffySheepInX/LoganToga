@@ -9,22 +9,17 @@ void TitleScene::draw() const
 	const auto& data = getData();
 	const bool hasContinue = m_hasContinue;
 	const auto& continuePreview = m_continuePreview;
-	const double continueButtonOffset = 120;
-	const double tutorialButtonOffset = hasContinue ? 172 : 120;
-	const double quickGuideButtonOffset = hasContinue ? 224 : 172;
-	const double startButtonOffset = hasContinue ? 276 : 224;
-	const double bonusButtonOffset = hasContinue ? 328 : 276;
-	const double debugButtonOffset = hasContinue ? 380 : 328;
-	data.titleFont(U"LoganToga2Remake2").drawAt(Scene::CenterF().movedBy(0, -170), Palette::White);
-	data.uiFont(U"RTS run prototype").drawAt(Scene::CenterF().movedBy(0, -100), ColorF{ 0.75, 0.86, 1.0 });
-	data.smallFont(U"・3-5 battles per run").drawAt(Scene::CenterF().movedBy(0, -20), Palette::White);
-	data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(Scene::CenterF().movedBy(0, 12), Palette::White);
-	data.smallFont(U"・Lose once and the run ends").drawAt(Scene::CenterF().movedBy(0, 44), Palette::White);
-	data.smallFont(s3d::Format(U"・Viewed bonus rooms: ", data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(Scene::CenterF().movedBy(0, 76), Palette::White);
-	data.smallFont(hasContinue ? U"Press Enter to continue the saved run" : U"Press Enter to start a new run").drawAt(Scene::CenterF().movedBy(0, 112), Palette::Yellow);
+	const TitleUiLayout layout = TitleUi::GetTitleUiLayout();
+	data.titleFont(U"LoganToga2Remake2").drawAt(layout.titlePos, Palette::White);
+	data.uiFont(U"RTS run prototype").drawAt(layout.subtitlePos, ColorF{ 0.75, 0.86, 1.0 });
+	data.smallFont(U"・3-5 battles per run").drawAt(layout.summaryLine1Pos, Palette::White);
+	data.smallFont(U"・Choose 1 of 3 reward cards after each victory").drawAt(layout.summaryLine2Pos, Palette::White);
+	data.smallFont(U"・Lose once and the run ends").drawAt(layout.summaryLine3Pos, Palette::White);
+	data.smallFont(s3d::Format(U"・Viewed bonus rooms: ", data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(layout.viewedBonusRoomsPos, Palette::White);
+	data.smallFont(hasContinue ? U"Press Enter to continue the saved run" : U"Press Enter to start a new run").drawAt(layout.enterHintPos, Palette::Yellow);
 	if (hasContinue)
 	{
-		drawButton(getMenuButtonRect(continueButtonOffset), U"Continue", data.uiFont, true);
+		drawButton(getContinueButtonRect(), U"Continue", data.uiFont, true);
 		if (continuePreview)
 		{
 			drawContinuePreview(*continuePreview, data);
@@ -32,14 +27,14 @@ void TitleScene::draw() const
 	}
 	if (!data.bonusRoomProgress.viewedRoomIds.isEmpty())
 	{
-		data.smallFont(U"Bonus Rooms can be revisited from this menu").drawAt(Scene::CenterF().movedBy(0, hasContinue ? 156 : 144), ColorF{ 1.0, 0.88, 0.55 });
-		drawButton(getMenuButtonRect(bonusButtonOffset), U"Bonus Rooms", data.uiFont);
+		data.smallFont(U"Bonus Rooms can be revisited from this menu").drawAt(TitleUi::GetBonusRoomHintPos(layout, hasContinue), ColorF{ 1.0, 0.88, 0.55 });
+		drawButton(getBonusButtonRect(hasContinue), U"Bonus Rooms", data.uiFont);
 	}
 
-	drawButton(getMenuButtonRect(tutorialButtonOffset), U"Tutorial", data.uiFont, true);
-	drawButton(getMenuButtonRect(quickGuideButtonOffset), U"クイック操作説明", data.uiFont, true);
-	drawButton(getMenuButtonRect(startButtonOffset), hasContinue ? U"New Run" : U"Start Run", data.uiFont);
-	data.smallFont(U"チュートリアル前に基本操作を確認").drawAt(Scene::CenterF().movedBy(0, quickGuideButtonOffset + 28), ColorF{ 0.88, 0.92, 1.0 });
+	drawButton(getTutorialButtonRect(hasContinue), U"Tutorial", data.uiFont, true);
+	drawButton(getQuickGuideButtonRect(hasContinue), U"クイック操作説明", data.uiFont, true);
+	drawButton(getStartButtonRect(hasContinue), hasContinue ? U"New Run" : U"Start Run", data.uiFont);
+	data.smallFont(U"チュートリアル前に基本操作を確認").drawAt(TitleUi::GetQuickGuideHintPos(layout, hasContinue), ColorF{ 0.88, 0.92, 1.0 });
 
 	const s3d::Size resolutionSize = GetWindowResolutionSize(data.displaySettings.resolutionPreset);
 	data.smallFont(U"解像度").draw(getResolutionLabelPos(), Palette::White);
@@ -71,11 +66,12 @@ void TitleScene::draw() const
 	data.smallFont(U"現在の保存先のみ削除 / 設定は既定値へ戻ります").drawAt(Vec2{ Scene::CenterF().x, clearContinueButtonRect.bottomY() + 18 }, ColorF{ 0.82, 0.88, 0.96 });
 
 #ifdef _DEBUG
-	data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Scene::CenterF().movedBy(0, 178), ColorF{ 1.0, 0.75, 0.45 });
-	drawButton(getMenuButtonRect(debugButtonOffset), U"Debug Full Unlock", data.uiFont, true);
+	data.smallFont(U"DEBUG: Start with all unlockable units/buildings").drawAt(Vec2{ Scene::CenterF().x, getDebugButtonRect(hasContinue).y - 24 }, ColorF{ 1.0, 0.75, 0.45 });
+	drawButton(getDebugButtonRect(hasContinue), U"Debug Full Unlock", data.uiFont, true);
 	drawButton(getMapEditButtonRect(), U"Map Edit", data.smallFont);
 	drawButton(getBalanceEditButtonRect(), U"Balance Edit", data.smallFont);
 	drawButton(getTransitionPresetButtonRect(), U"Fade: " + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
+	drawButton(getTitleUiEditorButtonRect(), U"Title UI Editor", data.smallFont, true);
 #endif
 	if (m_isQuickGuideOpen)
 	{
@@ -97,7 +93,7 @@ void TitleScene::draw() const
 
 RectF TitleScene::getContinuePreviewRect()
 {
-	return RectF{ Scene::CenterF().movedBy(156, 118), 308, 92 };
+	return TitleUi::GetTitleUiLayout().continuePreviewRect;
 }
 
 String TitleScene::getContinuePreviewHeadline(const ContinueRunPreview& preview)

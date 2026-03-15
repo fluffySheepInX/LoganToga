@@ -23,12 +23,6 @@ void TitleScene::update()
 
 	auto& data = getData();
 	const bool hasContinue = m_hasContinue;
-	const double continueButtonOffset = 120;
-	const double tutorialButtonOffset = hasContinue ? 172 : 120;
-	const double quickGuideButtonOffset = hasContinue ? 224 : 172;
-	const double startButtonOffset = hasContinue ? 276 : 224;
-	const double bonusButtonOffset = hasContinue ? 328 : 276;
-	const double debugButtonOffset = hasContinue ? 380 : 328;
 
 	if (m_isQuickGuideOpen)
 	{
@@ -75,7 +69,7 @@ void TitleScene::update()
 		return;
 	}
 
-	if (hasContinue && (KeyEnter.down() || isButtonClicked(getMenuButtonRect(continueButtonOffset))))
+	if (hasContinue && (KeyEnter.down() || isButtonClicked(getContinueButtonRect())))
 	{
 		ContinueResumeScene resumeScene = ContinueResumeScene::Battle;
 		if (LoadContinueRun(data, resumeScene))
@@ -91,13 +85,13 @@ void TitleScene::update()
 		refreshContinueState();
 	}
 
-	if (isButtonClicked(getMenuButtonRect(quickGuideButtonOffset)))
+	if (isButtonClicked(getQuickGuideButtonRect(hasContinue)))
 	{
 		m_isQuickGuideOpen = true;
 		return;
 	}
 
-	if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getMenuButtonRect(startButtonOffset)))
+	if ((!hasContinue && KeyEnter.down()) || isButtonClicked(getStartButtonRect(hasContinue)))
 	{
 		data.battleLaunchMode = BattleLaunchMode::Run;
 		BeginNewRun(data.runState, data.baseBattleConfig, false);
@@ -110,7 +104,7 @@ void TitleScene::update()
 		return;
 	}
 
-	if (isButtonClicked(getMenuButtonRect(tutorialButtonOffset)))
+	if (isButtonClicked(getTutorialButtonRect(hasContinue)))
 	{
 		data.battleLaunchMode = BattleLaunchMode::Tutorial;
 		RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
@@ -122,7 +116,7 @@ void TitleScene::update()
 
 	auto& bonusRoomProgress = data.bonusRoomProgress;
 	const Array<const BonusRoomDefinition*> viewedRooms = CollectViewedBonusRooms(data.bonusRooms, bonusRoomProgress);
-	if (!viewedRooms.isEmpty() && isButtonClicked(getMenuButtonRect(bonusButtonOffset)))
+	if (!viewedRooms.isEmpty() && isButtonClicked(getBonusButtonRect(hasContinue)))
 	{
 		ResetBonusRoomSceneState(bonusRoomProgress);
 		bonusRoomProgress.sceneMode = BonusRoomSceneMode::Gallery;
@@ -160,6 +154,7 @@ void TitleScene::update()
 		if (SetContinueRunSaveLocation(nextLocation))
 		{
 			GameSettings::MoveGameSettingsToLocation(currentLocation, nextLocation);
+			TitleUi::MoveTitleUiLayoutToLocation(currentLocation, nextLocation);
 			refreshContinueState();
 		}
 	}
@@ -177,7 +172,7 @@ void TitleScene::update()
 	}
 
 #ifdef _DEBUG
-	if (isButtonClicked(getMenuButtonRect(debugButtonOffset)))
+	if (isButtonClicked(getDebugButtonRect(hasContinue)))
 	{
 		data.battleLaunchMode = BattleLaunchMode::Run;
 		BeginNewRun(data.runState, data.baseBattleConfig, true);
@@ -193,6 +188,15 @@ void TitleScene::update()
 	if (isButtonClicked(getTransitionPresetButtonRect()))
 	{
 		data.sceneTransitionSettings.preset = CycleSceneTransitionPreset(data.sceneTransitionSettings.preset);
+		return;
+	}
+
+	if (isButtonClicked(getTitleUiEditorButtonRect()))
+	{
+		RequestSceneTransition(data, U"TitleUiEditor", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
 		return;
 	}
 
@@ -298,8 +302,7 @@ void TitleScene::drawButton(const RectF& rect, const String& label, const Font& 
 
 RectF TitleScene::getPanelRect()
 {
-	const Vec2 panelSize{ 1040, 520 };
-	return RectF{ Arg::center = Scene::CenterF(), panelSize };
+	return TitleUi::GetTitleUiLayout().panelRect;
 }
 
 RectF TitleScene::getMenuButtonRect(const double yOffset)
@@ -307,103 +310,127 @@ RectF TitleScene::getMenuButtonRect(const double yOffset)
 	return RectF{ Scene::CenterF().movedBy(-110, yOffset), 220, 36 };
 }
 
+RectF TitleScene::getContinueButtonRect()
+{
+	return TitleUi::GetTitleUiLayout().continueButtonRect;
+}
+
+RectF TitleScene::getTutorialButtonRect(const bool hasContinue)
+{
+	return TitleUi::GetTutorialButtonRect(TitleUi::GetTitleUiLayout(), hasContinue);
+}
+
+RectF TitleScene::getQuickGuideButtonRect(const bool hasContinue)
+{
+	return TitleUi::GetQuickGuideButtonRect(TitleUi::GetTitleUiLayout(), hasContinue);
+}
+
+RectF TitleScene::getStartButtonRect(const bool hasContinue)
+{
+	return TitleUi::GetStartButtonRect(TitleUi::GetTitleUiLayout(), hasContinue);
+}
+
+RectF TitleScene::getBonusButtonRect(const bool hasContinue)
+{
+	return TitleUi::GetBonusButtonRect(TitleUi::GetTitleUiLayout(), hasContinue);
+}
+
+RectF TitleScene::getDebugButtonRect(const bool hasContinue)
+{
+	return TitleUi::GetDebugButtonRect(TitleUi::GetTitleUiLayout(), hasContinue);
+}
+
+RectF TitleScene::getTitleUiEditorButtonRect()
+{
+	return TitleUi::GetTitleUiLayout().titleUiEditorButtonRect;
+}
+
 RectF TitleScene::getQuickGuidePanelRect()
 {
-	return RectF{ Arg::center = Scene::CenterF(), 860, 520 };
+	return TitleUi::GetTitleUiLayout().quickGuidePanelRect;
 }
 
 RectF TitleScene::getQuickGuideTutorialButtonRect()
 {
-	const RectF panel = getQuickGuidePanelRect();
-	return RectF{ Arg::center(panel.center().movedBy(-120, 168)), 200, 40 };
+	return TitleUi::GetTitleUiLayout().quickGuideTutorialButtonRect;
 }
 
 RectF TitleScene::getQuickGuideCloseButtonRect()
 {
-	const RectF panel = getQuickGuidePanelRect();
-	return RectF{ Arg::center(panel.center().movedBy(120, 168)), 200, 40 };
+	return TitleUi::GetTitleUiLayout().quickGuideCloseButtonRect;
 }
 
 RectF TitleScene::getDataClearDialogRect()
 {
-	return RectF{ Arg::center = Scene::CenterF(), 520, 210 };
+	return TitleUi::GetTitleUiLayout().dataClearDialogRect;
 }
 
 RectF TitleScene::getDataClearDialogYesButtonRect()
 {
-	const RectF dialog = getDataClearDialogRect();
-	return RectF{ Arg::center(dialog.center().movedBy(-110, 62)), 160, 40 };
+	return TitleUi::GetTitleUiLayout().dataClearDialogYesButtonRect;
 }
 
 RectF TitleScene::getDataClearDialogNoButtonRect()
 {
-	const RectF dialog = getDataClearDialogRect();
-	return RectF{ Arg::center(dialog.center().movedBy(110, 62)), 160, 40 };
+	return TitleUi::GetTitleUiLayout().dataClearDialogNoButtonRect;
 }
 
 RectF TitleScene::getExitDialogRect()
 {
-	return RectF{ Arg::center = Scene::CenterF(), 420, 180 };
+	return TitleUi::GetTitleUiLayout().exitDialogRect;
 }
 
 RectF TitleScene::getExitDialogYesButtonRect()
 {
-	const RectF dialog = getExitDialogRect();
-	return RectF{ Arg::center(dialog.center().movedBy(-90, 44)), 140, 40 };
+	return TitleUi::GetTitleUiLayout().exitDialogYesButtonRect;
 }
 
 RectF TitleScene::getExitDialogNoButtonRect()
 {
-	const RectF dialog = getExitDialogRect();
-	return RectF{ Arg::center(dialog.center().movedBy(90, 44)), 140, 40 };
+	return TitleUi::GetTitleUiLayout().exitDialogNoButtonRect;
 }
 
 Vec2 TitleScene::getResolutionLabelPos()
 {
-	return Scene::CenterF().movedBy(-150, 250);
+	return TitleUi::GetTitleUiLayout().resolutionLabelPos;
 }
 
 RectF TitleScene::getResolutionButtonRect(const size_t index)
 {
-	return RectF{ getResolutionLabelPos().movedBy(100 + (index * 108), -4), 96, 32 };
+	return TitleUi::GetResolutionButtonRect(TitleUi::GetTitleUiLayout(), index);
 }
 
 Vec2 TitleScene::getSaveLocationLabelPos()
 {
-	return Scene::CenterF().movedBy(250, 250);
+	return TitleUi::GetTitleUiLayout().saveLocationLabelPos;
 }
 
 RectF TitleScene::getSaveLocationButtonRect()
 {
-	return RectF{ getSaveLocationLabelPos().movedBy(112, -4), 180, 32 };
+	return TitleUi::GetTitleUiLayout().saveLocationButtonRect;
 }
 
 RectF TitleScene::getClearContinueRunButtonRect()
 {
-	const RectF panel = getPanelRect();
-	return RectF{ Arg::center(panel.center().movedBy(-92, 212)), 170, 32 };
+	return TitleUi::GetTitleUiLayout().clearContinueRunButtonRect;
 }
 
 RectF TitleScene::getClearSettingsButtonRect()
 {
-	const RectF panel = getPanelRect();
-	return RectF{ Arg::center(panel.center().movedBy(92, 212)), 170, 32 };
+	return TitleUi::GetTitleUiLayout().clearSettingsButtonRect;
 }
 
 RectF TitleScene::getMapEditButtonRect()
 {
-	const RectF panel = getPanelRect();
-	return RectF{ panel.x + panel.w - 150, panel.y + 18, 128, 30 };
+	return TitleUi::GetTitleUiLayout().mapEditButtonRect;
 }
 
 RectF TitleScene::getTransitionPresetButtonRect()
 {
-	const RectF panel = getPanelRect();
-	return RectF{ panel.x + panel.w - 214, panel.y + 94, 192, 30 };
+	return TitleUi::GetTitleUiLayout().transitionPresetButtonRect;
 }
 
 RectF TitleScene::getBalanceEditButtonRect()
 {
-	const RectF panel = getPanelRect();
-	return RectF{ panel.x + panel.w - 150, panel.y + 56, 128, 30 };
+	return TitleUi::GetTitleUiLayout().balanceEditButtonRect;
 }

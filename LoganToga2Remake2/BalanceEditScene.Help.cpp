@@ -20,7 +20,7 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 	}
 	if (getTopButtonRect(4).mouseOver())
 	{
-		return{ U"Clear All", U"Delete both manual _override files and editor _editor_override files for core and unit balance." };
+		return{ U"Clear All", U"Delete both manual _override files and editor _editor_override files for core, unit, and card balance." };
 	}
 	if (getTabButtonRect(Tab::Core).mouseOver())
 	{
@@ -29,6 +29,10 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 	if (getTabButtonRect(Tab::Units).mouseOver())
 	{
 		return{ U"Units Tab", U"Edit unit stats and player production slot values from battle_units data." };
+	}
+	if (getTabButtonRect(Tab::Cards).mouseOver())
+	{
+		return{ U"Cards Tab", U"Edit reward card value, rarity, and repeatable settings from cards data." };
 	}
 
 	if (m_tab == Tab::Units)
@@ -45,10 +49,24 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 			}
 		}
 	}
+	else if (m_tab == Tab::Cards)
+	{
+		for (size_t index = 0; index < m_editCards.size(); ++index)
+		{
+			const auto& card = m_editCards[index];
+			if (getCardButtonRect(static_cast<int32>(index)).mouseOver())
+			{
+				return{
+					card.name,
+					card.description.isEmpty() ? U"Select this reward card to edit its balance-facing values." : card.description
+				};
+			}
+		}
+	}
 
 	const auto rowHelp = (m_tab == Tab::Core)
 		? getHoveredCoreRowHelp()
-		: getHoveredUnitRowHelp();
+		: ((m_tab == Tab::Units) ? getHoveredUnitRowHelp() : getHoveredCardRowHelp());
 	if (rowHelp)
 	{
 		return *rowHelp;
@@ -102,7 +120,7 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCoreRowHelp() c
 Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredUnitRowHelp() const
 {
 	const bool hasProductionSlot = (getSelectedProductionSlot() != nullptr);
-	const int32 rowCount = hasProductionSlot ? 9 : 7;
+	const int32 rowCount = hasProductionSlot ? 10 : 8;
 	for (int32 row = 0; row < rowCount; ++row)
 	{
 		if (!getEditorRowRect(row).mouseOver())
@@ -139,8 +157,10 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredUnitRowHelp() c
 				return HelpText{ U"Attack Range", U"Distance at which the unit can attack. Higher values improve safety and first-hit control." };
 			case 8:
 				return HelpText{ U"Attack Cooldown", U"Delay between attacks. Lower values mean faster repeated attacks." };
-			default:
+			case 9:
 				return HelpText{ U"Aggro Range", U"Detection radius for engaging targets. Higher values make units react earlier." };
+			default:
+				break;
 			}
 		}
 
@@ -154,14 +174,36 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredUnitRowHelp() c
 			return HelpText{ U"Attack Range", U"Distance at which the unit can attack. Higher values improve safety and first-hit control." };
 		case 6:
 			return HelpText{ U"Attack Cooldown", U"Delay between attacks. Lower values mean faster repeated attacks." };
-		default:
+		case 7:
 			return HelpText{ U"Aggro Range", U"Detection radius for engaging targets. Higher values make units react earlier." };
+		default:
+			break;
 		}
 	}
 
-	if ((getSelectedProductionSlot() == nullptr) && getEditorRowRect(7).mouseOver())
+	return none;
+}
+
+Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCardRowHelp() const
+{
+	for (int32 row = 0; row < 3; ++row)
 	{
-		return HelpText{ U"Aggro Range", U"Detection radius for engaging targets. Higher values make units react earlier." };
+		if (!getEditorRowRect(row).mouseOver())
+		{
+			continue;
+		}
+
+		switch (row)
+		{
+		case 0:
+			return HelpText{ U"Value", U"Primary numeric strength of the card. For stat bonus cards this is the amount applied to the target stat." };
+		case 1:
+			return HelpText{ U"Rarity", U"Controls how often the card appears in the reward pool. Use the row buttons to cycle Common, Rare, and Epic." };
+		case 2:
+			return HelpText{ U"Repeatable", U"If enabled, the same card can be selected multiple times across a run." };
+		default:
+			break;
+		}
 	}
 
 	return none;

@@ -1,0 +1,237 @@
+﻿schemaVersion = 1
+
+[panel]
+x = 280
+y = 190
+w = 1040
+h = 520
+
+[title]
+x = 528
+y = 216
+
+[subtitle]
+x = 872
+y = 224
+
+[summaryLine1]
+x = 384
+y = 256
+
+[summaryLine2]
+x = 664
+y = 256
+
+[summaryLine3]
+x = 968
+y = 256
+
+[viewedBonusRooms]
+x = 1167.5
+y = 360.16669
+
+[enterHint]
+x = 448
+y = 280
+
+[continueButton]
+x = 304
+y = 296
+w = 220
+h = 36
+
+[tutorialButtonWithContinue]
+x = 304
+y = 344
+w = 220
+h = 36
+
+[tutorialButtonWithoutContinue]
+x = 304
+y = 344
+w = 220
+h = 36
+
+[quickGuideButtonWithContinue]
+x = 304
+y = 392
+w = 220
+h = 36
+
+[quickGuideButtonWithoutContinue]
+x = 304
+y = 392
+w = 220
+h = 36
+
+[startButtonWithContinue]
+x = 304
+y = 456
+w = 220
+h = 36
+
+[startButtonWithoutContinue]
+x = 304
+y = 456
+w = 220
+h = 36
+
+[bonusButtonWithContinue]
+x = 1061.66669
+y = 376.33331
+w = 220
+h = 36
+
+[bonusButtonWithoutContinue]
+x = 1060.83331
+y = 377.66666
+w = 220
+h = 36
+
+[bonusRoomHintWithContinue]
+x = 1100
+y = 431
+
+[bonusRoomHintWithoutContinue]
+x = 1096.66663
+y = 433.16666
+
+[debugButtonWithContinue]
+x = 1064
+y = 616
+w = 220
+h = 36
+
+[debugButtonWithoutContinue]
+x = 1064
+y = 616
+w = 220
+h = 36
+
+[continuePreview]
+x = 536
+y = 296
+w = 308
+h = 92
+
+[quickGuidePanel]
+x = 370
+y = 190
+w = 860
+h = 520
+
+[quickGuideTutorialButton]
+x = 580
+y = 598
+w = 200
+h = 40
+
+[quickGuideCloseButton]
+x = 820
+y = 598
+w = 200
+h = 40
+
+[dataClearDialog]
+x = 540
+y = 345
+w = 520
+h = 210
+
+[dataClearDialogYesButton]
+x = 610
+y = 492
+w = 160
+h = 40
+
+[dataClearDialogNoButton]
+x = 830
+y = 492
+w = 160
+h = 40
+
+[exitDialog]
+x = 590
+y = 360
+w = 420
+h = 180
+
+[exitDialogYesButton]
+x = 640
+y = 474
+w = 140
+h = 40
+
+[exitDialogNoButton]
+x = 820
+y = 474
+w = 140
+h = 40
+
+[resolutionLabel]
+x = 304
+y = 656
+
+[resolutionSmallButton]
+x = 464
+y = 672
+w = 96
+h = 32
+
+[resolutionMediumButton]
+x = 560
+y = 672
+w = 96
+h = 32
+
+[resolutionLargeButton]
+x = 656
+y = 672
+w = 96
+h = 32
+
+[saveLocationLabel]
+x = 1008
+y = 656
+
+[saveLocationButton]
+x = 1104
+y = 672
+w = 180
+h = 32
+
+[clearContinueRunButton]
+x = 536
+y = 392
+w = 170
+h = 32
+
+[clearSettingsButton]
+x = 704
+y = 392
+w = 170
+h = 32
+
+[mapEditButton]
+x = 1170
+y = 208
+w = 128
+h = 30
+
+[balanceEditButton]
+x = 1170
+y = 246
+w = 128
+h = 30
+
+[transitionPresetButton]
+x = 1106
+y = 284
+w = 192
+h = 30
+
+[titleUiEditorButton]
+x = 1106
+y = 322
+w = 192
+h = 30

@@ -80,3 +80,70 @@ String BalanceEditScene::toUnitArchetypeTomlString(const UnitArchetype archetype
 		return U"spinner";
 	}
 }
+
+String BalanceEditScene::toRewardCardRarityDisplayString(const RewardCardRarity rarity)
+{
+	switch (rarity)
+	{
+	case RewardCardRarity::Common:
+		return U"Common";
+	case RewardCardRarity::Rare:
+		return U"Rare";
+	case RewardCardRarity::Epic:
+	default:
+		return U"Epic";
+	}
+}
+
+String BalanceEditScene::toRewardCardRarityTomlString(const RewardCardRarity rarity)
+{
+	return toRewardCardRarityDisplayString(rarity).lowercased();
+}
+
+String BalanceEditScene::toRewardCardEffectTypeDisplayString(const RewardCardEffectType effectType)
+{
+	switch (effectType)
+	{
+	case RewardCardEffectType::UnitStatBonus:
+		return U"Unit Stat Bonus";
+	case RewardCardEffectType::ProductionUnlock:
+		return U"Production Unlock";
+	case RewardCardEffectType::ConstructionUnlock:
+		return U"Construction Unlock";
+	case RewardCardEffectType::TurretUpgradeUnlock:
+	default:
+		return U"Turret Upgrade Unlock";
+	}
+}
+
+String BalanceEditScene::toRewardCardStatTypeDisplayString(const RewardCardStatType statType)
+{
+	switch (statType)
+	{
+	case RewardCardStatType::HP:
+		return U"HP";
+	case RewardCardStatType::AttackPower:
+		return U"Attack Power";
+	case RewardCardStatType::MoveSpeed:
+		return U"Move Speed";
+	case RewardCardStatType::AttackRange:
+		return U"Attack Range";
+	case RewardCardStatType::ProductionTime:
+	default:
+		return U"Production Time";
+	}
+}
+
+String BalanceEditScene::toTurretUpgradeTypeDisplayString(const TurretUpgradeType type)
+{
+	switch (type)
+	{
+	case TurretUpgradeType::Power:
+		return U"Power";
+	case TurretUpgradeType::Rapid:
+		return U"Rapid";
+	case TurretUpgradeType::Dual:
+	default:
+		return U"Dual";
+	}
+}

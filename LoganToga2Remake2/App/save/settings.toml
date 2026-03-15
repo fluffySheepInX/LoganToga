@@ -1,6 +1,6 @@
 ﻿schemaVersion = 1
-resolutionPreset = "Medium"
-fullscreen = true
+resolutionPreset = "Large"
+fullscreen = false
 masterVolume = 1
 bgmVolume = 1
 seVolume = 1

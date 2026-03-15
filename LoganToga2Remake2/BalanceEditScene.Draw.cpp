@@ -5,20 +5,33 @@ void BalanceEditScene::drawLeftPanel() const
 	const auto& data = getData();
 	const RectF panel = getLeftPanelRect();
 	data.smallFont(U"Panel").draw(panel.x + 16, panel.y + 16, Palette::White);
-	data.smallFont(m_tab == Tab::Core ? U"Global economy / AI values" : U"Select a unit to edit stats and queue values")
+	data.smallFont(m_tab == Tab::Core
+		? U"Global economy / AI values"
+		: (m_tab == Tab::Units ? U"Select a unit to edit stats and queue values" : U"Select a reward card to edit balance values"))
 		.draw(panel.x + 16, panel.y + 40, ColorF{ 0.84, 0.90, 0.98 });
 
-	if (m_tab != Tab::Units)
+	if (m_tab == Tab::Core)
 	{
 		data.smallFont(U"Core tab edits values from battle_core.toml").draw(panel.x + 16, panel.y + 84, Palette::White);
 		data.smallFont(U"Units tab edits battle_units.toml and player_production slots").draw(panel.x + 16, panel.y + 108, Palette::White);
+		data.smallFont(U"Cards tab edits reward card values from cards.toml").draw(panel.x + 16, panel.y + 132, Palette::White);
 		return;
 	}
 
-	for (size_t index = 0; index < m_editConfig.unitDefinitions.size(); ++index)
+	if (m_tab == Tab::Units)
 	{
-		const auto& unit = m_editConfig.unitDefinitions[index];
-		drawButton(getUnitButtonRect(static_cast<int32>(index)), toUnitArchetypeDisplayString(unit.archetype), data.smallFont, static_cast<int32>(index) == m_selectedUnitIndex);
+		for (size_t index = 0; index < m_editConfig.unitDefinitions.size(); ++index)
+		{
+			const auto& unit = m_editConfig.unitDefinitions[index];
+			drawButton(getUnitButtonRect(static_cast<int32>(index)), toUnitArchetypeDisplayString(unit.archetype), data.smallFont, static_cast<int32>(index) == m_selectedUnitIndex);
+		}
+		return;
+	}
+
+	for (size_t index = 0; index < m_editCards.size(); ++index)
+	{
+		const auto& card = m_editCards[index];
+		drawButton(getCardButtonRect(static_cast<int32>(index)), card.name, data.smallFont, static_cast<int32>(index) == m_selectedCardIndex);
 	}
 }
 
@@ -68,6 +81,41 @@ void BalanceEditScene::drawUnitPanel() const
 	drawDoubleRow(row++, U"Aggro Range", unit->aggroRange, data.smallFont);
 }
 
+void BalanceEditScene::drawCardPanel() const
+{
+	const auto& data = getData();
+	const auto* card = getSelectedCardDefinition();
+	if (!card)
+	{
+		data.smallFont(U"No card selected").draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 138, Palette::White);
+		return;
+	}
+
+	data.uiFont(card->name).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 118, Palette::White);
+	data.smallFont(card->id).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 146, ColorF{ 0.74, 0.84, 0.98 });
+	data.smallFont(toRewardCardEffectTypeDisplayString(card->effectType)).draw(getEditorPanelRect().x + 240, getEditorPanelRect().y + 126, ColorF{ 0.82, 0.90, 1.0 });
+
+	String targetText;
+	if (card->effectType == RewardCardEffectType::TurretUpgradeUnlock)
+	{
+		targetText = card->targetTurretUpgradeType ? toTurretUpgradeTypeDisplayString(*card->targetTurretUpgradeType) : U"No target";
+	}
+	else
+	{
+		targetText = toUnitArchetypeDisplayString(card->targetArchetype);
+		if (card->effectType == RewardCardEffectType::UnitStatBonus)
+		{
+			targetText += U" / " + toRewardCardStatTypeDisplayString(card->statType);
+		}
+	}
+	data.smallFont(targetText).draw(getEditorPanelRect().x + 240, getEditorPanelRect().y + 150, ColorF{ 0.82, 0.90, 1.0 });
+	data.smallFont(card->description).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 174, ColorF{ 0.86, 0.90, 0.96 });
+
+	drawDoubleRow(0, U"Value", card->value, data.smallFont);
+	drawTextRow(1, U"Rarity", toRewardCardRarityDisplayString(card->rarity), data.smallFont);
+	drawTextRow(2, U"Repeatable", card->repeatable ? U"Yes" : U"No", data.smallFont);
+}
+
 void BalanceEditScene::drawHelpPanel() const
 {
 	const auto help = getHoveredHelpText();
@@ -88,6 +136,11 @@ void BalanceEditScene::drawIntRow(const int32 rowIndex, const String& label, con
 void BalanceEditScene::drawDoubleRow(const int32 rowIndex, const String& label, const double value, const Font& font) const
 {
 	drawAdjustmentRow(getEditorRowRect(rowIndex), label, Format(value), font);
+}
+
+void BalanceEditScene::drawTextRow(const int32 rowIndex, const String& label, const String& valueText, const Font& font) const
+{
+	drawAdjustmentRow(getEditorRowRect(rowIndex), label, valueText, font);
 }
 
 void BalanceEditScene::drawAdjustmentRow(const RectF& rowRect, const String& label, const String& valueText, const Font& font) const
