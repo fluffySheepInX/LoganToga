@@ -23,6 +23,11 @@ struct DisplaySettings
 	WindowResolutionPreset resolutionPreset = WindowResolutionPreset::Medium;
 };
 
+[[nodiscard]] inline constexpr s3d::Size GetBaseSceneResolutionSize() noexcept
+{
+	return{ 1600, 900 };
+}
+
 [[nodiscard]] inline s3d::Size GetWindowResolutionSize(const WindowResolutionPreset preset)
 {
 	switch (preset)
@@ -51,10 +56,39 @@ struct DisplaySettings
 	}
 }
 
+[[nodiscard]] inline double CalculateDisplayScale(const s3d::Size& baseSize, const s3d::Size& currentSize)
+{
+	return Min((currentSize.x / static_cast<double>(baseSize.x)), (currentSize.y / static_cast<double>(baseSize.y)));
+}
+
+[[nodiscard]] inline s3d::Vec2 CalculateDisplayOffset(const s3d::Size& baseSize, const s3d::Size& currentSize)
+{
+	return ((s3d::Vec2{ currentSize } - (s3d::Vec2{ baseSize } * CalculateDisplayScale(baseSize, currentSize))) / 2.0);
+}
+
 inline void ApplyDisplaySettings(const DisplaySettings& displaySettings)
 {
+	const s3d::Size baseSceneSize = GetBaseSceneResolutionSize();
 	const s3d::Size windowSize = GetWindowResolutionSize(displaySettings.resolutionPreset);
-	Window::Resize(windowSize.x, windowSize.y);
+	const s3d::Size requiredAreaSize = (windowSize + s3d::Size{ 60, 10 });
+	const s3d::Size workAreaSize = System::GetCurrentMonitor().workArea.size;
+	const double uiScaling = Max(Window::GetState().scaling, 1.0);
+	const s3d::Size availableWorkAreaSize = (s3d::SizeF{ workAreaSize } / uiScaling).asPoint();
+	const bool fitsWorkArea = ((requiredAreaSize.x <= availableWorkAreaSize.x) && (requiredAreaSize.y <= availableWorkAreaSize.y));
+
+	Scene::SetResizeMode(ResizeMode::Keep);
+	Scene::Resize(baseSceneSize);
+
+	if (fitsWorkArea)
+	{
+		Window::Resize(windowSize);
+	}
+	else
+	{
+		Window::ResizeActual(windowSize);
+	}
+
+	Window::Centering();
 }
 
 struct GameData

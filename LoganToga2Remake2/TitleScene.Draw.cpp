@@ -2,7 +2,7 @@
 
 void TitleScene::draw() const
 {
-	Scene::Rect().draw(ColorF{ 0.08, 0.10, 0.14 });
+	//Scene::Rect().draw(ColorF{ 0.08, 0.10, 0.14 });
 	getPanelRect().draw(ColorF{ 0.13, 0.16, 0.20 });
 	getPanelRect().drawFrame(2, ColorF{ 0.3, 0.45, 0.7 });
 
@@ -75,6 +75,12 @@ void TitleScene::draw() const
 	{
 		drawQuickGuide(data);
 	}
+
+	if (m_isExitDialogOpen)
+	{
+		drawExitDialog(data);
+	}
+
 	DrawSceneTransitionOverlay(data);
 }
 
@@ -148,4 +154,18 @@ void TitleScene::drawQuickGuide(const GameData& data)
 	drawButton(getQuickGuideTutorialButtonRect(), U"Tutorial へ", data.uiFont, true);
 	drawButton(getQuickGuideCloseButtonRect(), U"閉じる", data.uiFont);
 	data.smallFont(U"Esc でも閉じられます").drawAt(panelRect.center().movedBy(0, 200), ColorF{ 0.80, 0.87, 0.95 });
+}
+
+void TitleScene::drawExitDialog(const GameData& data)
+{
+	Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+
+	const RectF dialogRect = getExitDialogRect();
+	dialogRect.draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
+	dialogRect.drawFrame(2, ColorF{ 0.40, 0.58, 0.90, 0.98 });
+
+	data.uiFont(U"ゲームを終了しますか？").drawAt(dialogRect.center().movedBy(0, -34), Palette::White);
+	drawButton(getExitDialogYesButtonRect(), U"はい", data.uiFont, true);
+	drawButton(getExitDialogNoButtonRect(), U"いいえ", data.uiFont);
+	data.smallFont(U"Enter: はい / Esc: いいえ").drawAt(dialogRect.center().movedBy(0, 70), ColorF{ 0.80, 0.87, 0.95 });
 }

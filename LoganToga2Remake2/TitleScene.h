@@ -17,6 +17,7 @@ private:
 	Optional<ContinueRunPreview> m_continuePreview;
 	bool m_hasContinue = false;
 	bool m_isQuickGuideOpen = false;
+	bool m_isExitDialogOpen = false;
 
 	void updateQuickGuide();
 	void refreshContinueState();
@@ -26,6 +27,7 @@ private:
 	[[nodiscard]] static String getContinuePreviewDetail(const ContinueRunPreview& preview);
 	static void drawContinuePreview(const ContinueRunPreview& preview, const GameData& data);
 	static void drawQuickGuide(const GameData& data);
+	static void drawExitDialog(const GameData& data);
 
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect);
 	static void drawButton(const RectF& rect, const String& label, const Font& font, bool selected = false);
@@ -34,6 +36,9 @@ private:
 	[[nodiscard]] static RectF getQuickGuidePanelRect();
 	[[nodiscard]] static RectF getQuickGuideTutorialButtonRect();
 	[[nodiscard]] static RectF getQuickGuideCloseButtonRect();
+	[[nodiscard]] static RectF getExitDialogRect();
+	[[nodiscard]] static RectF getExitDialogYesButtonRect();
+	[[nodiscard]] static RectF getExitDialogNoButtonRect();
 	[[nodiscard]] static Vec2 getResolutionLabelPos();
 	[[nodiscard]] static RectF getResolutionButtonRect(size_t index);
 	[[nodiscard]] static Vec2 getSaveLocationLabelPos();

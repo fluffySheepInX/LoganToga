@@ -5,12 +5,16 @@
 #include "MapEditScene.h"
 #include "RewardScene.h"
 #include "TitleScene.h"
+#include "WindowChromeAddon.h"
 
 void Main()
 {
 	ApplyDisplaySettings(DisplaySettings{});
 	Window::SetTitle(U"LoganToga2Remake2");
-	Scene::SetBackground(ColorF{ 0.11, 0.13, 0.16 });
+	s3d::Addon::Register<WindowChromeAddon>(WindowChromeAddon::AddonName);
+	WindowChromeAddon::Configure(U"LoganToga2Remake2");
+	//Scene::SetBackground(ColorF{ 0.11, 0.13, 0.16 });
+	Scene::SetBackground(ColorF{ U"#011B05" });
 	System::SetTerminationTriggers(UserAction::CloseButtonClicked);
 
 	App manager;

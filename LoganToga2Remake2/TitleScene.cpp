@@ -32,6 +32,28 @@ void TitleScene::update()
 		return;
 	}
 
+	if (m_isExitDialogOpen)
+	{
+		if (KeyEnter.down() || isButtonClicked(getExitDialogYesButtonRect()))
+		{
+			System::Exit();
+			return;
+		}
+
+		if (KeyEscape.down() || isButtonClicked(getExitDialogNoButtonRect()))
+		{
+			m_isExitDialogOpen = false;
+		}
+
+		return;
+	}
+
+	if (KeyEscape.down())
+	{
+		m_isExitDialogOpen = true;
+		return;
+	}
+
 	if (hasContinue && (KeyEnter.down() || isButtonClicked(getMenuButtonRect(continueButtonOffset))))
 	{
 		ContinueResumeScene resumeScene = ContinueResumeScene::Battle;
@@ -231,6 +253,23 @@ RectF TitleScene::getQuickGuideCloseButtonRect()
 {
 	const RectF panel = getQuickGuidePanelRect();
 	return RectF{ Arg::center(panel.center().movedBy(120, 168)), 200, 40 };
+}
+
+RectF TitleScene::getExitDialogRect()
+{
+	return RectF{ Arg::center = Scene::CenterF(), 420, 180 };
+}
+
+RectF TitleScene::getExitDialogYesButtonRect()
+{
+	const RectF dialog = getExitDialogRect();
+	return RectF{ Arg::center(dialog.center().movedBy(-90, 44)), 140, 40 };
+}
+
+RectF TitleScene::getExitDialogNoButtonRect()
+{
+	const RectF dialog = getExitDialogRect();
+	return RectF{ Arg::center(dialog.center().movedBy(90, 44)), 140, 40 };
 }
 
 Vec2 TitleScene::getResolutionLabelPos()

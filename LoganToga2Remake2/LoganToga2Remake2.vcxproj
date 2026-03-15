@@ -453,6 +453,7 @@
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="BattleConstructionController.h" />
     <ClInclude Include="BattleInputController.h" />
+    <ClInclude Include="WindowChromeAddon.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">
