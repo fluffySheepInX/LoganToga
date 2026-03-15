@@ -9,6 +9,12 @@ enum class ContinueResumeScene
 	BonusRoom,
 };
 
+enum class ContinueRunSaveLocation
+{
+	Local,
+	AppData,
+};
+
 struct ContinueRunPreview
 {
 	ContinueResumeScene resumeScene = ContinueResumeScene::Battle;
@@ -23,6 +29,10 @@ struct ContinueRunPreview
 
 [[nodiscard]] String GetContinueRunSavePath();
 [[nodiscard]] bool HasContinueRunSave();
+[[nodiscard]] ContinueRunSaveLocation GetContinueRunSaveLocation();
+[[nodiscard]] String GetContinueRunSaveLocationLabel(ContinueRunSaveLocation location);
+[[nodiscard]] ContinueRunSaveLocation CycleContinueRunSaveLocation(ContinueRunSaveLocation location);
+[[nodiscard]] bool SetContinueRunSaveLocation(ContinueRunSaveLocation location);
 [[nodiscard]] String GetContinueResumeSceneLabel(ContinueResumeScene scene);
 [[nodiscard]] String GetContinueResumeSceneName(ContinueResumeScene scene);
 [[nodiscard]] ContinueResumeScene ParseContinueResumeScene(const String& label);

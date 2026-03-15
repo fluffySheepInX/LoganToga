@@ -25,12 +25,16 @@
     <ClCompile Include="BattleSessionCombat.cpp" />
     <ClCompile Include="BattleSessionCommands.cpp" />
     <ClCompile Include="BattleSessionEconomy.cpp" />
+    <ClCompile Include="BattleSessionEnemyAiDebug.cpp" />
     <ClCompile Include="BattleSessionMovement.cpp" />
     <ClCompile Include="BattleSessionProduction.cpp" />
     <ClCompile Include="BattleSessionQuery.cpp" />
+    <ClCompile Include="BattleSessionTutorial.cpp" />
     <ClCompile Include="BattleSessionWorld.cpp" />
     <ClCompile Include="BonusRoomScene.cpp" />
     <ClCompile Include="ContinueRunSave.cpp" />
+    <ClCompile Include="ContinueRunSave.Location.cpp" />
+    <ClCompile Include="ContinueRunSave.Persistence.cpp" />
     <ClCompile Include="ContinueRunSave.Toml.cpp" />
     <ClCompile Include="ContinueRunSave.Validation.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -41,6 +45,8 @@
     <ClCompile Include="MapEditScene.Input.cpp" />
     <ClCompile Include="MapEditScene.Input.Panels.cpp" />
     <ClCompile Include="MapEditScene.Persistence.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
+    <ClCompile Include="TitleScene.Draw.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

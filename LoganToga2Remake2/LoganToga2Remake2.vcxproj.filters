@@ -45,6 +45,12 @@
     <ClCompile Include="ContinueRunSave.cpp" />
     <ClCompile Include="ContinueRunSave.Toml.cpp" />
     <ClCompile Include="ContinueRunSave.Validation.cpp" />
+    <ClCompile Include="ContinueRunSave.Location.cpp" />
+    <ClCompile Include="ContinueRunSave.Persistence.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
+    <ClCompile Include="TitleScene.Draw.cpp" />
+    <ClCompile Include="BattleSessionTutorial.cpp" />
+    <ClCompile Include="BattleSessionEnemyAiDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleCommands.h" />
