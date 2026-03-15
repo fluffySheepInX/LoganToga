@@ -463,6 +463,9 @@
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="BattleConstructionController.h" />
     <ClInclude Include="BattleInputController.h" />
+    <ClInclude Include="TitleUiEditorScene.h" />
+    <ClInclude Include="TitleUiLayout.h" />
+    <ClInclude Include="TitleUiText.h" />
     <ClInclude Include="WindowChromeAddon.h" />
   </ItemGroup>
   <ItemGroup>

@@ -27,6 +27,13 @@ RectF TitleUiEditorScene::getToggleButtonRect(const int32 index)
 	return RectF{ right.x + 16, right.y + 44 + (index * 28), right.w - 32, 24 };
 }
 
+RectF TitleUiEditorScene::getPreviewViewportRect()
+{
+	const RectF left = getLeftPanelRect();
+	const RectF right = getRightPanelRect();
+	return RectF{ left.x + left.w + 12, 12, right.x - (left.x + left.w) - 24, Scene::Height() - 24 };
+}
+
 RectF TitleUiEditorScene::getSelectionListRect()
 {
 	const RectF left = getLeftPanelRect();

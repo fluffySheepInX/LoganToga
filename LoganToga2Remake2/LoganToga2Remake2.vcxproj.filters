@@ -130,6 +130,9 @@
     <ClInclude Include="BattleConstructionController.h" />
     <ClInclude Include="BattleInputController.h" />
     <ClInclude Include="WindowChromeAddon.h" />
+    <ClInclude Include="TitleUiEditorScene.h" />
+    <ClInclude Include="TitleUiLayout.h" />
+    <ClInclude Include="TitleUiText.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

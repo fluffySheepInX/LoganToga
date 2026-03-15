@@ -27,8 +27,8 @@ x = 968
 y = 256
 
 [viewedBonusRooms]
-x = 1167.5
-y = 360.16669
+x = 1208
+y = 160
 
 [enterHint]
 x = 448
@@ -66,45 +66,45 @@ h = 36
 
 [startButtonWithContinue]
 x = 304
-y = 456
+y = 440
 w = 220
 h = 36
 
 [startButtonWithoutContinue]
 x = 304
-y = 456
+y = 440
 w = 220
 h = 36
 
 [bonusButtonWithContinue]
-x = 1061.66669
-y = 376.33331
+x = 1096
+y = 200
 w = 220
 h = 36
 
 [bonusButtonWithoutContinue]
-x = 1060.83331
-y = 377.66666
+x = 1096
+y = 200
 w = 220
 h = 36
 
 [bonusRoomHintWithContinue]
-x = 1100
-y = 431
+x = 1144
+y = 176
 
 [bonusRoomHintWithoutContinue]
-x = 1096.66663
-y = 433.16666
+x = 1136
+y = 176
 
 [debugButtonWithContinue]
-x = 1064
-y = 616
+x = 1328
+y = 352
 w = 220
 h = 36
 
 [debugButtonWithoutContinue]
-x = 1064
-y = 616
+x = 1328
+y = 352
 w = 220
 h = 36
 
@@ -120,17 +120,29 @@ y = 190
 w = 860
 h = 520
 
+[quickGuideBody]
+x = 496
+y = 336
+
+[quickGuideFlow]
+x = 808
+y = 624
+
 [quickGuideTutorialButton]
-x = 580
-y = 598
+x = 584
+y = 640
 w = 200
 h = 40
 
 [quickGuideCloseButton]
-x = 820
-y = 598
+x = 824
+y = 640
 w = 200
 h = 40
+
+[quickGuideEscHint]
+x = 928
+y = 696
 
 [dataClearDialog]
 x = 540
@@ -169,24 +181,28 @@ w = 140
 h = 40
 
 [resolutionLabel]
-x = 304
-y = 656
+x = 264
+y = 120
+
+[resolutionValue]
+x = 264
+y = 152
 
 [resolutionSmallButton]
-x = 464
-y = 672
+x = 440
+y = 144
 w = 96
 h = 32
 
 [resolutionMediumButton]
-x = 560
-y = 672
+x = 544
+y = 144
 w = 96
 h = 32
 
 [resolutionLargeButton]
-x = 656
-y = 672
+x = 648
+y = 144
 w = 96
 h = 32
 
@@ -194,44 +210,64 @@ h = 32
 x = 1008
 y = 656
 
+[saveLocationValue]
+x = 1016
+y = 680
+
 [saveLocationButton]
-x = 1104
+x = 1136
 y = 672
 w = 180
 h = 32
 
+[dataManagementLabel]
+x = 1184
+y = 432
+
 [clearContinueRunButton]
-x = 536
-y = 392
+x = 1104
+y = 448
 w = 170
 h = 32
 
 [clearSettingsButton]
-x = 704
-y = 392
+x = 1104
+y = 488
 w = 170
 h = 32
 
+[dataManagementHint]
+x = 1136
+y = 536
+
+[debugHintWithContinue]
+x = 1520
+y = 400
+
+[debugHintWithoutContinue]
+x = 1504
+y = 400
+
 [mapEditButton]
-x = 1170
-y = 208
+x = 1328
+y = 192
 w = 128
 h = 30
 
 [balanceEditButton]
-x = 1170
-y = 246
+x = 1328
+y = 232
 w = 128
 h = 30
 
 [transitionPresetButton]
-x = 1106
-y = 284
+x = 1328
+y = 272
 w = 192
 h = 30
 
 [titleUiEditorButton]
-x = 1106
-y = 322
+x = 1328
+y = 312
 w = 192
 h = 30

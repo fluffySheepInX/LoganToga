@@ -205,31 +205,53 @@ void TitleUiEditorScene::handleDragInput()
 		{
 			m_dragOffset.reset();
 			m_isDraggingPoint = false;
+			m_previewPanAnchor.reset();
+			m_isPanningPreview = false;
 		}
 		return;
 	}
 
+	const Vec2 cursorPos = Cursor::PosF();
+	const Vec2 cursorWorldPos = toPreviewWorldPos(cursorPos);
+
 	if (const Vec2* point = getSelectedPoint())
 	{
-		const Circle handle{ *point, 12 };
-		if (!m_dragOffset && MouseL.down() && handle.mouseOver())
+		const Circle handle{ toPreviewScreenPos(*point), 12 };
+		if (!m_dragOffset && !m_isPanningPreview && MouseL.down() && handle.mouseOver())
 		{
-			m_dragOffset = (*point - Cursor::PosF());
+			m_dragOffset = (*point - cursorWorldPos);
 			m_isDraggingPoint = true;
 		}
 	}
 	else if (const RectF* rect = getSelectedRect())
 	{
-		if (!m_dragOffset && MouseL.down() && rect->mouseOver())
+		const RectF screenRect = toPreviewScreenRect(*rect);
+		if (!m_dragOffset && !m_isPanningPreview && MouseL.down() && screenRect.mouseOver())
 		{
-			m_dragOffset = (Cursor::PosF() - rect->pos);
+			m_dragOffset = (cursorWorldPos - rect->pos);
 			m_isDraggingPoint = false;
 		}
+	}
+
+	if (!m_dragOffset && !m_isPanningPreview && MouseL.down() && getPreviewViewportRect().mouseOver())
+	{
+		m_previewPanAnchor = cursorPos;
+		m_previewPanStartOffset = m_previewCameraOffset;
+		m_isPanningPreview = true;
+		m_statusMessage = U"Panning preview camera";
 	}
 
 	if (!MouseL.pressed())
 	{
 		m_dragOffset.reset();
+		m_previewPanAnchor.reset();
+		m_isPanningPreview = false;
+		return;
+	}
+
+	if (m_isPanningPreview && m_previewPanAnchor)
+	{
+		m_previewCameraOffset = (m_previewPanStartOffset + (cursorPos - *m_previewPanAnchor));
 		return;
 	}
 
@@ -240,12 +262,12 @@ void TitleUiEditorScene::handleDragInput()
 
 	if (Vec2* point = getSelectedPoint(); m_isDraggingPoint && point)
 	{
-		*point = TitleUiEditorSceneInputDetail::SnapToEditorGrid(Cursor::PosF() + *m_dragOffset);
+		*point = TitleUiEditorSceneInputDetail::SnapToEditorGrid(cursorWorldPos + *m_dragOffset);
 		markEdited(U"Dragged point element");
 	}
 	else if (RectF* rect = getSelectedRect(); rect)
 	{
-		rect->pos = TitleUiEditorSceneInputDetail::SnapToEditorGrid(Cursor::PosF() - *m_dragOffset);
+		rect->pos = TitleUiEditorSceneInputDetail::SnapToEditorGrid(cursorWorldPos - *m_dragOffset);
 		markEdited(U"Dragged rectangle element");
 	}
 }

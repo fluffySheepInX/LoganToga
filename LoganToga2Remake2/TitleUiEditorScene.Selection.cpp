@@ -92,16 +92,34 @@ const Vec2* TitleUiEditorScene::getSelectedPoint() const
 	return element.pointMember ? &(m_layout.*(element.pointMember)) : nullptr;
 }
 
+Vec2 TitleUiEditorScene::toPreviewScreenPos(const Vec2& pos) const
+{
+	return (pos + m_previewCameraOffset);
+}
+
+Vec2 TitleUiEditorScene::toPreviewWorldPos(const Vec2& pos) const
+{
+	return (pos - m_previewCameraOffset);
+}
+
+RectF TitleUiEditorScene::toPreviewScreenRect(const RectF& rect) const
+{
+	RectF screenRect = rect;
+	screenRect.pos.moveBy(m_previewCameraOffset);
+	return screenRect;
+}
+
 RectF TitleUiEditorScene::getSelectionHandleRect() const
 {
 	if (const RectF* rect = getSelectedRect())
 	{
-		return *rect;
+		return toPreviewScreenRect(*rect);
 	}
 
 	if (const Vec2* point = getSelectedPoint())
 	{
-		return RectF{ point->x - 10, point->y - 10, 20, 20 };
+		const Vec2 screenPoint = toPreviewScreenPos(*point);
+		return RectF{ screenPoint.x - 10, screenPoint.y - 10, 20, 20 };
 	}
 
 	return RectF{};
@@ -138,8 +156,11 @@ const Array<TitleUiEditorScene::EditableElement>& TitleUiEditorScene::getEditabl
 		{ U"Bonus Hint (New)", nullptr, &TitleUiLayout::bonusRoomHintPosWithoutContinue },
 		{ U"Continue Preview", &TitleUiLayout::continuePreviewRect, nullptr },
 		{ U"QuickGuide Panel", &TitleUiLayout::quickGuidePanelRect, nullptr },
+		{ U"QuickGuide Body", nullptr, &TitleUiLayout::quickGuideBodyPos },
+		{ U"QuickGuide Flow", nullptr, &TitleUiLayout::quickGuideFlowPos },
 		{ U"QuickGuide Tutorial", &TitleUiLayout::quickGuideTutorialButtonRect, nullptr },
 		{ U"QuickGuide Close", &TitleUiLayout::quickGuideCloseButtonRect, nullptr },
+		{ U"QuickGuide Esc", nullptr, &TitleUiLayout::quickGuideEscHintPos },
 		{ U"DataClear Dialog", &TitleUiLayout::dataClearDialogRect, nullptr },
 		{ U"DataClear Yes", &TitleUiLayout::dataClearDialogYesButtonRect, nullptr },
 		{ U"DataClear No", &TitleUiLayout::dataClearDialogNoButtonRect, nullptr },
@@ -147,18 +168,24 @@ const Array<TitleUiEditorScene::EditableElement>& TitleUiEditorScene::getEditabl
 		{ U"Exit Yes", &TitleUiLayout::exitDialogYesButtonRect, nullptr },
 		{ U"Exit No", &TitleUiLayout::exitDialogNoButtonRect, nullptr },
 		{ U"Resolution Label", nullptr, &TitleUiLayout::resolutionLabelPos },
+		{ U"Resolution Value", nullptr, &TitleUiLayout::resolutionValuePos },
 		{ U"Resolution Small", &TitleUiLayout::resolutionSmallButtonRect, nullptr },
 		{ U"Resolution Medium", &TitleUiLayout::resolutionMediumButtonRect, nullptr },
 		{ U"Resolution Large", &TitleUiLayout::resolutionLargeButtonRect, nullptr },
 		{ U"SaveLocation Label", nullptr, &TitleUiLayout::saveLocationLabelPos },
+		{ U"SaveLocation Value", nullptr, &TitleUiLayout::saveLocationValuePos },
 		{ U"SaveLocation Button", &TitleUiLayout::saveLocationButtonRect, nullptr },
+		{ U"Data Manage Label", nullptr, &TitleUiLayout::dataManagementLabelPos },
 		{ U"Clear Continue", &TitleUiLayout::clearContinueRunButtonRect, nullptr },
 		{ U"Clear Settings", &TitleUiLayout::clearSettingsButtonRect, nullptr },
+		{ U"Data Manage Hint", nullptr, &TitleUiLayout::dataManagementHintPos },
 		{ U"Map Edit", &TitleUiLayout::mapEditButtonRect, nullptr },
 		{ U"Balance Edit", &TitleUiLayout::balanceEditButtonRect, nullptr },
 		{ U"Transition Preset", &TitleUiLayout::transitionPresetButtonRect, nullptr },
 		{ U"TitleUi Editor", &TitleUiLayout::titleUiEditorButtonRect, nullptr },
 #ifdef _DEBUG
+		{ U"Debug Hint (Cont)", nullptr, &TitleUiLayout::debugHintPosWithContinue },
+		{ U"Debug Hint (New)", nullptr, &TitleUiLayout::debugHintPosWithoutContinue },
 		{ U"Debug Btn (Cont)", &TitleUiLayout::debugButtonRectWithContinue, nullptr },
 		{ U"Debug Btn (New)", &TitleUiLayout::debugButtonRectWithoutContinue, nullptr },
 #endif

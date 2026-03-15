@@ -25,6 +25,7 @@ private:
 	TitleUiLayout m_layout;
 	int32 m_selectedElementIndex = 0;
 	int32 m_selectionScrollRow = 0;
+	Vec2 m_previewCameraOffset{ 0, 0 };
 	String m_statusMessage = U"Title UI editor ready";
 	bool m_hasUnsavedChanges = false;
 	bool m_previewHasContinue = true;
@@ -37,6 +38,9 @@ private:
 #endif
 	Optional<Vec2> m_dragOffset;
 	bool m_isDraggingPoint = false;
+	Optional<Vec2> m_previewPanAnchor;
+	Vec2 m_previewPanStartOffset{ 0, 0 };
+	bool m_isPanningPreview = false;
 
 	void reloadLayout();
 	void saveLayout();
@@ -58,6 +62,9 @@ private:
 	[[nodiscard]] const RectF* getSelectedRect() const;
 	[[nodiscard]] Vec2* getSelectedPoint();
 	[[nodiscard]] const Vec2* getSelectedPoint() const;
+	[[nodiscard]] Vec2 toPreviewScreenPos(const Vec2& pos) const;
+	[[nodiscard]] Vec2 toPreviewWorldPos(const Vec2& pos) const;
+	[[nodiscard]] RectF toPreviewScreenRect(const RectF& rect) const;
 	[[nodiscard]] RectF getSelectionHandleRect() const;
 	[[nodiscard]] const EditableElement& getSelectedElement() const;
 	[[nodiscard]] static const Array<EditableElement>& getEditableElements();
@@ -72,6 +79,7 @@ private:
 	[[nodiscard]] static RectF getRightPanelRect();
 	[[nodiscard]] static RectF getTopButtonRect(int32 index);
 	[[nodiscard]] static RectF getToggleButtonRect(int32 index);
+	[[nodiscard]] static RectF getPreviewViewportRect();
 	[[nodiscard]] static RectF getSelectionListRect();
 	[[nodiscard]] int32 getMaxSelectionScrollRow() const;
 	[[nodiscard]] static int32 getSelectionVisibleRowCount();
