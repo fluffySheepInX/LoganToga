@@ -5,6 +5,11 @@
 
 namespace
 {
+	[[nodiscard]] Vec2 GetUnitRenderPosition(const UnitState& unit, const double interpolationAlpha)
+	{
+		return unit.previousPosition.lerp(unit.position, Clamp(interpolationAlpha, 0.0, 1.0));
+	}
+
 	[[nodiscard]] double GetBuildingProductionPulse(const int32 unitId)
 	{
 		return 0.5 + (0.5 * std::sin((Scene::Time() * 6.0) + (unitId * 0.8)));
@@ -160,7 +165,7 @@ namespace
 	}
 }
 
-void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData) const
+void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameData, const double interpolationAlpha) const
 {
 	std::unordered_map<int32, const AttackVisualEffect*> meleeEffectsByUnitId;
 	meleeEffectsByUnitId.reserve(state.attackVisualEffects.size());
@@ -204,7 +209,7 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 
 		const auto meleeEffectIt = meleeEffectsByUnitId.find(unit.id);
 		const AttackVisualEffect* meleeEffect = (meleeEffectIt != meleeEffectsByUnitId.end()) ? meleeEffectIt->second : nullptr;
-		const Vec2 renderPosition = unit.position + GetUnitRenderOffset(unit, meleeEffect);
+		const Vec2 renderPosition = GetUnitRenderPosition(unit, interpolationAlpha) + GetUnitRenderOffset(unit, meleeEffect);
 		const ColorF color = GetOwnerColor(unit.owner);
 		const auto buildingIt = buildingsByUnitId.find(unit.id);
 		const BuildingState* building = (buildingIt != buildingsByUnitId.end()) ? buildingIt->second : nullptr;

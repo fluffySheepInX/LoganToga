@@ -424,7 +424,10 @@
     <ClInclude Include="BattleSessionCombatHelpers.h" />
     <ClInclude Include="BattleSessionCombatTargeting.ipp" />
     <ClInclude Include="BattleSessionConstruction.ipp" />
+    <ClInclude Include="BattleSessionEnemyAI.Helpers.ipp" />
     <ClInclude Include="BattleSessionEnemyAI.ipp" />
+    <ClInclude Include="BattleSessionEnemyAI.Strategy.ipp" />
+    <ClInclude Include="BattleSessionEnemyAI.Types.ipp" />
     <ClInclude Include="BattleSessionFormation.ipp" />
     <ClInclude Include="BattleSessionFormationHelpers.h" />
     <ClInclude Include="BattleSessionInternal.h" />

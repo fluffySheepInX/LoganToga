@@ -9,11 +9,13 @@ struct UnitState
 	Owner owner = Owner::Player;
 	UnitArchetype archetype = UnitArchetype::Soldier;
 	Vec2 position = Vec2::Zero();
+	Vec2 previousPosition = Vec2::Zero();
 	Vec2 moveTarget = Vec2::Zero();
 	Array<Vec2> pathPoints;
 	int32 pathIndex = 0;
 	Vec2 pathDestination = Vec2::Zero();
 	bool pathDirty = false;
+	int32 pathStuckFrames = 0;
 	double radius = 12.0;
 	double moveSpeed = 80.0;
 	double attackRange = 24.0;

@@ -133,6 +133,9 @@
     <ClInclude Include="TitleUiEditorScene.h" />
     <ClInclude Include="TitleUiLayout.h" />
     <ClInclude Include="TitleUiText.h" />
+    <ClInclude Include="BattleSessionEnemyAI.Types.ipp" />
+    <ClInclude Include="BattleSessionEnemyAI.Helpers.ipp" />
+    <ClInclude Include="BattleSessionEnemyAI.Strategy.ipp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

@@ -92,6 +92,7 @@ private:
 	[[nodiscard]] double getProductionTime(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] double getAggroRange(Owner owner, UnitArchetype archetype) const;
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source) const;
+	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source, Array<size_t>& nearbyOpponentIndicesScratch) const;
 	[[nodiscard]] const UnitState* findBestKatyushaTarget(const UnitState& source) const;
 	[[nodiscard]] const UnitState* tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const;
 	void applyUnitHpDelta(UnitState& target, int32 hpDelta);
@@ -113,7 +114,7 @@ private:
 	[[nodiscard]] const Array<size_t>& getOwnerUnitIndices(Owner owner) const;
 	[[nodiscard]] const Array<size_t>& getOwnerBuildingIndices(Owner owner) const;
 	[[nodiscard]] const UnitState* findOwnerUnitByArchetype(Owner owner, UnitArchetype archetype) const;
-	[[nodiscard]] const UnitState* findNearestIntrudingPlayerUnit(const Vec2& assetPosition, double defenseRadius, double& inOutDistanceSq) const;
+	[[nodiscard]] const UnitState* findNearestIntrudingPlayerUnit(const Vec2& assetPosition, double defenseRadius, double& inOutDistanceSq, Array<size_t>& nearbyUnitIndicesScratch) const;
 	[[nodiscard]] bool hasBaseDefenseTurret(const UnitState& base, double lockRadius) const;
 	[[nodiscard]] UnitState* findCachedUnit(int32 id);
 	[[nodiscard]] const UnitState* findCachedUnit(int32 id) const;

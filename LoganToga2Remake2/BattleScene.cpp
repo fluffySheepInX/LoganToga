@@ -25,7 +25,7 @@ namespace
 
 BattleScene::BattleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
-	, m_clock{ 1.0 / 60.0 }
+	, m_clock{ 1.0 / 120.0 }
 {
 	PlayBattleBgm();
 
@@ -82,7 +82,7 @@ void BattleScene::update()
 
 void BattleScene::draw() const
 {
-	m_renderer.draw(m_session.state(), m_session.config(), getData(), m_camera);
+	m_renderer.draw(m_session.state(), m_session.config(), getData(), m_camera, m_clock.interpolationAlpha());
 	if (m_session.state().winner)
 	{
 		DrawBattleResultOverlay(getData(), m_session.state());

@@ -193,9 +193,21 @@ void BattleSession::updateMovement(const double deltaTime)
 		nextPosition = ClampToWorld(m_state.worldBounds, nextPosition, unit.radius);
 		unit.position = BattleSessionInternal::ResolveObstacleMove(unit.position, nextPosition, unit.radius, m_config.obstacles);
 		unit.movementDistanceLastFrame = unit.position.distanceFrom(currentPosition);
-		if (useNavigationPath && (unit.position.distanceFrom(currentPosition) <= 0.01))
+		if (useNavigationPath)
 		{
-			unit.pathDirty = true;
+			if (unit.movementDistanceLastFrame <= 0.01)
+			{
+				++unit.pathStuckFrames;
+				if (unit.pathStuckFrames >= 3)
+				{
+					unit.pathDirty = true;
+					unit.pathStuckFrames = 0;
+				}
+			}
+			else
+			{
+				unit.pathStuckFrames = 0;
+			}
 		}
 	}
 }
@@ -204,14 +216,19 @@ void BattleSession::updateMovement(const double deltaTime)
 
 const UnitState* BattleSession::findNearestEnemy(const UnitState& source) const
 {
+	return findNearestEnemy(source, m_nearbyOpponentIndicesScratch);
+}
+
+const UnitState* BattleSession::findNearestEnemy(const UnitState& source, Array<size_t>& nearbyOpponentIndicesScratch) const
+{
 	const double searchRadius = getAggroRange(source.owner, source.archetype);
 	const double searchRadiusSq = (searchRadius * searchRadius);
-	gatherNearbyOpponentIndices(source, searchRadius, m_nearbyOpponentIndicesScratch);
+	gatherNearbyOpponentIndices(source, searchRadius, nearbyOpponentIndicesScratch);
 
 	const UnitState* nearest = nullptr;
 	double nearestDistanceSq = searchRadiusSq;
 
-	for (const auto index : m_nearbyOpponentIndicesScratch)
+	for (const auto index : nearbyOpponentIndicesScratch)
 	{
 		const auto& candidate = m_state.units[index];
 		if (!candidate.isAlive || !IsEnemy(source, candidate))

@@ -7,7 +7,7 @@
 class BattleRenderer
 {
 public:
-	void draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera) const;
+	void draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera, double interpolationAlpha) const;
 
 private:
 	void drawWorld(const BattleState& state) const;
@@ -19,6 +19,6 @@ private:
 	void drawBuildings(const BattleState& state, const GameData& gameData) const;
 	void drawAttackEffects(const BattleState& state) const;
 	void drawMeleeAttackEffects(const BattleState& state) const;
-	void drawUnits(const BattleState& state, const GameData& gameData) const;
+	void drawUnits(const BattleState& state, const GameData& gameData, double interpolationAlpha) const;
 	void drawHud(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const;
 };

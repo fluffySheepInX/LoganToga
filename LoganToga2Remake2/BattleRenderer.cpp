@@ -1,6 +1,6 @@
 ﻿#include "BattleRenderer.h"
 
-void BattleRenderer::draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera) const
+void BattleRenderer::draw(const BattleState& state, const BattleConfigData& config, const GameData& gameData, const Camera2D& camera, const double interpolationAlpha) const
 {
 	{
 		const auto transformer = camera.createTransformer();
@@ -12,7 +12,7 @@ void BattleRenderer::draw(const BattleState& state, const BattleConfigData& conf
 		drawResourcePoints(state, gameData);
 		drawBuildings(state, gameData);
 		drawAttackEffects(state);
-		drawUnits(state, gameData);
+		drawUnits(state, gameData, interpolationAlpha);
 		drawMeleeAttackEffects(state);
 	}
 

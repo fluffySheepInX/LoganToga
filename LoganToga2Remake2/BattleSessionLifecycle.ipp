@@ -91,6 +91,7 @@ UnitState BattleSession::makeUnit(const int32 id, const Owner owner, const UnitA
 	unit.owner = owner;
 	unit.archetype = archetype;
 	unit.position = position;
+	unit.previousPosition = position;
 	unit.moveTarget = position;
 	unit.radius = definition.radius;
 	unit.moveSpeed = definition.moveSpeed;

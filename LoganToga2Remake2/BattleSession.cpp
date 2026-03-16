@@ -116,6 +116,11 @@ void BattleSession::update(const double deltaTime)
 		return;
 	}
 
+	for (auto& unit : m_state.units)
+	{
+		unit.previousPosition = unit.position;
+	}
+
 	processCommands();
 	updateEconomy(deltaTime);
 	updateProduction(deltaTime);
