@@ -40,6 +40,33 @@ RectF TitleUiEditorScene::getSelectionListRect()
 	return RectF{ left.x + 16, left.y + 246, left.w - 32, left.h - 262 };
 }
 
+RectF TitleUiEditorScene::getInfoPresetButtonRect(const int32 index)
+{
+	const RectF right = getRightPanelRect();
+	const RectF infoRect{ right.x + 16, right.y + 214, right.w - 32, right.h - 230 };
+	const double marginX = 12.0;
+	const double spacing = 8.0;
+	const double buttonWidth = ((infoRect.w - (marginX * 2.0) - spacing) * 0.5);
+	const double buttonHeight = 26.0;
+	const double fullWidth = (infoRect.w - (marginX * 2.0));
+	const double startY = (infoRect.y + 178.0);
+
+	switch (index)
+	{
+	case 0:
+		return RectF{ infoRect.x + marginX, startY, buttonWidth, buttonHeight };
+	case 1:
+		return RectF{ infoRect.x + marginX + buttonWidth + spacing, startY, buttonWidth, buttonHeight };
+	case 2:
+		return RectF{ infoRect.x + marginX, startY + buttonHeight + spacing, buttonWidth, buttonHeight };
+	case 3:
+		return RectF{ infoRect.x + marginX + buttonWidth + spacing, startY + buttonHeight + spacing, buttonWidth, buttonHeight };
+	case 4:
+	default:
+		return RectF{ infoRect.x + marginX, startY + ((buttonHeight + spacing) * 2.0), fullWidth, buttonHeight };
+	}
+}
+
 int32 TitleUiEditorScene::getMaxSelectionScrollRow() const
 {
 	return Max(0, static_cast<int32>(getEditableElements().size()) - getSelectionVisibleRowCount());

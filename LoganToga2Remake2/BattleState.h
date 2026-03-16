@@ -21,6 +21,7 @@ struct UnitState
 	double attackRange = 24.0;
 	double attackCooldown = 0.7;
 	double attackCooldownRemaining = 0.0;
+	double damageFlashTime = 0.0;
 	double movementDistanceLastFrame = 0.0;
 	int32 attackPower = 8;
 	int32 hp = 40;
@@ -87,6 +88,33 @@ struct AttackVisualEffect
 	double areaRadius = 0.0;
 };
 
+enum class BattleAudioEventKind
+{
+	Hit,
+	Death,
+	Explosion,
+};
+
+struct BattleAudioEvent
+{
+	Vec2 position = Vec2::Zero();
+	Owner targetOwner = Owner::Player;
+	UnitArchetype sourceArchetype = UnitArchetype::Soldier;
+	bool isBuilding = false;
+	BattleAudioEventKind kind = BattleAudioEventKind::Hit;
+};
+
+struct DeathVisualEffect
+{
+	Vec2 position = Vec2::Zero();
+	double radius = 12.0;
+	Owner owner = Owner::Player;
+	UnitArchetype archetype = UnitArchetype::Soldier;
+	bool isBuilding = false;
+	double remainingTime = 0.0;
+	double totalTime = 0.0;
+};
+
 struct ProductionCompletionEffect
 {
 	int32 unitId = -1;
@@ -110,6 +138,8 @@ struct BattleState
 	Array<ResourcePointState> resourcePoints;
 	Array<SquadState> squads;
 	Array<AttackVisualEffect> attackVisualEffects;
+	Array<BattleAudioEvent> battleAudioEvents;
+	Array<DeathVisualEffect> deathVisualEffects;
 	Array<ProductionCompletionEffect> productionCompletionEffects;
 	Array<PendingConstructionOrder> pendingConstructionOrders;
 	bool isSelecting = false;

@@ -133,6 +133,46 @@ void TitleUiEditorScene::handlePreviewToggleInput()
 #endif
 }
 
+void TitleUiEditorScene::handleInfoPanelInput()
+{
+	if (!getSelectedRect())
+	{
+		return;
+	}
+
+	if (isButtonClicked(getInfoPresetButtonRect(0)))
+	{
+		applySelectedRectSizePreset(Vec2{ 220, 36 }, U"220x36");
+		return;
+	}
+
+	if (isButtonClicked(getInfoPresetButtonRect(1)))
+	{
+		applySelectedRectSizePreset(Vec2{ 170, 32 }, U"170x32");
+		return;
+	}
+
+	if (isButtonClicked(getInfoPresetButtonRect(2)))
+	{
+		applySelectedRectSizePreset(Vec2{ 140, 40 }, U"140x40");
+		return;
+	}
+
+	if (isButtonClicked(getInfoPresetButtonRect(3)))
+	{
+		applySelectedRectSizePreset(Vec2{ 128, 30 }, U"128x30");
+		return;
+	}
+
+	if (isButtonClicked(getInfoPresetButtonRect(4)))
+	{
+		if (const auto defaultRect = getSelectedDefaultRect())
+		{
+			applySelectedRectSizePreset(defaultRect->size, U"Default Size");
+		}
+	}
+}
+
 void TitleUiEditorScene::handleEditorShortcuts()
 {
 	const bool controlPressed = s3d::KeyControl.pressed();

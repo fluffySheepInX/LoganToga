@@ -111,6 +111,21 @@ void BattleSession::update(const double deltaTime)
 		m_state.statusMessage.clear();
 	}
 
+	for (auto& unit : m_state.units)
+	{
+		unit.damageFlashTime = Max(unit.damageFlashTime - deltaTime, 0.0);
+	}
+
+	for (auto& effect : m_state.deathVisualEffects)
+	{
+		effect.remainingTime = Max(effect.remainingTime - deltaTime, 0.0);
+	}
+
+	m_state.deathVisualEffects.remove_if([](const DeathVisualEffect& effect)
+	{
+		return (effect.remainingTime <= 0.0);
+	});
+
 	if (m_state.winner)
 	{
 		return;

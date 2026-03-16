@@ -63,6 +63,18 @@ void TitleUiEditorScene::markEdited(const String& message)
 	m_statusMessage = message;
 }
 
+bool TitleUiEditorScene::isRectLikelyTooSmall(const RectF& rect, const RectF& defaultRect)
+{
+	if ((defaultRect.w > 260.0) || (defaultRect.h > 56.0))
+	{
+		return false;
+	}
+
+	const double minWidth = Max(80.0, defaultRect.w * 0.5);
+	const double minHeight = Max(24.0, defaultRect.h * 0.75);
+	return (rect.w < minWidth) || (rect.h < minHeight);
+}
+
 bool TitleUiEditorScene::isCursorOnControlPanel() const
 {
 	return getLeftPanelRect().mouseOver() || getRightPanelRect().mouseOver();
@@ -90,6 +102,59 @@ const Vec2* TitleUiEditorScene::getSelectedPoint() const
 {
 	const EditableElement& element = getSelectedElement();
 	return element.pointMember ? &(m_layout.*(element.pointMember)) : nullptr;
+}
+
+Optional<RectF> TitleUiEditorScene::getSelectedDefaultRect() const
+{
+	const TitleUiLayout defaults = TitleUi::MakeDefaultTitleUiLayout();
+	const EditableElement& element = getSelectedElement();
+	if (!element.rectMember)
+	{
+		return none;
+	}
+
+	return defaults.*(element.rectMember);
+}
+
+Optional<Vec2> TitleUiEditorScene::getSelectedDefaultPoint() const
+{
+	const TitleUiLayout defaults = TitleUi::MakeDefaultTitleUiLayout();
+	const EditableElement& element = getSelectedElement();
+	if (!element.pointMember)
+	{
+		return none;
+	}
+
+	return defaults.*(element.pointMember);
+}
+
+Optional<TitleUiEditorScene::ValidationIssue> TitleUiEditorScene::findValidationIssue() const
+{
+	const auto& elements = getEditableElements();
+	const TitleUiLayout defaults = TitleUi::MakeDefaultTitleUiLayout();
+
+	for (int32 i = 0; i < static_cast<int32>(elements.size()); ++i)
+	{
+		const EditableElement& element = elements[static_cast<size_t>(i)];
+		if (!element.rectMember)
+		{
+			continue;
+		}
+
+		const RectF& rect = (m_layout.*(element.rectMember));
+		const RectF defaultRect = defaults.*(element.rectMember);
+		if (!isRectLikelyTooSmall(rect, defaultRect))
+		{
+			continue;
+		}
+
+		return ValidationIssue{
+			.elementIndex = i,
+			.message = U"Save blocked: " + element.name + U" is too small. Use Default Size or a size preset."
+		};
+	}
+
+	return none;
 }
 
 Vec2 TitleUiEditorScene::toPreviewScreenPos(const Vec2& pos) const
@@ -178,6 +243,7 @@ const Array<TitleUiEditorScene::EditableElement>& TitleUiEditorScene::getEditabl
 		{ U"Data Manage Label", nullptr, &TitleUiLayout::dataManagementLabelPos },
 		{ U"Clear Continue", &TitleUiLayout::clearContinueRunButtonRect, nullptr },
 		{ U"Clear Settings", &TitleUiLayout::clearSettingsButtonRect, nullptr },
+		{ U"Exit Button", &TitleUiLayout::exitButtonRect, nullptr },
 		{ U"Data Manage Hint", nullptr, &TitleUiLayout::dataManagementHintPos },
 		{ U"Map Edit", &TitleUiLayout::mapEditButtonRect, nullptr },
 		{ U"Balance Edit", &TitleUiLayout::balanceEditButtonRect, nullptr },

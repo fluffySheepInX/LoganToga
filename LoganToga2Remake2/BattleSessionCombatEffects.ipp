@@ -1,11 +1,24 @@
-﻿void BattleSession::applyUnitHpDelta(UnitState& target, const int32 hpDelta)
+﻿void BattleSession::applyUnitHpDelta(UnitState& target, const int32 hpDelta, const UnitArchetype sourceArchetype)
 {
 	if (!target.isAlive)
 	{
 		return;
 	}
 
+	const int32 previousHp = target.hp;
 	target.hp = Clamp(target.hp - hpDelta, 0, target.maxHp);
+	if ((hpDelta > 0) && (target.hp < previousHp))
+	{
+		target.damageFlashTime = 0.18;
+		m_state.battleAudioEvents << BattleAudioEvent{
+			.position = target.position,
+			.targetOwner = target.owner,
+			.sourceArchetype = sourceArchetype,
+			.isBuilding = IsBuildingArchetype(target.archetype),
+			.kind = ((target.hp <= 0) ? BattleAudioEventKind::Death : BattleAudioEventKind::Hit),
+		};
+	}
+
 	if ((hpDelta > 0) && (target.hp <= 0))
 	{
 		if (target.archetype == UnitArchetype::Goliath)
@@ -14,8 +27,19 @@
 			return;
 		}
 
+		m_state.deathVisualEffects << DeathVisualEffect{
+			.position = target.position,
+			.radius = target.radius,
+			.owner = target.owner,
+			.archetype = target.archetype,
+			.isBuilding = IsBuildingArchetype(target.archetype),
+			.remainingTime = 0.36,
+			.totalTime = 0.36,
+		};
+
 		target.hp = 0;
 		target.isAlive = false;
+		target.damageFlashTime = 0.0;
 	}
 }
 
@@ -28,6 +52,14 @@ void BattleSession::triggerGoliathExplosion(UnitState& unit)
 
 	const Vec2 explosionCenter = unit.position;
 	const int32 effectFrames = GetAttackEffectFrames(UnitArchetype::Goliath);
+	m_state.battleAudioEvents << BattleAudioEvent{
+		.position = explosionCenter,
+		.targetOwner = unit.owner,
+		.sourceArchetype = UnitArchetype::Goliath,
+		.isBuilding = false,
+		.kind = BattleAudioEventKind::Explosion,
+	};
+
 	unit.hp = 0;
 	unit.isAlive = false;
 	unit.isSelected = false;
@@ -69,6 +101,6 @@ void BattleSession::triggerGoliathExplosion(UnitState& unit)
 		const int32 damage = IsBuildingArchetype(target.archetype)
 			? Max(1, static_cast<int32>(std::round(GoliathExplosionDamage * GoliathBuildingDamageMultiplier)))
 			: GoliathExplosionDamage;
-		applyUnitHpDelta(target, damage);
+		applyUnitHpDelta(target, damage, UnitArchetype::Goliath);
 	}
 }

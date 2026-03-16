@@ -3,6 +3,12 @@
 #include "AudioManager.h"
 #include "GameSettings.h"
 
+namespace
+{
+	constexpr double TitleIntroDuration = 1.10;
+	constexpr double TitleIntroSeDelay = 0.12;
+}
+
 TitleScene::TitleScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 {
@@ -11,6 +17,12 @@ TitleScene::TitleScene(const SceneBase::InitData& init)
 
 void TitleScene::update()
 {
+	updateIntro();
+	if (isIntroPlaying())
+	{
+		return;
+	}
+
 	if (UpdateSceneTransition(getData(), [this](const String& sceneName)
 	{
 		changeScene(sceneName);
@@ -64,6 +76,12 @@ void TitleScene::update()
 	}
 
 	if (KeyEscape.down())
+	{
+		m_isExitDialogOpen = true;
+		return;
+	}
+
+	if (isButtonClicked(getExitButtonRect()))
 	{
 		m_isExitDialogOpen = true;
 		return;
@@ -218,6 +236,37 @@ void TitleScene::update()
 		return;
 	}
 #endif
+}
+
+void TitleScene::updateIntro()
+{
+	if (!m_hasPlayedIntroSe && m_introElapsed >= TitleIntroSeDelay)
+	{
+		PlayTitleIntroSe();
+		m_hasPlayedIntroSe = true;
+	}
+
+	if (m_introElapsed >= TitleIntroDuration)
+	{
+		m_introElapsed = TitleIntroDuration;
+		return;
+	}
+
+	m_introElapsed += Scene::DeltaTime();
+	if (m_introElapsed > TitleIntroDuration)
+	{
+		m_introElapsed = TitleIntroDuration;
+	}
+}
+
+bool TitleScene::isIntroPlaying() const
+{
+	return m_introElapsed < TitleIntroDuration;
+}
+
+double TitleScene::getIntroProgress() const
+{
+	return Clamp(m_introElapsed / TitleIntroDuration, 0.0, 1.0);
 }
 
 void TitleScene::updateQuickGuide()
@@ -418,6 +467,11 @@ RectF TitleScene::getClearContinueRunButtonRect()
 RectF TitleScene::getClearSettingsButtonRect()
 {
 	return TitleUi::GetTitleUiLayout().clearSettingsButtonRect;
+}
+
+RectF TitleScene::getExitButtonRect()
+{
+	return TitleUi::GetTitleUiLayout().exitButtonRect;
 }
 
 RectF TitleScene::getMapEditButtonRect()

@@ -50,6 +50,92 @@
 	{
 		m_session.update(m_clock.stepSeconds());
 	}
+
+	playBattleSoundEffects();
+}
+
+void BattleScene::playBattleSoundEffects()
+{
+	m_lightBattleSeCooldown = Max(m_lightBattleSeCooldown - Scene::DeltaTime(), 0.0);
+	m_heavyBattleSeCooldown = Max(m_heavyBattleSeCooldown - Scene::DeltaTime(), 0.0);
+	m_deathBattleSeCooldown = Max(m_deathBattleSeCooldown - Scene::DeltaTime(), 0.0);
+
+	auto& state = m_session.state();
+	if (state.battleAudioEvents.isEmpty())
+	{
+		return;
+	}
+
+	const RectF audibleRect = getCameraWorldRect(48.0);
+	struct PrioritizedAudioEvent
+	{
+		const BattleAudioEvent* event = nullptr;
+		int32 priority = 0;
+	};
+
+	Array<PrioritizedAudioEvent> candidates;
+	candidates.reserve(state.battleAudioEvents.size());
+	for (const auto& event : state.battleAudioEvents)
+	{
+		if (!audibleRect.intersects(event.position))
+		{
+			continue;
+		}
+
+		candidates << PrioritizedAudioEvent{ &event, GetBattleAudioPriority(event) };
+	}
+
+	std::sort(candidates.begin(), candidates.end(), [](const PrioritizedAudioEvent& a, const PrioritizedAudioEvent& b)
+	{
+		return a.priority > b.priority;
+	});
+
+	int32 playedCount = 0;
+	for (const auto& candidate : candidates)
+	{
+		if ((playedCount >= 3) || !candidate.event)
+		{
+			break;
+		}
+
+		const auto& event = *candidate.event;
+		if (event.kind == BattleAudioEventKind::Death)
+		{
+			if (m_deathBattleSeCooldown > 0.0)
+			{
+				continue;
+			}
+
+			PlayBattleImpactSe((event.targetOwner == Owner::Player) ? 0.24 : 0.18);
+			m_deathBattleSeCooldown = 0.16;
+			++playedCount;
+			continue;
+		}
+
+		if (IsHeavyBattleAudioEvent(event))
+		{
+			if (m_heavyBattleSeCooldown > 0.0)
+			{
+				continue;
+			}
+
+			PlayBattleImpactSe((event.targetOwner == Owner::Player) ? 0.20 : 0.15);
+			m_heavyBattleSeCooldown = 0.11;
+			++playedCount;
+			continue;
+		}
+
+		if (m_lightBattleSeCooldown > 0.0)
+		{
+			continue;
+		}
+
+		PlayBattleHitSe((event.targetOwner == Owner::Player) ? 0.13 : 0.09);
+		m_lightBattleSeCooldown = 0.075;
+		++playedCount;
+	}
+
+	state.battleAudioEvents.clear();
 }
 
 bool BattleScene::isCommandSlotTriggered(const int32 slot)

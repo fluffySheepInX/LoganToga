@@ -154,6 +154,36 @@ namespace
 		Circle{ effect.start, radius * 0.82 }.drawFrame(2.0, trailColor);
 		Circle{ effect.start, 4.0 + (3.0 * t) }.draw(coreColor);
 	}
+
+	void DrawDeathBurstEffect(const DeathVisualEffect& effect)
+	{
+		if ((effect.remainingTime <= 0.0) || (effect.totalTime <= 0.0))
+		{
+			return;
+		}
+
+		const double t = Clamp(effect.remainingTime / effect.totalTime, 0.0, 1.0);
+		const double progress = (1.0 - t);
+		const ColorF ownerColor = GetOwnerColor(effect.owner);
+		const double outerRadius = effect.radius + (effect.isBuilding ? 16.0 : 9.0) + (progress * (effect.isBuilding ? 26.0 : 16.0));
+		const double innerRadius = (effect.radius * 0.52) + (progress * effect.radius * 0.28);
+		const ColorF ringColor{ 1.0, 0.44, 0.26, 0.18 + (0.42 * t) };
+		const ColorF coreColor{ 1.0, 0.92, 0.76, 0.10 + (0.16 * t) };
+		const ColorF ownerRingColor{ ownerColor.r, ownerColor.g, ownerColor.b, 0.10 + (0.18 * t) };
+
+		Circle{ effect.position, outerRadius }.drawFrame(effect.isBuilding ? 3.6 : 2.6, ringColor);
+		Circle{ effect.position, effect.radius + 4.0 + (progress * 8.0) }.drawFrame(1.6, ownerRingColor);
+		Circle{ effect.position, innerRadius }.draw(coreColor);
+
+		for (int32 burstIndex = 0; burstIndex < 4; ++burstIndex)
+		{
+			const double angle = (Math::TwoPi * burstIndex / 4.0) + (progress * 0.45);
+			const Vec2 direction{ std::cos(angle), std::sin(angle) };
+			const Vec2 start = effect.position + (direction * (effect.radius * 0.30));
+			const Vec2 end = effect.position + (direction * (effect.radius + 6.0 + (progress * 12.0)));
+			Line{ start, end }.draw(effect.isBuilding ? 3.2 : 2.2, ColorF{ 1.0, 0.78, 0.40, 0.16 + (0.40 * t) });
+		}
+	}
 }
 
 void BattleRenderer::drawAttackEffects(const BattleState& state) const
@@ -196,6 +226,14 @@ void BattleRenderer::drawAttackEffects(const BattleState& state) const
 			DrawBeamAttackEffect(effect, t, ownerColor);
 			break;
 		}
+	}
+}
+
+void BattleRenderer::drawDeathEffects(const BattleState& state) const
+{
+	for (const auto& effect : state.deathVisualEffects)
+	{
+		DrawDeathBurstEffect(effect);
 	}
 }
 

@@ -19,6 +19,7 @@ void TitleUiEditorScene::update()
 
 	handleTopButtonInput();
 	handleSelectionInput();
+	handleInfoPanelInput();
 	handlePreviewToggleInput();
 	handleEditorShortcuts();
 	handleDragInput();
@@ -41,6 +42,14 @@ void TitleUiEditorScene::reloadLayout()
 
 void TitleUiEditorScene::saveLayout()
 {
+	if (const auto validationIssue = findValidationIssue())
+	{
+		m_selectedElementIndex = validationIssue->elementIndex;
+		ensureSelectedElementVisible();
+		m_statusMessage = validationIssue->message;
+		return;
+	}
+
 	if (TitleUi::SaveTitleUiLayout(m_layout))
 	{
 		m_hasUnsavedChanges = false;
@@ -49,6 +58,16 @@ void TitleUiEditorScene::saveLayout()
 	else
 	{
 		m_statusMessage = U"Failed to save title UI layout";
+	}
+}
+
+void TitleUiEditorScene::applySelectedRectSizePreset(const Vec2& size, const String& label)
+{
+	if (RectF* rect = getSelectedRect())
+	{
+		rect->w = Max(8.0, size.x);
+		rect->h = Max(8.0, size.y);
+		markEdited(U"Applied size preset: " + label);
 	}
 }
 

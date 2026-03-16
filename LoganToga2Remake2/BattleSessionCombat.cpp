@@ -241,7 +241,7 @@ void BattleSession::updateCombat()
 
 		if (auto* target = findCachedUnit(event.targetId))
 		{
-			applyUnitHpDelta(*target, event.hpDelta);
+			applyUnitHpDelta(*target, event.hpDelta, event.sourceArchetype);
 		}
 	}
 }

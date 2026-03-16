@@ -49,6 +49,7 @@ struct TitleUiLayout
 	Vec2 dataManagementLabelPos{ 800, 628 };
 	RectF clearContinueRunButtonRect{ 623, 646, 170, 32 };
 	RectF clearSettingsButtonRect{ 807, 646, 170, 32 };
+	RectF exitButtonRect{ 991, 646, 170, 32 };
 	Vec2 dataManagementHintPos{ 800, 696 };
 	Vec2 debugHintPosWithContinue{ 800, 806 };
 	Vec2 debugHintPosWithoutContinue{ 800, 754 };
@@ -127,6 +128,57 @@ namespace TitleUi
 		}
 	}
 
+	inline void RepairRectSizeFromDefault(RectF& value, const RectF& defaults, const double minWidth, const double minHeight)
+	{
+		if (value.w < minWidth)
+		{
+			value.w = defaults.w;
+		}
+
+		if (value.h < minHeight)
+		{
+			value.h = defaults.h;
+		}
+	}
+
+	inline void RepairTitleUiLayout(TitleUiLayout& layout)
+	{
+		const TitleUiLayout defaults = MakeDefaultTitleUiLayout();
+		auto repairButton = [](RectF& value, const RectF& defaults)
+		{
+			RepairRectSizeFromDefault(value, defaults, Max(80.0, defaults.w * 0.5), Max(24.0, defaults.h * 0.75));
+		};
+
+		repairButton(layout.continueButtonRect, defaults.continueButtonRect);
+		repairButton(layout.tutorialButtonRectWithContinue, defaults.tutorialButtonRectWithContinue);
+		repairButton(layout.tutorialButtonRectWithoutContinue, defaults.tutorialButtonRectWithoutContinue);
+		repairButton(layout.quickGuideButtonRectWithContinue, defaults.quickGuideButtonRectWithContinue);
+		repairButton(layout.quickGuideButtonRectWithoutContinue, defaults.quickGuideButtonRectWithoutContinue);
+		repairButton(layout.startButtonRectWithContinue, defaults.startButtonRectWithContinue);
+		repairButton(layout.startButtonRectWithoutContinue, defaults.startButtonRectWithoutContinue);
+		repairButton(layout.bonusButtonRectWithContinue, defaults.bonusButtonRectWithContinue);
+		repairButton(layout.bonusButtonRectWithoutContinue, defaults.bonusButtonRectWithoutContinue);
+		repairButton(layout.debugButtonRectWithContinue, defaults.debugButtonRectWithContinue);
+		repairButton(layout.debugButtonRectWithoutContinue, defaults.debugButtonRectWithoutContinue);
+		repairButton(layout.quickGuideTutorialButtonRect, defaults.quickGuideTutorialButtonRect);
+		repairButton(layout.quickGuideCloseButtonRect, defaults.quickGuideCloseButtonRect);
+		repairButton(layout.dataClearDialogYesButtonRect, defaults.dataClearDialogYesButtonRect);
+		repairButton(layout.dataClearDialogNoButtonRect, defaults.dataClearDialogNoButtonRect);
+		repairButton(layout.exitDialogYesButtonRect, defaults.exitDialogYesButtonRect);
+		repairButton(layout.exitDialogNoButtonRect, defaults.exitDialogNoButtonRect);
+		repairButton(layout.resolutionSmallButtonRect, defaults.resolutionSmallButtonRect);
+		repairButton(layout.resolutionMediumButtonRect, defaults.resolutionMediumButtonRect);
+		repairButton(layout.resolutionLargeButtonRect, defaults.resolutionLargeButtonRect);
+		repairButton(layout.saveLocationButtonRect, defaults.saveLocationButtonRect);
+		repairButton(layout.clearContinueRunButtonRect, defaults.clearContinueRunButtonRect);
+		repairButton(layout.clearSettingsButtonRect, defaults.clearSettingsButtonRect);
+		repairButton(layout.exitButtonRect, defaults.exitButtonRect);
+		repairButton(layout.mapEditButtonRect, defaults.mapEditButtonRect);
+		repairButton(layout.balanceEditButtonRect, defaults.balanceEditButtonRect);
+		repairButton(layout.transitionPresetButtonRect, defaults.transitionPresetButtonRect);
+		repairButton(layout.titleUiEditorButtonRect, defaults.titleUiEditorButtonRect);
+	}
+
 	inline void TryLoadRectSection(const TOMLReader& toml, const String& section, RectF& value)
 	{
 		try
@@ -190,6 +242,7 @@ namespace TitleUi
 		AppendVec2Section(content, U"dataManagementLabel", layout.dataManagementLabelPos);
 		AppendRectSection(content, U"clearContinueRunButton", layout.clearContinueRunButtonRect);
 		AppendRectSection(content, U"clearSettingsButton", layout.clearSettingsButtonRect);
+		AppendRectSection(content, U"exitButton", layout.exitButtonRect);
 		AppendVec2Section(content, U"dataManagementHint", layout.dataManagementHintPos);
 		AppendVec2Section(content, U"debugHintWithContinue", layout.debugHintPosWithContinue);
 		AppendVec2Section(content, U"debugHintWithoutContinue", layout.debugHintPosWithoutContinue);
@@ -266,6 +319,7 @@ namespace TitleUi
 		TryLoadVec2Section(toml, U"dataManagementLabel", layout.dataManagementLabelPos);
 		TryLoadRectSection(toml, U"clearContinueRunButton", layout.clearContinueRunButtonRect);
 		TryLoadRectSection(toml, U"clearSettingsButton", layout.clearSettingsButtonRect);
+		TryLoadRectSection(toml, U"exitButton", layout.exitButtonRect);
 		TryLoadVec2Section(toml, U"dataManagementHint", layout.dataManagementHintPos);
 		TryLoadVec2Section(toml, U"debugHintWithContinue", layout.debugHintPosWithContinue);
 		TryLoadVec2Section(toml, U"debugHintWithoutContinue", layout.debugHintPosWithoutContinue);
@@ -273,6 +327,7 @@ namespace TitleUi
 		TryLoadRectSection(toml, U"balanceEditButton", layout.balanceEditButtonRect);
 		TryLoadRectSection(toml, U"transitionPresetButton", layout.transitionPresetButtonRect);
 		TryLoadRectSection(toml, U"titleUiEditorButton", layout.titleUiEditorButtonRect);
+		RepairTitleUiLayout(layout);
 		return layout;
 	}
 

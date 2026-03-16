@@ -7,6 +7,8 @@
 #include "BattleScenePause.ipp"
 #include "BattleSceneResult.ipp"
 
+#include <algorithm>
+
 namespace
 {
 	[[nodiscard]] Vec2 GetInitialCameraCenter(const BattleState& state)
@@ -20,6 +22,62 @@ namespace
 		}
 
 		return state.worldBounds.center();
+	}
+
+	[[nodiscard]] int32 GetBattleAudioPriority(const BattleAudioEvent& event)
+	{
+		int32 priority = 0;
+		if (event.targetOwner == Owner::Player)
+		{
+			priority += 120;
+		}
+
+		if (event.isBuilding)
+		{
+			priority += 35;
+		}
+
+		switch (event.kind)
+		{
+		case BattleAudioEventKind::Explosion:
+			priority += 180;
+			break;
+		case BattleAudioEventKind::Death:
+			priority += 140;
+			break;
+		case BattleAudioEventKind::Hit:
+		default:
+			break;
+		}
+
+		switch (event.sourceArchetype)
+		{
+		case UnitArchetype::Goliath:
+			priority += 90;
+			break;
+		case UnitArchetype::Sniper:
+			priority += 70;
+			break;
+		case UnitArchetype::Katyusha:
+			priority += 60;
+			break;
+		case UnitArchetype::MachineGun:
+			priority -= 20;
+			break;
+		default:
+			break;
+		}
+
+		return priority;
+	}
+
+	[[nodiscard]] bool IsHeavyBattleAudioEvent(const BattleAudioEvent& event)
+	{
+		return (event.kind == BattleAudioEventKind::Explosion)
+			|| event.isBuilding
+			|| (event.sourceArchetype == UnitArchetype::Goliath)
+			|| (event.sourceArchetype == UnitArchetype::Sniper)
+			|| (event.sourceArchetype == UnitArchetype::Katyusha);
 	}
 }
 

@@ -107,6 +107,7 @@ void TitleUiEditorScene::drawPreview() const
 		.drawAt(screenPos(m_layout.dataManagementLabelPos), ColorF{ 0.90, 0.94, 1.0 });
 	drawButton(screenRect(m_layout.clearContinueRunButtonRect), TitleUiText::ClearContinueButton, data.smallFont, hasContinue);
 	drawButton(screenRect(m_layout.clearSettingsButtonRect), TitleUiText::ClearSettingsButton, data.smallFont, true);
+	drawButton(screenRect(m_layout.exitButtonRect), TitleUiText::ExitButton, data.smallFont);
 	data.smallFont(TitleUiText::DataManagementHint)
 		.drawAt(screenPos(m_layout.dataManagementHintPos), ColorF{ 0.82, 0.88, 0.96 });
 
@@ -235,21 +236,38 @@ void TitleUiEditorScene::drawPanels() const
 		data.smallFont(s3d::Format(U"y: ", rect->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
 		data.smallFont(s3d::Format(U"w: ", rect->w)).draw(infoRect.x + 12, infoRect.y + 104, Palette::White);
 		data.smallFont(s3d::Format(U"h: ", rect->h)).draw(infoRect.x + 12, infoRect.y + 130, Palette::White);
+
+		if (const auto defaultRect = getSelectedDefaultRect())
+		{
+			data.smallFont(s3d::Format(U"default w/h: ", defaultRect->w, U" x ", defaultRect->h)).draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.82, 0.90, 1.0 });
+			const bool tooSmall = isRectLikelyTooSmall(*rect, *defaultRect);
+			data.smallFont(tooSmall ? U"Warning: current size is too small for this button" : U"Current size is within the normal button range")
+				.draw(infoRect.x + 12, infoRect.y + 186, tooSmall ? ColorF{ 1.0, 0.68, 0.52 } : ColorF{ 0.72, 0.88, 0.78 });
+			drawButton(getInfoPresetButtonRect(0), U"220x36", data.smallFont, rect->size == SizeF{ 220, 36 });
+			drawButton(getInfoPresetButtonRect(1), U"170x32", data.smallFont, rect->size == SizeF{ 170, 32 });
+			drawButton(getInfoPresetButtonRect(2), U"140x40", data.smallFont, rect->size == SizeF{ 140, 40 });
+			drawButton(getInfoPresetButtonRect(3), U"128x30", data.smallFont, rect->size == SizeF{ 128, 30 });
+			drawButton(getInfoPresetButtonRect(4), U"Default Size", data.smallFont, rect->size == defaultRect->size);
+		}
 	}
 	else if (const Vec2* point = getSelectedPoint())
 	{
 		data.smallFont(s3d::Format(U"x: ", point->x)).draw(infoRect.x + 12, infoRect.y + 52, Palette::White);
 		data.smallFont(s3d::Format(U"y: ", point->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
+		if (const auto defaultPoint = getSelectedDefaultPoint())
+		{
+			data.smallFont(s3d::Format(U"default x/y: ", defaultPoint->x, U" / ", defaultPoint->y)).draw(infoRect.x + 12, infoRect.y + 104, ColorF{ 0.82, 0.90, 1.0 });
+		}
+		data.smallFont(U"Size presets are available when a rectangle element is selected").draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.84, 0.90, 1.0 });
 	}
 
-	data.smallFont(U"Left-drag empty preview to pan the camera").draw(infoRect.x + 12, infoRect.y + 170, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Preview uses an 8px snap grid with faint guides").draw(infoRect.x + 12, infoRect.y + 196, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Arrow: move 8px / Shift+Arrow: move 32px").draw(infoRect.x + 12, infoRect.y + 222, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Ctrl+Arrow: resize rect / Shift adds 32px").draw(infoRect.x + 12, infoRect.y + 248, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Wheel over Elements list to scroll hidden items").draw(infoRect.x + 12, infoRect.y + 274, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Ctrl+S: save / Ctrl+R: reload / R: reset selected").draw(infoRect.x + 12, infoRect.y + 300, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Shift+R resets all edited elements").draw(infoRect.x + 12, infoRect.y + 326, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Esc returns to title").draw(infoRect.x + 12, infoRect.y + 352, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Left-drag empty preview to pan the camera").draw(infoRect.x + 12, infoRect.y + 274, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Preview uses an 8px snap grid with faint guides").draw(infoRect.x + 12, infoRect.y + 300, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Arrow: move 8px / Shift+Arrow: move 32px").draw(infoRect.x + 12, infoRect.y + 326, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Ctrl+Arrow: resize rect / Shift adds 32px").draw(infoRect.x + 12, infoRect.y + 352, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Use size presets to recover tiny buttons before saving").draw(infoRect.x + 12, infoRect.y + 378, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"Ctrl+S saves / invalid tiny buttons are blocked").draw(infoRect.x + 12, infoRect.y + 404, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(U"R resets selected / Shift+R resets all / Esc returns").draw(infoRect.x + 12, infoRect.y + 430, ColorF{ 0.84, 0.90, 1.0 });
 	data.smallFont(m_statusMessage).draw(infoRect.x + 12, infoRect.bottomY() - 28, ColorF{ 1.0, 0.94, 0.70 });
 }
 

@@ -2,6 +2,16 @@
 
 #include "TitleUiText.h"
 
+namespace
+{
+	[[nodiscard]] double ApplyIntroEaseOut(const double value)
+	{
+		const double t = Clamp(value, 0.0, 1.0);
+		const double inverse = 1.0 - t;
+		return 1.0 - (inverse * inverse * inverse);
+	}
+}
+
 void TitleScene::draw() const
 {
 	//Scene::Rect().draw(ColorF{ 0.08, 0.10, 0.14 });
@@ -12,11 +22,20 @@ void TitleScene::draw() const
 	const bool hasContinue = m_hasContinue;
 	const auto& continuePreview = m_continuePreview;
 	const TitleUiLayout layout = TitleUi::GetTitleUiLayout();
-	data.titleFont(TitleUiText::Title).drawAt(layout.titlePos, Palette::White);
-	data.uiFont(TitleUiText::Subtitle).drawAt(layout.subtitlePos, ColorF{ 0.75, 0.86, 1.0 });
-	data.smallFont(TitleUiText::SummaryLines[0]).drawAt(layout.summaryLine1Pos, Palette::White);
-	data.smallFont(TitleUiText::SummaryLines[1]).drawAt(layout.summaryLine2Pos, Palette::White);
-	data.smallFont(TitleUiText::SummaryLines[2]).drawAt(layout.summaryLine3Pos, Palette::White);
+	const double introProgress = getIntroProgress();
+	const double titleProgress = ApplyIntroEaseOut(introProgress);
+	const double subtitleProgress = ApplyIntroEaseOut(Clamp((introProgress - 0.10) / 0.90, 0.0, 1.0));
+	const double summaryProgress = ApplyIntroEaseOut(Clamp((introProgress - 0.18) / 0.82, 0.0, 1.0));
+	data.titleFont(TitleUiText::Title)
+		.drawAt(layout.titlePos.movedBy(0, -44.0 * (1.0 - titleProgress)), ColorF{ 1.0, 1.0, 1.0, titleProgress });
+	data.uiFont(TitleUiText::Subtitle)
+		.drawAt(layout.subtitlePos.movedBy(0, -24.0 * (1.0 - subtitleProgress)), ColorF{ 0.75, 0.86, 1.0, subtitleProgress });
+	data.smallFont(TitleUiText::SummaryLines[0])
+		.drawAt(layout.summaryLine1Pos.movedBy(0, -14.0 * (1.0 - summaryProgress)), ColorF{ 1.0, 1.0, 1.0, summaryProgress });
+	data.smallFont(TitleUiText::SummaryLines[1])
+		.drawAt(layout.summaryLine2Pos.movedBy(0, -14.0 * (1.0 - summaryProgress)), ColorF{ 1.0, 1.0, 1.0, summaryProgress });
+	data.smallFont(TitleUiText::SummaryLines[2])
+		.drawAt(layout.summaryLine3Pos.movedBy(0, -14.0 * (1.0 - summaryProgress)), ColorF{ 1.0, 1.0, 1.0, summaryProgress });
 	data.smallFont(s3d::Format(TitleUiText::ViewedBonusRoomsPrefix, data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(layout.viewedBonusRoomsPos, Palette::White);
 	data.smallFont(TitleUiText::GetEnterHintText(hasContinue)).drawAt(layout.enterHintPos, Palette::Yellow);
 	if (hasContinue)
@@ -65,6 +84,7 @@ void TitleScene::draw() const
 	data.smallFont(TitleUiText::DataManagementLabel).drawAt(layout.dataManagementLabelPos, ColorF{ 0.90, 0.94, 1.0 });
 	drawButton(clearContinueButtonRect, TitleUiText::ClearContinueButton, data.smallFont, hasContinue);
 	drawButton(clearSettingsButtonRect, TitleUiText::ClearSettingsButton, data.smallFont, true);
+	drawButton(getExitButtonRect(), TitleUiText::ExitButton, data.smallFont);
 	data.smallFont(TitleUiText::DataManagementHint).drawAt(layout.dataManagementHintPos, ColorF{ 0.82, 0.88, 0.96 });
 
 #ifdef _DEBUG

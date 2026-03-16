@@ -30,6 +30,24 @@ namespace AudioManager
 		return audio;
 	}
 
+	inline s3d::Audio& GetTitleIntroSe()
+	{
+		static s3d::Audio audio{ U"example/op10.mp3" };
+		return audio;
+	}
+
+	inline s3d::Audio& GetBattleHitSe()
+	{
+		static s3d::Audio audio{ U"example/gun14.mp3" };
+		return audio;
+	}
+
+	inline s3d::Audio& GetBattleImpactSe()
+	{
+		static s3d::Audio audio{ U"example/syometu.mp3" };
+		return audio;
+	}
+
 	inline BgmTrack& CurrentBgmTrack()
 	{
 		static BgmTrack track = BgmTrack::None;
@@ -105,4 +123,22 @@ inline void PlayUiClickSe()
 {
 	auto& audio = AudioManager::GetUiClickSe();
 	audio.playOneShot(WindowChromeAddon::SeBus, 0.55);
+}
+
+inline void PlayTitleIntroSe()
+{
+	auto& audio = AudioManager::GetTitleIntroSe();
+	audio.playOneShot(WindowChromeAddon::SeBus, 0.42);
+}
+
+inline void PlayBattleHitSe(const double volume = 0.16)
+{
+	auto& audio = AudioManager::GetBattleHitSe();
+	audio.playOneShot(WindowChromeAddon::SeBus, volume);
+}
+
+inline void PlayBattleImpactSe(const double volume = 0.22)
+{
+	auto& audio = AudioManager::GetBattleImpactSe();
+	audio.playOneShot(WindowChromeAddon::SeBus, volume);
 }

@@ -266,6 +266,13 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 			DrawSpinnerDecoration(unit, renderPosition);
 		}
 
+		const double damageFlash = Clamp(unit.damageFlashTime / 0.18, 0.0, 1.0);
+		if (damageFlash > 0.0)
+		{
+			Circle{ renderPosition, unit.radius * (1.0 + (0.08 * damageFlash)) }.draw(ColorF{ 1.0, 0.96, 0.92, 0.10 + (0.24 * damageFlash) });
+			Circle{ renderPosition, unit.radius + 4.0 + ((1.0 - damageFlash) * 6.0) }.drawFrame(2.0, ColorF{ 1.0, 0.26, 0.20, 0.12 + (0.42 * damageFlash) });
+		}
+
 		if (IsBuildingArchetype(unit.archetype))
 		{
 			Circle{ renderPosition, unit.radius + 10 }.drawFrame(4, color);

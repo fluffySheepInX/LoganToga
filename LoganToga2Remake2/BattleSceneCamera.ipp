@@ -3,6 +3,17 @@
 	return ((screenPosition - Scene::CenterF()) / m_camera.getScale()) + m_camera.getCenter();
 }
 
+RectF BattleScene::getCameraWorldRect(const double margin) const
+{
+	const Vec2 halfViewport = ((Scene::Size() * 0.5) / m_camera.getScale());
+	return RectF{
+		m_camera.getCenter().x - halfViewport.x - margin,
+		m_camera.getCenter().y - halfViewport.y - margin,
+		(halfViewport.x * 2.0) + (margin * 2.0),
+		(halfViewport.y * 2.0) + (margin * 2.0)
+	};
+}
+
 Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 {
 	const RectF& worldBounds = m_session.state().worldBounds;

@@ -27,10 +27,15 @@ private:
 	bool m_isQuickGuideOpen = false;
 	DataClearAction m_dataClearAction = DataClearAction::None;
 	bool m_isExitDialogOpen = false;
+	double m_introElapsed = 0.0;
+	bool m_hasPlayedIntroSe = false;
 
+	void updateIntro();
 	void updateQuickGuide();
 	void refreshContinueState();
 	void executeDataClearAction();
+	[[nodiscard]] bool isIntroPlaying() const;
+	[[nodiscard]] double getIntroProgress() const;
 
 	[[nodiscard]] static RectF getContinuePreviewRect();
 	[[nodiscard]] static RectF getContinueButtonRect();
@@ -66,6 +71,7 @@ private:
 	[[nodiscard]] static RectF getSaveLocationButtonRect();
 	[[nodiscard]] static RectF getClearContinueRunButtonRect();
 	[[nodiscard]] static RectF getClearSettingsButtonRect();
+	[[nodiscard]] static RectF getExitButtonRect();
 	[[nodiscard]] static RectF getMapEditButtonRect();
 	[[nodiscard]] static RectF getTransitionPresetButtonRect();
 	[[nodiscard]] static RectF getBalanceEditButtonRect();

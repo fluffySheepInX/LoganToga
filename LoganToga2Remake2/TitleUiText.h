@@ -31,6 +31,7 @@ namespace TitleUiText
 	inline const String DataManagementLabel = U"データ管理";
 	inline const String ClearContinueButton = U"セーブ削除";
 	inline const String ClearSettingsButton = U"設定初期化";
+	inline const String ExitButton = U"終了";
 	inline const String DataManagementHint = U"現在の保存先のみ削除 / 設定は既定値へ戻ります";
 	inline const String DebugUnlockHint = U"DEBUG: Start with all unlockable units/buildings";
 	inline const String DebugFullUnlockButton = U"Debug Full Unlock";

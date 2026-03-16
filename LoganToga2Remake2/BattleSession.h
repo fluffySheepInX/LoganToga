@@ -95,7 +95,7 @@ private:
 	[[nodiscard]] const UnitState* findNearestEnemy(const UnitState& source, Array<size_t>& nearbyOpponentIndicesScratch) const;
 	[[nodiscard]] const UnitState* findBestKatyushaTarget(const UnitState& source) const;
 	[[nodiscard]] const UnitState* tryReacquireCombatTarget(const UnitState& source, UnitOrder& order) const;
-	void applyUnitHpDelta(UnitState& target, int32 hpDelta);
+	void applyUnitHpDelta(UnitState& target, int32 hpDelta, UnitArchetype sourceArchetype = UnitArchetype::Soldier);
 	void triggerGoliathExplosion(UnitState& unit);
 	void invalidateUnitIndex() noexcept;
 	void invalidateBuildingIndex() noexcept;

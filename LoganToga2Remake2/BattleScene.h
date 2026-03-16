@@ -27,8 +27,12 @@ private:
 	BattleConstructionController m_constructionController;
 	bool m_isPaused = false;
 	int32 m_pauseMenuIndex = 0;
+	double m_lightBattleSeCooldown = 0.0;
+	double m_heavyBattleSeCooldown = 0.0;
+	double m_deathBattleSeCooldown = 0.0;
 
 	[[nodiscard]] Vec2 screenToWorld(const Vec2& screenPosition) const;
+	[[nodiscard]] RectF getCameraWorldRect(double margin = 0.0) const;
 	[[nodiscard]] Vec2 clampCameraCenter(const Vec2& desiredCenter) const;
 	[[nodiscard]] bool updateCameraPan();
 	void resetCameraPan();
@@ -38,6 +42,7 @@ private:
 	void drawPauseMenu() const;
 	[[nodiscard]] bool handleResultInput();
 	void updateActiveBattle();
+	void playBattleSoundEffects();
 	[[nodiscard]] static bool isCommandSlotTriggered(int32 slot);
 	void handleProductionInput();
 };
