@@ -376,6 +376,8 @@
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="localization\en.toml" />
+    <None Include="localization\ja.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\shot.mp3" />
@@ -450,6 +452,7 @@
     <ClInclude Include="FixedStepClock.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="GameSettings.h" />
+    <ClInclude Include="Localization.h" />
     <ClInclude Include="MapEditScene.h" />
     <ClInclude Include="MenuButtonUi.h" />
     <ClInclude Include="Remake2Common.h" />

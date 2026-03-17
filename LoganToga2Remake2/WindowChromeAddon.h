@@ -24,6 +24,9 @@ private:
 	[[nodiscard]] RectF getCloseButtonRect() const;
 	[[nodiscard]] RectF getFullscreenButtonRect() const;
 	[[nodiscard]] RectF getAudioButtonRect() const;
+	[[nodiscard]] RectF getLanguageButtonRect() const;
+	[[nodiscard]] RectF getLanguagePanelRect() const;
+	[[nodiscard]] RectF getLanguageOptionRect(size_t index) const;
 	[[nodiscard]] RectF getVolumePanelRect() const;
 	[[nodiscard]] RectF getVolumeRowRect(int32 rowIndex) const;
 	[[nodiscard]] RectF getVolumeDecreaseButtonRect(int32 rowIndex) const;
@@ -39,6 +42,7 @@ private:
 	void handleCloseDialog();
 	void handleFullscreenButton();
 	void handleAudioButton();
+	void handleLanguageButton();
 	static double getBusVolume(s3d::MixBus bus);
 	static double getMasterVolume();
 	static void setBusVolume(s3d::MixBus bus, double volume);
@@ -46,6 +50,7 @@ private:
 	void handleVolumeControls();
 	void handleMasterVolumeRowControls(int32 rowIndex);
 	void handleVolumeRowControls(int32 rowIndex, s3d::MixBus bus);
+	void updateLanguageButtonHint();
 	void setPersistedMasterVolume(double volume);
 	void setPersistedBusVolume(s3d::MixBus bus, double volume);
 	void flushPersistedSettings();
@@ -55,6 +60,8 @@ private:
 	void drawGlowSource() const;
 	void drawChrome() const;
 	void drawControlButton(const RectF& rect, const String& label, bool hovered, bool selected) const;
+	void drawLanguageButtonHint(const RectF& rect) const;
+	void drawLanguagePanel() const;
 	void drawVolumePanel() const;
 	void drawMasterVolumeRow(const String& label, int32 rowIndex) const;
 	void drawVolumeRow(const String& label, int32 rowIndex, s3d::MixBus bus) const;
@@ -69,6 +76,9 @@ private:
 	double m_borderThickness = 2.0;
 	double m_innerGlowThickness = 8.0;
 	double m_audioButtonWidth = 50.0;
+	double m_languageButtonWidth = 94.0;
+	double m_languagePanelWidth = 132.0;
+	double m_languageRowHeight = 24.0;
 	double m_fullscreenButtonWidth = 66.0;
 	double m_buttonSpacing = 6.0;
 	double m_closeButtonSize = 30.0;
@@ -88,6 +98,10 @@ private:
 	Font m_titleFont{ FontMethod::MSDF, 12, Typeface::Medium };
 	Font m_dialogFont{ FontMethod::MSDF, 24, Typeface::Bold };
 	Font m_dialogSmallFont{ 16, Typeface::Medium };
+	bool m_isLanguageButtonHintActive = false;
+	double m_languageButtonHintElapsed = 0.0;
+	double m_languageButtonHintDuration = 2.6;
+	bool m_isLanguagePanelOpen = false;
 	bool m_isAudioPanelOpen = false;
 	bool m_isCloseDialogOpen = false;
 	bool m_settingsDirty = false;

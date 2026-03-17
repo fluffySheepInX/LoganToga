@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "ContinueRunSave.h"
+#include "Localization.h"
 
 struct PersistentGameSettings
 {
@@ -9,6 +10,8 @@ struct PersistentGameSettings
 	double masterVolume = 1.0;
 	double bgmVolume = 1.0;
 	double seVolume = 1.0;
+	AppLanguage language = Localization::DefaultLanguage;
+	bool hasSeenLanguageButtonHint = false;
 };
 
 namespace GameSettings
@@ -102,6 +105,8 @@ namespace GameSettings
 		content += U"masterVolume = " + Format(Clamp(settings.masterVolume, 0.0, 1.0)) + U"\n";
 		content += U"bgmVolume = " + Format(Clamp(settings.bgmVolume, 0.0, 1.0)) + U"\n";
 		content += U"seVolume = " + Format(Clamp(settings.seVolume, 0.0, 1.0)) + U"\n";
+		content += U"language = " + QuoteTomlString(Localization::GetPersistenceLabel(settings.language)) + U"\n";
+		content += U"hasSeenLanguageButtonHint = " + String{ settings.hasSeenLanguageButtonHint ? U"true" : U"false" } + U"\n";
 		return content;
 	}
 
@@ -166,6 +171,22 @@ namespace GameSettings
 		{
 		}
 
+		try
+		{
+			settings.language = Localization::ParsePersistenceLabel(toml[U"language"].get<String>());
+		}
+		catch (const std::exception&)
+		{
+		}
+
+		try
+		{
+			settings.hasSeenLanguageButtonHint = toml[U"hasSeenLanguageButtonHint"].get<bool>();
+		}
+		catch (const std::exception&)
+		{
+		}
+
 		return settings;
 	}
 
@@ -222,6 +243,20 @@ namespace GameSettings
 		settings.masterVolume = Clamp(masterVolume, 0.0, 1.0);
 		settings.bgmVolume = Clamp(bgmVolume, 0.0, 1.0);
 		settings.seVolume = Clamp(seVolume, 0.0, 1.0);
+		return SaveGameSettings(settings);
+	}
+
+	[[nodiscard]] inline bool SetPersistedLanguage(const AppLanguage language)
+	{
+		auto settings = GetGameSettings();
+		settings.language = language;
+		return SaveGameSettings(settings);
+	}
+
+	[[nodiscard]] inline bool SetPersistedLanguageButtonHintSeen(const bool hasSeenLanguageButtonHint)
+	{
+		auto settings = GetGameSettings();
+		settings.hasSeenLanguageButtonHint = hasSeenLanguageButtonHint;
 		return SaveGameSettings(settings);
 	}
 

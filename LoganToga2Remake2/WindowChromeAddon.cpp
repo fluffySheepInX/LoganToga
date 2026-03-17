@@ -7,6 +7,13 @@ void WindowChromeAddon::Configure(const String& title, const ColorF& frameColor,
 		addon->m_title = title;
 		addon->m_frameColor = frameColor;
 		addon->m_glowColor = glowColor;
+		const auto settings = GameSettings::GetGameSettings();
+		addon->m_isLanguageButtonHintActive = !settings.hasSeenLanguageButtonHint;
+		addon->m_languageButtonHintElapsed = 0.0;
+		if (addon->m_isLanguageButtonHintActive)
+		{
+			GameSettings::SetPersistedLanguageButtonHintSeen(true);
+		}
 		Window::SetStyle(s3d::WindowStyle::Frameless);
 		addon->ensureTextures(Scene::Size());
 	}
@@ -28,12 +35,29 @@ bool WindowChromeAddon::update()
 	}
 
 	handleAudioButton();
+	handleLanguageButton();
 	handleFullscreenButton();
+	updateLanguageButtonHint();
 	handleVolumeControls();
 	flushPersistedSettings();
 	handleCloseButton();
 	handleWindowDrag();
 	return true;
+}
+
+void WindowChromeAddon::updateLanguageButtonHint()
+{
+	if (!m_isLanguageButtonHintActive)
+	{
+		return;
+	}
+
+	m_languageButtonHintElapsed += Scene::DeltaTime();
+	if (m_languageButtonHintElapsed >= m_languageButtonHintDuration)
+	{
+		m_isLanguageButtonHintActive = false;
+		m_languageButtonHintElapsed = 0.0;
+	}
 }
 
 void WindowChromeAddon::ensureTextures(const s3d::Size& sceneSize)
@@ -82,6 +106,27 @@ RectF WindowChromeAddon::getAudioButtonRect() const
 {
 	const RectF fullscreenButtonRect = getFullscreenButtonRect();
 	return RectF{ (fullscreenButtonRect.x - m_buttonSpacing - m_audioButtonWidth), fullscreenButtonRect.y, m_audioButtonWidth, fullscreenButtonRect.h };
+}
+
+RectF WindowChromeAddon::getLanguageButtonRect() const
+{
+	const RectF audioButtonRect = getAudioButtonRect();
+	return RectF{ (audioButtonRect.x - m_buttonSpacing - m_languageButtonWidth), audioButtonRect.y, m_languageButtonWidth, audioButtonRect.h };
+}
+
+RectF WindowChromeAddon::getLanguagePanelRect() const
+{
+	const auto& definitions = Localization::GetLanguageDefinitions();
+	const double panelHeight = (8.0 + (definitions.size() * m_languageRowHeight) + 8.0);
+	const RectF languageButtonRect = getLanguageButtonRect();
+	const double panelX = Clamp((languageButtonRect.rightX() - m_languagePanelWidth), 6.0, Max(6.0, static_cast<double>(m_sceneSize.x) - m_languagePanelWidth - 6.0));
+	return RectF{ panelX, (languageButtonRect.y - panelHeight - 6.0), m_languagePanelWidth, panelHeight };
+}
+
+RectF WindowChromeAddon::getLanguageOptionRect(const size_t index) const
+{
+	const RectF panelRect = getLanguagePanelRect();
+	return RectF{ (panelRect.x + 8.0), (panelRect.y + 8.0 + (index * m_languageRowHeight)), (panelRect.w - 16.0), (m_languageRowHeight - 4.0) };
 }
 
 RectF WindowChromeAddon::getVolumePanelRect() const
@@ -135,6 +180,6 @@ RectF WindowChromeAddon::getCloseDialogNoButtonRect() const
 
 RectF WindowChromeAddon::getDragRect() const
 {
-	const double dragWidth = Max(0.0, getAudioButtonRect().x - 6.0);
+	const double dragWidth = Max(0.0, getLanguageButtonRect().x - 6.0);
 	return RectF{ 0, static_cast<double>(m_sceneSize.y) - m_bottomBarHeight, dragWidth, m_bottomBarHeight };
 }

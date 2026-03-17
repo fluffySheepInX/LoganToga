@@ -36,7 +36,7 @@ void TitleScene::draw() const
 		.drawAt(layout.summaryLine2Pos.movedBy(0, -14.0 * (1.0 - summaryProgress)), ColorF{ 1.0, 1.0, 1.0, summaryProgress });
 	data.smallFont(TitleUiText::SummaryLines[2])
 		.drawAt(layout.summaryLine3Pos.movedBy(0, -14.0 * (1.0 - summaryProgress)), ColorF{ 1.0, 1.0, 1.0, summaryProgress });
-	data.smallFont(s3d::Format(TitleUiText::ViewedBonusRoomsPrefix, data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(layout.viewedBonusRoomsPos, Palette::White);
+	data.smallFont(s3d::Format(TitleUiText::ViewedBonusRoomsPrefix.get(), data.bonusRoomProgress.viewedRoomIds.size(), U" / ", data.bonusRooms.size())).drawAt(layout.viewedBonusRoomsPos, Palette::White);
 	data.smallFont(TitleUiText::GetEnterHintText(hasContinue)).drawAt(layout.enterHintPos, Palette::Yellow);
 	if (hasContinue)
 	{
@@ -59,7 +59,7 @@ void TitleScene::draw() const
 
 	const s3d::Size resolutionSize = GetWindowResolutionSize(data.displaySettings.resolutionPreset);
 	data.smallFont(TitleUiText::ResolutionLabel).draw(getResolutionLabelPos(), Palette::White);
-	data.smallFont(s3d::Format(TitleUiText::CurrentPrefix, GetWindowResolutionLabel(data.displaySettings.resolutionPreset), U" (", resolutionSize.x, U"x", resolutionSize.y, U")"))
+	data.smallFont(s3d::Format(TitleUiText::CurrentPrefix.get(), GetWindowResolutionLabel(data.displaySettings.resolutionPreset), U" (", resolutionSize.x, U"x", resolutionSize.y, U")"))
 		.draw(layout.resolutionValuePos, ColorF{ 0.85, 0.92, 1.0 });
 
 	const Array<WindowResolutionPreset> presets =
@@ -79,7 +79,7 @@ void TitleScene::draw() const
 	const RectF clearContinueButtonRect = getClearContinueRunButtonRect();
 	const RectF clearSettingsButtonRect = getClearSettingsButtonRect();
 	data.smallFont(TitleUiText::SaveLocationLabel).draw(getSaveLocationLabelPos(), Palette::White);
-	data.smallFont(TitleUiText::CurrentPrefix + GetContinueRunSaveLocationLabel(saveLocation)).draw(layout.saveLocationValuePos, ColorF{ 0.85, 0.92, 1.0 });
+	data.smallFont(TitleUiText::CurrentPrefix.get() + GetContinueRunSaveLocationLabel(saveLocation)).draw(layout.saveLocationValuePos, ColorF{ 0.85, 0.92, 1.0 });
 	drawButton(getSaveLocationButtonRect(), TitleUiText::SaveLocationButton, data.smallFont, true);
 	data.smallFont(TitleUiText::DataManagementLabel).drawAt(layout.dataManagementLabelPos, ColorF{ 0.90, 0.94, 1.0 });
 	drawButton(clearContinueButtonRect, TitleUiText::ClearContinueButton, data.smallFont, hasContinue);
@@ -92,7 +92,7 @@ void TitleScene::draw() const
 	drawButton(getDebugButtonRect(hasContinue), TitleUiText::DebugFullUnlockButton, data.uiFont, true);
 	drawButton(getMapEditButtonRect(), TitleUiText::MapEditButton, data.smallFont);
 	drawButton(getBalanceEditButtonRect(), TitleUiText::BalanceEditButton, data.smallFont);
-	drawButton(getTransitionPresetButtonRect(), TitleUiText::TransitionPresetPrefix + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
+	drawButton(getTransitionPresetButtonRect(), TitleUiText::TransitionPresetPrefix.get() + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
 	drawButton(getTitleUiEditorButtonRect(), TitleUiText::TitleUiEditorButton, data.smallFont, true);
 #endif
 	if (m_isQuickGuideOpen)
@@ -123,12 +123,12 @@ String TitleScene::getContinuePreviewHeadline(const ContinueRunPreview& preview)
 	switch (preview.resumeScene)
 	{
 	case ContinueResumeScene::Reward:
-		return s3d::Format(U"Reward after battle ", preview.currentBattleIndex + 1, U"/", preview.totalBattles);
+		return Localization::FormatText(U"title.continue_preview.reward_headline", U"戦闘 {0}/{1} 後の報酬", U"Reward after battle {0}/{1}", preview.currentBattleIndex + 1, preview.totalBattles);
 	case ContinueResumeScene::BonusRoom:
-		return U"Bonus Room after clear";
+		return Localization::GetText(U"title.continue_preview.bonus_room_headline", U"クリア後のボーナスルーム", U"Bonus Room after clear");
 	case ContinueResumeScene::Battle:
 	default:
-		return s3d::Format(U"Battle ", preview.currentBattleIndex + 1, U"/", preview.totalBattles);
+		return Localization::FormatText(U"title.continue_preview.battle_headline", U"戦闘 {0}/{1}", U"Battle {0}/{1}", preview.currentBattleIndex + 1, preview.totalBattles);
 	}
 }
 
@@ -137,12 +137,14 @@ String TitleScene::getContinuePreviewDetail(const ContinueRunPreview& preview)
 	switch (preview.resumeScene)
 	{
 	case ContinueResumeScene::Reward:
-		return s3d::Format(U"Reward choices: ", preview.pendingRewardCardCount);
+		return Localization::FormatText(U"title.continue_preview.reward_detail", U"報酬候補: {0}", U"Reward choices: {0}", preview.pendingRewardCardCount);
 	case ContinueResumeScene::BonusRoom:
-		return preview.isCleared ? U"Run cleared" : U"Clear reward available";
+		return preview.isCleared
+			? Localization::GetText(U"title.continue_preview.bonus_room_cleared", U"ランクリア済み", U"Run cleared")
+			: Localization::GetText(U"title.continue_preview.bonus_room_available", U"クリア報酬を受け取れます", U"Clear reward available");
 	case ContinueResumeScene::Battle:
 	default:
-		return U"Resume from battle start checkpoint";
+		return Localization::GetText(U"title.continue_preview.battle_detail", U"戦闘開始チェックポイントから再開", U"Resume from battle start checkpoint");
 	}
 }
 
@@ -154,7 +156,7 @@ void TitleScene::drawContinuePreview(const ContinueRunPreview& preview, const Ga
 	data.smallFont(TitleUiText::ContinuePreviewTitle).draw(rect.x + 14, rect.y + 10, ColorF{ 0.82, 0.90, 1.0 });
 	data.smallFont(getContinuePreviewHeadline(preview)).draw(rect.x + 14, rect.y + 32, Palette::White);
 	data.smallFont(getContinuePreviewDetail(preview)).draw(rect.x + 14, rect.y + 52, ColorF{ 0.86, 0.90, 0.96 });
-	data.smallFont(s3d::Format(TitleUiText::ContinuePreviewCardsPrefix, preview.selectedCardCount)).draw(rect.x + 14, rect.y + 72, Palette::Gold);
+	data.smallFont(s3d::Format(TitleUiText::ContinuePreviewCardsPrefix.get(), preview.selectedCardCount)).draw(rect.x + 14, rect.y + 72, Palette::Gold);
 }
 
 void TitleScene::drawQuickGuide(const GameData& data)
@@ -192,14 +194,14 @@ void TitleScene::drawDataClearDialog(const DataClearAction action, const GameDat
 	dialogRect.drawFrame(2, ColorF{ 0.40, 0.58, 0.90, 0.98 });
 
 	const bool isContinueSave = (action == DataClearAction::ContinueRunSave);
-	data.uiFont(isContinueSave ? U"セーブデータを削除しますか？" : TitleUiText::DataClearQuestion)
+	data.uiFont(isContinueSave ? TitleUiText::DataClearContinueQuestion : TitleUiText::DataClearQuestion)
 		.drawAt(dialogRect.center().movedBy(0, -48), Palette::White);
-	data.smallFont(isContinueSave ? U"現在の保存先にある continue データを削除します" : TitleUiText::DataClearBody)
+	data.smallFont(isContinueSave ? TitleUiText::DataClearContinueBody : TitleUiText::DataClearBody)
 		.drawAt(dialogRect.center().movedBy(0, -8), ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"この操作はタイトルメニューからすぐ反映されます").drawAt(dialogRect.center().movedBy(0, 24), ColorF{ 1.0, 0.86, 0.62 });
+	data.smallFont(TitleUiText::DataClearImmediateHint).drawAt(dialogRect.center().movedBy(0, 24), ColorF{ 1.0, 0.86, 0.62 });
 	drawButton(getDataClearDialogYesButtonRect(), TitleUiText::Yes, data.uiFont, true);
 	drawButton(getDataClearDialogNoButtonRect(), TitleUiText::No, data.uiFont);
-	data.smallFont(U"Enter: はい / Esc: いいえ").drawAt(dialogRect.center().movedBy(0, 94), ColorF{ 0.80, 0.87, 0.95 });
+	data.smallFont(TitleUiText::DialogEnterYesNoHint).drawAt(dialogRect.center().movedBy(0, 94), ColorF{ 0.80, 0.87, 0.95 });
 }
 
 void TitleScene::drawExitDialog(const GameData& data)
@@ -213,5 +215,5 @@ void TitleScene::drawExitDialog(const GameData& data)
 	data.uiFont(TitleUiText::ExitQuestion).drawAt(dialogRect.center().movedBy(0, -34), Palette::White);
 	drawButton(getExitDialogYesButtonRect(), TitleUiText::Yes, data.uiFont, true);
 	drawButton(getExitDialogNoButtonRect(), TitleUiText::No, data.uiFont);
-	data.smallFont(U"Enter: はい / Esc: いいえ").drawAt(dialogRect.center().movedBy(0, 70), ColorF{ 0.80, 0.87, 0.95 });
+	data.smallFont(TitleUiText::DialogEnterYesNoHint).drawAt(dialogRect.center().movedBy(0, 70), ColorF{ 0.80, 0.87, 0.95 });
 }

@@ -8,9 +8,49 @@ void WindowChromeAddon::handleCloseButton()
 	}
 }
 
+void WindowChromeAddon::handleLanguageButton()
+{
+	if (getLanguageButtonRect().leftClicked())
+	{
+		m_isLanguageButtonHintActive = false;
+		m_languageButtonHintElapsed = 0.0;
+		m_isLanguagePanelOpen = !m_isLanguagePanelOpen;
+		if (m_isLanguagePanelOpen)
+		{
+			m_isAudioPanelOpen = false;
+		}
+		return;
+	}
+
+	if (!m_isLanguagePanelOpen)
+	{
+		return;
+	}
+
+	const auto& definitions = Localization::GetLanguageDefinitions();
+	for (size_t i = 0; i < definitions.size(); ++i)
+	{
+		if (!getLanguageOptionRect(i).leftClicked())
+		{
+			continue;
+		}
+
+		Localization::SetLanguage(definitions[i].language);
+		GameSettings::SetPersistedLanguage(definitions[i].language);
+		m_isLanguagePanelOpen = false;
+		return;
+	}
+
+	if (MouseL.down() && !getLanguagePanelRect().mouseOver())
+	{
+		m_isLanguagePanelOpen = false;
+	}
+}
+
 void WindowChromeAddon::openCloseDialog()
 {
 	m_isCloseDialogOpen = true;
+	m_isLanguagePanelOpen = false;
 	m_isAudioPanelOpen = false;
 	m_dragStartWindow.reset();
 }
@@ -51,6 +91,10 @@ void WindowChromeAddon::handleAudioButton()
 	if (getAudioButtonRect().leftClicked())
 	{
 		m_isAudioPanelOpen = !m_isAudioPanelOpen;
+		if (m_isAudioPanelOpen)
+		{
+			m_isLanguagePanelOpen = false;
+		}
 		return;
 	}
 
@@ -192,10 +236,11 @@ void WindowChromeAddon::handleWindowDrag()
 
 bool WindowChromeAddon::isPointerOnInteractiveChrome() const
 {
-	if (getCloseButtonRect().mouseOver() || getFullscreenButtonRect().mouseOver() || getAudioButtonRect().mouseOver())
+	if (getCloseButtonRect().mouseOver() || getFullscreenButtonRect().mouseOver() || getAudioButtonRect().mouseOver() || getLanguageButtonRect().mouseOver())
 	{
 		return true;
 	}
 
-	return (m_isAudioPanelOpen && getVolumePanelRect().mouseOver());
+	return ((m_isAudioPanelOpen && getVolumePanelRect().mouseOver())
+		|| (m_isLanguagePanelOpen && getLanguagePanelRect().mouseOver()));
 }

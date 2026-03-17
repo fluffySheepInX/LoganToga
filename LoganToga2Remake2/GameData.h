@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "BonusRoomData.h"
+#include "Localization.h"
 #include "Remake2Common.h"
 #include "RunData.h"
 #include "SceneTransitionTypes.h"
@@ -47,12 +48,12 @@ struct DisplaySettings
 	switch (preset)
 	{
 	case WindowResolutionPreset::Small:
-		return U"小";
+		return Localization::GetText(U"common.resolution_small", U"小", U"Small");
 	case WindowResolutionPreset::Large:
-		return U"大";
+		return Localization::GetText(U"common.resolution_large", U"大", U"Large");
 	case WindowResolutionPreset::Medium:
 	default:
-		return U"中";
+		return Localization::GetText(U"common.resolution_medium", U"中", U"Medium");
 	}
 }
 

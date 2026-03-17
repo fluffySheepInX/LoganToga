@@ -75,7 +75,7 @@ void TitleUiEditorScene::drawPreview() const
 		data.smallFont(TitleUiText::ContinuePreviewTitle).draw(continuePreviewRect.x + 14, continuePreviewRect.y + 10, ColorF{ 0.82, 0.90, 1.0 });
 		data.smallFont(TitleUiText::ContinuePreviewHeadline).draw(continuePreviewRect.x + 14, continuePreviewRect.y + 32, Palette::White);
 		data.smallFont(TitleUiText::ContinuePreviewDetail).draw(continuePreviewRect.x + 14, continuePreviewRect.y + 52, ColorF{ 0.86, 0.90, 0.96 });
-		data.smallFont(s3d::Format(TitleUiText::ContinuePreviewCardsPrefix, 3)).draw(continuePreviewRect.x + 14, continuePreviewRect.y + 72, Palette::Gold);
+		data.smallFont(s3d::Format(TitleUiText::ContinuePreviewCardsPrefix.get(), 3)).draw(continuePreviewRect.x + 14, continuePreviewRect.y + 72, Palette::Gold);
 	}
 
 	if (hasViewedBonusRooms)
@@ -93,14 +93,14 @@ void TitleUiEditorScene::drawPreview() const
 
 	const s3d::Size resolutionSize = GetWindowResolutionSize(data.displaySettings.resolutionPreset);
 	data.smallFont(TitleUiText::ResolutionLabel).draw(screenPos(m_layout.resolutionLabelPos), Palette::White);
-	data.smallFont(s3d::Format(TitleUiText::CurrentPrefix, GetWindowResolutionLabel(data.displaySettings.resolutionPreset), U" (", resolutionSize.x, U"x", resolutionSize.y, U")"))
+	data.smallFont(s3d::Format(TitleUiText::CurrentPrefix.get(), GetWindowResolutionLabel(data.displaySettings.resolutionPreset), U" (", resolutionSize.x, U"x", resolutionSize.y, U")"))
 		.draw(screenPos(m_layout.resolutionValuePos), ColorF{ 0.85, 0.92, 1.0 });
 	drawButton(screenRect(m_layout.resolutionSmallButtonRect), GetWindowResolutionLabel(WindowResolutionPreset::Small), data.smallFont, false);
 	drawButton(screenRect(m_layout.resolutionMediumButtonRect), GetWindowResolutionLabel(WindowResolutionPreset::Medium), data.smallFont, data.displaySettings.resolutionPreset == WindowResolutionPreset::Medium);
 	drawButton(screenRect(m_layout.resolutionLargeButtonRect), GetWindowResolutionLabel(WindowResolutionPreset::Large), data.smallFont, false);
 
 	data.smallFont(TitleUiText::SaveLocationLabel).draw(screenPos(m_layout.saveLocationLabelPos), Palette::White);
-	data.smallFont(TitleUiText::CurrentPrefix + GetContinueRunSaveLocationLabel(GetContinueRunSaveLocation()))
+	data.smallFont(TitleUiText::CurrentPrefix.get() + GetContinueRunSaveLocationLabel(GetContinueRunSaveLocation()))
 		.draw(screenPos(m_layout.saveLocationValuePos), ColorF{ 0.85, 0.92, 1.0 });
 	drawButton(screenRect(m_layout.saveLocationButtonRect), TitleUiText::SaveLocationButton, data.smallFont, true);
 	data.smallFont(TitleUiText::DataManagementLabel)
@@ -119,7 +119,7 @@ void TitleUiEditorScene::drawPreview() const
 		drawButton(screenRect(TitleUi::GetDebugButtonRect(m_layout, hasContinue)), TitleUiText::DebugFullUnlockButton, data.uiFont, true);
 		drawButton(screenRect(m_layout.mapEditButtonRect), TitleUiText::MapEditButton, data.smallFont);
 		drawButton(screenRect(m_layout.balanceEditButtonRect), TitleUiText::BalanceEditButton, data.smallFont);
-		drawButton(screenRect(m_layout.transitionPresetButtonRect), TitleUiText::TransitionPresetPrefix + U"Default", data.smallFont, true);
+		drawButton(screenRect(m_layout.transitionPresetButtonRect), TitleUiText::TransitionPresetPrefix.get() + U"Default", data.smallFont, true);
 		drawButton(screenRect(m_layout.titleUiEditorButtonRect), TitleUiText::TitleUiEditorButton, data.smallFont, true);
 	}
 #endif

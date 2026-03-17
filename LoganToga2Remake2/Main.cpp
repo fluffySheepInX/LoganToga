@@ -12,6 +12,7 @@
 void Main()
 {
 	const PersistentGameSettings settings = GameSettings::GetGameSettings();
+	Localization::InitializeLanguage(settings.language);
 	ApplyDisplaySettings(settings.displaySettings);
 	Window::SetTitle(U"LoganToga2Remake2");
 	s3d::Addon::Register<WindowChromeAddon>(WindowChromeAddon::AddonName);

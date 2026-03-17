@@ -136,6 +136,7 @@
     <ClInclude Include="BattleSessionEnemyAI.Types.ipp" />
     <ClInclude Include="BattleSessionEnemyAI.Helpers.ipp" />
     <ClInclude Include="BattleSessionEnemyAI.Strategy.ipp" />
+    <ClInclude Include="Localization.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
@@ -362,6 +363,8 @@
     <None Include="App\example\shader\hlsl\swirl.hlsl" />
     <None Include="App\example\shader\hlsl\terrain_forward.hlsl" />
     <None Include="App\example\shader\hlsl\terrain_normal.hlsl" />
+    <None Include="localization\ja.toml" />
+    <None Include="localization\en.toml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="App\dll\soundtouch\COPYING.TXT" />

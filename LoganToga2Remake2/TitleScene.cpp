@@ -7,6 +7,17 @@ namespace
 {
 	constexpr double TitleIntroDuration = 1.10;
 	constexpr double TitleIntroSeDelay = 0.12;
+
+	[[nodiscard]] MenuButtonStyle GetTitleMenuButtonStyle()
+	{
+		MenuButtonStyle style;
+		style.hoverExpand = 4.0;
+		style.hoverBorderThickness = 3.5;
+		style.hoverFillColor = ColorF{ 0.30, 0.36, 0.47, 0.99 };
+		style.selectedHoverFillColor = ColorF{ 0.40, 0.54, 0.82, 0.99 };
+		style.hoverFrameColor = ColorF{ 0.88, 0.94, 1.0, 0.99 };
+		return style;
+	}
 }
 
 TitleScene::TitleScene(const SceneBase::InitData& init)
@@ -324,6 +335,7 @@ void TitleScene::executeDataClearAction()
 		if (GameSettings::ClearGameSettings())
 		{
 			const PersistentGameSettings settings = GameSettings::GetGameSettings();
+			Localization::InitializeLanguage(settings.language);
 			data.displaySettings = settings.displaySettings;
 			ApplyDisplaySettings(data.displaySettings);
 			s3d::GlobalAudio::SetVolume(settings.masterVolume);
@@ -346,7 +358,7 @@ bool TitleScene::isButtonClicked(const RectF& rect)
 
 void TitleScene::drawButton(const RectF& rect, const String& label, const Font& font, const bool selected)
 {
-	DrawMenuButton(rect, label, font, selected);
+	DrawMenuButton(rect, label, font, selected, GetTitleMenuButtonStyle());
 }
 
 RectF TitleScene::getPanelRect()
