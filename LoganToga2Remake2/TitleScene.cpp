@@ -229,6 +229,15 @@ void TitleScene::update()
 		return;
 	}
 
+	if (isButtonClicked(getRewardEditorButtonRect()))
+	{
+		RequestSceneTransition(data, U"RewardEditor", [this](const String& sceneName)
+		{
+			changeScene(sceneName);
+		});
+		return;
+	}
+
 	if (isButtonClicked(getMapEditButtonRect()))
 	{
 		RequestSceneTransition(data, U"MapEdit", [this](const String& sceneName)
@@ -499,4 +508,9 @@ RectF TitleScene::getTransitionPresetButtonRect()
 RectF TitleScene::getBalanceEditButtonRect()
 {
 	return TitleUi::GetTitleUiLayout().balanceEditButtonRect;
+}
+
+RectF TitleScene::getRewardEditorButtonRect()
+{
+	return TitleUi::GetTitleUiLayout().titleUiEditorButtonRect.movedBy(0, 38);
 }

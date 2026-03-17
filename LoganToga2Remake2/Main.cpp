@@ -4,6 +4,7 @@
 #include "BonusRoomScene.h"
 #include "GameSettings.h"
 #include "MapEditScene.h"
+#include "RewardEditorScene.h"
 #include "RewardScene.h"
 #include "TitleScene.h"
 #include "TitleUiEditorScene.h"
@@ -33,6 +34,7 @@ void Main()
 	manager.add<BonusRoomScene>(U"BonusRoom");
 	manager.add<MapEditScene>(U"MapEdit");
 	manager.add<RewardScene>(U"Reward");
+	manager.add<RewardEditorScene>(U"RewardEditor");
 	manager.add<TitleUiEditorScene>(U"TitleUiEditor");
 
 	while (System::Update())

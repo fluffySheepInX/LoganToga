@@ -137,6 +137,8 @@
     <ClInclude Include="BattleSessionEnemyAI.Helpers.ipp" />
     <ClInclude Include="BattleSessionEnemyAI.Strategy.ipp" />
     <ClInclude Include="Localization.h" />
+    <ClInclude Include="RewardUiLayout.h" />
+    <ClInclude Include="RewardEditorScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

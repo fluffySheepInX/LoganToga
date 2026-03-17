@@ -94,6 +94,7 @@ void TitleScene::draw() const
 	drawButton(getBalanceEditButtonRect(), TitleUiText::BalanceEditButton, data.smallFont);
 	drawButton(getTransitionPresetButtonRect(), TitleUiText::TransitionPresetPrefix.get() + GetSceneTransitionPresetLabel(data.sceneTransitionSettings.preset), data.smallFont, true);
 	drawButton(getTitleUiEditorButtonRect(), TitleUiText::TitleUiEditorButton, data.smallFont, true);
+	drawButton(getRewardEditorButtonRect(), TitleUiText::RewardEditorButton, data.smallFont, true);
 #endif
 	if (m_isQuickGuideOpen)
 	{

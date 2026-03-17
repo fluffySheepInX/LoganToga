@@ -456,7 +456,9 @@
     <ClInclude Include="MapEditScene.h" />
     <ClInclude Include="MenuButtonUi.h" />
     <ClInclude Include="Remake2Common.h" />
+    <ClInclude Include="RewardEditorScene.h" />
     <ClInclude Include="RewardScene.h" />
+    <ClInclude Include="RewardUiLayout.h" />
     <ClInclude Include="RunBattleBuilder.h" />
     <ClInclude Include="RunCardLoader.h" />
     <ClInclude Include="RunCardLogic.h" />

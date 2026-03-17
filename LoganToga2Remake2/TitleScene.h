@@ -75,4 +75,5 @@ private:
 	[[nodiscard]] static RectF getMapEditButtonRect();
 	[[nodiscard]] static RectF getTransitionPresetButtonRect();
 	[[nodiscard]] static RectF getBalanceEditButtonRect();
+	[[nodiscard]] static RectF getRewardEditorButtonRect();
 };

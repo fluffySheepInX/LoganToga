@@ -98,13 +98,13 @@ y = 176
 
 [debugButtonWithContinue]
 x = 1328
-y = 352
+y = 384
 w = 220
 h = 36
 
 [debugButtonWithoutContinue]
 x = 1328
-y = 352
+y = 384
 w = 220
 h = 36
 
