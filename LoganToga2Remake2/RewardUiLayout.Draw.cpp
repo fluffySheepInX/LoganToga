@@ -59,12 +59,12 @@ namespace RewardUi
 	{
 		Scene::Rect().draw(ColorF{ 0.06, 0.08, 0.12 });
 		const double selectionPulse = (0.5 + (0.5 * Math::Sin(Scene::Time() * 14.0)));
-		const String titleText = Localization::GetText(U"reward_screen.title", U"報酬を選択", U"Choose Reward");
-		const String subtitleText = Localization::FormatText(U"reward_screen.subtitle", U"戦闘 {0} クリア / 1枚選択", U"Battle {0} clear / choose 1 card", runState.currentBattleIndex + 1);
-		String hintText = Localization::GetText(U"reward_screen.controls_hint", U"カードをクリック / 1-3 で選択", U"Click a card or press 1-3");
+     const String titleText = Localization::GetText(U"reward_screen.title");
+		const String subtitleText = Localization::FormatText(U"reward_screen.subtitle", runState.currentBattleIndex + 1);
+		String hintText = Localization::GetText(U"reward_screen.controls_hint");
 		if (selectedCardIndex)
 		{
-			hintText = Localization::GetText(U"reward_screen.acquired_hint", U"報酬反映中... 次の戦闘を準備しています", U"Reward acquired... preparing next battle");
+            hintText = Localization::GetText(U"reward_screen.acquired_hint");
 		}
 
 		data.titleFont(titleText).drawAt(layout.titlePos, Palette::White);
@@ -102,7 +102,7 @@ namespace RewardUi
 
 			if (!selectedCardIndex)
 			{
-				const String pressText = Localization::FormatText(U"reward_screen.press_slot", U"{0}で選択", U"Press {0}", index + 1);
+             const String pressText = Localization::FormatText(U"reward_screen.press_slot", index + 1);
 				data.smallFont(pressText).draw(drawRect.x + 18, drawRect.bottomY() - 34, Palette::Yellow);
 			}
 		}
@@ -117,7 +117,7 @@ namespace RewardUi
 				{
 					const ColorF rarityColor = GetRewardCardRarityColor(selectedCard->rarity);
 					Scene::Rect().draw(ColorF{ rarityColor.r, rarityColor.g, rarityColor.b, 0.05 + (0.06 * selectionPulse) });
-					data.uiFont(Localization::GetText(U"reward_screen.acquired_title", U"報酬獲得", U"Reward Acquired")).drawAt(layout.acquiredLabelPos, rarityColor);
+                  data.uiFont(Localization::GetText(U"reward_screen.acquired_title")).drawAt(layout.acquiredLabelPos, rarityColor);
                   data.smallFont(GetRewardCardName(*selectedCard)).drawAt(layout.acquiredCardNamePos, Palette::White);
 				}
 			}

@@ -9,21 +9,23 @@ using AppLanguage = String;
 
 namespace Localization
 {
-	struct LanguageDefinition
+   struct LanguageDefinition
 	{
 		AppLanguage language;
 		String displayName;
 		String resourcePath;
 		int32 sortOrder = 1000;
+		Array<String> persistenceAliases;
 	};
 
-	inline const AppLanguage DefaultLanguage = U"en";
+	inline constexpr StringView LocalizationIndexFileName = U"index.toml";
 
+	[[nodiscard]] inline const AppLanguage& GetDefaultLanguage();
 	[[nodiscard]] inline AppLanguage ParsePersistenceLabel(const String& label);
 
 	[[nodiscard]] inline String GetLocalizationDirectoryPath()
 	{
-        const String runtimeRelativePath = U"localization";
+		const String runtimeRelativePath = U"localization";
 		if (FileSystem::Exists(runtimeRelativePath))
 		{
 			return runtimeRelativePath;
@@ -38,25 +40,32 @@ namespace Localization
 		return runtimeRelativePath;
 	}
 
+	[[nodiscard]] inline String GetLocalizationIndexPath()
+	{
+		return FileSystem::PathAppend(GetLocalizationDirectoryPath(), String{ LocalizationIndexFileName });
+	}
+
 	[[nodiscard]] inline String GetLanguageCodeFromPath(const String& resourcePath)
 	{
 		return FileSystem::BaseName(FileSystem::FileName(resourcePath));
 	}
 
-	[[nodiscard]] inline String ReadTomlString(const s3d::TOMLReader& toml, const String& key, const String& fallback)
+	template <class TomlLike>
+	[[nodiscard]] inline String ReadTomlString(const TomlLike& toml, const String& key, const String& fallback)
 	{
 		try
 		{
-         const String value = toml[key].get<String>();
+			const String value = toml[key].get<String>();
 			return value.isEmpty() ? fallback : value;
 		}
 		catch (const std::exception&)
 		{
-         return fallback;
+			return fallback;
 		}
 	}
 
-	[[nodiscard]] inline int32 ReadTomlInt(const s3d::TOMLReader& toml, const String& key, const int32 fallback)
+	template <class TomlLike>
+	[[nodiscard]] inline int32 ReadTomlInt(const TomlLike& toml, const String& key, const int32 fallback)
 	{
 		try
 		{
@@ -64,26 +73,121 @@ namespace Localization
 		}
 		catch (const std::exception&)
 		{
-         return fallback;
+			return fallback;
 		}
 	}
 
-	[[nodiscard]] inline LanguageDefinition BuildLanguageDefinition(const String& resourcePath)
+	template <class TomlLike>
+	[[nodiscard]] inline Array<String> ReadTomlStringArray(const TomlLike& toml, const String& key)
+	{
+		Array<String> values;
+		try
+		{
+			for (const auto& value : toml[key].arrayView())
+			{
+				values << value.get<String>();
+			}
+		}
+		catch (const std::exception&)
+		{
+		}
+
+		return values;
+	}
+
+	[[nodiscard]] inline bool ContainsPersistenceLabel(const LanguageDefinition& definition, const String& label)
+	{
+		if (definition.language == label)
+		{
+			return true;
+		}
+
+		for (const auto& alias : definition.persistenceAliases)
+		{
+			if (alias == label)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	[[nodiscard]] inline void EnsureCanonicalPersistenceLabel(LanguageDefinition& definition)
+	{
+		for (const auto& alias : definition.persistenceAliases)
+		{
+			if (alias == definition.language)
+			{
+				return;
+			}
+		}
+
+      definition.persistenceAliases << definition.language;
+	}
+
+	[[nodiscard]] inline LanguageDefinition BuildLanguageDefinitionFromResourcePath(const String& resourcePath)
 	{
 		const String fallbackCode = GetLanguageCodeFromPath(resourcePath);
 		s3d::TOMLReader toml{ resourcePath };
 		if (!toml)
 		{
-			return { fallbackCode, fallbackCode, resourcePath, 1000 };
+			return { fallbackCode, fallbackCode, resourcePath, 1000, { fallbackCode } };
 		}
 
-		const String languageCode = ReadTomlString(toml, U"_meta.code", fallbackCode);
-		const String displayName = ReadTomlString(toml, U"_meta.displayName", languageCode);
-		const int32 sortOrder = ReadTomlInt(toml, U"_meta.order", 1000);
-		return { languageCode, displayName, resourcePath, sortOrder };
+		LanguageDefinition definition
+		{
+			ReadTomlString(toml, U"_meta.code", fallbackCode),
+			ReadTomlString(toml, U"_meta.displayName", fallbackCode),
+			resourcePath,
+			ReadTomlInt(toml, U"_meta.order", 1000),
+			ReadTomlStringArray(toml, U"_meta.aliases")
+		};
+		EnsureCanonicalPersistenceLabel(definition);
+		return definition;
 	}
 
-	[[nodiscard]] inline Array<LanguageDefinition> BuildLanguageDefinitions()
+	[[nodiscard]] inline Array<LanguageDefinition> BuildLanguageDefinitionsFromIndex()
+	{
+		Array<LanguageDefinition> definitions;
+		const String indexPath = GetLocalizationIndexPath();
+		if (!FileSystem::Exists(indexPath))
+		{
+			return definitions;
+		}
+
+		s3d::TOMLReader toml{ indexPath };
+		if (!toml)
+		{
+			return definitions;
+		}
+
+		const String localizationDirectory = GetLocalizationDirectoryPath();
+		for (const auto& table : toml[U"languages"].tableArrayView())
+		{
+			const String languageCode = ReadTomlString(table, U"code", U"");
+			const String relativeFilePath = ReadTomlString(table, U"file", U"");
+			if (languageCode.isEmpty() || relativeFilePath.isEmpty())
+			{
+				continue;
+			}
+
+			LanguageDefinition definition
+			{
+				languageCode,
+				ReadTomlString(table, U"displayName", languageCode),
+				FileSystem::PathAppend(localizationDirectory, relativeFilePath),
+				ReadTomlInt(table, U"order", 1000),
+				ReadTomlStringArray(table, U"aliases")
+			};
+			EnsureCanonicalPersistenceLabel(definition);
+			definitions << std::move(definition);
+		}
+
+		return definitions;
+	}
+
+	[[nodiscard]] inline Array<LanguageDefinition> BuildLanguageDefinitionsFromDirectory()
 	{
 		Array<LanguageDefinition> definitions;
 		for (const auto& path : FileSystem::DirectoryContents(GetLocalizationDirectoryPath()))
@@ -93,22 +197,23 @@ namespace Localization
 				continue;
 			}
 
-			if (!FileSystem::FileName(path).ends_with(U".toml"))
+			if (!FileSystem::FileName(path).ends_with(U".toml") || (FileSystem::FileName(path) == LocalizationIndexFileName))
 			{
 				continue;
 			}
 
-			definitions << BuildLanguageDefinition(path);
+			definitions << BuildLanguageDefinitionFromResourcePath(path);
 		}
 
+		return definitions;
+	}
+
+	[[nodiscard]] inline Array<LanguageDefinition> BuildLanguageDefinitions()
+	{
+      Array<LanguageDefinition> definitions = BuildLanguageDefinitionsFromIndex();
 		if (definitions.isEmpty())
 		{
-           const String localizationDirectory = GetLocalizationDirectoryPath();
-			definitions =
-			{
-                { U"en", U"English", FileSystem::PathAppend(localizationDirectory, U"en.toml"), 0 },
-				{ U"ja", U"日本語", FileSystem::PathAppend(localizationDirectory, U"ja.toml"), 10 },
-			};
+			definitions = BuildLanguageDefinitionsFromDirectory();
 		}
 
 		std::sort(definitions.begin(), definitions.end(), [](const LanguageDefinition& a, const LanguageDefinition& b)
@@ -129,6 +234,46 @@ namespace Localization
 		return definitions;
 	}
 
+	[[nodiscard]] inline const LanguageDefinition& EmptyLanguageDefinitionStorage()
+	{
+		static const LanguageDefinition definition{ U"", U"", U"", 1000, {} };
+		return definition;
+	}
+
+	[[nodiscard]] inline AppLanguage BuildDefaultLanguage()
+	{
+		const String indexPath = GetLocalizationIndexPath();
+		if (FileSystem::Exists(indexPath))
+		{
+			s3d::TOMLReader toml{ indexPath };
+			if (toml)
+			{
+				const String configuredDefault = ReadTomlString(toml, U"_meta.defaultLanguage", U"");
+				for (const auto& definition : GetLanguageDefinitions())
+				{
+					if (definition.language == configuredDefault)
+					{
+						return definition.language;
+					}
+				}
+			}
+		}
+
+		const auto& definitions = GetLanguageDefinitions();
+		if (!definitions.isEmpty())
+		{
+			return definitions.front().language;
+		}
+
+		return U"";
+	}
+
+	[[nodiscard]] inline const AppLanguage& GetDefaultLanguage()
+	{
+		static const AppLanguage defaultLanguage = BuildDefaultLanguage();
+		return defaultLanguage;
+	}
+
 	[[nodiscard]] inline const LanguageDefinition& GetLanguageDefinition(const AppLanguage& language)
 	{
 		for (const auto& definition : GetLanguageDefinitions())
@@ -139,12 +284,18 @@ namespace Localization
 			}
 		}
 
-		return GetLanguageDefinitions().front();
+        const auto& definitions = GetLanguageDefinitions();
+		if (!definitions.isEmpty())
+		{
+			return definitions.front();
+		}
+
+		return EmptyLanguageDefinitionStorage();
 	}
 
 	[[nodiscard]] inline AppLanguage& CurrentLanguageStorage()
 	{
-		static AppLanguage language = DefaultLanguage;
+      static AppLanguage language = GetDefaultLanguage();
 		return language;
 	}
 
@@ -190,7 +341,7 @@ namespace Localization
 
 	[[nodiscard]] inline const s3d::TOMLReader* GetDefaultLanguageToml()
 	{
-        if (CurrentLanguageStorage() == DefaultLanguage)
+        if (CurrentLanguageStorage() == GetDefaultLanguage())
 		{
 			return LanguageTomlStorage().get();
 		}
@@ -198,7 +349,7 @@ namespace Localization
 		auto& toml = DefaultLanguageTomlStorage();
 		if (!toml)
 		{
-			const String resourcePath = GetLanguageDefinition(DefaultLanguage).resourcePath;
+            const String resourcePath = GetLanguageDefinition(GetDefaultLanguage()).resourcePath;
 			if (!FileSystem::Exists(resourcePath))
 			{
 				return nullptr;
@@ -219,7 +370,7 @@ namespace Localization
 		const String resourcePath = GetLanguageDefinition(language).resourcePath;
 		auto& toml = LanguageTomlStorage();
 		toml.reset();
-		if (!FileSystem::Exists(resourcePath))
+      if (resourcePath.isEmpty() || !FileSystem::Exists(resourcePath))
 		{
 			return;
 		}
@@ -259,6 +410,11 @@ namespace Localization
 	[[nodiscard]] inline AppLanguage GetNextLanguage(const AppLanguage& language)
 	{
 		const auto& definitions = GetLanguageDefinitions();
+     if (definitions.isEmpty())
+		{
+			return GetDefaultLanguage();
+		}
+
 		for (size_t i = 0; i < definitions.size(); ++i)
 		{
 			if (definitions[i].language == language)
@@ -267,7 +423,7 @@ namespace Localization
 			}
 		}
 
-		return DefaultLanguage;
+     return GetDefaultLanguage();
 	}
 
 	inline void CycleLanguage()
@@ -284,30 +440,26 @@ namespace Localization
 
 	[[nodiscard]] inline String GetPersistenceLabel(const AppLanguage& language)
 	{
-		return ParsePersistenceLabel(language);
+     const AppLanguage normalizedLanguage = ParsePersistenceLabel(language);
+		return normalizedLanguage.isEmpty() ? language : normalizedLanguage;
 	}
 
 	[[nodiscard]] inline AppLanguage ParsePersistenceLabel(const String& label)
 	{
 		for (const auto& definition : GetLanguageDefinitions())
 		{
-			if (definition.language == label)
+           if (ContainsPersistenceLabel(definition, label))
 			{
 				return definition.language;
 			}
 		}
 
-		if (label == U"Japanese")
+       if (!label.isEmpty())
 		{
-			return U"ja";
+           return GetDefaultLanguage();
 		}
 
-		if (label == U"English")
-		{
-			return U"en";
-		}
-
-		return DefaultLanguage;
+        return GetDefaultLanguage();
 	}
 
 	[[nodiscard]] inline const String& GetDisplayName(const AppLanguage& language)
@@ -320,14 +472,9 @@ namespace Localization
 		return GetDisplayName(GetLanguage());
 	}
 
-	[[nodiscard]] inline bool UsesJapaneseFallback(const AppLanguage& language)
+ [[nodiscard]] inline String TryGetText(const String& key)
 	{
-		return (ParsePersistenceLabel(language) == U"ja");
-	}
-
-	[[nodiscard]] inline String GetText(const String& key, const String& japanese, const String& english)
-	{
-     const String localizedValue = TryReadLocalizedValue(LanguageTomlStorage().get(), key);
+		const String localizedValue = TryReadLocalizedValue(LanguageTomlStorage().get(), key);
 		if (!localizedValue.isEmpty())
 		{
 			return localizedValue;
@@ -339,28 +486,19 @@ namespace Localization
 			return defaultLanguageValue;
 		}
 
-		if (UsesJapaneseFallback(GetLanguage()))
-		{
-         if (!japanese.isEmpty())
-			{
-                return japanese;
-			}
+		return U"";
+	}
 
-			return english;
-		}
-
-		if (!english.isEmpty())
-			{
-           return english;
-			}
-
-        return japanese;
+	[[nodiscard]] inline String GetText(const String& key)
+	{
+		const String localizedValue = TryGetText(key);
+		return localizedValue.isEmpty() ? key : localizedValue;
 	}
 
 	template <class... Args>
-	[[nodiscard]] inline String FormatText(const String& key, const String& japanese, const String& english, const Args&... args)
+	[[nodiscard]] inline String FormatText(const String& key, const Args&... args)
 	{
-		String text = GetText(key, japanese, english);
+		String text = GetText(key);
 		const Array<String> replacements = { s3d::Format(args)... };
 		for (size_t i = 0; i < replacements.size(); ++i)
 		{
@@ -369,30 +507,86 @@ namespace Localization
 		return text;
 	}
 
-	[[nodiscard]] inline String Text(const String& japanese, const String& english)
+    namespace Legacy
 	{
-		return UsesJapaneseFallback(GetLanguage()) ? japanese : english;
+      [[nodiscard]] inline bool PrefersJapaneseFallbackText(const AppLanguage& language)
+		{
+          return (ParsePersistenceLabel(language) == U"ja");
+		}
+
+		[[nodiscard]] inline String SelectFallbackText(const String& japanese, const String& english)
+		{
+			if (PrefersJapaneseFallbackText(GetLanguage()))
+			{
+				if (!japanese.isEmpty())
+				{
+					return japanese;
+				}
+
+				return english;
+			}
+
+			if (!english.isEmpty())
+			{
+				return english;
+			}
+
+			return japanese;
+		}
+
+		[[nodiscard]] inline String GetText(const String& key, const String& japanese, const String& english)
+		{
+			const String localizedValue = TryGetText(key);
+			return localizedValue.isEmpty() ? SelectFallbackText(japanese, english) : localizedValue;
+		}
+
+		template <class... Args>
+		[[nodiscard]] inline String FormatText(const String& key, const String& japanese, const String& english, const Args&... args)
+		{
+			String text = GetText(key, japanese, english);
+			const Array<String> replacements = { s3d::Format(args)... };
+			for (size_t i = 0; i < replacements.size(); ++i)
+			{
+				text.replace((U"{" + s3d::Format(i) + U"}"), replacements[i]);
+			}
+			return text;
+		}
 	}
 }
 
 struct LocalizedText
 {
 	String key;
-	String japanese;
-	String english;
+    String legacyJapanese;
+	String legacyEnglish;
 
 	LocalizedText() = default;
 
+	LocalizedText(String keyValue)
+		: key{ std::move(keyValue) }
+	{
+	}
+
 	LocalizedText(String keyValue, String japaneseValue, String englishValue)
 		: key{ std::move(keyValue) }
-		, japanese{ std::move(japaneseValue) }
-		, english{ std::move(englishValue) }
+      , legacyJapanese{ std::move(japaneseValue) }
+		, legacyEnglish{ std::move(englishValue) }
 	{
+	}
+
+	[[nodiscard]] bool hasLegacyFallbackText() const
+	{
+		return !(legacyJapanese.isEmpty() && legacyEnglish.isEmpty());
 	}
 
 	[[nodiscard]] String get() const
 	{
-		return Localization::GetText(key, japanese, english);
+     if (!hasLegacyFallbackText())
+		{
+			return Localization::GetText(key);
+		}
+
+        return Localization::Legacy::GetText(key, legacyJapanese, legacyEnglish);
 	}
 
 	operator String() const

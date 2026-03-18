@@ -380,6 +380,8 @@
     <None Include="App\example\shader\hlsl\terrain_normal.hlsl" />
     <None Include="localization\ja.toml" />
     <None Include="localization\en.toml" />
+    <None Include="App\localization\index.toml" />
+    <None Include="localization\index.toml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="App\dll\soundtouch\COPYING.TXT" />

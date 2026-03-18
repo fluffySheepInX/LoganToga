@@ -125,12 +125,12 @@ String TitleScene::getContinuePreviewHeadline(const ContinueRunPreview& preview)
 	switch (preview.resumeScene)
 	{
 	case ContinueResumeScene::Reward:
-		return Localization::FormatText(U"title.continue_preview.reward_headline", U"戦闘 {0}/{1} 後の報酬", U"Reward after battle {0}/{1}", preview.currentBattleIndex + 1, preview.totalBattles);
+       return Localization::FormatText(U"title.continue_preview.reward_headline", preview.currentBattleIndex + 1, preview.totalBattles);
 	case ContinueResumeScene::BonusRoom:
-		return Localization::GetText(U"title.continue_preview.bonus_room_headline", U"クリア後のボーナスルーム", U"Bonus Room after clear");
+        return Localization::GetText(U"title.continue_preview.bonus_room_headline");
 	case ContinueResumeScene::Battle:
 	default:
-		return Localization::FormatText(U"title.continue_preview.battle_headline", U"戦闘 {0}/{1}", U"Battle {0}/{1}", preview.currentBattleIndex + 1, preview.totalBattles);
+     return Localization::FormatText(U"title.continue_preview.battle_headline", preview.currentBattleIndex + 1, preview.totalBattles);
 	}
 }
 
@@ -139,14 +139,14 @@ String TitleScene::getContinuePreviewDetail(const ContinueRunPreview& preview)
 	switch (preview.resumeScene)
 	{
 	case ContinueResumeScene::Reward:
-		return Localization::FormatText(U"title.continue_preview.reward_detail", U"報酬候補: {0}", U"Reward choices: {0}", preview.pendingRewardCardCount);
+     return Localization::FormatText(U"title.continue_preview.reward_detail", preview.pendingRewardCardCount);
 	case ContinueResumeScene::BonusRoom:
 		return preview.isCleared
-			? Localization::GetText(U"title.continue_preview.bonus_room_cleared", U"ランクリア済み", U"Run cleared")
-			: Localization::GetText(U"title.continue_preview.bonus_room_available", U"クリア報酬を受け取れます", U"Clear reward available");
+           ? Localization::GetText(U"title.continue_preview.bonus_room_cleared")
+			: Localization::GetText(U"title.continue_preview.bonus_room_available");
 	case ContinueResumeScene::Battle:
 	default:
-		return Localization::GetText(U"title.continue_preview.battle_detail", U"戦闘開始チェックポイントから再開", U"Resume from battle start checkpoint");
+     return Localization::GetText(U"title.continue_preview.battle_detail");
 	}
 }
 

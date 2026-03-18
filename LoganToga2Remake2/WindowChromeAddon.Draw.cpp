@@ -61,15 +61,15 @@ void WindowChromeAddon::drawChrome() const
 	bottomBarRect.drawFrame(1.0, m_frameColor);
 	m_titleFont(m_title).draw(10.0, (bottomBarRect.y + 4.0), Palette::White);
 
-	drawControlButton(languageButtonRect, (Localization::GetText(U"chrome.language_prefix", U"言語: ", U"Lang: ") + Localization::GetCurrentDisplayName()), languageHovered, m_isLanguagePanelOpen);
+  drawControlButton(languageButtonRect, (Localization::GetText(U"chrome.language_prefix") + Localization::GetCurrentDisplayName()), languageHovered, m_isLanguagePanelOpen);
 	if (m_isLanguageButtonHintActive)
 	{
 		drawLanguageButtonHint(languageButtonRect);
 	}
-	drawControlButton(audioButtonRect, Localization::GetText(U"chrome.audio_button", U"音量", U"Volume"), audioHovered, m_isAudioPanelOpen);
+  drawControlButton(audioButtonRect, Localization::GetText(U"chrome.audio_button"), audioHovered, m_isAudioPanelOpen);
 	drawControlButton(fullscreenButtonRect, Window::GetState().fullscreen
-		? Localization::GetText(U"chrome.windowed_button", U"窓", U"Window")
-		: Localization::GetText(U"chrome.fullscreen_button", U"全画面", U"Fullscreen"), fullscreenHovered, false);
+     ? Localization::GetText(U"chrome.windowed_button")
+		: Localization::GetText(U"chrome.fullscreen_button"), fullscreenHovered, false);
 	closeButtonRect.draw(closeHovered ? ColorF{ 0.60, 0.16, 0.20, 0.95 } : ColorF{ 0.20, 0.11, 0.16, 0.90 });
 	closeButtonRect.drawFrame(1.0, m_frameColor);
 	Line{ closeButtonRect.tl().movedBy(5, 4), closeButtonRect.br().movedBy(-5, -4) }.draw(1.5, Palette::White);
@@ -108,7 +108,7 @@ void WindowChromeAddon::drawLanguageButtonHint(const RectF& rect) const
 	const double pulse = (0.5 + (0.5 * std::sin(m_languageButtonHintElapsed * 8.0)));
 	const double swingAmplitude = (12.0 * (1.0 - (0.30 * hintProgress)));
 	const double swingOffsetX = (std::sin((m_languageButtonHintElapsed * 5.2) + 0.4) * swingAmplitude);
-	const String bubbleLabel = Localization::GetText(U"chrome.language_hint_bubble", U"Language / 言語", U"Language / 言語");
+   const String bubbleLabel = Localization::GetText(U"chrome.language_hint_bubble");
 	const double bubbleWidth = Max(132.0, m_titleFont(bubbleLabel).region().w + 18.0);
 	const RectF bubbleRect{ (rect.center().x - (bubbleWidth * 0.5) + swingOffsetX), (rect.y - 46.0), bubbleWidth, 22.0 };
 	const ColorF outerColor{ 1.0, 0.86, 0.34, (0.14 + (0.08 * pulse)) };
@@ -157,7 +157,7 @@ void WindowChromeAddon::drawVolumePanel() const
 	const RectF panelRect = getVolumePanelRect();
 	panelRect.draw(ColorF{ 0.05, 0.07, 0.09, 0.96 });
 	panelRect.drawFrame(1.0, m_frameColor);
-	drawMasterVolumeRow(Localization::GetText(U"chrome.master_volume", U"全体", U"Master"), 0);
+   drawMasterVolumeRow(Localization::GetText(U"chrome.master_volume"), 0);
 	drawVolumeRow(U"BGM", 1, BgmBus);
 	drawVolumeRow(U"SE", 2, SeBus);
 }
@@ -201,10 +201,10 @@ void WindowChromeAddon::drawCloseDialog() const
 	dialogRect.draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
 	dialogRect.drawFrame(2.0, ColorF{ 0.40, 0.58, 0.90, 0.98 });
 
-	m_dialogFont(Localization::GetText(U"common.exit_question", U"ゲームを終了しますか？", U"Exit the game?")).drawAt(dialogRect.center().movedBy(0, -34), Palette::White);
-	drawDialogButton(getCloseDialogYesButtonRect(), Localization::GetText(U"common.yes", U"はい", U"Yes"), true);
-	drawDialogButton(getCloseDialogNoButtonRect(), Localization::GetText(U"common.no", U"いいえ", U"No"), false);
-	m_dialogSmallFont(Localization::GetText(U"common.dialog_enter_yes_no_hint", U"Enter: はい / Esc: いいえ", U"Enter: Yes / Esc: No")).drawAt(dialogRect.center().movedBy(0, 70), ColorF{ 0.80, 0.87, 0.95 });
+    m_dialogFont(Localization::GetText(U"common.exit_question")).drawAt(dialogRect.center().movedBy(0, -34), Palette::White);
+	drawDialogButton(getCloseDialogYesButtonRect(), Localization::GetText(U"common.yes"), true);
+	drawDialogButton(getCloseDialogNoButtonRect(), Localization::GetText(U"common.no"), false);
+	m_dialogSmallFont(Localization::GetText(U"common.dialog_enter_yes_no_hint")).drawAt(dialogRect.center().movedBy(0, 70), ColorF{ 0.80, 0.87, 0.95 });
 }
 
 void WindowChromeAddon::drawDialogButton(const RectF& rect, const String& label, const bool selected) const

@@ -56,23 +56,23 @@ void BonusRoomScene::drawViewer() const
 	pageRect.draw(ColorF{ 0.12, 0.14, 0.20, 0.98 });
 	pageRect.drawFrame(3, ColorF{ 0.78, 0.68, 0.34 });
 	data.titleFont(room->title).drawAt(Scene::CenterF().movedBy(0, -240), Palette::White);
- data.smallFont(Localization::FormatText(U"bonus_room.viewer.page", U"ページ {0} / {1}", U"Page {0} / {1}", progress.activePageIndex + 1, room->pages.size())).drawAt(Scene::CenterF().movedBy(0, -192), Palette::Yellow);
+ data.smallFont(Localization::FormatText(U"bonus_room.viewer.page", progress.activePageIndex + 1, room->pages.size())).drawAt(Scene::CenterF().movedBy(0, -192), Palette::Yellow);
 	data.uiFont(room->pages[progress.activePageIndex]).draw(pageRect.x + 36, pageRect.y + 36, ColorF{ 0.94, 0.96, 0.99 });
 
 	const MenuButtonStyle buttonStyle = GetBonusButtonStyle();
 	if (progress.activePageIndex > 0)
 	{
-     DrawMenuButton(GetViewerPrevButtonRect(), Localization::GetText(U"bonus_room.viewer.prev", U"前へ", U"Prev"), data.smallFont, false, buttonStyle);
+       DrawMenuButton(GetViewerPrevButtonRect(), Localization::GetText(U"bonus_room.viewer.prev"), data.smallFont, false, buttonStyle);
 	}
-    DrawMenuButton(GetViewerCloseButtonRect(), progress.sceneMode == BonusRoomSceneMode::Selection
-		? Localization::GetText(U"bonus_room.viewer.skip", U"スキップ", U"Skip")
-		: Localization::GetText(U"bonus_room.viewer.back", U"戻る", U"Back"), data.smallFont, false, buttonStyle);
+  DrawMenuButton(GetViewerCloseButtonRect(), progress.sceneMode == BonusRoomSceneMode::Selection
+		? Localization::GetText(U"bonus_room.viewer.skip")
+		: Localization::GetText(U"bonus_room.viewer.back"), data.smallFont, false, buttonStyle);
 	const bool hasNextPage = ((progress.activePageIndex + 1) < static_cast<int32>(room->pages.size()));
     DrawMenuButton(GetViewerNextButtonRect(), hasNextPage
-		? Localization::GetText(U"bonus_room.viewer.next", U"次へ", U"Next")
+      ? Localization::GetText(U"bonus_room.viewer.next")
 		: (progress.sceneMode == BonusRoomSceneMode::Selection
-			? Localization::GetText(U"bonus_room.viewer.finish", U"完了", U"Finish")
-			: Localization::GetText(U"bonus_room.viewer.close", U"閉じる", U"Close")), data.smallFont, false, buttonStyle);
+          ? Localization::GetText(U"bonus_room.viewer.finish")
+			: Localization::GetText(U"bonus_room.viewer.close")), data.smallFont, false, buttonStyle);
 }
 
 void BonusRoomScene::openRoom(const String& roomId)

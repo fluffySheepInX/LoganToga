@@ -96,9 +96,9 @@ namespace
 		const Font titleFont{ FontMethod::MSDF, 34, Typeface::Bold };
 		const Font bodyFont{ FontMethod::MSDF, 22 };
 		const Font hintFont{ FontMethod::MSDF, 16 };
-		const String title = Localization::GetText(U"startup_limit.expired_title", U"起動期限が終了しました", U"Startup period ended");
-		const String body = Localization::FormatText(U"startup_limit.expired_body", U"このビルドは初回起動から {0} 日を過ぎたため、起動できません。", U"This build can no longer start because {0} days have passed since first launch.", StartupAvailableDays);
-		const String hint = Localization::GetText(U"startup_limit.expired_hint", U"Esc またはウィンドウを閉じて終了してください", U"Press Esc or close the window to exit");
+        const String title = Localization::GetText(U"startup_limit.expired_title");
+		const String body = Localization::FormatText(U"startup_limit.expired_body", StartupAvailableDays);
+		const String hint = Localization::GetText(U"startup_limit.expired_hint");
 
 		while (System::Update())
 		{

@@ -16,31 +16,31 @@ void RewardEditorScene::drawPanels() const
 	panel.drawFrame(2.0, ColorF{ 0.42, 0.60, 0.92 });
 
 	const auto& data = getData();
-	data.uiFont(Localization::GetText(U"reward_editor.panel_title", U"Reward UI Editor", U"Reward UI Editor")).draw(panel.x + 16, panel.y + 14, Palette::White);
+    data.uiFont(Localization::GetText(U"reward_editor.panel_title")).draw(panel.x + 16, panel.y + 14, Palette::White);
 	data.smallFont(m_hasUnsavedChanges
-		? Localization::GetText(U"reward_editor.unsaved_changes", U"未保存の変更があります", U"Unsaved changes")
-		: Localization::GetText(U"reward_editor.saved_state", U"保存済みレイアウト", U"Layout saved"))
+       ? Localization::GetText(U"reward_editor.unsaved_changes")
+		: Localization::GetText(U"reward_editor.saved_state"))
 		.draw(panel.x + 16, panel.y + 46, ColorF{ 0.82, 0.88, 0.96 });
 
-	drawButton(getTopButtonRect(0), Localization::GetText(U"reward_editor.save_layout_button", U"Save Layout", U"Save Layout"), data.smallFont, true);
-	drawButton(getTopButtonRect(1), Localization::GetText(U"reward_editor.reload_layout_button", U"Reload Layout", U"Reload Layout"), data.smallFont);
-	drawButton(getTopButtonRect(2), Localization::GetText(U"reward_editor.reset_layout_button", U"Reset Layout", U"Reset Layout"), data.smallFont);
-	drawButton(getTopButtonRect(3), Localization::GetText(U"reward_editor.reroll_button", U"再抽選", U"Reroll"), data.smallFont);
-	drawButton(getTopButtonRect(4), Localization::GetText(U"reward_editor.reset_preview_button", U"プレビュー初期化", U"Reset Preview"), data.smallFont);
-	drawButton(getTopButtonRect(5), Localization::GetText(U"reward_editor.back_button", U"タイトルへ戻る", U"Back to Title"), data.smallFont);
+  drawButton(getTopButtonRect(0), Localization::GetText(U"reward_editor.save_layout_button"), data.smallFont, true);
+	drawButton(getTopButtonRect(1), Localization::GetText(U"reward_editor.reload_layout_button"), data.smallFont);
+	drawButton(getTopButtonRect(2), Localization::GetText(U"reward_editor.reset_layout_button"), data.smallFont);
+	drawButton(getTopButtonRect(3), Localization::GetText(U"reward_editor.reroll_button"), data.smallFont);
+	drawButton(getTopButtonRect(4), Localization::GetText(U"reward_editor.reset_preview_button"), data.smallFont);
+	drawButton(getTopButtonRect(5), Localization::GetText(U"reward_editor.back_button"), data.smallFont);
 
-	data.smallFont(Localization::GetText(U"reward_editor.element_list_title", U"編集対象", U"Editable Elements")).draw(panel.x + 16, panel.y + 236, Palette::White);
+    data.smallFont(Localization::GetText(U"reward_editor.element_list_title")).draw(panel.x + 16, panel.y + 236, Palette::White);
 	const auto& elements = getEditableElements();
 	for (int32 i = 0; i < static_cast<int32>(elements.size()); ++i)
 	{
 		drawButton(getSelectionRowRect(i), elements[i].name, data.smallFont, (i == m_selectedElementIndex));
 	}
 
-	data.smallFont(Localization::GetText(U"reward_editor.editor_hint", U"左の一覧で要素を選択し、画面上でドラッグして移動", U"Select an element on the left and drag it in the preview"))
+   data.smallFont(Localization::GetText(U"reward_editor.editor_hint"))
 		.draw(panel.x + 16, panel.bottomY() - 74, ColorF{ 0.88, 0.92, 1.0 });
-	data.smallFont(Localization::GetText(U"reward_editor.grid_hint", U"8px グリッド表示 / ドラッグ中は升目にスナップ", U"8px grid shown / dragging snaps to cells"))
+   data.smallFont(Localization::GetText(U"reward_editor.grid_hint"))
 		.draw(panel.x + 16, panel.bottomY() - 60, ColorF{ 0.84, 0.90, 0.98 });
-	data.smallFont(Localization::FormatText(U"reward_editor.selected_cards", U"選択済みカード: {0}", U"Selected cards: {0}", m_previewRunState.selectedCardIds.size()))
+    data.smallFont(Localization::FormatText(U"reward_editor.selected_cards", m_previewRunState.selectedCardIds.size()))
 		.draw(panel.x + 16, panel.bottomY() - 38, ColorF{ 0.88, 0.93, 1.0 });
 	data.smallFont(m_statusMessage).draw(panel.x + 16, panel.bottomY() - 20, ColorF{ 0.84, 0.90, 0.98 });
 }

@@ -1,0 +1,16 @@
+[_meta]
+defaultLanguage = "en"
+
+[[languages]]
+code = "en"
+displayName = "English"
+file = "en.toml"
+order = 0
+aliases = ["en", "English"]
+
+[[languages]]
+code = "ja"
+displayName = "日本語"
+file = "ja.toml"
+order = 10
+aliases = ["ja", "Japanese"]

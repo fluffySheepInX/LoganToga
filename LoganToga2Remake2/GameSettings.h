@@ -10,7 +10,7 @@ struct PersistentGameSettings
 	double masterVolume = 1.0;
 	double bgmVolume = 1.0;
 	double seVolume = 1.0;
-	AppLanguage language = Localization::DefaultLanguage;
+   AppLanguage language = Localization::GetDefaultLanguage();
 	bool hasSeenLanguageButtonHint = false;
 };
 

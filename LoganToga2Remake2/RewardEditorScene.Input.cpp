@@ -7,11 +7,11 @@ void RewardEditorScene::handleTopButtonInput()
 		if (RewardUi::SaveRewardUiLayout(m_layout))
 		{
 			m_hasUnsavedChanges = false;
-			m_statusMessage = Localization::GetText(U"reward_editor.status_saved_layout", U"リワード画面レイアウトを保存しました", U"Saved reward screen layout");
+            m_statusMessage = Localization::GetText(U"reward_editor.status_saved_layout");
 		}
 		else
 		{
-			m_statusMessage = Localization::GetText(U"reward_editor.status_save_failed", U"リワード画面レイアウトの保存に失敗しました", U"Failed to save reward screen layout");
+         m_statusMessage = Localization::GetText(U"reward_editor.status_save_failed");
 		}
 		return;
 	}
@@ -20,7 +20,7 @@ void RewardEditorScene::handleTopButtonInput()
 	{
 		m_layout = RewardUi::ReloadRewardUiLayout();
 		m_hasUnsavedChanges = false;
-		m_statusMessage = Localization::GetText(U"reward_editor.status_reloaded_layout", U"リワード画面レイアウトを再読み込みしました", U"Reloaded reward screen layout");
+       m_statusMessage = Localization::GetText(U"reward_editor.status_reloaded_layout");
 		return;
 	}
 
@@ -28,13 +28,13 @@ void RewardEditorScene::handleTopButtonInput()
 	{
 		m_layout = RewardUi::MakeDefaultRewardUiLayout();
 		m_hasUnsavedChanges = true;
-		m_statusMessage = Localization::GetText(U"reward_editor.status_reset_layout", U"リワード画面レイアウトを既定値へ戻しました", U"Reset reward screen layout to defaults");
+     m_statusMessage = Localization::GetText(U"reward_editor.status_reset_layout");
 		return;
 	}
 
 	if (isButtonClicked(getTopButtonRect(3)) || KeyR.down())
 	{
-		rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_rerolled", U"報酬候補を再抽選しました", U"Rerolled reward choices"));
+        rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_rerolled"));
 		return;
 	}
 
@@ -89,7 +89,7 @@ void RewardEditorScene::handleDragInput()
 			{
 				*point = snapToGrid(Cursor::PosF() - *m_dragOffset);
 				m_hasUnsavedChanges = true;
-				m_statusMessage = Localization::GetText(U"reward_editor.status_dragging", U"要素を移動中...", U"Moving selected element...");
+             m_statusMessage = Localization::GetText(U"reward_editor.status_dragging");
 			}
 			else
 			{
@@ -115,7 +115,7 @@ void RewardEditorScene::handleDragInput()
 				rect->x = snappedPos.x;
 				rect->y = snappedPos.y;
 				m_hasUnsavedChanges = true;
-				m_statusMessage = Localization::GetText(U"reward_editor.status_dragging", U"要素を移動中...", U"Moving selected element...");
+             m_statusMessage = Localization::GetText(U"reward_editor.status_dragging");
 			}
 			else
 			{

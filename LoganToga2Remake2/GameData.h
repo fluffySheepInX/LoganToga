@@ -48,12 +48,12 @@ struct DisplaySettings
 	switch (preset)
 	{
 	case WindowResolutionPreset::Small:
-		return Localization::GetText(U"common.resolution_small", U"小", U"Small");
+       return Localization::GetText(U"common.resolution_small");
 	case WindowResolutionPreset::Large:
-		return Localization::GetText(U"common.resolution_large", U"大", U"Large");
+       return Localization::GetText(U"common.resolution_large");
 	case WindowResolutionPreset::Medium:
 	default:
-		return Localization::GetText(U"common.resolution_medium", U"中", U"Medium");
+     return Localization::GetText(U"common.resolution_medium");
 	}
 }
 

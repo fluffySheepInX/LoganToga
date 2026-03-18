@@ -72,7 +72,7 @@ void RewardEditorScene::rebuildPreviewChoices(const String& statusMessage)
 	if (data.rewardCards.isEmpty())
 	{
 		m_previewRunState.pendingRewardCardIds.clear();
-		m_statusMessage = Localization::GetText(U"reward_editor.no_cards", U"表示できる報酬カードがありません", U"No reward cards available for preview");
+      m_statusMessage = Localization::GetText(U"reward_editor.no_cards");
 		return;
 	}
 
@@ -89,7 +89,7 @@ void RewardEditorScene::rebuildPreviewChoices(const String& statusMessage)
 void RewardEditorScene::resetPreviewState()
 {
 	initializePreviewRun();
-	rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_reset_preview", U"プレビュー状態を初期化しました", U"Reset preview state"));
+    rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_reset_preview"));
 }
 
 void RewardEditorScene::choosePreviewCard(const int32 index)
@@ -121,7 +121,7 @@ void RewardEditorScene::finishSelectedCardPreview()
 
 	ApplyRewardCardChoice(m_previewRunState, data.rewardCards, m_previewRunState.pendingRewardCardIds[index]);
 	m_previewRunState.currentBattleIndex = ((m_previewRunState.currentBattleIndex + 1) % Max(m_previewRunState.totalBattles, 1));
-	rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_applied", U"報酬選択をプレビューへ反映しました", U"Applied reward choice to preview"));
+   rebuildPreviewChoices(Localization::GetText(U"reward_editor.status_applied"));
 }
 
 void RewardEditorScene::requestReturnToTitle()
