@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+#include "BattleUiText.h"
+
 namespace BattleRendererHudInternal
 {
 	String GetCommandIconGlyph(const UnitArchetype archetype)
@@ -74,20 +76,7 @@ namespace BattleRendererHudInternal
 
 	String GetCommandKindLabel(const CommandKind kind)
 	{
-		switch (kind)
-		{
-		case CommandKind::Construction:
-			return U"Build";
-		case CommandKind::Repair:
-			return U"Repair";
-		case CommandKind::Detonate:
-			return U"Detonate";
-		case CommandKind::Upgrade:
-			return U"Upgrade";
-		case CommandKind::Production:
-		default:
-			return U"Queue";
-		}
+       return BattleUiText::GetCommandKindLabel(kind);
 	}
 
 	ColorF GetCommandAvailabilityColor(const CommandIconEntry& command)
@@ -109,7 +98,7 @@ namespace BattleRendererHudInternal
 			const ColorF accentColor = ((icon.command.kind == CommandKind::Construction) || (icon.command.kind == CommandKind::Upgrade) || (icon.command.kind == CommandKind::Repair) || (icon.command.kind == CommandKind::Detonate))
 				? GetCommandAvailabilityColor(icon.command)
 				: GetCommandIconColor(icon.command.archetype);
-			const String titleText = icon.command.displayLabel.isEmpty() ? GetArchetypeLabel(icon.command.archetype) : icon.command.displayLabel;
+          const String titleText = icon.command.displayLabel.isEmpty() ? BattleUiText::GetLocalizedArchetypeLabel(icon.command.archetype) : icon.command.displayLabel;
 			const bool hasDescription = !icon.command.descriptionText.isEmpty();
 			const bool hasFlavor = !icon.command.flavorText.isEmpty();
 			const double tooltipWidth = 320.0;
@@ -133,9 +122,9 @@ namespace BattleRendererHudInternal
 			RoundRect{ tooltipRect, 9 }.draw(ColorF{ 0.03, 0.05, 0.08, 0.96 });
 			RoundRect{ tooltipRect, 9 }.drawFrame(2, 0, accentColor);
 			gameData.smallFont(titleText).draw(tooltipRect.x + 12, tooltipRect.y + 10, Palette::White);
-			gameData.smallFont(s3d::Format(GetCommandKindLabel(icon.command.kind), U" / ", icon.command.slot, U"   @", GetArchetypeLabel(icon.command.sourceArchetype))).draw(tooltipRect.x + 12, tooltipRect.y + 30, ColorF{ 0.84, 0.88, 0.94 });
+          gameData.smallFont(s3d::Format(GetCommandKindLabel(icon.command.kind), U" / ", icon.command.slot, U"   @", BattleUiText::GetLocalizedArchetypeLabel(icon.command.sourceArchetype))).draw(tooltipRect.x + 12, tooltipRect.y + 30, ColorF{ 0.84, 0.88, 0.94 });
 			double lineY = tooltipRect.y + 50;
-			gameData.smallFont(s3d::Format(U"Cost: ", icon.command.cost, U"G")).draw(tooltipRect.x + 12, lineY, Palette::Gold);
+         gameData.smallFont(BattleUiText::GetCommandCost(icon.command.cost)).draw(tooltipRect.x + 12, lineY, Palette::Gold);
 			lineY += 18.0;
 			if (hasDescription)
 			{
@@ -156,7 +145,7 @@ namespace BattleRendererHudInternal
 		void DrawCommandIcon(const RectF& rect, const CommandIconEntry& command, const GameData& gameData, const bool isHovered, const bool isPressed)
 		{
 			const String glyphText = command.glyphText.isEmpty() ? GetCommandIconGlyph(command.archetype) : command.glyphText;
-			const String labelText = command.displayLabel.isEmpty() ? GetArchetypeLabel(command.archetype) : command.displayLabel;
+          const String labelText = command.displayLabel.isEmpty() ? BattleUiText::GetLocalizedArchetypeLabel(command.archetype) : command.displayLabel;
 			const double alpha = command.isEnabled ? 1.0 : 0.30;
 			const ColorF iconColor{ GetCommandIconColor(command.archetype).r, GetCommandIconColor(command.archetype).g, GetCommandIconColor(command.archetype).b, alpha };
 			const ColorF availabilityColor = GetCommandAvailabilityColor(command);

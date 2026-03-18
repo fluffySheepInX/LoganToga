@@ -449,6 +449,7 @@
     <ClInclude Include="BattleStateHelpers.h" />
     <ClInclude Include="BattleTutorialText.h" />
     <ClInclude Include="BattleTypes.h" />
+    <ClInclude Include="BattleUiText.h" />
     <ClInclude Include="BonusRoomData.h" />
     <ClInclude Include="BonusRoomScene.h" />
     <ClInclude Include="BonusRoomSceneGallery.ipp" />

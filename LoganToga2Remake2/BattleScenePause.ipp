@@ -1,4 +1,5 @@
-﻿#include "MenuButtonUi.h"
+﻿#include "BattleUiText.h"
+#include "MenuButtonUi.h"
 
 namespace
 {
@@ -34,9 +35,9 @@ namespace
 	[[nodiscard]] Array<String> GetPauseMenuLabels(const bool isTutorialBattle)
 	{
 		return{
-			U"Resume",
-			U"Restart Battle",
-			isTutorialBattle ? U"Return to Title" : U"Save & Return to Title"
+          BattleUiText::GetPauseResume(),
+			BattleUiText::GetPauseRestartBattle(),
+			isTutorialBattle ? BattleUiText::GetPauseReturnToTitle() : BattleUiText::GetPauseSaveReturnToTitle()
 		};
 	}
 
@@ -165,14 +166,14 @@ void BattleScene::drawPauseMenu() const
 		productionEntries << s3d::Format(
 			slot.slot,
 			U": ",
-			GetArchetypeLabel(slot.archetype),
+          BattleUiText::GetLocalizedArchetypeLabel(slot.archetype),
 			(slot.batchCount >= 2) ? U" x" + Format(slot.batchCount) : U"",
 			U" (",
 			cost,
 			U"G)");
 	}
-	const Array<String> productionLines = BuildWrappedPauseLines(productionEntries, data.smallFont, panelRect.w - 80.0, U"Production: ");
-	String constructionText = U"Build: none";
+   const Array<String> productionLines = BuildWrappedPauseLines(productionEntries, data.smallFont, panelRect.w - 80.0, BattleUiText::GetPauseProductionPrefix());
+	String constructionText = BattleUiText::GetPauseBuildNone();
 	for (const auto& slot : config.playerConstructionSlots)
 	{
 		if (!ContainsArchetype(config.playerAvailableConstructionArchetypes, slot.archetype))
@@ -182,14 +183,14 @@ void BattleScene::drawPauseMenu() const
 
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = definition ? definition->cost : 0;
-		constructionText = s3d::Format(U"Build: ", slot.slot, U": ", GetArchetypeLabel(slot.archetype), U" (", cost, U"G)");
+      constructionText = BattleUiText::GetPauseBuildText(slot.slot, BattleUiText::GetLocalizedArchetypeLabel(slot.archetype), cost);
 		break;
 	}
 
 	Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.45 });
 	RoundRect{ panelRect, 14 }.draw(ColorF{ 0.04, 0.06, 0.10, 0.96 });
 	RoundRect{ panelRect, 14 }.drawFrame(2, 0, ColorF{ 0.32, 0.48, 0.82, 0.96 });
-	data.titleFont(U"PAUSED").drawAt(panelRect.center().movedBy(0, -145), Palette::White);
+  data.titleFont(BattleUiText::GetPauseTitle()).drawAt(panelRect.center().movedBy(0, -145), Palette::White);
 
 	for (int32 i = 0; i < labels.size(); ++i)
 	{
@@ -205,7 +206,7 @@ void BattleScene::drawPauseMenu() const
 	}
 	const double constructionY = infoBaseY + (lineStep * productionLines.size());
 	data.smallFont(constructionText).drawAt(Vec2{ panelRect.center().x, constructionY }, Palette::White);
-	data.smallFont(U"Menu: Esc resume / Up-Down select / Enter confirm").drawAt(Vec2{ panelRect.center().x, constructionY + 30.0 }, ColorF{ 0.82, 0.87, 0.94 });
-	data.smallFont(config.hud.escapeHint).drawAt(Vec2{ panelRect.center().x, constructionY + 56.0 }, ColorF{ 0.76, 0.82, 0.90 });
-	data.smallFont(config.hud.controls).drawAt(Vec2{ panelRect.center().x, constructionY + 82.0 }, ColorF{ 0.72, 0.78, 0.86 });
+    data.smallFont(BattleUiText::GetPauseMenuHint()).drawAt(Vec2{ panelRect.center().x, constructionY + 30.0 }, ColorF{ 0.82, 0.87, 0.94 });
+	data.smallFont(BattleUiText::GetEscapeHint(config)).drawAt(Vec2{ panelRect.center().x, constructionY + 56.0 }, ColorF{ 0.76, 0.82, 0.90 });
+	data.smallFont(BattleUiText::GetControls(config)).drawAt(Vec2{ panelRect.center().x, constructionY + 82.0 }, ColorF{ 0.72, 0.78, 0.86 });
 }

@@ -1,5 +1,7 @@
 ﻿#include "BattleCommandUi.h"
 
+#include "BattleUiText.h"
+
 Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, const BattleConfigData& config)
 {
 	const auto turretId = FindSingleSelectedPlayerTurretId(state);
@@ -21,26 +23,26 @@ Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, c
 		const bool alreadyUpgraded = building->turretUpgrade.has_value();
 		const bool hasEnoughGold = (state.playerGold >= definition.cost);
 		const bool isEnabled = (!state.winner) && isUnlocked && !alreadyUpgraded && (definition.cost > 0) && hasEnoughGold;
-		String statusText = U"READY";
+       String statusText = BattleUiText::GetCommandStatusReady();
 		if (state.winner)
 		{
-			statusText = U"BATTLE ENDED";
+           statusText = BattleUiText::GetCommandStatusBattleEnded();
 		}
 		else if (!isUnlocked)
 		{
-			statusText = U"LOCKED";
+         statusText = BattleUiText::GetCommandStatusLocked();
 		}
 		else if (alreadyUpgraded)
 		{
-			statusText = U"UPGRADED";
+           statusText = BattleUiText::GetCommandStatusUpgraded();
 		}
 		else if (definition.cost <= 0)
 		{
-			statusText = U"UNAVAILABLE";
+            statusText = BattleUiText::GetCommandStatusUnavailable();
 		}
 		else if (!hasEnoughGold)
 		{
-			statusText = U"NOT ENOUGH GOLD";
+            statusText = BattleUiText::GetCommandStatusNotEnoughGold();
 		}
 
 		commands << CommandIconEntry{
@@ -51,10 +53,10 @@ Array<CommandIconEntry> CollectTurretUpgradeCommands(const BattleState& state, c
 			definition.cost,
 			isEnabled,
 			statusText,
-			definition.label,
+           BattleUiText::GetLocalizedTurretUpgradeLabel(definition.type),
 			definition.glyph,
-			definition.description,
-			definition.flavorText,
+         BattleUiText::GetLocalizedTurretUpgradeDescription(definition.type),
+			BattleUiText::GetLocalizedTurretUpgradeFlavorText(definition.type),
 			definition.type
 		};
 	}

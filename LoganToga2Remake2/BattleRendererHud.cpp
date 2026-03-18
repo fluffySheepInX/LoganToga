@@ -1,5 +1,6 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+#include "BattleUiText.h"
 #include "BattleTutorialText.h"
 
 #include <unordered_map>
@@ -207,13 +208,13 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 		}
 	}
 
-	const double detailBaseY = 66.0;
+    const double detailBaseY = 66.0;
 	const double hudHeight = 140.0;
- const String runText = state.tutorialActive
+	const String runText = state.tutorialActive
 		? BattleTutorialText::GetModeLabel()
 		: (gameData.runState.isActive
-			? s3d::Format(U"Run: battle ", gameData.runState.currentBattleIndex + 1, U"/", gameData.runState.totalBattles)
-			: U"Run: inactive");
+			? BattleUiText::GetRunBattleLabel(gameData.runState.currentBattleIndex + 1, gameData.runState.totalBattles)
+			: BattleUiText::GetRunInactiveLabel());
 	const auto commandLayout = BuildCommandPanelLayout(state, config);
 	std::unordered_map<int32, const BuildingState*> buildingsByUnitId;
 	buildingsByUnitId.reserve(state.buildings.size());
@@ -223,12 +224,12 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 	}
 	const auto queueTarget = BattleRendererHudInternal::FindQueueDisplayTarget(state, buildingsByUnitId);
 
-	RoundRect{ 16, 16, 480, hudHeight, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
- gameData.uiFont(state.tutorialActive ? BattleTutorialText::GetHudTitle(config) : config.hud.title).draw(28, 26, Palette::White);
-	gameData.smallFont(s3d::Format(U"Resource: ", playerResourceCount, U" pts / +", playerResourceIncome, U" income")).draw(28, detailBaseY, Palette::White);
+ RoundRect{ 16, 16, 480, hudHeight, 8 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.55 });
+	gameData.uiFont(state.tutorialActive ? BattleTutorialText::GetHudTitle(config) : BattleUiText::GetHudTitle(config)).draw(28, 26, Palette::White);
+	gameData.smallFont(BattleUiText::GetResourceSummary(playerResourceCount, playerResourceIncome)).draw(28, detailBaseY, Palette::White);
 	gameData.smallFont(runText).draw(28, detailBaseY + 22.0, Palette::White);
-	gameData.smallFont(s3d::Format(U"Gold: ", state.playerGold)).draw(28, detailBaseY + 44.0, Palette::Gold);
- DrawTutorialPanel(state, config, gameData);
+    gameData.smallFont(BattleUiText::GetGoldLabel(state.playerGold)).draw(28, detailBaseY + 44.0, Palette::Gold);
+	DrawTutorialPanel(state, config, gameData);
 	DrawFormationPanel(state, gameData);
 	DrawEnemyAiDebugPanel(state, config, gameData);
 
@@ -258,17 +259,17 @@ void BattleRenderer::drawHud(const BattleState& state, const BattleConfigData& c
 
 	if (state.winner)
 	{
-		const String label = (*state.winner == Owner::Player) ? U"PLAYER WIN" : U"ENEMY WIN";
-		String winHint = config.hud.winHint;
+       const String label = (*state.winner == Owner::Player) ? BattleUiText::GetPlayerWinLabel() : BattleUiText::GetEnemyWinLabel();
+		String winHint = BattleUiText::GetWinHint(config);
 		if (!state.tutorialActive && gameData.runState.isActive)
 		{
 			if ((*state.winner == Owner::Player) && ((gameData.runState.currentBattleIndex + 1) < gameData.runState.totalBattles))
 			{
-				winHint = U"Enter: choose reward / R: new run";
+             winHint = BattleUiText::GetRunRewardHint();
 			}
 			else
 			{
-				winHint = U"Enter: title / R: new run";
+             winHint = BattleUiText::GetRunTitleHint();
 			}
 		}
 		gameData.titleFont(label).drawAt(Scene::CenterF().movedBy(0, -30), Palette::White);

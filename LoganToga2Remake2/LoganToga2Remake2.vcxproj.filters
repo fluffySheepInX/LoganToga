@@ -145,6 +145,7 @@
     <ClInclude Include="RewardUiLayout.h" />
     <ClInclude Include="RewardEditorScene.h" />
     <ClInclude Include="BattleTutorialText.h" />
+    <ClInclude Include="BattleUiText.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

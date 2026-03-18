@@ -1,5 +1,7 @@
 ﻿#include "BattleRenderer.h"
 
+#include "BattleUiText.h"
+
 void BattleRenderer::drawConstructionPreview(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
 {
 	if (state.pendingRepairTargeting)
@@ -54,7 +56,7 @@ void BattleRenderer::drawConstructionPreview(const BattleState& state, const Bat
 	const Vec2 position = state.buildingPreviewPosition;
 	Circle{ position, definition->radius }.draw(ColorF{ 0.85, 0.9, 1.0, 0.18 });
 	Circle{ position, definition->radius }.drawFrame(2, Palette::Skyblue);
-	gameData.smallFont(s3d::Format(U"Place ", GetArchetypeLabel(*state.pendingConstructionArchetype))).drawAt(position.movedBy(0, -definition->radius - 16), Palette::Skyblue);
+ gameData.smallFont(BattleUiText::GetWorldPlaceLabel(*state.pendingConstructionArchetype)).drawAt(position.movedBy(0, -definition->radius - 16), Palette::Skyblue);
 }
 
 void BattleRenderer::drawPendingConstructionOrders(const BattleState& state, const BattleConfigData& config, const GameData& gameData) const
@@ -74,7 +76,7 @@ void BattleRenderer::drawPendingConstructionOrders(const BattleState& state, con
 		Circle{ order.position, definition->radius }.draw(ColorF{ accentColor, 0.10 });
 		Circle{ order.position, definition->radius }.drawFrame(2.5, accentColor);
 		RectF{ Arg::center(order.position), definition->radius * 2.4, definition->radius * 2.4 }.drawFrame(1.5, ColorF{ accentColor, 0.42 });
-		gameData.smallFont(s3d::Format(U"BUILD ", GetArchetypeLabel(order.archetype))).drawAt(order.position.movedBy(0, -definition->radius - 16), Palette::Yellow);
+        gameData.smallFont(BattleUiText::GetWorldBuildLabel(order.archetype)).drawAt(order.position.movedBy(0, -definition->radius - 16), Palette::Yellow);
 	}
 }
 
@@ -120,7 +122,7 @@ void BattleRenderer::drawBuildings(const BattleState& state, const GameData& gam
 			const RectF barBack{ unit->position.x - 30, unit->position.y + unit->radius + 16, 60, 6 };
 			barBack.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
 			RectF{ barBack.pos, barBack.w * Clamp(progress, 0.0, 1.0), barBack.h }.draw(ColorF{ 0.58, 0.77, 1.0 });
-			gameData.smallFont(U"Constructing").drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
+           gameData.smallFont(BattleUiText::GetWorldConstructing()).drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
 			continue;
 		}
 
@@ -136,6 +138,6 @@ void BattleRenderer::drawBuildings(const BattleState& state, const GameData& gam
 		const RectF barBack{ unit->position.x - 26, unit->position.y + unit->radius + 16, 52, 6 };
 		barBack.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
 		RectF{ barBack.pos, barBack.w * Clamp(progress, 0.0, 1.0), barBack.h }.draw(ColorF{ 0.95, 0.82, 0.28 });
-		gameData.smallFont(s3d::Format(GetArchetypeLabel(currentItem.archetype), U" x", building.productionQueue.size())).drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
+      gameData.smallFont(s3d::Format(BattleUiText::GetLocalizedArchetypeLabel(currentItem.archetype), U" x", building.productionQueue.size())).drawAt(unit->position.movedBy(0, unit->radius + 30), Palette::White);
 	}
 }

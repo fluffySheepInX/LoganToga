@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererHudInternal.h"
 
+#include "BattleUiText.h"
+
 #include <unordered_map>
 
 namespace BattleRendererHudInternal
@@ -75,21 +77,21 @@ namespace BattleRendererHudInternal
 
 		panelRect.draw(ColorF{ 0.02, 0.04, 0.08, 0.82 });
 		panelRect.drawFrame(2.0, ColorF{ 0.34, 0.52, 0.86, 0.95 });
-		gameData.uiFont(U"QUEUE").draw(panelRect.x + 14.0, panelRect.y + 6.0, Palette::White);
-		gameData.smallFont(GetArchetypeLabel(target.unit->archetype)).draw(panelRect.x + 112.0, panelRect.y + 11.0, ColorF{ 0.76, 0.82, 0.92 });
+      gameData.uiFont(BattleUiText::GetQueueTitle()).draw(panelRect.x + 14.0, panelRect.y + 6.0, Palette::White);
+      gameData.smallFont(BattleUiText::GetLocalizedArchetypeLabel(target.unit->archetype)).draw(panelRect.x + 112.0, panelRect.y + 11.0, ColorF{ 0.76, 0.82, 0.92 });
 
 		DrawQueueIcon(primaryIconRect, primaryArchetype, gameData);
 
-		String titleText = U"Idle";
-		String subtitleText = U"No queued units";
+     String titleText = BattleUiText::GetQueueIdle();
+		String subtitleText = BattleUiText::GetQueueNoQueuedUnits();
 		double progress = 0.0;
 		String progressText;
 		ColorF progressColor{ 0.30, 0.72, 0.98 };
 
 		if (isConstructing)
 		{
-			titleText = U"Constructing";
-			subtitleText = GetArchetypeLabel(target.unit->archetype);
+            titleText = BattleUiText::GetQueueConstructing();
+          subtitleText = BattleUiText::GetLocalizedArchetypeLabel(target.unit->archetype);
 			if (target.building->constructionTotal > 0.0)
 			{
 				progress = Clamp(1.0 - (target.building->constructionRemaining / target.building->constructionTotal), 0.0, 1.0);
@@ -100,9 +102,9 @@ namespace BattleRendererHudInternal
 		else if (hasQueuedUnit)
 		{
 			const auto& currentItem = target.building->productionQueue.front();
-			titleText = GetArchetypeLabel(currentItem.archetype)
+          titleText = BattleUiText::GetLocalizedArchetypeLabel(currentItem.archetype)
 				+ ((currentItem.batchCount >= 2) ? s3d::Format(U" x", currentItem.batchCount) : U"");
-			subtitleText = s3d::Format(U"@ ", GetArchetypeLabel(target.unit->archetype), U" / ", target.building->productionQueue.size(), U" in queue");
+          subtitleText = BattleUiText::GetQueueSubtitle(BattleUiText::GetLocalizedArchetypeLabel(target.unit->archetype), target.building->productionQueue.size());
 			if (currentItem.totalTime > 0.0)
 			{
 				progress = Clamp(1.0 - (currentItem.remainingTime / currentItem.totalTime), 0.0, 1.0);
@@ -111,7 +113,7 @@ namespace BattleRendererHudInternal
 		}
 		else
 		{
-			subtitleText = s3d::Format(U"Select ", GetArchetypeLabel(target.unit->archetype), U" and queue a unit");
+          subtitleText = BattleUiText::GetQueueSelectHint(BattleUiText::GetLocalizedArchetypeLabel(target.unit->archetype));
 		}
 
 		gameData.smallFont(titleText).draw(detailRect.x, detailRect.y + 4.0, Palette::White);

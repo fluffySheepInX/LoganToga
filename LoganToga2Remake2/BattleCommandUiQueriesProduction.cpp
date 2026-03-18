@@ -1,5 +1,7 @@
 ﻿#include "BattleCommandUi.h"
 
+#include "BattleUiText.h"
+
 Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, const BattleConfigData& config)
 {
 	if (state.tutorialActive)
@@ -47,8 +49,8 @@ Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, cons
 		const int32 cost = (slot.cost > 0)
 			? slot.cost
 			: (definition ? definition->cost : 0);
-		const String descriptionText = definition ? definition->description : U"";
-		const String flavorText = definition ? definition->flavorText : U"";
+      const String descriptionText = BattleUiText::GetLocalizedArchetypeDescription(slot.archetype);
+		const String flavorText = BattleUiText::GetLocalizedArchetypeFlavorText(slot.archetype);
 		bool hasProducer = false;
 		for (const auto& building : state.buildings)
 		{
@@ -62,22 +64,22 @@ Array<CommandIconEntry> CollectProductionCommands(const BattleState& state, cons
 
 		const bool hasEnoughGold = (state.playerGold >= cost);
 		const bool isEnabled = (!state.winner) && hasProducer && (cost > 0) && hasEnoughGold;
-		String statusText = U"READY";
+       String statusText = BattleUiText::GetCommandStatusReady();
 		if (state.winner)
 		{
-			statusText = U"BATTLE ENDED";
+           statusText = BattleUiText::GetCommandStatusBattleEnded();
 		}
 		else if (!hasProducer)
 		{
-			statusText = U"PRODUCER OFFLINE";
+           statusText = BattleUiText::GetCommandStatusProducerOffline();
 		}
 		else if (cost <= 0)
 		{
-			statusText = U"UNAVAILABLE";
+            statusText = BattleUiText::GetCommandStatusUnavailable();
 		}
 		else if (!hasEnoughGold)
 		{
-			statusText = U"NOT ENOUGH GOLD";
+            statusText = BattleUiText::GetCommandStatusNotEnoughGold();
 		}
 
 		commands << CommandIconEntry{

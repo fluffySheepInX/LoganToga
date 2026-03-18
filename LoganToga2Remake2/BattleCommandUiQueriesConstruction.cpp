@@ -1,5 +1,7 @@
 ﻿#include "BattleCommandUi.h"
 
+#include "BattleUiText.h"
+
 namespace
 {
 	[[nodiscard]] bool HasSelectedPlayerArchetype(const BattleState& state, const UnitArchetype archetype)
@@ -43,22 +45,22 @@ Array<CommandIconEntry> CollectConstructionCommands(const BattleState& state, co
 
 		const auto* definition = FindUnitDefinition(config, slot.archetype);
 		const int32 cost = definition ? definition->cost : 0;
-		const String descriptionText = definition ? definition->description : U"";
-		const String flavorText = definition ? definition->flavorText : U"";
+      const String descriptionText = BattleUiText::GetLocalizedArchetypeDescription(slot.archetype);
+		const String flavorText = BattleUiText::GetLocalizedArchetypeFlavorText(slot.archetype);
 		const bool hasEnoughGold = (state.playerGold >= cost);
 		const bool isEnabled = (!state.winner) && (cost > 0) && hasEnoughGold;
-		String statusText = U"READY";
+       String statusText = BattleUiText::GetCommandStatusReady();
 		if (state.winner)
 		{
-			statusText = U"BATTLE ENDED";
+           statusText = BattleUiText::GetCommandStatusBattleEnded();
 		}
 		else if (cost <= 0)
 		{
-			statusText = U"UNAVAILABLE";
+            statusText = BattleUiText::GetCommandStatusUnavailable();
 		}
 		else if (!hasEnoughGold)
 		{
-			statusText = U"NOT ENOUGH GOLD";
+            statusText = BattleUiText::GetCommandStatusNotEnoughGold();
 		}
 
 		commands << CommandIconEntry{
@@ -117,11 +119,11 @@ Array<CommandIconEntry> CollectRepairCommands(const BattleState& state, const Ba
 			UnitArchetype::Turret,
 			0,
 			!state.winner && hasDamagedRepairTarget,
-			state.winner ? U"BATTLE ENDED" : (!hasConstructedRepairTarget ? U"NO TARGET" : (hasDamagedRepairTarget ? U"READY" : U"FULL HP")),
-			U"REPAIR",
+           state.winner ? BattleUiText::GetCommandStatusBattleEnded() : (!hasConstructedRepairTarget ? BattleUiText::GetCommandStatusNoTarget() : (hasDamagedRepairTarget ? BattleUiText::GetCommandStatusReady() : BattleUiText::GetCommandStatusFullHp())),
+			BattleUiText::GetRepairCommandLabel(),
 			U"R",
-			U"After pressing this, click a damaged turret or base to repair it.",
-			U"先に命令してから、傷んだ砲台か拠点を選ぶ。",
+           BattleUiText::GetRepairCommandDescription(),
+			BattleUiText::GetRepairCommandFlavorText(),
 			none
 		}
 	};
@@ -157,11 +159,11 @@ Array<CommandIconEntry> CollectDetonateCommands(const BattleState& state, const 
 			UnitArchetype::Goliath,
 			0,
 			!state.winner && hasReadyGoliath,
-			state.winner ? U"BATTLE ENDED" : (hasReadyGoliath ? U"READY" : U"ARMED"),
-			U"DETONATE",
+           state.winner ? BattleUiText::GetCommandStatusBattleEnded() : (hasReadyGoliath ? BattleUiText::GetCommandStatusReady() : BattleUiText::GetCommandStatusArmed()),
+			BattleUiText::GetDetonateCommandLabel(),
 			U"!",
-			U"Self-destruct selected Goliaths after a short fuse.",
-			U"近づけて押すだけ。落とされても周囲を巻き込む。",
+         BattleUiText::GetDetonateCommandDescription(),
+			BattleUiText::GetDetonateCommandFlavorText(),
 			none
 		}
 	};

@@ -1,20 +1,22 @@
 ﻿#include "BattleCommandUi.h"
 
+#include "BattleUiText.h"
+
 String GetCommandPanelTitle(const BattleState& state)
 {
 	const Array<UnitArchetype> selectedBuildings = CollectSelectedBuildingArchetypes(state);
 	const bool hasSelectedWorker = HasSelectedWorker(state);
 	if (hasSelectedWorker && selectedBuildings.isEmpty())
 	{
-		return U"WORKER COMMANDS";
+      return BattleUiText::GetCommandPanelWorkerTitle();
 	}
 
 	if (!hasSelectedWorker && (selectedBuildings.size() == 1))
 	{
-		return GetArchetypeLabel(selectedBuildings.front()) + U" COMMANDS";
+       return BattleUiText::GetCommandPanelArchetypeTitle(BattleUiText::GetLocalizedArchetypeLabel(selectedBuildings.front()));
 	}
 
-	return U"SELECTION COMMANDS";
+   return BattleUiText::GetCommandPanelSelectionTitle();
 }
 
 String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
@@ -36,30 +38,30 @@ String GetCommandSectionLabel(const Array<CommandIconEntry>& commands)
 
 	if ((static_cast<int32>(hasProduction) + static_cast<int32>(hasConstruction) + static_cast<int32>(hasUpgrade) + static_cast<int32>(hasRepair) + static_cast<int32>(hasDetonate)) >= 2)
 	{
-		return U"COMMANDS";
+     return BattleUiText::GetCommandSectionCommands();
 	}
 
 	if (hasUpgrade)
 	{
-		return U"UPGRADES";
+     return BattleUiText::GetCommandSectionUpgrades();
 	}
 
 	if (hasRepair)
 	{
-		return U"REPAIR";
+       return BattleUiText::GetCommandSectionRepair();
 	}
 
 	if (hasDetonate)
 	{
-		return U"SPECIAL";
+      return BattleUiText::GetCommandSectionSpecial();
 	}
 
 	if (hasConstruction)
 	{
-		return U"CONSTRUCTION";
+     return BattleUiText::GetCommandSectionConstruction();
 	}
 
-	return U"PRODUCTION";
+   return BattleUiText::GetCommandSectionProduction();
 }
 
 Optional<CommandPanelLayout> BuildCommandPanelLayout(const BattleState& state, const BattleConfigData& config)

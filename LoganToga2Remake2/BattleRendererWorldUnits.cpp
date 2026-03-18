@@ -1,5 +1,7 @@
 ﻿#include "BattleRendererWorldMeleeHelpers.h"
 
+#include "BattleUiText.h"
+
 #include <cmath>
 #include <unordered_map>
 
@@ -288,6 +290,6 @@ void BattleRenderer::drawUnits(const BattleState& state, const GameData& gameDat
 		barBack.draw(ColorF{ 0.1 });
 		RectF{ barBack.pos, 36 * hpRate, barBack.h }.draw(ColorF{ 0.3, 0.95, 0.45 });
 
-		gameData.smallFont(GetArchetypeLabel(unit.archetype)).drawAt(renderPosition.movedBy(0, unit.radius + 10), Palette::White);
+      gameData.smallFont(BattleUiText::GetLocalizedArchetypeLabel(unit.archetype)).drawAt(renderPosition.movedBy(0, unit.radius + 10), Palette::White);
 	}
 }

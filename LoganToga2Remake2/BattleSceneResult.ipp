@@ -1,4 +1,5 @@
-﻿#include "BattleTutorialText.h"
+﻿#include "BattleUiText.h"
+#include "BattleTutorialText.h"
 
 namespace
 {
@@ -41,40 +42,39 @@ namespace
 		const bool hasNextBattle = playerWon && ((runState.currentBattleIndex + 1) < runState.totalBattles);
 		const bool hasBonusRoom = playerWon && !hasNextBattle && HasAvailableBonusRoom(data);
 		BattleResultOverlayContent content;
-		content.title = playerWon ? (hasNextBattle ? U"Victory" : U"Run Cleared") : U"Defeat";
-		content.subtitle = s3d::Format(
-			U"Battle ",
+      content.title = playerWon
+			? (hasNextBattle ? BattleUiText::GetResultVictoryTitle() : BattleUiText::GetResultRunClearedTitle())
+			: BattleUiText::GetResultDefeatTitle();
+		content.subtitle = BattleUiText::GetResultSubtitle(
 			runState.currentBattleIndex + 1,
-			U"/",
 			runState.totalBattles,
-			U"   Cards selected: ",
 			runState.selectedCardIds.size());
-		content.retryAction = U"R: Start New Run";
+		content.retryAction = BattleUiText::GetResultRetryAction();
 		content.titleColor = playerWon ? ColorF{ 1.0, 0.92, 0.55 } : ColorF{ 1.0, 0.66, 0.66 };
 
 		if (!playerWon)
 		{
-			content.enterAction = U"Enter: Return to Title";
-			content.footer = U"This run has ended";
+            content.enterAction = BattleUiText::GetResultEnterReturnTitle();
+			content.footer = BattleUiText::GetResultFooterRunEnded();
 			return content;
 		}
 
 		if (hasNextBattle)
 		{
-			content.enterAction = U"Enter: Choose Reward";
-			content.footer = U"Choose 1 reward card before the next battle";
+          content.enterAction = BattleUiText::GetResultEnterChooseReward();
+			content.footer = BattleUiText::GetResultFooterChooseReward();
 			return content;
 		}
 
 		if (hasBonusRoom)
 		{
-			content.enterAction = U"Enter: Bonus Room";
-			content.footer = U"Choose 1 bonus room after clearing the run";
+         content.enterAction = BattleUiText::GetResultEnterBonusRoom();
+			content.footer = BattleUiText::GetResultFooterBonusRoom();
 			return content;
 		}
 
-		content.enterAction = U"Enter: Return to Title";
-		content.footer = U"All bonus rooms already viewed. Run complete";
+        content.enterAction = BattleUiText::GetResultEnterReturnTitle();
+		content.footer = BattleUiText::GetResultFooterRunComplete();
 		return content;
 	}
 
