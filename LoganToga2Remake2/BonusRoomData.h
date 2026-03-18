@@ -1,13 +1,14 @@
 ﻿#pragma once
 
+#include "Localization.h"
 #include "Remake2Common.h"
 
 struct BonusRoomDefinition
 {
 	String id;
-	String title;
-	String teaser;
-	Array<String> pages;
+   LocalizedText title;
+	LocalizedText teaser;
+	Array<LocalizedText> pages;
 };
 
 enum class BonusRoomSceneMode
@@ -124,11 +125,38 @@ inline void ResetBonusRoomSceneState(BonusRoomProgress& progress)
 	{
 		BonusRoomDefinition room;
 		room.id = table[U"id"].get<String>();
-		room.title = table[U"title"].get<String>();
-		room.teaser = table[U"teaser"].get<String>();
-		for (const auto& page : table[U"pages"].arrayView())
+		const String keyPrefix = table[U"key_prefix"].getOr<String>(U"bonus_room.rooms." + room.id);
+		const String titleFallback = table[U"title"].getOr<String>(room.id);
+		const String teaserFallback = table[U"teaser"].getOr<String>(room.id);
+		room.title = LocalizedText{ table[U"title_key"].getOr<String>(keyPrefix + U".title"), titleFallback, titleFallback };
+		room.teaser = LocalizedText{ table[U"teaser_key"].getOr<String>(keyPrefix + U".teaser"), teaserFallback, teaserFallback };
+
+		if (table[U"page_keys"].isArray())
 		{
-			room.pages << page.get<String>();
+			for (const auto& pageKey : table[U"page_keys"].arrayView())
+			{
+				const String pageKeyStr = pageKey.get<String>();
+				room.pages << LocalizedText{ pageKeyStr, pageKeyStr, pageKeyStr };
+			}
+		}
+		else if (table[U"pages"].isArray())
+		{
+           int32 pageIndex = 0;
+			for (const auto& page : table[U"pages"].arrayView())
+			{
+				const String pageFallback = page.get<String>();
+				room.pages << LocalizedText{ (keyPrefix + U".page" + Format(pageIndex + 1)), pageFallback, pageFallback };
+				++pageIndex;
+			}
+		}
+		else
+		{
+			const int32 pageCount = table[U"page_count"].get<int32>();
+			for (int32 pageIndex = 0; pageIndex < pageCount; ++pageIndex)
+			{
+				const String pageKey = keyPrefix + U".page" + Format(pageIndex + 1);
+				room.pages << LocalizedText{ pageKey, pageKey, pageKey };
+			}
 		}
 		if (!room.pages.isEmpty())
 		{

@@ -57,6 +57,8 @@ struct TitleUiLayout
 	RectF balanceEditButtonRect{ 1170, 246, 128, 30 };
 	RectF transitionPresetButtonRect{ 1106, 284, 192, 30 };
 	RectF titleUiEditorButtonRect{ 1106, 322, 192, 30 };
+  RectF rewardEditorButtonRect{ 1106, 360, 192, 30 };
+	RectF bonusRoomEditorButtonRect{ 1106, 398, 192, 30 };
 };
 
 namespace TitleUi
@@ -177,6 +179,8 @@ namespace TitleUi
 		repairButton(layout.balanceEditButtonRect, defaults.balanceEditButtonRect);
 		repairButton(layout.transitionPresetButtonRect, defaults.transitionPresetButtonRect);
 		repairButton(layout.titleUiEditorButtonRect, defaults.titleUiEditorButtonRect);
+       repairButton(layout.rewardEditorButtonRect, defaults.rewardEditorButtonRect);
+		repairButton(layout.bonusRoomEditorButtonRect, defaults.bonusRoomEditorButtonRect);
 	}
 
 	inline void TryLoadRectSection(const TOMLReader& toml, const String& section, RectF& value)
@@ -250,6 +254,8 @@ namespace TitleUi
 		AppendRectSection(content, U"balanceEditButton", layout.balanceEditButtonRect);
 		AppendRectSection(content, U"transitionPresetButton", layout.transitionPresetButtonRect);
 		AppendRectSection(content, U"titleUiEditorButton", layout.titleUiEditorButtonRect);
+     AppendRectSection(content, U"rewardEditorButton", layout.rewardEditorButtonRect);
+		AppendRectSection(content, U"bonusRoomEditorButton", layout.bonusRoomEditorButtonRect);
 		return content;
 	}
 
@@ -327,6 +333,8 @@ namespace TitleUi
 		TryLoadRectSection(toml, U"balanceEditButton", layout.balanceEditButtonRect);
 		TryLoadRectSection(toml, U"transitionPresetButton", layout.transitionPresetButtonRect);
 		TryLoadRectSection(toml, U"titleUiEditorButton", layout.titleUiEditorButtonRect);
+        TryLoadRectSection(toml, U"rewardEditorButton", layout.rewardEditorButtonRect);
+		TryLoadRectSection(toml, U"bonusRoomEditorButton", layout.bonusRoomEditorButtonRect);
 		RepairTitleUiLayout(layout);
 		return layout;
 	}

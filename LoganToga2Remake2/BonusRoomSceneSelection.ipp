@@ -52,10 +52,10 @@ void BonusRoomScene::drawSelection() const
 	const auto& data = getData();
 	const auto& progress = data.bonusRoomProgress;
 	const MenuButtonStyle buttonStyle = GetBonusButtonStyle();
-	data.titleFont(U"Bonus Room").drawAt(Scene::CenterF().movedBy(0, -250), Palette::White);
-	data.uiFont(U"Choose 1 room after clearing the run").drawAt(Scene::CenterF().movedBy(0, -205), ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Viewed rooms are removed from future clear rewards").drawAt(Scene::CenterF().movedBy(0, -172), Palette::Yellow);
-	DrawMenuButton(GetBackButtonRect(), U"Back to Title", data.smallFont, false, buttonStyle);
+    data.titleFont(Localization::GetText(U"bonus_room.selection.title", U"Bonus Room", U"Bonus Room")).drawAt(Scene::CenterF().movedBy(0, -250), Palette::White);
+	data.uiFont(Localization::GetText(U"bonus_room.selection.subtitle", U"ラン制覇後に 1 つ選択", U"Choose 1 room after clearing the run")).drawAt(Scene::CenterF().movedBy(0, -205), ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"bonus_room.selection.hint", U"閲覧した部屋は次回以降のクリア報酬候補から外れます", U"Viewed rooms are removed from future clear rewards")).drawAt(Scene::CenterF().movedBy(0, -172), Palette::Yellow);
+	DrawMenuButton(GetBackButtonRect(), Localization::GetText(U"bonus_room.common.back_to_title", U"タイトルへ戻る", U"Back to Title"), data.smallFont, false, buttonStyle);
 
 	for (int32 index = 0; index < static_cast<int32>(progress.pendingRoomIds.size()); ++index)
 	{
@@ -81,6 +81,6 @@ void BonusRoomScene::drawSelection() const
 		RectF{ drawRect.x, drawRect.y, drawRect.w, 14 }.draw(ColorF{ 0.82, 0.72, 0.38 });
 		data.uiFont(room->title).draw(drawRect.x + 18, drawRect.y + 28, Palette::White);
 		data.smallFont(room->teaser).draw(drawRect.x + 18, drawRect.y + 84, ColorF{ 0.90, 0.93, 0.98 });
-		data.smallFont(s3d::Format(U"Press ", index + 1)).draw(drawRect.x + 18, drawRect.bottomY() - 34, Palette::Yellow);
+      data.smallFont(Localization::FormatText(U"bonus_room.selection.press_slot", U"{0}で選択", U"Press {0}", index + 1)).draw(drawRect.x + 18, drawRect.bottomY() - 34, Palette::Yellow);
 	}
 }

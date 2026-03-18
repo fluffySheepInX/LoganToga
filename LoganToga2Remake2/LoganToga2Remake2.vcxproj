@@ -145,6 +145,9 @@
     <ClCompile Include="BattleSessionQuery.cpp" />
     <ClCompile Include="BattleSessionTutorial.cpp" />
     <ClCompile Include="BattleSessionWorld.cpp" />
+    <ClCompile Include="BonusRoomEditorScene.cpp" />
+    <ClCompile Include="BonusRoomEditorScene.Draw.cpp" />
+    <ClCompile Include="BonusRoomEditorScene.Input.cpp" />
     <ClCompile Include="BonusRoomScene.cpp" />
     <ClCompile Include="ContinueRunSave.cpp" />
     <ClCompile Include="ContinueRunSave.Location.cpp" />
@@ -173,6 +176,8 @@
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="TitleScene.Draw.cpp" />
+    <ClCompile Include="TitleScene.Input.cpp" />
+    <ClCompile Include="TitleScene.Layout.cpp" />
     <ClCompile Include="TitleUiEditorScene.cpp" />
     <ClCompile Include="TitleUiEditorScene.Draw.cpp" />
     <ClCompile Include="TitleUiEditorScene.Input.cpp" />
@@ -451,6 +456,7 @@
     <ClInclude Include="BattleTypes.h" />
     <ClInclude Include="BattleUiText.h" />
     <ClInclude Include="BonusRoomData.h" />
+    <ClInclude Include="BonusRoomEditorScene.h" />
     <ClInclude Include="BonusRoomScene.h" />
     <ClInclude Include="BonusRoomSceneGallery.ipp" />
     <ClInclude Include="BonusRoomSceneSelection.ipp" />

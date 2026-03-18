@@ -1,0 +1,428 @@
+﻿[_meta]
+code = "en"
+displayName = "English"
+order = 0
+
+[title]
+title = "LoganToga2Remake2"
+subtitle = "RTS run prototype"
+viewed_bonus_rooms_prefix = "・Viewed bonus rooms: "
+viewed_bonus_rooms_preview = "・Viewed bonus rooms: 2 / 6"
+continue_enter_hint = "Press Enter to continue the saved run"
+start_enter_hint = "Press Enter to start a new run"
+continue_button = "Continue"
+bonus_rooms_hint = "Bonus Rooms can be revisited from this menu"
+bonus_rooms_button = "Bonus Rooms"
+tutorial_button = "Tutorial"
+quick_guide_button = "Quick Guide"
+new_run_button = "New Run"
+start_run_button = "Start Run"
+quick_guide_hint = ""
+resolution_label = "Resolution"
+save_location_label = "Save Location"
+save_location_button = "Local ⇔ AppData"
+data_management_label = "Data"
+clear_continue_button = "Delete Save"
+clear_settings_button = "Reset Settings"
+exit_button = "Exit"
+data_management_hint = "Delete only current storage / settings return to defaults"
+debug_unlock_hint = "DEBUG: Start with all unlockable units/buildings"
+debug_full_unlock_button = "Debug Full Unlock"
+map_edit_button = "Map Edit"
+balance_edit_button = "Balance Edit"
+transition_preset_prefix = "Fade: "
+title_ui_editor_button = "Title UI Editor"
+reward_editor_button = "Reward Editor"
+bonus_room_editor_button = "Bonus Room Editor"
+quick_guide_title = "Quick Guide"
+quick_guide_subtitle = "Learn just this first. Check Tutorial for the full explanation."
+quick_guide_flow = "Flow: Select → right click to act → build and produce to grow stronger → upgrade after victory"
+quick_guide_tutorial_button = "Open Tutorial"
+quick_guide_esc_hint = "You can also close with Esc"
+continue_preview_title = "CONTINUE"
+continue_preview_headline = "Battle 2/5"
+continue_preview_detail = "Resume from battle start checkpoint"
+continue_preview_cards_prefix = "Cards selected: "
+data_clear_question = "Reset the settings file?"
+data_clear_body = "Resolution, fullscreen, and volume return to defaults"
+data_clear_continue_question = "Delete the continue save?"
+data_clear_continue_body = "Delete the continue data in the current save location"
+data_clear_immediate_hint = "This change is reflected in the title menu immediately"
+
+[title.summary]
+line1 = "・3-5 battles per run"
+line2 = "・Choose 1 of 3 reward cards after each victory"
+line3 = "・Lose once and the run ends"
+
+[common]
+current_prefix = "Current: "
+resolution_small = "Small"
+resolution_medium = "Medium"
+resolution_large = "Large"
+close_button = "Close"
+dialog_enter_yes_no_hint = "Enter: Yes / Esc: No"
+exit_question = "Exit the game?"
+yes = "Yes"
+no = "No"
+
+[title.quick_guide]
+line1 = "1. Left click to select units or buildings"
+line2 = "2. Shift + left click to add to selection"
+line3 = "3. Right click to move or attack with one unit,"
+line4 = "   right drag to target multiple units, then right drag again to move the squad"
+line5 = "4. Use the bottom command panel for production / building / upgrades"
+line6 = "5. Press Esc to pause. Stop first if you get overwhelmed"
+line7 = "6. After victory, pick 1 reward card and move to the next battle"
+line8 = "7. Defeat ends the run. Retry from the title screen"
+
+[title.continue_preview]
+reward_headline = "Reward after battle {0}/{1}"
+bonus_room_headline = "Bonus Room after clear"
+battle_headline = "Battle {0}/{1}"
+reward_detail = "Reward choices: {0}"
+bonus_room_cleared = "Run cleared"
+bonus_room_available = "Clear reward available"
+battle_detail = "Resume from battle start checkpoint"
+
+[startup_limit]
+expired_title = "Startup period ended"
+expired_body = "This build can no longer start because {0} days have passed since first launch."
+expired_hint = "Press Esc or close the window to exit"
+
+[reward_screen]
+title = "Choose Reward"
+subtitle = "Battle {0} clear / choose 1 card"
+controls_hint = "Click a card or press 1-3"
+acquired_hint = "Reward acquired... preparing next battle"
+press_slot = "Press {0}"
+acquired_title = "Reward Acquired"
+
+[reward.card.rarity]
+common = "COMMON"
+rare = "RARE"
+epic = "EPIC"
+
+[reward_editor]
+title = "Reward Screen Editor"
+subtitle = "Preview reward card choices anytime"
+panel_title = "Reward UI Editor"
+unsaved_changes = "Unsaved changes"
+saved_state = "Layout saved"
+save_layout_button = "Save Layout"
+reload_layout_button = "Reload Layout"
+reset_layout_button = "Reset Layout"
+reroll_button = "Reroll"
+reset_preview_button = "Reset Preview"
+reset_button = "Reset Picks"
+back_button = "Back to Title"
+element_list_title = "Editable Elements"
+editor_hint = "Select an element on the left and drag it in the preview"
+grid_hint = "8px grid shown / dragging snaps to cells"
+preview_battle = "Battle {0}/{1} reward preview"
+controls_hint = "Click a card or press 1-3 / R: reroll / C: reset / Esc: back"
+selected_cards = "Selected cards: {0}"
+no_cards = "No reward cards available for preview"
+press_slot = "Press {0}"
+reward_acquired = "Applying preview reward"
+status_saved_layout = "Saved reward screen layout"
+status_save_failed = "Failed to save reward screen layout"
+status_reloaded_layout = "Reloaded reward screen layout"
+status_reset_layout = "Reset reward screen layout to defaults"
+status_reset_preview = "Reset preview state"
+status_dragging = "Moving selected element..."
+status_rerolled = "Rerolled reward choices"
+status_reset = "Reset preview state"
+status_applied = "Applied reward choice to preview"
+
+[bonus_room.selection]
+title = "Bonus Room"
+subtitle = "Choose 1 room after clearing the run"
+hint = "Viewed rooms are removed from future clear rewards"
+press_slot = "Press {0}"
+
+[bonus_room.gallery]
+title = "Bonus Room Gallery"
+subtitle = "Revisit viewed rooms from the title menu"
+viewed_count = "Viewed {0} / {1} rooms"
+
+[bonus_room.common]
+back_to_title = "Back to Title"
+
+[bonus_room.viewer]
+page = "Page {0} / {1}"
+prev = "Prev"
+back = "Back"
+skip = "Skip"
+next = "Next"
+finish = "Finish"
+close = "Close"
+
+[bonus_room_editor]
+title = "Bonus Room Editor"
+subtitle = "Preview Selection / Gallery / Viewer states"
+mode_selection = "Selection"
+mode_gallery = "Gallery"
+mode_viewer = "Viewer"
+mark_viewed_button = "Mark Viewed"
+unmark_viewed_button = "Unmark Viewed"
+mark_all_viewed_button = "Mark All Viewed"
+reset_viewed_button = "Reset Viewed"
+back_button = "Back to Title"
+viewed_count = "Viewed {0} / {1}"
+rooms_title = "Rooms"
+no_rooms = "No bonus rooms available"
+status_viewed = "Status: viewed"
+status_unviewed = "Status: unviewed"
+page = "Page {0} / {1}"
+prev_button = "Prev"
+next_button = "Next"
+selection_empty = "No unviewed selection candidates"
+gallery_empty = "No viewed rooms available"
+controls_hint_selection = "Click a card or press 1-3 to open the Viewer preview"
+controls_hint_gallery = "Click a row to open the Viewer preview"
+controls_hint_viewer = "Use Left/Right or Enter to change pages / Esc returns to the previous preview"
+
+[bonus_room.rooms.bonus_room_1]
+title = "Bonus Room 1 / Soldier Direction"
+teaser = "On soldiers that feel weak but not frustrating"
+page1 = "The soldiers in this prototype are designed less around carrying fights alone and more around being easy to deploy to form a frontline."
+page2 = "RTS games become busy very quickly if the required actions pile up, so even if the unit is somewhat weak, I prefer one that responds cleanly to orders and has an obvious role."
+page3 = "The result is a baseline soldier that is not overpowered, but also rarely feels bad to produce."
+
+[bonus_room.rooms.bonus_room_2]
+title = "Bonus Room 2 / Run Format Prototype"
+teaser = "Why each battle is kept short"
+page1 = "In Remake2, I am trying a run format built from multiple short battles instead of one long match."
+page2 = "When the choices expand a little after each battle, it is easier to feel the build evolving and easier to jump back in for another attempt."
+page3 = "The bonus rooms follow that same idea and act as a small post-clear reward that lets you take a brief detour."
+
+[bonus_room.rooms.bonus_room_3]
+title = "Bonus Room 3 / Screen Readability"
+teaser = "Balancing information density and readability"
+page1 = "Because the battlefield contains a lot of information, I prioritize readability over spectacle so it stays clear what is happening and where."
+page2 = "Units, structures, and effects are shaped and colored to make their roles easier to distinguish, even when many elements overlap."
+page3 = "As a small behind-the-scenes note, I often spend more time improving how easy things are to track than adding new visual flair."
+
+[bonus_room.rooms.bonus_room_4]
+title = "Bonus Room 4 / Scrapped Notes"
+teaser = "A few ideas that were not adopted"
+page1 = "Early concepts also considered giving each soldier more detailed unique actions."
+page2 = "That direction made the game feel too busy too quickly, and at this prototype stage it looked likely to hurt clarity, so I set it aside."
+page3 = "If I later find a way to add fun without adding extra actions, parts of those ideas may return in another form."
+
+[bonus_room.rooms.bonus_room_5]
+title = "Bonus Room 5 / Tempo Tuning"
+teaser = "On reducing the feeling of waiting"
+page1 = "When tuning tempo, I care less about raw power and more about whether the player is made to feel like they are waiting around."
+page2 = "If production, movement, combat, or reward selection drags too much, the whole game starts to feel heavier."
+page3 = "That is why even in number tuning, I prioritize a flow that keeps the game moving over difficulty for its own sake."
+
+[chrome]
+language_prefix = "Lang: "
+language_hint_bubble = "Language / 言語"
+audio_button = "Volume"
+windowed_button = "Window"
+fullscreen_button = "Fullscreen"
+master_volume = "Master"
+
+[tutorial.hud]
+title = "LoganToga2 Tutorial"
+
+[tutorial]
+mode_label = "Mode: tutorial"
+enemy_arrival = "Enemy arrival: {0}s"
+
+[tutorial.panel]
+title = "TUTORIAL"
+
+[tutorial.phase]
+move = "STEP 1"
+build = "STEP 2"
+prepare = "WARNING"
+produce = "STEP 3"
+defend = "STEP 4"
+completed = "DONE"
+none = "TUTORIAL"
+
+[tutorial.objective]
+move = "Step 1: Select the Worker and move it to the forward area."
+build = "Step 2: Build a Barracks near your base."
+prepare = "Enemy scouts were spotted. Take a moment to prepare your line."
+produce = "Step 3: Produce a Soldier from the Barracks, then hold until the wave arrives."
+defend = "Step 4: Defeat the incoming enemy wave."
+completed = "Tutorial complete. Press Enter to return to title."
+
+[tutorial.status]
+build = "Now build a Barracks"
+enemy_spotted = "Enemy forces spotted"
+produce = "Produce a Soldier before the enemy arrives"
+production_complete = "Production complete. Prepare to intercept."
+enemy_incoming = "Enemy wave incoming"
+
+[tutorial.result]
+complete_title = "Tutorial Complete"
+failed_title = "Tutorial Failed"
+complete_subtitle = "Move / Build / Produce / Defend complete"
+failed_subtitle = "Retry the tutorial battle to practice the basics"
+enter_action = "Enter: Return to Title"
+retry_action = "R: Retry Tutorial"
+footer = "You can start the tutorial again from the title menu at any time"
+
+[battle.hud]
+title = "LoganToga2 Remake Prototype"
+resource_summary = "Resource: {0} pts / +{1} income"
+run_battle = "Run: battle {0}/{1}"
+run_inactive = "Run: inactive"
+gold = "Gold: {0}"
+player_win = "PLAYER WIN"
+enemy_win = "ENEMY WIN"
+win_hint = "Enter: title / R: retry"
+run_reward_hint = "Enter: choose reward / R: new run"
+run_title_hint = "Enter: title / R: new run"
+controls = "L drag: pan / R click: move or attack / Q-W-E: formation / 1-0: command / X: cancel"
+escape_hint = "Esc: pause menu"
+
+[battle.archetype]
+base = "BASE"
+barracks = "BARRACKS"
+stable = "STABLE"
+turret = "TURRET"
+worker = "WORKER"
+soldier = "SOLDIER"
+archer = "ARCHER"
+sniper = "SNIPER"
+katyusha = "KATYUSHA"
+machine_gun = "M-GUN"
+goliath = "GOLIATH"
+healer = "HEALER"
+spinner = "SPINNER"
+unit = "UNIT"
+
+[battle.archetype_desc]
+base = "Main base. Lose this and the front collapses."
+barracks = "Production building for infantry. Essential for sustaining the front."
+stable = "Stable dedicated to Spinner cavalry. Opens up aggressive plays."
+turret = "Static defense that intercepts enemies. Good for holding the line."
+worker = "Support unit for construction and early frontline patching."
+soldier = "Basic low-cost infantry suited for holding the front."
+archer = "Ranged unit that chips from behind. Works well behind a defense line."
+sniper = "Ultra-long-range sniper that picks off dangerous backliners. You do not need many, but one changes the fight."
+katyusha = "Backline support launcher that fires rockets automatically and punishes clusters. Weak at single-target cleanup."
+machine_gun = "Heavy gunner with long range and rapid fire. Expensive, but strong even with low babysitting."
+goliath = "Disposable suicide unit that explodes on approach. Even if shot down, it still threatens nearby enemies."
+healer = "Backline support that automatically heals allied infantry. Cannot repair buildings."
+spinner = "Fast spinning cavalry that damages nearby enemies while moving. Easy to throw into the fight."
+
+[battle.archetype_flavor]
+stable = "Units that break through on momentum dash out from here."
+turret = "Set it down and it quietly does its job."
+barracks = "Rough or not, this is where soldiers gather."
+soldier = "Nothing flashy, but reliable under orders."
+archer = "From one step back, they keep layering arrows where it matters."
+sniper = "One shot at a time, the dangerous targets go quiet first."
+katyusha = "Spread out and it is manageable. Clump up and it becomes lethal."
+machine_gun = "Each bullet is light, but sustained fire makes advancing miserable."
+goliath = "Dangerous if stopped. Dangerous if it gets through."
+healer = "Mix one slightly behind the line and the front lasts much longer."
+spinner = "Average when stopped, fun when moving."
+
+[battle.upgrade.label]
+power = "POWER"
+rapid = "RAPID"
+dual = "DUAL"
+default = "UPGRADE"
+
+[battle.upgrade.desc]
+power = "Boosts damage only. Supports the front with heavier hits."
+rapid = "Boosts fire rate only. Best for sustained interception."
+dual = "Advanced upgrade that improves both damage and fire rate."
+
+[battle.upgrade.flavor]
+power = "Even with fewer shots, each hit leaves a mark."
+rapid = "Chip away faster and the line holds longer."
+dual = "A large investment, but one that buys real control of the field."
+
+[battle.command.status]
+ready = "READY"
+battle_ended = "BATTLE ENDED"
+unavailable = "UNAVAILABLE"
+not_enough_gold = "NOT ENOUGH GOLD"
+producer_offline = "PRODUCER OFFLINE"
+locked = "LOCKED"
+upgraded = "UPGRADED"
+no_target = "NO TARGET"
+full_hp = "FULL HP"
+armed = "ARMED"
+
+[battle.command.label]
+repair = "REPAIR"
+detonate = "DETONATE"
+
+[battle.command.desc]
+repair = "After pressing this, click a damaged turret or base to repair it."
+detonate = "Self-destruct selected Goliaths after a short fuse."
+
+[battle.command.flavor]
+repair = "Issue the order first, then pick the damaged turret or base."
+detonate = "Just get close and trigger it. Even if it gets shot down, it still catches nearby enemies."
+
+[battle.world]
+place = "Place {0}"
+build = "BUILD {0}"
+constructing = "Constructing"
+
+[battle.result]
+victory_title = "Victory"
+run_cleared_title = "Run Cleared"
+defeat_title = "Defeat"
+subtitle = "Battle {0}/{1}   Cards selected: {2}"
+retry_action = "R: Start New Run"
+enter_return_title = "Enter: Return to Title"
+footer_run_ended = "This run has ended"
+enter_choose_reward = "Enter: Choose Reward"
+footer_choose_reward = "Choose 1 reward card before the next battle"
+enter_bonus_room = "Enter: Bonus Room"
+footer_bonus_room = "Choose 1 bonus room after clearing the run"
+footer_run_complete = "All bonus rooms already viewed. Run complete"
+
+[battle.pause]
+title = "PAUSED"
+resume = "Resume"
+restart_battle = "Restart Battle"
+return_to_title = "Return to Title"
+save_return_to_title = "Save & Return to Title"
+production_prefix = "Production: "
+build_none = "Build: none"
+build_text = "Build: {0}: {1} ({2}G)"
+menu_hint = "Menu: Esc resume / Up-Down select / Enter confirm"
+
+[battle.queue]
+title = "QUEUE"
+idle = "Idle"
+no_queued_units = "No queued units"
+constructing = "Constructing"
+subtitle = "@ {0} / {1} in queue"
+select_hint = "Select {0} and queue a unit"
+
+[battle.command.panel]
+worker = "WORKER COMMANDS"
+archetype = "{0} COMMANDS"
+selection = "SELECTION COMMANDS"
+
+[battle.command.section]
+commands = "COMMANDS"
+upgrades = "UPGRADES"
+repair = "REPAIR"
+special = "SPECIAL"
+construction = "CONSTRUCTION"
+production = "PRODUCTION"
+
+[battle.command.kind]
+build = "Build"
+repair = "Repair"
+detonate = "Detonate"
+upgrade = "Upgrade"
+queue = "Queue"
+
+[battle.command]
+cost = "Cost: {0}G"

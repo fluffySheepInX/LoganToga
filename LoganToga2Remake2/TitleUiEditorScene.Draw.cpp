@@ -121,6 +121,8 @@ void TitleUiEditorScene::drawPreview() const
 		drawButton(screenRect(m_layout.balanceEditButtonRect), TitleUiText::BalanceEditButton, data.smallFont);
 		drawButton(screenRect(m_layout.transitionPresetButtonRect), TitleUiText::TransitionPresetPrefix.get() + U"Default", data.smallFont, true);
 		drawButton(screenRect(m_layout.titleUiEditorButtonRect), TitleUiText::TitleUiEditorButton, data.smallFont, true);
+       drawButton(screenRect(m_layout.rewardEditorButtonRect), TitleUiText::RewardEditorButton, data.smallFont, true);
+		drawButton(screenRect(m_layout.bonusRoomEditorButtonRect), TitleUiText::BonusRoomEditorButton, data.smallFont, true);
 	}
 #endif
 

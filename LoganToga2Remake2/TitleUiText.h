@@ -41,6 +41,7 @@ namespace TitleUiText
 	inline const LocalizedText TransitionPresetPrefix{ U"title.transition_preset_prefix", U"Fade: ", U"Fade: " };
 	inline const LocalizedText TitleUiEditorButton{ U"title.title_ui_editor_button", U"Title UI Editor", U"Title UI Editor" };
 	inline const LocalizedText RewardEditorButton{ U"title.reward_editor_button", U"Reward Editor", U"Reward Editor" };
+  inline const LocalizedText BonusRoomEditorButton{ U"title.bonus_room_editor_button", U"Bonus Room Editor", U"Bonus Room Editor" };
 	inline const LocalizedText QuickGuideTitle{ U"title.quick_guide_title", U"クイック操作説明", U"Quick Guide" };
 	inline const LocalizedText QuickGuideSubtitle{ U"title.quick_guide_subtitle", U"まずはここだけ覚えればOK。詳しくは Tutorial で確認できます。", U"Learn just this first. Check Tutorial for the full explanation." };
 	inline const Array<LocalizedText> QuickGuideBodyLines =

@@ -34,6 +34,16 @@ private:
 	void updateQuickGuide();
 	void refreshContinueState();
 	void executeDataClearAction();
+  [[nodiscard]] bool handleDialogInput();
+	[[nodiscard]] bool handleExitOpenInput();
+	[[nodiscard]] bool handleContinueInput(bool hasContinue);
+	[[nodiscard]] bool handlePrimaryActionInput(bool hasContinue);
+	void handleResolutionInput();
+	void handleSaveLocationInput();
+	[[nodiscard]] bool handleDataManagementInput(bool hasContinue);
+	#ifdef _DEBUG
+	[[nodiscard]] bool handleDebugInput(bool hasContinue);
+	#endif
 	[[nodiscard]] bool isIntroPlaying() const;
 	[[nodiscard]] double getIntroProgress() const;
 
@@ -76,4 +86,5 @@ private:
 	[[nodiscard]] static RectF getTransitionPresetButtonRect();
 	[[nodiscard]] static RectF getBalanceEditButtonRect();
 	[[nodiscard]] static RectF getRewardEditorButtonRect();
+  [[nodiscard]] static RectF getBonusRoomEditorButtonRect();
 };

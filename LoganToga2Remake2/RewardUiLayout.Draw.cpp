@@ -96,9 +96,9 @@ namespace RewardUi
 			RoundRect{ drawRect, 18 }.draw(ColorF{ visual.fillColor.r, visual.fillColor.g, visual.fillColor.b, visual.fillColor.a * contentAlpha });
 			RoundRect{ drawRect, 18 }.drawFrame(visual.frameThickness + (isSelected ? 2.0 : 0.0), 0, ColorF{ visual.frameColor.r, visual.frameColor.g, visual.frameColor.b, visual.frameColor.a * contentAlpha });
 			RectF{ drawRect.x, drawRect.y, drawRect.w, 14 }.draw(rarityColor);
-			data.uiFont(card->name).draw(drawRect.x + 18, drawRect.y + 28, ColorF{ 1.0, 1.0, 1.0, contentAlpha });
+          data.uiFont(GetRewardCardName(*card)).draw(drawRect.x + 18, drawRect.y + 28, ColorF{ 1.0, 1.0, 1.0, contentAlpha });
 			data.smallFont(GetRewardCardRarityLabel(card->rarity)).draw(drawRect.x + 18, drawRect.y + 64, ColorF{ rarityColor.r, rarityColor.g, rarityColor.b, contentAlpha });
-			data.smallFont(card->description).draw(drawRect.x + 18, drawRect.y + 98, ColorF{ 0.90, 0.93, 0.98, contentAlpha });
+         data.smallFont(GetRewardCardDescription(*card)).draw(drawRect.x + 18, drawRect.y + 98, ColorF{ 0.90, 0.93, 0.98, contentAlpha });
 
 			if (!selectedCardIndex)
 			{
@@ -118,7 +118,7 @@ namespace RewardUi
 					const ColorF rarityColor = GetRewardCardRarityColor(selectedCard->rarity);
 					Scene::Rect().draw(ColorF{ rarityColor.r, rarityColor.g, rarityColor.b, 0.05 + (0.06 * selectionPulse) });
 					data.uiFont(Localization::GetText(U"reward_screen.acquired_title", U"報酬獲得", U"Reward Acquired")).drawAt(layout.acquiredLabelPos, rarityColor);
-					data.smallFont(selectedCard->name).drawAt(layout.acquiredCardNamePos, Palette::White);
+                  data.smallFont(GetRewardCardName(*selectedCard)).drawAt(layout.acquiredCardNamePos, Palette::White);
 				}
 			}
 		}

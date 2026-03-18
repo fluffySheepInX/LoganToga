@@ -1,6 +1,7 @@
 ﻿#include "GameData.h"
 #include "BattleScene.h"
 #include "BalanceEditScene.h"
+#include "BonusRoomEditorScene.h"
 #include "BonusRoomScene.h"
 #include "GameSettings.h"
 #include "MapEditScene.h"
@@ -145,6 +146,7 @@ void Main()
 	manager.add<BattleScene>(U"Battle");
 	manager.add<BalanceEditScene>(U"BalanceEdit");
 	manager.add<BonusRoomScene>(U"BonusRoom");
+  manager.add<BonusRoomEditorScene>(U"BonusRoomEditor");
 	manager.add<MapEditScene>(U"MapEdit");
 	manager.add<RewardScene>(U"Reward");
 	manager.add<RewardEditorScene>(U"RewardEditor");

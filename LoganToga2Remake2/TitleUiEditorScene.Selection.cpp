@@ -249,6 +249,8 @@ const Array<TitleUiEditorScene::EditableElement>& TitleUiEditorScene::getEditabl
 		{ U"Balance Edit", &TitleUiLayout::balanceEditButtonRect, nullptr },
 		{ U"Transition Preset", &TitleUiLayout::transitionPresetButtonRect, nullptr },
 		{ U"TitleUi Editor", &TitleUiLayout::titleUiEditorButtonRect, nullptr },
+       { U"Reward Editor", &TitleUiLayout::rewardEditorButtonRect, nullptr },
+		{ U"BonusRoom Editor", &TitleUiLayout::bonusRoomEditorButtonRect, nullptr },
 #ifdef _DEBUG
 		{ U"Debug Hint (Cont)", nullptr, &TitleUiLayout::debugHintPosWithContinue },
 		{ U"Debug Hint (New)", nullptr, &TitleUiLayout::debugHintPosWithoutContinue },

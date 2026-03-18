@@ -30,7 +30,11 @@ struct RewardCardDefinition
 {
 	String id;
 	String name;
+ String nameJa;
+	String nameEn;
 	String description;
+ String descriptionJa;
+	String descriptionEn;
 	RewardCardRarity rarity = RewardCardRarity::Common;
 	RewardCardEffectType effectType = RewardCardEffectType::UnitStatBonus;
 	UnitArchetype targetArchetype = UnitArchetype::Soldier;

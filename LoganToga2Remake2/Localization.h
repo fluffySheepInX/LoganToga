@@ -23,7 +23,19 @@ namespace Localization
 
 	[[nodiscard]] inline String GetLocalizationDirectoryPath()
 	{
-		return U"localization";
+        const String runtimeRelativePath = U"localization";
+		if (FileSystem::Exists(runtimeRelativePath))
+		{
+			return runtimeRelativePath;
+		}
+
+		const String projectRelativePath = U"App/localization";
+		if (FileSystem::Exists(projectRelativePath))
+		{
+			return projectRelativePath;
+		}
+
+		return runtimeRelativePath;
 	}
 
 	[[nodiscard]] inline String GetLanguageCodeFromPath(const String& resourcePath)
@@ -35,11 +47,12 @@ namespace Localization
 	{
 		try
 		{
-			return toml[key].get<String>();
+         const String value = toml[key].get<String>();
+			return value.isEmpty() ? fallback : value;
 		}
 		catch (const std::exception&)
 		{
-			return fallback;
+         return fallback;
 		}
 	}
 
@@ -51,7 +64,7 @@ namespace Localization
 		}
 		catch (const std::exception&)
 		{
-			return fallback;
+         return fallback;
 		}
 	}
 
@@ -90,10 +103,11 @@ namespace Localization
 
 		if (definitions.isEmpty())
 		{
+           const String localizationDirectory = GetLocalizationDirectoryPath();
 			definitions =
 			{
-				{ U"en", U"English", U"localization/en.toml", 0 },
-				{ U"ja", U"日本語", U"localization/ja.toml", 10 },
+                { U"en", U"English", FileSystem::PathAppend(localizationDirectory, U"en.toml"), 0 },
+				{ U"ja", U"日本語", FileSystem::PathAppend(localizationDirectory, U"ja.toml"), 10 },
 			};
 		}
 
@@ -144,6 +158,60 @@ namespace Localization
 	{
 		static std::unique_ptr<s3d::TOMLReader> toml;
 		return toml;
+	}
+
+	[[nodiscard]] inline std::unique_ptr<s3d::TOMLReader>& DefaultLanguageTomlStorage()
+	{
+		static std::unique_ptr<s3d::TOMLReader> toml;
+		return toml;
+	}
+
+	[[nodiscard]] inline String TryReadLocalizedValue(const s3d::TOMLReader* toml, const String& key)
+	{
+		if (!toml)
+		{
+			return U"";
+		}
+
+		try
+		{
+          const String value = (*toml)[key].get<String>();
+			if (!value.isEmpty())
+			{
+				return value;
+			}
+		}
+		catch (const std::exception&)
+		{
+		}
+
+		return U"";
+	}
+
+	[[nodiscard]] inline const s3d::TOMLReader* GetDefaultLanguageToml()
+	{
+        if (CurrentLanguageStorage() == DefaultLanguage)
+		{
+			return LanguageTomlStorage().get();
+		}
+
+		auto& toml = DefaultLanguageTomlStorage();
+		if (!toml)
+		{
+			const String resourcePath = GetLanguageDefinition(DefaultLanguage).resourcePath;
+			if (!FileSystem::Exists(resourcePath))
+			{
+				return nullptr;
+			}
+
+			auto reader = std::make_unique<s3d::TOMLReader>(resourcePath);
+			if (*reader)
+			{
+				toml = std::move(reader);
+			}
+		}
+
+		return toml.get();
 	}
 
 	inline void ReloadLanguageToml(const AppLanguage& language)
@@ -259,22 +327,34 @@ namespace Localization
 
 	[[nodiscard]] inline String GetText(const String& key, const String& japanese, const String& english)
 	{
-		if (const auto* toml = LanguageTomlStorage().get())
+     const String localizedValue = TryReadLocalizedValue(LanguageTomlStorage().get(), key);
+		if (!localizedValue.isEmpty())
 		{
-			try
-			{
-				const String value = (*toml)[key].get<String>();
-				if (!value.isEmpty())
-				{
-					return value;
-				}
-			}
-			catch (const std::exception&)
-			{
-			}
+			return localizedValue;
 		}
 
-		return UsesJapaneseFallback(GetLanguage()) ? japanese : english;
+		const String defaultLanguageValue = TryReadLocalizedValue(GetDefaultLanguageToml(), key);
+		if (!defaultLanguageValue.isEmpty())
+		{
+			return defaultLanguageValue;
+		}
+
+		if (UsesJapaneseFallback(GetLanguage()))
+		{
+         if (!japanese.isEmpty())
+			{
+                return japanese;
+			}
+
+			return english;
+		}
+
+		if (!english.isEmpty())
+			{
+           return english;
+			}
+
+        return japanese;
 	}
 
 	template <class... Args>

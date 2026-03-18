@@ -1,0 +1,428 @@
+﻿[_meta]
+code = "ja"
+displayName = "日本語"
+order = 10
+
+[title]
+title = "LoganToga2Remake2"
+subtitle = "RTSラン試作"
+viewed_bonus_rooms_prefix = "・閲覧済みボーナスルーム: "
+viewed_bonus_rooms_preview = "・閲覧済みボーナスルーム: 2 / 6"
+continue_enter_hint = "Enterでセーブ済みランを再開"
+start_enter_hint = "Enterで新しいランを開始"
+continue_button = "続きから"
+bonus_rooms_hint = "Bonus Rooms はこのメニューから再訪できます"
+bonus_rooms_button = "Bonus Rooms"
+tutorial_button = "Tutorial"
+quick_guide_button = "クイック操作説明"
+new_run_button = "新しいラン"
+start_run_button = "ラン開始"
+quick_guide_hint = ""
+resolution_label = "解像度"
+save_location_label = "セーブ保存先"
+save_location_button = "Local ⇔ AppData"
+data_management_label = "データ管理"
+clear_continue_button = "セーブ削除"
+clear_settings_button = "設定初期化"
+exit_button = "終了"
+data_management_hint = "現在の保存先のみ削除 / 設定は既定値へ戻ります"
+debug_unlock_hint = "DEBUG: すべての解放対象ユニット/建物を所持した状態で開始"
+debug_full_unlock_button = "Debug Full Unlock"
+map_edit_button = "Map Edit"
+balance_edit_button = "Balance Edit"
+transition_preset_prefix = "Fade: "
+title_ui_editor_button = "Title UI Editor"
+reward_editor_button = "Reward Editor"
+bonus_room_editor_button = "Bonus Room Editor"
+quick_guide_title = "クイック操作説明"
+quick_guide_subtitle = "まずはここだけ覚えればOK。詳しくは Tutorial で確認できます。"
+quick_guide_flow = "流れ: 選択 → 右クリックで行動 → 建築と生産で戦力を増やす → 勝利後に強化"
+quick_guide_tutorial_button = "Tutorial へ"
+quick_guide_esc_hint = "Esc でも閉じられます"
+continue_preview_title = "CONTINUE"
+continue_preview_headline = "戦闘 2/5"
+continue_preview_detail = "戦闘開始チェックポイントから再開"
+continue_preview_cards_prefix = "選択済みカード: "
+data_clear_question = "設定ファイルを初期化しますか？"
+data_clear_body = "解像度・フルスクリーン・音量を既定値へ戻します"
+data_clear_continue_question = "セーブデータを削除しますか？"
+data_clear_continue_body = "現在の保存先にある continue データを削除します"
+data_clear_immediate_hint = "この操作はタイトルメニューからすぐ反映されます"
+
+[title.summary]
+line1 = "・1ランは3〜5戦"
+line2 = "・勝利後、3枚から報酬カードを1枚選択"
+line3 = "・1度でも敗北するとラン終了"
+
+[common]
+current_prefix = "現在: "
+resolution_small = "小"
+resolution_medium = "中"
+resolution_large = "大"
+close_button = "閉じる"
+dialog_enter_yes_no_hint = "Enter: はい / Esc: いいえ"
+exit_question = "ゲームを終了しますか？"
+yes = "はい"
+no = "いいえ"
+
+[title.quick_guide]
+line1 = "1. 左クリックでユニットや建物を選択"
+line2 = "2. Shift + 左クリックで選択追加"
+line3 = "3. 右クリックで単体移動 / 攻撃指示、"
+line4 = "　　右ドラッグで複数指定、その後再び右ドラッグで部隊移動"
+line5 = "4. 下のコマンドパネルで生産 / 建築 / 強化"
+line6 = "5. Esc でポーズ。困ったら一度止める"
+line7 = "6. 勝利後は報酬カードを1枚選んで次の戦闘へ"
+line8 = "7. 敗北するとラン終了。再挑戦はタイトルから"
+
+[battle.hud]
+title = "LoganToga2 Remake Prototype"
+resource_summary = "資源拠点: {0} 箇所 / +{1} 収入"
+run_battle = "ラン: 戦闘 {0}/{1}"
+run_inactive = "ラン: 非アクティブ"
+gold = "ゴールド: {0}"
+player_win = "PLAYER WIN"
+enemy_win = "ENEMY WIN"
+win_hint = "Enter: タイトル / R: リトライ"
+run_reward_hint = "Enter: 報酬選択 / R: 新しいラン"
+run_title_hint = "Enter: タイトル / R: 新しいラン"
+controls = "左ドラッグ: 視点移動 / 右クリック: 移動・攻撃 / Q-W-E: 陣形 / 1-0: コマンド / X: キャンセル"
+escape_hint = "Esc: ポーズメニュー"
+
+[battle.archetype]
+base = "本拠地"
+barracks = "兵舎"
+stable = "厩舎"
+turret = "砲台"
+worker = "作業員"
+soldier = "兵士"
+archer = "弓兵"
+sniper = "狙撃兵"
+katyusha = "カチューシャ"
+machine_gun = "機関銃兵"
+goliath = "ゴライアス"
+healer = "回復兵"
+spinner = "スピナー"
+unit = "ユニット"
+
+[battle.archetype_desc]
+base = "本拠地。ここを失うと戦線が崩れる。"
+barracks = "兵士を呼べる生産拠点。戦線の継続に必要。"
+stable = "回転騎兵を送り出す専用厩舎。遊びの起点になる。"
+turret = "足を止めて迎撃する防衛施設。前線の支え向き。"
+worker = "建設と序盤の穴埋めを担う補助役。"
+soldier = "低コストで前線維持に向く基本兵。"
+archer = "後衛から削る射撃兵。守りの後ろで活きる。"
+sniper = "超長射程で危険な後衛を抜く狙撃兵。数は要らないが、置くだけで相手の厚みを削れる。"
+katyusha = "自動でロケットを撃ち込み、密集した敵をまとめて削る後衛支援車両。単体処理は苦手。"
+machine_gun = "長射程を高速連射で維持する重射手。高価だが放っておいても前線を支える。"
+goliath = "敵に近づいて爆ぜる使い切り特攻兵。撃ち落とされても周囲を巻き込む。"
+healer = "味方歩兵を自動回復する後方支援兵。建物は治せない。"
+spinner = "走りながら周囲を削る回転騎兵。深く考えず突っ込ませやすい。"
+
+[battle.archetype_flavor]
+stable = "勢いで押し込む兵は、ここから飛び出す。"
+turret = "据えれば静かに仕事をする。"
+barracks = "粗末でも、ここが兵の集まる場所になる。"
+soldier = "派手さはないが、命令には素直だ。"
+archer = "一歩引いた位置から、確実に矢を重ねる。"
+sniper = "一発ずつ、危ない相手から黙らせる。"
+katyusha = "散らばれば軽い。固まれば危ない。"
+machine_gun = "弾は軽いが、撃ち続ければ相手は前に出づらい。"
+goliath = "止めても危ない。通しても危ない。"
+healer = "少し後ろに混ぜるだけで、前線が長く持つ。"
+spinner = "止まると並、走れば楽しい。"
+
+[battle.upgrade.label]
+power = "威力"
+rapid = "速射"
+dual = "両立"
+default = "強化"
+
+[battle.upgrade.desc]
+power = "威力のみ強化。重い一撃で前線を支える。"
+rapid = "連射のみ強化。継続迎撃に向く。"
+dual = "威力と連射を両立した上位強化。"
+
+[battle.upgrade.flavor]
+power = "少ない手数でも、撃てば違いが出る。"
+rapid = "細かく刻めば、押し返す時間が延びる。"
+dual = "大きな投資に見合うだけの制圧力を得る。"
+
+[battle.command.status]
+ready = "準備完了"
+battle_ended = "戦闘終了"
+unavailable = "利用不可"
+not_enough_gold = "ゴールド不足"
+producer_offline = "生産元が停止中"
+locked = "未解放"
+upgraded = "強化済み"
+no_target = "対象なし"
+full_hp = "HP満タン"
+armed = "起爆中"
+
+[battle.command.label]
+repair = "修理"
+detonate = "起爆"
+
+[battle.command.desc]
+repair = "押したあと、傷ついた砲台か拠点をクリックして修理します。"
+detonate = "選択中のゴライアスを短い導火時間のあと自爆させます。"
+
+[battle.command.flavor]
+repair = "先に命令してから、傷んだ砲台か拠点を選ぶ。"
+detonate = "近づけて押すだけ。落とされても周囲を巻き込む。"
+
+[battle.world]
+place = "配置: {0}"
+build = "建築: {0}"
+constructing = "建設中"
+
+[battle.result]
+victory_title = "勝利"
+run_cleared_title = "ラン制覇"
+defeat_title = "敗北"
+subtitle = "戦闘 {0}/{1}   選択済みカード: {2}"
+retry_action = "R: 新しいランを開始"
+enter_return_title = "Enter: タイトルへ戻る"
+footer_run_ended = "このランは終了しました"
+enter_choose_reward = "Enter: 報酬を選ぶ"
+footer_choose_reward = "次の戦闘の前に報酬カードを1枚選びましょう"
+enter_bonus_room = "Enter: Bonus Room へ"
+footer_bonus_room = "ラン制覇後に Bonus Room を1つ選べます"
+footer_run_complete = "すべての Bonus Room は閲覧済みです。ラン完了"
+
+[battle.pause]
+title = "PAUSED"
+resume = "再開"
+restart_battle = "戦闘をやり直す"
+return_to_title = "タイトルへ戻る"
+save_return_to_title = "保存してタイトルへ戻る"
+production_prefix = "生産: "
+build_none = "建築: なし"
+build_text = "建築: {0}: {1} ({2}G)"
+menu_hint = "メニュー: Esc 再開 / 上下で選択 / Enter 決定"
+
+[battle.queue]
+title = "QUEUE"
+idle = "待機中"
+no_queued_units = "生産キューは空です"
+constructing = "建設中"
+subtitle = "@ {0} / キュー {1}"
+select_hint = "{0} を選択してユニットをキューに追加"
+
+[battle.command.panel]
+worker = "ワーカーコマンド"
+archetype = "{0} コマンド"
+selection = "選択コマンド"
+
+[battle.command.section]
+commands = "コマンド"
+upgrades = "強化"
+repair = "修理"
+special = "特殊"
+construction = "建築"
+production = "生産"
+
+[battle.command.kind]
+build = "建築"
+repair = "修理"
+detonate = "起動"
+upgrade = "強化"
+queue = "キュー"
+
+[battle.command]
+cost = "コスト: {0}G"
+
+[title.continue_preview]
+reward_headline = "戦闘 {0}/{1} 後の報酬"
+bonus_room_headline = "クリア後のボーナスルーム"
+battle_headline = "戦闘 {0}/{1}"
+reward_detail = "報酬候補: {0}"
+bonus_room_cleared = "ランクリア済み"
+bonus_room_available = "クリア報酬を受け取れます"
+battle_detail = "戦闘開始チェックポイントから再開"
+
+[startup_limit]
+expired_title = "起動期限が終了しました"
+expired_body = "このビルドは初回起動から {0} 日を過ぎたため、起動できません。"
+expired_hint = "Esc またはウィンドウを閉じて終了してください"
+
+[reward_screen]
+title = "報酬を選択"
+subtitle = "戦闘 {0} クリア / 1枚選択"
+controls_hint = "カードをクリック / 1-3 で選択"
+acquired_hint = "報酬反映中... 次の戦闘を準備しています"
+press_slot = "{0}で選択"
+acquired_title = "報酬獲得"
+
+[reward.card.rarity]
+common = "コモン"
+rare = "レア"
+epic = "エピック"
+
+[reward_editor]
+title = "リワード画面エディタ"
+subtitle = "いつでもリワード候補の見た目を確認できます"
+panel_title = "Reward UI Editor"
+unsaved_changes = "未保存の変更があります"
+saved_state = "保存済みレイアウト"
+save_layout_button = "Save Layout"
+reload_layout_button = "Reload Layout"
+reset_layout_button = "Reset Layout"
+reroll_button = "再抽選"
+reset_preview_button = "プレビュー初期化"
+reset_button = "所持カード初期化"
+back_button = "タイトルへ戻る"
+element_list_title = "編集対象"
+editor_hint = "左の一覧で要素を選択し、画面上でドラッグして移動"
+grid_hint = "8px グリッド表示 / ドラッグ中は升目にスナップ"
+preview_battle = "戦闘 {0}/{1} 報酬プレビュー"
+controls_hint = "カードをクリック / 1-3 で選択 / R: 再抽選 / C: 初期化 / Esc: 戻る"
+selected_cards = "選択済みカード: {0}"
+no_cards = "表示できる報酬カードがありません"
+press_slot = "{0}で選択"
+reward_acquired = "プレビュー反映中"
+status_saved_layout = "リワード画面レイアウトを保存しました"
+status_save_failed = "リワード画面レイアウトの保存に失敗しました"
+status_reloaded_layout = "リワード画面レイアウトを再読み込みしました"
+status_reset_layout = "リワード画面レイアウトを既定値へ戻しました"
+status_reset_preview = "プレビュー状態を初期化しました"
+status_dragging = "要素を移動中..."
+status_rerolled = "報酬候補を再抽選しました"
+status_reset = "プレビュー状態を初期化しました"
+status_applied = "報酬選択をプレビューへ反映しました"
+
+[bonus_room.selection]
+title = "Bonus Room"
+subtitle = "ラン制覇後に 1 つ選択"
+hint = "閲覧した部屋は次回以降のクリア報酬候補から外れます"
+press_slot = "{0}で選択"
+
+[bonus_room.gallery]
+title = "Bonus Room Gallery"
+subtitle = "タイトルメニューから閲覧済みの部屋を再訪できます"
+viewed_count = "閲覧済み {0} / {1} 部屋"
+
+[bonus_room.common]
+back_to_title = "タイトルへ戻る"
+
+[bonus_room.viewer]
+page = "ページ {0} / {1}"
+prev = "前へ"
+back = "戻る"
+skip = "スキップ"
+next = "次へ"
+finish = "完了"
+close = "閉じる"
+
+[bonus_room.rooms.bonus_room_1]
+title = "Bonus Room 1 / 兵士の方向性"
+teaser = "弱いがストレスではない兵士について"
+page1 = "この試作の兵士は、単体で戦況を背負う強さよりも、前線を作るために気軽に出しやすいことを重視しています。"
+page2 = "RTS は要求される操作が積み重なるとすぐ忙しくなるため、多少弱くても命令に素直で役割が分かりやすいユニットの方が好みです。"
+page3 = "その結果、飛び抜けて強くはないけれど、生産して損した気分になりにくい基礎兵を目指しています。"
+
+[bonus_room.rooms.bonus_room_2]
+title = "Bonus Room 2 / ラン形式の試作"
+teaser = "各戦闘を短めにしている理由"
+page1 = "Remake2 では、1 回の長い試合ではなく、短い戦闘をいくつか重ねるラン形式を試しています。"
+page2 = "各戦闘のあとで少しずつ選択肢が広がると、構成が育っていく感覚を持ちやすく、もう一度遊び直すハードルも下がります。"
+page3 = "Bonus Room もその延長にあり、ラン制覇後に少し寄り道できる小さなご褒美として置いています。"
+
+[bonus_room.rooms.bonus_room_3]
+title = "Bonus Room 3 / 画面の読みやすさ"
+teaser = "情報量と視認性の両立について"
+page1 = "戦場には多くの情報が出るため、何が起きているか、どこで起きているかが分かることを演出より優先しています。"
+page2 = "ユニット、建物、エフェクトは、重なっても役割を見分けやすいように形や色で差を付ける方針です。"
+page3 = "裏話としては、新しい見た目を足すよりも、追いやすさを少しずつ改善する作業に時間を使うことがよくあります。"
+
+[bonus_room.rooms.bonus_room_4]
+title = "Bonus Room 4 / 没メモ"
+teaser = "採用しなかった案を少しだけ"
+page1 = "初期案では、各兵士にもっと細かい固有アクションを持たせる方向も考えていました。"
+page2 = "ただ、その方向はこの段階では忙しさが増えやすく、見通しの良さも損ないそうだったため、いったん見送りました。"
+page3 = "今後、操作量を増やさずに面白さを足せる形が見つかれば、別の形で一部を戻すかもしれません。"
+
+[bonus_room.rooms.bonus_room_5]
+title = "Bonus Room 5 / テンポ調整"
+teaser = "待たされている感覚を減らしたい"
+page1 = "テンポ調整では、単純な強さよりも、プレイヤーに待たされている感覚を与えていないかを気にしています。"
+page2 = "生産、移動、戦闘、報酬選択のどこかが間延びすると、ゲーム全体の手触りまで重く感じやすくなります。"
+page3 = "そのため数値調整でも、難しさそのものより、流れが止まりにくいことを優先しています。"
+
+[bonus_room_editor]
+title = "Bonus Room Editor"
+subtitle = "Selection / Gallery / Viewer を切り替えて確認できます"
+mode_selection = "Selection"
+mode_gallery = "Gallery"
+mode_viewer = "Viewer"
+mark_viewed_button = "閲覧済みにする"
+unmark_viewed_button = "閲覧済み解除"
+mark_all_viewed_button = "すべて閲覧済み"
+reset_viewed_button = "閲覧状態を初期化"
+back_button = "タイトルへ戻る"
+viewed_count = "閲覧済み {0} / {1}"
+rooms_title = "部屋一覧"
+no_rooms = "Bonus Room がありません"
+status_viewed = "状態: 閲覧済み"
+status_unviewed = "状態: 未閲覧"
+page = "ページ {0} / {1}"
+prev_button = "前へ"
+next_button = "次へ"
+selection_empty = "未閲覧の候補がありません"
+gallery_empty = "閲覧済みの部屋がありません"
+controls_hint_selection = "カードクリック / 1-3 で Viewer プレビューへ"
+controls_hint_gallery = "行をクリックで Viewer プレビューへ"
+controls_hint_viewer = "← → / Enter でページ確認 / Esc で元のプレビューへ戻る"
+
+[chrome]
+language_prefix = "言語: "
+language_hint_bubble = "Language / 言語"
+audio_button = "音量"
+windowed_button = "窓"
+fullscreen_button = "全画面"
+master_volume = "全体"
+
+[tutorial.hud]
+title = "LoganToga2 チュートリアル"
+
+[tutorial]
+mode_label = "モード: チュートリアル"
+enemy_arrival = "敵到着まで: {0} 秒"
+
+[tutorial.panel]
+title = "チュートリアル"
+
+[tutorial.phase]
+move = "手順 1"
+build = "手順 2"
+prepare = "警告"
+produce = "手順 3"
+defend = "手順 4"
+completed = "完了"
+none = "チュートリアル"
+
+[tutorial.objective]
+move = "手順 1: Worker を選択し、前方のエリアまで移動させましょう。"
+build = "手順 2: 拠点の近くに Barracks を建てましょう。"
+prepare = "敵の斥候を確認しました。防衛線を整えましょう。"
+produce = "手順 3: Barracks で Soldier を生産し、敵が来るまで持ちこたえましょう。"
+defend = "手順 4: 接近してくる敵の波を撃退しましょう。"
+completed = "チュートリアル完了。Enter でタイトルへ戻れます。"
+
+[tutorial.status]
+build = "次は Barracks を建てましょう"
+enemy_spotted = "敵影を確認。防衛準備をしてください"
+produce = "敵が来る前に Soldier を生産しましょう"
+production_complete = "生産完了。迎撃に備えましょう"
+enemy_incoming = "敵部隊が接近中です"
+
+[tutorial.result]
+complete_title = "チュートリアル完了"
+failed_title = "チュートリアル失敗"
+complete_subtitle = "移動 / 建築 / 生産 / 防衛まで完了しました"
+failed_subtitle = "もう一度チュートリアル戦を遊んで基本操作を練習しましょう"
+enter_action = "Enter: タイトルへ戻る"
+retry_action = "R: チュートリアル再挑戦"
+footer = "チュートリアルはいつでもタイトルメニューから再開できます"

@@ -38,10 +38,10 @@ void BonusRoomScene::drawGallery() const
 	const auto& data = getData();
 	const Array<const BonusRoomDefinition*> rooms = viewedRooms();
 	const MenuButtonStyle buttonStyle = GetBonusButtonStyle();
-	data.titleFont(U"Bonus Room Gallery").drawAt(Scene::CenterF().movedBy(0, -250), Palette::White);
-	data.uiFont(U"Revisit viewed rooms from the title menu").drawAt(Scene::CenterF().movedBy(0, -205), ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(s3d::Format(U"Viewed ", rooms.size(), U" / ", data.bonusRooms.size(), U" rooms")).drawAt(Scene::CenterF().movedBy(0, -172), Palette::Yellow);
-	DrawMenuButton(GetBackButtonRect(), U"Back to Title", data.smallFont, false, buttonStyle);
+    data.titleFont(Localization::GetText(U"bonus_room.gallery.title", U"Bonus Room Gallery", U"Bonus Room Gallery")).drawAt(Scene::CenterF().movedBy(0, -250), Palette::White);
+	data.uiFont(Localization::GetText(U"bonus_room.gallery.subtitle", U"タイトルメニューから閲覧済みの部屋を再訪できます", U"Revisit viewed rooms from the title menu")).drawAt(Scene::CenterF().movedBy(0, -205), ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::FormatText(U"bonus_room.gallery.viewed_count", U"閲覧済み {0} / {1} 部屋", U"Viewed {0} / {1} rooms", rooms.size(), data.bonusRooms.size())).drawAt(Scene::CenterF().movedBy(0, -172), Palette::Yellow);
+	DrawMenuButton(GetBackButtonRect(), Localization::GetText(U"bonus_room.common.back_to_title", U"タイトルへ戻る", U"Back to Title"), data.smallFont, false, buttonStyle);
 
 	for (int32 index = 0; index < static_cast<int32>(rooms.size()); ++index)
 	{

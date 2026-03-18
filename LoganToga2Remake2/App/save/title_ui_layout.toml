@@ -98,13 +98,13 @@ y = 176
 
 [debugButtonWithContinue]
 x = 1328
-y = 384
+y = 640
 w = 220
 h = 36
 
 [debugButtonWithoutContinue]
 x = 1328
-y = 384
+y = 640
 w = 220
 h = 36
 
@@ -247,12 +247,12 @@ x = 1136
 y = 536
 
 [debugHintWithContinue]
-x = 1520
-y = 400
+x = 1560
+y = 696
 
 [debugHintWithoutContinue]
-x = 1504
-y = 400
+x = 1496
+y = 696
 
 [mapEditButton]
 x = 1328
@@ -275,5 +275,17 @@ h = 30
 [titleUiEditorButton]
 x = 1328
 y = 312
+w = 192
+h = 30
+
+[rewardEditorButton]
+x = 1328
+y = 392
+w = 192
+h = 30
+
+[bonusRoomEditorButton]
+x = 1328
+y = 352
 w = 192
 h = 30
