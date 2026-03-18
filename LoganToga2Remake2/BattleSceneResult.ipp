@@ -1,4 +1,6 @@
-﻿namespace
+﻿#include "BattleTutorialText.h"
+
+namespace
 {
 	[[nodiscard]] bool IsTutorialBattle(const GameData& data)
 	{
@@ -26,11 +28,11 @@
 		if (IsTutorialBattle(data))
 		{
 			return BattleResultOverlayContent{
-				.title = playerWon ? U"Tutorial Complete" : U"Tutorial Failed",
-				.subtitle = playerWon ? U"Move / Build / Produce / Defend complete" : U"Retry the tutorial battle to practice the basics",
-				.enterAction = U"Enter: Return to Title",
-				.retryAction = U"R: Retry Tutorial",
-				.footer = U"You can start the tutorial again from the title menu at any time",
+             .title = BattleTutorialText::GetResultTitle(playerWon),
+				.subtitle = BattleTutorialText::GetResultSubtitle(playerWon),
+				.enterAction = BattleTutorialText::GetResultEnterAction(),
+				.retryAction = BattleTutorialText::GetResultRetryAction(),
+				.footer = BattleTutorialText::GetResultFooter(),
 				.titleColor = playerWon ? ColorF{ 1.0, 0.92, 0.55 } : ColorF{ 1.0, 0.66, 0.66 }
 			};
 		}

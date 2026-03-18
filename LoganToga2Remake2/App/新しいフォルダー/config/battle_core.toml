@@ -1,0 +1,43 @@
+[economy]
+player_gold = 260
+enemy_gold = 260
+
+[world]
+width = 2560.0
+height = 1440.0
+
+[income]
+interval = 1.0
+player_amount = 24
+enemy_amount = 24
+
+[hud]
+title = "LoganToga2 Remake Prototype"
+controls = "L drag: pan / R click: move or attack / Q-W-E: formation / 1-0: command / X: cancel"
+escape_hint = "Esc: pause menu"
+win_hint = "Enter: title / R: retry"
+
+[enemy_spawn]
+interval = 4.0
+basic_archetype = "soldier"
+advanced_archetype = "archer"
+advanced_probability = 0.4
+x = 1130.0
+y = 170.0
+random_y_offset = 50.0
+
+[enemy_ai]
+mode = "default"
+decision_interval = 0.4
+assault_unit_threshold = 4
+defense_radius = 240.0
+rally_distance = 120.0
+base_assault_lock_radius = 180.0
+staging_assault_min_units = 5
+staging_assault_gather_radius = 96.0
+staging_assault_max_wait = 4.0
+staging_assault_commit_time = 5.0
+use_pathfinding_for_attack_target = true
+
+[debug]
+enable_enemy_ai_switcher = true

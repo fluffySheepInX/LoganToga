@@ -1,0 +1,176 @@
+﻿[[initial_units]]
+owner = "player"
+archetype = "base"
+x = 232.0
+y = 1210.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "base"
+x = 2308.0
+y = 228.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 180.0
+y = 1036.0
+
+[[initial_units]]
+owner = "player"
+archetype = "turret"
+x = 426.0
+y = 1282.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2118.0
+y = 114.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "turret"
+x = 2418.0
+y = 398.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 322.0
+y = 1080.0
+
+[[initial_units]]
+owner = "player"
+archetype = "soldier"
+x = 280.0
+y = 1028.0
+
+[[initial_units]]
+owner = "player"
+archetype = "archer"
+x = 294.0
+y = 1124.0
+
+[[initial_units]]
+owner = "player"
+archetype = "worker"
+x = 390.0
+y = 1168.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2148.0
+y = 316.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "soldier"
+x = 2192.0
+y = 372.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "archer"
+x = 2236.0
+y = 176.0
+
+[[initial_units]]
+owner = "enemy"
+archetype = "barracks"
+x = 2172.0
+y = 248.0
+
+[[obstacles]]
+label = "Fortress North Wall"
+x = 1858.0
+y = 144.0
+width = 250.0
+height = 72.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Fortress South Wall"
+x = 1886.0
+y = 438.0
+width = 250.0
+height = 72.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Fortress Inner Wall"
+x = 1714.0
+y = 284.0
+width = 160.0
+height = 112.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Midfield Crater"
+x = 1184.0
+y = 620.0
+width = 220.0
+height = 200.0
+blocks_movement = true
+
+[[obstacles]]
+label = "West Ridge"
+x = 718.0
+y = 932.0
+width = 200.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "East Ridge"
+x = 1508.0
+y = 826.0
+width = 200.0
+height = 96.0
+blocks_movement = true
+
+[[obstacles]]
+label = "Lower Ruin"
+x = 980.0
+y = 1118.0
+width = 180.0
+height = 96.0
+blocks_movement = true
+
+[[resource_points]]
+label = "Forward Mine West"
+owner = "neutral"
+x = 980.0
+y = 858.0
+radius = 44.0
+income_amount = 10
+capture_time = 1.9
+
+[[resource_points]]
+label = "Forward Mine East"
+owner = "neutral"
+x = 1548.0
+y = 610.0
+radius = 44.0
+income_amount = 10
+capture_time = 1.9
+
+[[resource_points]]
+label = "Enemy Fringe"
+owner = "neutral"
+x = 1866.0
+y = 602.0
+radius = 40.0
+income_amount = 8
+capture_time = 1.7
+
+[[resource_points]]
+label = "Player Fringe"
+owner = "neutral"
+x = 670.8
+y = 1062.1
+radius = 40.0
+income_amount = 8
+capture_time = 1.7
+

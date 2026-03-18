@@ -1,0 +1,334 @@
+[[units]]
+archetype = "base"
+description = "本拠地。ここを失うと戦線が崩れる。"
+radius = 28.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 480
+cost = 0
+production_time = 0.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "stable"
+description = "回転騎兵を送り出す専用厩舎。遊びの起点になる。"
+flavor_text = "勢いで押し込む兵は、ここから飛び出す。"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 300
+cost = 130
+production_time = 5.5
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+# ユニット種別。ここを turret にすると砲台定義として読み込まれる。
+archetype = "turret"
+# ゲーム内ヘルプやUIに出る説明文。性能には影響しない。
+description = "足を止めて迎撃する防衛施設。前線の支え向き。"
+# 雰囲気用テキスト。性能には影響しない。
+flavor_text = "据えれば静かに仕事をする。"
+# 当たり判定と占有サイズ。大きいほど置き場所や接触距離に影響する。
+radius = 18.0
+# 移動速度。タレットは動かないので通常は 0.0 のまま。
+move_speed = 0.0
+# 射程距離。大幅強化ならまずここを伸ばすと効きやすい。
+attack_range = 170.0
+# 攻撃間隔。小さいほど連射が速くなる。
+attack_cooldown = 0.5
+# 1発あたりの攻撃力。重い砲台にしたいならここを上げる。
+attack_power = 34
+# 耐久力。前線に置いて長持ちさせたいならここを上げる。
+hp = 540
+# 建設コスト。強化に合わせて重くしたい時に調整する。
+cost = 140
+# 生産時間。建設完了までの時間。建物なので 0.0 でも動作するが、建設処理側の値と合わせて調整する。
+production_time = 0.0
+# 移動可否。タレットは固定砲台なので false のまま。
+can_move = false
+# 敵を感知して戦闘開始する範囲。射程より少し長いと反応が良い。
+aggro_range = 220.0
+
+[[units]]
+archetype = "barracks"
+description = "兵士を呼べる生産拠点。戦線の継続に必要。"
+flavor_text = "粗末でも、ここが兵の集まる場所になる。"
+radius = 22.0
+move_speed = 0.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 320
+cost = 120
+production_time = 6.0
+can_move = false
+aggro_range = 0.0
+
+[[units]]
+archetype = "worker"
+description = "建設と序盤の穴埋めを担う補助役。"
+radius = 10.0
+move_speed = 85.0
+attack_range = 18.0
+attack_cooldown = 1.0
+attack_power = 4
+hp = 44
+cost = 40
+production_time = 1.2
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "soldier"
+description = "低コストで前線維持に向く基本兵。"
+flavor_text = "派手さはないが、命令には素直だ。"
+radius = 12.0
+move_speed = 92.0
+attack_range = 24.0
+attack_cooldown = 0.7
+attack_power = 8
+hp = 84
+cost = 60
+production_time = 1.6
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "archer"
+description = "後衛から削る射撃兵。守りの後ろで活きる。"
+flavor_text = "一歩引いた位置から、確実に矢を重ねる。"
+radius = 11.0
+move_speed = 82.0
+attack_range = 120.0
+attack_cooldown = 1.0
+attack_power = 6
+hp = 60
+cost = 80
+production_time = 2.0
+can_move = true
+aggro_range = 220.0
+
+[[units]]
+archetype = "sniper"
+description = "超長射程で危険な後衛を抜く狙撃兵。数は要らないが、置くだけで相手の厚みを削れる。"
+flavor_text = "一発ずつ、危ない相手から黙らせる。"
+radius = 11.0
+move_speed = 74.0
+attack_range = 270.0
+attack_cooldown = 2.4
+attack_power = 24
+hp = 56
+cost = 130
+production_time = 3.2
+can_move = true
+aggro_range = 340.0
+
+[[units]]
+archetype = "katyusha"
+description = "自動でロケットを撃ち込み、密集した敵をまとめて削る後衛支援車両。単体処理は苦手。"
+flavor_text = "散らばれば軽い。固まれば危ない。"
+radius = 13.0
+move_speed = 60.0
+attack_range = 300.0
+attack_cooldown = 6.4
+attack_power = 18
+hp = 68
+cost = 170
+production_time = 4.8
+can_move = true
+aggro_range = 360.0
+
+[[units]]
+archetype = "machine_gun"
+description = "長射程を高速連射で維持する重射手。高価だが放っておいても前線を支える。"
+flavor_text = "弾は軽いが、撃ち続ければ相手は前に出づらい。"
+radius = 12.0
+move_speed = 70.0
+attack_range = 210.0
+attack_cooldown = 0.18
+attack_power = 4
+hp = 96
+cost = 100
+production_time = 9.0
+can_move = true
+aggro_range = 270.0
+
+[[units]]
+archetype = "goliath"
+description = "敵に近づいて爆ぜる使い切り特攻兵。撃ち落とされても周囲を巻き込む。"
+flavor_text = "止めても危ない。通しても危ない。"
+radius = 11.0
+move_speed = 96.0
+attack_range = 0.0
+attack_cooldown = 1.0
+attack_power = 0
+hp = 48
+cost = 80
+production_time = 2.0
+can_move = true
+aggro_range = 150.0
+
+[[units]]
+archetype = "healer"
+description = "味方歩兵を自動回復する後方支援兵。建物は治せない。"
+flavor_text = "少し後ろに混ぜるだけで、前線が長く持つ。"
+radius = 11.0
+move_speed = 80.0
+attack_range = 108.0
+attack_cooldown = 1.0
+attack_power = 8
+hp = 52
+cost = 100
+production_time = 2.4
+can_move = true
+aggro_range = 170.0
+
+[[units]]
+archetype = "spinner"
+description = "走りながら周囲を削る回転騎兵。深く考えず突っ込ませやすい。"
+flavor_text = "止まると並、走れば楽しい。"
+radius = 13.0
+move_speed = 118.0
+attack_range = 22.0
+attack_cooldown = 0.75
+attack_power = 6
+hp = 72
+cost = 90
+production_time = 2.2
+can_move = true
+aggro_range = 200.0
+
+[[player_production]]
+slot = 1
+producer = "base"
+archetype = "worker"
+
+[[player_production]]
+slot = 2
+producer = "barracks"
+archetype = "soldier"
+cost = 120
+batch_count = 2
+
+[[player_production]]
+slot = 3
+producer = "barracks"
+archetype = "archer"
+cost = 160
+batch_count = 2
+
+[[player_production]]
+slot = 0
+producer = "barracks"
+archetype = "sniper"
+
+[[player_production]]
+slot = 6
+producer = "barracks"
+archetype = "katyusha"
+
+[[player_production]]
+slot = 7
+producer = "barracks"
+archetype = "goliath"
+
+[[player_production]]
+slot = 8
+producer = "barracks"
+archetype = "machine_gun"
+
+[[player_production]]
+slot = 9
+producer = "barracks"
+archetype = "healer"
+
+[[player_production]]
+slot = 4
+producer = "stable"
+archetype = "spinner"
+cost = 180
+batch_count = 2
+
+[[player_construction]]
+slot = 5
+archetype = "barracks"
+
+[[player_construction]]
+slot = 6
+archetype = "stable"
+
+[[player_construction]]
+slot = 7
+archetype = "turret"
+
+[[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
+slot = 8
+# 強化種別ID。内部判定用なので既存値を維持する。
+type = "power"
+# UIラベル。表示名のみ。
+label = "POWER"
+# アイコン1文字。表示用のみ。
+glyph = "P"
+# 強化説明。性能には影響しない。
+description = "威力のみ強化。重い一撃で前線を支える。"
+# 雰囲気用テキスト。性能には影響しない。
+flavor_text = "少ない手数でも、撃てば違いが出る。"
+# 強化コスト。強化を強くするなら上げる候補。
+cost = 100
+# 威力の加算値。火力を大幅に上げたいならここを増やす。
+attack_power_delta = 4
+# 攻撃間隔の加算値。マイナスにすると連射が速くなる。
+attack_cooldown_delta = 0.0
+# 初期解放されているか。false なら進行で解放する前提。
+unlocked_by_default = true
+
+[[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
+slot = 9
+# 強化種別ID。内部判定用なので既存値を維持する。
+type = "rapid"
+# UIラベル。表示名のみ。
+label = "RAPID"
+# アイコン1文字。表示用のみ。
+glyph = "R"
+# 強化説明。性能には影響しない。
+description = "連射のみ強化。継続迎撃に向く。"
+# 雰囲気用テキスト。性能には影響しない。
+flavor_text = "細かく刻めば、押し返す時間が延びる。"
+# 強化コスト。強化を強くするなら上げる候補。
+cost = 100
+# 威力の加算値。rapid は通常 0 のまま。
+attack_power_delta = 0
+# 攻撃間隔の加算値。よりマイナスにするとさらに高速連射になる。
+attack_cooldown_delta = -0.28
+# 初期解放されているか。false なら進行で解放する前提。
+unlocked_by_default = true
+
+[[turret_upgrades]]
+# コマンドスロット番号。どのキー/アイコン位置で出すか。
+slot = 0
+# 強化種別ID。内部判定用なので既存値を維持する。
+type = "dual"
+# UIラベル。表示名のみ。
+label = "DUAL"
+# アイコン1文字。表示用のみ。
+glyph = "D"
+# 強化説明。性能には影響しない。
+description = "威力と連射を両立した上位強化。"
+# 雰囲気用テキスト。性能には影響しない。
+flavor_text = "大きな投資に見合うだけの制圧力を得る。"
+# 強化コスト。強い複合強化にするほど高めにしやすい。
+cost = 240
+# 威力の加算値。dual を重火力寄りにしたいなら増やす。
+attack_power_delta = 3
+# 攻撃間隔の加算値。マイナス幅を増やすほど速射になる。
+attack_cooldown_delta = -0.22
+# 初期解放されているか。false なら進行で解放する前提。
+unlocked_by_default = false

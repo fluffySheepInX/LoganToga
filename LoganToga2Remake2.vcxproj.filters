@@ -49,4 +49,9 @@
     <ClCompile Include="BalanceEditScene.Persistence.cpp" />
     <ClCompile Include="BalanceEditScene.Help.cpp" />
     <ClCompile Include="BalanceEditScene.Converters.cpp" />
+    <ClCompile Include="RewardEditorScene.cpp" />
+    <ClCompile Include="RewardEditorScene.Draw.cpp" />
+    <ClCompile Include="RewardEditorScene.Input.cpp" />
+    <ClCompile Include="RewardUiLayout.cpp" />
+    <ClCompile Include="RewardUiLayout.Draw.cpp" />
   </ItemGroup>

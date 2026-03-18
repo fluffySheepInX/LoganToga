@@ -159,6 +159,11 @@
     <ClCompile Include="MapEditScene.Input.cpp" />
     <ClCompile Include="MapEditScene.Input.Panels.cpp" />
     <ClCompile Include="MapEditScene.Persistence.cpp" />
+    <ClCompile Include="RewardEditorScene.cpp" />
+    <ClCompile Include="RewardEditorScene.Draw.cpp" />
+    <ClCompile Include="RewardEditorScene.Input.cpp" />
+    <ClCompile Include="RewardUiLayout.cpp" />
+    <ClCompile Include="RewardUiLayout.Draw.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -442,6 +447,7 @@
     <ClInclude Include="BattleSessionResourcePoints.ipp" />
     <ClInclude Include="BattleState.h" />
     <ClInclude Include="BattleStateHelpers.h" />
+    <ClInclude Include="BattleTutorialText.h" />
     <ClInclude Include="BattleTypes.h" />
     <ClInclude Include="BonusRoomData.h" />
     <ClInclude Include="BonusRoomScene.h" />

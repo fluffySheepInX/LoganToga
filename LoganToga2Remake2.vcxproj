@@ -7,6 +7,9 @@
     <ClCompile Include="BalanceEditScene.Input.cpp" />
     <ClCompile Include="BalanceEditScene.Persistence.cpp" />
     <ClCompile Include="BattleScene.cpp" />
+    <ClCompile Include="RewardEditorScene.cpp" />
+    <ClCompile Include="RewardEditorScene.Draw.cpp" />
+    <ClCompile Include="RewardEditorScene.Input.cpp" />
     <ClCompile Include="BattleCommandUi.cpp" />
     <ClCompile Include="BattleCommandUiQueries.cpp" />
     <ClCompile Include="BattleCommandUiQueriesConstruction.cpp" />
@@ -45,6 +48,8 @@
     <ClCompile Include="MapEditScene.Input.cpp" />
     <ClCompile Include="MapEditScene.Input.Panels.cpp" />
     <ClCompile Include="MapEditScene.Persistence.cpp" />
+    <ClCompile Include="RewardUiLayout.cpp" />
+    <ClCompile Include="RewardUiLayout.Draw.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="TitleScene.Draw.cpp" />
     <ClCompile Include="stdafx.cpp">

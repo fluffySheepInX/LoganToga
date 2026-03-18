@@ -2,12 +2,12 @@
 hasContinue = true
 resumeScene = "Battle"
 runIsActive = true
-runUseDebugFullUnlocks = true
+runUseDebugFullUnlocks = false
 runCurrentBattleIndex = 0
-runTotalBattles = 4
+runTotalBattles = 3
 runIsFailed = false
 runIsCleared = false
-runMapProgressionBattles = [2, 3, 4]
+runMapProgressionBattles = [2, 3]
 runSelectedCardIds = []
 runPendingRewardCardIds = []
 bonusViewedRoomIds = []

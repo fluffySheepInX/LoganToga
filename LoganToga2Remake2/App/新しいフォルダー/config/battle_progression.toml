@@ -1,0 +1,225 @@
+[[enemy_progression]]
+battle = 2
+map_source = "battle_map_crossroads.toml"
+gold_bonus = 80
+income_bonus = 8
+spawn_interval = 3.7
+assault_unit_threshold = 3
+replace_enemy_initial_units = true
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "base"
+x = 2298.0
+y = 252.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2122.0
+y = 156.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2368.0
+y = 420.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "barracks"
+x = 2168.0
+y = 304.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2096.0
+y = 310.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2208.0
+y = 376.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2246.0
+y = 212.0
+
+[[enemy_progression]]
+battle = 3
+map_source = "battle_map_dual_lane.toml"
+gold_bonus = 160
+income_bonus = 16
+spawn_interval = 3.4
+assault_unit_threshold = 3
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 4
+staging_assault_gather_radius = 88.0
+staging_assault_max_wait = 3.2
+staging_assault_commit_time = 4.5
+replace_enemy_initial_units = true
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "base"
+x = 2336.0
+y = 708.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2368.0
+y = 544.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2368.0
+y = 872.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "barracks"
+x = 2160.0
+y = 704.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2204.0
+y = 628.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2208.0
+y = 788.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2268.0
+y = 590.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2268.0
+y = 826.0
+
+[[enemy_progression]]
+battle = 4
+map_source = "battle_map_ridge.toml"
+gold_bonus = 240
+income_bonus = 24
+spawn_interval = 3.1
+assault_unit_threshold = 2
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 5
+staging_assault_gather_radius = 96.0
+staging_assault_max_wait = 3.8
+staging_assault_commit_time = 5.0
+replace_enemy_initial_units = true
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "base"
+x = 2268.0
+y = 324.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2104.0
+y = 188.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2412.0
+y = 476.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2208.0
+y = 520.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "barracks"
+x = 2128.0
+y = 356.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2120.0
+y = 436.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2190.0
+y = 402.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2194.0
+y = 250.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2298.0
+y = 442.0
+
+[[enemy_progression]]
+battle = 5
+map_source = "battle_map_fortress.toml"
+gold_bonus = 320
+income_bonus = 32
+spawn_interval = 2.8
+assault_unit_threshold = 2
+enemy_ai_mode = "staging_assault"
+staging_assault_min_units = 6
+staging_assault_gather_radius = 110.0
+staging_assault_max_wait = 4.2
+staging_assault_commit_time = 5.6
+replace_enemy_initial_units = true
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "base"
+x = 2308.0
+y = 228.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2118.0
+y = 114.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2418.0
+y = 398.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "turret"
+x = 2198.0
+y = 468.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "barracks"
+x = 2172.0
+y = 248.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2148.0
+y = 316.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2192.0
+y = 372.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "soldier"
+x = 2240.0
+y = 430.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2236.0
+y = 176.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2286.0
+y = 344.0
+
+[[enemy_progression.enemy_initial_units]]
+archetype = "archer"
+x = 2332.0
+y = 442.0

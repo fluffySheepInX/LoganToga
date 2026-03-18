@@ -1,0 +1,5 @@
+[sources]
+core = "battle_core.toml"
+units = "battle_units.toml"
+map = "battle_map.toml"
+progression = "battle_progression.toml"

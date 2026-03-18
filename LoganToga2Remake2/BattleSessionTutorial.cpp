@@ -1,29 +1,9 @@
 ﻿#include "BattleSession.h"
 
+#include "BattleTutorialText.h"
+
 namespace
 {
-	[[nodiscard]] String GetTutorialObjective(const BattleConfigData& config, const TutorialPhase phase)
-	{
-		switch (phase)
-		{
-		case TutorialPhase::MoveUnit:
-			return config.tutorial.objectiveMove;
-		case TutorialPhase::BuildStructure:
-			return config.tutorial.objectiveBuild;
-		case TutorialPhase::PrepareDefense:
-			return config.tutorial.objectivePrepare;
-		case TutorialPhase::ProduceUnit:
-			return config.tutorial.objectiveProduce;
-		case TutorialPhase::DefendWave:
-			return config.tutorial.objectiveDefend;
-		case TutorialPhase::Completed:
-			return config.tutorial.objectiveComplete;
-		case TutorialPhase::None:
-		default:
-			return U"";
-		}
-	}
-
 	[[nodiscard]] bool HasConstructedPlayerBuilding(const BattleState& state, const UnitArchetype archetype)
 	{
 		for (const auto& building : state.buildings)
@@ -57,7 +37,7 @@ void BattleSession::beginTutorialPhase(const TutorialPhase phase, const double t
 {
 	m_state.tutorialPhase = phase;
 	m_state.tutorialPhaseTimer = timer;
-	m_state.tutorialObjective = GetTutorialObjective(m_config, phase);
+  m_state.tutorialObjective = BattleTutorialText::GetObjective(m_config, phase);
 }
 
 void BattleSession::spawnTutorialEnemyWave()
@@ -73,7 +53,7 @@ void BattleSession::spawnTutorialEnemyWave()
 		spawnUnit(placement.owner, placement.archetype, placement.position);
 	}
 	beginTutorialPhase(TutorialPhase::DefendWave);
-	m_state.statusMessage = U"Enemy wave incoming";
+ m_state.statusMessage = BattleTutorialText::GetStatusEnemyIncoming();
 	m_state.statusMessageTimer = 2.0;
 }
 
@@ -111,7 +91,7 @@ void BattleSession::updateTutorial(const double deltaTime)
 				if (worker->isAlive && (worker->position.distanceFrom(m_config.tutorial.moveTarget) <= m_config.tutorial.moveTargetRadius))
 				{
 					beginTutorialPhase(TutorialPhase::BuildStructure);
-					m_state.statusMessage = U"Now build a Barracks";
+                    m_state.statusMessage = BattleTutorialText::GetStatusBuild();
 					m_state.statusMessageTimer = 2.0;
 				}
 			}
@@ -122,7 +102,7 @@ void BattleSession::updateTutorial(const double deltaTime)
 		if (HasConstructedPlayerBuilding(m_state, m_config.tutorial.requiredConstruction))
 		{
 			beginTutorialPhase(TutorialPhase::PrepareDefense, m_config.tutorial.prepareDelay);
-			m_state.statusMessage = U"Enemy forces spotted";
+            m_state.statusMessage = BattleTutorialText::GetStatusEnemySpotted();
 			m_state.statusMessageTimer = 2.0;
 		}
 		break;
@@ -131,7 +111,7 @@ void BattleSession::updateTutorial(const double deltaTime)
 		if (m_state.tutorialPhaseTimer <= 0.0)
 		{
 			beginTutorialPhase(TutorialPhase::ProduceUnit, m_config.tutorial.enemyWaveDelay);
-			m_state.statusMessage = U"Produce a Soldier before the enemy arrives";
+          m_state.statusMessage = BattleTutorialText::GetStatusProduce();
 			m_state.statusMessageTimer = 2.0;
 		}
 		break;
@@ -143,7 +123,7 @@ void BattleSession::updateTutorial(const double deltaTime)
 			if (m_state.tutorialPhaseTimer > postProductionGraceTime)
 			{
 				m_state.tutorialPhaseTimer = postProductionGraceTime;
-				m_state.statusMessage = U"Production complete. Prepare to intercept.";
+              m_state.statusMessage = BattleTutorialText::GetStatusProductionComplete();
 				m_state.statusMessageTimer = 2.0;
 			}
 

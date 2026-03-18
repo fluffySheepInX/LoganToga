@@ -59,6 +59,11 @@
     <ClCompile Include="TitleUiEditorScene.Draw.cpp" />
     <ClCompile Include="TitleUiEditorScene.Selection.cpp" />
     <ClCompile Include="TitleUiEditorScene.Layout.cpp" />
+    <ClCompile Include="RewardEditorScene.cpp" />
+    <ClCompile Include="RewardEditorScene.Input.cpp" />
+    <ClCompile Include="RewardEditorScene.Draw.cpp" />
+    <ClCompile Include="RewardUiLayout.cpp" />
+    <ClCompile Include="RewardUiLayout.Draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioManager.h" />
@@ -139,6 +144,7 @@
     <ClInclude Include="Localization.h" />
     <ClInclude Include="RewardUiLayout.h" />
     <ClInclude Include="RewardEditorScene.h" />
+    <ClInclude Include="BattleTutorialText.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

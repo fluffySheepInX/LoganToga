@@ -1,0 +1,60 @@
+[economy]
+player_gold = 280
+enemy_gold = 0
+
+[world]
+width = 1280.0
+height = 720.0
+
+[income]
+interval = 1.0
+player_amount = 20
+enemy_amount = 0
+
+[hud]
+title = "LoganToga2 Tutorial"
+controls = "L drag: pan / R click: move or attack / Q-W-E: formation / 1-0: command / X: cancel"
+escape_hint = "Esc: pause menu"
+win_hint = "Enter: title / R: retry tutorial"
+
+[enemy_spawn]
+interval = 9999.0
+basic_archetype = "soldier"
+advanced_archetype = "archer"
+advanced_probability = 0.0
+x = 1080.0
+y = 140.0
+random_y_offset = 0.0
+
+[enemy_ai]
+mode = "default"
+decision_interval = 0.4
+assault_unit_threshold = 99
+defense_radius = 220.0
+rally_distance = 96.0
+base_assault_lock_radius = 160.0
+staging_assault_min_units = 99
+staging_assault_gather_radius = 96.0
+staging_assault_max_wait = 4.0
+staging_assault_commit_time = 5.0
+use_pathfinding_for_attack_target = true
+
+[debug]
+enable_enemy_ai_switcher = true
+
+[tutorial]
+enabled = true
+move_target_x = 420.0
+move_target_y = 470.0
+move_target_radius = 72.0
+prepare_delay = 3.0
+enemy_wave_delay = 8.0
+required_construction = "barracks"
+required_production = "soldier"
+required_production_count = 1
+objective_move = "Step 1: Select the Worker and move it to the forward area."
+objective_build = "Step 2: Build a Barracks near your base."
+objective_prepare = "Enemy scouts were spotted. Take a moment to prepare your line."
+objective_produce = "Step 3: Produce a Soldier from the Barracks, then hold until the wave arrives."
+objective_defend = "Step 4: Defeat the incoming enemy wave."
+objective_complete = "Tutorial complete. Press Enter to return to title."

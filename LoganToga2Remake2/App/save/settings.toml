@@ -1,8 +1,8 @@
 ﻿schemaVersion = 1
-resolutionPreset = "Medium"
+resolutionPreset = "Large"
 fullscreen = false
 masterVolume = 1
-bgmVolume = 0.00347
+bgmVolume = 1
 seVolume = 1
 language = "en"
 hasSeenLanguageButtonHint = true
