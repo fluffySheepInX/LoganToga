@@ -152,6 +152,22 @@
     <ClInclude Include="BattleTutorialText.h" />
     <ClInclude Include="BattleUiText.h" />
     <ClInclude Include="BonusRoomEditorScene.h" />
+    <ClInclude Include="BattleUiText.Hud.h" />
+    <ClInclude Include="BattleUiText.Result.h" />
+    <ClInclude Include="BattleUiText.Pause.h" />
+    <ClInclude Include="BattleUiText.Queue.h" />
+    <ClInclude Include="BattleUiText.Archetype.h" />
+    <ClInclude Include="BattleUiText.Command.h" />
+    <ClInclude Include="TitleUiLayout.Accessors.h" />
+    <ClInclude Include="TitleUiLayout.Types.h" />
+    <ClInclude Include="TitleUiLayout.Serialization.h" />
+    <ClInclude Include="TitleUiLayout.Persistence.h" />
+    <ClInclude Include="Localization.Runtime.h" />
+    <ClInclude Include="Localization.Legacy.h" />
+    <ClInclude Include="Localization.LocalizedText.h" />
+    <ClInclude Include="Localization.Text.h" />
+    <ClInclude Include="Localization.Types.h" />
+    <ClInclude Include="Localization.Registry.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
