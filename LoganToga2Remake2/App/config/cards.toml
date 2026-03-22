@@ -18,10 +18,6 @@ repeatable = true
 
 [[cards]]
 id = "soldier_blades_1"
-name = "Sharpened Blades"
-name_ja = "研がれた刃"
-description = "Soldier attack +2"
-description_ja = "兵士 攻撃力 +2"
 rarity = "common"
 effect_type = "unit_stat_bonus"
 target_archetype = "soldier"
@@ -31,10 +27,6 @@ repeatable = true
 
 [[cards]]
 id = "worker_guild_1"
-name = "Worker Guild"
-name_ja = "作業員組合"
-description = "Worker production time -0.2s"
-description_ja = "作業員 生産時間 -0.2秒"
 rarity = "common"
 effect_type = "unit_stat_bonus"
 target_archetype = "worker"
@@ -44,10 +36,6 @@ repeatable = true
 
 [[cards]]
 id = "barracks_drums_1"
-name = "War Drums"
-name_ja = "軍鼓"
-description = "Barracks production time -0.7s"
-description_ja = "兵舎 生産時間 -0.7秒"
 rarity = "rare"
 effect_type = "unit_stat_bonus"
 target_archetype = "barracks"
@@ -57,10 +45,6 @@ repeatable = true
 
 [[cards]]
 id = "archer_unlock_1"
-name = "Bowyer Contract"
-name_ja = "弓師契約"
-description = "Unlock Archer production"
-description_ja = "弓兵の生産を解放"
 rarity = "rare"
 effect_type = "production_unlock"
 target_archetype = "archer"
@@ -68,10 +52,6 @@ repeatable = false
 
 [[cards]]
 id = "healer_unlock_1"
-name = "Field Medics"
-name_ja = "野戦衛生兵"
-description = "Unlock Healer production"
-description_ja = "回復兵の生産を解放"
 rarity = "rare"
 effect_type = "production_unlock"
 target_archetype = "healer"
@@ -79,10 +59,6 @@ repeatable = false
 
 [[cards]]
 id = "goliath_unlock_1"
-name = "Demolition Cart"
-name_ja = "爆薬荷車"
-description = "Unlock Goliath production"
-description_ja = "ゴライアスの生産を解放"
 rarity = "rare"
 effect_type = "production_unlock"
 target_archetype = "goliath"
@@ -90,10 +66,6 @@ repeatable = false
 
 [[cards]]
 id = "katyusha_unlock_1"
-name = "Rocket Rails"
-name_ja = "ロケットレール"
-description = "Unlock Katyusha production"
-description_ja = "カチューシャの生産を解放"
 rarity = "epic"
 effect_type = "production_unlock"
 target_archetype = "katyusha"
@@ -101,10 +73,6 @@ repeatable = false
 
 [[cards]]
 id = "spinner_unlock_1"
-name = "Whirl Stable"
-name_ja = "旋回厩舎"
-description = "Unlock Spinner production and Stable construction"
-description_ja = "スピナーの生産と厩舎建設を解放"
 rarity = "epic"
 effect_type = "production_unlock"
 target_archetype = "spinner"
@@ -112,10 +80,6 @@ repeatable = false
 
 [[cards]]
 id = "turret_unlock_1"
-name = "Siege Blueprints"
-name_ja = "攻城設計図"
-description = "Unlock Turret construction"
-description_ja = "砲台建設を解放"
 rarity = "rare"
 effect_type = "construction_unlock"
 target_archetype = "turret"
@@ -123,10 +87,6 @@ repeatable = false
 
 [[cards]]
 id = "turret_dual_upgrade_unlock_1"
-name = "Twin Mechanism"
-name_ja = "双連機構"
-description = "Unlock Dual turret upgrade"
-description_ja = "砲台の両立強化を解放"
 rarity = "epic"
 effect_type = "turret_upgrade_unlock"
 target_turret_upgrade = "dual"
@@ -134,10 +94,6 @@ repeatable = false
 
 [[cards]]
 id = "soldier_elite_1"
-name = "Elite Infantry"
-name_ja = "精鋭歩兵"
-description = "Soldier HP +20"
-description_ja = "兵士 HP +20"
 rarity = "epic"
 effect_type = "unit_stat_bonus"
 target_archetype = "soldier"
@@ -147,10 +103,6 @@ repeatable = true
 
 [[cards]]
 id = "archer_sight_1"
-name = "Longbow Strings"
-name_ja = "長弓の弦"
-description = "Archer attack range +28"
-description_ja = "弓兵 射程 +28"
 rarity = "epic"
 effect_type = "unit_stat_bonus"
 target_archetype = "archer"
@@ -160,10 +112,6 @@ repeatable = true
 
 [[cards]]
 id = "worker_march_1"
-name = "Forced March"
-name_ja = "強行軍"
-description = "Worker move speed +18"
-description_ja = "作業員 移動速度 +18"
 rarity = "common"
 effect_type = "unit_stat_bonus"
 target_archetype = "worker"

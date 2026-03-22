@@ -1,9 +1,11 @@
 ﻿#include "BalanceEditScene.h"
 
+#include "Localization.h"
+
 BalanceEditScene::BalanceEditScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 {
-	reloadFromDisk(U"Balance editor ready");
+    reloadFromDisk(Localization::GetText(U"balance_edit.status.ready"));
 }
 
 void BalanceEditScene::update()
@@ -28,7 +30,7 @@ void BalanceEditScene::update()
 
 	if (isButtonClicked(getTopButtonRect(1)))
 	{
-		reloadFromDisk(U"Applied current override files");
+      reloadFromDisk(Localization::GetText(U"balance_edit.status.applied_overrides"));
 		return;
 	}
 
@@ -36,11 +38,11 @@ void BalanceEditScene::update()
 	{
 		if (saveEditorOverrides())
 		{
-			reloadFromDisk(U"Saved editor overrides");
+          reloadFromDisk(Localization::GetText(U"balance_edit.status.saved_editor_overrides"));
 		}
 		else
 		{
-			m_statusMessage = U"Failed to save editor overrides";
+           m_statusMessage = Localization::GetText(U"balance_edit.status.failed_save_editor_overrides");
 		}
 		return;
 	}
@@ -49,11 +51,11 @@ void BalanceEditScene::update()
 	{
 		if (clearAllOverrides())
 		{
-			reloadFromDisk(U"Cleared manual and editor override files");
+            reloadFromDisk(Localization::GetText(U"balance_edit.status.cleared_all_overrides"));
 		}
 		else
 		{
-			m_statusMessage = U"Failed to clear all overrides";
+         m_statusMessage = Localization::GetText(U"balance_edit.status.failed_clear_all_overrides");
 		}
 		return;
 	}
@@ -62,11 +64,11 @@ void BalanceEditScene::update()
 	{
 		if (clearEditorOverrides())
 		{
-			reloadFromDisk(U"Cleared editor overrides");
+            reloadFromDisk(Localization::GetText(U"balance_edit.status.cleared_editor_overrides"));
 		}
 		else
 		{
-			m_statusMessage = U"Failed to clear editor overrides";
+          m_statusMessage = Localization::GetText(U"balance_edit.status.failed_clear_editor_overrides");
 		}
 		return;
 	}
@@ -122,22 +124,24 @@ void BalanceEditScene::draw() const
 	getRightPanelRect().drawFrame(2, ColorF{ 0.34, 0.48, 0.70 });
 
 	const auto& data = getData();
-	data.uiFont(U"Balance Editor").draw(getRightPanelRect().x + 16, getRightPanelRect().y + 16, Palette::White);
-	data.smallFont(U"Save writes editor-only TOML override files. Manual _override files stay untouched.")
+    data.uiFont(Localization::GetText(U"balance_edit.title")).draw(getRightPanelRect().x + 16, getRightPanelRect().y + 16, Palette::White);
+	data.smallFont(Localization::GetText(U"balance_edit.subtitle"))
 		.draw(getRightPanelRect().x + 16, getRightPanelRect().y + 52, ColorF{ 0.82, 0.90, 1.0 });
-	data.smallFont(m_hasUnsavedChanges ? U"Status: edited / unsaved" : U"Status: synced")
+   data.smallFont(m_hasUnsavedChanges
+		? Localization::GetText(U"balance_edit.status.edited_unsaved")
+		: Localization::GetText(U"balance_edit.status.synced"))
 		.draw(getRightPanelRect().x + 16, getRightPanelRect().y + 74, m_hasUnsavedChanges ? ColorF{ 1.0, 0.92, 0.25 } : ColorF{ 0.72, 0.88, 0.78 });
 	data.smallFont(m_statusMessage).draw(getRightPanelRect().x + 16, getRightPanelRect().y + 96, ColorF{ 0.94, 0.94, 0.98 });
 
-	drawButton(getTopButtonRect(0), U"Back", data.smallFont);
-	drawButton(getTopButtonRect(1), U"Apply Overrides", data.smallFont);
-	drawButton(getTopButtonRect(2), U"Save", data.smallFont, m_hasUnsavedChanges);
-	drawButton(getTopButtonRect(3), U"Clear Editor", data.smallFont);
-	drawButton(getTopButtonRect(4), U"Clear All", data.smallFont);
+   drawButton(getTopButtonRect(0), Localization::GetText(U"balance_edit.button.back"), data.smallFont);
+	drawButton(getTopButtonRect(1), Localization::GetText(U"balance_edit.button.apply_overrides"), data.smallFont);
+	drawButton(getTopButtonRect(2), Localization::GetText(U"balance_edit.button.save"), data.smallFont, m_hasUnsavedChanges);
+	drawButton(getTopButtonRect(3), Localization::GetText(U"balance_edit.button.clear_editor"), data.smallFont);
+	drawButton(getTopButtonRect(4), Localization::GetText(U"balance_edit.button.clear_all"), data.smallFont);
 
-	drawButton(getTabButtonRect(Tab::Core), U"Core", data.smallFont, m_tab == Tab::Core);
-	drawButton(getTabButtonRect(Tab::Units), U"Units", data.smallFont, m_tab == Tab::Units);
-	drawButton(getTabButtonRect(Tab::Cards), U"Cards", data.smallFont, m_tab == Tab::Cards);
+   drawButton(getTabButtonRect(Tab::Core), Localization::GetText(U"balance_edit.tab.core"), data.smallFont, m_tab == Tab::Core);
+	drawButton(getTabButtonRect(Tab::Units), Localization::GetText(U"balance_edit.tab.units"), data.smallFont, m_tab == Tab::Units);
+	drawButton(getTabButtonRect(Tab::Cards), Localization::GetText(U"balance_edit.tab.cards"), data.smallFont, m_tab == Tab::Cards);
 
 	drawLeftPanel();
 	if (m_tab == Tab::Core)
@@ -178,7 +182,7 @@ void BalanceEditScene::applyEditedState(const bool changed)
 	}
 
 	m_hasUnsavedChanges = true;
-	m_statusMessage = U"Edited values locally";
+ m_statusMessage = Localization::GetText(U"balance_edit.status.edited_local");
 }
 
 UnitDefinition* BalanceEditScene::getSelectedUnitDefinition()

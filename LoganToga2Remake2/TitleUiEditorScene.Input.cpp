@@ -1,5 +1,7 @@
 ﻿#include "TitleUiEditorScene.h"
 
+#include "Localization.h"
+
 namespace TitleUiEditorSceneInputDetail
 {
 	constexpr int32 EditorGridCellSize = 8;
@@ -36,7 +38,7 @@ void TitleUiEditorScene::handleSelectionInput()
 		if (isButtonClicked(getSelectionRowRect(visibleIndex)))
 		{
 			m_selectedElementIndex = actualIndex;
-			m_statusMessage = U"Selected: " + elements[static_cast<size_t>(actualIndex)].name;
+          m_statusMessage = Localization::FormatText(U"title_ui_editor.status.selected", Localization::GetText(elements[static_cast<size_t>(actualIndex)].name));
 			return;
 		}
 	}
@@ -45,13 +47,13 @@ void TitleUiEditorScene::handleSelectionInput()
 	{
 		m_selectedElementIndex = Max(0, m_selectedElementIndex - 1);
 		ensureSelectedElementVisible();
-		m_statusMessage = U"Selected: " + getSelectedElement().name;
+        m_statusMessage = Localization::FormatText(U"title_ui_editor.status.selected", Localization::GetText(getSelectedElement().name));
 	}
 	else if (KeyS.down())
 	{
 		m_selectedElementIndex = Min(static_cast<int32>(elements.size()) - 1, m_selectedElementIndex + 1);
 		ensureSelectedElementVisible();
-		m_statusMessage = U"Selected: " + getSelectedElement().name;
+        m_statusMessage = Localization::FormatText(U"title_ui_editor.status.selected", Localization::GetText(getSelectedElement().name));
 	}
 }
 
@@ -92,35 +94,35 @@ void TitleUiEditorScene::handlePreviewToggleInput()
 	if (isButtonClicked(getToggleButtonRect(0)))
 	{
 		m_previewHasContinue = !m_previewHasContinue;
-		m_statusMessage = U"Preview: toggled continue state";
+       m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_continue");
 		return;
 	}
 
 	if (isButtonClicked(getToggleButtonRect(1)))
 	{
 		m_previewHasViewedBonusRooms = !m_previewHasViewedBonusRooms;
-		m_statusMessage = U"Preview: toggled bonus room state";
+     m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_bonus" );
 		return;
 	}
 
 	if (isButtonClicked(getToggleButtonRect(2)))
 	{
 		m_previewQuickGuideOpen = !m_previewQuickGuideOpen;
-		m_statusMessage = U"Preview: toggled quick guide";
+      m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_quick_guide");
 		return;
 	}
 
 	if (isButtonClicked(getToggleButtonRect(3)))
 	{
 		m_previewDataClearDialogOpen = !m_previewDataClearDialogOpen;
-		m_statusMessage = U"Preview: toggled data clear dialog";
+        m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_data_clear");
 		return;
 	}
 
 	if (isButtonClicked(getToggleButtonRect(4)))
 	{
 		m_previewExitDialogOpen = !m_previewExitDialogOpen;
-		m_statusMessage = U"Preview: toggled exit dialog";
+      m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_exit_dialog");
 		return;
 	}
 
@@ -128,7 +130,7 @@ void TitleUiEditorScene::handlePreviewToggleInput()
 	if (isButtonClicked(getToggleButtonRect(5)))
 	{
 		m_previewDebugButtons = !m_previewDebugButtons;
-		m_statusMessage = U"Preview: toggled debug buttons";
+        m_statusMessage = Localization::GetText(U"title_ui_editor.status.preview_debug_buttons");
 	}
 #endif
 }
@@ -168,7 +170,7 @@ void TitleUiEditorScene::handleInfoPanelInput()
 	{
 		if (const auto defaultRect = getSelectedDefaultRect())
 		{
-			applySelectedRectSizePreset(defaultRect->size, U"Default Size");
+            applySelectedRectSizePreset(defaultRect->size, Localization::GetText(U"title_ui_editor.preset.default_size"));
 		}
 	}
 }
@@ -278,7 +280,7 @@ void TitleUiEditorScene::handleDragInput()
 		m_previewPanAnchor = cursorPos;
 		m_previewPanStartOffset = m_previewCameraOffset;
 		m_isPanningPreview = true;
-		m_statusMessage = U"Panning preview camera";
+        m_statusMessage = Localization::GetText(U"title_ui_editor.status.panning_preview");
 	}
 
 	if (!MouseL.pressed())
@@ -303,11 +305,11 @@ void TitleUiEditorScene::handleDragInput()
 	if (Vec2* point = getSelectedPoint(); m_isDraggingPoint && point)
 	{
 		*point = TitleUiEditorSceneInputDetail::SnapToEditorGrid(cursorWorldPos + *m_dragOffset);
-		markEdited(U"Dragged point element");
+       markEdited(Localization::GetText(U"title_ui_editor.status.dragged_point"));
 	}
 	else if (RectF* rect = getSelectedRect(); rect)
 	{
 		rect->pos = TitleUiEditorSceneInputDetail::SnapToEditorGrid(cursorWorldPos - *m_dragOffset);
-		markEdited(U"Dragged rectangle element");
+       markEdited(Localization::GetText(U"title_ui_editor.status.dragged_rectangle"));
 	}
 }

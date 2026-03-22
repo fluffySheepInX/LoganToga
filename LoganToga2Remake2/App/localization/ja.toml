@@ -55,6 +55,7 @@ line2 = "・勝利後、3枚から報酬カードを1枚選択"
 line3 = "・1度でも敗北するとラン終了"
 
 [common]
+default = "既定"
 current_prefix = "現在: "
 resolution_small = "小"
 resolution_medium = "中"
@@ -64,6 +65,16 @@ dialog_enter_yes_no_hint = "Enter: はい / Esc: いいえ"
 exit_question = "ゲームを終了しますか？"
 yes = "はい"
 no = "いいえ"
+
+[common.save_location]
+local = "ローカル"
+appdata = "AppData"
+
+[common.transition]
+off = "オフ"
+fade = "フェード"
+cyber_grid = "サイバーグリッド"
+cyber_scan = "サイバースキャン"
 
 [title.quick_guide]
 line1 = "1. 左クリックでユニットや建物を選択"
@@ -234,6 +245,83 @@ queue = "キュー"
 [battle.command]
 cost = "コスト: {0}G"
 
+[battle.formation]
+panel = "陣形"
+line = "密集"
+column = "列"
+square = "方陣"
+
+[battle.enemy_ai_debug]
+title = "敵AIデバッグ"
+toml = "TOML"
+default = "標準"
+staging = "集結"
+panel_toggle_hint = "F6: パネル  /  F7: 切替"
+current = "現在: {0}"
+toml_override = "TOML: {0}  /  上書き: {1}"
+combat_ready = "戦闘中: {0}  /  準備完了: {1}"
+stage_commit_target = "集結: {0}  /  突撃: {1}  /  目標: {2}"
+panel_on = "Enemy AI デバッグパネル ON"
+panel_off = "Enemy AI デバッグパネル OFF"
+status_override = "Enemy AI: {0}"
+status_toml = "Enemy AI: TOML ({0})"
+
+[reward.card.soldier_drill_1]
+name = "歩兵教練"
+description = "兵士 HP +12"
+
+[reward.card.soldier_blades_1]
+name = "研がれた刃"
+description = "兵士 攻撃力 +2"
+
+[reward.card.worker_guild_1]
+name = "作業員組合"
+description = "作業員 生産時間 -0.2秒"
+
+[reward.card.barracks_drums_1]
+name = "軍鼓"
+description = "兵舎 生産時間 -0.7秒"
+
+[reward.card.archer_unlock_1]
+name = "弓師契約"
+description = "弓兵の生産を解放"
+
+[reward.card.healer_unlock_1]
+name = "野戦衛生兵"
+description = "回復兵の生産を解放"
+
+[reward.card.goliath_unlock_1]
+name = "爆薬荷車"
+description = "ゴライアスの生産を解放"
+
+[reward.card.katyusha_unlock_1]
+name = "ロケットレール"
+description = "カチューシャの生産を解放"
+
+[reward.card.spinner_unlock_1]
+name = "旋回厩舎"
+description = "スピナーの生産と厩舎建設を解放"
+
+[reward.card.turret_unlock_1]
+name = "攻城設計図"
+description = "砲台建設を解放"
+
+[reward.card.turret_dual_upgrade_unlock_1]
+name = "双連機構"
+description = "砲台の両立強化を解放"
+
+[reward.card.soldier_elite_1]
+name = "精鋭歩兵"
+description = "兵士 HP +20"
+
+[reward.card.archer_sight_1]
+name = "長弓の弦"
+description = "弓兵 射程 +28"
+
+[reward.card.worker_march_1]
+name = "強行軍"
+description = "作業員 移動速度 +18"
+
 [title.continue_preview]
 reward_headline = "戦闘 {0}/{1} 後の報酬"
 bonus_room_headline = "クリア後のボーナスルーム"
@@ -350,6 +438,370 @@ teaser = "待たされている感覚を減らしたい"
 page1 = "テンポ調整では、単純な強さよりも、プレイヤーに待たされている感覚を与えていないかを気にしています。"
 page2 = "生産、移動、戦闘、報酬選択のどこかが間延びすると、ゲーム全体の手触りまで重く感じやすくなります。"
 page3 = "そのため数値調整でも、難しさそのものより、流れが止まりにくいことを優先しています。"
+
+[common.owner]
+player = "プレイヤー"
+enemy = "敵"
+neutral = "中立"
+
+[common.unit_archetype]
+base = "本拠地"
+barracks = "兵舎"
+stable = "厩舎"
+turret = "砲台"
+worker = "作業員"
+soldier = "兵士"
+archer = "弓兵"
+sniper = "狙撃兵"
+katyusha = "カチューシャ"
+machine_gun = "機関銃兵"
+goliath = "ゴライアス"
+healer = "回復兵"
+spinner = "スピナー"
+
+[common.reward_card_rarity]
+common = "コモン"
+rare = "レア"
+epic = "エピック"
+
+[common.turret_upgrade]
+power = "威力"
+rapid = "速射"
+dual = "両立"
+
+[balance_edit]
+title = "Balance Editor"
+subtitle = "Save は editor 専用の TOML override を書き出します。手動の _override は変更しません。"
+no_unit_selected = "ユニットが選択されていません"
+no_card_selected = "カードが選択されていません"
+no_target = "対象なし"
+
+[balance_edit.button]
+back = "戻る"
+apply_overrides = "上書きを適用"
+save = "保存"
+clear_editor = "Editorのみ削除"
+clear_all = "すべて削除"
+
+[balance_edit.tab]
+core = "Core"
+units = "Units"
+cards = "Cards"
+
+[balance_edit.status]
+ready = "Balance editor の準備完了"
+applied_overrides = "現在の override ファイルを適用しました"
+saved_editor_overrides = "editor override を保存しました"
+failed_save_editor_overrides = "editor override の保存に失敗しました"
+cleared_all_overrides = "manual / editor override を削除しました"
+failed_clear_all_overrides = "override の全削除に失敗しました"
+cleared_editor_overrides = "editor override を削除しました"
+failed_clear_editor_overrides = "editor override の削除に失敗しました"
+edited_local = "値をローカル編集しました"
+edited_unsaved = "状態: 編集済み / 未保存"
+synced = "状態: 同期済み"
+
+[balance_edit.left_panel]
+title = "パネル"
+core_summary = "経済 / AI の基本値を編集"
+units_summary = "ユニットの性能とキュー値を編集"
+cards_summary = "報酬カードのバランス値を編集"
+core_detail = "Core タブは battle_core.toml の値を編集します"
+units_detail = "Units タブは battle_units.toml と player_production を編集します"
+cards_detail = "Cards タブは cards.toml の値を編集します"
+
+[balance_edit.row]
+player_gold = "プレイヤー資金"
+enemy_gold = "敵資金"
+income_interval = "収入間隔"
+player_income = "プレイヤー収入"
+enemy_income = "敵収入"
+spawn_interval = "出現間隔"
+advanced_spawn_rate = "上位出現率"
+spawn_random_y = "出現Yゆらぎ"
+assault_threshold = "突撃しきい値"
+staging_min_units = "集結最小数"
+attack = "攻撃力"
+unit_cost = "ユニットコスト"
+queue_cost = "キューコスト"
+batch_count = "生産数"
+production_time = "生産時間"
+move_speed = "移動速度"
+attack_range = "射程"
+attack_cooldown = "攻撃間隔"
+aggro_range = "索敵範囲"
+value = "値"
+rarity = "レア度"
+repeatable = "重複可"
+
+[balance_edit.effect_type]
+unit_stat_bonus = "ユニット能力補正"
+production_unlock = "生産解放"
+construction_unlock = "建設解放"
+turret_upgrade_unlock = "砲台強化解放"
+
+[balance_edit.stat_type]
+attack_power = "攻撃力"
+move_speed = "移動速度"
+attack_range = "射程"
+production_time = "生産時間"
+
+[balance_edit.unit_panel]
+queue_backed = "キュー値は player_production を参照しています。"
+no_production_slot = "このユニットには player production slot がありません。"
+
+[balance_edit.help_panel]
+title = "ホバー説明"
+
+[balance_edit.help]
+back = "タイトル画面へ戻ります。このエディタで未保存のローカル編集は破棄されます。"
+apply_overrides = "ディスクから設定を再読み込みし、manual _override と _editor_override の両方を再適用します。"
+save = "現在の編集値を editor 専用 override TOML に書き込みます。"
+clear_editor = "このエディタが生成した _editor_override のみ削除し、ベース / manual override を再読み込みします。"
+clear_all = "core / unit / card の manual _override と editor _editor_override を両方削除します。"
+core_tab_title = "Core タブ"
+core_tab_body = "battle_core の経済、出現、敵 AI のテンポ値を編集します。"
+units_tab_title = "Units タブ"
+units_tab_body = "battle_units のユニット性能と player production slot を編集します。"
+cards_tab_title = "Cards タブ"
+cards_tab_body = "cards の value、rarity、repeatable を編集します。"
+unit_fallback = "このユニットを選ぶと戦闘性能とキュー関連の値を編集できます。"
+default = "コントロールや行にカーソルを合わせると影響内容を表示します。Save は editor override を書き込み、Apply Overrides はディスクから再読み込みします。"
+player_gold = "プレイヤーの初期資金です。高いほど序盤から建物やユニットを出しやすくなります。"
+enemy_gold = "敵の初期資金です。高いほど序盤の立ち上がりが速くなります。"
+income_interval = "自動収入の間隔です。低いほど両陣営の経済回転が速くなります。"
+player_income = "収入1回ごとにプレイヤーが得るゴールドです。"
+enemy_income = "収入1回ごとに敵が得るゴールドです。"
+spawn_interval = "敵出現の間隔です。低いほど圧力が継続します。"
+advanced_spawn_rate = "敵が基本アーキタイプではなく上位アーキタイプで出る確率です。"
+spawn_random_y = "敵出現位置にかかる縦方向のランダム幅です。"
+assault_threshold = "この数だけ戦力が揃うまで、敵 AI は強い突撃行動へ移りません。"
+staging_min_units = "集結突撃が開始される前に必要な最小数です。大きいほど遅い代わりに密度が上がります。"
+hp = "耐久力です。高いほど生存時間が伸び、損失の急さが和らぎやすくなります。"
+attack = "1回の攻撃で与えるダメージです。高いほど瞬間火力と集中攻撃効率が上がります。"
+unit_cost = "ユニット定義側の基本コストです。production slot に上書きがない場合はこちらが使われます。"
+queue_cost = "実際の生産コマンドコストです。0より大きければコマンドメニューとキューで基本コストを上書きします。"
+batch_count = "1回のキュー操作で出るユニット数です。大きいほど瞬間生産力が上がり、入力数も減ります。"
+production_time = "このユニット1件ぶんの生産完了までに必要な時間です。"
+move_speed = "移動速度です。高いほど増援速度と追撃性能が上がります。"
+attack_range = "攻撃できる距離です。高いほど安全性と先手性能が上がります。"
+attack_cooldown = "攻撃間の待ち時間です。低いほど連続攻撃が速くなります。"
+aggro_range = "敵を捉える範囲です。高いほど早く反応します。"
+value = "カードの主な数値効果です。能力補正カードでは対象ステータスへ加算される量になります。"
+rarity = "報酬プールに出現する頻度を決めます。行ボタンで Common / Rare / Epic を切り替えます。"
+repeatable = "有効なら、同じカードを1ラン中に複数回選べます。"
+
+[map_edit]
+title = "MAP EDIT"
+map_label = "Map"
+tool_label = "Tool"
+placement_label = "Placement"
+
+[map_edit.button]
+prev_map = "前のマップ"
+next_map = "次のマップ"
+save = "保存"
+reload = "再読込"
+test_play = "テストプレイ"
+back_to_title = "タイトルへ戻る"
+select = "選択"
+add_unit = "ユニット追加"
+add_obstacle = "障害物追加"
+add_resource = "資源追加"
+cycle_unit_owner = "ユニット所有者切替"
+cycle_unit_archetype = "ユニット種別切替"
+cycle_resource_owner = "資源所有者切替"
+cycle_owner = "所有者切替"
+cycle_archetype = "種別切替"
+delete = "削除"
+width_plus = "幅 +16"
+width_minus = "幅 -16"
+height_plus = "高さ +16"
+height_minus = "高さ -16"
+toggle_blocks_movement = "通行阻害切替"
+radius_plus = "半径 +4"
+radius_minus = "半径 -4"
+income_plus = "収入 +1"
+income_minus = "収入 -1"
+capture_plus = "占領 +0.1"
+capture_minus = "占領 -0.1"
+
+[map_edit.kind]
+initial_unit = "初期ユニット"
+obstacle = "障害物"
+resource_point = "資源拠点"
+
+[map_edit.placement]
+unit_owner = "ユニット所有者: {0}"
+archetype = "アーキタイプ: {0}"
+resource_owner = "資源所有者: {0}"
+
+[map_edit.canvas]
+world = "ワールド: {0} x {1}"
+summary = "{0} | Unit:{1} Obstacle:{2} Resource:{3}"
+
+[map_edit.inspect]
+title = "INSPECT"
+none = "マップ上のオブジェクトを選択してください。"
+type = "種類: {0}"
+label = "ラベル: {0}"
+owner = "所有者: {0}"
+archetype = "アーキタイプ: {0}"
+position = "位置: ({0:.1f}, {1:.1f})"
+size = "サイズ: {0:.1f} x {1:.1f}"
+blocks = "通行阻害: {0}"
+radius = "半径: {0:.1f}"
+income = "収入: {0}"
+capture = "占領: {0:.1f}"
+
+[map_edit.status]
+reloaded = "{0} を再読み込みしました"
+saved = "{0} を保存しました"
+tool_select = "Tool: 選択"
+tool_add_unit = "Tool: ユニット追加"
+tool_add_obstacle = "Tool: 障害物追加"
+tool_add_resource = "Tool: 資源追加"
+added_initial_unit = "初期ユニットを追加しました"
+added_obstacle = "障害物を追加しました"
+added_resource_point = "資源拠点を追加しました"
+deleted_initial_unit = "初期ユニットを削除しました"
+deleted_obstacle = "障害物を削除しました"
+deleted_resource_point = "資源拠点を削除しました"
+
+[map_edit.default_label]
+obstacle = "Obstacle {0}"
+resource = "Resource {0}"
+
+[map_edit.map_entry]
+base = "Base: {0}"
+battle = "Battle {0}: {1}"
+
+[title_ui_editor]
+title = "Title UI Editor"
+elements_heading = "要素一覧 (W/S でも移動)"
+preview_states_heading = "Preview States"
+
+[title_ui_editor.button]
+back = "戻る"
+save = "保存"
+reload = "再読込"
+reset_selected = "選択を初期化"
+reset_all = "すべて初期化"
+
+[title_ui_editor.toggle]
+continue = "Continue"
+bonus = "Bonus"
+quick_guide = "QuickGuide"
+data_clear = "DataClear"
+exit_dialog = "ExitDialog"
+debug_buttons = "DebugButtons"
+
+[title_ui_editor.preset]
+default_size = "既定サイズ"
+
+[title_ui_editor.status]
+ready = "Title UI editor の準備完了"
+reloaded = "Title UI layout を再読み込みしました"
+saved = "Title UI layout を保存しました"
+failed_save = "Title UI layout の保存に失敗しました"
+applied_size_preset = "サイズプリセットを適用: {0}"
+reset_selected = "選択要素を既定値へ戻しました"
+reset_all = "すべての Title UI 要素を既定値へ戻しました"
+selected = "選択: {0}"
+preview_continue = "Preview: continue 状態を切り替えました"
+preview_bonus = "Preview: bonus room 状態を切り替えました"
+preview_quick_guide = "Preview: quick guide を切り替えました"
+preview_data_clear = "Preview: data clear dialog を切り替えました"
+preview_exit_dialog = "Preview: exit dialog を切り替えました"
+preview_debug_buttons = "Preview: debug buttons を切り替えました"
+panning_preview = "プレビューカメラを移動中"
+dragged_point = "ポイント要素をドラッグしました"
+dragged_rectangle = "矩形要素をドラッグしました"
+moved_rectangle = "選択矩形を移動しました"
+moved_point = "選択ポイントを移動しました"
+resized_rectangle = "選択矩形をリサイズしました"
+edited_unsaved = "状態: 編集済み / 未保存"
+synced = "状態: 同期済み"
+
+[title_ui_editor.info]
+x = "x: {0}"
+y = "y: {0}"
+w = "w: {0}"
+h = "h: {0}"
+default_wh = "既定 w/h: {0} x {1}"
+default_xy = "既定 x/y: {0} / {1}"
+warning_too_small = "警告: 現在のサイズはこのボタンとして小さすぎます"
+size_ok = "現在のサイズは通常のボタン範囲内です"
+rect_only_presets = "サイズプリセットは矩形要素を選択しているときに使えます"
+
+[title_ui_editor.hint]
+pan_camera = "プレビューの空いている場所を左ドラッグでカメラ移動"
+snap_grid = "プレビューは 8px スナップグリッドと薄いガイドを使います"
+move = "Arrow: 8px移動 / Shift+Arrow: 32px移動"
+resize = "Ctrl+Arrow: 矩形をリサイズ / Shift で 32px"
+recover_tiny = "保存前にサイズプリセットで小さすぎるボタンを戻せます"
+save_blocked = "Ctrl+S で保存 / 小さすぎる無効ボタンは保存を止めます"
+reset_keys = "R で選択初期化 / Shift+R ですべて初期化 / Esc で戻る"
+
+[title_ui_editor.validation]
+too_small = "保存中止: {0} が小さすぎます。既定サイズかサイズプリセットを使ってください。"
+
+[title_ui_editor.element]
+panel = "Panel"
+title = "Title"
+subtitle = "Subtitle"
+summary1 = "Summary 1"
+summary2 = "Summary 2"
+summary3 = "Summary 3"
+viewed_bonus = "Viewed Bonus"
+enter_hint = "Enter Hint"
+continue_button = "Continue Button"
+tutorial_button_continue = "Tutorial Btn (Cont)"
+tutorial_button_new = "Tutorial Btn (New)"
+quick_guide_button_continue = "QuickGuide Btn (Cont)"
+quick_guide_button_new = "QuickGuide Btn (New)"
+start_button_continue = "Start Btn (Cont)"
+start_button_new = "Start Btn (New)"
+bonus_button_continue = "Bonus Btn (Cont)"
+bonus_button_new = "Bonus Btn (New)"
+bonus_hint_continue = "Bonus Hint (Cont)"
+bonus_hint_new = "Bonus Hint (New)"
+continue_preview = "Continue Preview"
+quick_guide_panel = "QuickGuide Panel"
+quick_guide_body = "QuickGuide Body"
+quick_guide_flow = "QuickGuide Flow"
+quick_guide_tutorial = "QuickGuide Tutorial"
+quick_guide_close = "QuickGuide Close"
+quick_guide_esc = "QuickGuide Esc"
+data_clear_dialog = "DataClear Dialog"
+data_clear_yes = "DataClear Yes"
+data_clear_no = "DataClear No"
+exit_dialog = "Exit Dialog"
+exit_yes = "Exit Yes"
+exit_no = "Exit No"
+resolution_label = "Resolution Label"
+resolution_value = "Resolution Value"
+resolution_small = "Resolution Small"
+resolution_medium = "Resolution Medium"
+resolution_large = "Resolution Large"
+save_location_label = "SaveLocation Label"
+save_location_value = "SaveLocation Value"
+save_location_button = "SaveLocation Button"
+data_manage_label = "Data Manage Label"
+clear_continue = "Clear Continue"
+clear_settings = "Clear Settings"
+exit_button = "Exit Button"
+data_manage_hint = "Data Manage Hint"
+map_edit = "Map Edit"
+balance_edit = "Balance Edit"
+transition_preset = "Transition Preset"
+title_ui_editor = "TitleUi Editor"
+reward_editor = "Reward Editor"
+bonus_room_editor = "BonusRoom Editor"
+debug_hint_continue = "Debug Hint (Cont)"
+debug_hint_new = "Debug Hint (New)"
+debug_button_continue = "Debug Btn (Cont)"
+debug_button_new = "Debug Btn (New)"
 
 [bonus_room_editor]
 title = "Bonus Room Editor"

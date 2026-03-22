@@ -1,4 +1,6 @@
 ﻿#include "MapEditScene.h"
+
+#include "Localization.h"
 #include "SceneTransition.h"
 
 String MapEditScene::resolveMapConfigPath(const String& battleConfigPath)
@@ -26,7 +28,7 @@ Array<MapEditScene::EditableMapEntry> MapEditScene::loadEditableMaps(const Strin
 	const String baseMapSource = rootToml[U"sources"][U"map"].get<String>();
 	editableMaps << EditableMapEntry{
 		ResolveBattleConfigSourcePath(battleConfigPath, baseMapSource),
-		U"Base: {}"_fmt(FileSystem::BaseName(baseMapSource))
+        Localization::FormatText(U"map_edit.map_entry.base", FileSystem::BaseName(baseMapSource))
 	};
 
 	if (const auto progressionSource = rootToml[U"sources"][U"progression"].getOpt<String>())
@@ -58,7 +60,7 @@ Array<MapEditScene::EditableMapEntry> MapEditScene::loadEditableMaps(const Strin
 
 			editableMaps << EditableMapEntry{
 				mapPath,
-				U"Battle {}: {}"_fmt(table[U"battle"].getOr<int32>(0), FileSystem::BaseName(*mapSource))
+                Localization::FormatText(U"map_edit.map_entry.battle", table[U"battle"].getOr<int32>(0), FileSystem::BaseName(*mapSource))
 			};
 		}
 	}
@@ -83,7 +85,7 @@ void MapEditScene::reloadConfig()
 
 	m_selection = {};
 	m_dragOffset.reset();
-	m_statusMessage = U"Reloaded {}"_fmt(getCurrentMapLabel());
+ m_statusMessage = Localization::FormatText(U"map_edit.status.reloaded", getCurrentMapLabel());
 }
 
 void MapEditScene::saveMap()
@@ -133,7 +135,7 @@ void MapEditScene::saveMap()
 	}
 
 	reloadConfig();
-	m_statusMessage = U"Saved {}"_fmt(getCurrentMapLabel());
+    m_statusMessage = Localization::FormatText(U"map_edit.status.saved", getCurrentMapLabel());
 }
 
 void MapEditScene::selectEditableMap(const int32 mapIndex)

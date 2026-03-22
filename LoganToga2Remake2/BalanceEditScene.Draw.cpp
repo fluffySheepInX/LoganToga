@@ -1,20 +1,25 @@
 ﻿#include "BalanceEditScene.h"
 
+#include "Localization.h"
+#include "RunCardPresentation.h"
+
 void BalanceEditScene::drawLeftPanel() const
 {
 	const auto& data = getData();
 	const RectF panel = getLeftPanelRect();
-	data.smallFont(U"Panel").draw(panel.x + 16, panel.y + 16, Palette::White);
+  data.smallFont(Localization::GetText(U"balance_edit.left_panel.title")).draw(panel.x + 16, panel.y + 16, Palette::White);
 	data.smallFont(m_tab == Tab::Core
-		? U"Global economy / AI values"
-		: (m_tab == Tab::Units ? U"Select a unit to edit stats and queue values" : U"Select a reward card to edit balance values"))
+		? Localization::GetText(U"balance_edit.left_panel.core_summary")
+		: (m_tab == Tab::Units
+			? Localization::GetText(U"balance_edit.left_panel.units_summary")
+			: Localization::GetText(U"balance_edit.left_panel.cards_summary")))
 		.draw(panel.x + 16, panel.y + 40, ColorF{ 0.84, 0.90, 0.98 });
 
 	if (m_tab == Tab::Core)
 	{
-		data.smallFont(U"Core tab edits values from battle_core.toml").draw(panel.x + 16, panel.y + 84, Palette::White);
-		data.smallFont(U"Units tab edits battle_units.toml and player_production slots").draw(panel.x + 16, panel.y + 108, Palette::White);
-		data.smallFont(U"Cards tab edits reward card values from cards.toml").draw(panel.x + 16, panel.y + 132, Palette::White);
+        data.smallFont(Localization::GetText(U"balance_edit.left_panel.core_detail")).draw(panel.x + 16, panel.y + 84, Palette::White);
+		data.smallFont(Localization::GetText(U"balance_edit.left_panel.units_detail")).draw(panel.x + 16, panel.y + 108, Palette::White);
+		data.smallFont(Localization::GetText(U"balance_edit.left_panel.cards_detail")).draw(panel.x + 16, panel.y + 132, Palette::White);
 		return;
 	}
 
@@ -31,7 +36,7 @@ void BalanceEditScene::drawLeftPanel() const
 	for (size_t index = 0; index < m_editCards.size(); ++index)
 	{
 		const auto& card = m_editCards[index];
-		drawButton(getCardButtonRect(static_cast<int32>(index)), card.name, data.smallFont, static_cast<int32>(index) == m_selectedCardIndex);
+      drawButton(getCardButtonRect(static_cast<int32>(index)), GetRewardCardName(card), data.smallFont, static_cast<int32>(index) == m_selectedCardIndex);
 	}
 }
 
@@ -56,29 +61,31 @@ void BalanceEditScene::drawUnitPanel() const
 	const auto* unit = getSelectedUnitDefinition();
 	if (!unit)
 	{
-		data.smallFont(U"No unit selected").draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 138, Palette::White);
+        data.smallFont(Localization::GetText(U"balance_edit.no_unit_selected")).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 138, Palette::White);
 		return;
 	}
 
 	data.uiFont(toUnitArchetypeDisplayString(unit->archetype)).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 118, Palette::White);
 	const auto* slot = getSelectedProductionSlot();
-	data.smallFont(slot ? U"Queue values are backed by player_production." : U"This unit has no player production slot.")
+   data.smallFont(slot
+		? Localization::GetText(U"balance_edit.unit_panel.queue_backed")
+		: Localization::GetText(U"balance_edit.unit_panel.no_production_slot"))
 		.draw(getEditorPanelRect().x + 220, getEditorPanelRect().y + 126, ColorF{ 0.82, 0.90, 1.0 });
 
 	int32 row = 0;
 	drawIntRow(row++, U"HP", unit->hp, data.smallFont);
-	drawIntRow(row++, U"Attack", unit->attackPower, data.smallFont);
-	drawIntRow(row++, U"Unit Cost", unit->cost, data.smallFont);
+    drawIntRow(row++, Localization::GetText(U"balance_edit.row.attack"), unit->attackPower, data.smallFont);
+	drawIntRow(row++, Localization::GetText(U"balance_edit.row.unit_cost"), unit->cost, data.smallFont);
 	if (slot)
 	{
-		drawIntRow(row++, U"Queue Cost", getSelectedProductionCost(), data.smallFont);
-		drawIntRow(row++, U"Batch Count", slot->batchCount, data.smallFont);
+      drawIntRow(row++, Localization::GetText(U"balance_edit.row.queue_cost"), getSelectedProductionCost(), data.smallFont);
+		drawIntRow(row++, Localization::GetText(U"balance_edit.row.batch_count"), slot->batchCount, data.smallFont);
 	}
-	drawDoubleRow(row++, U"Production Time", unit->productionTime, data.smallFont);
-	drawDoubleRow(row++, U"Move Speed", unit->moveSpeed, data.smallFont);
-	drawDoubleRow(row++, U"Attack Range", unit->attackRange, data.smallFont);
-	drawDoubleRow(row++, U"Attack Cooldown", unit->attackCooldown, data.smallFont);
-	drawDoubleRow(row++, U"Aggro Range", unit->aggroRange, data.smallFont);
+ drawDoubleRow(row++, Localization::GetText(U"balance_edit.row.production_time"), unit->productionTime, data.smallFont);
+	drawDoubleRow(row++, Localization::GetText(U"balance_edit.row.move_speed"), unit->moveSpeed, data.smallFont);
+	drawDoubleRow(row++, Localization::GetText(U"balance_edit.row.attack_range"), unit->attackRange, data.smallFont);
+	drawDoubleRow(row++, Localization::GetText(U"balance_edit.row.attack_cooldown"), unit->attackCooldown, data.smallFont);
+	drawDoubleRow(row++, Localization::GetText(U"balance_edit.row.aggro_range"), unit->aggroRange, data.smallFont);
 }
 
 void BalanceEditScene::drawCardPanel() const
@@ -87,18 +94,18 @@ void BalanceEditScene::drawCardPanel() const
 	const auto* card = getSelectedCardDefinition();
 	if (!card)
 	{
-		data.smallFont(U"No card selected").draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 138, Palette::White);
+        data.smallFont(Localization::GetText(U"balance_edit.no_card_selected")).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 138, Palette::White);
 		return;
 	}
 
-	data.uiFont(card->name).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 118, Palette::White);
+    data.uiFont(GetRewardCardName(*card)).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 118, Palette::White);
 	data.smallFont(card->id).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 146, ColorF{ 0.74, 0.84, 0.98 });
 	data.smallFont(toRewardCardEffectTypeDisplayString(card->effectType)).draw(getEditorPanelRect().x + 240, getEditorPanelRect().y + 126, ColorF{ 0.82, 0.90, 1.0 });
 
 	String targetText;
 	if (card->effectType == RewardCardEffectType::TurretUpgradeUnlock)
 	{
-		targetText = card->targetTurretUpgradeType ? toTurretUpgradeTypeDisplayString(*card->targetTurretUpgradeType) : U"No target";
+       targetText = card->targetTurretUpgradeType ? toTurretUpgradeTypeDisplayString(*card->targetTurretUpgradeType) : Localization::GetText(U"balance_edit.no_target");
 	}
 	else
 	{
@@ -109,11 +116,11 @@ void BalanceEditScene::drawCardPanel() const
 		}
 	}
 	data.smallFont(targetText).draw(getEditorPanelRect().x + 240, getEditorPanelRect().y + 150, ColorF{ 0.82, 0.90, 1.0 });
-	data.smallFont(card->description).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 174, ColorF{ 0.86, 0.90, 0.96 });
+  data.smallFont(GetRewardCardDescription(*card)).draw(getEditorPanelRect().x + 16, getEditorPanelRect().y + 174, ColorF{ 0.86, 0.90, 0.96 });
 
-	drawDoubleRow(0, U"Value", card->value, data.smallFont);
-	drawTextRow(1, U"Rarity", toRewardCardRarityDisplayString(card->rarity), data.smallFont);
-	drawTextRow(2, U"Repeatable", card->repeatable ? U"Yes" : U"No", data.smallFont);
+    drawDoubleRow(0, Localization::GetText(U"balance_edit.row.value"), card->value, data.smallFont);
+	drawTextRow(1, Localization::GetText(U"balance_edit.row.rarity"), toRewardCardRarityDisplayString(card->rarity), data.smallFont);
+	drawTextRow(2, Localization::GetText(U"balance_edit.row.repeatable"), card->repeatable ? Localization::GetText(U"common.yes") : Localization::GetText(U"common.no"), data.smallFont);
 }
 
 void BalanceEditScene::drawHelpPanel() const
@@ -123,7 +130,7 @@ void BalanceEditScene::drawHelpPanel() const
 	const RectF panel = getHelpPanelRect();
 	panel.draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
 	panel.drawFrame(1, ColorF{ 0.32, 0.44, 0.64 });
-	data.smallFont(U"Hover Help").draw(panel.x + 12, panel.y + 8, ColorF{ 0.82, 0.90, 1.0 });
+   data.smallFont(Localization::GetText(U"balance_edit.help_panel.title")).draw(panel.x + 12, panel.y + 8, ColorF{ 0.82, 0.90, 1.0 });
 	data.smallFont(help.title).draw(panel.x + 12, panel.y + 30, Palette::White);
 	data.smallFont(help.body).draw(panel.x + 12, panel.y + 54, ColorF{ 0.88, 0.92, 0.98 });
 }

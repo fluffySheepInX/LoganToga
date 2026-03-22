@@ -1,7 +1,21 @@
 ﻿#include "ContinueRunSave.h"
 
+#include "Localization.h"
+
 namespace
 {
+    [[nodiscard]] String GetContinueRunSaveLocationPersistenceLabel(const ContinueRunSaveLocation location)
+	{
+		switch (location)
+		{
+		case ContinueRunSaveLocation::AppData:
+			return U"appdata";
+		case ContinueRunSaveLocation::Local:
+		default:
+			return U"local";
+		}
+	}
+
 	[[nodiscard]] String GetContinueRunSaveLocationConfigDirectoryPath()
 	{
 		return FileSystem::PathAppend(FileSystem::GetFolderPath(SpecialFolder::LocalAppData), U"LoganToga2Remake2");
@@ -24,7 +38,8 @@ namespace
 
 	[[nodiscard]] ContinueRunSaveLocation ParseContinueRunSaveLocation(const String& label)
 	{
-		if (label == U"AppData")
+        const String normalized = label.lowercased();
+		if ((normalized == U"appdata") || (label == U"AppData"))
 		{
 			return ContinueRunSaveLocation::AppData;
 		}
@@ -79,7 +94,7 @@ namespace
 
 		String content;
 		AppendTomlLine(content, U"schemaVersion", U"1");
-		AppendTomlLine(content, U"location", QuoteTomlString(GetContinueRunSaveLocationLabel(location)));
+       AppendTomlLine(content, U"location", QuoteTomlString(GetContinueRunSaveLocationPersistenceLabel(location)));
 
 		TextWriter writer{ GetContinueRunSaveLocationConfigPath() };
 		if (!writer)
@@ -112,10 +127,10 @@ String GetContinueRunSaveLocationLabel(const ContinueRunSaveLocation location)
 	switch (location)
 	{
 	case ContinueRunSaveLocation::AppData:
-		return U"AppData";
+      return Localization::GetText(U"common.save_location.appdata");
 	case ContinueRunSaveLocation::Local:
 	default:
-		return U"Local";
+        return Localization::GetText(U"common.save_location.local");
 	}
 }
 

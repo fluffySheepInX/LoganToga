@@ -20,7 +20,7 @@ struct CommandIconEntry
 	UnitArchetype archetype = UnitArchetype::Soldier;
 	int32 cost = 0;
 	bool isEnabled = true;
-	String statusText = U"READY";
+   String statusText;
 	String displayLabel;
 	String glyphText;
 	String descriptionText;
@@ -36,8 +36,8 @@ struct CommandIconLayout
 
 struct CommandPanelLayout
 {
-	String title = U"COMMANDS";
-	String sectionLabel = U"COMMANDS";
+ String title;
+	String sectionLabel;
 	RectF panelRect{ 0, 0, 0, 0 };
 	Array<CommandIconLayout> commandIcons;
 };
@@ -57,7 +57,7 @@ struct FormationButtonLayout
 
 struct FormationPanelLayout
 {
-	String title = U"FORMATION";
+    String title;
 	RectF panelRect{ 0, 0, 0, 0 };
 	Array<FormationButtonLayout> buttons;
 };
@@ -84,7 +84,7 @@ struct EnemyAiDebugModeButtonLayout
 
 struct EnemyAiDebugPanelLayout
 {
-	String title = U"ENEMY AI DEBUG";
+   String title;
 	RectF panelRect{ 0, 0, 0, 0 };
 	Array<EnemyAiDebugModeButtonLayout> buttons;
 };

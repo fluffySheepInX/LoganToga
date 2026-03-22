@@ -1,5 +1,6 @@
 ﻿#include "TitleUiEditorScene.h"
 
+#include "Localization.h"
 #include "TitleUiText.h"
 
 namespace TitleUiEditorSceneDrawDetail
@@ -119,7 +120,7 @@ void TitleUiEditorScene::drawPreview() const
 		drawButton(screenRect(TitleUi::GetDebugButtonRect(m_layout, hasContinue)), TitleUiText::DebugFullUnlockButton, data.uiFont, true);
 		drawButton(screenRect(m_layout.mapEditButtonRect), TitleUiText::MapEditButton, data.smallFont);
 		drawButton(screenRect(m_layout.balanceEditButtonRect), TitleUiText::BalanceEditButton, data.smallFont);
-		drawButton(screenRect(m_layout.transitionPresetButtonRect), TitleUiText::TransitionPresetPrefix.get() + U"Default", data.smallFont, true);
+      drawButton(screenRect(m_layout.transitionPresetButtonRect), TitleUiText::TransitionPresetPrefix.get() + Localization::GetText(U"common.default"), data.smallFont, true);
 		drawButton(screenRect(m_layout.titleUiEditorButtonRect), TitleUiText::TitleUiEditorButton, data.smallFont, true);
        drawButton(screenRect(m_layout.rewardEditorButtonRect), TitleUiText::RewardEditorButton, data.smallFont, true);
 		drawButton(screenRect(m_layout.bonusRoomEditorButtonRect), TitleUiText::BonusRoomEditorButton, data.smallFont, true);
@@ -181,17 +182,19 @@ void TitleUiEditorScene::drawPanels() const
 	TitleUiEditorSceneDrawDetail::DrawEditorPanel(leftPanel);
 	TitleUiEditorSceneDrawDetail::DrawEditorPanel(rightPanel);
 
-	data.uiFont(U"Title UI Editor").draw(leftPanel.x + 16, leftPanel.y + 16, Palette::White);
-	data.smallFont(m_hasUnsavedChanges ? U"Status: edited / unsaved" : U"Status: synced")
+   data.uiFont(Localization::GetText(U"title_ui_editor.title")).draw(leftPanel.x + 16, leftPanel.y + 16, Palette::White);
+	data.smallFont(m_hasUnsavedChanges
+		? Localization::GetText(U"title_ui_editor.status.edited_unsaved")
+		: Localization::GetText(U"title_ui_editor.status.synced"))
 		.draw(leftPanel.x + 16, leftPanel.y + 48, m_hasUnsavedChanges ? ColorF{ 1.0, 0.92, 0.28 } : ColorF{ 0.72, 0.88, 0.78 });
 
-	drawButton(getTopButtonRect(0), U"Back", data.smallFont);
-	drawButton(getTopButtonRect(1), U"Save", data.smallFont, m_hasUnsavedChanges);
-	drawButton(getTopButtonRect(2), U"Reload", data.smallFont);
-	drawButton(getTopButtonRect(3), U"Reset Selected", data.smallFont);
-	drawButton(getTopButtonRect(4), U"Reset All", data.smallFont);
+   drawButton(getTopButtonRect(0), Localization::GetText(U"title_ui_editor.button.back"), data.smallFont);
+	drawButton(getTopButtonRect(1), Localization::GetText(U"title_ui_editor.button.save"), data.smallFont, m_hasUnsavedChanges);
+	drawButton(getTopButtonRect(2), Localization::GetText(U"title_ui_editor.button.reload"), data.smallFont);
+	drawButton(getTopButtonRect(3), Localization::GetText(U"title_ui_editor.button.reset_selected"), data.smallFont);
+	drawButton(getTopButtonRect(4), Localization::GetText(U"title_ui_editor.button.reset_all"), data.smallFont);
 
-	data.smallFont(U"Elements (W/S also works)").draw(leftPanel.x + 16, leftPanel.y + 220, ColorF{ 0.82, 0.90, 1.0 });
+  data.smallFont(Localization::GetText(U"title_ui_editor.elements_heading")).draw(leftPanel.x + 16, leftPanel.y + 220, ColorF{ 0.82, 0.90, 1.0 });
 	const RectF selectionListRect = getSelectionListRect();
 	selectionListRect.draw(ColorF{ 0.10, 0.13, 0.18, 0.96 });
 	selectionListRect.drawFrame(1, ColorF{ 0.34, 0.50, 0.76, 0.98 });
@@ -205,7 +208,7 @@ void TitleUiEditorScene::drawPanels() const
 			break;
 		}
 
-		drawButton(getSelectionRowRect(visibleIndex), elements[static_cast<size_t>(actualIndex)].name, data.smallFont, actualIndex == m_selectedElementIndex);
+      drawButton(getSelectionRowRect(visibleIndex), Localization::GetText(elements[static_cast<size_t>(actualIndex)].name), data.smallFont, actualIndex == m_selectedElementIndex);
 	}
 
 	if (getMaxSelectionScrollRow() > 0)
@@ -217,59 +220,61 @@ void TitleUiEditorScene::drawPanels() const
 			.draw(ColorF{ 0.70, 0.82, 1.0, 0.85 });
 	}
 
-	data.smallFont(U"Preview States").draw(rightPanel.x + 16, rightPanel.y + 16, Palette::White);
-	drawButton(getToggleButtonRect(0), U"Continue", data.smallFont, m_previewHasContinue);
-	drawButton(getToggleButtonRect(1), U"Bonus", data.smallFont, m_previewHasViewedBonusRooms);
-	drawButton(getToggleButtonRect(2), U"QuickGuide", data.smallFont, m_previewQuickGuideOpen);
-	drawButton(getToggleButtonRect(3), U"DataClear", data.smallFont, m_previewDataClearDialogOpen);
-	drawButton(getToggleButtonRect(4), U"ExitDialog", data.smallFont, m_previewExitDialogOpen);
+   data.smallFont(Localization::GetText(U"title_ui_editor.preview_states_heading")).draw(rightPanel.x + 16, rightPanel.y + 16, Palette::White);
+	drawButton(getToggleButtonRect(0), Localization::GetText(U"title_ui_editor.toggle.continue"), data.smallFont, m_previewHasContinue);
+	drawButton(getToggleButtonRect(1), Localization::GetText(U"title_ui_editor.toggle.bonus"), data.smallFont, m_previewHasViewedBonusRooms);
+	drawButton(getToggleButtonRect(2), Localization::GetText(U"title_ui_editor.toggle.quick_guide"), data.smallFont, m_previewQuickGuideOpen);
+	drawButton(getToggleButtonRect(3), Localization::GetText(U"title_ui_editor.toggle.data_clear"), data.smallFont, m_previewDataClearDialogOpen);
+	drawButton(getToggleButtonRect(4), Localization::GetText(U"title_ui_editor.toggle.exit_dialog"), data.smallFont, m_previewExitDialogOpen);
 #ifdef _DEBUG
-	drawButton(getToggleButtonRect(5), U"DebugButtons", data.smallFont, m_previewDebugButtons);
+ drawButton(getToggleButtonRect(5), Localization::GetText(U"title_ui_editor.toggle.debug_buttons"), data.smallFont, m_previewDebugButtons);
 #endif
 
 	const RectF infoRect{ rightPanel.x + 16, rightPanel.y + 214, rightPanel.w - 32, rightPanel.h - 230 };
 	infoRect.draw(ColorF{ 0.10, 0.13, 0.18, 0.96 });
 	infoRect.drawFrame(1, ColorF{ 0.34, 0.50, 0.76, 0.98 });
-	data.uiFont(getSelectedElement().name).draw(infoRect.x + 12, infoRect.y + 10, Palette::White);
+  data.uiFont(Localization::GetText(getSelectedElement().name)).draw(infoRect.x + 12, infoRect.y + 10, Palette::White);
 
 	if (const RectF* rect = getSelectedRect())
 	{
-		data.smallFont(s3d::Format(U"x: ", rect->x)).draw(infoRect.x + 12, infoRect.y + 52, Palette::White);
-		data.smallFont(s3d::Format(U"y: ", rect->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
-		data.smallFont(s3d::Format(U"w: ", rect->w)).draw(infoRect.x + 12, infoRect.y + 104, Palette::White);
-		data.smallFont(s3d::Format(U"h: ", rect->h)).draw(infoRect.x + 12, infoRect.y + 130, Palette::White);
+        data.smallFont(Localization::FormatText(U"title_ui_editor.info.x", rect->x)).draw(infoRect.x + 12, infoRect.y + 52, Palette::White);
+		data.smallFont(Localization::FormatText(U"title_ui_editor.info.y", rect->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
+		data.smallFont(Localization::FormatText(U"title_ui_editor.info.w", rect->w)).draw(infoRect.x + 12, infoRect.y + 104, Palette::White);
+		data.smallFont(Localization::FormatText(U"title_ui_editor.info.h", rect->h)).draw(infoRect.x + 12, infoRect.y + 130, Palette::White);
 
 		if (const auto defaultRect = getSelectedDefaultRect())
 		{
-			data.smallFont(s3d::Format(U"default w/h: ", defaultRect->w, U" x ", defaultRect->h)).draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.82, 0.90, 1.0 });
+           data.smallFont(Localization::FormatText(U"title_ui_editor.info.default_wh", defaultRect->w, defaultRect->h)).draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.82, 0.90, 1.0 });
 			const bool tooSmall = isRectLikelyTooSmall(*rect, *defaultRect);
-			data.smallFont(tooSmall ? U"Warning: current size is too small for this button" : U"Current size is within the normal button range")
+            data.smallFont(tooSmall
+				? Localization::GetText(U"title_ui_editor.info.warning_too_small")
+				: Localization::GetText(U"title_ui_editor.info.size_ok"))
 				.draw(infoRect.x + 12, infoRect.y + 186, tooSmall ? ColorF{ 1.0, 0.68, 0.52 } : ColorF{ 0.72, 0.88, 0.78 });
 			drawButton(getInfoPresetButtonRect(0), U"220x36", data.smallFont, rect->size == SizeF{ 220, 36 });
 			drawButton(getInfoPresetButtonRect(1), U"170x32", data.smallFont, rect->size == SizeF{ 170, 32 });
 			drawButton(getInfoPresetButtonRect(2), U"140x40", data.smallFont, rect->size == SizeF{ 140, 40 });
 			drawButton(getInfoPresetButtonRect(3), U"128x30", data.smallFont, rect->size == SizeF{ 128, 30 });
-			drawButton(getInfoPresetButtonRect(4), U"Default Size", data.smallFont, rect->size == defaultRect->size);
+           drawButton(getInfoPresetButtonRect(4), Localization::GetText(U"title_ui_editor.preset.default_size"), data.smallFont, rect->size == defaultRect->size);
 		}
 	}
 	else if (const Vec2* point = getSelectedPoint())
 	{
-		data.smallFont(s3d::Format(U"x: ", point->x)).draw(infoRect.x + 12, infoRect.y + 52, Palette::White);
-		data.smallFont(s3d::Format(U"y: ", point->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
+       data.smallFont(Localization::FormatText(U"title_ui_editor.info.x", point->x)).draw(infoRect.x + 12, infoRect.y + 52, Palette::White);
+		data.smallFont(Localization::FormatText(U"title_ui_editor.info.y", point->y)).draw(infoRect.x + 12, infoRect.y + 78, Palette::White);
 		if (const auto defaultPoint = getSelectedDefaultPoint())
 		{
-			data.smallFont(s3d::Format(U"default x/y: ", defaultPoint->x, U" / ", defaultPoint->y)).draw(infoRect.x + 12, infoRect.y + 104, ColorF{ 0.82, 0.90, 1.0 });
+         data.smallFont(Localization::FormatText(U"title_ui_editor.info.default_xy", defaultPoint->x, defaultPoint->y)).draw(infoRect.x + 12, infoRect.y + 104, ColorF{ 0.82, 0.90, 1.0 });
 		}
-		data.smallFont(U"Size presets are available when a rectangle element is selected").draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.84, 0.90, 1.0 });
+      data.smallFont(Localization::GetText(U"title_ui_editor.info.rect_only_presets")).draw(infoRect.x + 12, infoRect.y + 156, ColorF{ 0.84, 0.90, 1.0 });
 	}
 
-	data.smallFont(U"Left-drag empty preview to pan the camera").draw(infoRect.x + 12, infoRect.y + 274, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Preview uses an 8px snap grid with faint guides").draw(infoRect.x + 12, infoRect.y + 300, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Arrow: move 8px / Shift+Arrow: move 32px").draw(infoRect.x + 12, infoRect.y + 326, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Ctrl+Arrow: resize rect / Shift adds 32px").draw(infoRect.x + 12, infoRect.y + 352, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Use size presets to recover tiny buttons before saving").draw(infoRect.x + 12, infoRect.y + 378, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"Ctrl+S saves / invalid tiny buttons are blocked").draw(infoRect.x + 12, infoRect.y + 404, ColorF{ 0.84, 0.90, 1.0 });
-	data.smallFont(U"R resets selected / Shift+R resets all / Esc returns").draw(infoRect.x + 12, infoRect.y + 430, ColorF{ 0.84, 0.90, 1.0 });
+    data.smallFont(Localization::GetText(U"title_ui_editor.hint.pan_camera")).draw(infoRect.x + 12, infoRect.y + 274, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.snap_grid")).draw(infoRect.x + 12, infoRect.y + 300, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.move" )).draw(infoRect.x + 12, infoRect.y + 326, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.resize")).draw(infoRect.x + 12, infoRect.y + 352, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.recover_tiny")).draw(infoRect.x + 12, infoRect.y + 378, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.save_blocked")).draw(infoRect.x + 12, infoRect.y + 404, ColorF{ 0.84, 0.90, 1.0 });
+	data.smallFont(Localization::GetText(U"title_ui_editor.hint.reset_keys")).draw(infoRect.x + 12, infoRect.y + 430, ColorF{ 0.84, 0.90, 1.0 });
 	data.smallFont(m_statusMessage).draw(infoRect.x + 12, infoRect.bottomY() - 28, ColorF{ 1.0, 0.94, 0.70 });
 }
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Localization.h"
 #include "Remake2Common.h"
 
 enum class SceneTransitionPreset
@@ -36,14 +37,14 @@ struct SceneTransitionState
 	switch (preset)
 	{
 	case SceneTransitionPreset::Off:
-		return U"Off";
+      return Localization::GetText(U"common.transition.off");
 	case SceneTransitionPreset::Fade:
-		return U"Fade";
+     return Localization::GetText(U"common.transition.fade");
 	case SceneTransitionPreset::CyberGrid:
-		return U"Cyber Grid";
+       return Localization::GetText(U"common.transition.cyber_grid");
 	case SceneTransitionPreset::CyberScan:
 	default:
-		return U"Cyber Scan";
+       return Localization::GetText(U"common.transition.cyber_scan");
 	}
 }
 

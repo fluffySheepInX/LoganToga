@@ -49,18 +49,6 @@ namespace
 		}
 	}
 
-	[[nodiscard]] String GetEnemyAiModeLabel(const EnemyAiMode mode)
-	{
-		switch (mode)
-		{
-		case EnemyAiMode::StagingAssault:
-			return U"STAGING";
-		case EnemyAiMode::Default:
-		default:
-			return U"DEFAULT";
-		}
-	}
-
 	[[nodiscard]] ColorF GetEnemyAiDebugAccentColor(const EnemyAiMode mode)
 	{
 		switch (mode)
@@ -181,17 +169,17 @@ namespace
 		}
 
 		const String overrideLabel = state.enemyAiDebugOverrideMode
-			? GetEnemyAiModeLabel(*state.enemyAiDebugOverrideMode)
-			: U"TOML";
+          ? BattleUiText::GetEnemyAiModeLabel(*state.enemyAiDebugOverrideMode)
+			: BattleUiText::GetEnemyAiModeTomlLabel();
 		const String targetLabel = state.enemyAiAssaultTargetUnitId
 			? Format(*state.enemyAiAssaultTargetUnitId)
 			: U"-";
 		const double infoBaseY = layout->panelRect.y + 88.0;
-		gameData.smallFont(U"F6: Panel  /  F7: Cycle").draw(layout->panelRect.x + 16, infoBaseY, ColorF{ 0.78, 0.82, 0.88 });
-		gameData.smallFont(U"Current: " + GetEnemyAiModeLabel(state.enemyAiResolvedMode)).draw(layout->panelRect.x + 16, infoBaseY + 22.0, Palette::White);
-		gameData.smallFont(U"TOML: " + GetEnemyAiModeLabel(config.enemyAI.mode) + U"  /  Override: " + overrideLabel).draw(layout->panelRect.x + 16, infoBaseY + 44.0, Palette::White);
-		gameData.smallFont(Format(U"Combat: ", state.enemyAiDebugCombatUnitCount, U"  /  Ready: ", state.enemyAiDebugReadyUnitCount)).draw(layout->panelRect.x + 16, infoBaseY + 66.0, Palette::White);
-		gameData.smallFont(Format(U"Stage: ", state.enemyAiStagingTimer, U"  /  Commit: ", state.enemyAiAssaultCommitTimer, U"  /  Target: ", targetLabel)).draw(layout->panelRect.x + 16, infoBaseY + 88.0, Palette::White);
+       gameData.smallFont(Localization::GetText(U"battle.enemy_ai_debug.panel_toggle_hint")).draw(layout->panelRect.x + 16, infoBaseY, ColorF{ 0.78, 0.82, 0.88 });
+		gameData.smallFont(Localization::FormatText(U"battle.enemy_ai_debug.current", BattleUiText::GetEnemyAiModeLabel(state.enemyAiResolvedMode))).draw(layout->panelRect.x + 16, infoBaseY + 22.0, Palette::White);
+		gameData.smallFont(Localization::FormatText(U"battle.enemy_ai_debug.toml_override", BattleUiText::GetEnemyAiModeLabel(config.enemyAI.mode), overrideLabel)).draw(layout->panelRect.x + 16, infoBaseY + 44.0, Palette::White);
+		gameData.smallFont(Localization::FormatText(U"battle.enemy_ai_debug.combat_ready", state.enemyAiDebugCombatUnitCount, state.enemyAiDebugReadyUnitCount)).draw(layout->panelRect.x + 16, infoBaseY + 66.0, Palette::White);
+		gameData.smallFont(Localization::FormatText(U"battle.enemy_ai_debug.stage_commit_target", state.enemyAiStagingTimer, state.enemyAiAssaultCommitTimer, targetLabel)).draw(layout->panelRect.x + 16, infoBaseY + 88.0, Palette::White);
 	}
 }
 

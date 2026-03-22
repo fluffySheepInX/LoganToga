@@ -1,4 +1,6 @@
 ﻿#include "MapEditScene.h"
+
+#include "Localization.h"
 #include "MenuButtonUi.h"
 #include "SceneTransition.h"
 
@@ -76,49 +78,49 @@ void MapEditScene::drawCanvas(const RectF& canvasRect) const
 		getData().smallFont(toUnitArchetypeShortString(placement.archetype)).drawAt(center, Palette::White);
 	}
 
-	getData().smallFont(U"World: {} x {}"_fmt(static_cast<int32>(m_config.world.width), static_cast<int32>(m_config.world.height)))
+ getData().smallFont(Localization::FormatText(U"map_edit.canvas.world", static_cast<int32>(m_config.world.width), static_cast<int32>(m_config.world.height)))
 		.draw(canvasRect.x + 12, canvasRect.y + 10, Palette::White);
-	getData().smallFont(U"{} | Unit:{} Obstacle:{} Resource:{}"_fmt(m_statusMessage, m_config.initialUnits.size(), m_config.obstacles.size(), m_config.resourcePoints.size()))
+  getData().smallFont(Localization::FormatText(U"map_edit.canvas.summary", m_statusMessage, m_config.initialUnits.size(), m_config.obstacles.size(), m_config.resourcePoints.size()))
 		.draw(canvasRect.x + 12, canvasRect.y + canvasRect.h - 26, ColorF{ 0.92, 0.95, 1.0 });
 }
 
 void MapEditScene::drawLeftPanel(const RectF& panelRect) const
 {
 	const auto& data = getData();
-	data.uiFont(U"MAP EDIT").draw(panelRect.x + 16, panelRect.y + 14, Palette::White);
-	data.smallFont(U"Map").draw(panelRect.x + 16, panelRect.y + 48, Palette::White);
+  data.uiFont(Localization::GetText(U"map_edit.title")).draw(panelRect.x + 16, panelRect.y + 14, Palette::White);
+	data.smallFont(Localization::GetText(U"map_edit.map_label")).draw(panelRect.x + 16, panelRect.y + 48, Palette::White);
 	data.smallFont(getCurrentMapLabel()).draw(panelRect.x + 16, panelRect.y + 72, ColorF{ 0.92, 0.95, 1.0 });
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, U"Prev Map", data.smallFont);
-	drawButton(RectF{ panelRect.x + 24 + ((panelRect.w - 40) * 0.5), panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, U"Next Map", data.smallFont);
+ drawButton(RectF{ panelRect.x + 16, panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, Localization::GetText(U"map_edit.button.prev_map"), data.smallFont);
+	drawButton(RectF{ panelRect.x + 24 + ((panelRect.w - 40) * 0.5), panelRect.y + 96, (panelRect.w - 40) * 0.5, 28 }, Localization::GetText(U"map_edit.button.next_map"), data.smallFont);
 
-	drawButton(getPanelButtonRect(panelRect, 0), U"Save", data.uiFont);
-	drawButton(getPanelButtonRect(panelRect, 1), U"Reload", data.uiFont);
-	drawButton(getPanelButtonRect(panelRect, 2), U"Test Play", data.uiFont, true);
-	drawButton(getPanelButtonRect(panelRect, 3), U"Back to Title", data.smallFont);
+ drawButton(getPanelButtonRect(panelRect, 0), Localization::GetText(U"map_edit.button.save"), data.uiFont);
+	drawButton(getPanelButtonRect(panelRect, 1), Localization::GetText(U"map_edit.button.reload"), data.uiFont);
+	drawButton(getPanelButtonRect(panelRect, 2), Localization::GetText(U"map_edit.button.test_play"), data.uiFont, true);
+	drawButton(getPanelButtonRect(panelRect, 3), Localization::GetText(U"map_edit.button.back_to_title"), data.smallFont);
 
-	data.smallFont(U"Tool").draw(panelRect.x + 16, panelRect.y + 268, Palette::White);
-	drawButton(getPanelButtonRect(panelRect, 4), U"Select", data.uiFont, m_tool == Tool::Select);
-	drawButton(getPanelButtonRect(panelRect, 5), U"Add Unit", data.uiFont, m_tool == Tool::AddUnit);
-	drawButton(getPanelButtonRect(panelRect, 6), U"Add Obstacle", data.smallFont, m_tool == Tool::AddObstacle);
-	drawButton(getPanelButtonRect(panelRect, 7), U"Add Resource", data.smallFont, m_tool == Tool::AddResource);
+  data.smallFont(Localization::GetText(U"map_edit.tool_label")).draw(panelRect.x + 16, panelRect.y + 268, Palette::White);
+	drawButton(getPanelButtonRect(panelRect, 4), Localization::GetText(U"map_edit.button.select"), data.uiFont, m_tool == Tool::Select);
+	drawButton(getPanelButtonRect(panelRect, 5), Localization::GetText(U"map_edit.button.add_unit"), data.uiFont, m_tool == Tool::AddUnit);
+	drawButton(getPanelButtonRect(panelRect, 6), Localization::GetText(U"map_edit.button.add_obstacle"), data.smallFont, m_tool == Tool::AddObstacle);
+	drawButton(getPanelButtonRect(panelRect, 7), Localization::GetText(U"map_edit.button.add_resource"), data.smallFont, m_tool == Tool::AddResource);
 
-	data.smallFont(U"Placement").draw(panelRect.x + 16, panelRect.y + 480, Palette::White);
-	data.smallFont(U"Unit Owner: {}"_fmt(toOwnerDisplayString(m_unitPlacementOwner))).draw(panelRect.x + 16, panelRect.y + 508, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 532, panelRect.w - 32, 28 }, U"Cycle Unit Owner", data.smallFont);
-	data.smallFont(U"Archetype: {}"_fmt(toUnitArchetypeDisplayString(m_unitPlacementArchetype))).draw(panelRect.x + 16, panelRect.y + 572, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 596, panelRect.w - 32, 28 }, U"Cycle Unit Archetype", data.smallFont);
-	data.smallFont(U"Resource Owner: {}"_fmt(toOwnerDisplayString(m_resourcePlacementOwner))).draw(panelRect.x + 16, panelRect.y + 636, Palette::White);
-	drawButton(RectF{ panelRect.x + 16, panelRect.y + 660, panelRect.w - 32, 28 }, U"Cycle Resource Owner", data.smallFont);
+ data.smallFont(Localization::GetText(U"map_edit.placement_label")).draw(panelRect.x + 16, panelRect.y + 480, Palette::White);
+	data.smallFont(Localization::FormatText(U"map_edit.placement.unit_owner", toOwnerDisplayString(m_unitPlacementOwner))).draw(panelRect.x + 16, panelRect.y + 508, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 532, panelRect.w - 32, 28 }, Localization::GetText(U"map_edit.button.cycle_unit_owner"), data.smallFont);
+	data.smallFont(Localization::FormatText(U"map_edit.placement.archetype", toUnitArchetypeDisplayString(m_unitPlacementArchetype))).draw(panelRect.x + 16, panelRect.y + 572, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 596, panelRect.w - 32, 28 }, Localization::GetText(U"map_edit.button.cycle_unit_archetype"), data.smallFont);
+	data.smallFont(Localization::FormatText(U"map_edit.placement.resource_owner", toOwnerDisplayString(m_resourcePlacementOwner))).draw(panelRect.x + 16, panelRect.y + 636, Palette::White);
+	drawButton(RectF{ panelRect.x + 16, panelRect.y + 660, panelRect.w - 32, 28 }, Localization::GetText(U"map_edit.button.cycle_resource_owner"), data.smallFont);
 }
 
 void MapEditScene::drawRightPanel(const RectF& panelRect) const
 {
 	const auto& data = getData();
-	data.uiFont(U"INSPECT").draw(panelRect.x + 16, panelRect.y + 14, Palette::White);
+   data.uiFont(Localization::GetText(U"map_edit.inspect.title")).draw(panelRect.x + 16, panelRect.y + 14, Palette::White);
 
 	if (m_selection.kind == SelectionKind::None)
 	{
-		data.smallFont(U"Select an object on the map.").draw(panelRect.x + 16, panelRect.y + 54, Palette::White);
+       data.smallFont(Localization::GetText(U"map_edit.inspect.none")) .draw(panelRect.x + 16, panelRect.y + 54, Palette::White);
 		return;
 	}
 
@@ -128,49 +130,49 @@ void MapEditScene::drawRightPanel(const RectF& panelRect) const
 
 	if (const auto* placement = getSelectedUnit())
 	{
-		data.smallFont(U"Type: Initial Unit").draw(textX, panelRect.y + 54, Palette::White);
-		data.smallFont(U"Owner: {}"_fmt(toOwnerDisplayString(placement->owner))).draw(textX, panelRect.y + 82, Palette::White);
-		data.smallFont(U"Archetype: {}"_fmt(toUnitArchetypeDisplayString(placement->archetype))).draw(textX, panelRect.y + 108, Palette::White);
-		data.smallFont(U"Pos: ({:.1f}, {:.1f})"_fmt(placement->position.x, placement->position.y)).draw(textX, panelRect.y + 134, Palette::White);
-		drawButton(RectF{ buttonX, panelRect.y + 170, buttonW, 30 }, U"Cycle Owner", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 208, buttonW, 30 }, U"Cycle Archetype", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 246, buttonW, 30 }, U"Delete", data.smallFont);
+        data.smallFont(Localization::FormatText(U"map_edit.inspect.type", Localization::GetText(U"map_edit.kind.initial_unit"))).draw(textX, panelRect.y + 54, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.owner", toOwnerDisplayString(placement->owner))).draw(textX, panelRect.y + 82, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.archetype", toUnitArchetypeDisplayString(placement->archetype))).draw(textX, panelRect.y + 108, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.position", placement->position.x, placement->position.y)).draw(textX, panelRect.y + 134, Palette::White);
+		drawButton(RectF{ buttonX, panelRect.y + 170, buttonW, 30 }, Localization::GetText(U"map_edit.button.cycle_owner"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 208, buttonW, 30 }, Localization::GetText(U"map_edit.button.cycle_archetype"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 246, buttonW, 30 }, Localization::GetText(U"map_edit.button.delete"), data.smallFont);
 		return;
 	}
 
 	if (const auto* obstacle = getSelectedObstacle())
 	{
-		data.smallFont(U"Type: Obstacle").draw(textX, panelRect.y + 54, Palette::White);
-		data.smallFont(U"Label: {}"_fmt(obstacle->label)).draw(textX, panelRect.y + 82, Palette::White);
-		data.smallFont(U"Pos: ({:.1f}, {:.1f})"_fmt(obstacle->rect.x, obstacle->rect.y)).draw(textX, panelRect.y + 108, Palette::White);
-		data.smallFont(U"Size: {:.1f} x {:.1f}"_fmt(obstacle->rect.w, obstacle->rect.h)).draw(textX, panelRect.y + 134, Palette::White);
-		data.smallFont(U"Blocks: {}"_fmt(obstacle->blocksMovement ? U"Yes" : U"No")).draw(textX, panelRect.y + 160, Palette::White);
-		drawButton(RectF{ buttonX, panelRect.y + 194, buttonW, 30 }, U"Width +16", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 232, buttonW, 30 }, U"Width -16", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 270, buttonW, 30 }, U"Height +16", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 308, buttonW, 30 }, U"Height -16", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 346, buttonW, 30 }, U"Toggle Blocks Movement", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 384, buttonW, 30 }, U"Delete", data.smallFont);
+        data.smallFont(Localization::FormatText(U"map_edit.inspect.type", Localization::GetText(U"map_edit.kind.obstacle"))).draw(textX, panelRect.y + 54, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.label", obstacle->label)).draw(textX, panelRect.y + 82, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.position", obstacle->rect.x, obstacle->rect.y)).draw(textX, panelRect.y + 108, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.size", obstacle->rect.w, obstacle->rect.h)).draw(textX, panelRect.y + 134, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.blocks", obstacle->blocksMovement ? Localization::GetText(U"common.yes") : Localization::GetText(U"common.no"))).draw(textX, panelRect.y + 160, Palette::White);
+		drawButton(RectF{ buttonX, panelRect.y + 194, buttonW, 30 }, Localization::GetText(U"map_edit.button.width_plus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 232, buttonW, 30 }, Localization::GetText(U"map_edit.button.width_minus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 270, buttonW, 30 }, Localization::GetText(U"map_edit.button.height_plus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 308, buttonW, 30 }, Localization::GetText(U"map_edit.button.height_minus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 346, buttonW, 30 }, Localization::GetText(U"map_edit.button.toggle_blocks_movement"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 384, buttonW, 30 }, Localization::GetText(U"map_edit.button.delete"), data.smallFont);
 		return;
 	}
 
 	if (const auto* resourcePoint = getSelectedResourcePoint())
 	{
-		data.smallFont(U"Type: Resource Point").draw(textX, panelRect.y + 54, Palette::White);
-		data.smallFont(U"Label: {}"_fmt(resourcePoint->label)).draw(textX, panelRect.y + 82, Palette::White);
-		data.smallFont(U"Owner: {}"_fmt(toOwnerDisplayString(resourcePoint->owner))).draw(textX, panelRect.y + 108, Palette::White);
-		data.smallFont(U"Pos: ({:.1f}, {:.1f})"_fmt(resourcePoint->position.x, resourcePoint->position.y)).draw(textX, panelRect.y + 134, Palette::White);
-		data.smallFont(U"Radius: {:.1f}"_fmt(resourcePoint->radius)).draw(textX, panelRect.y + 160, Palette::White);
-		data.smallFont(U"Income: {}"_fmt(resourcePoint->incomeAmount)).draw(textX, panelRect.y + 186, Palette::White);
-		data.smallFont(U"Capture: {:.1f}"_fmt(resourcePoint->captureTime)).draw(textX, panelRect.y + 212, Palette::White);
-		drawButton(RectF{ buttonX, panelRect.y + 246, buttonW, 30 }, U"Cycle Owner", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 284, buttonW, 30 }, U"Radius +4", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 322, buttonW, 30 }, U"Radius -4", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 360, buttonW, 30 }, U"Income +1", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 398, buttonW, 30 }, U"Income -1", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 436, buttonW, 30 }, U"Capture +0.1", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 474, buttonW, 30 }, U"Capture -0.1", data.smallFont);
-		drawButton(RectF{ buttonX, panelRect.y + 512, buttonW, 30 }, U"Delete", data.smallFont);
+      data.smallFont(Localization::FormatText(U"map_edit.inspect.type", Localization::GetText(U"map_edit.kind.resource_point"))).draw(textX, panelRect.y + 54, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.label", resourcePoint->label)).draw(textX, panelRect.y + 82, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.owner", toOwnerDisplayString(resourcePoint->owner))).draw(textX, panelRect.y + 108, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.position", resourcePoint->position.x, resourcePoint->position.y)).draw(textX, panelRect.y + 134, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.radius", resourcePoint->radius)).draw(textX, panelRect.y + 160, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.income", resourcePoint->incomeAmount)).draw(textX, panelRect.y + 186, Palette::White);
+		data.smallFont(Localization::FormatText(U"map_edit.inspect.capture", resourcePoint->captureTime)).draw(textX, panelRect.y + 212, Palette::White);
+		drawButton(RectF{ buttonX, panelRect.y + 246, buttonW, 30 }, Localization::GetText(U"map_edit.button.cycle_owner"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 284, buttonW, 30 }, Localization::GetText(U"map_edit.button.radius_plus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 322, buttonW, 30 }, Localization::GetText(U"map_edit.button.radius_minus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 360, buttonW, 30 }, Localization::GetText(U"map_edit.button.income_plus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 398, buttonW, 30 }, Localization::GetText(U"map_edit.button.income_minus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 436, buttonW, 30 }, Localization::GetText(U"map_edit.button.capture_plus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 474, buttonW, 30 }, Localization::GetText(U"map_edit.button.capture_minus"), data.smallFont);
+		drawButton(RectF{ buttonX, panelRect.y + 512, buttonW, 30 }, Localization::GetText(U"map_edit.button.delete"), data.smallFont);
 	}
 }
 

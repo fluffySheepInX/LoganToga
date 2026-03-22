@@ -17,34 +17,14 @@
 	}
 }
 
-[[nodiscard]] inline String GetRewardCardLocalizedFallback(const String& key, const String& japanese, const String& english)
-{
-	if (!(japanese.isEmpty() && english.isEmpty()))
-	{
-		const String localizedValue = Localization::TryGetText(key);
-		if (!localizedValue.isEmpty())
-		{
-			return localizedValue;
-		}
-
-     return Localization::Legacy::SelectFallbackText(japanese, english);
-	}
-
-	return Localization::GetText(key);
-}
-
 [[nodiscard]] inline String GetRewardCardName(const RewardCardDefinition& card)
 {
-   const String japanese = card.nameJa.isEmpty() ? card.name : card.nameJa;
-	const String english = card.nameEn.isEmpty() ? card.name : card.nameEn;
-  return GetRewardCardLocalizedFallback(U"reward.card." + card.id + U".name", japanese, english);
+ return Localization::GetText(U"reward.card." + card.id + U".name");
 }
 
 [[nodiscard]] inline String GetRewardCardDescription(const RewardCardDefinition& card)
 {
-  const String japanese = card.descriptionJa.isEmpty() ? card.description : card.descriptionJa;
-	const String english = card.descriptionEn.isEmpty() ? card.description : card.descriptionEn;
-    return GetRewardCardLocalizedFallback(U"reward.card." + card.id + U".description", japanese, english);
+ return Localization::GetText(U"reward.card." + card.id + U".description");
 }
 
 [[nodiscard]] inline ColorF GetRewardCardRarityColor(const RewardCardRarity rarity)

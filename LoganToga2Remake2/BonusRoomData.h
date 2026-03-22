@@ -126,29 +126,26 @@ inline void ResetBonusRoomSceneState(BonusRoomProgress& progress)
 		BonusRoomDefinition room;
 		room.id = table[U"id"].get<String>();
 		const String keyPrefix = table[U"key_prefix"].getOr<String>(U"bonus_room.rooms." + room.id);
-        const String titleKey = table[U"title_key"].getOr<String>(keyPrefix + U".title");
+       const String titleKey = table[U"title_key"].getOr<String>(keyPrefix + U".title");
 		const String teaserKey = table[U"teaser_key"].getOr<String>(keyPrefix + U".teaser");
-		const String titleFallback = table[U"title"].getOr<String>(U"");
-		const String teaserFallback = table[U"teaser"].getOr<String>(U"");
-		room.title = titleFallback.isEmpty() ? LocalizedText{ titleKey } : LocalizedText{ titleKey, titleFallback, titleFallback };
-		room.teaser = teaserFallback.isEmpty() ? LocalizedText{ teaserKey } : LocalizedText{ teaserKey, teaserFallback, teaserFallback };
+        room.title = LocalizedText{ titleKey };
+		room.teaser = LocalizedText{ teaserKey };
 
 		if (table[U"page_keys"].isArray())
 		{
 			for (const auto& pageKey : table[U"page_keys"].arrayView())
 			{
 				const String pageKeyStr = pageKey.get<String>();
-              room.pages << LocalizedText{ pageKeyStr };
+                room.pages << LocalizedText{ pageKeyStr };
 			}
 		}
 		else if (table[U"pages"].isArray())
 		{
-         int32 pageIndex = 0;
+           int32 pageIndex = 0;
 			for (const auto& page : table[U"pages"].arrayView())
 			{
-             const String pageKey = keyPrefix + U".page" + Format(pageIndex + 1);
-				const String pageFallback = page.get<String>();
-              room.pages << (pageFallback.isEmpty() ? LocalizedText{ pageKey } : LocalizedText{ pageKey, pageFallback, pageFallback });
+               const String pageKey = page.get<String>();
+				room.pages << LocalizedText{ pageKey };
 				++pageIndex;
 			}
 		}
@@ -158,7 +155,7 @@ inline void ResetBonusRoomSceneState(BonusRoomProgress& progress)
 			for (int32 pageIndex = 0; pageIndex < pageCount; ++pageIndex)
 			{
 				const String pageKey = keyPrefix + U".page" + Format(pageIndex + 1);
-               room.pages << LocalizedText{ pageKey };
+              room.pages << LocalizedText{ pageKey };
 			}
 		}
 		if (!room.pages.isEmpty())

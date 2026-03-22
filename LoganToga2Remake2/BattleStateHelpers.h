@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "BattleTypes.h"
+#include "Localization.h"
 
 [[nodiscard]] inline Vec2 ClampToWorld(const RectF& bounds, const Vec2& position, const double radius)
 {
@@ -42,13 +43,13 @@ template <class TUnitState>
 	switch (formation)
 	{
 	case FormationType::Line:
-		return U"CLUSTER";
+      return Localization::GetText(U"battle.formation.line");
 	case FormationType::Column:
-		return U"ROW";
+      return Localization::GetText(U"battle.formation.column");
 	case FormationType::Square:
-		return U"SQUARE";
+       return Localization::GetText(U"battle.formation.square");
 	default:
-		return U"FORMATION";
+        return Localization::GetText(U"battle.formation.panel");
 	}
 }
 
@@ -57,33 +58,33 @@ template <class TUnitState>
 	switch (archetype)
 	{
 	case UnitArchetype::Base:
-		return U"BASE";
+     return Localization::GetText(U"battle.archetype.base");
 	case UnitArchetype::Barracks:
-		return U"BARRACKS";
+     return Localization::GetText(U"battle.archetype.barracks");
 	case UnitArchetype::Stable:
-		return U"STABLE";
+       return Localization::GetText(U"battle.archetype.stable");
 	case UnitArchetype::Turret:
-		return U"TURRET";
+       return Localization::GetText(U"battle.archetype.turret");
 	case UnitArchetype::Worker:
-		return U"WORKER";
+       return Localization::GetText(U"battle.archetype.worker");
 	case UnitArchetype::Soldier:
-		return U"SOLDIER";
+      return Localization::GetText(U"battle.archetype.soldier");
 	case UnitArchetype::Archer:
-		return U"ARCHER";
-		case UnitArchetype::Sniper:
-			return U"SNIPER";
-		case UnitArchetype::Katyusha:
-			return U"KATYUSHA";
+       return Localization::GetText(U"battle.archetype.archer");
+	case UnitArchetype::Sniper:
+		return Localization::GetText(U"battle.archetype.sniper");
+	case UnitArchetype::Katyusha:
+		return Localization::GetText(U"battle.archetype.katyusha");
 	case UnitArchetype::MachineGun:
-		return U"M-GUN";
+        return Localization::GetText(U"battle.archetype.machine_gun");
 	case UnitArchetype::Goliath:
-		return U"GOLIATH";
+      return Localization::GetText(U"battle.archetype.goliath");
 	case UnitArchetype::Healer:
-		return U"HEALER";
+       return Localization::GetText(U"battle.archetype.healer");
 	case UnitArchetype::Spinner:
-		return U"SPINNER";
+      return Localization::GetText(U"battle.archetype.spinner");
 	default:
-		return U"UNIT";
+     return Localization::GetText(U"battle.archetype.unit");
 	}
 }
 
@@ -92,12 +93,12 @@ template <class TUnitState>
 	switch (type)
 	{
 	case TurretUpgradeType::Power:
-		return U"POWER";
+        return Localization::GetText(U"battle.upgrade.label.power");
 	case TurretUpgradeType::Rapid:
-		return U"RAPID";
+        return Localization::GetText(U"battle.upgrade.label.rapid");
 	case TurretUpgradeType::Dual:
-		return U"DUAL";
+     return Localization::GetText(U"battle.upgrade.label.dual");
 	default:
-		return U"UPGRADE";
+      return Localization::GetText(U"battle.upgrade.label.default");
 	}
 }

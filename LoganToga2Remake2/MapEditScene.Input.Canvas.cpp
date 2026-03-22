@@ -1,5 +1,7 @@
 ﻿#include "MapEditScene.h"
 
+#include "Localization.h"
+
 void MapEditScene::handleCanvasInput()
 {
 	const RectF canvasRect = getCanvasRect();
@@ -21,28 +23,28 @@ void MapEditScene::handleCanvasInput()
 				.position = cursorWorld,
 			};
 			m_selection = Selection{ SelectionKind::InitialUnit, static_cast<int32>(m_config.initialUnits.size() - 1) };
-			m_statusMessage = U"Added initial unit";
+            m_statusMessage = Localization::GetText(U"map_edit.status.added_initial_unit");
 			return;
 		case Tool::AddObstacle:
 		{
 			ObstacleConfig obstacle;
-			obstacle.label = U"Obstacle {}"_fmt(m_config.obstacles.size() + 1);
+         obstacle.label = Localization::FormatText(U"map_edit.default_label.obstacle", m_config.obstacles.size() + 1);
 			obstacle.rect = RectF{ cursorWorld.x - 48.0, cursorWorld.y - 48.0, 96.0, 96.0 };
 			clampObstacle(obstacle);
 			m_config.obstacles << obstacle;
 			m_selection = Selection{ SelectionKind::Obstacle, static_cast<int32>(m_config.obstacles.size() - 1) };
-			m_statusMessage = U"Added obstacle";
+            m_statusMessage = Localization::GetText(U"map_edit.status.added_obstacle");
 			return;
 		}
 		case Tool::AddResource:
 		{
 			ResourcePointConfig resourcePoint;
-			resourcePoint.label = U"Resource {}"_fmt(m_config.resourcePoints.size() + 1);
+           resourcePoint.label = Localization::FormatText(U"map_edit.default_label.resource", m_config.resourcePoints.size() + 1);
 			resourcePoint.owner = m_resourcePlacementOwner;
 			resourcePoint.position = cursorWorld;
 			m_config.resourcePoints << resourcePoint;
 			m_selection = Selection{ SelectionKind::ResourcePoint, static_cast<int32>(m_config.resourcePoints.size() - 1) };
-			m_statusMessage = U"Added resource point";
+          m_statusMessage = Localization::GetText(U"map_edit.status.added_resource_point");
 			return;
 		}
 		case Tool::Select:
@@ -147,21 +149,21 @@ void MapEditScene::deleteSelection()
 		if (isValidIndex(m_config.initialUnits, m_selection.index))
 		{
 			m_config.initialUnits.remove_at(static_cast<size_t>(m_selection.index));
-			m_statusMessage = U"Deleted initial unit";
+          m_statusMessage = Localization::GetText(U"map_edit.status.deleted_initial_unit");
 		}
 		break;
 	case SelectionKind::Obstacle:
 		if (isValidIndex(m_config.obstacles, m_selection.index))
 		{
 			m_config.obstacles.remove_at(static_cast<size_t>(m_selection.index));
-			m_statusMessage = U"Deleted obstacle";
+          m_statusMessage = Localization::GetText(U"map_edit.status.deleted_obstacle");
 		}
 		break;
 	case SelectionKind::ResourcePoint:
 		if (isValidIndex(m_config.resourcePoints, m_selection.index))
 		{
 			m_config.resourcePoints.remove_at(static_cast<size_t>(m_selection.index));
-			m_statusMessage = U"Deleted resource point";
+            m_statusMessage = Localization::GetText(U"map_edit.status.deleted_resource_point");
 		}
 		break;
 	case SelectionKind::None:

@@ -102,13 +102,6 @@ inline void ApplyRewardCardDefinitionOverrides(Array<RewardCardDefinition>& card
 			card = &cards.back();
 			card->id = id;
 		}
-
-		card->name = table[U"name"].getOr<String>(card->name);
-     card->nameJa = table[U"name_ja"].getOr<String>(card->nameJa);
-		card->nameEn = table[U"name_en"].getOr<String>(card->nameEn);
-		card->description = table[U"description"].getOr<String>(card->description);
-     card->descriptionJa = table[U"description_ja"].getOr<String>(card->descriptionJa);
-		card->descriptionEn = table[U"description_en"].getOr<String>(card->descriptionEn);
 		if (const auto rarityValue = table[U"rarity"].getOpt<String>())
 		{
 			card->rarity = ParseRewardCardRarity(*rarityValue);
@@ -147,12 +140,6 @@ inline void ApplyRewardCardDefinitionOverrides(Array<RewardCardDefinition>& card
 	{
 		RewardCardDefinition card;
 		card.id = table[U"id"].get<String>();
-		card.name = table[U"name"].get<String>();
-     card.nameJa = table[U"name_ja"].getOr<String>(card.name);
-		card.nameEn = table[U"name_en"].getOr<String>(card.name);
-		card.description = table[U"description"].get<String>();
-        card.descriptionJa = table[U"description_ja"].getOr<String>(card.description);
-		card.descriptionEn = table[U"description_en"].getOr<String>(card.description);
 		card.rarity = ParseRewardCardRarity(table[U"rarity"].get<String>());
 		card.effectType = ParseRewardCardEffectType(table[U"effect_type"].get<String>());
 		card.repeatable = table[U"repeatable"].getOr<bool>(false);

@@ -1,4 +1,6 @@
 ﻿#include "MapEditScene.h"
+
+#include "Localization.h"
 #include "SceneTransition.h"
 
 bool MapEditScene::handleLeftPanelInput()
@@ -59,28 +61,28 @@ bool MapEditScene::handleLeftPanelInput()
 	if (isButtonClicked(getPanelButtonRect(panelRect, 4)))
 	{
 		m_tool = Tool::Select;
-		m_statusMessage = U"Tool: Select";
+      m_statusMessage = Localization::GetText(U"map_edit.status.tool_select");
 		return true;
 	}
 
 	if (isButtonClicked(getPanelButtonRect(panelRect, 5)))
 	{
 		m_tool = Tool::AddUnit;
-		m_statusMessage = U"Tool: Add Unit";
+        m_statusMessage = Localization::GetText(U"map_edit.status.tool_add_unit");
 		return true;
 	}
 
 	if (isButtonClicked(getPanelButtonRect(panelRect, 6)))
 	{
 		m_tool = Tool::AddObstacle;
-		m_statusMessage = U"Tool: Add Obstacle";
+        m_statusMessage = Localization::GetText(U"map_edit.status.tool_add_obstacle");
 		return true;
 	}
 
 	if (isButtonClicked(getPanelButtonRect(panelRect, 7)))
 	{
 		m_tool = Tool::AddResource;
-		m_statusMessage = U"Tool: Add Resource";
+        m_statusMessage = Localization::GetText(U"map_edit.status.tool_add_resource");
 		return true;
 	}
 

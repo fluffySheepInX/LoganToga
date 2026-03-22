@@ -1,9 +1,12 @@
 ﻿#include "TitleUiEditorScene.h"
 
+#include "Localization.h"
+
 TitleUiEditorScene::TitleUiEditorScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
 	, m_layout{ TitleUi::GetTitleUiLayout() }
 {
+   m_statusMessage = Localization::GetText(U"title_ui_editor.status.ready");
 }
 
 void TitleUiEditorScene::update()
@@ -37,7 +40,7 @@ void TitleUiEditorScene::reloadLayout()
 {
 	m_layout = TitleUi::ReloadTitleUiLayout();
 	m_hasUnsavedChanges = false;
-	m_statusMessage = U"Reloaded title UI layout from disk";
+    m_statusMessage = Localization::GetText(U"title_ui_editor.status.reloaded");
 }
 
 void TitleUiEditorScene::saveLayout()
@@ -53,11 +56,11 @@ void TitleUiEditorScene::saveLayout()
 	if (TitleUi::SaveTitleUiLayout(m_layout))
 	{
 		m_hasUnsavedChanges = false;
-		m_statusMessage = U"Saved title UI layout";
+     m_statusMessage = Localization::GetText(U"title_ui_editor.status.saved");
 	}
 	else
 	{
-		m_statusMessage = U"Failed to save title UI layout";
+        m_statusMessage = Localization::GetText(U"title_ui_editor.status.failed_save");
 	}
 }
 
@@ -67,7 +70,7 @@ void TitleUiEditorScene::applySelectedRectSizePreset(const Vec2& size, const Str
 	{
 		rect->w = Max(8.0, size.x);
 		rect->h = Max(8.0, size.y);
-		markEdited(U"Applied size preset: " + label);
+       markEdited(Localization::FormatText(U"title_ui_editor.status.applied_size_preset", label));
 	}
 }
 
@@ -84,13 +87,13 @@ void TitleUiEditorScene::resetSelectedElement()
 		m_layout.*(element.pointMember) = defaults.*(element.pointMember);
 	}
 
-	markEdited(U"Reset selected element to default");
+   markEdited(Localization::GetText(U"title_ui_editor.status.reset_selected"));
 }
 
 void TitleUiEditorScene::resetAllElements()
 {
 	m_layout = TitleUi::MakeDefaultTitleUiLayout();
-	markEdited(U"Reset all title UI elements to default");
+  markEdited(Localization::GetText(U"title_ui_editor.status.reset_all"));
 }
 
 void TitleUiEditorScene::requestReturnToTitle()

@@ -1,5 +1,7 @@
 ﻿#include "MapEditScene.h"
 
+#include "Localization.h"
+
 Owner MapEditScene::cycleUnitPlacementOwner(const Owner owner)
 {
 	return (owner == Owner::Player) ? Owner::Enemy : Owner::Player;
@@ -72,12 +74,12 @@ String MapEditScene::toOwnerDisplayString(const Owner owner)
 	switch (owner)
 	{
 	case Owner::Player:
-		return U"Player";
+       return Localization::GetText(U"common.owner.player");
 	case Owner::Enemy:
-		return U"Enemy";
+        return Localization::GetText(U"common.owner.enemy");
 	case Owner::Neutral:
 	default:
-		return U"Neutral";
+      return Localization::GetText(U"common.owner.neutral");
 	}
 }
 
@@ -100,32 +102,32 @@ String MapEditScene::toUnitArchetypeDisplayString(const UnitArchetype archetype)
 	switch (archetype)
 	{
 	case UnitArchetype::Base:
-		return U"Base";
+     return Localization::GetText(U"common.unit_archetype.base");
 	case UnitArchetype::Barracks:
-		return U"Barracks";
+     return Localization::GetText(U"common.unit_archetype.barracks");
 	case UnitArchetype::Stable:
-		return U"Stable";
+       return Localization::GetText(U"common.unit_archetype.stable");
 	case UnitArchetype::Turret:
-		return U"Turret";
+       return Localization::GetText(U"common.unit_archetype.turret");
 	case UnitArchetype::Worker:
-		return U"Worker";
+       return Localization::GetText(U"common.unit_archetype.worker");
 	case UnitArchetype::Soldier:
-		return U"Soldier";
+      return Localization::GetText(U"common.unit_archetype.soldier");
 	case UnitArchetype::Archer:
-		return U"Archer";
+       return Localization::GetText(U"common.unit_archetype.archer");
 	case UnitArchetype::Sniper:
-		return U"Sniper";
+       return Localization::GetText(U"common.unit_archetype.sniper");
 	case UnitArchetype::Katyusha:
-		return U"Katyusha";
+     return Localization::GetText(U"common.unit_archetype.katyusha");
 	case UnitArchetype::MachineGun:
-		return U"MachineGun";
+       return Localization::GetText(U"common.unit_archetype.machine_gun");
 	case UnitArchetype::Goliath:
-		return U"Goliath";
+      return Localization::GetText(U"common.unit_archetype.goliath");
 	case UnitArchetype::Healer:
-		return U"Healer";
+       return Localization::GetText(U"common.unit_archetype.healer");
 	case UnitArchetype::Spinner:
 	default:
-		return U"Spinner";
+      return Localization::GetText(U"common.unit_archetype.spinner");
 	}
 }
 

@@ -133,9 +133,9 @@ Optional<EnemyAiDebugPanelLayout> BuildEnemyAiDebugPanelLayout(const BattleState
 	const bool useDefault = state.enemyAiDebugOverrideMode && (*state.enemyAiDebugOverrideMode == EnemyAiMode::Default);
 	const bool useStaging = state.enemyAiDebugOverrideMode && (*state.enemyAiDebugOverrideMode == EnemyAiMode::StagingAssault);
 	const Array<EnemyAiDebugModeButtonEntry> buttons = {
-		{ EnemyAiDebugModeSelection::Toml, U"TOML", useToml },
-		{ EnemyAiDebugModeSelection::Default, U"DEFAULT", useDefault },
-		{ EnemyAiDebugModeSelection::StagingAssault, U"STAGING", useStaging }
+      { EnemyAiDebugModeSelection::Toml, BattleUiText::GetEnemyAiModeTomlLabel(), useToml },
+		{ EnemyAiDebugModeSelection::Default, BattleUiText::GetEnemyAiModeLabel(EnemyAiMode::Default), useDefault },
+		{ EnemyAiDebugModeSelection::StagingAssault, BattleUiText::GetEnemyAiModeLabel(EnemyAiMode::StagingAssault), useStaging }
 	};
 
 	constexpr double ButtonWidth = 88.0;
@@ -145,6 +145,7 @@ Optional<EnemyAiDebugPanelLayout> BuildEnemyAiDebugPanelLayout(const BattleState
 	const double panelHeight = 182.0;
 
 	EnemyAiDebugPanelLayout layout;
+  layout.title = BattleUiText::GetEnemyAiDebugTitle();
 	layout.panelRect = RectF{ Scene::Width() - panelWidth - 16, 16, panelWidth, panelHeight };
 
 	const Vec2 origin = layout.panelRect.pos.movedBy(16, 42);
@@ -192,6 +193,7 @@ FormationPanelLayout BuildFormationPanelLayout(const BattleState& state)
 	const double panelHeight = 40 + ButtonHeight + 16;
 
 	FormationPanelLayout layout;
+   layout.title = BattleUiText::GetFormationPanelTitle();
 	layout.panelRect = RectF{
 		16,
 		Scene::Height() - panelHeight - 16,

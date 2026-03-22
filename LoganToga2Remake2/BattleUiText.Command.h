@@ -175,6 +175,33 @@ namespace BattleUiText
 		return Localization::GetText(U"battle.command.section.production");
 	}
 
+	[[nodiscard]] inline String GetFormationPanelTitle()
+	{
+		return Localization::GetText(U"battle.formation.panel");
+	}
+
+	[[nodiscard]] inline String GetEnemyAiDebugTitle()
+	{
+		return Localization::GetText(U"battle.enemy_ai_debug.title");
+	}
+
+	[[nodiscard]] inline String GetEnemyAiModeTomlLabel()
+	{
+		return Localization::GetText(U"battle.enemy_ai_debug.toml");
+	}
+
+	[[nodiscard]] inline String GetEnemyAiModeLabel(const EnemyAiMode mode)
+	{
+		switch (mode)
+		{
+		case EnemyAiMode::StagingAssault:
+			return Localization::GetText(U"battle.enemy_ai_debug.staging");
+		case EnemyAiMode::Default:
+		default:
+			return Localization::GetText(U"battle.enemy_ai_debug.default");
+		}
+	}
+
 	[[nodiscard]] inline String GetCommandKindLabel(const CommandKind kind)
 	{
 		switch (kind)

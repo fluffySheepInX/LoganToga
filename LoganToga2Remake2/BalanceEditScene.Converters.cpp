@@ -1,5 +1,7 @@
 ﻿#include "BalanceEditScene.h"
 
+#include "Localization.h"
+
 void BalanceEditScene::appendTomlLine(String& content, const String& key, const String& value)
 {
 	content += key + U" = " + value + U"\n";
@@ -18,32 +20,32 @@ String BalanceEditScene::toUnitArchetypeDisplayString(const UnitArchetype archet
 	switch (archetype)
 	{
 	case UnitArchetype::Base:
-		return U"Base";
+     return Localization::GetText(U"common.unit_archetype.base");
 	case UnitArchetype::Barracks:
-		return U"Barracks";
+     return Localization::GetText(U"common.unit_archetype.barracks");
 	case UnitArchetype::Stable:
-		return U"Stable";
+       return Localization::GetText(U"common.unit_archetype.stable");
 	case UnitArchetype::Turret:
-		return U"Turret";
+       return Localization::GetText(U"common.unit_archetype.turret");
 	case UnitArchetype::Worker:
-		return U"Worker";
+       return Localization::GetText(U"common.unit_archetype.worker");
 	case UnitArchetype::Soldier:
-		return U"Soldier";
+      return Localization::GetText(U"common.unit_archetype.soldier");
 	case UnitArchetype::Archer:
-		return U"Archer";
+       return Localization::GetText(U"common.unit_archetype.archer");
 	case UnitArchetype::Sniper:
-		return U"Sniper";
+       return Localization::GetText(U"common.unit_archetype.sniper");
 	case UnitArchetype::Katyusha:
-		return U"Katyusha";
+     return Localization::GetText(U"common.unit_archetype.katyusha");
 	case UnitArchetype::MachineGun:
-		return U"MachineGun";
+       return Localization::GetText(U"common.unit_archetype.machine_gun");
 	case UnitArchetype::Goliath:
-		return U"Goliath";
+      return Localization::GetText(U"common.unit_archetype.goliath");
 	case UnitArchetype::Healer:
-		return U"Healer";
+       return Localization::GetText(U"common.unit_archetype.healer");
 	case UnitArchetype::Spinner:
 	default:
-		return U"Spinner";
+      return Localization::GetText(U"common.unit_archetype.spinner");
 	}
 }
 
@@ -86,12 +88,12 @@ String BalanceEditScene::toRewardCardRarityDisplayString(const RewardCardRarity 
 	switch (rarity)
 	{
 	case RewardCardRarity::Common:
-		return U"Common";
+       return Localization::GetText(U"common.reward_card_rarity.common");
 	case RewardCardRarity::Rare:
-		return U"Rare";
+     return Localization::GetText(U"common.reward_card_rarity.rare");
 	case RewardCardRarity::Epic:
 	default:
-		return U"Epic";
+     return Localization::GetText(U"common.reward_card_rarity.epic");
 	}
 }
 
@@ -105,14 +107,14 @@ String BalanceEditScene::toRewardCardEffectTypeDisplayString(const RewardCardEff
 	switch (effectType)
 	{
 	case RewardCardEffectType::UnitStatBonus:
-		return U"Unit Stat Bonus";
+      return Localization::GetText(U"balance_edit.effect_type.unit_stat_bonus");
 	case RewardCardEffectType::ProductionUnlock:
-		return U"Production Unlock";
+        return Localization::GetText(U"balance_edit.effect_type.production_unlock");
 	case RewardCardEffectType::ConstructionUnlock:
-		return U"Construction Unlock";
+      return Localization::GetText(U"balance_edit.effect_type.construction_unlock");
 	case RewardCardEffectType::TurretUpgradeUnlock:
 	default:
-		return U"Turret Upgrade Unlock";
+        return Localization::GetText(U"balance_edit.effect_type.turret_upgrade_unlock");
 	}
 }
 
@@ -123,14 +125,14 @@ String BalanceEditScene::toRewardCardStatTypeDisplayString(const RewardCardStatT
 	case RewardCardStatType::HP:
 		return U"HP";
 	case RewardCardStatType::AttackPower:
-		return U"Attack Power";
+     return Localization::GetText(U"balance_edit.stat_type.attack_power");
 	case RewardCardStatType::MoveSpeed:
-		return U"Move Speed";
+       return Localization::GetText(U"balance_edit.stat_type.move_speed");
 	case RewardCardStatType::AttackRange:
-		return U"Attack Range";
+     return Localization::GetText(U"balance_edit.stat_type.attack_range");
 	case RewardCardStatType::ProductionTime:
 	default:
-		return U"Production Time";
+      return Localization::GetText(U"balance_edit.stat_type.production_time");
 	}
 }
 
@@ -139,11 +141,11 @@ String BalanceEditScene::toTurretUpgradeTypeDisplayString(const TurretUpgradeTyp
 	switch (type)
 	{
 	case TurretUpgradeType::Power:
-		return U"Power";
+        return Localization::GetText(U"common.turret_upgrade.power");
 	case TurretUpgradeType::Rapid:
-		return U"Rapid";
+        return Localization::GetText(U"common.turret_upgrade.rapid");
 	case TurretUpgradeType::Dual:
 	default:
-		return U"Dual";
+     return Localization::GetText(U"common.turret_upgrade.dual");
 	}
 }

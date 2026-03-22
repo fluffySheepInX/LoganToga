@@ -32,7 +32,7 @@ private:
 	int32 m_selectedElementIndex = 0;
 	int32 m_selectionScrollRow = 0;
 	Vec2 m_previewCameraOffset{ 0, 0 };
-	String m_statusMessage = U"Title UI editor ready";
+  String m_statusMessage;
 	bool m_hasUnsavedChanges = false;
 	bool m_previewHasContinue = true;
 	bool m_previewHasViewedBonusRooms = true;

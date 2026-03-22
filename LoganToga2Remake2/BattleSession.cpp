@@ -11,40 +11,6 @@ namespace
 #endif
 	}
 
-	[[nodiscard]] String GetEnemyAiModeLabel(const EnemyAiMode mode)
-	{
-		switch (mode)
-		{
-		case EnemyAiMode::StagingAssault:
-			return U"STAGING";
-		case EnemyAiMode::Default:
-		default:
-			return U"DEFAULT";
-		}
-	}
-
-	[[nodiscard]] String GetTutorialObjective(const BattleConfigData& config, const TutorialPhase phase)
-	{
-		switch (phase)
-		{
-		case TutorialPhase::MoveUnit:
-			return config.tutorial.objectiveMove;
-		case TutorialPhase::BuildStructure:
-			return config.tutorial.objectiveBuild;
-		case TutorialPhase::PrepareDefense:
-			return config.tutorial.objectivePrepare;
-		case TutorialPhase::ProduceUnit:
-			return config.tutorial.objectiveProduce;
-		case TutorialPhase::DefendWave:
-			return config.tutorial.objectiveDefend;
-		case TutorialPhase::Completed:
-			return config.tutorial.objectiveComplete;
-		case TutorialPhase::None:
-		default:
-			return U"";
-		}
-	}
-
 	[[nodiscard]] bool HasConstructedPlayerBuilding(const BattleState& state, const UnitArchetype archetype)
 	{
 		for (const auto& building : state.buildings)

@@ -5,10 +5,9 @@
 
 namespace BattleTutorialText
 {
-	[[nodiscard]] inline String GetHudTitle(const BattleConfigData& config)
+ [[nodiscard]] inline String GetHudTitle(const BattleConfigData&)
 	{
-		const String english = config.hud.title.isEmpty() ? U"LoganToga2 Tutorial" : config.hud.title;
-        return Localization::Legacy::GetText(U"tutorial.hud.title", U"LoganToga2 チュートリアル", english);
+      return Localization::GetText(U"tutorial.hud.title");
 	}
 
 	[[nodiscard]] inline String GetModeLabel()
@@ -43,22 +42,22 @@ namespace BattleTutorialText
 		}
 	}
 
-	[[nodiscard]] inline String GetObjective(const BattleConfigData& config, const TutorialPhase phase)
+ [[nodiscard]] inline String GetObjective(const BattleConfigData&, const TutorialPhase phase)
 	{
 		switch (phase)
 		{
 		case TutorialPhase::MoveUnit:
-            return Localization::Legacy::GetText(U"tutorial.objective.move", U"手順 1: Worker を選択し、前方のエリアまで移動させましょう。", config.tutorial.objectiveMove);
+            return Localization::GetText(U"tutorial.objective.move");
 		case TutorialPhase::BuildStructure:
-            return Localization::Legacy::GetText(U"tutorial.objective.build", U"手順 2: 拠点の近くに Barracks を建てましょう。", config.tutorial.objectiveBuild);
+           return Localization::GetText(U"tutorial.objective.build");
 		case TutorialPhase::PrepareDefense:
-            return Localization::Legacy::GetText(U"tutorial.objective.prepare", U"敵の斥候を確認しました。防衛線を整えましょう。", config.tutorial.objectivePrepare);
+          return Localization::GetText(U"tutorial.objective.prepare");
 		case TutorialPhase::ProduceUnit:
-            return Localization::Legacy::GetText(U"tutorial.objective.produce", U"手順 3: Barracks で Soldier を生産し、敵が来るまで持ちこたえましょう。", config.tutorial.objectiveProduce);
+           return Localization::GetText(U"tutorial.objective.produce");
 		case TutorialPhase::DefendWave:
-            return Localization::Legacy::GetText(U"tutorial.objective.defend", U"手順 4: 接近してくる敵の波を撃退しましょう。", config.tutorial.objectiveDefend);
+           return Localization::GetText(U"tutorial.objective.defend");
 		case TutorialPhase::Completed:
-            return Localization::Legacy::GetText(U"tutorial.objective.completed", U"チュートリアル完了。Enter でタイトルへ戻れます。", config.tutorial.objectiveComplete);
+           return Localization::GetText(U"tutorial.objective.completed");
 		case TutorialPhase::None:
 		default:
 			return U"";

@@ -42,7 +42,7 @@ private:
 	Tab m_tab = Tab::Core;
 	int32 m_selectedUnitIndex = 0;
 	int32 m_selectedCardIndex = 0;
-	String m_statusMessage = U"Ready";
+  String m_statusMessage;
 	bool m_hasUnsavedChanges = false;
 
 	void reloadFromDisk(const String& statusMessage);

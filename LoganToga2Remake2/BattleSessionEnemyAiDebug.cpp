@@ -1,5 +1,7 @@
 ﻿#include "BattleSession.h"
 
+#include "BattleUiText.h"
+
 namespace
 {
 	[[nodiscard]] constexpr bool IsEnemyAiDebugBuildEnabled()
@@ -11,17 +13,6 @@ namespace
 #endif
 	}
 
-	[[nodiscard]] String GetEnemyAiModeLabel(const EnemyAiMode mode)
-	{
-		switch (mode)
-		{
-		case EnemyAiMode::StagingAssault:
-			return U"STAGING";
-		case EnemyAiMode::Default:
-		default:
-			return U"DEFAULT";
-		}
-	}
 }
 
 void BattleSession::toggleEnemyAiDebugPanel()
@@ -33,8 +24,8 @@ void BattleSession::toggleEnemyAiDebugPanel()
 
 	m_state.enemyAiDebugPanelVisible = !m_state.enemyAiDebugPanelVisible;
 	m_state.statusMessage = m_state.enemyAiDebugPanelVisible
-		? U"Enemy AI debug panel ON"
-		: U"Enemy AI debug panel OFF";
+        ? Localization::GetText(U"battle.enemy_ai_debug.panel_on")
+		: Localization::GetText(U"battle.enemy_ai_debug.panel_off");
 	m_state.statusMessageTimer = 1.2;
 }
 
@@ -79,8 +70,8 @@ void BattleSession::setEnemyAiDebugOverrideMode(const Optional<EnemyAiMode>& mod
 	m_state.enemyAiResolvedMode = mode ? *mode : m_config.enemyAI.mode;
 	m_state.enemyAiDecisionTimer = m_config.enemyAI.decisionInterval;
 	m_state.statusMessage = mode
-		? (U"Enemy AI: " + GetEnemyAiModeLabel(*mode))
-		: (U"Enemy AI: TOML (" + GetEnemyAiModeLabel(m_config.enemyAI.mode) + U")");
+      ? Localization::FormatText(U"battle.enemy_ai_debug.status_override", BattleUiText::GetEnemyAiModeLabel(*mode))
+		: Localization::FormatText(U"battle.enemy_ai_debug.status_toml", BattleUiText::GetEnemyAiModeLabel(m_config.enemyAI.mode));
 	m_state.statusMessageTimer = 1.6;
 }
 

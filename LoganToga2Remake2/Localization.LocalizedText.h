@@ -1,13 +1,11 @@
 ﻿#pragma once
 
-#include "Localization.Legacy.h"
+#include "Localization.Text.h"
 #include <utility>
 
 struct LocalizedText
 {
 	String key;
-	String legacyJapanese;
-	String legacyEnglish;
 
 	LocalizedText() = default;
 
@@ -16,26 +14,9 @@ struct LocalizedText
 	{
 	}
 
-	LocalizedText(String keyValue, String japaneseValue, String englishValue)
-		: key{ std::move(keyValue) }
-		, legacyJapanese{ std::move(japaneseValue) }
-		, legacyEnglish{ std::move(englishValue) }
-	{
-	}
-
-	[[nodiscard]] bool hasLegacyFallbackText() const
-	{
-		return !(legacyJapanese.isEmpty() && legacyEnglish.isEmpty());
-	}
-
 	[[nodiscard]] String get() const
 	{
-		if (!hasLegacyFallbackText())
-		{
-			return Localization::GetText(key);
-		}
-
-		return Localization::Legacy::GetText(key, legacyJapanese, legacyEnglish);
+       return Localization::GetText(key);
 	}
 
 	operator String() const

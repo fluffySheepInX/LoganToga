@@ -55,7 +55,7 @@ private:
 	Owner m_unitPlacementOwner = Owner::Player;
 	UnitArchetype m_unitPlacementArchetype = UnitArchetype::Soldier;
 	Owner m_resourcePlacementOwner = Owner::Neutral;
-	String m_statusMessage = U"Ready";
+  String m_statusMessage;
 
 	[[nodiscard]] static String resolveMapConfigPath(const String& battleConfigPath);
 	[[nodiscard]] static Array<EditableMapEntry> loadEditableMaps(const String& battleConfigPath);

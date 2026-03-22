@@ -1,5 +1,7 @@
 ﻿#include "TitleUiEditorScene.h"
 
+#include "Localization.h"
+
 namespace TitleUiEditorSceneSelectionDetail
 {
 	constexpr int32 EditorGridCellSize = 8;
@@ -36,14 +38,14 @@ void TitleUiEditorScene::applySelectionDelta(const Vec2& delta)
 	{
 		rect->x = TitleUiEditorSceneSelectionDetail::SnapToEditorGrid(rect->x + delta.x);
 		rect->y = TitleUiEditorSceneSelectionDetail::SnapToEditorGrid(rect->y + delta.y);
-		markEdited(U"Moved selected rectangle");
+        markEdited(Localization::GetText(U"title_ui_editor.status.moved_rectangle"));
 		return;
 	}
 
 	if (Vec2* point = getSelectedPoint())
 	{
 		*point = TitleUiEditorSceneSelectionDetail::SnapToEditorGrid(*point + delta);
-		markEdited(U"Moved selected point");
+        markEdited(Localization::GetText(U"title_ui_editor.status.moved_point"));
 	}
 }
 
@@ -53,7 +55,7 @@ void TitleUiEditorScene::applySelectionResize(const Vec2& delta)
 	{
 		rect->w = Max(8.0, rect->w + delta.x);
 		rect->h = Max(8.0, rect->h + delta.y);
-		markEdited(U"Resized selected rectangle");
+      markEdited(Localization::GetText(U"title_ui_editor.status.resized_rectangle"));
 	}
 }
 
@@ -150,7 +152,7 @@ Optional<TitleUiEditorScene::ValidationIssue> TitleUiEditorScene::findValidation
 
 		return ValidationIssue{
 			.elementIndex = i,
-			.message = U"Save blocked: " + element.name + U" is too small. Use Default Size or a size preset."
+          .message = Localization::FormatText(U"title_ui_editor.validation.too_small", Localization::GetText(element.name))
 		};
 	}
 
@@ -200,62 +202,62 @@ const Array<TitleUiEditorScene::EditableElement>& TitleUiEditorScene::getEditabl
 {
 	static const Array<EditableElement> elements =
 	{
-		{ U"Panel", &TitleUiLayout::panelRect, nullptr },
-		{ U"Title", nullptr, &TitleUiLayout::titlePos },
-		{ U"Subtitle", nullptr, &TitleUiLayout::subtitlePos },
-		{ U"Summary 1", nullptr, &TitleUiLayout::summaryLine1Pos },
-		{ U"Summary 2", nullptr, &TitleUiLayout::summaryLine2Pos },
-		{ U"Summary 3", nullptr, &TitleUiLayout::summaryLine3Pos },
-		{ U"Viewed Bonus", nullptr, &TitleUiLayout::viewedBonusRoomsPos },
-		{ U"Enter Hint", nullptr, &TitleUiLayout::enterHintPos },
-		{ U"Continue Button", &TitleUiLayout::continueButtonRect, nullptr },
-		{ U"Tutorial Btn (Cont)", &TitleUiLayout::tutorialButtonRectWithContinue, nullptr },
-		{ U"Tutorial Btn (New)", &TitleUiLayout::tutorialButtonRectWithoutContinue, nullptr },
-		{ U"QuickGuide Btn (Cont)", &TitleUiLayout::quickGuideButtonRectWithContinue, nullptr },
-		{ U"QuickGuide Btn (New)", &TitleUiLayout::quickGuideButtonRectWithoutContinue, nullptr },
-		{ U"Start Btn (Cont)", &TitleUiLayout::startButtonRectWithContinue, nullptr },
-		{ U"Start Btn (New)", &TitleUiLayout::startButtonRectWithoutContinue, nullptr },
-		{ U"Bonus Btn (Cont)", &TitleUiLayout::bonusButtonRectWithContinue, nullptr },
-		{ U"Bonus Btn (New)", &TitleUiLayout::bonusButtonRectWithoutContinue, nullptr },
-		{ U"Bonus Hint (Cont)", nullptr, &TitleUiLayout::bonusRoomHintPosWithContinue },
-		{ U"Bonus Hint (New)", nullptr, &TitleUiLayout::bonusRoomHintPosWithoutContinue },
-		{ U"Continue Preview", &TitleUiLayout::continuePreviewRect, nullptr },
-		{ U"QuickGuide Panel", &TitleUiLayout::quickGuidePanelRect, nullptr },
-		{ U"QuickGuide Body", nullptr, &TitleUiLayout::quickGuideBodyPos },
-		{ U"QuickGuide Flow", nullptr, &TitleUiLayout::quickGuideFlowPos },
-		{ U"QuickGuide Tutorial", &TitleUiLayout::quickGuideTutorialButtonRect, nullptr },
-		{ U"QuickGuide Close", &TitleUiLayout::quickGuideCloseButtonRect, nullptr },
-		{ U"QuickGuide Esc", nullptr, &TitleUiLayout::quickGuideEscHintPos },
-		{ U"DataClear Dialog", &TitleUiLayout::dataClearDialogRect, nullptr },
-		{ U"DataClear Yes", &TitleUiLayout::dataClearDialogYesButtonRect, nullptr },
-		{ U"DataClear No", &TitleUiLayout::dataClearDialogNoButtonRect, nullptr },
-		{ U"Exit Dialog", &TitleUiLayout::exitDialogRect, nullptr },
-		{ U"Exit Yes", &TitleUiLayout::exitDialogYesButtonRect, nullptr },
-		{ U"Exit No", &TitleUiLayout::exitDialogNoButtonRect, nullptr },
-		{ U"Resolution Label", nullptr, &TitleUiLayout::resolutionLabelPos },
-		{ U"Resolution Value", nullptr, &TitleUiLayout::resolutionValuePos },
-		{ U"Resolution Small", &TitleUiLayout::resolutionSmallButtonRect, nullptr },
-		{ U"Resolution Medium", &TitleUiLayout::resolutionMediumButtonRect, nullptr },
-		{ U"Resolution Large", &TitleUiLayout::resolutionLargeButtonRect, nullptr },
-		{ U"SaveLocation Label", nullptr, &TitleUiLayout::saveLocationLabelPos },
-		{ U"SaveLocation Value", nullptr, &TitleUiLayout::saveLocationValuePos },
-		{ U"SaveLocation Button", &TitleUiLayout::saveLocationButtonRect, nullptr },
-		{ U"Data Manage Label", nullptr, &TitleUiLayout::dataManagementLabelPos },
-		{ U"Clear Continue", &TitleUiLayout::clearContinueRunButtonRect, nullptr },
-		{ U"Clear Settings", &TitleUiLayout::clearSettingsButtonRect, nullptr },
-		{ U"Exit Button", &TitleUiLayout::exitButtonRect, nullptr },
-		{ U"Data Manage Hint", nullptr, &TitleUiLayout::dataManagementHintPos },
-		{ U"Map Edit", &TitleUiLayout::mapEditButtonRect, nullptr },
-		{ U"Balance Edit", &TitleUiLayout::balanceEditButtonRect, nullptr },
-		{ U"Transition Preset", &TitleUiLayout::transitionPresetButtonRect, nullptr },
-		{ U"TitleUi Editor", &TitleUiLayout::titleUiEditorButtonRect, nullptr },
-       { U"Reward Editor", &TitleUiLayout::rewardEditorButtonRect, nullptr },
-		{ U"BonusRoom Editor", &TitleUiLayout::bonusRoomEditorButtonRect, nullptr },
+       { U"title_ui_editor.element.panel", &TitleUiLayout::panelRect, nullptr },
+		{ U"title_ui_editor.element.title", nullptr, &TitleUiLayout::titlePos },
+		{ U"title_ui_editor.element.subtitle", nullptr, &TitleUiLayout::subtitlePos },
+		{ U"title_ui_editor.element.summary1", nullptr, &TitleUiLayout::summaryLine1Pos },
+		{ U"title_ui_editor.element.summary2", nullptr, &TitleUiLayout::summaryLine2Pos },
+		{ U"title_ui_editor.element.summary3", nullptr, &TitleUiLayout::summaryLine3Pos },
+		{ U"title_ui_editor.element.viewed_bonus", nullptr, &TitleUiLayout::viewedBonusRoomsPos },
+		{ U"title_ui_editor.element.enter_hint", nullptr, &TitleUiLayout::enterHintPos },
+		{ U"title_ui_editor.element.continue_button", &TitleUiLayout::continueButtonRect, nullptr },
+		{ U"title_ui_editor.element.tutorial_button_continue", &TitleUiLayout::tutorialButtonRectWithContinue, nullptr },
+		{ U"title_ui_editor.element.tutorial_button_new", &TitleUiLayout::tutorialButtonRectWithoutContinue, nullptr },
+		{ U"title_ui_editor.element.quick_guide_button_continue", &TitleUiLayout::quickGuideButtonRectWithContinue, nullptr },
+		{ U"title_ui_editor.element.quick_guide_button_new", &TitleUiLayout::quickGuideButtonRectWithoutContinue, nullptr },
+		{ U"title_ui_editor.element.start_button_continue", &TitleUiLayout::startButtonRectWithContinue, nullptr },
+		{ U"title_ui_editor.element.start_button_new", &TitleUiLayout::startButtonRectWithoutContinue, nullptr },
+		{ U"title_ui_editor.element.bonus_button_continue", &TitleUiLayout::bonusButtonRectWithContinue, nullptr },
+		{ U"title_ui_editor.element.bonus_button_new", &TitleUiLayout::bonusButtonRectWithoutContinue, nullptr },
+		{ U"title_ui_editor.element.bonus_hint_continue", nullptr, &TitleUiLayout::bonusRoomHintPosWithContinue },
+		{ U"title_ui_editor.element.bonus_hint_new", nullptr, &TitleUiLayout::bonusRoomHintPosWithoutContinue },
+		{ U"title_ui_editor.element.continue_preview", &TitleUiLayout::continuePreviewRect, nullptr },
+		{ U"title_ui_editor.element.quick_guide_panel", &TitleUiLayout::quickGuidePanelRect, nullptr },
+		{ U"title_ui_editor.element.quick_guide_body", nullptr, &TitleUiLayout::quickGuideBodyPos },
+		{ U"title_ui_editor.element.quick_guide_flow", nullptr, &TitleUiLayout::quickGuideFlowPos },
+		{ U"title_ui_editor.element.quick_guide_tutorial", &TitleUiLayout::quickGuideTutorialButtonRect, nullptr },
+		{ U"title_ui_editor.element.quick_guide_close", &TitleUiLayout::quickGuideCloseButtonRect, nullptr },
+		{ U"title_ui_editor.element.quick_guide_esc", nullptr, &TitleUiLayout::quickGuideEscHintPos },
+		{ U"title_ui_editor.element.data_clear_dialog", &TitleUiLayout::dataClearDialogRect, nullptr },
+		{ U"title_ui_editor.element.data_clear_yes", &TitleUiLayout::dataClearDialogYesButtonRect, nullptr },
+		{ U"title_ui_editor.element.data_clear_no", &TitleUiLayout::dataClearDialogNoButtonRect, nullptr },
+		{ U"title_ui_editor.element.exit_dialog", &TitleUiLayout::exitDialogRect, nullptr },
+		{ U"title_ui_editor.element.exit_yes", &TitleUiLayout::exitDialogYesButtonRect, nullptr },
+		{ U"title_ui_editor.element.exit_no", &TitleUiLayout::exitDialogNoButtonRect, nullptr },
+		{ U"title_ui_editor.element.resolution_label", nullptr, &TitleUiLayout::resolutionLabelPos },
+		{ U"title_ui_editor.element.resolution_value", nullptr, &TitleUiLayout::resolutionValuePos },
+		{ U"title_ui_editor.element.resolution_small", &TitleUiLayout::resolutionSmallButtonRect, nullptr },
+		{ U"title_ui_editor.element.resolution_medium", &TitleUiLayout::resolutionMediumButtonRect, nullptr },
+		{ U"title_ui_editor.element.resolution_large", &TitleUiLayout::resolutionLargeButtonRect, nullptr },
+		{ U"title_ui_editor.element.save_location_label", nullptr, &TitleUiLayout::saveLocationLabelPos },
+		{ U"title_ui_editor.element.save_location_value", nullptr, &TitleUiLayout::saveLocationValuePos },
+		{ U"title_ui_editor.element.save_location_button", &TitleUiLayout::saveLocationButtonRect, nullptr },
+		{ U"title_ui_editor.element.data_manage_label", nullptr, &TitleUiLayout::dataManagementLabelPos },
+		{ U"title_ui_editor.element.clear_continue", &TitleUiLayout::clearContinueRunButtonRect, nullptr },
+		{ U"title_ui_editor.element.clear_settings", &TitleUiLayout::clearSettingsButtonRect, nullptr },
+		{ U"title_ui_editor.element.exit_button", &TitleUiLayout::exitButtonRect, nullptr },
+		{ U"title_ui_editor.element.data_manage_hint", nullptr, &TitleUiLayout::dataManagementHintPos },
+		{ U"title_ui_editor.element.map_edit", &TitleUiLayout::mapEditButtonRect, nullptr },
+		{ U"title_ui_editor.element.balance_edit", &TitleUiLayout::balanceEditButtonRect, nullptr },
+		{ U"title_ui_editor.element.transition_preset", &TitleUiLayout::transitionPresetButtonRect, nullptr },
+		{ U"title_ui_editor.element.title_ui_editor", &TitleUiLayout::titleUiEditorButtonRect, nullptr },
+		{ U"title_ui_editor.element.reward_editor", &TitleUiLayout::rewardEditorButtonRect, nullptr },
+		{ U"title_ui_editor.element.bonus_room_editor", &TitleUiLayout::bonusRoomEditorButtonRect, nullptr },
 #ifdef _DEBUG
-		{ U"Debug Hint (Cont)", nullptr, &TitleUiLayout::debugHintPosWithContinue },
-		{ U"Debug Hint (New)", nullptr, &TitleUiLayout::debugHintPosWithoutContinue },
-		{ U"Debug Btn (Cont)", &TitleUiLayout::debugButtonRectWithContinue, nullptr },
-		{ U"Debug Btn (New)", &TitleUiLayout::debugButtonRectWithoutContinue, nullptr },
+        { U"title_ui_editor.element.debug_hint_continue", nullptr, &TitleUiLayout::debugHintPosWithContinue },
+		{ U"title_ui_editor.element.debug_hint_new", nullptr, &TitleUiLayout::debugHintPosWithoutContinue },
+		{ U"title_ui_editor.element.debug_button_continue", &TitleUiLayout::debugButtonRectWithContinue, nullptr },
+		{ U"title_ui_editor.element.debug_button_new", &TitleUiLayout::debugButtonRectWithoutContinue, nullptr },
 #endif
 	};
 	return elements;
