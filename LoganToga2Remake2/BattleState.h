@@ -31,6 +31,7 @@ struct UnitState
 	int32 detonationFramesRemaining = 0;
 	bool isSelected = false;
 	bool isAlive = true;
+    bool enemyAiAwaitingRallyAssignment = false;
 	Optional<int32> squadId;
 	Vec2 formationOffset = Vec2::Zero();
 	UnitOrder order;
@@ -167,7 +168,9 @@ struct BattleState
 	int32 enemyAiDebugReadyUnitCount = 0;
 	int32 enemyAiSearchPhase = 0;
 	double enemyAiStagingTimer = 0.0;
+  bool enemyAiStagingCompleted = false;
 	double enemyAiAssaultCommitTimer = 0.0;
+    bool enemyAiAssaultActive = false;
 	Vec2 enemyAiAssaultDestination = Vec2::Zero();
 	Optional<int32> enemyAiAssaultTargetUnitId;
 	String statusMessage;

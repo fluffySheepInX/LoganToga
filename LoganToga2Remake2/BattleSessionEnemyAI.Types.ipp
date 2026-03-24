@@ -54,6 +54,7 @@
 	struct EnemyAiPendingUpdate
 	{
 		bool shouldApply = false;
+       bool shouldClearRallyAssignment = false;
 		EnemyAiDecision decision;
 	};
 

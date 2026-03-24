@@ -84,8 +84,15 @@ inline void ApplyBattleProgressionConfigOverrides(BattleConfigData& config, cons
 		progression->assaultUnitThreshold = table[U"assault_unit_threshold"].getOr<int32>(progression->assaultUnitThreshold);
 		if (const auto modeValue = table[U"enemy_ai_mode"].getOpt<String>())
 		{
-			progression->overrideEnemyAiMode = true;
-			progression->enemyAiMode = ParseEnemyAiMode(*modeValue);
+            if (modeValue->isEmpty())
+			{
+				progression->overrideEnemyAiMode = false;
+			}
+			else
+			{
+				progression->overrideEnemyAiMode = true;
+				progression->enemyAiMode = ParseEnemyAiMode(*modeValue);
+			}
 		}
 		progression->stagingAssaultMinUnits = table[U"staging_assault_min_units"].getOr<int32>(progression->stagingAssaultMinUnits);
 		progression->stagingAssaultGatherRadius = table[U"staging_assault_gather_radius"].getOr<double>(progression->stagingAssaultGatherRadius);

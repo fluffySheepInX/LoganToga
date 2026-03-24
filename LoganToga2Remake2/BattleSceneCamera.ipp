@@ -17,28 +17,10 @@ RectF BattleScene::getCameraWorldRect(const double margin) const
 Vec2 BattleScene::clampCameraCenter(const Vec2& desiredCenter) const
 {
 	const RectF& worldBounds = m_session.state().worldBounds;
-	const Vec2 halfViewport = ((Scene::Size() * 0.5) / m_camera.getScale());
-	Vec2 clamped = desiredCenter;
-
-	if (worldBounds.w <= (halfViewport.x * 2.0))
-	{
-		clamped.x = worldBounds.center().x;
-	}
-	else
-	{
-		clamped.x = Clamp(clamped.x, worldBounds.leftX() - halfViewport.x, worldBounds.rightX() + halfViewport.x);
-	}
-
-	if (worldBounds.h <= (halfViewport.y * 2.0))
-	{
-		clamped.y = worldBounds.center().y;
-	}
-	else
-	{
-		clamped.y = Clamp(clamped.y, worldBounds.topY() - halfViewport.y, worldBounds.bottomY() + halfViewport.y);
-	}
-
-	return clamped;
+    return Vec2{
+		Clamp(desiredCenter.x, worldBounds.leftX(), worldBounds.rightX()),
+		Clamp(desiredCenter.y, worldBounds.topY(), worldBounds.bottomY())
+	};
 }
 
 bool BattleScene::updateCameraPan()

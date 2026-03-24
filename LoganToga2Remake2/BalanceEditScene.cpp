@@ -1,6 +1,22 @@
 ﻿#include "BalanceEditScene.h"
 
+#include "ContinueRunSave.h"
 #include "Localization.h"
+#include "RunCardLogic.h"
+
+namespace
+{
+	[[nodiscard]] int32 GetMaxBattleNumberForTest(const BattleConfigData& config)
+	{
+		int32 maxBattleNumber = 1;
+		for (const auto& progression : config.enemyProgression)
+		{
+			maxBattleNumber = Max(maxBattleNumber, progression.battle);
+		}
+
+		return maxBattleNumber;
+	}
+}
 
 BalanceEditScene::BalanceEditScene(const SceneBase::InitData& init)
 	: SceneBase{ init }
@@ -16,6 +32,12 @@ void BalanceEditScene::update()
 		changeScene(sceneName);
 	}))
 	{
+		return;
+	}
+
+	if ((m_tab == Tab::Core) && isButtonClicked(getCoreTestStartButtonRect()))
+	{
+		startTestBattle();
 		return;
 	}
 
@@ -79,6 +101,12 @@ void BalanceEditScene::update()
 		return;
 	}
 
+	if (isButtonClicked(getTabButtonRect(Tab::Progression)))
+	{
+		m_tab = Tab::Progression;
+		return;
+	}
+
 	if (isButtonClicked(getTabButtonRect(Tab::Units)))
 	{
 		m_tab = Tab::Units;
@@ -88,6 +116,11 @@ void BalanceEditScene::update()
 	if (isButtonClicked(getTabButtonRect(Tab::Cards)))
 	{
 		m_tab = Tab::Cards;
+		return;
+	}
+
+ if ((m_tab == Tab::Progression) && handleProgressionListInput())
+	{
 		return;
 	}
 
@@ -104,6 +137,10 @@ void BalanceEditScene::update()
 	if (m_tab == Tab::Core)
 	{
 		handleCoreInput();
+	}
+   else if (m_tab == Tab::Progression)
+	{
+		handleProgressionInput();
 	}
 	else if (m_tab == Tab::Units)
 	{
@@ -140,6 +177,7 @@ void BalanceEditScene::draw() const
 	drawButton(getTopButtonRect(4), Localization::GetText(U"balance_edit.button.clear_all"), data.smallFont);
 
    drawButton(getTabButtonRect(Tab::Core), Localization::GetText(U"balance_edit.tab.core"), data.smallFont, m_tab == Tab::Core);
+    drawButton(getTabButtonRect(Tab::Progression), Localization::GetText(U"balance_edit.tab.progression"), data.smallFont, m_tab == Tab::Progression);
 	drawButton(getTabButtonRect(Tab::Units), Localization::GetText(U"balance_edit.tab.units"), data.smallFont, m_tab == Tab::Units);
 	drawButton(getTabButtonRect(Tab::Cards), Localization::GetText(U"balance_edit.tab.cards"), data.smallFont, m_tab == Tab::Cards);
 
@@ -147,6 +185,10 @@ void BalanceEditScene::draw() const
 	if (m_tab == Tab::Core)
 	{
 		drawCorePanel();
+	}
+   else if (m_tab == Tab::Progression)
+	{
+		drawProgressionPanel();
 	}
 	else if (m_tab == Tab::Units)
 	{
@@ -168,6 +210,15 @@ void BalanceEditScene::reloadFromDisk(const String& statusMessage)
 	ReloadGameConfigData(data);
 	m_editConfig = data.baseBattleConfig;
 	m_editCards = data.rewardCards;
+    m_testOwnedCardIds.remove_if([this](const String& id)
+	{
+		return !m_editCards.includes_if([&](const RewardCardDefinition& card)
+		{
+			return card.id == id;
+		});
+	});
+ m_testBattleNumber = Clamp(m_testBattleNumber, 1, GetMaxBattleNumberForTest(m_editConfig));
+   m_selectedProgressionIndex = Clamp(m_selectedProgressionIndex, 0, Max(0, static_cast<int32>(m_editConfig.enemyProgression.size()) - 1));
 	m_selectedUnitIndex = Clamp(m_selectedUnitIndex, 0, Max(0, static_cast<int32>(m_editConfig.unitDefinitions.size()) - 1));
 	m_selectedCardIndex = Clamp(m_selectedCardIndex, 0, Max(0, static_cast<int32>(m_editCards.size()) - 1));
 	m_hasUnsavedChanges = false;
@@ -183,6 +234,26 @@ void BalanceEditScene::applyEditedState(const bool changed)
 
 	m_hasUnsavedChanges = true;
  m_statusMessage = Localization::GetText(U"balance_edit.status.edited_local");
+}
+
+void BalanceEditScene::startTestBattle()
+{
+	auto& data = getData();
+	data.baseBattleConfig = m_editConfig;
+	data.rewardCards = m_editCards;
+	data.battleLaunchMode = BattleLaunchMode::Run;
+	BeginNewRun(data.runState, data.baseBattleConfig, data.runState.useDebugFullUnlocks);
+	data.runState.currentBattleIndex = (m_testBattleNumber - 1);
+	data.runState.totalBattles = Max(3, m_testBattleNumber);
+	data.runState.mapProgressionBattles = BuildSequentialRunMapProgressionBattles(data.baseBattleConfig, data.runState.totalBattles);
+   data.runState.selectedCardIds = m_testOwnedCardIds;
+	data.runState.pendingRewardCardIds.clear();
+	ResetBonusRoomSceneState(data.bonusRoomProgress);
+	SaveContinueRun(data, ContinueResumeScene::Battle);
+	RequestSceneTransition(data, U"Battle", [this](const String& sceneName)
+	{
+		changeScene(sceneName);
+	});
 }
 
 UnitDefinition* BalanceEditScene::getSelectedUnitDefinition()
@@ -263,9 +334,34 @@ const RewardCardDefinition* BalanceEditScene::getSelectedCardDefinition() const
 	return &m_editCards[static_cast<size_t>(m_selectedCardIndex)];
 }
 
+EnemyProgressionConfig* BalanceEditScene::getSelectedProgressionConfig()
+{
+	if ((m_selectedProgressionIndex < 0) || (static_cast<size_t>(m_selectedProgressionIndex) >= m_editConfig.enemyProgression.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_editConfig.enemyProgression[static_cast<size_t>(m_selectedProgressionIndex)];
+}
+
+const EnemyProgressionConfig* BalanceEditScene::getSelectedProgressionConfig() const
+{
+	if ((m_selectedProgressionIndex < 0) || (static_cast<size_t>(m_selectedProgressionIndex) >= m_editConfig.enemyProgression.size()))
+	{
+		return nullptr;
+	}
+
+	return &m_editConfig.enemyProgression[static_cast<size_t>(m_selectedProgressionIndex)];
+}
+
 bool BalanceEditScene::isButtonClicked(const RectF& rect)
 {
 	return IsMenuButtonClicked(rect);
+}
+
+bool BalanceEditScene::hasTestOwnedCard(const String& id) const
+{
+	return m_testOwnedCardIds.includes(id);
 }
 
 void BalanceEditScene::drawButton(const RectF& rect, const String& label, const Font& font, const bool selected)
@@ -304,8 +400,24 @@ RectF BalanceEditScene::getTopButtonRect(const int32 index)
 RectF BalanceEditScene::getTabButtonRect(const Tab tab)
 {
 	const RectF right = getRightPanelRect();
-	const int32 index = (tab == Tab::Core) ? 0 : ((tab == Tab::Units) ? 1 : 2);
-	return RectF{ right.x + 16 + (index * 108), right.y + 112, 96, 30 };
+ const int32 index = (tab == Tab::Core)
+		? 0
+		: ((tab == Tab::Progression)
+			? 1
+			: ((tab == Tab::Units) ? 2 : 3));
+	return RectF{ right.x + 16 + (index * 104), right.y + 112, 100, 30 };
+}
+
+RectF BalanceEditScene::getCoreTestStartButtonRect()
+{
+	const RectF editor = getEditorPanelRect();
+	return RectF{ editor.x + editor.w - 150, editor.y + 8, 138, 28 };
+}
+
+RectF BalanceEditScene::getProgressionButtonRect(const int32 index)
+{
+	const RectF left = getLeftPanelRect();
+	return RectF{ left.x + 16, left.y + 84 + (index * 32), left.w - 32, 28 };
 }
 
 RectF BalanceEditScene::getUnitButtonRect(const int32 index)
@@ -323,5 +435,5 @@ RectF BalanceEditScene::getCardButtonRect(const int32 index)
 RectF BalanceEditScene::getEditorRowRect(const int32 index)
 {
 	const RectF editor = getEditorPanelRect();
-	return RectF{ editor.x, editor.y + 44 + (index * 40), editor.w, 36 };
+   return RectF{ editor.x, editor.y + 44 + (index * 33), editor.w, 30 };
 }

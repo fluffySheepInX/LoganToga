@@ -12,6 +12,7 @@ private:
 	enum class Tab
 	{
 		Core,
+      Progression,
 		Units,
 		Cards,
 	};
@@ -39,10 +40,13 @@ public:
 private:
 	BattleConfigData m_editConfig;
 	Array<RewardCardDefinition> m_editCards;
+  Array<String> m_testOwnedCardIds;
 	Tab m_tab = Tab::Core;
+ int32 m_testBattleNumber = 1;
+  int32 m_selectedProgressionIndex = 0;
 	int32 m_selectedUnitIndex = 0;
 	int32 m_selectedCardIndex = 0;
-  String m_statusMessage;
+   String m_statusMessage;
 	bool m_hasUnsavedChanges = false;
 
 	void reloadFromDisk(const String& statusMessage);
@@ -53,29 +57,37 @@ private:
 	[[nodiscard]] static bool writeTextFile(const String& path, const String& content);
 	[[nodiscard]] static bool removeFileIfExists(const String& path);
 	[[nodiscard]] bool saveCoreEditorOverride() const;
+ [[nodiscard]] bool saveProgressionEditorOverride() const;
 	[[nodiscard]] bool saveUnitsEditorOverride() const;
 	[[nodiscard]] bool saveCardsEditorOverride() const;
 
 	void drawLeftPanel() const;
 	void drawCorePanel() const;
+ void drawProgressionPanel() const;
 	void drawUnitPanel() const;
 	void drawCardPanel() const;
 	void drawHelpPanel() const;
 
 	void handleCoreInput();
+ void handleProgressionInput();
 	void handleUnitInput();
 	void handleCardInput();
+    void startTestBattle();
 	void applyEditedState(bool changed);
+   [[nodiscard]] bool handleProgressionListInput();
 	[[nodiscard]] bool handleUnitListInput();
 	[[nodiscard]] bool handleCardListInput();
 	[[nodiscard]] bool handleSelectedProductionCostInput(int32 rowIndex, int32 smallStep, int32 largeStep);
 	[[nodiscard]] int32 getSelectedProductionCost() const;
 	[[nodiscard]] bool handleIntRowInput(int32 rowIndex, int32& value, int32 smallStep, int32 largeStep, int32 minValue);
+  [[nodiscard]] bool handleEnemyAiModeRowInput(int32 rowIndex, EnemyAiMode& value, bool& overrideEnabled);
 	[[nodiscard]] HelpText getHoveredHelpText() const;
 	[[nodiscard]] Optional<HelpText> getHoveredCoreRowHelp() const;
+ [[nodiscard]] Optional<HelpText> getHoveredProgressionRowHelp() const;
 	[[nodiscard]] Optional<HelpText> getHoveredUnitRowHelp() const;
 	[[nodiscard]] Optional<HelpText> getHoveredCardRowHelp() const;
 	[[nodiscard]] bool handleDoubleRowInput(int32 rowIndex, double& value, double smallStep, double largeStep, double minValue, double maxValue);
+ [[nodiscard]] bool handleBoolRowInput(int32 rowIndex, bool& value);
 	[[nodiscard]] bool handleCardRarityInput(int32 rowIndex, RewardCardRarity& rarity);
 	[[nodiscard]] bool handleCardRepeatableInput(int32 rowIndex, bool& repeatable);
 
@@ -91,9 +103,13 @@ private:
 	[[nodiscard]] const ProductionSlot* getSelectedProductionSlot() const;
 	[[nodiscard]] RewardCardDefinition* getSelectedCardDefinition();
 	[[nodiscard]] const RewardCardDefinition* getSelectedCardDefinition() const;
+	[[nodiscard]] EnemyProgressionConfig* getSelectedProgressionConfig();
+	[[nodiscard]] const EnemyProgressionConfig* getSelectedProgressionConfig() const;
 
 	[[nodiscard]] static String getCoreEditorOverridePath();
 	[[nodiscard]] static String getCoreOverridePath();
+   [[nodiscard]] static String getProgressionEditorOverridePath();
+	[[nodiscard]] static String getProgressionOverridePath();
 	[[nodiscard]] static String getUnitsEditorOverridePath();
 	[[nodiscard]] static String getUnitsOverridePath();
 	[[nodiscard]] static String getCardsEditorOverridePath();
@@ -102,6 +118,8 @@ private:
 	[[nodiscard]] static String quoteTomlString(const String& value);
 	[[nodiscard]] static String toUnitArchetypeDisplayString(UnitArchetype archetype);
 	[[nodiscard]] static String toUnitArchetypeTomlString(UnitArchetype archetype);
+   [[nodiscard]] static String toEnemyAiModeDisplayString(EnemyAiMode mode);
+	[[nodiscard]] static String toEnemyAiModeTomlString(EnemyAiMode mode);
 	[[nodiscard]] static String toRewardCardRarityDisplayString(RewardCardRarity rarity);
 	[[nodiscard]] static String toRewardCardRarityTomlString(RewardCardRarity rarity);
 	[[nodiscard]] static String toRewardCardEffectTypeDisplayString(RewardCardEffectType effectType);
@@ -109,6 +127,7 @@ private:
 	[[nodiscard]] static String toTurretUpgradeTypeDisplayString(TurretUpgradeType type);
 
 	[[nodiscard]] static bool isButtonClicked(const RectF& rect);
+    [[nodiscard]] bool hasTestOwnedCard(const String& id) const;
 	static void drawButton(const RectF& rect, const String& label, const Font& font, bool selected = false);
 	[[nodiscard]] static RectF getLeftPanelRect();
 	[[nodiscard]] static RectF getRightPanelRect();
@@ -116,6 +135,8 @@ private:
 	[[nodiscard]] static RectF getHelpPanelRect();
 	[[nodiscard]] static RectF getTopButtonRect(int32 index);
 	[[nodiscard]] static RectF getTabButtonRect(Tab tab);
+ [[nodiscard]] static RectF getCoreTestStartButtonRect();
+  [[nodiscard]] static RectF getProgressionButtonRect(int32 index);
 	[[nodiscard]] static RectF getUnitButtonRect(int32 index);
 	[[nodiscard]] static RectF getCardButtonRect(int32 index);
 	[[nodiscard]] static RectF getEditorRowRect(int32 index);

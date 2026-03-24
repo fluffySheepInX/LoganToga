@@ -46,7 +46,19 @@ void BattleSession::updateProduction(const double deltaTime)
 		for (int32 count = 0; count < currentItem.batchCount; ++count)
 		{
 			const Vec2 spawnPosition = getProductionSpawnPoint(*buildingUnit, currentItem.archetype);
-			spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
+            const int32 spawnedUnitId = spawnUnit(buildingUnit->owner, currentItem.archetype, spawnPosition);
+			const EnemyAiMode activeEnemyAiMode = m_state.enemyAiDebugOverrideMode
+				? *m_state.enemyAiDebugOverrideMode
+				: m_config.enemyAI.mode;
+			if ((buildingUnit->owner == Owner::Enemy)
+				&& (activeEnemyAiMode == EnemyAiMode::StagingAssault)
+				&& (currentItem.archetype != UnitArchetype::Worker))
+			{
+				if (auto* spawnedUnit = findCachedUnit(spawnedUnitId))
+				{
+					spawnedUnit->enemyAiAwaitingRallyAssignment = spawnedUnit->canMove;
+				}
+			}
 		}
 
 		if (m_state.tutorialActive

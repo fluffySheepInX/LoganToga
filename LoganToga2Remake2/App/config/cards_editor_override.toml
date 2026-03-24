@@ -1,0 +1,84 @@
+﻿[[cards]]
+id = "soldier_drill_1"
+value = 12
+rarity = "common"
+repeatable = true
+
+[[cards]]
+id = "soldier_blades_1"
+value = 2
+rarity = "common"
+repeatable = true
+
+[[cards]]
+id = "worker_guild_1"
+value = 0.2
+rarity = "common"
+repeatable = true
+
+[[cards]]
+id = "barracks_drums_1"
+value = 0.7
+rarity = "rare"
+repeatable = true
+
+[[cards]]
+id = "archer_unlock_1"
+value = 0
+rarity = "rare"
+repeatable = false
+
+[[cards]]
+id = "healer_unlock_1"
+value = 0
+rarity = "rare"
+repeatable = false
+
+[[cards]]
+id = "goliath_unlock_1"
+value = 0
+rarity = "rare"
+repeatable = false
+
+[[cards]]
+id = "katyusha_unlock_1"
+value = 0
+rarity = "epic"
+repeatable = false
+
+[[cards]]
+id = "spinner_unlock_1"
+value = 0
+rarity = "epic"
+repeatable = false
+
+[[cards]]
+id = "turret_unlock_1"
+value = 0
+rarity = "rare"
+repeatable = false
+
+[[cards]]
+id = "turret_dual_upgrade_unlock_1"
+value = 0
+rarity = "epic"
+repeatable = false
+
+[[cards]]
+id = "soldier_elite_1"
+value = 20
+rarity = "epic"
+repeatable = true
+
+[[cards]]
+id = "archer_sight_1"
+value = 28
+rarity = "epic"
+repeatable = true
+
+[[cards]]
+id = "worker_march_1"
+value = 18
+rarity = "common"
+repeatable = true
+

@@ -83,6 +83,30 @@ String BalanceEditScene::toUnitArchetypeTomlString(const UnitArchetype archetype
 	}
 }
 
+String BalanceEditScene::toEnemyAiModeDisplayString(const EnemyAiMode mode)
+{
+	switch (mode)
+	{
+	case EnemyAiMode::StagingAssault:
+		return Localization::GetText(U"battle.enemy_ai_debug.staging");
+	case EnemyAiMode::Default:
+	default:
+		return Localization::GetText(U"battle.enemy_ai_debug.default");
+	}
+}
+
+String BalanceEditScene::toEnemyAiModeTomlString(const EnemyAiMode mode)
+{
+	switch (mode)
+	{
+	case EnemyAiMode::StagingAssault:
+		return U"staging_assault";
+	case EnemyAiMode::Default:
+	default:
+		return U"default";
+	}
+}
+
 String BalanceEditScene::toRewardCardRarityDisplayString(const RewardCardRarity rarity)
 {
 	switch (rarity)
@@ -99,7 +123,16 @@ String BalanceEditScene::toRewardCardRarityDisplayString(const RewardCardRarity 
 
 String BalanceEditScene::toRewardCardRarityTomlString(const RewardCardRarity rarity)
 {
-	return toRewardCardRarityDisplayString(rarity).lowercased();
+    switch (rarity)
+	{
+	case RewardCardRarity::Common:
+		return U"common";
+	case RewardCardRarity::Rare:
+		return U"rare";
+	case RewardCardRarity::Epic:
+	default:
+		return U"epic";
+	}
 }
 
 String BalanceEditScene::toRewardCardEffectTypeDisplayString(const RewardCardEffectType effectType)

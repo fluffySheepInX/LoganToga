@@ -44,15 +44,6 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		: m_config.enemyAI.mode;
 	m_state.enemyAiResolvedMode = activeEnemyAiMode;
 
-	if (m_state.enemyAiAssaultCommitTimer > 0.0)
-	{
-		m_state.enemyAiAssaultCommitTimer = Max(0.0, m_state.enemyAiAssaultCommitTimer - deltaTime);
-		if (m_state.enemyAiAssaultCommitTimer <= 0.0)
-		{
-			m_state.enemyAiAssaultTargetUnitId.reset();
-		}
-	}
-
 	m_state.enemyAiDecisionTimer += deltaTime;
 	if (m_state.enemyAiDecisionTimer < m_config.enemyAI.decisionInterval)
 	{
@@ -71,6 +62,7 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	EnemyAiContext aiContext;
 	aiContext.enemyAnchor = enemyBarracks ? enemyBarracks->position : (enemyBase ? enemyBase->position : m_state.worldBounds.center());
 	aiContext.canAssaultPlayerBase = playerBase && !hasBaseDefenseTurret(*playerBase, m_config.enemyAI.baseAssaultLockRadius);
+	aiContext.useStagingAssault = (activeEnemyAiMode == EnemyAiMode::StagingAssault);
 
 	Array<size_t> nearbyPlayerUnitIndicesScratch;
 	Array<size_t> nearbyEnemyUnitIndicesScratch;
@@ -178,6 +170,31 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 		}
 	}
 
+	std::unordered_set<size_t> captureResponderIndexSet;
+	if (aiContext.useStagingAssault && m_state.enemyAiStagingCompleted && aiContext.captureTargetIndex)
+	{
+		const int32 captureResponderLimit = (aiContext.enemyCombatUnits >= 6) ? 2 : 1;
+		Array<EnemyAiDefenseResponderCandidate> bestCaptureCandidates;
+		bestCaptureCandidates.reserve(captureResponderLimit);
+
+		for (const auto unitIndex : enemyUnitIndices)
+		{
+			const auto& unit = m_state.units[unitIndex];
+			if (!IsEnemyCombatUnit(unit) || (defenseResponderIndexSet.find(unitIndex) != defenseResponderIndexSet.end()))
+			{
+				continue;
+			}
+
+			ConsiderDefenseResponderCandidate(bestCaptureCandidates, captureResponderLimit, unitIndex, unit.position.distanceFromSq(aiContext.captureTargetPosition));
+		}
+
+		captureResponderIndexSet.reserve(bestCaptureCandidates.size());
+		for (const auto& candidate : bestCaptureCandidates)
+		{
+			captureResponderIndexSet.insert(candidate.unitIndex);
+		}
+	}
+
 	aiContext.strategicTarget = useStrategicTargetAsync
 		? strategicTargetFuture.get()
 		: EvaluateStrategicTarget(
@@ -190,7 +207,6 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			aiContext.captureTargetIndex,
 			aiContext.captureTargetPosition);
 
-	aiContext.useStagingAssault = (activeEnemyAiMode == EnemyAiMode::StagingAssault);
 	aiContext.hasStrategicTarget = (aiContext.strategicTarget.score > -Math::Inf);
 	aiContext.canStageAssault = aiContext.useStagingAssault && !aiContext.defenseTargetUnitId && aiContext.hasStrategicTarget;
 	aiContext.stagingRallyPoint = aiContext.canStageAssault
@@ -199,57 +215,131 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 	aiContext.stagingMinUnits = Max(1, (m_config.enemyAI.stagingAssaultMinUnits > 0)
 		? m_config.enemyAI.stagingAssaultMinUnits
 		: m_config.enemyAI.assaultUnitThreshold);
+  bool hasAwaitingRallyAssignment = false;
 	if (aiContext.canStageAssault)
 	{
 		const double gatherRadius = m_config.enemyAI.stagingAssaultGatherRadius;
 		const double gatherRadiusSq = (gatherRadius * gatherRadius);
 		gatherNearbyUnitIndices(Owner::Enemy, aiContext.stagingRallyPoint, gatherRadius, nearbyEnemyUnitIndicesScratch);
 		aiContext.stagingReadyUnits = CountStagingReadyUnits(m_state, nearbyEnemyUnitIndicesScratch, aiContext.stagingRallyPoint, gatherRadiusSq);
+
+		if (m_state.enemyAiStagingCompleted)
+		{
+			for (const auto unitIndex : enemyUnitIndices)
+			{
+				const auto& unit = m_state.units[unitIndex];
+				if (IsEnemyCombatUnit(unit) && unit.enemyAiAwaitingRallyAssignment)
+				{
+					hasAwaitingRallyAssignment = true;
+					break;
+				}
+			}
+		}
 	}
 	m_state.enemyAiDebugCombatUnitCount = aiContext.enemyCombatUnits;
 	m_state.enemyAiDebugReadyUnitCount = aiContext.stagingReadyUnits;
+	const bool reinforcementStagingPending = aiContext.useStagingAssault
+		&& m_state.enemyAiStagingCompleted
+		&& aiContext.canStageAssault
+		&& hasAwaitingRallyAssignment
+		&& (aiContext.stagingReadyUnits < aiContext.stagingMinUnits);
+	if (reinforcementStagingPending)
+	{
+		m_state.enemyAiStagingTimer += m_config.enemyAI.decisionInterval;
+	}
+	else if (m_state.enemyAiStagingCompleted)
+	{
+		m_state.enemyAiStagingTimer = 0.0;
+	}
 
 	if (aiContext.useStagingAssault)
 	{
-		if ((m_state.enemyAiAssaultCommitTimer > 0.0) && aiContext.hasStrategicTarget)
+		const auto isCommittedTargetValid = [&]()
 		{
+			if (!m_state.enemyAiAssaultTargetUnitId)
+			{
+				return false;
+			}
+
+			const UnitState* committedTarget = findCachedUnit(*m_state.enemyAiAssaultTargetUnitId);
+			return committedTarget
+				&& committedTarget->isAlive
+				&& (committedTarget->owner == Owner::Player)
+				&& !((committedTarget->archetype == UnitArchetype::Base) && !aiContext.canAssaultPlayerBase);
+		};
+
+		const auto assignStrategicAssaultTarget = [&]()
+		{
+			if (!(aiContext.hasStrategicTarget && aiContext.strategicTarget.unitId))
+			{
+				m_state.enemyAiAssaultActive = false;
+				m_state.enemyAiAssaultCommitTimer = 0.0;
+				m_state.enemyAiAssaultTargetUnitId.reset();
+				return;
+			}
+
+			m_state.enemyAiAssaultActive = true;
+			m_state.enemyAiAssaultCommitTimer = m_config.enemyAI.stagingAssaultCommitTime;
 			m_state.enemyAiAssaultDestination = aiContext.strategicTarget.position;
 			m_state.enemyAiAssaultTargetUnitId = aiContext.strategicTarget.unitId;
-		}
+		};
 
-		if (aiContext.canStageAssault && (m_state.enemyAiAssaultCommitTimer <= 0.0) && (aiContext.enemyCombatUnits >= aiContext.stagingMinUnits))
+		if (!m_state.enemyAiStagingCompleted)
 		{
-			m_state.enemyAiStagingTimer += m_config.enemyAI.decisionInterval;
-			if ((aiContext.stagingReadyUnits >= aiContext.stagingMinUnits) || (m_state.enemyAiStagingTimer >= m_config.enemyAI.stagingAssaultMaxWait))
+			m_state.enemyAiAssaultActive = false;
+			m_state.enemyAiAssaultTargetUnitId.reset();
+			m_state.enemyAiAssaultCommitTimer = 0.0;
+
+			if (aiContext.canStageAssault && (aiContext.enemyCombatUnits >= aiContext.stagingMinUnits))
 			{
-				m_state.enemyAiAssaultCommitTimer = m_config.enemyAI.stagingAssaultCommitTime;
-				m_state.enemyAiAssaultDestination = aiContext.strategicTarget.position;
-				m_state.enemyAiAssaultTargetUnitId = aiContext.strategicTarget.unitId;
+				m_state.enemyAiStagingTimer += m_config.enemyAI.decisionInterval;
+				if ((aiContext.stagingReadyUnits >= aiContext.stagingMinUnits) || (m_state.enemyAiStagingTimer >= m_config.enemyAI.stagingAssaultMaxWait))
+				{
+					m_state.enemyAiStagingCompleted = true;
+					m_state.enemyAiStagingTimer = 0.0;
+					assignStrategicAssaultTarget();
+				}
+			}
+			else
+			{
 				m_state.enemyAiStagingTimer = 0.0;
 			}
 		}
-		else if ((m_state.enemyAiAssaultCommitTimer <= 0.0) || !aiContext.canStageAssault)
+		else if (isCommittedTargetValid())
 		{
-			m_state.enemyAiStagingTimer = 0.0;
+			m_state.enemyAiAssaultActive = true;
+			if (const UnitState* committedTarget = findCachedUnit(*m_state.enemyAiAssaultTargetUnitId))
+			{
+				m_state.enemyAiAssaultDestination = committedTarget->position;
+			}
+			m_state.enemyAiAssaultCommitTimer = m_config.enemyAI.stagingAssaultCommitTime;
+		}
+		else
+		{
+			assignStrategicAssaultTarget();
 		}
 	}
 	else
 	{
 		m_state.enemyAiStagingTimer = 0.0;
+		m_state.enemyAiStagingCompleted = false;
 		m_state.enemyAiAssaultCommitTimer = 0.0;
+		m_state.enemyAiAssaultActive = false;
 		m_state.enemyAiAssaultTargetUnitId.reset();
 	}
 
+   const bool shouldHoldReinforcementsAtRally = reinforcementStagingPending
+		&& (m_state.enemyAiStagingTimer < m_config.enemyAI.stagingAssaultMaxWait);
 	aiContext.shouldAssault = aiContext.useStagingAssault
-		? (m_state.enemyAiAssaultCommitTimer > 0.0)
+		? m_state.enemyAiAssaultActive
 		: ((aiContext.enemyCombatUnits >= m_config.enemyAI.assaultUnitThreshold) && aiContext.hasStrategicTarget);
 	aiContext.rallyPoint = aiContext.useStagingAssault
 		? aiContext.stagingRallyPoint
 		: (aiContext.shouldAssault ? MakeOffsetToward(aiContext.enemyAnchor, aiContext.strategicTarget.position, m_config.enemyAI.rallyDistance) : aiContext.enemyAnchor);
-	aiContext.assaultDestination = (aiContext.useStagingAssault && (m_state.enemyAiAssaultCommitTimer > 0.0))
+	aiContext.assaultDestination = (aiContext.useStagingAssault && m_state.enemyAiAssaultActive)
 		? m_state.enemyAiAssaultDestination
 		: aiContext.strategicTarget.position;
-	aiContext.assaultTargetUnitId = (aiContext.useStagingAssault && (m_state.enemyAiAssaultCommitTimer > 0.0))
+	aiContext.assaultTargetUnitId = (aiContext.useStagingAssault && m_state.enemyAiAssaultActive)
 		? m_state.enemyAiAssaultTargetUnitId
 		: aiContext.strategicTarget.unitId;
 
@@ -263,6 +353,26 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			return pendingUpdate;
 		}
 
+		if (aiContext.useStagingAssault && unit.enemyAiAwaitingRallyAssignment)
+		{
+			const double assignmentRallyRadius = Max(12.0, m_config.enemyAI.stagingAssaultGatherRadius * 0.65);
+			if (unit.position.distanceFromSq(aiContext.rallyPoint) <= (assignmentRallyRadius * assignmentRallyRadius))
+			{
+                if (shouldHoldReinforcementsAtRally)
+				{
+					return pendingUpdate;
+				}
+
+				pendingUpdate.shouldClearRallyAssignment = true;
+				return pendingUpdate;
+			}
+
+			pendingUpdate.shouldApply = true;
+			pendingUpdate.decision.objective = EnemyAiObjectiveType::Rally;
+			pendingUpdate.decision.strategicDestination = aiContext.rallyPoint;
+			return pendingUpdate;
+		}
+
 		EnemyAiDecision decision;
 		if (aiContext.defenseTargetUnitId && (defenseResponderIndexSet.find(unitIndex) != defenseResponderIndexSet.end()))
 		{
@@ -270,12 +380,17 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			decision.strategicDestination = aiContext.defenseTargetPosition;
 			decision.targetUnitId = aiContext.defenseTargetUnitId;
 		}
+		else if (captureResponderIndexSet.find(unitIndex) != captureResponderIndexSet.end())
+		{
+			decision.objective = EnemyAiObjectiveType::CaptureResource;
+			decision.strategicDestination = aiContext.captureTargetPosition;
+		}
 		else if ((unit.archetype == UnitArchetype::Worker) && aiContext.captureTargetIndex)
 		{
 			decision.objective = EnemyAiObjectiveType::CaptureResource;
 			decision.strategicDestination = aiContext.captureTargetPosition;
 		}
-		else if (aiContext.useStagingAssault && IsEnemyCombatUnit(unit) && !aiContext.shouldAssault && aiContext.canStageAssault)
+		else if (aiContext.useStagingAssault && IsEnemyCombatUnit(unit) && !m_state.enemyAiStagingCompleted && !aiContext.shouldAssault && aiContext.canStageAssault)
 		{
 			decision.objective = EnemyAiObjectiveType::Rally;
 			decision.strategicDestination = aiContext.rallyPoint;
@@ -294,13 +409,17 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 			decision.objective = EnemyAiObjectiveType::CaptureResource;
 			decision.strategicDestination = aiContext.captureTargetPosition;
 		}
+		else if (aiContext.useStagingAssault && m_state.enemyAiStagingCompleted)
+		{
+			return pendingUpdate;
+		}
 		else
 		{
 			decision.objective = EnemyAiObjectiveType::Rally;
 			decision.strategicDestination = aiContext.rallyPoint;
 		}
 
-		const bool suppressNearbyTargetSelection = aiContext.useStagingAssault && IsEnemyCombatUnit(unit) && !aiContext.shouldAssault && aiContext.canStageAssault;
+		const bool suppressNearbyTargetSelection = aiContext.useStagingAssault && IsEnemyCombatUnit(unit) && !m_state.enemyAiStagingCompleted && !aiContext.shouldAssault && aiContext.canStageAssault;
 		if (!decision.targetUnitId && !suppressNearbyTargetSelection)
 		{
 			if ((unit.order.type == UnitOrderType::AttackTarget) && unit.order.targetUnitId)
@@ -386,12 +505,17 @@ void BattleSession::updateEnemyAI(const double deltaTime)
 
 	for (const auto unitIndex : enemyUnitIndices)
 	{
+     auto& unit = m_state.units[unitIndex];
+		if (pendingUpdates[unitIndex].shouldClearRallyAssignment)
+		{
+			unit.enemyAiAwaitingRallyAssignment = false;
+		}
+
 		if (!pendingUpdates[unitIndex].shouldApply)
 		{
 			continue;
 		}
 
-		auto& unit = m_state.units[unitIndex];
 		ApplyEnemyAiDecision(unit, pendingUpdates[unitIndex].decision);
 	}
 }

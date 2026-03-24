@@ -1,0 +1,206 @@
+﻿[[units]]
+archetype = "base"
+hp = 480
+attack_power = 0
+cost = 0
+production_time = 0
+move_speed = 0
+attack_range = 0
+attack_cooldown = 1
+aggro_range = 0
+
+[[units]]
+archetype = "stable"
+hp = 300
+attack_power = 0
+cost = 130
+production_time = 5.5
+move_speed = 0
+attack_range = 0
+attack_cooldown = 1
+aggro_range = 0
+
+[[units]]
+archetype = "turret"
+hp = 540
+attack_power = 34
+cost = 140
+production_time = 0
+move_speed = 0
+attack_range = 170
+attack_cooldown = 0.5
+aggro_range = 220
+
+[[units]]
+archetype = "barracks"
+hp = 320
+attack_power = 0
+cost = 120
+production_time = 6
+move_speed = 0
+attack_range = 0
+attack_cooldown = 1
+aggro_range = 0
+
+[[units]]
+archetype = "worker"
+hp = 44
+attack_power = 4
+cost = 40
+production_time = 1.2
+move_speed = 85
+attack_range = 18
+attack_cooldown = 1
+aggro_range = 170
+
+[[units]]
+archetype = "soldier"
+hp = 84
+attack_power = 8
+cost = 60
+production_time = 1.6
+move_speed = 92
+attack_range = 24
+attack_cooldown = 0.7
+aggro_range = 170
+
+[[units]]
+archetype = "archer"
+hp = 60
+attack_power = 6
+cost = 80
+production_time = 2
+move_speed = 82
+attack_range = 120
+attack_cooldown = 1
+aggro_range = 220
+
+[[units]]
+archetype = "sniper"
+hp = 56
+attack_power = 24
+cost = 130
+production_time = 3.2
+move_speed = 74
+attack_range = 270
+attack_cooldown = 2.4
+aggro_range = 340
+
+[[units]]
+archetype = "katyusha"
+hp = 68
+attack_power = 18
+cost = 170
+production_time = 4.8
+move_speed = 60
+attack_range = 300
+attack_cooldown = 6.4
+aggro_range = 360
+
+[[units]]
+archetype = "machine_gun"
+hp = 96
+attack_power = 4
+cost = 100
+production_time = 9
+move_speed = 70
+attack_range = 210
+attack_cooldown = 0.18
+aggro_range = 270
+
+[[units]]
+archetype = "goliath"
+hp = 48
+attack_power = 0
+cost = 80
+production_time = 2
+move_speed = 96
+attack_range = 0
+attack_cooldown = 1
+aggro_range = 150
+
+[[units]]
+archetype = "healer"
+hp = 52
+attack_power = 8
+cost = 100
+production_time = 2.4
+move_speed = 80
+attack_range = 108
+attack_cooldown = 1
+aggro_range = 170
+
+[[units]]
+archetype = "spinner"
+hp = 72
+attack_power = 6
+cost = 90
+production_time = 2.2
+move_speed = 118
+attack_range = 22
+attack_cooldown = 0.75
+aggro_range = 200
+
+[[player_production]]
+slot = 1
+producer = "base"
+archetype = "worker"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 2
+producer = "barracks"
+archetype = "soldier"
+cost = 120
+batch_count = 2
+
+[[player_production]]
+slot = 3
+producer = "barracks"
+archetype = "archer"
+cost = 160
+batch_count = 2
+
+[[player_production]]
+slot = 0
+producer = "barracks"
+archetype = "sniper"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 6
+producer = "barracks"
+archetype = "katyusha"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 7
+producer = "barracks"
+archetype = "goliath"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 8
+producer = "barracks"
+archetype = "machine_gun"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 9
+producer = "barracks"
+archetype = "healer"
+cost = -1
+batch_count = 1
+
+[[player_production]]
+slot = 4
+producer = "stable"
+archetype = "spinner"
+cost = 180
+batch_count = 2
+

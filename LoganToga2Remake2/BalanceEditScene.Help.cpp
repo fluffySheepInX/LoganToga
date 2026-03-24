@@ -25,9 +25,17 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 	{
       return{ Localization::GetText(U"balance_edit.button.clear_all"), Localization::GetText(U"balance_edit.help.clear_all") };
 	}
+    if ((m_tab == Tab::Core) && getCoreTestStartButtonRect().mouseOver())
+	{
+		return{ Localization::GetText(U"balance_edit.button.test_start"), Localization::GetText(U"balance_edit.help.test_start") };
+	}
 	if (getTabButtonRect(Tab::Core).mouseOver())
 	{
        return{ Localization::GetText(U"balance_edit.help.core_tab_title"), Localization::GetText(U"balance_edit.help.core_tab_body") };
+	}
+   if (getTabButtonRect(Tab::Progression).mouseOver())
+	{
+		return{ Localization::GetText(U"balance_edit.help.progression_tab_title"), Localization::GetText(U"balance_edit.help.progression_tab_body") };
 	}
 	if (getTabButtonRect(Tab::Units).mouseOver())
 	{
@@ -38,7 +46,21 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
         return{ Localization::GetText(U"balance_edit.help.cards_tab_title"), Localization::GetText(U"balance_edit.help.cards_tab_body") };
 	}
 
-	if (m_tab == Tab::Units)
+    if (m_tab == Tab::Progression)
+	{
+		for (size_t index = 0; index < m_editConfig.enemyProgression.size(); ++index)
+		{
+			const auto& progression = m_editConfig.enemyProgression[index];
+			if (getProgressionButtonRect(static_cast<int32>(index)).mouseOver())
+			{
+				return{
+					Localization::FormatText(U"balance_edit.progression.title", progression.battle),
+					Localization::FormatText(U"balance_edit.help.progression_entry", FileSystem::FileName(progression.mapSourcePath), progression.enemyInitialUnits.size())
+				};
+			}
+		}
+	}
+	else if (m_tab == Tab::Units)
 	{
 		for (size_t index = 0; index < m_editConfig.unitDefinitions.size(); ++index)
 		{
@@ -69,7 +91,9 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 
 	const auto rowHelp = (m_tab == Tab::Core)
 		? getHoveredCoreRowHelp()
-		: ((m_tab == Tab::Units) ? getHoveredUnitRowHelp() : getHoveredCardRowHelp());
+      : ((m_tab == Tab::Progression)
+			? getHoveredProgressionRowHelp()
+			: ((m_tab == Tab::Units) ? getHoveredUnitRowHelp() : getHoveredCardRowHelp()));
 	if (rowHelp)
 	{
 		return *rowHelp;
@@ -83,7 +107,7 @@ BalanceEditScene::HelpText BalanceEditScene::getHoveredHelpText() const
 
 Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCoreRowHelp() const
 {
-	for (int32 row = 0; row < 10; ++row)
+    for (int32 row = 0; row < 20; ++row)
 	{
 		if (!getEditorRowRect(row).mouseOver())
 		{
@@ -112,6 +136,71 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCoreRowHelp() c
           return HelpText{ Localization::GetText(U"balance_edit.row.assault_threshold"), Localization::GetText(U"balance_edit.help.assault_threshold") };
 		case 9:
          return HelpText{ Localization::GetText(U"balance_edit.row.staging_min_units"), Localization::GetText(U"balance_edit.help.staging_min_units") };
+        case 10:
+			return HelpText{ Localization::GetText(U"balance_edit.row.decision_interval"), Localization::GetText(U"balance_edit.help.decision_interval") };
+		case 11:
+			return HelpText{ Localization::GetText(U"balance_edit.row.defense_radius"), Localization::GetText(U"balance_edit.help.defense_radius") };
+		case 12:
+			return HelpText{ Localization::GetText(U"balance_edit.row.rally_distance"), Localization::GetText(U"balance_edit.help.rally_distance") };
+		case 13:
+			return HelpText{ Localization::GetText(U"balance_edit.row.base_assault_lock_radius"), Localization::GetText(U"balance_edit.help.base_assault_lock_radius") };
+		case 14:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_gather_radius"), Localization::GetText(U"balance_edit.help.staging_gather_radius") };
+		case 15:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_max_wait"), Localization::GetText(U"balance_edit.help.staging_max_wait") };
+		case 16:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_commit_time"), Localization::GetText(U"balance_edit.help.staging_commit_time") };
+		case 17:
+			return HelpText{ Localization::GetText(U"balance_edit.row.attack_target_pathfinding"), Localization::GetText(U"balance_edit.help.attack_target_pathfinding") };
+        case 18:
+			return HelpText{ Localization::GetText(U"balance_edit.row.test_battle_number"), Localization::GetText(U"balance_edit.help.test_battle_number") };
+        case 19:
+			return HelpText{ Localization::GetText(U"balance_edit.row.test_owned_cards"), Localization::GetText(U"balance_edit.help.test_owned_cards") };
+		default:
+			break;
+		}
+	}
+
+	return none;
+}
+
+Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredProgressionRowHelp() const
+{
+	for (int32 row = 0; row < 13; ++row)
+	{
+		if (!getEditorRowRect(row).mouseOver())
+		{
+			continue;
+		}
+
+		switch (row)
+		{
+		case 0:
+			return HelpText{ Localization::GetText(U"balance_edit.row.gold_bonus"), Localization::GetText(U"balance_edit.help.gold_bonus") };
+		case 1:
+			return HelpText{ Localization::GetText(U"balance_edit.row.income_bonus"), Localization::GetText(U"balance_edit.help.income_bonus") };
+		case 2:
+			return HelpText{ Localization::GetText(U"balance_edit.row.spawn_interval"), Localization::GetText(U"balance_edit.help.progression_spawn_interval") };
+		case 3:
+			return HelpText{ Localization::GetText(U"balance_edit.row.assault_threshold"), Localization::GetText(U"balance_edit.help.progression_assault_threshold") };
+		case 4:
+			return HelpText{ Localization::GetText(U"balance_edit.row.ai_mode_override"), Localization::GetText(U"balance_edit.help.ai_mode_override") };
+		case 5:
+			return HelpText{ Localization::GetText(U"balance_edit.row.ai_mode"), Localization::GetText(U"balance_edit.help.ai_mode") };
+		case 6:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_min_units"), Localization::GetText(U"balance_edit.help.staging_min_units") };
+		case 7:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_gather_radius"), Localization::GetText(U"balance_edit.help.staging_gather_radius") };
+		case 8:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_max_wait"), Localization::GetText(U"balance_edit.help.staging_max_wait") };
+		case 9:
+			return HelpText{ Localization::GetText(U"balance_edit.row.staging_commit_time"), Localization::GetText(U"balance_edit.help.staging_commit_time") };
+		case 10:
+			return HelpText{ Localization::GetText(U"balance_edit.row.extra_basic_units"), Localization::GetText(U"balance_edit.help.extra_basic_units") };
+		case 11:
+			return HelpText{ Localization::GetText(U"balance_edit.row.extra_advanced_units"), Localization::GetText(U"balance_edit.help.extra_advanced_units") };
+		case 12:
+			return HelpText{ Localization::GetText(U"balance_edit.row.replace_enemy_initial_units"), Localization::GetText(U"balance_edit.help.replace_enemy_initial_units") };
 		default:
 			break;
 		}
@@ -189,7 +278,7 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredUnitRowHelp() c
 
 Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCardRowHelp() const
 {
-	for (int32 row = 0; row < 3; ++row)
+ for (int32 row = 0; row < 4; ++row)
 	{
 		if (!getEditorRowRect(row).mouseOver())
 		{
@@ -204,6 +293,8 @@ Optional<BalanceEditScene::HelpText> BalanceEditScene::getHoveredCardRowHelp() c
           return HelpText{ Localization::GetText(U"balance_edit.row.rarity"), Localization::GetText(U"balance_edit.help.rarity") };
 		case 2:
             return HelpText{ Localization::GetText(U"balance_edit.row.repeatable"), Localization::GetText(U"balance_edit.help.repeatable") };
+        case 3:
+			return HelpText{ Localization::GetText(U"balance_edit.row.test_owned"), Localization::GetText(U"balance_edit.help.test_owned") };
 		default:
 			break;
 		}

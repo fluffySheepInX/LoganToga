@@ -1,0 +1,17 @@
+﻿[economy]
+player_gold = 260
+enemy_gold = 260
+
+[income]
+interval = 1
+player_amount = 24
+enemy_amount = 24
+
+[enemy_spawn]
+interval = 4
+advanced_probability = 0.4
+random_y_offset = 50
+
+[enemy_ai]
+assault_unit_threshold = 31
+staging_assault_min_units = 7

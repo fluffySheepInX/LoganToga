@@ -2,7 +2,7 @@
 resolutionPreset = "Large"
 fullscreen = true
 masterVolume = 1
-bgmVolume = 0.02083
+bgmVolume = 1
 seVolume = 1
 language = "ja"
 hasSeenLanguageButtonHint = true

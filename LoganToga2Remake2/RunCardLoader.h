@@ -19,15 +19,15 @@
 [[nodiscard]] inline RewardCardRarity ParseRewardCardRarity(const String& value)
 {
 	const String normalized = value.lowercased();
-	if (normalized == U"common")
+    if ((normalized == U"common") || (normalized == U"コモン"))
 	{
 		return RewardCardRarity::Common;
 	}
-	if (normalized == U"rare")
+  if ((normalized == U"rare") || (normalized == U"レア"))
 	{
 		return RewardCardRarity::Rare;
 	}
-	if (normalized == U"epic")
+  if ((normalized == U"epic") || (normalized == U"エピック"))
 	{
 		return RewardCardRarity::Epic;
 	}

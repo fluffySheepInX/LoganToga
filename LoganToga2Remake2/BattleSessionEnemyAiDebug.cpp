@@ -78,7 +78,9 @@ void BattleSession::setEnemyAiDebugOverrideMode(const Optional<EnemyAiMode>& mod
 void BattleSession::resetEnemyAiAssaultState()
 {
 	m_state.enemyAiStagingTimer = 0.0;
+    m_state.enemyAiStagingCompleted = false;
 	m_state.enemyAiAssaultCommitTimer = 0.0;
+    m_state.enemyAiAssaultActive = false;
 	m_state.enemyAiAssaultDestination = Vec2::Zero();
 	m_state.enemyAiAssaultTargetUnitId.reset();
 	m_state.enemyAiDebugReadyUnitCount = 0;

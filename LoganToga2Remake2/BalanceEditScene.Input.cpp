@@ -12,7 +12,49 @@ void BalanceEditScene::handleCoreInput()
 	changed = handleDoubleRowInput(6, m_editConfig.enemySpawn.advancedProbability, 0.05, 0.2, 0.0, 1.0) || changed;
 	changed = handleDoubleRowInput(7, m_editConfig.enemySpawn.randomYOffset, 5.0, 20.0, 0.0, 1000.0) || changed;
 	changed = handleIntRowInput(8, m_editConfig.enemyAI.assaultUnitThreshold, 1, 2, 1) || changed;
-	changed = handleIntRowInput(9, m_editConfig.enemyAI.stagingAssaultMinUnits, 1, 2, 1) || changed;
+    changed = handleIntRowInput(9, m_editConfig.enemyAI.stagingAssaultMinUnits, 1, 3, 1) || changed;
+  changed = handleDoubleRowInput(10, m_editConfig.enemyAI.decisionInterval, 0.05, 0.2, 0.05, 10.0) || changed;
+	changed = handleDoubleRowInput(11, m_editConfig.enemyAI.defenseRadius, 8.0, 32.0, 0.0, 3000.0) || changed;
+	changed = handleDoubleRowInput(12, m_editConfig.enemyAI.rallyDistance, 8.0, 32.0, 0.0, 3000.0) || changed;
+	changed = handleDoubleRowInput(13, m_editConfig.enemyAI.baseAssaultLockRadius, 8.0, 32.0, 0.0, 3000.0) || changed;
+	changed = handleDoubleRowInput(14, m_editConfig.enemyAI.stagingAssaultGatherRadius, 8.0, 32.0, 0.0, 3000.0) || changed;
+	changed = handleDoubleRowInput(15, m_editConfig.enemyAI.stagingAssaultMaxWait, 0.1, 0.5, 0.1, 60.0) || changed;
+	changed = handleDoubleRowInput(16, m_editConfig.enemyAI.stagingAssaultCommitTime, 0.1, 0.5, 0.1, 60.0) || changed;
+    changed = handleBoolRowInput(17, m_editConfig.enemyAI.usePathfindingForAttackTarget) || changed;
+	handleIntRowInput(18, m_testBattleNumber, 1, 1, 1);
+    if (isButtonClicked(getAdjustmentButtonRects(getEditorRowRect(19)).minusLarge)
+		|| isButtonClicked(getAdjustmentButtonRects(getEditorRowRect(19)).minusSmall)
+		|| isButtonClicked(getAdjustmentButtonRects(getEditorRowRect(19)).plusSmall)
+		|| isButtonClicked(getAdjustmentButtonRects(getEditorRowRect(19)).plusLarge))
+	{
+		m_testOwnedCardIds.clear();
+	}
+	m_testBattleNumber = Clamp(m_testBattleNumber, 1, Max(1, static_cast<int32>(m_editConfig.enemyProgression.size()) + 1));
+	applyEditedState(changed);
+}
+
+void BalanceEditScene::handleProgressionInput()
+{
+	auto* progression = getSelectedProgressionConfig();
+	if (!progression)
+	{
+		return;
+	}
+
+	bool changed = false;
+	changed = handleIntRowInput(0, progression->goldBonus, 10, 50, 0) || changed;
+	changed = handleIntRowInput(1, progression->incomeBonus, 1, 5, 0) || changed;
+	changed = handleDoubleRowInput(2, progression->spawnInterval, 0.1, 0.5, 0.0, 60.0) || changed;
+	changed = handleIntRowInput(3, progression->assaultUnitThreshold, 0, 1, 0) || changed;
+	changed = handleBoolRowInput(4, progression->overrideEnemyAiMode) || changed;
+	changed = handleEnemyAiModeRowInput(5, progression->enemyAiMode, progression->overrideEnemyAiMode) || changed;
+	changed = handleIntRowInput(6, progression->stagingAssaultMinUnits, 0, 1, 0) || changed;
+	changed = handleDoubleRowInput(7, progression->stagingAssaultGatherRadius, 8.0, 32.0, 0.0, 3000.0) || changed;
+	changed = handleDoubleRowInput(8, progression->stagingAssaultMaxWait, 0.1, 0.5, 0.0, 60.0) || changed;
+	changed = handleDoubleRowInput(9, progression->stagingAssaultCommitTime, 0.1, 0.5, 0.0, 60.0) || changed;
+	changed = handleIntRowInput(10, progression->extraBasicUnits, 1, 3, 0) || changed;
+	changed = handleIntRowInput(11, progression->extraAdvancedUnits, 1, 3, 0) || changed;
+	changed = handleBoolRowInput(12, progression->replaceEnemyInitialUnits) || changed;
 	applyEditedState(changed);
 }
 
@@ -28,6 +70,18 @@ void BalanceEditScene::handleCardInput()
 	changed = handleDoubleRowInput(0, card->value, 0.1, 1.0, -9999.0, 9999.0) || changed;
 	changed = handleCardRarityInput(1, card->rarity) || changed;
 	changed = handleCardRepeatableInput(2, card->repeatable) || changed;
+  bool testOwned = hasTestOwnedCard(card->id);
+	if (handleBoolRowInput(3, testOwned))
+	{
+		if (testOwned)
+		{
+			m_testOwnedCardIds << card->id;
+		}
+		else
+		{
+			m_testOwnedCardIds.remove(card->id);
+		}
+	}
 	applyEditedState(changed);
 }
 
@@ -67,6 +121,22 @@ bool BalanceEditScene::handleUnitListInput()
 		}
 
 		m_selectedUnitIndex = static_cast<int32>(index);
+		return true;
+	}
+
+	return false;
+}
+
+bool BalanceEditScene::handleProgressionListInput()
+{
+	for (size_t index = 0; index < m_editConfig.enemyProgression.size(); ++index)
+	{
+		if (!isButtonClicked(getProgressionButtonRect(static_cast<int32>(index))))
+		{
+			continue;
+		}
+
+		m_selectedProgressionIndex = static_cast<int32>(index);
 		return true;
 	}
 
@@ -185,7 +255,29 @@ bool BalanceEditScene::handleCardRarityInput(const int32 rowIndex, RewardCardRar
 	return rarity != original;
 }
 
+bool BalanceEditScene::handleEnemyAiModeRowInput(const int32 rowIndex, EnemyAiMode& value, bool& overrideEnabled)
+{
+	const auto buttons = getAdjustmentButtonRects(getEditorRowRect(rowIndex));
+	const bool previousOverrideEnabled = overrideEnabled;
+	const EnemyAiMode original = value;
+	if (!(isButtonClicked(buttons.minusLarge) || isButtonClicked(buttons.minusSmall) || isButtonClicked(buttons.plusSmall) || isButtonClicked(buttons.plusLarge)))
+	{
+		return false;
+	}
+
+	overrideEnabled = true;
+	value = (value == EnemyAiMode::Default)
+		? EnemyAiMode::StagingAssault
+		: EnemyAiMode::Default;
+	return (overrideEnabled != previousOverrideEnabled) || (value != original);
+}
+
 bool BalanceEditScene::handleCardRepeatableInput(const int32 rowIndex, bool& repeatable)
+{
+  return handleBoolRowInput(rowIndex, repeatable);
+}
+
+bool BalanceEditScene::handleBoolRowInput(const int32 rowIndex, bool& value)
 {
 	const auto buttons = getAdjustmentButtonRects(getEditorRowRect(rowIndex));
 	if (!(isButtonClicked(buttons.minusLarge) || isButtonClicked(buttons.minusSmall) || isButtonClicked(buttons.plusSmall) || isButtonClicked(buttons.plusLarge)))
@@ -193,7 +285,7 @@ bool BalanceEditScene::handleCardRepeatableInput(const int32 rowIndex, bool& rep
 		return false;
 	}
 
-	repeatable = !repeatable;
+	value = !value;
 	return true;
 }
 
