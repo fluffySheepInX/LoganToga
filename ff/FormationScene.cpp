@@ -109,7 +109,7 @@ void FormationScene::draw() const
 
 	for (size_t index = 0; index < unitTypes.size(); ++index)
 	{
-       DrawFormationUnitButton(GetUnitButton(index), m_buttonFont, unitTypes[index], (m_selectedFormationUnit == unitTypes[index]));
+        DrawFormationUnitButton(GetUnitButton(index), m_buttonFont, m_infoFont, unitTypes[index], (m_selectedFormationUnit == unitTypes[index]));
 	}
 
     for (size_t index = 0; index < m_editingFormationSlots.size(); ++index)
@@ -153,7 +153,7 @@ void FormationScene::draw() const
 
 RectF FormationScene::GetUnitButton(const size_t index) const
 {
-	return RectF{ 185, (175 + (index * 62)), 220, 52 };
+ return RectF{ 185, (175 + (index * 62)), 220, 56 };
 }
 
 RectF FormationScene::GetSlotButton(const size_t index) const

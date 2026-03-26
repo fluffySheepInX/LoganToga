@@ -93,10 +93,16 @@ namespace ff
 		return closest->pos;
 	}
 
-  int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp)
+   int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Vec2>* defeatedEnemyPositions, const bool canDamagePlayer, bool* playerWasHit)
 	{
 		Array<double> enemyDamage(enemies.size(), 0.0);
 		Array<double> allyDamage(allies.size(), 0.0);
+		bool playerCanTakeDamage = canDamagePlayer;
+
+		if (playerWasHit)
+		{
+			*playerWasHit = false;
+		}
 
 		for (auto& ally : allies)
 		{
@@ -117,10 +123,14 @@ namespace ff
 				continue;
 			}
 
-          if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, GetAllyAttackRange(ally.behavior)))
+          const bool commandBuffActive = IsWithinPlayerCommandRange(ally.pos, playerPos);
+			const double allyDamage = GetAllyAttackDamage(ally.behavior) * (commandBuffActive ? PlayerCommandDamageMultiplier : 1.0);
+			const double allyAttackInterval = GetAllyAttackInterval(ally.behavior) * (commandBuffActive ? PlayerCommandAttackIntervalMultiplier : 1.0);
+
+			  if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, GetAllyAttackRange(ally.behavior)))
 			{
-              enemyDamage[*targetIndex] += GetAllyAttackDamage(ally.behavior);
-				ally.attackCooldown = GetAllyAttackInterval(ally.behavior);
+                enemyDamage[*targetIndex] += allyDamage;
+				ally.attackCooldown = allyAttackInterval;
 			}
 		}
 
@@ -140,9 +150,19 @@ namespace ff
 				continue;
 			}
 
-			if (enemy.pos.distanceFrom(playerPos) <= EnemyAttackRange)
+          if (enemy.pos.distanceFrom(playerPos) <= EnemyAttackRange)
 			{
-				playerHp = Max(0.0, (playerHp - EnemyAttackDamage));
+                if (playerCanTakeDamage)
+				{
+					playerHp = Max(0.0, (playerHp - EnemyAttackDamage));
+					playerCanTakeDamage = false;
+
+					if (playerWasHit)
+					{
+						*playerWasHit = true;
+					}
+				}
+
 				enemy.attackCooldown = EnemyAttackInterval;
 			}
 		}
@@ -157,14 +177,18 @@ namespace ff
 			allies[i].hp -= allyDamage[i];
 		}
 
-        Array<Enemy> survivingEnemies;
+      Array<Enemy> survivingEnemies;
 		survivingEnemies.reserve(enemies.size());
 
 		for (const auto& enemy : enemies)
 			{
-               if (enemy.hp > 0.0)
+                 if (enemy.hp > 0.0)
 				{
 					survivingEnemies << enemy;
+				}
+               else if (defeatedEnemyPositions)
+				{
+					defeatedEnemyPositions->push_back(enemy.pos);
 				}
 			}
 

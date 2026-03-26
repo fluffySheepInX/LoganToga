@@ -31,6 +31,11 @@ namespace ff
 			}
 		}
 
+		bool IsTooltipModifierPressed()
+		{
+			return KeyControl.pressed();
+		}
+
 		struct SummonAllyButton
 		{
 			RectF rect;
@@ -101,6 +106,8 @@ namespace ff
 
   void DrawSummonAllyButtons(const Font& font, const int32 resourceCount, const Array<Optional<AllyBehavior>>& formationSlots, const Optional<size_t>& deniedSlotIndex, const double deniedFlashTimer)
 	{
+        Optional<AllyBehavior> hoveredBehaviorForTooltip;
+
        for (const auto& button : BuildSummonAllyButtons(formationSlots))
 		{
             const int32 summonCost = button.behavior ? GetSummonCost(*button.behavior) : 0;
@@ -127,6 +134,11 @@ namespace ff
 			button.rect.rounded(12).drawFrame(2, frameColor);
 			font(button.label).drawAt(17, button.rect.center().movedBy(0, -8), affordable ? ColorF{ 1.0, 1.0, 1.0 } : ColorF{ 0.86, 0.86, 0.88 });
 
+			if (button.behavior && hovered && IsTooltipModifierPressed())
+			{
+				hoveredBehaviorForTooltip = *button.behavior;
+			}
+
 			if (button.behavior)
 			{
                const String infoLabel = deniedFlash
@@ -141,6 +153,19 @@ namespace ff
 			{
                 font(U"Empty / [{}] Key"_fmt(button.slotIndex + 1)).drawAt(14, button.rect.center().movedBy(0, 10), ColorF{ 0.80, 0.80, 0.84, 0.9 });
 			}
+		}
+
+		if (hoveredBehaviorForTooltip)
+		{
+			const String title = U"{}"_fmt(GetAllyBehaviorLabel(*hoveredBehaviorForTooltip));
+			const String description = U"{}"_fmt(GetAllyBehaviorRoleDescription(*hoveredBehaviorForTooltip));
+			const Vec2 cursorPos = Cursor::PosF().movedBy(18, 20);
+			const RectF tooltipRect{ cursorPos, 240, 60 };
+			const ColorF accent = GetAllyBehaviorColor(*hoveredBehaviorForTooltip);
+			tooltipRect.rounded(12).draw(ColorF{ 0.06, 0.08, 0.14, 0.94 });
+			tooltipRect.rounded(12).drawFrame(2, accent.lerp(Palette::White, 0.20));
+			font(title).draw(15, tooltipRect.pos.movedBy(12, 8), Palette::White);
+			font(description).draw(13, tooltipRect.pos.movedBy(12, 32), ColorF{ 0.88, 0.92, 1.0, 0.92 });
 		}
 	}
 }

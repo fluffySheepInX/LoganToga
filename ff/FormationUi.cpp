@@ -36,6 +36,29 @@ String GetAllyBehaviorLabel(const ff::AllyBehavior behavior)
 	return U"不明";
 }
 
+StringView GetAllyBehaviorRoleDescription(const ff::AllyBehavior behavior)
+{
+	switch (behavior)
+	{
+	case ff::AllyBehavior::ChaseEnemies:
+		return U"敵を追って前線を押す";
+
+	case ff::AllyBehavior::HoldPosition:
+		return U"その場で迎撃して足止め";
+
+	case ff::AllyBehavior::GuardPlayer:
+		return U"主人公の近くを守る";
+
+	case ff::AllyBehavior::OrbitPlayer:
+		return U"周囲を巡回して素早く接敵";
+
+	case ff::AllyBehavior::FixedTurret:
+		return U"動かず遠距離火力を出す";
+	}
+
+	return U"役割不明";
+}
+
 ColorF GetAllyBehaviorColor(const ff::AllyBehavior behavior)
 {
 	switch (behavior)
@@ -59,7 +82,7 @@ ColorF GetAllyBehaviorColor(const ff::AllyBehavior behavior)
 	return Palette::White;
 }
 
-void DrawFormationUnitButton(const RectF& rect, const Font& font, const ff::AllyBehavior behavior, const bool selected)
+void DrawFormationUnitButton(const RectF& rect, const Font& font, const Font& infoFont, const ff::AllyBehavior behavior, const bool selected)
 {
 	const bool hovered = rect.mouseOver();
 	const ColorF accent = GetAllyBehaviorColor(behavior);
@@ -68,9 +91,15 @@ void DrawFormationUnitButton(const RectF& rect, const Font& font, const ff::Ally
 		: (hovered ? ColorF{ 0.22, 0.27, 0.39, 0.96 } : ColorF{ 0.14, 0.18, 0.28, 0.92 });
 	const ColorF frameColor = selected ? accent : ColorF{ 0.75, 0.82, 0.95, (hovered ? 0.90 : 0.58) };
 
+   if (hovered)
+	{
+		Cursor::RequestStyle(CursorStyle::Hand);
+	}
+
 	rect.rounded(12).draw(fillColor);
 	rect.rounded(12).drawFrame(2, frameColor);
-	font(GetAllyBehaviorLabel(behavior)).drawAt(20, rect.center(), Palette::White);
+ font(GetAllyBehaviorLabel(behavior)).drawAt(19, rect.center().movedBy(0, -8), Palette::White);
+	infoFont(GetAllyBehaviorRoleDescription(behavior)).drawAt(12, rect.center().movedBy(0, 12), ColorF{ 0.90, 0.94, 1.0, 0.84 });
 }
 
 String GetFormationSlotLabel(const Optional<ff::AllyBehavior>& behavior, const size_t index)

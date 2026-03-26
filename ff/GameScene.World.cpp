@@ -83,6 +83,19 @@ void GameScene::UpdateSummonFeedback()
 		});
 }
 
+void GameScene::UpdateResourceGainPopups()
+{
+	for (auto& popup : m_resourceGainPopups)
+	{
+		popup.timer -= Scene::DeltaTime();
+	}
+
+	m_resourceGainPopups.remove_if([](const ResourceGainPopup& popup)
+		{
+			return (popup.timer <= 0.0);
+		});
+}
+
 void GameScene::UpdateSpecialTiles()
 {
 	m_specialTileTimer -= Scene::DeltaTime();
@@ -155,12 +168,13 @@ void GameScene::DrawWorld() const
 			{
 				if (ff::ToTileIndex(ally.pos) == tileIndex)
 				{
-					ff::DrawAlly(worldOrigin + ff::ToIsometric(ally.pos), (ally.hp / ff::GetAllyMaxHp(ally.behavior)));
+         ff::DrawAlly(worldOrigin + ff::ToIsometric(ally.pos), (ally.hp / ff::GetAllyMaxHp(ally.behavior)), ff::IsWithinPlayerCommandRange(ally.pos, m_playerPos));
 				}
 			}
 		});
 
 	DrawSummonEffects(worldOrigin);
+   DrawResourceGainPopups(worldOrigin);
 }
 
 void GameScene::DrawSummonEffects(const Vec2& worldOrigin) const
@@ -173,6 +187,19 @@ void GameScene::DrawSummonEffects(const Vec2& worldOrigin) const
 		const Vec2 ringCenter = screenPos.movedBy(0, -10);
 		Circle{ ringCenter, (10 + (26 * t)) }.drawFrame((3.5 - (2.0 * t)), ColorF{ 0.72, 1.0, 0.78, (0.88 * alpha) });
 		ff::MakeTileQuad(ff::ToScreenPos(ff::ToTileIndex(effect.pos), worldOrigin)).draw(ColorF{ 0.46, 0.92, 0.58, (0.12 * alpha) });
+	}
+}
+
+void GameScene::DrawResourceGainPopups(const Vec2& worldOrigin) const
+{
+	for (const auto& popup : m_resourceGainPopups)
+	{
+		const double t = (1.0 - Min(1.0, (popup.timer / 0.75)));
+		const double alpha = (1.0 - t);
+		const Vec2 screenPos = (worldOrigin + ff::ToIsometric(popup.pos)).movedBy(0, (-38 - (20 * t)));
+		const String label = U"+{}"_fmt(popup.amount);
+		m_font(label).drawAt(18, screenPos.movedBy(0, 1), ColorF{ 0.16, 0.10, 0.04, (0.54 * alpha) });
+		m_font(label).drawAt(18, screenPos, ColorF{ 1.0, 0.92, 0.42, (0.96 * alpha) });
 	}
 }
 

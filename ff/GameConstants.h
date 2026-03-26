@@ -11,6 +11,7 @@ namespace ff
 	inline constexpr double PlayerSpeed = 3.8;
 	inline constexpr double PlayerFootOffsetY = 0.0;
   inline constexpr double PlayerMaxHp = 18.0;
+  inline constexpr double PlayerHitInvincibilityDuration = 0.55;
   inline constexpr int32 InitialResources = 8;
 	inline constexpr int32 ResourcePerEnemyKill = 2;
  inline constexpr int32 BonusTileResourcePerEnemyKill = 4;
@@ -40,6 +41,9 @@ namespace ff
 	inline constexpr double AllyAttackRange = 1.15;
 	inline constexpr double AllyAttackInterval = 0.55;
 	inline constexpr double AllyAttackDamage = 1.0;
+    inline constexpr double PlayerCommandRadius = 2.35;
+	inline constexpr double PlayerCommandAttackIntervalMultiplier = 0.82;
+	inline constexpr double PlayerCommandDamageMultiplier = 1.25;
 	inline constexpr double FixedTurretMaxHp = 10.0;
 	inline constexpr double FixedTurretAttackRange = 3.2;
 	inline constexpr double FixedTurretAttackInterval = 1.45;
@@ -93,6 +97,11 @@ namespace ff
 		default:
 			return ResourcePerEnemyKill;
 		}
+	}
+
+	inline bool IsWithinPlayerCommandRange(const Vec2& unitPos, const Vec2& playerPos)
+	{
+		return (unitPos.distanceFrom(playerPos) <= PlayerCommandRadius);
 	}
 
 	struct Enemy
