@@ -115,14 +115,23 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AppBootstrap.cpp" />
+    <ClCompile Include="FormationScene.cpp" />
+    <ClCompile Include="FormationUi.cpp" />
+    <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="GameScene.Ui.cpp" />
+    <ClCompile Include="GameScene.Wave.cpp" />
+    <ClCompile Include="GameScene.World.cpp" />
     <ClCompile Include="libs\EffFs\EffFs.cpp" />
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
     <ClCompile Include="libs\MemoryMonitor.ixx" />
     <ClCompile Include="libs\MultiTextureMaskRendererFS\MultiTextureMaskRenderer.cpp" />
     <ClCompile Include="libs\SaveFS\Save.cpp" />
+    <ClCompile Include="MenuUi.cpp" />
     <ClCompile Include="RenderWorld.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="TextureAssets.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="UnitLogic.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -132,11 +141,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppBootstrap.h" />
+    <ClInclude Include="AppState.h" />
+    <ClInclude Include="FormationScene.h" />
+    <ClInclude Include="FormationUi.h" />
     <ClInclude Include="GameConstants.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="IsoMap.h" />
+    <ClInclude Include="MenuUi.h" />
     <ClInclude Include="RenderWorld.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="TextureAssets.h" />
+    <ClInclude Include="TitleScene.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="UnitLogic.h" />
   </ItemGroup>

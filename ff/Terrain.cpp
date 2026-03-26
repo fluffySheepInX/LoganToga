@@ -4,18 +4,18 @@ namespace ff
 {
 	namespace
 	{
-      bool CanPlaceSpecialArea(const TerrainGrid& terrain, const SpecialTileGrid& specialTiles, const Point& origin)
+        bool CanPlaceSpecialArea(const TerrainGrid& terrain, const SpecialTileGrid& specialTiles, const Point& origin)
 		{
-         for (int32 y = 0; y < 2; ++y)
+			for (int32 y = 0; y < 2; ++y)
 			{
-               for (int32 x = 0; x < 2; ++x)
+				for (int32 x = 0; x < 2; ++x)
 				{
 					const Point tile{ (origin.x + x), (origin.y + y) };
 
 					if ((not InRange(tile.x, 0, (MapSize.x - 1)))
 						|| (not InRange(tile.y, 0, (MapSize.y - 1)))
-					|| IsWaterTile(terrain[tile]))
-                   {
+						|| IsWaterTile(terrain[tile]))
+					{
 						return false;
 					}
 
@@ -35,9 +35,43 @@ namespace ff
 			{
 				for (int32 x = 0; x < 2; ++x)
 				{
-                 specialTiles[Point{ (origin.x + x), (origin.y + y) }] = tileKind;
+                  specialTiles[Point{ (origin.x + x), (origin.y + y) }] = tileKind;
 				}
 			}
+		}
+
+		Array<Point> CollectSpecialAreaCandidates(const TerrainGrid& terrain, const SpecialTileGrid& specialTiles)
+		{
+			Array<Point> candidates;
+
+			for (int32 y = 0; y < (MapSize.y - 1); ++y)
+			{
+				for (int32 x = 0; x < (MapSize.x - 1); ++x)
+				{
+					const Point origin{ x, y };
+
+					if (CanPlaceSpecialArea(terrain, specialTiles, origin))
+					{
+						candidates << origin;
+					}
+				}
+			}
+
+			return candidates;
+		}
+
+		bool TryPlaceSpecialArea(const TerrainGrid& terrain, SpecialTileGrid& specialTiles, const Array<Point>& candidates, const SpecialTileKind tileKind)
+		{
+			for (const auto& origin : candidates)
+			{
+				if (CanPlaceSpecialArea(terrain, specialTiles, origin))
+				{
+					PlaceSpecialArea(specialTiles, origin, tileKind);
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		bool HasLandNeighbor(const TerrainGrid& terrain, const Point& index, const Point& offset)
@@ -72,42 +106,46 @@ namespace ff
 	SpecialTileGrid MakeRandomSpecialTiles(const TerrainGrid& terrain)
 	{
 		SpecialTileGrid specialTiles = MakeEmptySpecialTiles();
-		Array<Point> candidates;
-
-		for (int32 y = 0; y < (MapSize.y - 1); ++y)
-		{
-			for (int32 x = 0; x < (MapSize.x - 1); ++x)
-			{
-				const Point origin{ x, y };
-
-				if (CanPlaceSpecialArea(terrain, specialTiles, origin))
-				{
-					candidates << origin;
-				}
-			}
-		}
+        Array<Point> candidates = CollectSpecialAreaCandidates(terrain, specialTiles);
 
 		candidates.shuffle();
+		TryPlaceSpecialArea(terrain, specialTiles, candidates, SpecialTileKind::Bonus);
 
-		for (const auto& origin : candidates)
-		{
-			if (CanPlaceSpecialArea(terrain, specialTiles, origin))
-			{
-				PlaceSpecialArea(specialTiles, origin, SpecialTileKind::Bonus);
-				break;
-			}
-		}
-
+       candidates = CollectSpecialAreaCandidates(terrain, specialTiles);
 		candidates.shuffle();
+		TryPlaceSpecialArea(terrain, specialTiles, candidates, SpecialTileKind::Penalty);
 
-		for (const auto& origin : candidates)
+		return specialTiles;
+	}
+
+	SpecialTileGrid MakeOpeningSpecialTiles(const TerrainGrid& terrain, const Point& playerTile)
+	{
+		SpecialTileGrid specialTiles = MakeEmptySpecialTiles();
+		const Array<Point> preferredBonusOrigins = {
+			(playerTile + Point{ 1, -1 }),
+			(playerTile + Point{ -2, -1 }),
+			(playerTile + Point{ -1, 1 }),
+			(playerTile + Point{ -1, -2 }),
+			(playerTile + Point{ 2, -1 }),
+			(playerTile + Point{ -3, -1 }),
+			(playerTile + Point{ -1, 2 }),
+			(playerTile + Point{ -1, -3 }),
+			(playerTile + Point{ -1, -1 }),
+			(playerTile + Point{ 0, -1 }),
+			(playerTile + Point{ -1, 0 }),
+			(playerTile + Point{ 0, 0 }),
+		};
+
+		if (not TryPlaceSpecialArea(terrain, specialTiles, preferredBonusOrigins, SpecialTileKind::Bonus))
 		{
-			if (CanPlaceSpecialArea(terrain, specialTiles, origin))
-			{
-				PlaceSpecialArea(specialTiles, origin, SpecialTileKind::Penalty);
-				break;
-			}
+			Array<Point> fallbackBonusOrigins = CollectSpecialAreaCandidates(terrain, specialTiles);
+			fallbackBonusOrigins.shuffle();
+			TryPlaceSpecialArea(terrain, specialTiles, fallbackBonusOrigins, SpecialTileKind::Bonus);
 		}
+
+		Array<Point> penaltyOrigins = CollectSpecialAreaCandidates(terrain, specialTiles);
+		penaltyOrigins.shuffle();
+		TryPlaceSpecialArea(terrain, specialTiles, penaltyOrigins, SpecialTileKind::Penalty);
 
 		return specialTiles;
 	}

@@ -117,10 +117,10 @@ namespace ff
 				continue;
 			}
 
-			if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, AllyAttackRange))
+          if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, GetAllyAttackRange(ally.behavior)))
 			{
-				enemyDamage[*targetIndex] += AllyAttackDamage;
-				ally.attackCooldown = AllyAttackInterval;
+              enemyDamage[*targetIndex] += GetAllyAttackDamage(ally.behavior);
+				ally.attackCooldown = GetAllyAttackInterval(ally.behavior);
 			}
 		}
 
@@ -233,6 +233,9 @@ namespace ff
 					AllySpeed,
 					0.25);
 				break;
+
+			case AllyBehavior::FixedTurret:
+				break;
 			}
 		}
 	}
@@ -280,7 +283,7 @@ namespace ff
 				continue;
 			}
 
-            allies << Ally{ Vec2{ static_cast<double>(tile.x), static_cast<double>(tile.y) }, behavior, Random(0.0, Math::TwoPi) };
+         allies << Ally{ Vec2{ static_cast<double>(tile.x), static_cast<double>(tile.y) }, behavior, Random(0.0, Math::TwoPi), GetAllyMaxHp(behavior) };
          return true;
 		}
 
