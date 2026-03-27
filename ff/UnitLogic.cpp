@@ -93,7 +93,7 @@ namespace ff
 		return closest->pos;
 	}
 
-   int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Vec2>* defeatedEnemyPositions, const bool canDamagePlayer, bool* playerWasHit)
+ int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Enemy>* defeatedEnemies, const bool canDamagePlayer, bool* playerWasHit)
 	{
 		Array<double> enemyDamage(enemies.size(), 0.0);
 		Array<double> allyDamage(allies.size(), 0.0);
@@ -143,18 +143,18 @@ namespace ff
 				continue;
 			}
 
-			if (const auto targetIndex = FindClosestAllyIndexInRange(allies, enemy.pos, EnemyAttackRange))
+          if (const auto targetIndex = FindClosestAllyIndexInRange(allies, enemy.pos, GetEnemyAttackRange(enemy.kind)))
 			{
-				allyDamage[*targetIndex] += EnemyAttackDamage;
-				enemy.attackCooldown = EnemyAttackInterval;
+              allyDamage[*targetIndex] += GetEnemyAttackDamage(enemy.kind);
+				enemy.attackCooldown = GetEnemyAttackInterval(enemy.kind);
 				continue;
 			}
 
-          if (enemy.pos.distanceFrom(playerPos) <= EnemyAttackRange)
+            if (enemy.pos.distanceFrom(playerPos) <= GetEnemyAttackRange(enemy.kind))
 			{
                 if (playerCanTakeDamage)
 				{
-					playerHp = Max(0.0, (playerHp - EnemyAttackDamage));
+                    playerHp = Max(0.0, (playerHp - GetEnemyAttackDamage(enemy.kind)));
 					playerCanTakeDamage = false;
 
 					if (playerWasHit)
@@ -163,7 +163,7 @@ namespace ff
 					}
 				}
 
-				enemy.attackCooldown = EnemyAttackInterval;
+             enemy.attackCooldown = GetEnemyAttackInterval(enemy.kind);
 			}
 		}
 
@@ -186,9 +186,9 @@ namespace ff
 				{
 					survivingEnemies << enemy;
 				}
-               else if (defeatedEnemyPositions)
+             else if (defeatedEnemies)
 				{
-					defeatedEnemyPositions->push_back(enemy.pos);
+                   defeatedEnemies->push_back(enemy);
 				}
 			}
 
@@ -209,23 +209,23 @@ namespace ff
        return defeatedEnemyCount;
 	}
 
-  bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles)
+    bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles, const EnemyKind kind)
 	{
 		if (spawnTiles.isEmpty() || (enemies.size() >= MaxEnemyCount))
 		{
-         return false;
+          return false;
 		}
 
 		const Point spawnTile = spawnTiles[Random<size_t>(spawnTiles.size() - 1)];
-		enemies << Enemy{ Vec2{ static_cast<double>(spawnTile.x), static_cast<double>(spawnTile.y) } };
-       return true;
+     enemies << Enemy{ Vec2{ static_cast<double>(spawnTile.x), static_cast<double>(spawnTile.y) }, kind, GetEnemyMaxHp(kind) };
+		return true;
 	}
 
 	void UpdateEnemies(Array<Enemy>& enemies, const TerrainGrid& terrain, const Vec2& playerPos)
 	{
 		for (auto& enemy : enemies)
 		{
-			MoveUnitTowards(enemy.pos, playerPos, terrain, EnemySpeed, EnemyStopDistance);
+          MoveUnitTowards(enemy.pos, playerPos, terrain, GetEnemySpeed(enemy.kind), EnemyStopDistance);
 		}
 	}
 

@@ -36,6 +36,16 @@ namespace ff
 			return KeyControl.pressed();
 		}
 
+		double GetSummonAvailabilityRate(const int32 resourceCount, const int32 summonCost)
+		{
+			if (summonCost <= 0)
+			{
+				return 1.0;
+			}
+
+			return Clamp((static_cast<double>(resourceCount) / static_cast<double>(summonCost)), 0.0, 1.0);
+		}
+
 		struct SummonAllyButton
 		{
 			RectF rect;
@@ -111,6 +121,7 @@ namespace ff
        for (const auto& button : BuildSummonAllyButtons(formationSlots))
 		{
             const int32 summonCost = button.behavior ? GetSummonCost(*button.behavior) : 0;
+         const double summonAvailabilityRate = button.behavior ? GetSummonAvailabilityRate(resourceCount, summonCost) : 0.0;
 			const bool affordable = (button.behavior && (resourceCount >= summonCost));
            const bool hovered = button.rect.mouseOver();
 			const bool hotkeyPressed = IsSummonSlotTriggered(button.slotIndex);
@@ -131,6 +142,19 @@ namespace ff
 				? ColorF{ 1.0, 0.62, 0.62, (0.82 + (0.18 * deniedPulse)) }
 				: (button.behavior ? ColorF{ 0.86, 0.95, 0.88, 0.9 } : ColorF{ 0.62, 0.62, 0.66, 0.72 });
 			button.rect.rounded(12).draw(fillColor);
+
+			if (button.behavior && !affordable)
+			{
+				const RectF gaugeRect{ button.rect.x + 10, button.rect.y + button.rect.h - 12, button.rect.w - 20, 6 };
+				gaugeRect.rounded(3).draw(ColorF{ 0.02, 0.03, 0.05, 0.30 });
+
+				if (summonAvailabilityRate > 0.0)
+				{
+					const RectF fillGaugeRect{ gaugeRect.x, gaugeRect.y, (gaugeRect.w * summonAvailabilityRate), gaugeRect.h };
+					fillGaugeRect.rounded(3).draw(ColorF{ 0.96, 0.98, 1.0, 0.18 });
+				}
+			}
+
 			button.rect.rounded(12).drawFrame(2, frameColor);
 			font(button.label).drawAt(17, button.rect.center().movedBy(0, -8), affordable ? ColorF{ 1.0, 1.0, 1.0 } : ColorF{ 0.86, 0.86, 0.88 });
 

@@ -20,6 +20,7 @@ namespace ff
 	inline constexpr double SpecialTileHiddenDuration = 5.0;
  inline constexpr double WaveStartDelay = 1.8;
 	inline constexpr double WaveClearDelay = 4.0;
+  inline constexpr double StageClearReturnDelay = 3.2;
 	inline constexpr int32 BaseEnemiesPerWave = 5;
 	inline constexpr int32 AdditionalEnemiesPerWave = 2;
 	inline constexpr double EnemySpawnIntervalStepPerWave = 0.12;
@@ -34,6 +35,21 @@ namespace ff
 	inline constexpr double EnemyAttackInterval = 0.95;
 	inline constexpr double EnemyAttackDamage = 1.0;
  inline constexpr size_t MaxEnemyCount = 24;
+    inline constexpr int32 MidBossWaveInterval = 5;
+	inline constexpr int32 FinalBossWave = 20;
+	inline constexpr int32 MidBossBaseSupportEnemyCount = 3;
+	inline constexpr double MidBossMaxHp = 24.0;
+	inline constexpr double MidBossSpeed = 1.7;
+	inline constexpr double MidBossAttackRange = 1.0;
+	inline constexpr double MidBossAttackInterval = 0.88;
+	inline constexpr double MidBossAttackDamage = 2.0;
+	inline constexpr int32 MidBossRewardMultiplier = 6;
+	inline constexpr double TrueBossMaxHp = 72.0;
+	inline constexpr double TrueBossSpeed = 1.45;
+	inline constexpr double TrueBossAttackRange = 1.2;
+	inline constexpr double TrueBossAttackInterval = 0.72;
+	inline constexpr double TrueBossAttackDamage = 3.0;
+	inline constexpr int32 TrueBossRewardMultiplier = 20;
 	inline constexpr double AllySpeed = 2.8;
 	inline constexpr double AllyStopDistance = 0.2;
 	inline constexpr double AllyOrbitRadius = 1.4;
@@ -104,12 +120,116 @@ namespace ff
 		return (unitPos.distanceFrom(playerPos) <= PlayerCommandRadius);
 	}
 
+	enum class EnemyKind : uint8
+	{
+		Normal,
+		MidBoss,
+		TrueBoss,
+	};
+
 	struct Enemy
 	{
 		Vec2 pos;
-      double hp = EnemyMaxHp;
+      EnemyKind kind = EnemyKind::Normal;
+		double hp = EnemyMaxHp;
 		double attackCooldown = 0.0;
 	};
+
+	inline constexpr double GetEnemyMaxHp(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossMaxHp;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossMaxHp;
+
+		case EnemyKind::Normal:
+		default:
+			return EnemyMaxHp;
+		}
+	}
+
+	inline constexpr double GetEnemySpeed(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossSpeed;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossSpeed;
+
+		case EnemyKind::Normal:
+		default:
+			return EnemySpeed;
+		}
+	}
+
+	inline constexpr double GetEnemyAttackRange(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossAttackRange;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossAttackRange;
+
+		case EnemyKind::Normal:
+		default:
+			return EnemyAttackRange;
+		}
+	}
+
+	inline constexpr double GetEnemyAttackInterval(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossAttackInterval;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossAttackInterval;
+
+		case EnemyKind::Normal:
+		default:
+			return EnemyAttackInterval;
+		}
+	}
+
+	inline constexpr double GetEnemyAttackDamage(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossAttackDamage;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossAttackDamage;
+
+		case EnemyKind::Normal:
+		default:
+			return EnemyAttackDamage;
+		}
+	}
+
+	inline constexpr int32 GetEnemyRewardMultiplier(const EnemyKind kind)
+	{
+		switch (kind)
+		{
+		case EnemyKind::MidBoss:
+			return MidBossRewardMultiplier;
+
+		case EnemyKind::TrueBoss:
+			return TrueBossRewardMultiplier;
+
+		case EnemyKind::Normal:
+		default:
+			return 1;
+		}
+	}
 
 	enum class AllyBehavior : uint8
 	{

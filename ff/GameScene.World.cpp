@@ -160,7 +160,7 @@ void GameScene::DrawWorld() const
 			{
 				if (ff::ToTileIndex(enemy.pos) == tileIndex)
 				{
-					ff::DrawEnemy(worldOrigin + ff::ToIsometric(enemy.pos), (enemy.hp / ff::EnemyMaxHp));
+                   ff::DrawEnemy(worldOrigin + ff::ToIsometric(enemy.pos), (enemy.hp / ff::GetEnemyMaxHp(enemy.kind)), enemy.kind);
 				}
 			}
 

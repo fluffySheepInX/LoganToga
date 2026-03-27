@@ -32,6 +32,12 @@ void GameScene::update()
 	UpdateSummonFeedback();
 	UpdateResourceGainPopups();
 	m_playerInvincibilityTimer = Max(0.0, (m_playerInvincibilityTimer - Scene::DeltaTime()));
+	UpdateStageClearState();
+
+  if (m_stageCleared)
+	{
+		return;
+	}
 
 	if (m_playerHp <= 0.0)
 	{
@@ -42,22 +48,45 @@ void GameScene::update()
 	UpdateSpecialTiles();
 	ff::UpdatePlayerPosition(m_playerPos, m_terrain);
 	const int32 currentKillReward = ff::GetResourceRewardPerEnemyKill(m_specialTiles[ff::ToTileIndex(m_playerPos)]);
-   Array<Vec2> defeatedEnemyPositions;
+  Array<ff::Enemy> defeatedEnemies;
 	bool playerWasHit = false;
 	ff::UpdateAllies(m_allies, m_enemies, m_terrain, m_playerPos);
 	ff::UpdateEnemies(m_enemies, m_terrain, m_playerPos);
-   const int32 defeatedEnemyCount = ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, &defeatedEnemyPositions, (m_playerInvincibilityTimer <= 0.0), &playerWasHit);
+    ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, &defeatedEnemies, (m_playerInvincibilityTimer <= 0.0), &playerWasHit);
 
 	if (playerWasHit)
 	{
 		m_playerInvincibilityTimer = ff::PlayerHitInvincibilityDuration;
 	}
 
-	m_resourceCount += (defeatedEnemyCount * currentKillReward);
+    int32 gainedResourceCount = 0;
+	bool trueBossDefeated = false;
 
-	for (size_t index = 0; index < defeatedEnemyPositions.size(); ++index)
+  for (size_t index = 0; index < defeatedEnemies.size(); ++index)
 	{
-		m_resourceGainPopups << ResourceGainPopup{ defeatedEnemyPositions[index].movedBy(0, (-0.16 * static_cast<double>(index % 3))), currentKillReward, 0.75 };
+       const int32 rewardAmount = (currentKillReward * ff::GetEnemyRewardMultiplier(defeatedEnemies[index].kind));
+		gainedResourceCount += rewardAmount;
+		m_resourceGainPopups << ResourceGainPopup{ defeatedEnemies[index].pos.movedBy(0, (-0.16 * static_cast<double>(index % 3))), rewardAmount, 0.75 };
+
+		if (defeatedEnemies[index].kind == ff::EnemyKind::TrueBoss)
+		{
+			trueBossDefeated = true;
+		}
+	}
+
+	m_resourceCount += gainedResourceCount;
+
+	if (trueBossDefeated)
+	{
+		m_stageCleared = true;
+       m_menuOpen = false;
+		m_waveActive = false;
+        m_stageClearTransitionTimer = ff::StageClearReturnDelay;
+		m_enemySpawnTimer = 0.0;
+		m_nextWaveTimer = 0.0;
+		m_waveBannerTimer = 0.0;
+		m_pendingWaveEnemies.clear();
+		return;
 	}
 
 	UpdateWaveState();
@@ -80,10 +109,16 @@ void GameScene::draw() const
     ff::DrawPlayer(playerScreenPos, (m_playerHp / ff::PlayerMaxHp), (m_playerInvincibilityTimer > 0.0));
 	DrawTimeOfDayOverlay();
  ff::DrawHud(m_font, m_enemies.size(), m_allies.size(), m_playerHp, m_resourceCount, currentKillReward, m_currentWave, m_waveActive, pendingEnemyCount, m_nextWaveTimer, currentSpecialTile);
-	ff::DrawSummonAllyButtons(m_font, m_resourceCount, formationSlots, m_deniedSummonSlot, m_deniedSummonTimer);
-	DrawTimeOfDayButtons();
+
+	if (not m_stageCleared)
+	{
+		ff::DrawSummonAllyButtons(m_font, m_resourceCount, formationSlots, m_deniedSummonSlot, m_deniedSummonTimer);
+		DrawTimeOfDayButtons();
+	}
+
 	DrawWaveBanner();
 	DrawDefeatMessage();
+	DrawVictoryMessage();
 
 	if (m_menuOpen)
 	{

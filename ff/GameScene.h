@@ -18,6 +18,7 @@ private:
   void UpdateSummonFeedback();
   void UpdateResourceGainPopups();
 	void UpdateSpecialTiles();
+ void UpdateStageClearState();
 	void UpdateWaveState();
     void SetTimeOfDay(ff::TimeOfDay timeOfDay);
 	void DrawWorld() const;
@@ -27,6 +28,7 @@ private:
 	void DrawTimeOfDayButtons() const;
 	void DrawWaveBanner() const;
 	void DrawDefeatMessage() const;
+   void DrawVictoryMessage() const;
 	void DrawMenuOverlay() const;
    RectF GetEveningButton() const;
 	RectF GetNightButton() const;
@@ -60,10 +62,13 @@ private:
 	int32 m_resourceCount = ff::InitialResources;
 	Array<ff::Ally> m_allies;
 	Array<ff::Enemy> m_enemies;
+    Array<ff::EnemyKind> m_pendingWaveEnemies;
 	int32 m_currentWave = 0;
 	int32 m_enemiesToSpawnInWave = 0;
 	int32 m_enemiesSpawnedInWave = 0;
 	bool m_waveActive = false;
+ bool m_stageCleared = false;
+ double m_stageClearTransitionTimer = ff::StageClearReturnDelay;
 	double m_enemySpawnTimer = 0.0;
 	double m_nextWaveTimer = ff::WaveStartDelay;
 	double m_waveBannerTimer = ff::WaveBannerDuration;

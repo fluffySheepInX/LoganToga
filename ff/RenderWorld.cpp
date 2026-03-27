@@ -144,14 +144,30 @@ namespace ff
         DrawHealthBar(screenPos.movedBy(0, -54), hpRate, invincible ? ColorF{ 0.96, 0.84, 0.38 } : ColorF{ 0.22, 0.64, 0.96 });
 	}
 
-   void DrawEnemy(const Vec2& screenPos, const double hpRate)
+   void DrawEnemy(const Vec2& screenPos, const double hpRate, const EnemyKind kind)
 	{
-		Ellipse{ screenPos.movedBy(0, 14), 12, 6 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.18 });
-		RectF{ Arg::center = screenPos.movedBy(0, -16), 16, 22 }.draw(ColorF{ 0.82, 0.28, 0.32 });
-		Circle{ screenPos.movedBy(0, -34), 9 }.draw(ColorF{ 0.96, 0.84, 0.76 });
-		Line{ screenPos.movedBy(-4, -3), screenPos.movedBy(-2, 0) }.draw(3, ColorF{ 0.30, 0.12, 0.16 });
-		Line{ screenPos.movedBy(4, -3), screenPos.movedBy(2, 0) }.draw(3, ColorF{ 0.30, 0.12, 0.16 });
-       DrawHealthBar(screenPos.movedBy(0, -50), hpRate, ColorF{ 0.94, 0.34, 0.28 });
+     const bool boss = (kind != EnemyKind::Normal);
+		const bool trueBoss = (kind == EnemyKind::TrueBoss);
+		const double bodyScale = trueBoss ? 1.8 : (boss ? 1.35 : 1.0);
+		const ColorF bodyColor = trueBoss
+			? ColorF{ 0.44, 0.18, 0.66 }
+			: (boss ? ColorF{ 0.74, 0.18, 0.26 } : ColorF{ 0.82, 0.28, 0.32 });
+		const ColorF hpColor = trueBoss
+			? ColorF{ 0.86, 0.40, 0.98 }
+			: (boss ? ColorF{ 1.0, 0.58, 0.30 } : ColorF{ 0.94, 0.34, 0.28 });
+
+		if (boss)
+		{
+			const double pulse = (0.5 + (0.5 * Periodic::Sine0_1(trueBoss ? 1.2s : 0.9s)));
+			Circle{ screenPos.movedBy(0, -14), (18 * bodyScale + (4 * pulse)) }.drawFrame(3, ColorF{ hpColor, (0.36 + (0.18 * pulse)) });
+		}
+
+		Ellipse{ screenPos.movedBy(0, 14), (12 * bodyScale), (6 * bodyScale) }.draw(ColorF{ 0.0, 0.0, 0.0, 0.18 });
+		RectF{ Arg::center = screenPos.movedBy(0, -16 * bodyScale), (16 * bodyScale), (22 * bodyScale) }.draw(bodyColor);
+		Circle{ screenPos.movedBy(0, -34 * bodyScale), (9 * bodyScale) }.draw(ColorF{ 0.96, 0.84, 0.76 });
+		Line{ screenPos.movedBy(-4 * bodyScale, -3 * bodyScale), screenPos.movedBy(-2 * bodyScale, 0) }.draw(3, ColorF{ 0.30, 0.12, 0.16 });
+		Line{ screenPos.movedBy(4 * bodyScale, -3 * bodyScale), screenPos.movedBy(2 * bodyScale, 0) }.draw(3, ColorF{ 0.30, 0.12, 0.16 });
+		DrawHealthBar(screenPos.movedBy(0, -50 * bodyScale), hpRate, hpColor);
 	}
 
        void DrawAlly(const Vec2& screenPos, const double hpRate, const bool commandBuffActive)
