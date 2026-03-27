@@ -18,4 +18,6 @@ private:
 
 	Font m_titleFont;
 	Font m_buttonFont;
+  Font m_infoFont;
+	double m_emptyFormationNoticeTimer = 0.0;
 };

@@ -19,6 +19,8 @@ private:
 	RectF GetPresetCard(size_t index) const;
 	RectF GetPresetLoadButton(size_t index) const;
 	RectF GetPresetSaveButton(size_t index) const;
+	RectF GetRandomButton() const;
+	RectF GetClearButton() const;
 
 	Font m_titleFont;
 	Font m_buttonFont;

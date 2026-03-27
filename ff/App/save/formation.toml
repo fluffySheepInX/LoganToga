@@ -1,0 +1,6 @@
+﻿schemaVersion = 1
+formationSlots = [1, 4, 0, 3, 0, 1, 2, 3]
+preset1 = [1, 4, 0, 3, 0, 1, 2, 3]
+preset2 = [-1, -1, -1, -1, -1, -1, -1, -1]
+preset3 = [-1, -1, -1, -1, -1, -1, -1, -1]
+selectedFormationUnit = 2

@@ -9,6 +9,7 @@ void Main()
 	ConfigureAddons();
 
 	App manager;
+  *manager.get() = LoadAppDataFromDisk();
 	manager.add<TitleScene>(U"Title");
 	manager.add<FormationScene>(U"Formation");
 	manager.add<GameScene>(U"Game");

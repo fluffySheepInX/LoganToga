@@ -11,6 +11,27 @@ namespace
 				return static_cast<bool>(slot);
 			}));
 	}
+
+	Array<Optional<ff::AllyBehavior>> MakeRandomFormationSlots()
+	{
+		const auto& unitTypes = GetFormationUnitTypes();
+		Array<Optional<ff::AllyBehavior>> slots = ff::MakeEmptyFormationSlots();
+
+		for (auto& slot : slots)
+		{
+			slot = unitTypes[Random(unitTypes.size() - 1)];
+		}
+
+		return slots;
+	}
+
+	void ClearFormationSlots(Array<Optional<ff::AllyBehavior>>& slots)
+	{
+		for (auto& slot : slots)
+		{
+			slot.reset();
+		}
+	}
 }
 
 FormationScene::FormationScene(const InitData& init)
@@ -36,7 +57,20 @@ void FormationScene::update()
 	{
 		getData().formationSlots = m_editingFormationSlots;
 		getData().selectedFormationUnit = m_selectedFormationUnit;
+      SaveAppDataToDisk(getData());
 		changeScene(U"Title");
+		return;
+	}
+
+	if (GetRandomButton().leftClicked())
+	{
+		m_editingFormationSlots = MakeRandomFormationSlots();
+		return;
+	}
+
+	if (GetClearButton().leftClicked())
+	{
+		ClearFormationSlots(m_editingFormationSlots);
 		return;
 	}
 
@@ -51,6 +85,7 @@ void FormationScene::update()
 		if (GetPresetSaveButton(index).leftClicked())
 		{
 			getData().formationPresets[index] = m_editingFormationSlots;
+         SaveAppDataToDisk(getData());
 			return;
 		}
 	}
@@ -100,10 +135,12 @@ void FormationScene::draw() const
 
 	m_titleFont(U"編成").drawAt(Scene::Center().movedBy(0, -258), Palette::White);
 	m_infoFont(U"左でユニットを選択し、右の8スロットに左クリックで格納").drawAt(Scene::Center().movedBy(0, -212), ColorF{ 0.82, 0.88, 1.0, 0.90 });
-    m_infoFont(U"スロットを右クリックすると空に戻せます / プリセット保存可 / 確定で保存").drawAt(Scene::Center().movedBy(0, -184), ColorF{ 0.82, 0.88, 1.0, 0.72 });
+    m_infoFont(U"右クリックで空に戻す / ランダム・クリアあり / 確定とプリセット保存は次回起動でも維持").drawAt(Scene::Center().movedBy(0, -184), ColorF{ 0.82, 0.88, 1.0, 0.72 });
 	m_buttonFont(U"ユニット一覧").drawAt(rosterPanel.center().movedBy(0, -145), Palette::White);
 	m_buttonFont(U"スロット").drawAt(slotPanel.center().movedBy(0, -145), Palette::White);
 	m_buttonFont(U"プリセット").drawAt(presetPanel.center().movedBy(0, -28), Palette::White);
+	DrawMenuButton(GetRandomButton(), m_infoFont, U"ランダム");
+	DrawMenuButton(GetClearButton(), m_infoFont, U"クリア");
 
 	const auto& unitTypes = GetFormationUnitTypes();
 
@@ -189,4 +226,14 @@ RectF FormationScene::GetPresetLoadButton(const size_t index) const
 RectF FormationScene::GetPresetSaveButton(const size_t index) const
 {
 	return RectF{ Arg::center = GetPresetCard(index).center().movedBy(52, 20), 92, 30 };
+}
+
+RectF FormationScene::GetRandomButton() const
+{
+	return RectF{ 548, 154, 148, 34 };
+}
+
+RectF FormationScene::GetClearButton() const
+{
+	return RectF{ 764, 154, 148, 34 };
 }

@@ -146,12 +146,32 @@ namespace ff
 			if (button.behavior && !affordable)
 			{
 				const RectF gaugeRect{ button.rect.x + 10, button.rect.y + button.rect.h - 12, button.rect.w - 20, 6 };
-				gaugeRect.rounded(3).draw(ColorF{ 0.02, 0.03, 0.05, 0.30 });
+				gaugeRect.rounded(3).draw(ColorF{ 0.02, 0.03, 0.05, 0.36 });
 
 				if (summonAvailabilityRate > 0.0)
 				{
-					const RectF fillGaugeRect{ gaugeRect.x, gaugeRect.y, (gaugeRect.w * summonAvailabilityRate), gaugeRect.h };
-					fillGaugeRect.rounded(3).draw(ColorF{ 0.96, 0.98, 1.0, 0.18 });
+					const double fillWidth = (gaugeRect.w * summonAvailabilityRate);
+					const RectF fillGaugeRect{ gaugeRect.x, gaugeRect.y, fillWidth, gaugeRect.h };
+
+					if (fillWidth >= gaugeRect.h)
+					{
+						fillGaugeRect.rounded(3).draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
+					}
+					else
+					{
+						fillGaugeRect.draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
+					}
+				}
+
+				if (summonAvailabilityRate < 1.0)
+				{
+					const RectF shortageRect{
+						gaugeRect.x + (gaugeRect.w * summonAvailabilityRate),
+						gaugeRect.y,
+						gaugeRect.w * (1.0 - summonAvailabilityRate),
+						gaugeRect.h
+					};
+					shortageRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.24 });
 				}
 			}
 
