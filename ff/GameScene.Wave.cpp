@@ -17,6 +17,15 @@ namespace
 		Pressure,
 	};
 
+	struct WaveTraitProfile
+	{
+      ff::WaveTrait trait = ff::WaveTrait::None;
+		double enemyHpMultiplier = 1.0;
+		double enemySpeedMultiplier = 1.0;
+		double enemyAttackIntervalMultiplier = 1.0;
+		int32 rewardBonusPerKill = 0;
+	};
+
 	WaveType GetWaveType(const int32 wave)
 	{
 		if (wave == ff::FinalBossWave)
@@ -45,6 +54,29 @@ namespace
 		}
 	}
 
+	WaveTraitProfile GetWaveTraitProfile(const int32 wave)
+	{
+		if (GetWaveType(wave) != WaveType::Standard)
+		{
+			return {};
+		}
+
+		switch ((((wave - 1) % 4) + 4) % 4)
+		{
+		case 0:
+         return WaveTraitProfile{ ff::WaveTrait::Reinforced, 1.35, 1.0, 1.0, 0 };
+
+		case 1:
+            return WaveTraitProfile{ ff::WaveTrait::Assault, 1.0, 1.18, 0.86, 0 };
+
+		case 2:
+           return WaveTraitProfile{ ff::WaveTrait::Bounty, 1.0, 1.0, 1.0, 1 };
+
+		default:
+			return {};
+		}
+	}
+
 	StringView GetWaveFocusLabel(const WaveFocus focus)
 	{
 		switch (focus)
@@ -56,6 +88,18 @@ namespace
 		default:
 			return U"Pressure";
 		}
+	}
+
+	String GetWaveTraitBannerText(const int32 wave)
+	{
+		const WaveTraitProfile trait = GetWaveTraitProfile(wave);
+
+       if (trait.trait == ff::WaveTrait::None)
+		{
+			return U"";
+		}
+
+      return U"特性: {} / {}"_fmt(String{ ff::GetWaveTraitLabel(trait.trait) }, String{ ff::GetWaveTraitDescription(trait.trait) });
 	}
 
 	StringView GetWaveFocusDescription(const WaveFocus focus)
@@ -220,7 +264,13 @@ void GameScene::UpdateWaveState()
 		{
 			m_enemySpawnTimer -= waveSpawnInterval;
 
-           if (ff::SpawnEnemy(m_enemies, m_enemySpawnTiles, m_pendingWaveEnemies[m_enemiesSpawnedInWave]))
+          if (ff::SpawnEnemy(
+				m_enemies,
+				m_enemySpawnTiles,
+				m_pendingWaveEnemies[m_enemiesSpawnedInWave],
+				m_currentWaveEnemyHpMultiplier,
+				m_currentWaveEnemySpeedMultiplier,
+				m_currentWaveEnemyAttackIntervalMultiplier))
 			{
 				++m_enemiesSpawnedInWave;
 			}
@@ -254,11 +304,17 @@ void GameScene::UpdateWaveState()
 	{
 		m_waveActive = true;
 		++m_currentWave;
+     const WaveTraitProfile trait = GetWaveTraitProfile(m_currentWave);
      m_pendingWaveEnemies = BuildWaveSpawnQueue(m_currentWave);
 		m_enemiesSpawnedInWave = 0;
        m_enemiesToSpawnInWave = static_cast<int32>(m_pendingWaveEnemies.size());
 		m_enemySpawnTimer = 0.0;
 		m_waveBannerTimer = ff::WaveBannerDuration;
+        m_currentWaveTrait = trait.trait;
+       m_currentWaveEnemyHpMultiplier = trait.enemyHpMultiplier;
+		m_currentWaveEnemySpeedMultiplier = trait.enemySpeedMultiplier;
+		m_currentWaveEnemyAttackIntervalMultiplier = trait.enemyAttackIntervalMultiplier;
+		m_currentWaveRewardBonusPerKill = trait.rewardBonusPerKill;
 	}
 }
 
@@ -272,14 +328,19 @@ void GameScene::DrawWaveBanner() const
 	if ((m_waveBannerTimer > 0.0) && (m_currentWave > 0))
 	{
         const ColorF accent = GetWaveAccentColor(m_currentWave);
+        const String traitLine = GetWaveTraitBannerText(m_currentWave);
 		const double alpha = Min(1.0, (m_waveBannerTimer / ff::WaveBannerDuration));
-      const RectF waveRect{ Arg::center = Scene::Center().movedBy(0, -220), 320, 68 };
+        const RectF waveRect{ Arg::center = Scene::Center().movedBy(0, -220), 320, traitLine.isEmpty() ? 68 : 90 };
 		const ColorF accentText{ accent, alpha };
 		const ColorF accentFrame{ accent.lerp(Palette::White, 0.35), (0.92 * alpha) };
 		waveRect.rounded(14).draw(ColorF{ 0.10, 0.08, 0.18, (0.76 * alpha) });
      waveRect.rounded(14).drawFrame(2, accentFrame);
-		m_font(U"Wave {} Start"_fmt(m_currentWave)).drawAt(20, waveRect.center().movedBy(0, -12), ColorF{ 1.0, 1.0, 1.0, alpha });
-        m_font(U"{} / {}"_fmt(GetWaveLabel(m_currentWave), GetWaveDescription(m_currentWave))).drawAt(14, waveRect.center().movedBy(0, 14), accentText);
+      m_font(U"Wave {} Start"_fmt(m_currentWave)).drawAt(20, waveRect.center().movedBy(0, traitLine.isEmpty() ? -12 : -22), ColorF{ 1.0, 1.0, 1.0, alpha });
+			m_font(U"{} / {}"_fmt(GetWaveLabel(m_currentWave), GetWaveDescription(m_currentWave))).drawAt(14, waveRect.center().movedBy(0, traitLine.isEmpty() ? 14 : 4), accentText);
+		if (not traitLine.isEmpty())
+		{
+			m_font(traitLine).drawAt(12, waveRect.center().movedBy(0, 28), ColorF{ 0.92, 0.96, 1.0, alpha });
+		}
 		return;
 	}
 
@@ -287,14 +348,19 @@ void GameScene::DrawWaveBanner() const
 	{
 		const int32 nextWave = (m_currentWave + 1);
      const ColorF accent = GetWaveAccentColor(nextWave);
+     const String traitLine = GetWaveTraitBannerText(nextWave);
 		const double alpha = Min(1.0, (1.6 - Max(0.0, m_nextWaveTimer)) / 1.6);
       const ColorF accentText{ accent, alpha };
 		const ColorF accentFrame{ accent, (0.78 * alpha) };
-		const RectF previewRect{ Arg::center = Scene::Center().movedBy(0, -220), 320, 56 };
+     const RectF previewRect{ Arg::center = Scene::Center().movedBy(0, -220), 320, traitLine.isEmpty() ? 56 : 78 };
 		previewRect.rounded(14).draw(ColorF{ 0.08, 0.10, 0.18, (0.52 * alpha) });
       previewRect.rounded(14).drawFrame(2, accentFrame);
-		m_font(U"Next Wave {}: {}"_fmt(nextWave, GetWaveLabel(nextWave))).drawAt(18, previewRect.center().movedBy(0, -8), ColorF{ 1.0, 1.0, 1.0, alpha });
-		m_font(GetWaveDescription(nextWave)).drawAt(13, previewRect.center().movedBy(0, 12), accentText);
+      m_font(U"Next Wave {}: {}"_fmt(nextWave, GetWaveLabel(nextWave))).drawAt(18, previewRect.center().movedBy(0, traitLine.isEmpty() ? -8 : -16), ColorF{ 1.0, 1.0, 1.0, alpha });
+		m_font(GetWaveDescription(nextWave)).drawAt(13, previewRect.center().movedBy(0, traitLine.isEmpty() ? 12 : 6), accentText);
+		if (not traitLine.isEmpty())
+		{
+			m_font(traitLine).drawAt(12, previewRect.center().movedBy(0, 26), ColorF{ 0.92, 0.96, 1.0, alpha });
+		}
 	}
 }
 

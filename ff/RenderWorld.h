@@ -8,5 +8,5 @@ namespace ff
     void DrawPlayer(const Vec2& screenPos, double hpRate, bool invincible);
    void DrawEnemy(const Vec2& screenPos, double hpRate, EnemyKind kind);
         void DrawAlly(const Vec2& screenPos, double hpRate, bool commandBuffActive);
-   void DrawHud(const Font& font, size_t enemyCount, size_t allyCount, double playerHp, int32 resourceCount, int32 currentKillReward, int32 currentWave, bool waveActive, int32 pendingEnemyCount, double nextWaveTime, SpecialTileKind tileKind);
+  void DrawHud(const Font& font, size_t enemyCount, size_t allyCount, double playerHp, int32 resourceCount, int32 currentKillReward, int32 currentWave, bool waveActive, int32 pendingEnemyCount, double nextWaveTime, SpecialTileKind tileKind, const String& waveDetailLabel = U"");
 }

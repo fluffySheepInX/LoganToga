@@ -4,7 +4,7 @@
 namespace ff
 {
 	Optional<Vec2> FindClosestEnemyPos(const Array<Enemy>& enemies, const Vec2& fromPos);
-    bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles, EnemyKind kind = EnemyKind::Normal);
+ bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles, EnemyKind kind = EnemyKind::Normal, double hpMultiplier = 1.0, double speedMultiplier = 1.0, double attackIntervalMultiplier = 1.0);
 	void UpdateEnemies(Array<Enemy>& enemies, const TerrainGrid& terrain, const Vec2& playerPos);
 	void UpdateAllies(Array<Ally>& allies, const Array<Enemy>& enemies, const TerrainGrid& terrain, const Vec2& playerPos);
  bool SpawnAlly(Array<Ally>& allies, const TerrainGrid& terrain, const Vec2& playerPos, AllyBehavior behavior);

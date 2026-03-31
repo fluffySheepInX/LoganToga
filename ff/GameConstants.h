@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include <array>
 # include <Siv3D.hpp>
 
 namespace ff
@@ -82,6 +83,14 @@ namespace ff
 		Penalty,
 	};
 
+	enum class WaveTrait : uint8
+	{
+		None,
+		Reinforced,
+		Assault,
+		Bounty,
+	};
+
 	using SpecialTileGrid = Grid<SpecialTileKind>;
 
 	inline constexpr size_t ToTextureIndex(const TerrainTile tile)
@@ -120,6 +129,44 @@ namespace ff
 		return (unitPos.distanceFrom(playerPos) <= PlayerCommandRadius);
 	}
 
+	inline StringView GetWaveTraitLabel(const WaveTrait trait)
+	{
+		switch (trait)
+		{
+		case WaveTrait::Reinforced:
+			return U"装甲";
+
+		case WaveTrait::Assault:
+			return U"急襲";
+
+		case WaveTrait::Bounty:
+			return U"収穫";
+
+		case WaveTrait::None:
+		default:
+			return U"";
+		}
+	}
+
+	inline StringView GetWaveTraitDescription(const WaveTrait trait)
+	{
+		switch (trait)
+		{
+		case WaveTrait::Reinforced:
+			return U"敵HP増加";
+
+		case WaveTrait::Assault:
+			return U"敵加速・攻撃短縮";
+
+		case WaveTrait::Bounty:
+			return U"撃破資源 +1";
+
+		case WaveTrait::None:
+		default:
+			return U"";
+		}
+	}
+
 	enum class EnemyKind : uint8
 	{
 		Normal,
@@ -132,6 +179,9 @@ namespace ff
 		Vec2 pos;
       EnemyKind kind = EnemyKind::Normal;
 		double hp = EnemyMaxHp;
+        double maxHp = EnemyMaxHp;
+		double speedMultiplier = 1.0;
+		double attackIntervalMultiplier = 1.0;
 		double attackCooldown = 0.0;
 	};
 
@@ -240,6 +290,37 @@ namespace ff
       FixedTurret,
 	};
 
+	inline constexpr size_t AllyBehaviorCount = 5;
+	inline constexpr int32 WaveTraitSummonDiscountAmount = 1;
+	using SummonDiscountTraitConfig = std::array<Array<WaveTrait>, AllyBehaviorCount>;
+
+	inline constexpr size_t ToIndex(const AllyBehavior behavior)
+	{
+		return static_cast<size_t>(behavior);
+	}
+
+	inline SummonDiscountTraitConfig MakeDefaultSummonDiscountTraitConfig()
+	{
+		SummonDiscountTraitConfig config;
+		config[ToIndex(AllyBehavior::ChaseEnemies)] = { WaveTrait::Reinforced };
+		config[ToIndex(AllyBehavior::HoldPosition)] = { WaveTrait::Bounty };
+		config[ToIndex(AllyBehavior::GuardPlayer)] = { WaveTrait::Assault };
+		config[ToIndex(AllyBehavior::OrbitPlayer)] = { WaveTrait::Assault, WaveTrait::Bounty };
+		config[ToIndex(AllyBehavior::FixedTurret)] = { WaveTrait::Reinforced };
+		return config;
+	}
+
+	inline bool HasWaveTraitSummonDiscount(const SummonDiscountTraitConfig& config, const AllyBehavior behavior, const WaveTrait activeWaveTrait)
+	{
+		if (activeWaveTrait == WaveTrait::None)
+		{
+			return false;
+		}
+
+		const auto& discountedTraits = config[ToIndex(behavior)];
+		return discountedTraits.contains(activeWaveTrait);
+	}
+
 	inline constexpr double GetAllyMaxHp(const AllyBehavior behavior)
 	{
 		switch (behavior)
@@ -325,6 +406,18 @@ namespace ff
 		}
 
 		return 2;
+	}
+
+	inline int32 GetSummonCost(const AllyBehavior behavior, const WaveTrait activeWaveTrait, const SummonDiscountTraitConfig& config)
+	{
+		const int32 baseCost = GetSummonCost(behavior);
+
+		if (HasWaveTraitSummonDiscount(config, behavior, activeWaveTrait))
+		{
+			return Max(1, (baseCost - WaveTraitSummonDiscountAmount));
+		}
+
+		return baseCost;
 	}
 
 	struct Ally

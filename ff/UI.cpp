@@ -55,6 +55,23 @@ namespace ff
 			ColorF fillColor;
 		};
 
+		struct SummonAllyButtonVisualState
+		{
+			int32 baseSummonCost = 0;
+			int32 summonCost = 0;
+			bool discounted = false;
+			double summonAvailabilityRate = 0.0;
+			bool affordable = false;
+			bool hovered = false;
+			bool hotkeyPressed = false;
+			bool deniedFlash = false;
+			ColorF fillColor;
+			ColorF frameColor;
+			ColorF labelColor;
+			String infoLabel;
+			ColorF infoColor;
+		};
+
      Array<SummonAllyButton> BuildSummonAllyButtons(const Array<Optional<AllyBehavior>>& formationSlots)
 		{
            const Vec2 center = Scene::Rect().bottomCenter().movedBy(0, -108);
@@ -98,6 +115,120 @@ namespace ff
 
 			return buttons;
 		}
+
+		SummonAllyButtonVisualState BuildSummonAllyButtonVisualState(const SummonAllyButton& button, const int32 resourceCount, const WaveTrait activeWaveTrait, const SummonDiscountTraitConfig& summonDiscountTraits, const Optional<size_t>& deniedSlotIndex, const double deniedFlashTimer)
+		{
+			SummonAllyButtonVisualState state;
+			state.baseSummonCost = button.behavior ? GetSummonCost(*button.behavior) : 0;
+			state.summonCost = button.behavior ? GetSummonCost(*button.behavior, activeWaveTrait, summonDiscountTraits) : 0;
+			state.discounted = (button.behavior && (state.summonCost < state.baseSummonCost));
+			state.summonAvailabilityRate = button.behavior ? GetSummonAvailabilityRate(resourceCount, state.summonCost) : 0.0;
+			state.affordable = (button.behavior && (resourceCount >= state.summonCost));
+			state.hovered = button.rect.mouseOver();
+			state.hotkeyPressed = IsSummonSlotTriggered(button.slotIndex);
+			state.deniedFlash = (deniedSlotIndex && (*deniedSlotIndex == button.slotIndex) && (deniedFlashTimer > 0.0));
+
+			const ColorF baseColor = state.affordable ? button.fillColor : ColorF{ 0.36, 0.36, 0.38, 0.78 };
+			const bool emphasized = ((state.hovered || state.hotkeyPressed) && state.affordable);
+			const double deniedPulse = (0.55 + (0.45 * Periodic::Sine0_1(0.10s)));
+			state.fillColor = state.deniedFlash
+				? baseColor.lerp(ColorF{ 0.96, 0.22, 0.22, 0.94 }, (0.55 * deniedPulse))
+				: (emphasized ? baseColor.lerp(ColorF{ 0.92, 0.96, 1.0, 0.96 }, state.hotkeyPressed ? 0.28 : 0.18) : baseColor);
+			state.frameColor = state.deniedFlash
+				? ColorF{ 1.0, 0.62, 0.62, (0.82 + (0.18 * deniedPulse)) }
+				: (state.discounted
+					? ColorF{ 0.98, 0.86, 0.48, 0.94 }
+					: (button.behavior ? ColorF{ 0.86, 0.95, 0.88, 0.9 } : ColorF{ 0.62, 0.62, 0.66, 0.72 }));
+			state.labelColor = state.affordable ? ColorF{ 1.0, 1.0, 1.0 } : ColorF{ 0.86, 0.86, 0.88 };
+
+			if (button.behavior)
+			{
+				state.infoLabel = state.deniedFlash
+					? U"資源不足 / [{}] Key"_fmt(button.slotIndex + 1)
+					: (state.discounted
+						? U"Cost {} (-{} {}) / [{}] Key"_fmt(state.summonCost, (state.baseSummonCost - state.summonCost), GetWaveTraitLabel(activeWaveTrait), button.slotIndex + 1)
+						: U"Cost {} / [{}] Key"_fmt(state.summonCost, button.slotIndex + 1));
+				state.infoColor = state.deniedFlash
+					? ColorF{ 1.0, 0.90, 0.90, 0.96 }
+					: (state.discounted ? ColorF{ 1.0, 0.92, 0.64, 0.96 } : (state.affordable ? ColorF{ 0.96, 0.98, 0.96, 0.92 } : ColorF{ 0.80, 0.80, 0.84, 0.9 }));
+			}
+			else
+			{
+				state.infoLabel = U"Empty / [{}] Key"_fmt(button.slotIndex + 1);
+				state.infoColor = ColorF{ 0.80, 0.80, 0.84, 0.9 };
+			}
+
+			return state;
+		}
+
+		void DrawSummonAvailabilityGauge(const RectF& buttonRect, const double summonAvailabilityRate)
+		{
+			const RectF gaugeRect{ buttonRect.x + 10, buttonRect.y + buttonRect.h - 12, buttonRect.w - 20, 6 };
+			gaugeRect.rounded(3).draw(ColorF{ 0.02, 0.03, 0.05, 0.36 });
+
+			if (summonAvailabilityRate > 0.0)
+			{
+				const double fillWidth = (gaugeRect.w * summonAvailabilityRate);
+				const RectF fillGaugeRect{ gaugeRect.x, gaugeRect.y, fillWidth, gaugeRect.h };
+
+				if (fillWidth >= gaugeRect.h)
+				{
+					fillGaugeRect.rounded(3).draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
+				}
+				else
+				{
+					fillGaugeRect.draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
+				}
+			}
+
+			if (summonAvailabilityRate < 1.0)
+			{
+				const RectF shortageRect{
+					gaugeRect.x + (gaugeRect.w * summonAvailabilityRate),
+					gaugeRect.y,
+					gaugeRect.w * (1.0 - summonAvailabilityRate),
+					gaugeRect.h
+				};
+				shortageRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.24 });
+			}
+		}
+
+		bool ShouldShowSummonAllyTooltip(const SummonAllyButton& button, const SummonAllyButtonVisualState& state)
+		{
+			return (button.behavior && state.hovered && IsTooltipModifierPressed());
+		}
+
+		void DrawSummonAllyButton(const Font& font, const SummonAllyButton& button, const SummonAllyButtonVisualState& state)
+		{
+			if ((state.hovered || state.hotkeyPressed) && state.affordable)
+			{
+				Cursor::RequestStyle(CursorStyle::Hand);
+			}
+
+			button.rect.rounded(12).draw(state.fillColor);
+
+			if (button.behavior && !state.affordable)
+			{
+				DrawSummonAvailabilityGauge(button.rect, state.summonAvailabilityRate);
+			}
+
+			button.rect.rounded(12).drawFrame(2, state.frameColor);
+			font(button.label).drawAt(17, button.rect.center().movedBy(0, -8), state.labelColor);
+			font(state.infoLabel).drawAt(14, button.rect.center().movedBy(0, 10), state.infoColor);
+		}
+
+		void DrawSummonAllyTooltip(const Font& font, const AllyBehavior behavior)
+		{
+			const String title = U"{}"_fmt(GetAllyBehaviorLabel(behavior));
+			const String description = U"{}"_fmt(GetAllyBehaviorRoleDescription(behavior));
+			const Vec2 cursorPos = Cursor::PosF().movedBy(18, 20);
+			const RectF tooltipRect{ cursorPos, 240, 60 };
+			const ColorF accent = GetAllyBehaviorColor(behavior);
+			tooltipRect.rounded(12).draw(ColorF{ 0.06, 0.08, 0.14, 0.94 });
+			tooltipRect.rounded(12).drawFrame(2, accent.lerp(Palette::White, 0.20));
+			font(title).draw(15, tooltipRect.pos.movedBy(12, 8), Palette::White);
+			font(description).draw(13, tooltipRect.pos.movedBy(12, 32), ColorF{ 0.88, 0.92, 1.0, 0.92 });
+		}
 	}
 
    Optional<SummonInputResult> CheckSummonAllyButtonPressed(const Array<Optional<AllyBehavior>>& formationSlots)
@@ -114,102 +245,25 @@ namespace ff
 		return none;
 	}
 
-  void DrawSummonAllyButtons(const Font& font, const int32 resourceCount, const Array<Optional<AllyBehavior>>& formationSlots, const Optional<size_t>& deniedSlotIndex, const double deniedFlashTimer)
+  void DrawSummonAllyButtons(const Font& font, const int32 resourceCount, const Array<Optional<AllyBehavior>>& formationSlots, const WaveTrait activeWaveTrait, const SummonDiscountTraitConfig& summonDiscountTraits, const Optional<size_t>& deniedSlotIndex, const double deniedFlashTimer)
 	{
         Optional<AllyBehavior> hoveredBehaviorForTooltip;
+		const auto buttons = BuildSummonAllyButtons(formationSlots);
 
-       for (const auto& button : BuildSummonAllyButtons(formationSlots))
+        for (const auto& button : buttons)
 		{
-            const int32 summonCost = button.behavior ? GetSummonCost(*button.behavior) : 0;
-         const double summonAvailabilityRate = button.behavior ? GetSummonAvailabilityRate(resourceCount, summonCost) : 0.0;
-			const bool affordable = (button.behavior && (resourceCount >= summonCost));
-           const bool hovered = button.rect.mouseOver();
-			const bool hotkeyPressed = IsSummonSlotTriggered(button.slotIndex);
-			const bool deniedFlash = (deniedSlotIndex && (*deniedSlotIndex == button.slotIndex) && (deniedFlashTimer > 0.0));
+            const auto state = BuildSummonAllyButtonVisualState(button, resourceCount, activeWaveTrait, summonDiscountTraits, deniedSlotIndex, deniedFlashTimer);
+			DrawSummonAllyButton(font, button, state);
 
-          if ((hovered || hotkeyPressed) && affordable)
-			{
-				Cursor::RequestStyle(CursorStyle::Hand);
-			}
-
-            const ColorF baseColor = affordable ? button.fillColor : ColorF{ 0.36, 0.36, 0.38, 0.78 };
-			const bool emphasized = ((hovered || hotkeyPressed) && affordable);
-         const double deniedPulse = (0.55 + (0.45 * Periodic::Sine0_1(0.10s)));
-			const ColorF fillColor = deniedFlash
-				? baseColor.lerp(ColorF{ 0.96, 0.22, 0.22, 0.94 }, (0.55 * deniedPulse))
-				: (emphasized ? baseColor.lerp(ColorF{ 0.92, 0.96, 1.0, 0.96 }, hotkeyPressed ? 0.28 : 0.18) : baseColor);
-			const ColorF frameColor = deniedFlash
-				? ColorF{ 1.0, 0.62, 0.62, (0.82 + (0.18 * deniedPulse)) }
-				: (button.behavior ? ColorF{ 0.86, 0.95, 0.88, 0.9 } : ColorF{ 0.62, 0.62, 0.66, 0.72 });
-			button.rect.rounded(12).draw(fillColor);
-
-			if (button.behavior && !affordable)
-			{
-				const RectF gaugeRect{ button.rect.x + 10, button.rect.y + button.rect.h - 12, button.rect.w - 20, 6 };
-				gaugeRect.rounded(3).draw(ColorF{ 0.02, 0.03, 0.05, 0.36 });
-
-				if (summonAvailabilityRate > 0.0)
-				{
-					const double fillWidth = (gaugeRect.w * summonAvailabilityRate);
-					const RectF fillGaugeRect{ gaugeRect.x, gaugeRect.y, fillWidth, gaugeRect.h };
-
-					if (fillWidth >= gaugeRect.h)
-					{
-						fillGaugeRect.rounded(3).draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
-					}
-					else
-					{
-						fillGaugeRect.draw(ColorF{ 0.96, 0.98, 1.0, 0.20 });
-					}
-				}
-
-				if (summonAvailabilityRate < 1.0)
-				{
-					const RectF shortageRect{
-						gaugeRect.x + (gaugeRect.w * summonAvailabilityRate),
-						gaugeRect.y,
-						gaugeRect.w * (1.0 - summonAvailabilityRate),
-						gaugeRect.h
-					};
-					shortageRect.draw(ColorF{ 0.0, 0.0, 0.0, 0.24 });
-				}
-			}
-
-			button.rect.rounded(12).drawFrame(2, frameColor);
-			font(button.label).drawAt(17, button.rect.center().movedBy(0, -8), affordable ? ColorF{ 1.0, 1.0, 1.0 } : ColorF{ 0.86, 0.86, 0.88 });
-
-			if (button.behavior && hovered && IsTooltipModifierPressed())
+			if (ShouldShowSummonAllyTooltip(button, state))
 			{
 				hoveredBehaviorForTooltip = *button.behavior;
-			}
-
-			if (button.behavior)
-			{
-               const String infoLabel = deniedFlash
-					? U"資源不足 / [{}] Key"_fmt(button.slotIndex + 1)
-					: U"Cost {} / [{}] Key"_fmt(summonCost, button.slotIndex + 1);
-				const ColorF infoColor = deniedFlash
-					? ColorF{ 1.0, 0.90, 0.90, 0.96 }
-					: (affordable ? ColorF{ 0.96, 0.98, 0.96, 0.92 } : ColorF{ 0.80, 0.80, 0.84, 0.9 });
-				font(infoLabel).drawAt(14, button.rect.center().movedBy(0, 10), infoColor);
-			}
-			else
-			{
-                font(U"Empty / [{}] Key"_fmt(button.slotIndex + 1)).drawAt(14, button.rect.center().movedBy(0, 10), ColorF{ 0.80, 0.80, 0.84, 0.9 });
 			}
 		}
 
 		if (hoveredBehaviorForTooltip)
 		{
-			const String title = U"{}"_fmt(GetAllyBehaviorLabel(*hoveredBehaviorForTooltip));
-			const String description = U"{}"_fmt(GetAllyBehaviorRoleDescription(*hoveredBehaviorForTooltip));
-			const Vec2 cursorPos = Cursor::PosF().movedBy(18, 20);
-			const RectF tooltipRect{ cursorPos, 240, 60 };
-			const ColorF accent = GetAllyBehaviorColor(*hoveredBehaviorForTooltip);
-			tooltipRect.rounded(12).draw(ColorF{ 0.06, 0.08, 0.14, 0.94 });
-			tooltipRect.rounded(12).drawFrame(2, accent.lerp(Palette::White, 0.20));
-			font(title).draw(15, tooltipRect.pos.movedBy(12, 8), Palette::White);
-			font(description).draw(13, tooltipRect.pos.movedBy(12, 32), ColorF{ 0.88, 0.92, 1.0, 0.92 });
+           DrawSummonAllyTooltip(font, *hoveredBehaviorForTooltip);
 		}
 	}
 }

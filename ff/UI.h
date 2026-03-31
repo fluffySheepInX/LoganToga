@@ -10,5 +10,5 @@ namespace ff
     };
 
     Optional<SummonInputResult> CheckSummonAllyButtonPressed(const Array<Optional<AllyBehavior>>& formationSlots);
-    void DrawSummonAllyButtons(const Font& font, int32 resourceCount, const Array<Optional<AllyBehavior>>& formationSlots, const Optional<size_t>& deniedSlotIndex = none, double deniedFlashTimer = 0.0);
+  void DrawSummonAllyButtons(const Font& font, int32 resourceCount, const Array<Optional<AllyBehavior>>& formationSlots, WaveTrait activeWaveTrait, const SummonDiscountTraitConfig& summonDiscountTraits, const Optional<size_t>& deniedSlotIndex = none, double deniedFlashTimer = 0.0);
 }

@@ -189,7 +189,7 @@ namespace ff
        DrawHealthBar(screenPos.movedBy(0, -50), hpRate, ColorF{ 0.28, 0.80, 0.42 });
 	}
 
-   void DrawHud(const Font& font, const size_t enemyCount, const size_t allyCount, const double playerHp, const int32 resourceCount, const int32 currentKillReward, const int32 currentWave, bool waveActive, const int32 pendingEnemyCount, const double nextWaveTime, const SpecialTileKind tileKind)
+ void DrawHud(const Font& font, const size_t enemyCount, const size_t allyCount, const double playerHp, const int32 resourceCount, const int32 currentKillReward, const int32 currentWave, bool waveActive, const int32 pendingEnemyCount, const double nextWaveTime, const SpecialTileKind tileKind, const String& waveDetailLabel)
 	{
         const RectF panel{ 16, 16, 436, 208 };
 		const RectF hpCard{ 28, 28, 124, 72 };
@@ -223,7 +223,9 @@ namespace ff
 		drawKeyCard(waveCard,
 			U"WAVE",
 			waveActive ? U"{}"_fmt(currentWave) : U"Next {}"_fmt(currentWave + 1),
-			waveActive ? U"脅威 {}"_fmt(pendingEnemyCount) : U"{:.1f}s"_fmt(Max(0.0, nextWaveTime)),
+          waveActive
+				? (waveDetailLabel.isEmpty() ? U"脅威 {}"_fmt(pendingEnemyCount) : U"{} / 脅威 {}"_fmt(waveDetailLabel, pendingEnemyCount))
+				: U"{:.1f}s"_fmt(Max(0.0, nextWaveTime)),
 			ColorF{ 0.62, 0.42, 0.96 });
 
 		font(U"敵 {}  /  味方 {}"_fmt(enemyCount, allyCount)).draw(13, Vec2{ 30, 114 }, ColorF{ 0.20, 0.24, 0.30, 0.92 });

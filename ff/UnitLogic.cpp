@@ -209,7 +209,7 @@ namespace ff
        return defeatedEnemyCount;
 	}
 
-    bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles, const EnemyKind kind)
+    bool SpawnEnemy(Array<Enemy>& enemies, const Array<Point>& spawnTiles, const EnemyKind kind, const double hpMultiplier, const double speedMultiplier, const double attackIntervalMultiplier)
 	{
 		if (spawnTiles.isEmpty() || (enemies.size() >= MaxEnemyCount))
 		{
@@ -217,7 +217,15 @@ namespace ff
 		}
 
 		const Point spawnTile = spawnTiles[Random<size_t>(spawnTiles.size() - 1)];
-     enemies << Enemy{ Vec2{ static_cast<double>(spawnTile.x), static_cast<double>(spawnTile.y) }, kind, GetEnemyMaxHp(kind) };
+     const double maxHp = (GetEnemyMaxHp(kind) * Max(0.1, hpMultiplier));
+		enemies << Enemy{
+			Vec2{ static_cast<double>(spawnTile.x), static_cast<double>(spawnTile.y) },
+			kind,
+			maxHp,
+			maxHp,
+			Max(0.1, speedMultiplier),
+			Max(0.1, attackIntervalMultiplier)
+		};
 		return true;
 	}
 
@@ -225,7 +233,7 @@ namespace ff
 	{
 		for (auto& enemy : enemies)
 		{
-          MoveUnitTowards(enemy.pos, playerPos, terrain, GetEnemySpeed(enemy.kind), EnemyStopDistance);
+         MoveUnitTowards(enemy.pos, playerPos, terrain, (GetEnemySpeed(enemy.kind) * enemy.speedMultiplier), EnemyStopDistance);
 		}
 	}
 

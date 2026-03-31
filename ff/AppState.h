@@ -11,9 +11,9 @@ namespace ff
 		Night,
 	};
 
-	inline constexpr size_t FormationSlotCount = 8;
+ inline constexpr size_t FormationSlotCount = 8;
 	inline constexpr size_t FormationPresetCount = 3;
-	inline constexpr int32 FormationSaveSchemaVersion = 1;
+	inline constexpr int32 FormationSaveSchemaVersion = 2;
 
 	[[nodiscard]] inline Array<Optional<AllyBehavior>> MakeEmptyFormationSlots()
 	{
@@ -126,6 +126,67 @@ namespace ff
 
 		return values;
 	}
+
+	[[nodiscard]] inline Optional<WaveTrait> ToPersistentWaveTrait(const int32 value)
+	{
+		switch (value)
+		{
+		case static_cast<int32>(WaveTrait::None):
+			return WaveTrait::None;
+
+		case static_cast<int32>(WaveTrait::Reinforced):
+			return WaveTrait::Reinforced;
+
+		case static_cast<int32>(WaveTrait::Assault):
+			return WaveTrait::Assault;
+
+		case static_cast<int32>(WaveTrait::Bounty):
+			return WaveTrait::Bounty;
+
+		default:
+			return none;
+		}
+	}
+
+	[[nodiscard]] inline Array<int32> SerializeWaveTraits(const Array<WaveTrait>& traits)
+	{
+		Array<int32> values;
+		values.reserve(traits.size());
+
+		for (const auto trait : traits)
+		{
+			if (trait != WaveTrait::None)
+			{
+				values << static_cast<int32>(trait);
+			}
+		}
+
+		return values;
+	}
+
+	inline void DeserializeWaveTraits(const Array<int32>& values, Array<WaveTrait>& traits)
+	{
+		traits.clear();
+
+		for (const int32 value : values)
+		{
+			if (const auto trait = ToPersistentWaveTrait(value))
+			{
+				if ((*trait != WaveTrait::None) && (not traits.contains(*trait)))
+				{
+					traits << *trait;
+				}
+			}
+		}
+	}
+
+	inline void DeserializeSummonDiscountTraitConfig(const TOMLReader& toml, SummonDiscountTraitConfig& config)
+	{
+		for (size_t index = 0; index < config.size(); ++index)
+		{
+			DeserializeWaveTraits(ReadTomlIntArray(toml, U"summonDiscountTraits{}"_fmt(index)), config[index]);
+		}
+	}
 }
 
 struct AppData
@@ -133,6 +194,7 @@ struct AppData
     Array<Optional<ff::AllyBehavior>> formationSlots = ff::MakeEmptyFormationSlots();
 	Array<Array<Optional<ff::AllyBehavior>>> formationPresets = ff::MakeDefaultFormationPresets();
 	Optional<ff::AllyBehavior> selectedFormationUnit = ff::AllyBehavior::GuardPlayer;
+     ff::SummonDiscountTraitConfig summonDiscountTraits = ff::MakeDefaultSummonDiscountTraitConfig();
   ff::TimeOfDay timeOfDay = ff::TimeOfDay::Day;
 };
 
@@ -146,9 +208,13 @@ struct AppData
 		return data;
 	}
 
+ int32 schemaVersion = 1;
+
 	try
 	{
-		if (toml[U"schemaVersion"].get<int32>() != ff::FormationSaveSchemaVersion)
+      schemaVersion = toml[U"schemaVersion"].get<int32>();
+
+		if ((schemaVersion <= 0) || (schemaVersion > ff::FormationSaveSchemaVersion))
 		{
 			return data;
 		}
@@ -171,6 +237,11 @@ struct AppData
 	}
 	catch (const std::exception&)
 	{
+	}
+
+	if (schemaVersion >= 2)
+	{
+		ff::DeserializeSummonDiscountTraitConfig(toml, data.summonDiscountTraits);
 	}
 
 	return data;
@@ -197,6 +268,12 @@ struct AppData
 	}
 
 	content += U"selectedFormationUnit = {}\n"_fmt(ff::ToPersistentValue(data.selectedFormationUnit));
+
+	for (size_t index = 0; index < data.summonDiscountTraits.size(); ++index)
+	{
+		content += U"summonDiscountTraits{} = {}\n"_fmt(index, ff::BuildTomlIntArray(ff::SerializeWaveTraits(data.summonDiscountTraits[index])));
+	}
+
 	writer.write(content);
 	return true;
 }

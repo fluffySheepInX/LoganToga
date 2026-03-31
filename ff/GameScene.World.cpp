@@ -38,7 +38,7 @@ void GameScene::UpdateSummoning()
 {
  if (const auto summonRequest = ff::CheckSummonAllyButtonPressed(getData().formationSlots))
 	{
-        const int32 summonCost = ff::GetSummonCost(summonRequest->behavior);
+        const int32 summonCost = ff::GetSummonCost(summonRequest->behavior, m_currentWaveTrait, getData().summonDiscountTraits);
 
 		if (m_resourceCount < summonCost)
 		{
@@ -160,7 +160,7 @@ void GameScene::DrawWorld() const
 			{
 				if (ff::ToTileIndex(enemy.pos) == tileIndex)
 				{
-                   ff::DrawEnemy(worldOrigin + ff::ToIsometric(enemy.pos), (enemy.hp / ff::GetEnemyMaxHp(enemy.kind)), enemy.kind);
+                 ff::DrawEnemy(worldOrigin + ff::ToIsometric(enemy.pos), (enemy.hp / Max(1.0, enemy.maxHp)), enemy.kind);
 				}
 			}
 

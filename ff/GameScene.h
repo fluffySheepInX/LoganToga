@@ -72,6 +72,11 @@ private:
 	double m_enemySpawnTimer = 0.0;
 	double m_nextWaveTimer = ff::WaveStartDelay;
 	double m_waveBannerTimer = ff::WaveBannerDuration;
+  ff::WaveTrait m_currentWaveTrait = ff::WaveTrait::None;
+  double m_currentWaveEnemyHpMultiplier = 1.0;
+	double m_currentWaveEnemySpeedMultiplier = 1.0;
+	double m_currentWaveEnemyAttackIntervalMultiplier = 1.0;
+	int32 m_currentWaveRewardBonusPerKill = 0;
   Optional<size_t> m_deniedSummonSlot;
 	double m_deniedSummonTimer = 0.0;
 	Array<SummonEffect> m_summonEffects;

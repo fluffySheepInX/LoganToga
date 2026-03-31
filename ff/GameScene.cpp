@@ -47,7 +47,8 @@ void GameScene::update()
 	UpdateSummoning();
 	UpdateSpecialTiles();
 	ff::UpdatePlayerPosition(m_playerPos, m_terrain);
-	const int32 currentKillReward = ff::GetResourceRewardPerEnemyKill(m_specialTiles[ff::ToTileIndex(m_playerPos)]);
+    const int32 currentKillReward = (ff::GetResourceRewardPerEnemyKill(m_specialTiles[ff::ToTileIndex(m_playerPos)])
+		+ (m_waveActive ? m_currentWaveRewardBonusPerKill : 0));
   Array<ff::Enemy> defeatedEnemies;
 	bool playerWasHit = false;
 	ff::UpdateAllies(m_allies, m_enemies, m_terrain, m_playerPos);
@@ -101,18 +102,19 @@ void GameScene::draw() const
 		: 0;
 	const Point playerTile = ff::ToTileIndex(m_playerPos);
 	const ff::SpecialTileKind currentSpecialTile = m_specialTiles[playerTile];
-    const int32 currentKillReward = ff::GetResourceRewardPerEnemyKill(currentSpecialTile);
+  const int32 currentKillReward = (ff::GetResourceRewardPerEnemyKill(currentSpecialTile)
+		+ (m_waveActive ? m_currentWaveRewardBonusPerKill : 0));
 	const Vec2 worldOrigin = (Scene::Center().movedBy(0, 110) - ff::ToIsometric(m_playerPos));
 	const Vec2 playerScreenPos = (worldOrigin + ff::ToIsometric(m_playerPos));
 
 	DrawWorld();
     ff::DrawPlayer(playerScreenPos, (m_playerHp / ff::PlayerMaxHp), (m_playerInvincibilityTimer > 0.0));
 	DrawTimeOfDayOverlay();
- ff::DrawHud(m_font, m_enemies.size(), m_allies.size(), m_playerHp, m_resourceCount, currentKillReward, m_currentWave, m_waveActive, pendingEnemyCount, m_nextWaveTimer, currentSpecialTile);
+ ff::DrawHud(m_font, m_enemies.size(), m_allies.size(), m_playerHp, m_resourceCount, currentKillReward, m_currentWave, m_waveActive, pendingEnemyCount, m_nextWaveTimer, currentSpecialTile, (m_waveActive ? String{ ff::GetWaveTraitLabel(m_currentWaveTrait) } : U""));
 
 	if (not m_stageCleared)
 	{
-		ff::DrawSummonAllyButtons(m_font, m_resourceCount, formationSlots, m_deniedSummonSlot, m_deniedSummonTimer);
+        ff::DrawSummonAllyButtons(m_font, m_resourceCount, formationSlots, m_currentWaveTrait, getData().summonDiscountTraits, m_deniedSummonSlot, m_deniedSummonTimer);
 		DrawTimeOfDayButtons();
 	}
 
