@@ -17,6 +17,7 @@ private:
 		None,
 		BackToFormation,
 		SwitchUnit,
+     SwitchEnemy,
 		ReloadFromDisk,
 		ResetToDefault,
 	};
@@ -26,16 +27,18 @@ private:
 	bool HandleFieldAdjustment();
 	void HandleKeyboardShortcuts();
 	bool HandlePendingActionConfirmation();
-	bool RequestAction(PendingAction action, Optional<ff::UnitId> targetUnit = none);
+   bool RequestAction(PendingAction action, Optional<ff::UnitId> targetUnit = none, Optional<ff::EnemyKind> targetEnemy = none);
 	void CommitPendingAction();
 	void ClearPendingAction();
 	void LoadUnit(ff::UnitId unitId);
+   void LoadEnemy(ff::EnemyKind enemyKind);
 	void SaveCurrentDefinition();
 
 	void DrawUnitList() const;
 	void DrawPreviewPanel() const;
 	void DrawEditorPanel() const;
 	void DrawInfoPanel(const ff::UnitDefinition& loadedDefinition, const ff::UnitDefinition& normalizedDefinition) const;
+    void DrawInfoPanel(const ff::EnemyDefinition& loadedDefinition, const ff::EnemyDefinition& normalizedDefinition) const;
  void DrawStatusBar() const;
 	void DrawBottomButtons() const;
 	void DrawIconChip(const RectF& rect, const String& icon, const ColorF& fillColor, const ColorF& frameColor, const ColorF& iconColor = Palette::White) const;
@@ -93,11 +96,20 @@ private:
 	[[nodiscard]] bool IsDirty() const;
 	[[nodiscard]] bool IsFieldChanged(size_t index) const;
 	[[nodiscard]] ff::UnitDefinition GetNormalizedEditingDefinition() const;
+    [[nodiscard]] ff::EnemyDefinition GetNormalizedEditingEnemyDefinition() const;
 	[[nodiscard]] Array<String> BuildChangeLines(const ff::UnitDefinition& loadedDefinition, const ff::UnitDefinition& editingDefinition) const;
+   [[nodiscard]] Array<String> BuildChangeLines(const ff::EnemyDefinition& loadedDefinition, const ff::EnemyDefinition& editingDefinition) const;
 	[[nodiscard]] static String FormatColor(const ColorF& color);
 	[[nodiscard]] String GetPendingActionMessage() const;
 	[[nodiscard]] static String FormatDefinitionSummary(const ff::UnitDefinition& definition);
+  [[nodiscard]] static String FormatDefinitionSummary(const ff::EnemyDefinition& definition);
 	[[nodiscard]] static bool AreSameDefinition(const ff::UnitDefinition& lhs, const ff::UnitDefinition& rhs);
+	[[nodiscard]] static bool AreSameDefinition(const ff::EnemyDefinition& lhs, const ff::EnemyDefinition& rhs);
+	[[nodiscard]] bool IsEnemyEditor() const;
+	[[nodiscard]] String GetCurrentDefinitionPath() const;
+	[[nodiscard]] String GetCurrentStableId() const;
+	[[nodiscard]] String GetCurrentDisplayName() const;
+	[[nodiscard]] String GetBackButtonTooltipText() const;
 
 	static constexpr size_t FieldCount = 5;
 	static constexpr size_t ColorChannelCount = 4;
@@ -106,7 +118,10 @@ private:
 	Font m_buttonFont;
 	Font m_infoFont;
 	ff::UnitId m_unitId;
+ Optional<ff::EnemyKind> m_enemyKind;
+	bool m_editingEnemyDefinitions = false;
 	ff::UnitDefinition m_editingDefinition;
+ ff::EnemyDefinition m_editingEnemyDefinition;
 	mutable TextEditState m_labelEditState;
 	mutable TextEditState m_roleEditState;
 	mutable Array<TextEditState> m_numericEditStates = Array<TextEditState>(FieldCount);
@@ -114,6 +129,7 @@ private:
 	String m_validationStatus;
 	PendingAction m_pendingAction = PendingAction::None;
 	Optional<ff::UnitId> m_pendingUnitId;
+    Optional<ff::EnemyKind> m_pendingEnemyKind;
 	bool m_lastSaveSucceeded = true;
 	bool m_hasValidationError = false;
 	size_t m_selectedFieldIndex = 0;

@@ -152,6 +152,24 @@ RectF UnitEditorScene::GetChangeListIcon() const
 
 StringView UnitEditorScene::GetFieldLabel(const size_t index) const
 {
+  if (IsEnemyEditor())
+	{
+		switch (index)
+		{
+		case 0:
+			return U"最大HP";
+		case 1:
+			return U"移動速度";
+		case 2:
+			return U"攻撃距離";
+		case 3:
+			return U"攻撃間隔";
+		case 4:
+		default:
+			return U"攻撃力";
+		}
+	}
+
 	switch (index)
 	{
 	case 0:
@@ -186,6 +204,24 @@ StringView UnitEditorScene::GetColorLabel(const size_t index) const
 
 String UnitEditorScene::GetFieldValue(const size_t index) const
 {
+  if (IsEnemyEditor())
+	{
+		switch (index)
+		{
+		case 0:
+			return U"{:.1f}"_fmt(m_editingEnemyDefinition.maxHp);
+		case 1:
+			return U"{:.2f}"_fmt(m_editingEnemyDefinition.speed);
+		case 2:
+			return U"{:.2f}"_fmt(m_editingEnemyDefinition.attackRange);
+		case 3:
+			return U"{:.2f}"_fmt(m_editingEnemyDefinition.attackInterval);
+		case 4:
+		default:
+			return U"{:.2f}"_fmt(m_editingEnemyDefinition.attackDamage);
+		}
+	}
+
 	switch (index)
 	{
 	case 0:
@@ -204,7 +240,7 @@ String UnitEditorScene::GetFieldValue(const size_t index) const
 
 String UnitEditorScene::GetColorValue(const size_t index) const
 {
-	const ColorF color = GetNormalizedEditingDefinition().color;
+    const ColorF color = IsEnemyEditor() ? GetNormalizedEditingEnemyDefinition().color : GetNormalizedEditingDefinition().color;
 	switch (index)
 	{
 	case 0:

@@ -1,6 +1,11 @@
-﻿schemaVersion = 1
-formationSlots = [3, 2, 3, 4, 3, 0, 2, 3]
-preset1 = [1, 4, 0, 3, 0, 1, 2, 3]
-preset2 = [-1, -1, -1, -1, -1, -1, -1, -1]
-preset3 = [-1, -1, -1, -1, -1, -1, -1, -1]
-selectedFormationUnit = 2
+﻿schemaVersion = 3
+formationSlots = ["orbit_player", "guard_player", "orbit_player", "fixed_turret", "orbit_player", "chase_enemies", "guard_player", "orbit_player"]
+preset1 = ["hold_position", "fixed_turret", "chase_enemies", "orbit_player", "chase_enemies", "hold_position", "guard_player", "orbit_player"]
+preset2 = ["", "", "", "", "", "", "", ""]
+preset3 = ["", "", "", "", "", "", "", ""]
+selectedFormationUnit = "guard_player"
+summonDiscountTraits0 = [1]
+summonDiscountTraits1 = [3]
+summonDiscountTraits2 = [2]
+summonDiscountTraits3 = [2, 3]
+summonDiscountTraits4 = [1]

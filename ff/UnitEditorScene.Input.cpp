@@ -3,13 +3,28 @@
 
 bool UnitEditorScene::HandleUnitSelection()
 {
+    if (IsEnemyEditor())
+	{
+		const auto& enemyKinds = ff::GetAvailableEnemyKinds();
+
+		for (size_t index = 0; index < enemyKinds.size(); ++index)
+		{
+			if (GetUnitButton(index).leftClicked())
+			{
+				return RequestAction(PendingAction::SwitchEnemy, none, enemyKinds[index]);
+			}
+		}
+
+		return false;
+	}
+
 	const auto& unitTypes = GetFormationUnitTypes();
 
 	for (size_t index = 0; index < unitTypes.size(); ++index)
 	{
 		if (GetUnitButton(index).leftClicked())
 		{
-			return RequestAction(PendingAction::SwitchUnit, unitTypes[index]);
+          return RequestAction(PendingAction::SwitchUnit, unitTypes[index], none);
 		}
 	}
 

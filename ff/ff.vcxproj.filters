@@ -30,6 +30,12 @@
     <ClCompile Include="UnitEditorScene.Edit.cpp" />
     <ClCompile Include="UnitEditorScene.Input.cpp" />
     <ClCompile Include="WaveEditorScene.cpp" />
+    <ClCompile Include="FormationScene.Input.cpp" />
+    <ClCompile Include="FormationScene.Draw.cpp" />
+    <ClCompile Include="FormationScene.Layout.cpp" />
+    <ClCompile Include="WaveEditorScene.Input.cpp" />
+    <ClCompile Include="WaveEditorScene.Draw.cpp" />
+    <ClCompile Include="WaveEditorScene.Layout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />

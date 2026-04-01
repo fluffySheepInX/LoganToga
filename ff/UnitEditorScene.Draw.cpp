@@ -10,8 +10,6 @@ void UnitEditorScene::draw() const
 	const RectF infoPanel{ 296, 356, 332, 268 };
 	const RectF editPanel{ 652, 84, 548, 540 };
 	const RectF statusBar{ 44, 638, 1156, 56 };
-	const ff::UnitDefinition loadedDefinition = ff::GetUnitDefinition(m_unitId);
-	const ff::UnitDefinition normalizedDefinition = GetNormalizedEditingDefinition();
 
 	panel.rounded(24).draw(ColorF{ 0.06, 0.09, 0.16, 0.94 });
 	panel.rounded(24).drawFrame(2, ColorF{ 0.82, 0.88, 1.0, 0.72 });
@@ -26,7 +24,7 @@ void UnitEditorScene::draw() const
 	statusBar.rounded(18).draw(ColorF{ 0.10, 0.14, 0.24, 0.90 });
 	statusBar.rounded(18).drawFrame(2, ColorF{ 0.72, 0.80, 0.98, 0.56 });
 
-    m_buttonFont(U"unit edit").draw(Vec2{ 44, 42 }, ColorF{ 0.90, 0.94, 1.0, 0.82 });
+       m_buttonFont(IsEnemyEditor() ? U"enemy edit" : U"unit edit").draw(Vec2{ 44, 42 }, ColorF{ 0.90, 0.94, 1.0, 0.82 });
 	DrawIconChip(GetTopHelpIcon(), U"?", ColorF{ 0.18, 0.24, 0.38, 0.96 }, ColorF{ 0.84, 0.90, 1.0, 0.84 });
 	DrawIconChip(GetUnitPanelHeaderIcon(), U"≡", ColorF{ 0.18, 0.24, 0.38, 0.96 }, ColorF{ 0.84, 0.90, 1.0, 0.84 });
 	DrawIconChip(GetPreviewPanelHeaderIcon(), U"◎", ColorF{ 0.18, 0.24, 0.38, 0.96 }, ColorF{ 0.84, 0.90, 1.0, 0.84 });
@@ -36,7 +34,14 @@ void UnitEditorScene::draw() const
 	DrawUnitList();
 	DrawPreviewPanel();
 	DrawEditorPanel();
-	DrawInfoPanel(loadedDefinition, normalizedDefinition);
+  if (IsEnemyEditor())
+	{
+		DrawInfoPanel(ff::GetEnemyDefinition(m_enemyKind.value_or(ff::EnemyKind::Normal)), GetNormalizedEditingEnemyDefinition());
+	}
+	else
+	{
+		DrawInfoPanel(ff::GetUnitDefinition(m_unitId), GetNormalizedEditingDefinition());
+	}
     DrawStatusBar();
 
 	if (m_pendingAction == PendingAction::None)
@@ -52,6 +57,37 @@ void UnitEditorScene::draw() const
 
 void UnitEditorScene::DrawUnitList() const
 {
+    if (IsEnemyEditor())
+	{
+		const auto& enemyKinds = ff::GetAvailableEnemyKinds();
+		for (size_t index = 0; index < enemyKinds.size(); ++index)
+		{
+			const ff::EnemyKind enemyKind = enemyKinds[index];
+			const ff::EnemyDefinition definition = (m_enemyKind && (*m_enemyKind == enemyKind)) ? GetNormalizedEditingEnemyDefinition() : ff::GetEnemyDefinition(enemyKind);
+			const RectF rect = GetUnitButton(index);
+			const bool selected = (m_enemyKind && (*m_enemyKind == enemyKind));
+			const bool hovered = rect.mouseOver();
+			const ColorF accent = definition.color;
+			const ColorF fillColor = selected
+				? accent.lerp(ColorF{ 0.20, 0.24, 0.34 }, 0.45)
+				: (hovered ? ColorF{ 0.22, 0.27, 0.39, 0.96 } : ColorF{ 0.14, 0.18, 0.28, 0.92 });
+			const ColorF frameColor = selected ? accent : ColorF{ 0.75, 0.82, 0.95, (hovered ? 0.90 : 0.58) };
+
+			if (hovered)
+			{
+				Cursor::RequestStyle(CursorStyle::Hand);
+			}
+
+			rect.rounded(12).draw(fillColor);
+			rect.rounded(12).drawFrame(2, frameColor);
+			m_buttonFont(definition.label).drawAt(19, rect.center().movedBy(0, -8), Palette::White);
+			m_infoFont(definition.roleDescription).drawAt(12, rect.center().movedBy(0, 12), ColorF{ 0.90, 0.94, 1.0, 0.84 });
+		}
+
+		DrawIconChip(GetUnitListHelpIcon(), U"?", ColorF{ 0.16, 0.22, 0.34, 0.96 }, ColorF{ 0.84, 0.90, 1.0, 0.80 });
+		return;
+	}
+
 	const auto& unitTypes = GetFormationUnitTypes();
 
 	for (size_t index = 0; index < unitTypes.size(); ++index)
@@ -66,10 +102,23 @@ void UnitEditorScene::DrawUnitList() const
 
 void UnitEditorScene::DrawPreviewPanel() const
 {
-  DrawFormationUnitButton(RectF{ 352, 150, 220, 56 }, m_buttonFont, m_infoFont, GetNormalizedEditingDefinition(), true);
-	DrawLabeledValue(GetPreviewLineIcon(0), U"#", Vec2{ 352, 222 }, U"ID {}"_fmt(ff::GetUnitStableId(m_unitId)), ColorF{ 0.88, 0.92, 1.0, 0.76 });
-	DrawLabeledValue(GetPreviewLineIcon(1), U"◎", Vec2{ 352, 252 }, GetNormalizedEditingDefinition().label, Palette::White);
-	DrawLabeledValue(GetPreviewLineIcon(2), U"↓", Vec2{ 352, 282 }, ff::GetUserUnitDefinitionsPath(), ColorF{ 0.84, 0.90, 1.0, 0.72 });
+    if (IsEnemyEditor())
+	{
+		const ff::EnemyDefinition definition = GetNormalizedEditingEnemyDefinition();
+		const RectF previewRect{ 352, 150, 220, 56 };
+		previewRect.rounded(12).draw(definition.color.lerp(ColorF{ 0.18, 0.22, 0.34 }, 0.44));
+		previewRect.rounded(12).drawFrame(2, definition.color);
+		m_buttonFont(definition.label).drawAt(19, previewRect.center().movedBy(0, -8), Palette::White);
+		m_infoFont(definition.roleDescription).drawAt(12, previewRect.center().movedBy(0, 12), ColorF{ 0.90, 0.94, 1.0, 0.84 });
+	}
+	else
+	{
+		DrawFormationUnitButton(RectF{ 352, 150, 220, 56 }, m_buttonFont, m_infoFont, GetNormalizedEditingDefinition(), true);
+	}
+
+	DrawLabeledValue(GetPreviewLineIcon(0), U"#", Vec2{ 352, 222 }, U"ID {}"_fmt(GetCurrentStableId()), ColorF{ 0.88, 0.92, 1.0, 0.76 });
+	DrawLabeledValue(GetPreviewLineIcon(1), U"◎", Vec2{ 352, 252 }, GetCurrentDisplayName(), Palette::White);
+	DrawLabeledValue(GetPreviewLineIcon(2), U"↓", Vec2{ 352, 282 }, GetCurrentDefinitionPath(), ColorF{ 0.84, 0.90, 1.0, 0.72 });
 }
 
 void UnitEditorScene::DrawEditorPanel() const
@@ -109,17 +158,17 @@ void UnitEditorScene::DrawEditorPanel() const
 	}
 
 	const RectF swatch = GetColorPreview();
-	swatch.rounded(18).draw(GetNormalizedEditingDefinition().color);
+    swatch.rounded(18).draw(IsEnemyEditor() ? GetNormalizedEditingEnemyDefinition().color : GetNormalizedEditingDefinition().color);
 	swatch.rounded(18).drawFrame(2, ColorF{ 0.92, 0.96, 1.0, 0.86 });
-	DrawIconChip(GetColorPreviewIcon(), U"●", ColorF{ 0.16, 0.22, 0.34, 0.96 }, ColorF{ 0.92, 0.96, 1.0, 0.86 }, GetNormalizedEditingDefinition().color);
+   DrawIconChip(GetColorPreviewIcon(), U"●", ColorF{ 0.16, 0.22, 0.34, 0.96 }, ColorF{ 0.92, 0.96, 1.0, 0.86 }, IsEnemyEditor() ? GetNormalizedEditingEnemyDefinition().color : GetNormalizedEditingDefinition().color);
 }
 
 void UnitEditorScene::DrawInfoPanel(const ff::UnitDefinition& loadedDefinition, const ff::UnitDefinition& normalizedDefinition) const
 {
 	const Array<String> changeLines = BuildChangeLines(loadedDefinition, normalizedDefinition);
-   const size_t maxVisibleChangeLines = 3;
+	const size_t maxVisibleChangeLines = 3;
 	const size_t visibleChangeLines = Min(changeLines.size(), maxVisibleChangeLines);
-   const auto clipText = [](const String& text, const size_t maxLength)
+	const auto clipText = [](const String& text, const size_t maxLength) -> String
 	{
 		if (text.size() <= maxLength)
 		{
@@ -132,7 +181,7 @@ void UnitEditorScene::DrawInfoPanel(const ff::UnitDefinition& loadedDefinition, 
 	const double hpPerCost = (normalizedDefinition.summonCost > 0) ? (normalizedDefinition.maxHp / normalizedDefinition.summonCost) : 0.0;
 	const double dummyKillSeconds = (dps > 0.0) ? (100.0 / dps) : 0.0;
 
-    DrawLabeledValue(GetMetricIcon(0), U"✦", Vec2{ 348, 390 }, U"DPS {:.2f}"_fmt(dps), Palette::White);
+	DrawLabeledValue(GetMetricIcon(0), U"✦", Vec2{ 348, 390 }, U"DPS {:.2f}"_fmt(dps), Palette::White);
 	DrawLabeledValue(GetMetricIcon(1), U"+", Vec2{ 348, 420 }, U"HP/Cost {:.2f}"_fmt(hpPerCost), Palette::White);
 	DrawLabeledValue(GetMetricIcon(2), U"◎", Vec2{ 348, 450 }, U"100HP {:.2f}s"_fmt(dummyKillSeconds), Palette::White);
 	DrawLabeledValue(GetMetricIcon(3), U"×", Vec2{ 348, 480 }, U"RangeDPS {:.2f}"_fmt(normalizedDefinition.attackRange * dps), Palette::White);
@@ -140,18 +189,60 @@ void UnitEditorScene::DrawInfoPanel(const ff::UnitDefinition& loadedDefinition, 
 	DrawIconChip(GetChangeListIcon(), U"≡", ColorF{ 0.16, 0.22, 0.34, 0.96 }, ColorF{ 0.84, 0.90, 1.0, 0.80 });
 	if (changeLines.isEmpty())
 	{
-        m_infoFont(U"変更はありません").draw(Vec2{ 348, 532 }, ColorF{ 0.82, 0.92, 1.0, 0.78 });
+		m_infoFont(U"変更はありません").draw(Vec2{ 348, 532 }, ColorF{ 0.82, 0.92, 1.0, 0.78 });
 	}
 	else
 	{
-     for (size_t index = 0; index < visibleChangeLines; ++index)
+		for (size_t index = 0; index < visibleChangeLines; ++index)
 		{
-            m_infoFont(clipText(changeLines[index], 20)).draw(Vec2{ 348, (532 + (index * 24)) }, ColorF{ 0.92, 0.95, 1.0, 0.86 });
+			m_infoFont(clipText(changeLines[index], 20)).draw(Vec2{ 348, (532 + (index * 24)) }, ColorF{ 0.92, 0.95, 1.0, 0.86 });
 		}
 
 		if (changeLines.size() > visibleChangeLines)
 		{
 			m_infoFont(U"…ほか {} 件"_fmt(changeLines.size() - visibleChangeLines)).draw(Vec2{ 348, (532 + (visibleChangeLines * 24)) }, ColorF{ 0.82, 0.92, 1.0, 0.70 });
+		}
+	}
+}
+
+void UnitEditorScene::DrawInfoPanel(const ff::EnemyDefinition& loadedDefinition, const ff::EnemyDefinition& normalizedDefinition) const
+{
+	const Array<String> changeLines = BuildChangeLines(loadedDefinition, normalizedDefinition);
+	const size_t maxVisibleChangeLines = 3;
+	const size_t visibleChangeLines = Min(changeLines.size(), maxVisibleChangeLines);
+	const auto clipText = [](const String& text, const size_t maxLength) -> String
+	{
+		if (text.size() <= maxLength)
+		{
+			return text;
+		}
+
+		return text.substr(0, (maxLength - 3)) + U"...";
+	};
+	const double dps = (normalizedDefinition.attackInterval > 0.0) ? (normalizedDefinition.attackDamage / normalizedDefinition.attackInterval) : 0.0;
+	const double pressure = normalizedDefinition.speed * dps;
+	const double timeToPlayer = (normalizedDefinition.speed > 0.0) ? (10.0 / normalizedDefinition.speed) : 0.0;
+
+	DrawLabeledValue(GetMetricIcon(0), U"✦", Vec2{ 348, 390 }, U"DPS {:.2f}"_fmt(dps), Palette::White);
+	DrawLabeledValue(GetMetricIcon(1), U">", Vec2{ 348, 420 }, U"Speed {:.2f}"_fmt(normalizedDefinition.speed), Palette::White);
+	DrawLabeledValue(GetMetricIcon(2), U"⇄", Vec2{ 348, 450 }, U"10tile {:.2f}s"_fmt(timeToPlayer), Palette::White);
+	DrawLabeledValue(GetMetricIcon(3), U"×", Vec2{ 348, 480 }, U"Pressure {:.2f}"_fmt(pressure), Palette::White);
+	DrawLabeledValue(GetChangeListIcon(), U"$", Vec2{ 348, 510 }, U"Reward x{}"_fmt(normalizedDefinition.rewardMultiplier), ColorF{ 0.96, 0.86, 0.56, 0.92 });
+
+	if (changeLines.isEmpty())
+	{
+		m_infoFont(U"変更はありません").draw(Vec2{ 348, 552 }, ColorF{ 0.82, 0.92, 1.0, 0.78 });
+	}
+	else
+	{
+		for (size_t index = 0; index < visibleChangeLines; ++index)
+		{
+			m_infoFont(clipText(changeLines[index], 20)).draw(Vec2{ 348, (552 + (index * 22)) }, ColorF{ 0.92, 0.95, 1.0, 0.86 });
+		}
+
+		if (changeLines.size() > visibleChangeLines)
+		{
+			m_infoFont(U"…ほか {} 件"_fmt(changeLines.size() - visibleChangeLines)).draw(Vec2{ 348, (552 + (visibleChangeLines * 22)) }, ColorF{ 0.82, 0.92, 1.0, 0.70 });
 		}
 	}
 }

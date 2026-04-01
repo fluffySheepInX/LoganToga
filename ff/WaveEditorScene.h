@@ -17,6 +17,7 @@ private:
 	{
 		None,
 		BackToFormation,
+     OpenEnemyEditor,
 		ReloadFromDisk,
 	};
 
@@ -29,7 +30,7 @@ private:
 	bool HandlePrimaryActions();
 	bool HandleAdjustments();
 	void HandleKeyboardShortcuts();
-	bool RequestAction(PendingAction action);
+   bool RequestAction(PendingAction action, Optional<ff::EnemyKind> targetEnemyKind = none);
 	void CommitPendingAction();
 	void ClearPendingAction();
 	void ReloadEditingConfig();
@@ -74,6 +75,7 @@ private:
 	[[nodiscard]] RectF GetSpawnRow(size_t index) const;
 	[[nodiscard]] RectF GetSpawnDecreaseButton(size_t index) const;
 	[[nodiscard]] RectF GetSpawnIncreaseButton(size_t index) const;
+ [[nodiscard]] RectF GetSpawnEditButton(size_t index) const;
 	[[nodiscard]] RectF GetResetButton() const;
 	[[nodiscard]] RectF GetReloadButton() const;
 	[[nodiscard]] RectF GetSaveButton() const;
@@ -98,5 +100,6 @@ private:
 	mutable TextEditState m_descriptionEditState;
 	String m_debugStatus;
 	PendingAction m_pendingAction = PendingAction::None;
+    Optional<ff::EnemyKind> m_pendingEnemyKind;
 	bool m_lastSaveSucceeded = true;
 };

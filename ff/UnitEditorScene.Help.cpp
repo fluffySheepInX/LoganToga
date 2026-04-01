@@ -9,7 +9,7 @@ Optional<String> UnitEditorScene::GetHoveredTooltipText() const
 
 	if (GetUnitPanelHeaderIcon().mouseOver())
 	{
-		return U"ユニット一覧";
+       return IsEnemyEditor() ? U"エネミー一覧" : U"ユニット一覧";
 	}
 
 	if (GetPreviewPanelHeaderIcon().mouseOver())
@@ -29,17 +29,17 @@ Optional<String> UnitEditorScene::GetHoveredTooltipText() const
 
 	if (GetUnitListHelpIcon().mouseOver())
 	{
-		return U"クリックで編集中ユニットを切り替えます";
+      return IsEnemyEditor() ? U"クリックで編集中エネミーを切り替えます" : U"クリックで編集中ユニットを切り替えます";
 	}
 
 	if (GetPreviewLineIcon(0).mouseOver())
 	{
-		return U"ユニットID";
+       return IsEnemyEditor() ? U"エネミーID" : U"ユニットID";
 	}
 
 	if (GetPreviewLineIcon(1).mouseOver())
 	{
-		return U"編集中ユニット";
+      return IsEnemyEditor() ? U"編集中エネミー" : U"編集中ユニット";
 	}
 
 	if (GetPreviewLineIcon(2).mouseOver())
@@ -90,17 +90,17 @@ Optional<String> UnitEditorScene::GetHoveredTooltipText() const
 
 	if (GetMetricIcon(1).mouseOver())
 	{
-		return U"HP / Cost";
+        return IsEnemyEditor() ? U"移動速度" : U"HP / Cost";
 	}
 
 	if (GetMetricIcon(2).mouseOver())
 	{
-		return U"100HP 撃破目安";
+       return IsEnemyEditor() ? U"10タイル接近時間" : U"100HP 撃破目安";
 	}
 
 	if (GetMetricIcon(3).mouseOver())
 	{
-		return U"射程 x DPS";
+     return IsEnemyEditor() ? U"Speed x DPS" : U"射程 x DPS";
 	}
 
 	if (GetChangeListIcon().mouseOver())
@@ -125,7 +125,7 @@ Optional<String> UnitEditorScene::GetHoveredTooltipText() const
 
 	if (GetBackButton().mouseOver())
 	{
-		return U"編成画面へ戻る";
+      return GetBackButtonTooltipText();
 	}
 
 	return none;
@@ -136,9 +136,11 @@ String UnitEditorScene::GetPendingActionMessage() const
 	switch (m_pendingAction)
 	{
 	case PendingAction::BackToFormation:
-		return U"編成画面へ戻ります";
+        return getData().unitEditorReturnToWaveEditor ? U"Wave編集へ戻ります" : U"編成画面へ戻ります";
 	case PendingAction::SwitchUnit:
 		return m_pendingUnitId ? U"{} に切り替えます"_fmt(ff::GetUnitDefinition(*m_pendingUnitId).label) : U"別ユニットへ切り替えます";
+ case PendingAction::SwitchEnemy:
+		return m_pendingEnemyKind ? U"{} に切り替えます"_fmt(ff::GetEnemyDefinition(*m_pendingEnemyKind).label) : U"別エネミーへ切り替えます";
 	case PendingAction::ReloadFromDisk:
 		return U"ディスクから再読込します";
 	case PendingAction::ResetToDefault:
