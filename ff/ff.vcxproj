@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -133,12 +133,20 @@
     <ClCompile Include="TextureAssets.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="UI.cpp" />
+    <ClCompile Include="UnitEditorScene.cpp" />
+    <ClCompile Include="UnitEditorScene.Draw.cpp" />
+    <ClCompile Include="UnitEditorScene.Edit.cpp" />
+    <ClCompile Include="UnitEditorScene.Help.cpp" />
+    <ClCompile Include="UnitEditorScene.Input.cpp" />
+    <ClCompile Include="UnitEditorScene.Layout.cpp" />
+    <ClCompile Include="UnitEditorScene.Model.cpp" />
     <ClCompile Include="UnitLogic.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WaveEditorScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />
@@ -154,7 +162,10 @@
     <ClInclude Include="TextureAssets.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="UI.h" />
+    <ClInclude Include="UnitEditorScene.h" />
     <ClInclude Include="UnitLogic.h" />
+    <ClInclude Include="WaveDefinitions.h" />
+    <ClInclude Include="WaveEditorScene.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\engine\texture\box-shadow\128.png" />
@@ -341,6 +352,7 @@
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="App\waveDefinitions.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\shot.mp3" />

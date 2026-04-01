@@ -12,19 +12,33 @@ public:
 	void draw() const override;
 
 private:
+	bool HandleSceneNavigation();
+	bool HandleUtilityActions();
+	bool HandlePresetInput();
+	bool HandleUnitSelection();
+	bool HandleSlotInput();
+
+	void DrawPanels() const;
+	void DrawHeader() const;
+	void DrawUnitList() const;
+	void DrawSlots() const;
+	void DrawPresets() const;
+	void DrawBottomButtons() const;
+
 	RectF GetUnitButton(size_t index) const;
 	RectF GetSlotButton(size_t index) const;
-    RectF GetConfirmButton() const;
+	RectF GetConfirmButton() const;
 	RectF GetBackButton() const;
 	RectF GetPresetCard(size_t index) const;
 	RectF GetPresetLoadButton(size_t index) const;
 	RectF GetPresetSaveButton(size_t index) const;
 	RectF GetRandomButton() const;
 	RectF GetClearButton() const;
+	RectF GetUnitEditButton() const;
+	RectF GetWaveEditButton() const;
 
 	Font m_titleFont;
 	Font m_buttonFont;
 	Font m_infoFont;
-  Array<Optional<ff::AllyBehavior>> m_editingFormationSlots;
-	Optional<ff::AllyBehavior> m_selectedFormationUnit;
+	ff::FormationEditState m_editingFormation;
 };

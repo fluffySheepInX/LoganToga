@@ -1,0 +1,285 @@
+schemaVersion = 1
+wave_start_delay = 1.800
+wave_clear_delay = 4.000
+wave_banner_duration = 1.600
+waveCount = 20
+
+[[waves]]
+wave = 1
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "reinforced"
+enemy_hp_multiplier = 1.350
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 1.224
+spawn_queue = ["normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 2
+type = "standard"
+label = "Swarm"
+description = "数で押す"
+accent_color = [0.840, 0.700, 0.220, 1.000]
+trait = "assault"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.180
+enemy_attack_interval_multiplier = 0.860
+reward_bonus_per_kill = 0
+spawn_interval = 1.378
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 3
+type = "standard"
+label = "Pressure"
+description = "持続圧力"
+accent_color = [0.580, 0.340, 0.920, 1.000]
+trait = "bounty"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 1
+spawn_interval = 1.654
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 4
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.979
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 5
+type = "mid_boss"
+label = "Mid Boss"
+description = "中ボス + 少数護衛"
+accent_color = [0.960, 0.400, 0.220, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.820
+spawn_queue = ["mid_boss", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 6
+type = "standard"
+label = "Pressure"
+description = "持続圧力"
+accent_color = [0.580, 0.340, 0.920, 1.000]
+trait = "assault"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.180
+enemy_attack_interval_multiplier = 0.860
+reward_bonus_per_kill = 0
+spawn_interval = 1.272
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 7
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "bounty"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 1
+spawn_interval = 0.734
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 8
+type = "standard"
+label = "Swarm"
+description = "数で押す"
+accent_color = [0.840, 0.700, 0.220, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.787
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 9
+type = "standard"
+label = "Pressure"
+description = "持続圧力"
+accent_color = [0.580, 0.340, 0.920, 1.000]
+trait = "reinforced"
+enemy_hp_multiplier = 1.350
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.890
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 10
+type = "mid_boss"
+label = "Mid Boss"
+description = "中ボス + 少数護衛"
+accent_color = [0.960, 0.400, 0.220, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.820
+spawn_queue = ["mid_boss", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 11
+type = "standard"
+label = "Swarm"
+description = "数で押す"
+accent_color = [0.840, 0.700, 0.220, 1.000]
+trait = "bounty"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 1
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 12
+type = "standard"
+label = "Pressure"
+description = "持続圧力"
+accent_color = [0.580, 0.340, 0.920, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.583
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 13
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "reinforced"
+enemy_hp_multiplier = 1.350
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 14
+type = "standard"
+label = "Swarm"
+description = "数で押す"
+accent_color = [0.840, 0.700, 0.220, 1.000]
+trait = "assault"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.180
+enemy_attack_interval_multiplier = 0.860
+reward_bonus_per_kill = 0
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 15
+type = "mid_boss"
+label = "Mid Boss"
+description = "中ボス + 少数護衛"
+accent_color = [0.960, 0.400, 0.220, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.820
+spawn_queue = ["mid_boss", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 16
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 17
+type = "standard"
+label = "Swarm"
+description = "数で押す"
+accent_color = [0.840, 0.700, 0.220, 1.000]
+trait = "reinforced"
+enemy_hp_multiplier = 1.350
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 18
+type = "standard"
+label = "Pressure"
+description = "持続圧力"
+accent_color = [0.580, 0.340, 0.920, 1.000]
+trait = "assault"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.180
+enemy_attack_interval_multiplier = 0.860
+reward_bonus_per_kill = 0
+spawn_interval = 0.583
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 19
+type = "standard"
+label = "Rush"
+description = "高速接近"
+accent_color = [0.960, 0.440, 0.340, 1.000]
+trait = "bounty"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 1
+spawn_interval = 0.550
+spawn_queue = ["normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+
+[[waves]]
+wave = 20
+type = "true_boss"
+label = "True Boss"
+description = "撃破でクリア"
+accent_color = [0.760, 0.340, 0.960, 1.000]
+trait = "none"
+enemy_hp_multiplier = 1.000
+enemy_speed_multiplier = 1.000
+enemy_attack_interval_multiplier = 1.000
+reward_bonus_per_kill = 0
+spawn_interval = 1.150
+spawn_queue = ["true_boss"]

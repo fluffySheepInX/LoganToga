@@ -93,11 +93,17 @@ namespace ff
 		return closest->pos;
 	}
 
- int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Enemy>* defeatedEnemies, const bool canDamagePlayer, bool* playerWasHit)
+ int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Enemy>* defeatedEnemies, const bool canDamagePlayer, bool* playerWasHit, CombatTelemetry* combatTelemetry)
 	{
 		Array<double> enemyDamage(enemies.size(), 0.0);
 		Array<double> allyDamage(allies.size(), 0.0);
 		bool playerCanTakeDamage = canDamagePlayer;
+
+		if (combatTelemetry)
+		{
+			combatTelemetry->allyDamageDealt.assign(allies.size(), 0.0);
+			combatTelemetry->allySurvived.assign(allies.size(), false);
+		}
 
 		if (playerWasHit)
 		{
@@ -130,6 +136,10 @@ namespace ff
 			  if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, GetAllyAttackRange(ally.behavior)))
 			{
                 enemyDamage[*targetIndex] += allyDamage;
+               if (combatTelemetry)
+				{
+					combatTelemetry->allyDamageDealt[i] += allyDamage;
+				}
 				ally.attackCooldown = allyAttackInterval;
 			}
 		}
@@ -195,8 +205,16 @@ namespace ff
        Array<Ally> survivingAllies;
 		survivingAllies.reserve(allies.size());
 
-		for (const auto& ally : allies)
+     for (size_t i = 0; i < allies.size(); ++i)
 			{
+              const auto& ally = allies[i];
+				const bool survived = (ally.hp > 0.0);
+
+				if (combatTelemetry)
+				{
+					combatTelemetry->allySurvived[i] = survived;
+				}
+
                 if (ally.hp > 0.0)
 				{
 					survivingAllies << ally;

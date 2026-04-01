@@ -38,10 +38,24 @@ void GameScene::UpdateSummoning()
 {
  if (const auto summonRequest = ff::CheckSummonAllyButtonPressed(getData().formationSlots))
 	{
+        ++m_totalSummonAttempts;
+		const int32 busyWindowIndex = static_cast<int32>(m_elapsedBattleTime / 10.0);
+		if (m_busyWindowAnalytics.size() <= static_cast<size_t>(busyWindowIndex))
+		{
+			m_busyWindowAnalytics.resize(busyWindowIndex + 1);
+		}
+
+		auto& busyWindow = m_busyWindowAnalytics[busyWindowIndex];
+		busyWindow.startTime = (busyWindowIndex * 10.0);
+		++busyWindow.summonAttempts;
+		busyWindow.activityScore += 1.0;
         const int32 summonCost = ff::GetSummonCost(summonRequest->behavior, m_currentWaveTrait, getData().summonDiscountTraits);
 
 		if (m_resourceCount < summonCost)
 		{
+          ++m_totalDeniedSummons;
+			++busyWindow.deniedSummons;
+			busyWindow.activityScore += 0.45;
 			m_deniedSummonSlot = summonRequest->slotIndex;
 			m_deniedSummonTimer = 0.28;
 			return;
@@ -52,6 +66,10 @@ void GameScene::UpdateSummoning()
 		if (ff::SpawnAlly(m_allies, m_terrain, m_playerPos, summonRequest->behavior))
 		{
 			m_resourceCount -= summonCost;
+          ++busyWindow.successfulSummons;
+			m_unitBattleAnalytics[ff::ToIndex(summonRequest->behavior)].summonCount += 1;
+			m_unitBattleAnalytics[ff::ToIndex(summonRequest->behavior)].totalCost += summonCost;
+			m_activeAllyAnalytics << ActiveAllyAnalytics{ summonRequest->behavior, 0.0 };
            m_deniedSummonSlot.reset();
 			m_deniedSummonTimer = 0.0;
 
@@ -61,6 +79,94 @@ void GameScene::UpdateSummoning()
 			}
 		}
 	}
+}
+
+void GameScene::UpdateBattleAnalytics(const ff::CombatTelemetry& combatTelemetry, const bool playerWasHit)
+{
+	if (playerWasHit)
+	{
+		const int32 busyWindowIndex = static_cast<int32>(m_elapsedBattleTime / 10.0);
+		if (m_busyWindowAnalytics.size() <= static_cast<size_t>(busyWindowIndex))
+		{
+			m_busyWindowAnalytics.resize(busyWindowIndex + 1);
+		}
+
+		auto& busyWindow = m_busyWindowAnalytics[busyWindowIndex];
+		busyWindow.startTime = (busyWindowIndex * 10.0);
+		++busyWindow.playerHits;
+		busyWindow.activityScore += 1.2;
+	}
+
+	Array<ActiveAllyAnalytics> survivingAnalytics;
+	survivingAnalytics.reserve(m_activeAllyAnalytics.size());
+
+	for (size_t index = 0; index < m_activeAllyAnalytics.size(); ++index)
+	{
+		auto& unitAnalytics = m_unitBattleAnalytics[ff::ToIndex(m_activeAllyAnalytics[index].unitId)];
+		if (index < combatTelemetry.allyDamageDealt.size())
+		{
+			unitAnalytics.totalDamage += combatTelemetry.allyDamageDealt[index];
+		}
+
+		const bool survived = ((index < combatTelemetry.allySurvived.size()) ? combatTelemetry.allySurvived[index] : false);
+		if (survived)
+		{
+			survivingAnalytics << m_activeAllyAnalytics[index];
+		}
+		else
+		{
+			unitAnalytics.totalLifetime += m_activeAllyAnalytics[index].lifetime;
+		}
+	}
+
+	m_activeAllyAnalytics = std::move(survivingAnalytics);
+}
+
+void GameScene::UpdateDefeatState()
+{
+	FinalizeBattleAnalytics();
+	m_menuOpen = false;
+
+	if (KeyTab.down() || KeyRight.down())
+	{
+		m_defeatReportPage = ((m_defeatReportPage + 1) % Max(1, GetDefeatReportPageCount()));
+		return;
+	}
+
+	if (KeyLeft.down())
+	{
+		const int32 pageCount = Max(1, GetDefeatReportPageCount());
+		m_defeatReportPage = ((m_defeatReportPage + pageCount - 1) % pageCount);
+		return;
+	}
+
+	if (KeyEnter.down() || MouseL.down())
+	{
+		changeScene(U"Title");
+	}
+}
+
+void GameScene::FinalizeBattleAnalytics()
+{
+	if (m_battleAnalyticsFinalized)
+	{
+		return;
+	}
+
+	for (const auto& allyAnalytics : m_activeAllyAnalytics)
+	{
+		m_unitBattleAnalytics[ff::ToIndex(allyAnalytics.unitId)].totalLifetime += allyAnalytics.lifetime;
+	}
+
+	m_activeAllyAnalytics.clear();
+	m_battleAnalyticsFinalized = true;
+}
+
+int32 GameScene::GetDefeatReportPageCount() const
+{
+	constexpr int32 UnitsPerPage = 6;
+	const int32 unitCount = static_cast<int32>(ff::GetAvailableUnitIds().size());
+	return (1 + Max(1, ((unitCount + UnitsPerPage - 1) / UnitsPerPage)));
 }
 
 void GameScene::UpdateSummonFeedback()

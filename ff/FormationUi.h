@@ -1,9 +1,9 @@
 ﻿# pragma once
 # include "GameConstants.h"
 
-const Array<ff::AllyBehavior>& GetFormationUnitTypes();
-String GetAllyBehaviorLabel(ff::AllyBehavior behavior);
-StringView GetAllyBehaviorRoleDescription(ff::AllyBehavior behavior);
-ColorF GetAllyBehaviorColor(ff::AllyBehavior behavior);
-void DrawFormationUnitButton(const RectF& rect, const Font& font, const Font& infoFont, ff::AllyBehavior behavior, bool selected);
-String GetFormationSlotLabel(const Optional<ff::AllyBehavior>& behavior, size_t index);
+const Array<ff::UnitId>& GetFormationUnitTypes();
+String GetAllyBehaviorLabel(ff::UnitId behavior);
+StringView GetAllyBehaviorRoleDescription(ff::UnitId behavior);
+ColorF GetAllyBehaviorColor(ff::UnitId behavior);
+void DrawFormationUnitButton(const RectF& rect, const Font& font, const Font& infoFont, const ff::UnitDefinition& unitDefinition, bool selected);
+String GetFormationSlotLabel(const Optional<ff::UnitId>& behavior, size_t index);

@@ -14,10 +14,17 @@ GameScene::GameScene(const InitData& init)
 	, m_enemySpawnTiles{ ff::CollectEnemySpawnTiles(m_terrain) }
 {
 	SetTimeOfDay(getData().timeOfDay);
+   m_resourceIntegral = static_cast<double>(m_resourceCount);
 }
 
 void GameScene::update()
 {
+   if (m_playerHp <= 0.0)
+	{
+		UpdateDefeatState();
+		return;
+	}
+
 	if (KeyEscape.down())
 	{
 		m_menuOpen = (not m_menuOpen);
@@ -39,9 +46,37 @@ void GameScene::update()
 		return;
 	}
 
-	if (m_playerHp <= 0.0)
+  const double deltaTime = Scene::DeltaTime();
+	m_elapsedBattleTime += deltaTime;
+	m_resourceIntegral += (static_cast<double>(m_resourceCount) * deltaTime);
+
+	if (m_resourceCount <= 2)
 	{
-		return;
+		m_lowResourceTime += deltaTime;
+	}
+
+	if (m_resourceCount >= 10)
+	{
+		m_highResourceTime += deltaTime;
+	}
+
+	if (ff::GetMovementInput() != Vec2{ 0.0, 0.0 })
+	{
+		const int32 busyWindowIndex = static_cast<int32>(m_elapsedBattleTime / 10.0);
+		if (m_busyWindowAnalytics.size() <= static_cast<size_t>(busyWindowIndex))
+		{
+			m_busyWindowAnalytics.resize(busyWindowIndex + 1);
+		}
+
+		auto& busyWindow = m_busyWindowAnalytics[busyWindowIndex];
+		busyWindow.startTime = (busyWindowIndex * 10.0);
+		busyWindow.movementSeconds += deltaTime;
+		busyWindow.activityScore += (0.55 * deltaTime);
+	}
+
+	for (auto& allyAnalytics : m_activeAllyAnalytics)
+	{
+		allyAnalytics.lifetime += deltaTime;
 	}
 
 	UpdateSummoning();
@@ -53,7 +88,9 @@ void GameScene::update()
 	bool playerWasHit = false;
 	ff::UpdateAllies(m_allies, m_enemies, m_terrain, m_playerPos);
 	ff::UpdateEnemies(m_enemies, m_terrain, m_playerPos);
-    ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, &defeatedEnemies, (m_playerInvincibilityTimer <= 0.0), &playerWasHit);
+   ff::CombatTelemetry combatTelemetry;
+	ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, &defeatedEnemies, (m_playerInvincibilityTimer <= 0.0), &playerWasHit, &combatTelemetry);
+    UpdateBattleAnalytics(combatTelemetry, playerWasHit);
 
 	if (playerWasHit)
 	{
@@ -79,6 +116,7 @@ void GameScene::update()
 
 	if (trueBossDefeated)
 	{
+      FinalizeBattleAnalytics();
 		m_stageCleared = true;
        m_menuOpen = false;
 		m_waveActive = false;

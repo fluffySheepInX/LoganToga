@@ -13,16 +13,24 @@ namespace ff
 
  inline constexpr size_t FormationSlotCount = 8;
 	inline constexpr size_t FormationPresetCount = 3;
-	inline constexpr int32 FormationSaveSchemaVersion = 2;
+  inline constexpr int32 FormationSaveSchemaVersion = 3;
+	using FormationSlotUnit = Optional<UnitId>;
+	using FormationSlots = Array<FormationSlotUnit>;
 
-	[[nodiscard]] inline Array<Optional<AllyBehavior>> MakeEmptyFormationSlots()
+	struct FormationEditState
 	{
-		return Array<Optional<AllyBehavior>>(FormationSlotCount);
+       FormationSlots slots = FormationSlots(FormationSlotCount);
+		Optional<UnitId> selectedUnit = UnitId::GuardPlayer;
+	};
+
+    [[nodiscard]] inline FormationSlots MakeEmptyFormationSlots()
+	{
+       return FormationSlots(FormationSlotCount);
 	}
 
-	[[nodiscard]] inline Array<Array<Optional<AllyBehavior>>> MakeDefaultFormationPresets()
+ [[nodiscard]] inline Array<FormationSlots> MakeDefaultFormationPresets()
 	{
-		Array<Array<Optional<AllyBehavior>>> presets;
+       Array<FormationSlots> presets;
 		presets.reserve(FormationPresetCount);
 
 		for (size_t index = 0; index < FormationPresetCount; ++index)
@@ -33,38 +41,121 @@ namespace ff
 		return presets;
 	}
 
+	[[nodiscard]] inline int32 CountAssignedFormationUnits(const FormationSlots& slots)
+	{
+		return static_cast<int32>(std::count_if(slots.begin(), slots.end(), [](const auto& slot)
+			{
+				return static_cast<bool>(slot);
+			}));
+	}
+
+	[[nodiscard]] inline bool HasAssignedFormationSlot(const FormationSlots& slots)
+	{
+		return std::any_of(slots.begin(), slots.end(), [](const auto& slot)
+			{
+				return static_cast<bool>(slot);
+			});
+	}
+
+	[[nodiscard]] inline FormationSlots MakeRandomFormationSlots()
+	{
+		const auto& unitTypes = GetAvailableUnitIds();
+		FormationSlots slots = MakeEmptyFormationSlots();
+
+		for (auto& slot : slots)
+		{
+			slot = unitTypes[Random(unitTypes.size() - 1)];
+		}
+
+		return slots;
+	}
+
+	inline void ClearFormationSlots(FormationSlots& slots)
+	{
+		for (auto& slot : slots)
+		{
+			slot.reset();
+		}
+	}
+
+	[[nodiscard]] inline bool AssignSelectedFormationUnit(FormationEditState& state, const size_t index)
+	{
+		if ((index >= state.slots.size()) || (not state.selectedUnit))
+		{
+			return false;
+		}
+
+		state.slots[index] = state.selectedUnit;
+		return true;
+	}
+
+	[[nodiscard]] inline bool ClearFormationSlot(FormationSlots& slots, const size_t index)
+	{
+		if (index >= slots.size())
+		{
+			return false;
+		}
+
+		slots[index].reset();
+		return true;
+	}
+
 	[[nodiscard]] inline String GetFormationSavePath()
 	{
 		return U"save/formation.toml";
 	}
 
-	[[nodiscard]] inline Optional<AllyBehavior> ToPersistentAllyBehavior(const int32 value)
+ [[nodiscard]] inline Optional<UnitId> ToLegacyPersistentUnitId(const int32 value)
 	{
 		switch (value)
 		{
-		case static_cast<int32>(AllyBehavior::ChaseEnemies):
-			return AllyBehavior::ChaseEnemies;
+        case static_cast<int32>(UnitId::ChaseEnemies):
+			return UnitId::ChaseEnemies;
 
-		case static_cast<int32>(AllyBehavior::HoldPosition):
-			return AllyBehavior::HoldPosition;
+        case static_cast<int32>(UnitId::HoldPosition):
+			return UnitId::HoldPosition;
 
-		case static_cast<int32>(AllyBehavior::GuardPlayer):
-			return AllyBehavior::GuardPlayer;
+     case static_cast<int32>(UnitId::GuardPlayer):
+			return UnitId::GuardPlayer;
 
-		case static_cast<int32>(AllyBehavior::OrbitPlayer):
-			return AllyBehavior::OrbitPlayer;
+     case static_cast<int32>(UnitId::OrbitPlayer):
+			return UnitId::OrbitPlayer;
 
-		case static_cast<int32>(AllyBehavior::FixedTurret):
-			return AllyBehavior::FixedTurret;
+     case static_cast<int32>(UnitId::FixedTurret):
+			return UnitId::FixedTurret;
 
 		default:
 			return none;
 		}
 	}
 
-	[[nodiscard]] inline int32 ToPersistentValue(const Optional<AllyBehavior>& behavior)
+    [[nodiscard]] inline String EscapeTomlString(const String& value)
 	{
-		return behavior ? static_cast<int32>(*behavior) : -1;
+       String escaped;
+		escaped.reserve(value.size());
+
+		for (const auto ch : value)
+		{
+			if (ch == U'\\')
+			{
+				escaped += U"\\\\";
+			}
+			else if (ch == U'\"')
+			{
+				escaped += U"\\\"";
+			}
+			else
+			{
+				escaped.push_back(ch);
+			}
+		}
+
+		return escaped;
+	}
+
+	[[nodiscard]] inline String ToPersistentValue(const Optional<UnitId>& unitId)
+	{
+		return unitId ? String{ GetUnitStableId(*unitId) } : U"";
 	}
 
 	[[nodiscard]] inline String BuildTomlIntArray(const Array<int32>& values)
@@ -85,9 +176,27 @@ namespace ff
 		return result;
 	}
 
-	[[nodiscard]] inline Array<int32> SerializeFormationSlots(const Array<Optional<AllyBehavior>>& slots)
+   [[nodiscard]] inline String BuildTomlStringArray(const Array<String>& values)
 	{
-		Array<int32> values;
+		String result = U"[";
+
+		for (size_t index = 0; index < values.size(); ++index)
+		{
+			if (index > 0)
+			{
+				result += U", ";
+			}
+
+			result += U"\"{}\""_fmt(EscapeTomlString(values[index]));
+		}
+
+		result += U"]";
+		return result;
+	}
+
+	[[nodiscard]] inline Array<String> SerializeFormationSlots(const FormationSlots& slots)
+	{
+        Array<String> values;
 		values.reserve(slots.size());
 
 		for (const auto& slot : slots)
@@ -98,13 +207,23 @@ namespace ff
 		return values;
 	}
 
-	inline void DeserializeFormationSlots(const Array<int32>& values, Array<Optional<AllyBehavior>>& slots)
+ inline void DeserializeFormationSlots(const Array<String>& values, FormationSlots& slots)
 	{
 		slots = MakeEmptyFormationSlots();
 
 		for (size_t index = 0; index < Min(slots.size(), values.size()); ++index)
 		{
-			slots[index] = ToPersistentAllyBehavior(values[index]);
+         slots[index] = values[index].isEmpty() ? none : ParseUnitId(values[index]);
+		}
+	}
+
+	inline void DeserializeLegacyFormationSlots(const Array<int32>& values, FormationSlots& slots)
+	{
+		slots = MakeEmptyFormationSlots();
+
+		for (size_t index = 0; index < Min(slots.size(), values.size()); ++index)
+		{
+			slots[index] = ToLegacyPersistentUnitId(values[index]);
 		}
 	}
 
@@ -117,6 +236,25 @@ namespace ff
 			for (const auto& value : toml[key].arrayView())
 			{
 				values << value.get<int32>();
+			}
+		}
+		catch (const std::exception&)
+		{
+			values.clear();
+		}
+
+		return values;
+	}
+
+	[[nodiscard]] inline Array<String> ReadTomlStringArray(const TOMLReader& toml, const String& key)
+	{
+		Array<String> values;
+
+		try
+		{
+			for (const auto& value : toml[key].arrayView())
+			{
+				values << value.get<String>();
 			}
 		}
 		catch (const std::exception&)
@@ -191,12 +329,23 @@ namespace ff
 
 struct AppData
 {
-    Array<Optional<ff::AllyBehavior>> formationSlots = ff::MakeEmptyFormationSlots();
-	Array<Array<Optional<ff::AllyBehavior>>> formationPresets = ff::MakeDefaultFormationPresets();
-	Optional<ff::AllyBehavior> selectedFormationUnit = ff::AllyBehavior::GuardPlayer;
+    ff::FormationSlots formationSlots = ff::MakeEmptyFormationSlots();
+	Array<ff::FormationSlots> formationPresets = ff::MakeDefaultFormationPresets();
+	Optional<ff::UnitId> selectedFormationUnit = ff::UnitId::GuardPlayer;
      ff::SummonDiscountTraitConfig summonDiscountTraits = ff::MakeDefaultSummonDiscountTraitConfig();
   ff::TimeOfDay timeOfDay = ff::TimeOfDay::Day;
 };
+
+[[nodiscard]] inline ff::FormationEditState MakeFormationEditState(const AppData& data)
+{
+	return ff::FormationEditState{ data.formationSlots, data.selectedFormationUnit };
+}
+
+inline void ApplyFormationEditState(AppData& data, const ff::FormationEditState& state)
+{
+	data.formationSlots = state.slots;
+	data.selectedFormationUnit = state.selectedUnit;
+}
 
 [[nodiscard]] inline AppData LoadAppDataFromDisk()
 {
@@ -224,16 +373,38 @@ struct AppData
 		return data;
 	}
 
-	ff::DeserializeFormationSlots(ff::ReadTomlIntArray(toml, U"formationSlots"), data.formationSlots);
+  if (schemaVersion >= 3)
+	{
+		ff::DeserializeFormationSlots(ff::ReadTomlStringArray(toml, U"formationSlots"), data.formationSlots);
+	}
+	else
+	{
+		ff::DeserializeLegacyFormationSlots(ff::ReadTomlIntArray(toml, U"formationSlots"), data.formationSlots);
+	}
 
 	for (size_t index = 0; index < data.formationPresets.size(); ++index)
 	{
-		ff::DeserializeFormationSlots(ff::ReadTomlIntArray(toml, U"preset{}"_fmt(index + 1)), data.formationPresets[index]);
+        if (schemaVersion >= 3)
+		{
+			ff::DeserializeFormationSlots(ff::ReadTomlStringArray(toml, U"preset{}"_fmt(index + 1)), data.formationPresets[index]);
+		}
+		else
+		{
+			ff::DeserializeLegacyFormationSlots(ff::ReadTomlIntArray(toml, U"preset{}"_fmt(index + 1)), data.formationPresets[index]);
+		}
 	}
 
 	try
 	{
-		data.selectedFormationUnit = ff::ToPersistentAllyBehavior(toml[U"selectedFormationUnit"].get<int32>());
+     if (schemaVersion >= 3)
+		{
+			const String persistentUnitId = toml[U"selectedFormationUnit"].get<String>();
+			data.selectedFormationUnit = persistentUnitId.isEmpty() ? none : ff::ParseUnitId(persistentUnitId);
+		}
+		else
+		{
+			data.selectedFormationUnit = ff::ToLegacyPersistentUnitId(toml[U"selectedFormationUnit"].get<int32>());
+		}
 	}
 	catch (const std::exception&)
 	{
@@ -260,14 +431,14 @@ struct AppData
 
 	String content;
 	content += U"schemaVersion = {}\n"_fmt(ff::FormationSaveSchemaVersion);
-	content += U"formationSlots = {}\n"_fmt(ff::BuildTomlIntArray(ff::SerializeFormationSlots(data.formationSlots)));
+   content += U"formationSlots = {}\n"_fmt(ff::BuildTomlStringArray(ff::SerializeFormationSlots(data.formationSlots)));
 
 	for (size_t index = 0; index < data.formationPresets.size(); ++index)
 	{
-		content += U"preset{} = {}\n"_fmt(index + 1, ff::BuildTomlIntArray(ff::SerializeFormationSlots(data.formationPresets[index])));
+     content += U"preset{} = {}\n"_fmt(index + 1, ff::BuildTomlStringArray(ff::SerializeFormationSlots(data.formationPresets[index])));
 	}
 
-	content += U"selectedFormationUnit = {}\n"_fmt(ff::ToPersistentValue(data.selectedFormationUnit));
+  content += U"selectedFormationUnit = \"{}\"\n"_fmt(ff::EscapeTomlString(ff::ToPersistentValue(data.selectedFormationUnit)));
 
 	for (size_t index = 0; index < data.summonDiscountTraits.size(); ++index)
 	{

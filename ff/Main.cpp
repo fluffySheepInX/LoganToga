@@ -3,6 +3,8 @@
 # include "FormationScene.h"
 # include "GameScene.h"
 # include "TitleScene.h"
+# include "UnitEditorScene.h"
+# include "WaveEditorScene.h"
 
 void Main()
 {
@@ -12,6 +14,8 @@ void Main()
   *manager.get() = LoadAppDataFromDisk();
 	manager.add<TitleScene>(U"Title");
 	manager.add<FormationScene>(U"Formation");
+    manager.add<UnitEditorScene>(U"UnitEditor");
+    manager.add<WaveEditorScene>(U"WaveEditor");
 	manager.add<GameScene>(U"Game");
 
 	while (System::Update())
