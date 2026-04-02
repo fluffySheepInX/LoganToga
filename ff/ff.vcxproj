@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AppBootstrap.cpp" />
+    <ClCompile Include="AppStatePersistence.cpp" />
     <ClCompile Include="FormationScene.cpp" />
     <ClCompile Include="FormationScene.Draw.cpp" />
     <ClCompile Include="FormationScene.Input.cpp" />
@@ -158,10 +159,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />
+    <ClInclude Include="AppData.h" />
     <ClInclude Include="AppState.h" />
+    <ClInclude Include="AppStatePersistence.h" />
     <ClInclude Include="BalanceConstants.h" />
     <ClInclude Include="EnemyTypes.h" />
     <ClInclude Include="FormationScene.h" />
+    <ClInclude Include="FormationState.h" />
     <ClInclude Include="FormationUi.h" />
     <ClInclude Include="GameConstants.h" />
     <ClInclude Include="GameScene.h" />

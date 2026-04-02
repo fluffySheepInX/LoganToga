@@ -40,6 +40,7 @@
     <ClCompile Include="WaveEditorScene.Layout.cpp" />
     <ClCompile Include="GameScene.Result.cpp" />
     <ClCompile Include="GameScene.WaveBanner.cpp" />
+    <ClCompile Include="AppStatePersistence.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />
@@ -81,6 +82,9 @@
     <ClInclude Include="WaveEditorScene.h" />
     <ClInclude Include="WaveTypes.h" />
     <ClInclude Include="ResourceBalance.h" />
+    <ClInclude Include="FormationState.h" />
+    <ClInclude Include="AppData.h" />
+    <ClInclude Include="AppStatePersistence.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
