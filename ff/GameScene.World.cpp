@@ -34,6 +34,11 @@ namespace
 	}
 }
 
+void GameScene::UpdateRushTileBoost()
+{
+	m_rushTileBoostTimer = Max(0.0, (m_rushTileBoostTimer - Scene::DeltaTime()));
+}
+
 void GameScene::UpdateSummoning()
 {
  if (const auto summonRequest = ff::CheckSummonAllyButtonPressed(getData().formationSlots))
@@ -274,7 +279,7 @@ void GameScene::DrawWorld() const
 			{
 				if (ff::ToTileIndex(ally.pos) == tileIndex)
 				{
-         ff::DrawAlly(worldOrigin + ff::ToIsometric(ally.pos), (ally.hp / ff::GetAllyMaxHp(ally.behavior)), ff::IsWithinPlayerCommandRange(ally.pos, m_playerPos));
+                 ff::DrawAlly(worldOrigin + ff::ToIsometric(ally.pos), (ally.hp / ff::GetAllyMaxHp(ally.behavior)), ff::IsWithinPlayerCommandRange(ally.pos, m_playerPos), (m_rushTileBoostTimer > 0.0));
 				}
 			}
 		});

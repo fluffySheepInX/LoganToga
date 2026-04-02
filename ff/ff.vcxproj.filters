@@ -1,12 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="AppBootstrap.cpp" />
     <ClCompile Include="FormationScene.cpp" />
     <ClCompile Include="FormationUi.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="GameScene.Result.cpp" />
     <ClCompile Include="GameScene.Ui.cpp" />
     <ClCompile Include="GameScene.Wave.cpp" />
+    <ClCompile Include="GameScene.WaveBanner.cpp" />
     <ClCompile Include="GameScene.World.cpp" />
     <ClCompile Include="libs\EffFs\EffFs.cpp" />
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
@@ -36,10 +38,14 @@
     <ClCompile Include="WaveEditorScene.Input.cpp" />
     <ClCompile Include="WaveEditorScene.Draw.cpp" />
     <ClCompile Include="WaveEditorScene.Layout.cpp" />
+    <ClCompile Include="GameScene.Result.cpp" />
+    <ClCompile Include="GameScene.WaveBanner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />
     <ClInclude Include="AppState.h" />
+    <ClInclude Include="BalanceConstants.h" />
+    <ClInclude Include="EnemyTypes.h" />
     <ClInclude Include="FormationScene.h" />
     <ClInclude Include="FormationUi.h" />
     <ClInclude Include="GameConstants.h" />
@@ -48,10 +54,13 @@
     <ClInclude Include="MenuUi.h" />
     <ClInclude Include="RenderWorld.h" />
     <ClInclude Include="Terrain.h" />
+    <ClInclude Include="TerrainTypes.h" />
     <ClInclude Include="TextureAssets.h" />
+    <ClInclude Include="TomlUtils.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="UnitLogic.h" />
+    <ClInclude Include="UnitTypes.h" />
     <ClInclude Include="libs\AddonEffFs.h" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="libs\AddonSave.h" />
@@ -66,7 +75,12 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="UnitEditorScene.h" />
     <ClInclude Include="WaveDefinitions.h" />
+    <ClInclude Include="WaveDefinitionDefaults.h" />
+    <ClInclude Include="WaveDefinitionSerialization.h" />
+    <ClInclude Include="WaveDefinitionRepository.h" />
     <ClInclude Include="WaveEditorScene.h" />
+    <ClInclude Include="WaveTypes.h" />
+    <ClInclude Include="ResourceBalance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />
@@ -280,6 +294,7 @@
     <None Include="App\example\shader\hlsl\terrain_forward.hlsl" />
     <None Include="App\example\shader\hlsl\terrain_normal.hlsl" />
     <None Include="App\waveDefinitions.toml" />
+    <None Include="App\resourceBalance.toml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="App\dll\soundtouch\COPYING.TXT" />

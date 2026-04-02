@@ -93,7 +93,7 @@ namespace ff
 		return closest->pos;
 	}
 
- int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, Array<Enemy>* defeatedEnemies, const bool canDamagePlayer, bool* playerWasHit, CombatTelemetry* combatTelemetry)
+ int32 UpdateAutoCombat(Array<Ally>& allies, Array<Enemy>& enemies, const Vec2& playerPos, double& playerHp, const double allyAttackIntervalMultiplier, Array<Enemy>* defeatedEnemies, const bool canDamagePlayer, bool* playerWasHit, CombatTelemetry* combatTelemetry)
 	{
 		Array<double> enemyDamage(enemies.size(), 0.0);
 		Array<double> allyDamage(allies.size(), 0.0);
@@ -131,7 +131,9 @@ namespace ff
 
           const bool commandBuffActive = IsWithinPlayerCommandRange(ally.pos, playerPos);
 			const double allyDamage = GetAllyAttackDamage(ally.behavior) * (commandBuffActive ? PlayerCommandDamageMultiplier : 1.0);
-			const double allyAttackInterval = GetAllyAttackInterval(ally.behavior) * (commandBuffActive ? PlayerCommandAttackIntervalMultiplier : 1.0);
+            const double allyAttackInterval = GetAllyAttackInterval(ally.behavior)
+				* (commandBuffActive ? PlayerCommandAttackIntervalMultiplier : 1.0)
+				* allyAttackIntervalMultiplier;
 
 			  if (const auto targetIndex = FindClosestEnemyIndexInRange(enemies, ally.pos, GetAllyAttackRange(ally.behavior)))
 			{
@@ -255,7 +257,7 @@ namespace ff
 		}
 	}
 
-	void UpdateAllies(Array<Ally>& allies, const Array<Enemy>& enemies, const TerrainGrid& terrain, const Vec2& playerPos)
+  void UpdateAllies(Array<Ally>& allies, const Array<Enemy>& enemies, const TerrainGrid& terrain, const Vec2& playerPos, const double speedMultiplier)
 	{
 		for (auto& ally : allies)
 		{
@@ -264,7 +266,7 @@ namespace ff
 			case AllyBehavior::ChaseEnemies:
 				if (const auto target = FindClosestEnemyPos(enemies, ally.pos))
 				{
-					MoveUnitTowards(ally.pos, *target, terrain, AllySpeed, AllyStopDistance);
+                   MoveUnitTowards(ally.pos, *target, terrain, (AllySpeed * speedMultiplier), AllyStopDistance);
 				}
 				break;
 
@@ -272,7 +274,7 @@ namespace ff
 				break;
 
 			case AllyBehavior::GuardPlayer:
-				MoveUnitTowards(ally.pos, playerPos, terrain, AllySpeed, 1.1);
+              MoveUnitTowards(ally.pos, playerPos, terrain, (AllySpeed * speedMultiplier), 1.1);
 				break;
 
 			case AllyBehavior::OrbitPlayer:
@@ -280,7 +282,7 @@ namespace ff
 				MoveUnitTowards(ally.pos,
 					(playerPos + Circular{ AllyOrbitRadius, ally.orbitAngle }.fastToVec2()),
 					terrain,
-					AllySpeed,
+                  (AllySpeed * speedMultiplier),
 					0.25);
 				break;
 
@@ -367,7 +369,7 @@ namespace ff
 		return movement;
 	}
 
-	void UpdatePlayerPosition(Vec2& playerPos, const TerrainGrid& terrain)
+  void UpdatePlayerPosition(Vec2& playerPos, const TerrainGrid& terrain, const double speedMultiplier)
 	{
 		Vec2 movement = GetMovementInput();
 
@@ -376,7 +378,7 @@ namespace ff
 			return;
 		}
 
-		movement = movement.normalized() * PlayerSpeed * Scene::DeltaTime();
+        movement = movement.normalized() * (PlayerSpeed * speedMultiplier) * Scene::DeltaTime();
 		Vec2 nextPos = (playerPos + movement);
 		nextPos.x = Clamp(nextPos.x, 1.0, (MapSize.x - 2.0));
 		nextPos.y = Clamp(nextPos.y, 1.0, (MapSize.y - 2.0));

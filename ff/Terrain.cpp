@@ -115,6 +115,14 @@ namespace ff
 		candidates.shuffle();
 		TryPlaceSpecialArea(terrain, specialTiles, candidates, SpecialTileKind::Penalty);
 
+        candidates = CollectSpecialAreaCandidates(terrain, specialTiles);
+		candidates.shuffle();
+		TryPlaceSpecialArea(terrain, specialTiles, candidates, SpecialTileKind::Haste);
+
+       candidates = CollectSpecialAreaCandidates(terrain, specialTiles);
+		candidates.shuffle();
+		TryPlaceSpecialArea(terrain, specialTiles, candidates, SpecialTileKind::Rush);
+
 		return specialTiles;
 	}
 
@@ -135,6 +143,26 @@ namespace ff
 			(playerTile + Point{ -1, 0 }),
 			(playerTile + Point{ 0, 0 }),
 		};
+        const Array<Point> preferredRushOrigins = {
+			(playerTile + Point{ 2, 1 }),
+			(playerTile + Point{ -3, 1 }),
+			(playerTile + Point{ 1, 2 }),
+			(playerTile + Point{ 1, -3 }),
+			(playerTile + Point{ 3, 0 }),
+			(playerTile + Point{ -4, 0 }),
+			(playerTile + Point{ 0, 3 }),
+			(playerTile + Point{ 0, -4 }),
+		};
+		const Array<Point> preferredHasteOrigins = {
+			(playerTile + Point{ 3, -2 }),
+			(playerTile + Point{ -4, -2 }),
+			(playerTile + Point{ 2, 3 }),
+			(playerTile + Point{ -2, 3 }),
+			(playerTile + Point{ 3, 2 }),
+			(playerTile + Point{ -4, 2 }),
+			(playerTile + Point{ 2, -4 }),
+			(playerTile + Point{ -2, -4 }),
+		};
 
 		if (not TryPlaceSpecialArea(terrain, specialTiles, preferredBonusOrigins, SpecialTileKind::Bonus))
 		{
@@ -146,6 +174,20 @@ namespace ff
 		Array<Point> penaltyOrigins = CollectSpecialAreaCandidates(terrain, specialTiles);
 		penaltyOrigins.shuffle();
 		TryPlaceSpecialArea(terrain, specialTiles, penaltyOrigins, SpecialTileKind::Penalty);
+
+		if (not TryPlaceSpecialArea(terrain, specialTiles, preferredHasteOrigins, SpecialTileKind::Haste))
+		{
+			Array<Point> fallbackHasteOrigins = CollectSpecialAreaCandidates(terrain, specialTiles);
+			fallbackHasteOrigins.shuffle();
+			TryPlaceSpecialArea(terrain, specialTiles, fallbackHasteOrigins, SpecialTileKind::Haste);
+		}
+
+      if (not TryPlaceSpecialArea(terrain, specialTiles, preferredRushOrigins, SpecialTileKind::Rush))
+		{
+            Array<Point> fallbackRushOrigins = CollectSpecialAreaCandidates(terrain, specialTiles);
+			fallbackRushOrigins.shuffle();
+			TryPlaceSpecialArea(terrain, specialTiles, fallbackRushOrigins, SpecialTileKind::Rush);
+		}
 
 		return specialTiles;
 	}

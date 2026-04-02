@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -122,8 +122,10 @@
     <ClCompile Include="FormationScene.Layout.cpp" />
     <ClCompile Include="FormationUi.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="GameScene.Result.cpp" />
     <ClCompile Include="GameScene.Ui.cpp" />
     <ClCompile Include="GameScene.Wave.cpp" />
+    <ClCompile Include="GameScene.WaveBanner.cpp" />
     <ClCompile Include="GameScene.World.cpp" />
     <ClCompile Include="libs\EffFs\EffFs.cpp" />
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
@@ -157,6 +159,8 @@
   <ItemGroup>
     <ClInclude Include="AppBootstrap.h" />
     <ClInclude Include="AppState.h" />
+    <ClInclude Include="BalanceConstants.h" />
+    <ClInclude Include="EnemyTypes.h" />
     <ClInclude Include="FormationScene.h" />
     <ClInclude Include="FormationUi.h" />
     <ClInclude Include="GameConstants.h" />
@@ -164,14 +168,22 @@
     <ClInclude Include="IsoMap.h" />
     <ClInclude Include="MenuUi.h" />
     <ClInclude Include="RenderWorld.h" />
+    <ClInclude Include="ResourceBalance.h" />
     <ClInclude Include="Terrain.h" />
+    <ClInclude Include="TerrainTypes.h" />
     <ClInclude Include="TextureAssets.h" />
+    <ClInclude Include="TomlUtils.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="UnitEditorScene.h" />
     <ClInclude Include="UnitLogic.h" />
+    <ClInclude Include="UnitTypes.h" />
     <ClInclude Include="WaveDefinitions.h" />
+    <ClInclude Include="WaveDefinitionDefaults.h" />
+    <ClInclude Include="WaveDefinitionSerialization.h" />
+    <ClInclude Include="WaveDefinitionRepository.h" />
     <ClInclude Include="WaveEditorScene.h" />
+    <ClInclude Include="WaveTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\engine\texture\box-shadow\128.png" />
@@ -358,6 +370,7 @@
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="App\resourceBalance.toml" />
     <None Include="App\waveDefinitions.toml" />
   </ItemGroup>
   <ItemGroup>

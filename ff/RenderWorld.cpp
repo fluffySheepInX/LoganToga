@@ -116,24 +116,73 @@ namespace ff
 		}
 
 		const double pulse = (0.5 + (0.5 * Periodic::Sine1_1(1.4s)));
-		const ColorF fillColor = (tileKind == SpecialTileKind::Bonus)
-			? ColorF{ 0.96, 0.84, 0.24, (active ? 0.28 : (0.14 + (0.08 * pulse))) }
-			: ColorF{ 0.62, 0.24, 0.86, (active ? 0.28 : (0.14 + (0.08 * pulse))) };
-		const ColorF frameColor = (tileKind == SpecialTileKind::Bonus)
-			? ColorF{ 1.0, 0.94, 0.52, (active ? 0.95 : 0.72) }
-			: ColorF{ 0.86, 0.58, 1.0, (active ? 0.95 : 0.72) };
+       ColorF fillColor;
+		ColorF frameColor;
+
+		switch (tileKind)
+		{
+		case SpecialTileKind::Bonus:
+			fillColor = ColorF{ 0.96, 0.84, 0.24, (active ? 0.28 : (0.14 + (0.08 * pulse))) };
+			frameColor = ColorF{ 1.0, 0.94, 0.52, (active ? 0.95 : 0.72) };
+			break;
+
+		case SpecialTileKind::Penalty:
+			fillColor = ColorF{ 0.62, 0.24, 0.86, (active ? 0.28 : (0.14 + (0.08 * pulse))) };
+			frameColor = ColorF{ 0.86, 0.58, 1.0, (active ? 0.95 : 0.72) };
+			break;
+
+     case SpecialTileKind::Haste:
+			fillColor = ColorF{ 1.0, 0.62, 0.22, (active ? 0.30 : (0.15 + (0.10 * pulse))) };
+			frameColor = ColorF{ 1.0, 0.86, 0.48, (active ? 0.98 : 0.76) };
+			break;
+
+        case SpecialTileKind::Rush:
+			fillColor = ColorF{ 0.24, 0.78, 1.0, (active ? 0.30 : (0.15 + (0.10 * pulse))) };
+			frameColor = ColorF{ 0.74, 0.94, 1.0, (active ? 0.98 : 0.76) };
+			break;
+
+		case SpecialTileKind::None:
+		default:
+			return;
+		}
 
 		MakeTileQuad(center).draw(fillColor);
 		MakeTileQuad(center).drawFrame(3, frameColor);
-		Circle{ center.movedBy(0, -2), 8 }.draw(frameColor);
+     if (tileKind == SpecialTileKind::Rush)
+		{
+			const Vec2 markerCenter = center.movedBy(0, -2);
+			Circle{ markerCenter, 9 }.drawFrame(2.5, frameColor);
+			Line{ markerCenter.movedBy(-4, -5), markerCenter.movedBy(1, -1) }.draw(3, frameColor);
+			Line{ markerCenter.movedBy(1, -1), markerCenter.movedBy(-1, 2) }.draw(3, frameColor);
+			Line{ markerCenter.movedBy(-1, 2), markerCenter.movedBy(5, 6) }.draw(3, frameColor);
+		}
+        else if (tileKind == SpecialTileKind::Haste)
+		{
+			const Vec2 markerCenter = center.movedBy(0, -2);
+			Circle{ markerCenter, 8 }.drawFrame(2.2, frameColor);
+			Line{ markerCenter.movedBy(-5, -1), markerCenter.movedBy(5, -1) }.draw(2.6, frameColor);
+			Line{ markerCenter.movedBy(-3, 3), markerCenter.movedBy(3, 3) }.draw(2.2, frameColor);
+			Line{ markerCenter.movedBy(0, -5), markerCenter.movedBy(0, 5) }.draw(2.2, frameColor);
+		}
+		else
+		{
+			Circle{ center.movedBy(0, -2), 8 }.draw(frameColor);
+		}
 	}
 
-    void DrawPlayer(const Vec2& screenPos, const double hpRate, const bool invincible)
+  void DrawPlayer(const Vec2& screenPos, const double hpRate, const bool invincible, const bool rushBoostActive)
 	{
      const double pulse = (0.5 + (0.5 * Periodic::Sine0_1(1.2s)));
 		const ColorF auraColor = invincible
 			? ColorF{ 1.0, 0.96, 0.72, (0.34 + (0.16 * pulse)) }
 			: ColorF{ 0.52, 0.86, 1.0, (0.22 + (0.10 * pulse)) };
+       if (rushBoostActive)
+		{
+			const double rushPulse = Periodic::Sine0_1(0.32s);
+			Circle{ screenPos.movedBy(0, -8), (14 + (10 * rushPulse)) }.drawFrame(2.5, ColorF{ 0.72, 0.94, 1.0, (0.20 + (0.16 * (1.0 - rushPulse))) });
+			Line{ screenPos.movedBy(-24, -6), screenPos.movedBy(-8, -10) }.draw(3, ColorF{ 0.72, 0.94, 1.0, 0.26 });
+			Line{ screenPos.movedBy(24, -6), screenPos.movedBy(8, -10) }.draw(3, ColorF{ 0.72, 0.94, 1.0, 0.26 });
+		}
 		Ellipse{ screenPos.movedBy(0, 12), (102 + (8 * pulse)), (50 + (4 * pulse)) }.drawFrame(3, auraColor);
 		Ellipse{ screenPos.movedBy(0, 12), 78, 38 }.draw(ColorF{ 0.24, 0.60, 0.96, 0.06 });
 		Ellipse{ screenPos.movedBy(0, 16), 14, 7 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.2 });
@@ -170,13 +219,22 @@ namespace ff
 		DrawHealthBar(screenPos.movedBy(0, -50 * bodyScale), hpRate, hpColor);
 	}
 
-       void DrawAlly(const Vec2& screenPos, const double hpRate, const bool commandBuffActive)
+  void DrawAlly(const Vec2& screenPos, const double hpRate, const bool commandBuffActive, const bool rushBoostActive)
 	{
 		Ellipse{ screenPos.movedBy(0, 15), 12, 6 }.draw(ColorF{ 0.0, 0.0, 0.0, 0.18 });
+        if (rushBoostActive)
+		{
+			const double rushPulse = Periodic::Sine0_1(0.38s);
+			Circle{ screenPos.movedBy(0, -16), (11 + (7 * rushPulse)) }.drawFrame(2.0, ColorF{ 0.68, 0.92, 1.0, (0.12 + (0.18 * (1.0 - rushPulse))) });
+		}
       if (commandBuffActive)
 		{
-			const double pulse = (0.5 + (0.5 * Periodic::Sine0_1(0.9s)));
-			Circle{ screenPos.movedBy(0, -18), (10 + (3 * pulse)) }.drawFrame(2.5, ColorF{ 0.82, 1.0, 0.72, (0.42 + (0.18 * pulse)) });
+           const double pulse = Periodic::Sine0_1(0.9s);
+			const double burst = Periodic::Sine0_1(0.45s);
+			const Vec2 effectCenter = screenPos.movedBy(0, -18);
+			Circle{ effectCenter, (9 + (7 * pulse)) }.drawFrame((2.5 + (1.8 * pulse)), ColorF{ 0.82, 1.0, 0.72, (0.34 + (0.28 * pulse)) });
+			Circle{ effectCenter, (14 + (10 * burst)) }.drawFrame(1.6, ColorF{ 0.92, 1.0, 0.82, (0.10 + (0.18 * (1.0 - burst))) });
+			Circle{ effectCenter, (5 + (3.5 * burst)) }.draw(ColorF{ 0.88, 1.0, 0.76, (0.06 + (0.10 * pulse)) });
 		}
 		RectF{ Arg::center = screenPos.movedBy(0, -16), 16, 22 }.draw(ColorF{ 0.26, 0.70, 0.42 });
 		Circle{ screenPos.movedBy(0, -34), 9 }.draw(ColorF{ 0.96, 0.88, 0.76 });
@@ -184,12 +242,13 @@ namespace ff
 		Line{ screenPos.movedBy(4, -3), screenPos.movedBy(2, 0) }.draw(3, ColorF{ 0.16, 0.30, 0.18 });
         if (commandBuffActive)
 		{
-			RectF{ Arg::center = screenPos.movedBy(0, -16), 16, 22 }.draw(ColorF{ 0.86, 1.0, 0.72, 0.18 });
+         const double bodyPulse = Periodic::Sine0_1(0.9s);
+			RectF{ Arg::center = screenPos.movedBy(0, -16), 16, 22 }.draw(ColorF{ 0.86, 1.0, 0.72, (0.12 + (0.16 * bodyPulse)) });
 		}
        DrawHealthBar(screenPos.movedBy(0, -50), hpRate, ColorF{ 0.28, 0.80, 0.42 });
 	}
 
- void DrawHud(const Font& font, const size_t enemyCount, const size_t allyCount, const double playerHp, const int32 resourceCount, const int32 currentKillReward, const int32 currentWave, bool waveActive, const int32 pendingEnemyCount, const double nextWaveTime, const SpecialTileKind tileKind, const String& waveDetailLabel)
+  void DrawHud(const Font& font, const size_t enemyCount, const size_t allyCount, const double playerHp, const int32 resourceCount, const int32 currentKillReward, const double passiveResourcePerSecond, const int32 currentWave, bool waveActive, const int32 pendingEnemyCount, const double nextWaveTime, const SpecialTileKind tileKind, const double rushBoostTimer, const String& waveDetailLabel)
 	{
         const RectF panel{ 16, 16, 436, 208 };
 		const RectF hpCard{ 28, 28, 124, 72 };
@@ -217,7 +276,7 @@ namespace ff
 		drawKeyCard(resourceCard,
 			U"資源",
 			U"{}"_fmt(resourceCount),
-			U"撃破 +{}"_fmt(currentKillReward),
+           U"撃破 +{} / 自然 +{:.2f}/s"_fmt(currentKillReward, passiveResourcePerSecond),
 			ColorF{ 0.86, 0.64, 0.18 });
 
 		drawKeyCard(waveCard,
@@ -228,19 +287,49 @@ namespace ff
 				: U"{:.1f}s"_fmt(Max(0.0, nextWaveTime)),
 			ColorF{ 0.62, 0.42, 0.96 });
 
-		font(U"敵 {}  /  味方 {}"_fmt(enemyCount, allyCount)).draw(13, Vec2{ 30, 114 }, ColorF{ 0.20, 0.24, 0.30, 0.92 });
-		font(U"WASD: Move / 指揮範囲で近くの味方を強化").draw(13, Vec2{ 30, 136 }, ColorF{ 0.22, 0.28, 0.34, 0.82 });
+     font(U"敵 {}  /  味方 {}"_fmt(enemyCount, allyCount)).draw(13, Vec2{ 30, 114 }, ColorF{ 0.20, 0.24, 0.30, 0.92 });
+		const String controlHint = (rushBoostTimer > 0.0)
+			? U"WASD: Move / 加速ブースト {:.1f}s"_fmt(rushBoostTimer)
+			: ((tileKind == SpecialTileKind::Haste)
+				? U"WASD: Move / 味方攻撃速度アップ"
+				: U"WASD: Move / 指揮範囲で近くの味方を強化");
+		font(controlHint).draw(13, Vec2{ 30, 136 }, ColorF{ 0.22, 0.28, 0.34, 0.82 });
 		font(U"水辺は通行不可 / 夕方・夜は視覚テーマ変化").draw(12, Vec2{ 30, 156 }, ColorF{ 0.26, 0.30, 0.36, 0.72 });
 
-		const String badgeTitle = (tileKind == SpecialTileKind::Bonus)
-			? U"BONUS TILE"
-			: ((tileKind == SpecialTileKind::Penalty) ? U"PENALTY TILE" : U"NORMAL TILE");
-		const String badgeText = U"現在 +{} / 撃破"_fmt(currentKillReward);
-		const ColorF badgeColor = (tileKind == SpecialTileKind::Bonus)
-			? ColorF{ 0.92, 0.72, 0.16 }
-			: ((tileKind == SpecialTileKind::Penalty)
-				? ColorF{ 0.64, 0.30, 0.92 }
-				: ColorF{ 0.42, 0.48, 0.56 });
+      String badgeTitle = U"NORMAL TILE";
+		String badgeText = U"現在 +{} / 撃破"_fmt(currentKillReward);
+		ColorF badgeColor{ 0.42, 0.48, 0.56 };
+
+		switch (tileKind)
+		{
+		case SpecialTileKind::Bonus:
+			badgeTitle = U"BONUS TILE";
+			badgeText = U"現在 +{} / 撃破"_fmt(currentKillReward);
+			badgeColor = ColorF{ 0.92, 0.72, 0.16 };
+			break;
+
+		case SpecialTileKind::Penalty:
+			badgeTitle = U"PENALTY TILE";
+			badgeText = U"現在 +{} / 撃破"_fmt(currentKillReward);
+			badgeColor = ColorF{ 0.64, 0.30, 0.92 };
+			break;
+
+     case SpecialTileKind::Haste:
+			badgeTitle = U"HASTE TILE";
+			badgeText = U"味方攻撃間隔 x{:.2f}"_fmt(GetAllyAttackIntervalMultiplier(tileKind));
+			badgeColor = ColorF{ 0.96, 0.58, 0.18 };
+			break;
+
+        case SpecialTileKind::Rush:
+			badgeTitle = U"RUSH TILE";
+			badgeText = U"踏むと移動加速 {:.0f}s"_fmt(RushTileBoostDuration);
+			badgeColor = ColorF{ 0.24, 0.72, 0.96 };
+			break;
+
+		case SpecialTileKind::None:
+		default:
+			break;
+		}
 		const RectF badgeRect{ 28, 176, 188, 34 };
 		badgeRect.rounded(17).draw(ColorF{ badgeColor, 0.16 });
 		badgeRect.rounded(17).drawFrame(2, ColorF{ badgeColor, 0.86 });

@@ -19,6 +19,7 @@ private:
 	void UpdateSummoning();
   void UpdateSummonFeedback();
   void UpdateResourceGainPopups();
+  void UpdateRushTileBoost();
 	void UpdateSpecialTiles();
  void UpdateStageClearState();
 	void UpdateWaveState();
@@ -117,6 +118,8 @@ private:
 	Array<BusyWindowAnalytics> m_busyWindowAnalytics;
 	double m_elapsedBattleTime = 0.0;
 	double m_resourceIntegral = 0.0;
+ double m_passiveResourceAccumulator = 0.0;
+ double m_rushTileBoostTimer = 0.0;
 	double m_lowResourceTime = 0.0;
 	double m_highResourceTime = 0.0;
 	int32 m_totalSummonAttempts = 0;

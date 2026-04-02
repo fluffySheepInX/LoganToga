@@ -1,5 +1,6 @@
 ﻿# include "GameScene.h"
 # include "IsoMap.h"
+# include "ResourceBalance.h"
 # include "RenderWorld.h"
 # include "Terrain.h"
 # include "TextureAssets.h"
@@ -38,6 +39,7 @@ void GameScene::update()
 	UpdateTimeOfDayButtons();
 	UpdateSummonFeedback();
 	UpdateResourceGainPopups();
+   UpdateRushTileBoost();
 	m_playerInvincibilityTimer = Max(0.0, (m_playerInvincibilityTimer - Scene::DeltaTime()));
 	UpdateStageClearState();
 
@@ -47,6 +49,18 @@ void GameScene::update()
 	}
 
   const double deltaTime = Scene::DeltaTime();
+	const double passiveResourcePerSecond = ff::GetPassiveResourcePerSecond();
+	if (passiveResourcePerSecond > 0.0)
+	{
+		m_passiveResourceAccumulator += (passiveResourcePerSecond * deltaTime);
+		const int32 gainedPassiveResourceCount = static_cast<int32>(m_passiveResourceAccumulator);
+		if (gainedPassiveResourceCount > 0)
+		{
+			m_passiveResourceAccumulator -= gainedPassiveResourceCount;
+			m_resourceCount += gainedPassiveResourceCount;
+		}
+	}
+
 	m_elapsedBattleTime += deltaTime;
 	m_resourceIntegral += (static_cast<double>(m_resourceCount) * deltaTime);
 
@@ -79,17 +93,24 @@ void GameScene::update()
 		allyAnalytics.lifetime += deltaTime;
 	}
 
-	UpdateSummoning();
+  UpdateSummoning();
 	UpdateSpecialTiles();
-	ff::UpdatePlayerPosition(m_playerPos, m_terrain);
-    const int32 currentKillReward = (ff::GetResourceRewardPerEnemyKill(m_specialTiles[ff::ToTileIndex(m_playerPos)])
+	ff::UpdatePlayerPosition(m_playerPos, m_terrain, ((m_rushTileBoostTimer > 0.0) ? ff::RushTilePlayerSpeedMultiplier : 1.0));
+	const Point playerTileIndex = ff::ToTileIndex(m_playerPos);
+	if (m_specialTiles[playerTileIndex] == ff::SpecialTileKind::Rush)
+	{
+		m_rushTileBoostTimer = ff::RushTileBoostDuration;
+		m_specialTiles[playerTileIndex] = ff::SpecialTileKind::None;
+	}
+ const ff::SpecialTileKind currentPlayerTileKind = m_specialTiles[playerTileIndex];
+	const int32 currentKillReward = (ff::GetResourceRewardPerEnemyKill(currentPlayerTileKind)
 		+ (m_waveActive ? m_currentWaveRewardBonusPerKill : 0));
   Array<ff::Enemy> defeatedEnemies;
 	bool playerWasHit = false;
-	ff::UpdateAllies(m_allies, m_enemies, m_terrain, m_playerPos);
+  ff::UpdateAllies(m_allies, m_enemies, m_terrain, m_playerPos, ((m_rushTileBoostTimer > 0.0) ? ff::RushTileAllySpeedMultiplier : 1.0));
 	ff::UpdateEnemies(m_enemies, m_terrain, m_playerPos);
    ff::CombatTelemetry combatTelemetry;
-	ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, &defeatedEnemies, (m_playerInvincibilityTimer <= 0.0), &playerWasHit, &combatTelemetry);
+   ff::UpdateAutoCombat(m_allies, m_enemies, m_playerPos, m_playerHp, ff::GetAllyAttackIntervalMultiplier(currentPlayerTileKind), &defeatedEnemies, (m_playerInvincibilityTimer <= 0.0), &playerWasHit, &combatTelemetry);
     UpdateBattleAnalytics(combatTelemetry, playerWasHit);
 
 	if (playerWasHit)
@@ -146,9 +167,10 @@ void GameScene::draw() const
 	const Vec2 playerScreenPos = (worldOrigin + ff::ToIsometric(m_playerPos));
 
 	DrawWorld();
-    ff::DrawPlayer(playerScreenPos, (m_playerHp / ff::PlayerMaxHp), (m_playerInvincibilityTimer > 0.0));
+    ff::DrawPlayer(playerScreenPos, (m_playerHp / ff::PlayerMaxHp), (m_playerInvincibilityTimer > 0.0), (m_rushTileBoostTimer > 0.0));
 	DrawTimeOfDayOverlay();
- ff::DrawHud(m_font, m_enemies.size(), m_allies.size(), m_playerHp, m_resourceCount, currentKillReward, m_currentWave, m_waveActive, pendingEnemyCount, m_nextWaveTimer, currentSpecialTile, (m_waveActive ? String{ ff::GetWaveTraitLabel(m_currentWaveTrait) } : U""));
+  ff::DrawHud(m_font, m_enemies.size(), m_allies.size(), m_playerHp, m_resourceCount, currentKillReward, ff::GetPassiveResourcePerSecond(), m_currentWave, m_waveActive, pendingEnemyCount, m_nextWaveTimer, currentSpecialTile, m_rushTileBoostTimer, (m_waveActive ? String{ ff::GetWaveTraitLabel(m_currentWaveTrait) } : U""));
+
 
 	if (not m_stageCleared)
 	{
