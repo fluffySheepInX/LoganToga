@@ -137,23 +137,45 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BirdModel.cpp" />
+    <ClCompile Include="BirdModelLoader.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MainScene.cpp" />
+    <ClCompile Include="MainSettings.cpp" />
+    <ClCompile Include="MainUi.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MapEditor.cpp" />
+    <ClCompile Include="SkyApp.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BirdModel.hpp" />
+    <ClInclude Include="BirdModelLoader.hpp" />
+    <ClInclude Include="BirdModelTypes.hpp" />
+    <ClInclude Include="MainContext.hpp" />
+    <ClInclude Include="MainScene.hpp" />
+    <ClInclude Include="MainSettings.hpp" />
+    <ClInclude Include="MainUi.hpp" />
     <ClInclude Include="MapData.hpp" />
     <ClInclude Include="MapEditor.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="BirdModel.Animation.inl" />
+    <None Include="BirdModel.Core.inl" />
+    <None Include="BirdModelLoader.Animated.inl" />
+    <None Include="BirdModelLoader.Asset.inl" />
+    <None Include="BirdModelLoader.Static.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SkyApp.hpp" />
     <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="App\Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
