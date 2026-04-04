@@ -22,24 +22,25 @@
 	const double clipTime = (0.0 < clip.duration)
 		? (Math::Fraction((m_animationTime * ticksPerSecond) / clip.duration) * clip.duration)
 		: 0.0;
-	HashTable<String, const BirdModelAnimationChannel*> channelsByNodeName;
-	channelsByNodeName.reserve(clip.channels.size());
+ Array<const BirdModelAnimationChannel*> channelsByNodeIndex(m_nodes.size(), nullptr);
 
 	for (const auto& channel : clip.channels)
 	{
-		channelsByNodeName.emplace(channel.nodeName, &channel);
+     if ((0 <= channel.nodeIndex) && (static_cast<size_t>(channel.nodeIndex) < channelsByNodeIndex.size()))
+		{
+			channelsByNodeIndex[channel.nodeIndex] = &channel;
+		}
 	}
 
 	for (size_t nodeIndex = 0; nodeIndex < m_nodes.size(); ++nodeIndex)
 	{
 		NodeTransformParts transform = DecomposeTransform(m_nodes[nodeIndex].localTransform);
 
-		if (const auto channelIt = channelsByNodeName.find(m_nodes[nodeIndex].name); channelIt != channelsByNodeName.end())
+     if (const BirdModelAnimationChannel* channel = channelsByNodeIndex[nodeIndex])
 		{
-			const BirdModelAnimationChannel& channel = *channelIt->second;
-			transform.translation = SampleVectorKey(channel.positionKeys, clipTime, transform.translation);
-			transform.rotation = SampleQuaternionKey(channel.rotationKeys, clipTime, transform.rotation);
-			transform.scale = SampleVectorKey(channel.scalingKeys, clipTime, transform.scale);
+          transform.translation = SampleVectorKey(channel->positionKeys, clipTime, transform.translation);
+			transform.rotation = SampleQuaternionKey(channel->rotationKeys, clipTime, transform.rotation);
+			transform.scale = SampleVectorKey(channel->scalingKeys, clipTime, transform.scale);
 		}
 
 		m_currentLocalTransforms[nodeIndex] = ComposeTransform(transform);
@@ -144,6 +145,11 @@ void BirdModel::refreshSkinnedMesh()
 	{
 		const Vertex3D& source = m_bindPoseVertices[vertexIndex];
 		const VertexSkinningData& skinningData = m_vertexSkinning[vertexIndex];
+      const bool hasNodeTransform = ((0 <= skinningData.nodeIndex)
+			&& (m_currentWorldTransforms.size() > static_cast<size_t>(skinningData.nodeIndex)));
+		const Mat4x4& nodeTransform = hasNodeTransform
+			? m_currentWorldTransforms[skinningData.nodeIndex]
+			: Mat4x4::Identity();
 		Float3 position{};
 		Float3 normal{};
 		float accumulatedWeight = 0.0f;
@@ -161,17 +167,18 @@ void BirdModel::refreshSkinnedMesh()
 			accumulatedWeight += influence.weight;
 		}
 
-		const float fallbackWeight = Clamp((1.0f - accumulatedWeight), 0.0f, 1.0f);
-
-		if ((0.0f < fallbackWeight)
-			&& (0 <= skinningData.nodeIndex)
-			&& (m_currentWorldTransforms.size() > static_cast<size_t>(skinningData.nodeIndex)))
+     if (0.0f < accumulatedWeight)
 		{
-			const Mat4x4& nodeTransform = m_currentWorldTransforms[skinningData.nodeIndex];
-			position += (nodeTransform.transformPoint(source.pos) * fallbackWeight);
-			normal += (TransformNormalByPointPair(nodeTransform, source.pos, source.normal) * fallbackWeight);
+          const float normalizationFactor = (1.0f / accumulatedWeight);
+			position *= normalizationFactor;
+			normal *= normalizationFactor;
 		}
-		else if (accumulatedWeight == 0.0f)
+     else if (hasNodeTransform)
+		{
+			position = nodeTransform.transformPoint(source.pos);
+			normal = TransformNormalByPointPair(nodeTransform, source.pos, source.normal);
+		}
+		else
 		{
 			position = source.pos;
 			normal = source.normal;

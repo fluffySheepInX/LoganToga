@@ -32,6 +32,7 @@ struct BirdModelBone
 struct BirdModelAnimationChannel
 {
 	String nodeName;
+  int32 nodeIndex = -1;
 	Array<BirdModelAnimationKey<Float3>> positionKeys;
 	Array<BirdModelAnimationKey<Quaternion>> rotationKeys;
 	Array<BirdModelAnimationKey<Float3>> scalingKeys;

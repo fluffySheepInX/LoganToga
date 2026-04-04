@@ -1,12 +1,69 @@
-﻿	void CollectMeshNodeIndices(const aiNode* node, const HashTable<String, int32>& nodeIndicesByName, HashTable<uint32, int32>& meshNodeIndices)
+﻿   [[nodiscard]] int32 ComputeNodeDepth(const Array<BirdModelNode>& nodes, int32 nodeIndex)
+	{
+		int32 depth = 0;
+
+		while ((0 <= nodeIndex) && (static_cast<size_t>(nodeIndex) < nodes.size()))
+		{
+			++depth;
+			nodeIndex = nodes[nodeIndex].parentIndex;
+		}
+
+		return depth;
+	}
+
+	[[nodiscard]] int32 ResolveNodeIndex(const String& nodeName,
+		const Array<BirdModelNode>& nodes,
+		const HashTable<String, Array<int32>>& nodeIndicesByName,
+		const HashTable<int32, bool>& meshOwningNodes)
+	{
+		const auto it = nodeIndicesByName.find(nodeName);
+
+		if (it == nodeIndicesByName.end() || it->second.isEmpty())
+		{
+			return -1;
+		}
+
+		const Array<int32>& candidates = it->second;
+
+		if (candidates.size() == 1)
+		{
+			return candidates.front();
+		}
+
+		int32 bestNonMeshNodeIndex = -1;
+		int32 bestNonMeshDepth = -1;
+		int32 bestNodeIndex = -1;
+		int32 bestDepth = -1;
+
+		for (const int32 candidate : candidates)
+		{
+			const int32 depth = ComputeNodeDepth(nodes, candidate);
+
+			if (bestDepth < depth)
+			{
+				bestDepth = depth;
+				bestNodeIndex = candidate;
+			}
+
+			if ((not meshOwningNodes.contains(candidate)) && (bestNonMeshDepth < depth))
+			{
+				bestNonMeshDepth = depth;
+				bestNonMeshNodeIndex = candidate;
+			}
+		}
+
+		return (0 <= bestNonMeshNodeIndex) ? bestNonMeshNodeIndex : bestNodeIndex;
+	}
+
+	void CollectMeshNodeIndices(const aiNode* node, const HashTable<size_t, int32>& nodeIndicesByPointer, HashTable<uint32, int32>& meshNodeIndices)
 	{
 		if (node == nullptr)
 		{
 			return;
 		}
 
-		const String nodeName = ToSivString(node->mName);
-		const int32 nodeIndex = nodeIndicesByName.contains(nodeName) ? nodeIndicesByName.at(nodeName) : -1;
+       const size_t nodeKey = reinterpret_cast<size_t>(node);
+		const int32 nodeIndex = nodeIndicesByPointer.contains(nodeKey) ? nodeIndicesByPointer.at(nodeKey) : -1;
 
 		for (uint32 meshListIndex = 0; meshListIndex < node->mNumMeshes; ++meshListIndex)
 		{
@@ -15,13 +72,14 @@
 
 		for (uint32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
 		{
-			CollectMeshNodeIndices(node->mChildren[childIndex], nodeIndicesByName, meshNodeIndices);
+            CollectMeshNodeIndices(node->mChildren[childIndex], nodeIndicesByPointer, meshNodeIndices);
 		}
 	}
 
 	void FlattenNodes(const aiNode* node, const int32 parentIndex,
 		Array<BirdModelNode>& nodes,
-		HashTable<String, int32>& nodeIndicesByName)
+        HashTable<String, Array<int32>>& nodeIndicesByName,
+		HashTable<size_t, int32>& nodeIndicesByPointer)
 	{
 		if (node == nullptr)
 		{
@@ -33,11 +91,12 @@
 		importedNode.name = ToSivString(node->mName);
 		importedNode.parentIndex = parentIndex;
 		importedNode.localTransform = ToMat4x4(node->mTransformation);
-		nodeIndicesByName.emplace(importedNode.name, nodeIndex);
+        nodeIndicesByName[importedNode.name] << nodeIndex;
+		nodeIndicesByPointer.emplace(reinterpret_cast<size_t>(node), nodeIndex);
 
 		for (uint32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
 		{
-			FlattenNodes(node->mChildren[childIndex], nodeIndex, nodes, nodeIndicesByName);
+         FlattenNodes(node->mChildren[childIndex], nodeIndex, nodes, nodeIndicesByName, nodeIndicesByPointer);
 		}
 	}
 
@@ -63,18 +122,29 @@
 		}
 
 		ImportedAnimatedData result;
-		HashTable<String, int32> nodeIndicesByName;
+     HashTable<String, Array<int32>> nodeIndicesByName;
+		HashTable<size_t, int32> nodeIndicesByPointer;
 
 		if (scene->mRootNode != nullptr)
 		{
-			FlattenNodes(scene->mRootNode, -1, result.nodes, nodeIndicesByName);
+            FlattenNodes(scene->mRootNode, -1, result.nodes, nodeIndicesByName, nodeIndicesByPointer);
 		}
 
 		HashTable<uint32, int32> meshNodeIndices;
 
 		if (scene->mRootNode != nullptr)
 		{
-			CollectMeshNodeIndices(scene->mRootNode, nodeIndicesByName, meshNodeIndices);
+           CollectMeshNodeIndices(scene->mRootNode, nodeIndicesByPointer, meshNodeIndices);
+		}
+
+		HashTable<int32, bool> meshOwningNodes;
+
+		for (uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
+		{
+			if (const auto meshNodeIt = meshNodeIndices.find(meshIndex); meshNodeIt != meshNodeIndices.end())
+			{
+				meshOwningNodes.emplace(meshNodeIt->second, true);
+			}
 		}
 
 		size_t totalVertices = 0;
@@ -199,10 +269,7 @@
 					BirdModelBone& importedBone = result.bones.emplace_back();
 					importedBone.name = boneName;
 					importedBone.offsetMatrix = ToMat4x4(bone->mOffsetMatrix);
-					if (const auto nodeIt = nodeIndicesByName.find(boneName); nodeIt != nodeIndicesByName.end())
-					{
-						importedBone.nodeIndex = nodeIt->second;
-					}
+                    importedBone.nodeIndex = ResolveNodeIndex(boneName, result.nodes, nodeIndicesByName, meshOwningNodes);
 					boneIndicesByName.emplace(boneName, importedBoneIndex);
 				}
 
@@ -251,6 +318,7 @@
 
 				BirdModelAnimationChannel& importedChannel = importedAnimation.channels.emplace_back();
 				importedChannel.nodeName = ToSivString(channel->mNodeName);
+                importedChannel.nodeIndex = ResolveNodeIndex(importedChannel.nodeName, result.nodes, nodeIndicesByName, meshOwningNodes);
 				importedChannel.positionKeys.reserve(channel->mNumPositionKeys);
 				importedChannel.rotationKeys.reserve(channel->mNumRotationKeys);
 				importedChannel.scalingKeys.reserve(channel->mNumScalingKeys);
