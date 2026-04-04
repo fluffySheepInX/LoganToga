@@ -38,6 +38,8 @@ namespace
 	{
 		Mesh mesh;
 		bool loaded = false;
+       Array<Vertex3D> vertices;
+		Array<TriangleIndex32> indices;
       Mat4x4 normalizationTransform = Mat4x4::Identity();
 	};
 

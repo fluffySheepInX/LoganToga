@@ -6,6 +6,8 @@ struct BirdModelAsset
 {
 	Mesh mesh;
 	bool loaded = false;
+   Array<Vertex3D> staticVertices;
+	Array<TriangleIndex32> staticIndices;
 	Array<Vertex3D> vertices;
 	Array<TriangleIndex32> indices;
 	Array<int32> vertexNodeIndices;

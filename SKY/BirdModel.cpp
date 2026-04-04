@@ -51,6 +51,11 @@ namespace
 			return keys.front().value;
 		}
 
+		if (time <= keys.front().time)
+		{
+			return keys.front().value;
+		}
+
 		for (size_t keyIndex = 1; keyIndex < keys.size(); ++keyIndex)
 		{
 			const auto& previous = keys[(keyIndex - 1)];
@@ -75,6 +80,11 @@ namespace
 		}
 
 		if (keys.size() == 1)
+		{
+			return keys.front().value;
+		}
+
+		if (time <= keys.front().time)
 		{
 			return keys.front().value;
 		}

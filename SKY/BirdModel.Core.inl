@@ -1,68 +1,106 @@
 ﻿BirdModel::BirdModel(FilePathView path, const double displayHeight)
 {
 	const BirdModelAsset imported = LoadBirdModelAsset(path, displayHeight);
-	m_mesh = imported.mesh;
-	m_loaded = imported.loaded;
-	m_bindPoseVertices = imported.vertices;
-	m_deformedVertices = imported.vertices;
-	m_indices = imported.indices;
-	m_nodes = imported.nodes;
-	m_bones = imported.bones;
-	m_animations = imported.animations;
-	m_normalizationTransform = imported.normalizationTransform;
-	m_vertexSkinning.resize(m_bindPoseVertices.size());
-
-	for (size_t vertexIndex = 0; vertexIndex < Min(m_vertexSkinning.size(), imported.vertexNodeIndices.size()); ++vertexIndex)
+ const auto initializeImportedAsset = [this, &imported]()
 	{
-		m_vertexSkinning[vertexIndex].nodeIndex = imported.vertexNodeIndices[vertexIndex];
-	}
-
-	for (size_t boneIndex = 0; boneIndex < m_bones.size(); ++boneIndex)
+		m_mesh = imported.mesh;
+		m_loaded = imported.loaded;
+		m_bindPoseVertices = imported.vertices;
+		m_deformedVertices = imported.vertices;
+		m_indices = imported.indices;
+		m_nodes = imported.nodes;
+		m_bones = imported.bones;
+		m_animations = imported.animations;
+		m_normalizationTransform = imported.normalizationTransform;
+		m_vertexSkinning.resize(m_bindPoseVertices.size());
+	};
+	const auto initializeVertexSkinning = [this, &imported]()
 	{
-		for (const auto& weight : m_bones[boneIndex].weights)
+		bool hasBoneInfluences = false;
+
+		for (size_t vertexIndex = 0; vertexIndex < Min(m_vertexSkinning.size(), imported.vertexNodeIndices.size()); ++vertexIndex)
 		{
-			if (m_vertexSkinning.size() <= weight.vertexIndex)
+			m_vertexSkinning[vertexIndex].nodeIndex = imported.vertexNodeIndices[vertexIndex];
+		}
+
+		for (size_t boneIndex = 0; boneIndex < m_bones.size(); ++boneIndex)
+		{
+			for (const auto& weight : m_bones[boneIndex].weights)
 			{
-				continue;
+				if (m_vertexSkinning.size() <= weight.vertexIndex)
+				{
+					continue;
+				}
+
+				VertexSkinningData& skinningData = m_vertexSkinning[weight.vertexIndex];
+				skinningData.totalBoneWeight += weight.weight;
+				skinningData.boneInfluences << VertexBoneInfluence{
+					.boneIndex = static_cast<int32>(boneIndex),
+					.weight = weight.weight,
+				};
+				hasBoneInfluences = true;
+			}
+		}
+
+		return hasBoneInfluences;
+	};
+	const auto applyStaticMeshFallback = [this, &imported](const bool hasBoneInfluences)
+	{
+		if ((not hasBoneInfluences)
+			&& m_animations.isEmpty()
+			&& (not imported.staticVertices.isEmpty())
+			&& (not imported.staticIndices.isEmpty()))
+		{
+			m_bindPoseVertices = imported.staticVertices;
+			m_deformedVertices = imported.staticVertices;
+			m_indices = imported.staticIndices;
+			m_normalizationTransform = Mat4x4::Identity();
+
+			for (auto& skinningData : m_vertexSkinning)
+			{
+				skinningData.nodeIndex = -1;
+			}
+		}
+	};
+	const auto initializeRenderMeshes = [this, &imported]()
+	{
+		if (not m_deformedVertices.isEmpty() && not m_indices.isEmpty())
+		{
+			for (const auto& subMeshInfo : imported.subMeshes)
+			{
+				if (subMeshInfo.vertexCount == 0 || subMeshInfo.localIndices.isEmpty())
+				{
+					continue;
+				}
+
+				SubMeshRenderData& rd = m_subMeshes.emplace_back();
+				rd.globalVertexStart = subMeshInfo.globalVertexStart;
+				rd.vertexCount = subMeshInfo.vertexCount;
+				rd.materialColor = subMeshInfo.materialColor;
+
+				const Array<Vertex3D> subVertices(m_bindPoseVertices.begin() + rd.globalVertexStart,
+					m_bindPoseVertices.begin() + rd.globalVertexStart + rd.vertexCount);
+				rd.dynamicMesh = DynamicMesh{ MeshData{ subVertices, subMeshInfo.localIndices } };
 			}
 
-			VertexSkinningData& skinningData = m_vertexSkinning[weight.vertexIndex];
-			skinningData.totalBoneWeight += weight.weight;
-			skinningData.boneInfluences << VertexBoneInfluence{
-				.boneIndex = static_cast<int32>(boneIndex),
-				.weight = weight.weight,
-			};
-		}
-	}
-
-	if (not m_deformedVertices.isEmpty() && not m_indices.isEmpty())
-	{
-		for (const auto& subMeshInfo : imported.subMeshes)
-		{
-			if (subMeshInfo.vertexCount == 0 || subMeshInfo.localIndices.isEmpty())
+			if (m_subMeshes.isEmpty())
 			{
-				continue;
+				m_dynamicMesh = DynamicMesh{ MeshData{ m_deformedVertices, m_indices } };
 			}
-
-			SubMeshRenderData& rd = m_subMeshes.emplace_back();
-			rd.globalVertexStart = subMeshInfo.globalVertexStart;
-			rd.vertexCount = subMeshInfo.vertexCount;
-			rd.materialColor = subMeshInfo.materialColor;
-
-			const Array<Vertex3D> subVertices(m_bindPoseVertices.begin() + rd.globalVertexStart,
-				m_bindPoseVertices.begin() + rd.globalVertexStart + rd.vertexCount);
-			rd.dynamicMesh = DynamicMesh{ MeshData{ subVertices, subMeshInfo.localIndices } };
 		}
+	};
+	const auto initializeTransformBuffers = [this]()
+	{
+		m_currentLocalTransforms.resize(m_nodes.size());
+		m_currentWorldTransforms.resize(m_nodes.size());
+		m_currentBoneTransforms.resize(m_bones.size());
+	};
 
-		if (m_subMeshes.isEmpty())
-		{
-			m_dynamicMesh = DynamicMesh{ MeshData{ m_deformedVertices, m_indices } };
-		}
-	}
-
-	m_currentLocalTransforms.resize(m_nodes.size());
-	m_currentWorldTransforms.resize(m_nodes.size());
-	m_currentBoneTransforms.resize(m_bones.size());
+	initializeImportedAsset();
+	const bool hasBoneInfluences = initializeVertexSkinning();
+	applyStaticMeshFallback(hasBoneInfluences);
+	initializeRenderMeshes();
+	initializeTransformBuffers();
 	evaluateAnimationPose();
 }
 
@@ -78,6 +116,8 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
 	{
 		return;
 	}
+
+	const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
 
 	if (not m_subMeshes.isEmpty())
 	{

@@ -143,7 +143,7 @@
 			return{};
 		}
 
-		MeshData meshData{ std::move(vertices), std::move(indices) };
+       MeshData meshData{ vertices, indices };
 		const Box bounds = meshData.computeBoundingBox();
 		const double scale = (0.001 < bounds.h)
 			? (displayHeight / bounds.h)
@@ -152,12 +152,22 @@
 		const Mat4x4 normalizationTransform = Mat4x4::Identity()
 			.translated(-bounds.center.x, -bottomY, -bounds.center.z)
 			.scaled(scale);
-		meshData.translate(-bounds.center.x, -bottomY, -bounds.center.z);
-		meshData.scale(scale);
+
+		for (auto& vertex : vertices)
+		{
+			vertex.pos.x -= static_cast<float>(bounds.center.x);
+			vertex.pos.y -= static_cast<float>(bottomY);
+			vertex.pos.z -= static_cast<float>(bounds.center.z);
+			vertex.pos *= static_cast<float>(scale);
+		}
+
+		meshData = MeshData{ vertices, indices };
 
 		return{
 			.mesh = Mesh{ meshData },
 			.loaded = true,
+           .vertices = std::move(vertices),
+			.indices = std::move(indices),
 			.normalizationTransform = normalizationTransform,
 		};
 	}

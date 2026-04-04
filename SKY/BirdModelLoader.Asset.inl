@@ -9,6 +9,8 @@
 	return{
 		.mesh = staticMesh.mesh,
 		.loaded = staticMesh.loaded,
+       .staticVertices = std::move(staticMesh.vertices),
+		.staticIndices = std::move(staticMesh.indices),
 		.vertices = std::move(animatedData.vertices),
 		.indices = std::move(animatedData.indices),
 		.vertexNodeIndices = std::move(animatedData.vertexNodeIndices),
