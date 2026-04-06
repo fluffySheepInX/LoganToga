@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -144,8 +144,14 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MainSettings.cpp" />
     <ClCompile Include="MainUi.cpp" />
     <ClCompile Include="MapData.cpp" />
+    <ClCompile Include="MapDataToml.cpp" />
     <ClCompile Include="MapEditor.cpp" />
     <ClCompile Include="SkyApp.cpp" />
+    <ClCompile Include="SkyAppLoop.cpp" />
+    <ClCompile Include="SkyAppRender.cpp" />
+    <ClCompile Include="SkyAppSapper.cpp" />
+    <ClCompile Include="SkyAppSupport.cpp" />
+    <ClCompile Include="SkyAppUi.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -172,6 +178,9 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SkyApp.hpp" />
+    <ClInclude Include="SkyAppLoop.hpp" />
+    <ClInclude Include="SkyAppSupport.hpp" />
+    <ClInclude Include="SkyAppUi.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -181,3 +190,4 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
+

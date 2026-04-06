@@ -43,13 +43,14 @@ namespace
 
 namespace MainSupport
 {
-	Optional<Vec3> GetWheelZoomFocusPosition(const DebugCamera3D& camera)
+   Optional<Vec3> GetWheelZoomFocusPosition(const DebugCamera3D& camera, const Vec3& playerBasePosition)
 	{
 		const Ray centerRay = camera.screenToRay(Scene::CenterF());
 		double nearestDistance = Math::Inf;
 		Optional<Vec3> focusPosition;
+		const Sphere playerBaseInteractionSphere{ playerBasePosition + Vec3{ 0, 4.0, 0 }, 4.5 };
 
-		if (const auto distance = centerRay.intersects(BlacksmithInteractionSphere))
+        if (const auto distance = centerRay.intersects(playerBaseInteractionSphere))
 		{
 			nearestDistance = *distance;
 			focusPosition = centerRay.point_at(*distance);

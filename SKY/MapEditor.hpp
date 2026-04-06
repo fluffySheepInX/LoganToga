@@ -4,6 +4,8 @@
 
 enum class MapEditorTool
 {
+    SetPlayerBasePosition,
+	SetEnemyBasePosition,
 	SetSapperRallyPoint,
 	PlaceMill,
 	PlaceTree,

@@ -38,6 +38,12 @@ namespace
 	{
 		switch (tool)
 		{
+        case MapEditorTool::SetPlayerBasePosition:
+			return U"自軍拠点";
+
+		case MapEditorTool::SetEnemyBasePosition:
+			return U"敵拠点";
+
 		case MapEditorTool::SetSapperRallyPoint:
 			return U"集結位置";
 
@@ -96,6 +102,20 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3
 
 	const Vec3 position = *state.hoveredGroundPosition;
 
+   if (state.selectedTool == MapEditorTool::SetPlayerBasePosition)
+	{
+		mapData.playerBasePosition = position;
+		SetStatusMessage(state, U"自軍拠点を更新");
+		return;
+	}
+
+	if (state.selectedTool == MapEditorTool::SetEnemyBasePosition)
+	{
+		mapData.enemyBasePosition = position;
+		SetStatusMessage(state, U"敵拠点を更新");
+		return;
+	}
+
 	if (state.selectedTool == MapEditorTool::SetSapperRallyPoint)
 	{
 		mapData.sapperRallyPoint = position;
@@ -112,6 +132,10 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3
 
 void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 {
+    Cylinder{ mapData.playerBasePosition.movedBy(0, 0.28, 0), 0.24, 0.56 }.draw(ColorF{ 0.22, 0.82, 0.98 }.removeSRGBCurve());
+	Sphere{ mapData.playerBasePosition.movedBy(0, 0.74, 0), 0.22 }.draw(ColorF{ 0.40, 0.90, 1.0 }.removeSRGBCurve());
+	Cylinder{ mapData.enemyBasePosition.movedBy(0, 0.28, 0), 0.24, 0.56 }.draw(ColorF{ 0.98, 0.32, 0.28 }.removeSRGBCurve());
+	Sphere{ mapData.enemyBasePosition.movedBy(0, 0.74, 0), 0.22 }.draw(ColorF{ 1.0, 0.50, 0.45 }.removeSRGBCurve());
 	Cylinder{ mapData.sapperRallyPoint.movedBy(0, 0.28, 0), 0.18, 0.56 }.draw(ColorF{ 0.95, 0.82, 0.12 }.removeSRGBCurve());
 	Sphere{ mapData.sapperRallyPoint.movedBy(0, 0.68, 0), 0.20 }.draw(ColorF{ 0.98, 0.92, 0.35 }.removeSRGBCurve());
 
@@ -121,9 +145,13 @@ void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 	}
 
 	const Vec3 hoverPosition = *state.hoveredGroundPosition;
-	const ColorF previewColor = (state.selectedTool == MapEditorTool::SetSapperRallyPoint)
-		? ColorF{ 0.98, 0.85, 0.25, 0.65 }
-		: ColorF{ 0.25, 0.85, 0.98, 0.50 };
+  const ColorF previewColor = (state.selectedTool == MapEditorTool::SetPlayerBasePosition)
+		? ColorF{ 0.25, 0.85, 0.98, 0.60 }
+		: (state.selectedTool == MapEditorTool::SetEnemyBasePosition)
+			? ColorF{ 0.98, 0.35, 0.30, 0.60 }
+			: (state.selectedTool == MapEditorTool::SetSapperRallyPoint)
+				? ColorF{ 0.98, 0.85, 0.25, 0.65 }
+				: ColorF{ 0.25, 0.85, 0.98, 0.50 };
 	Cylinder{ hoverPosition.movedBy(0, 0.06, 0), 0.35, 0.12 }.draw(previewColor.removeSRGBCurve());
 	Sphere{ hoverPosition.movedBy(0, 0.26, 0), 0.12 }.draw(previewColor.removeSRGBCurve());
 }
@@ -137,6 +165,8 @@ void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView pa
 	font(U"左クリック: 配置 / 設定").draw((panelRect.x + 16), (panelRect.y + 36), ColorF{ 0.18 });
 
 	const Array<MapEditorTool> tools{
+     MapEditorTool::SetPlayerBasePosition,
+		MapEditorTool::SetEnemyBasePosition,
 		MapEditorTool::SetSapperRallyPoint,
 		MapEditorTool::PlaceMill,
 		MapEditorTool::PlaceTree,
@@ -160,9 +190,9 @@ void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView pa
 		}
 	}
 
-	const Rect undoButton{ (panelRect.x + 16), (panelRect.y + 154), 92, 30 };
-	const Rect loadButton{ (panelRect.x + 116), (panelRect.y + 154), 92, 30 };
-	const Rect saveButton{ (panelRect.x + 216), (panelRect.y + 154), 92, 30 };
+   const Rect undoButton{ (panelRect.x + 16), (panelRect.y + 196), 92, 30 };
+	const Rect loadButton{ (panelRect.x + 116), (panelRect.y + 196), 92, 30 };
+	const Rect saveButton{ (panelRect.x + 216), (panelRect.y + 196), 92, 30 };
 
 	if (DrawEditorButton(undoButton, U"Undo"))
 	{
@@ -177,10 +207,11 @@ void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView pa
 		}
 	}
 
-	if (DrawEditorButton(loadButton, U"Reload"))
+    if (DrawEditorButton(loadButton, U"再読込"))
 	{
-		mapData = LoadMapData(path);
-		SetStatusMessage(state, U"TOML を再読込");
+        const MapDataLoadResult loadResult = LoadMapDataWithStatus(path);
+		mapData = loadResult.mapData;
+		SetStatusMessage(state, loadResult.message.isEmpty() ? U"TOML を再読込" : loadResult.message);
 		state.hoveredGroundPosition.reset();
 	}
 
@@ -189,12 +220,14 @@ void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView pa
 		SetStatusMessage(state, SaveMapData(mapData, path) ? U"TOML 保存完了" : U"TOML 保存失敗");
 	}
 
-	font(U"Tool: {}"_fmt(ToLabel(state.selectedTool))).draw((panelRect.x + 16), (panelRect.y + 196), ColorF{ 0.15 });
-	font(U"Objects: {}"_fmt(mapData.placedModels.size())).draw((panelRect.x + 16), (panelRect.y + 220), ColorF{ 0.15 });
-	font(U"Rally: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.sapperRallyPoint.x, mapData.sapperRallyPoint.y, mapData.sapperRallyPoint.z)).draw((panelRect.x + 16), (panelRect.y + 244), ColorF{ 0.15 });
+   font(U"Tool: {}"_fmt(ToLabel(state.selectedTool))).draw((panelRect.x + 16), (panelRect.y + 238), ColorF{ 0.15 });
+	font(U"Objects: {}"_fmt(mapData.placedModels.size())).draw((panelRect.x + 16), (panelRect.y + 262), ColorF{ 0.15 });
+	font(U"Player: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.playerBasePosition.x, mapData.playerBasePosition.y, mapData.playerBasePosition.z)).draw((panelRect.x + 16), (panelRect.y + 286), ColorF{ 0.15 });
+	font(U"Enemy: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.enemyBasePosition.x, mapData.enemyBasePosition.y, mapData.enemyBasePosition.z)).draw((panelRect.x + 16), (panelRect.y + 310), ColorF{ 0.15 });
+	font(U"Rally: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.sapperRallyPoint.x, mapData.sapperRallyPoint.y, mapData.sapperRallyPoint.z)).draw((panelRect.x + 16), (panelRect.y + 334), ColorF{ 0.15 });
 
 	if (Scene::Time() < state.statusMessageUntil)
 	{
-		font(state.statusMessage).draw((panelRect.x + 16), (panelRect.y + 268), ColorF{ 0.15 });
+        font(state.statusMessage).draw((panelRect.x + 16), (panelRect.y + 358), ColorF{ 0.15 });
 	}
 }

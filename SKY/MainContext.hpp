@@ -13,16 +13,59 @@ namespace MainSupport
 	inline constexpr Vec3 BirdDisplayPosition{ -10.5, 0, -2.5 };
 	inline constexpr Vec3 AshigaruDisplayPosition{ -5.5, 0, -2.5 };
 	inline constexpr double BirdDisplayYaw = 0_deg;
+    inline constexpr double SapperFacingYawOffset = 180_deg;
 	inline constexpr Vec3 BlacksmithPosition{ 8, 0, 4 };
+ inline constexpr Vec3 EnemyBasePosition{ -2.0, 0, 13.0 };
 	inline constexpr Sphere BlacksmithInteractionSphere{ BlacksmithPosition + Vec3{ 0, 4.0, 0 }, 4.5 };
 	inline constexpr Vec3 BlacksmithSelectionBoxSize{ 8.0, 8.0, 8.0 };
 	inline constexpr Vec3 BlacksmithSelectionBoxPadding{ 1.2, 0.8, 1.2 };
+    inline constexpr double BaseMaxHitPoints = 260.0;
+	inline constexpr double BaseCombatRadius = 4.2;
+ inline constexpr double StartingResources = 120.0;
+	inline constexpr double ResourceIncomePerSecond = 18.0;
+	inline constexpr double SapperCost = 60.0;
+   inline constexpr double ResourceAreaDefaultRadius = 5.0;
+	inline constexpr double ResourceAreaCaptureSeconds = 2.5;
+	inline constexpr double ResourceAreaIncomeIntervalSeconds = 3.0;
+	inline constexpr double BudgetAreaIncome = 45.0;
+	inline constexpr double GunpowderAreaIncome = 25.0;
+	inline constexpr double ManaAreaIncome = 20.0;
+	inline constexpr double EnemyReinforcementInterval = 6.0;
+	inline constexpr double EnemyAdvanceStopDistance = 4.8;
 	inline constexpr double CameraZoomMinDistance = 3.0;
 	inline constexpr double CameraZoomMaxDistance = 80.0;
 	inline constexpr double CameraZoomFactorPerWheelStep = 0.85;
 	inline constexpr double BirdDisplayHeight = 3.6;
 	inline constexpr double ModelHeightOffsetMin = -10.0;
 	inline constexpr double ModelHeightOffsetMax = 10.0;
+
+   enum class UnitTeam
+	{
+		Player,
+		Enemy,
+	};
+
+	enum class ResourceType
+	{
+		Budget,
+		Gunpowder,
+		Mana,
+	};
+
+	struct ResourceStock
+	{
+		double budget = 0.0;
+		double gunpowder = 0.0;
+		double mana = 0.0;
+	};
+
+	struct ResourceAreaState
+	{
+		Optional<UnitTeam> ownerTeam;
+		Optional<UnitTeam> capturingTeam;
+		double captureProgress = 0.0;
+		double incomeProgress = 0.0;
+	};
 
 	struct CameraSettings
 	{
@@ -36,6 +79,16 @@ namespace MainSupport
 		Vec3 position;
 		Vec3 targetPosition;
 		double spawnedAt = 0.0;
+      double moveStartedAt = 0.0;
+		double moveDuration = 0.0;
+        double facingYaw = BirdDisplayYaw;
+		UnitTeam team = UnitTeam::Player;
+		double maxHitPoints = 100.0;
+		double hitPoints = 100.0;
+		double attackRange = 3.2;
+		double attackDamage = 12.0;
+		double attackInterval = 0.8;
+		double lastAttackAt = -1000.0;
 	};
 
 	struct ModelHeightSettings
