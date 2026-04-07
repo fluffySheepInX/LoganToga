@@ -8,7 +8,10 @@ namespace SkyAppSupport
 	namespace
 	{
 		constexpr double InitialSapperMoveDuration = 0.45;
-		constexpr double SapperMoveSpeed = 6.0;
+     constexpr double DefaultSapperMoveSpeed = 6.0;
+		constexpr double MinimumSapperMoveSpeed = 0.5;
+		constexpr double MinimumSuppressionMultiplier = 0.1;
+		constexpr double MaximumSuppressionAttackIntervalMultiplier = 10.0;
 		constexpr double MinimumSapperMoveDuration = 0.08;
 		constexpr double MinimumSapperTurnDistanceSq = 0.0001;
 		constexpr double SapperBodyRadius = 1.2;
@@ -82,6 +85,82 @@ namespace SkyAppSupport
 
 			return nearestIndex;
 		}
+	}
+
+	bool IsSapperSuppressed(const SpawnedSapper& sapper)
+	{
+		return (Scene::Time() < sapper.suppressedUntil);
+	}
+
+	double GetEffectiveSapperMoveSpeed(const SpawnedSapper& sapper)
+	{
+		const double multiplier = (IsSapperSuppressed(sapper)
+			? Clamp(sapper.suppressedMoveSpeedMultiplier, MinimumSuppressionMultiplier, 1.0)
+			: 1.0);
+		return Max(MinimumSapperMoveSpeed, (sapper.moveSpeed * multiplier));
+	}
+
+	double GetEffectiveSapperAttackDamage(const SpawnedSapper& sapper)
+	{
+		const double multiplier = (IsSapperSuppressed(sapper)
+			? Clamp(sapper.suppressedAttackDamageMultiplier, MinimumSuppressionMultiplier, 1.0)
+			: 1.0);
+		return Max(0.0, (sapper.baseAttackDamage * multiplier));
+	}
+
+	double GetEffectiveSapperAttackInterval(const SpawnedSapper& sapper)
+	{
+		const double multiplier = (IsSapperSuppressed(sapper)
+			? Clamp(sapper.suppressedAttackIntervalMultiplier, 1.0, MaximumSuppressionAttackIntervalMultiplier)
+			: 1.0);
+		return Max(0.05, (sapper.baseAttackInterval * multiplier));
+	}
+
+		ColorF GetSpawnedSapperTint(const SpawnedSapper& sapper, const ColorF& baseColor)
+		{
+			switch (sapper.unitType)
+			{
+			case SapperUnitType::ArcaneInfantry:
+				return ColorF{
+					Clamp(baseColor.r * 0.62 + 0.18, 0.0, 1.0),
+					Clamp(baseColor.g * 0.82 + 0.10, 0.0, 1.0),
+					Clamp(baseColor.b * 1.30 + 0.18, 0.0, 1.0),
+					baseColor.a,
+				};
+
+			case SapperUnitType::Infantry:
+			default:
+				return baseColor;
+			}
+		}
+
+	void ApplySapperSuppression(SpawnedSapper& sapper, const double durationSeconds, const double moveSpeedMultiplier, const double attackDamageMultiplier, const double attackIntervalMultiplier)
+	{
+      const Vec3 currentPosition = GetSpawnedSapperBasePosition(sapper);
+		const double remainingDistance = currentPosition.distanceFrom(sapper.targetPosition);
+		sapper.suppressedUntil = Max(sapper.suppressedUntil, (Scene::Time() + Max(0.0, durationSeconds)));
+		sapper.suppressedMoveSpeedMultiplier = Clamp(moveSpeedMultiplier, MinimumSuppressionMultiplier, 1.0);
+		sapper.suppressedAttackDamageMultiplier = Clamp(attackDamageMultiplier, MinimumSuppressionMultiplier, 1.0);
+		sapper.suppressedAttackIntervalMultiplier = Clamp(attackIntervalMultiplier, 1.0, MaximumSuppressionAttackIntervalMultiplier);
+
+		if (sapper.moveDuration <= 0.0)
+		{
+			return;
+		}
+
+		sapper.position = currentPosition;
+		sapper.startPosition = currentPosition;
+		sapper.moveStartedAt = Scene::Time();
+
+		if (remainingDistance <= 0.05)
+		{
+			sapper.position = sapper.targetPosition;
+			sapper.startPosition = sapper.targetPosition;
+			sapper.moveDuration = 0.0;
+			return;
+		}
+
+		sapper.moveDuration = Max(MinimumSapperMoveDuration, (remainingDistance / GetEffectiveSapperMoveSpeed(sapper)));
 	}
 
 	Vec3 GetSpawnedSapperBasePosition(const SpawnedSapper& sapper)
@@ -220,7 +299,7 @@ namespace SkyAppSupport
 		}
 
 		sapper.moveStartedAt = Scene::Time();
-		sapper.moveDuration = Max(MinimumSapperMoveDuration, (distance / SapperMoveSpeed));
+     sapper.moveDuration = Max(MinimumSapperMoveDuration, (distance / GetEffectiveSapperMoveSpeed(sapper)));
 	}
 
 	void UpdateAutoCombat(Array<SpawnedSapper>& attackers, Array<SpawnedSapper>& defenders)
@@ -242,13 +321,13 @@ namespace SkyAppSupport
 			SpawnedSapper& target = defenders[*targetIndex];
 			attacker.facingYaw = ToSapperYaw((GetSpawnedSapperBasePosition(target) - GetSpawnedSapperBasePosition(attacker)), attacker.facingYaw);
 
-			if ((Scene::Time() - attacker.lastAttackAt) < attacker.attackInterval)
+          if ((Scene::Time() - attacker.lastAttackAt) < GetEffectiveSapperAttackInterval(attacker))
 			{
 				continue;
 			}
 
 			attacker.lastAttackAt = Scene::Time();
-			target.hitPoints = Max(0.0, (target.hitPoints - attacker.attackDamage));
+            target.hitPoints = Max(0.0, (target.hitPoints - GetEffectiveSapperAttackDamage(attacker)));
 		}
 	}
 
@@ -260,7 +339,7 @@ namespace SkyAppSupport
 			});
 	}
 
-	void SpawnSapper(Array<SpawnedSapper>& spawnedSappers, const Vec3& spawnPosition, const Vec3& rallyPoint)
+   void SpawnSapper(Array<SpawnedSapper>& spawnedSappers, const Vec3& spawnPosition, const Vec3& rallyPoint, const SapperUnitType unitType)
 	{
 		const size_t sapperIndex = spawnedSappers.size();
 		const Vec3 startPosition = spawnPosition.movedBy(2.4, 0, 2.2);
@@ -275,11 +354,13 @@ namespace SkyAppSupport
 			.moveDuration = InitialSapperMoveDuration,
 			.facingYaw = ToSapperYaw((targetPosition - startPosition), BirdDisplayYaw),
 			.team = UnitTeam::Player,
+          .unitType = unitType,
 			.maxHitPoints = 100.0,
 			.hitPoints = 100.0,
+         .moveSpeed = DefaultSapperMoveSpeed,
 			.attackRange = 3.2,
-			.attackDamage = 12.0,
-			.attackInterval = 0.8,
+           .baseAttackDamage = 12.0,
+			.baseAttackInterval = 0.8,
 		};
 	}
 
@@ -295,11 +376,13 @@ namespace SkyAppSupport
 			.moveDuration = 0.0,
 			.facingYaw = facingYaw,
 			.team = UnitTeam::Enemy,
+          .unitType = SapperUnitType::Infantry,
 			.maxHitPoints = 120.0,
 			.hitPoints = 120.0,
+         .moveSpeed = DefaultSapperMoveSpeed,
 			.attackRange = 3.0,
-			.attackDamage = 10.0,
-			.attackInterval = 0.95,
+           .baseAttackDamage = 10.0,
+			.baseAttackInterval = 0.95,
 		};
 	}
 }

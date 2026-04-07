@@ -13,6 +13,9 @@ struct PlacedModel
 {
 	PlaceableModelType type = PlaceableModelType::Tree;
 	Vec3 position{ 0, 0, 0 };
+  double attackRange = MainSupport::MillDefenseRange;
+	double attackDamage = MainSupport::MillDefenseDamage;
+	double attackInterval = MainSupport::MillDefenseInterval;
 };
 
 struct ResourceArea

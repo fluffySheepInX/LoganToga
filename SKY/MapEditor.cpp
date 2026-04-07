@@ -1,15 +1,28 @@
-﻿# include "MapEditor.hpp"
+﻿# include "MapEditorInternal.hpp"
+# include "MainScene.hpp"
 
-namespace
+namespace MapEditorDetail
 {
-	[[nodiscard]] Optional<Vec3> GetGroundIntersection(const DebugCamera3D& camera)
+	namespace
 	{
-		const Ray ray = camera.screenToRay(Cursor::PosF());
+		constexpr double MillSelectionRadius = 4.5;
+		constexpr double TreeSelectionRadius = 2.2;
+		constexpr double PineSelectionRadius = 2.2;
+	}
+
+   Optional<Vec3> GetGroundIntersection(const MainSupport::AppCamera3D& camera)
+	{
+		const Optional<Ray> ray = MainSupport::TryScreenToRay(camera, Cursor::PosF());
+		if (not ray)
+		{
+			return none;
+		}
+
 		const InfinitePlane groundPlane{ Float3{ 0, 0, 0 }, Float3{ 0, 1, 0 } };
 
-		if (const auto distance = ray.intersects(groundPlane))
+		if (const auto distance = ray->intersects(groundPlane))
 		{
-			const Vec3 position = ray.point_at(*distance);
+			const Vec3 position = ray->point_at(*distance);
 			return Vec3{ position.x, 0.0, position.z };
 		}
 
@@ -22,7 +35,7 @@ namespace
 		state.statusMessageUntil = (Scene::Time() + 2.0);
 	}
 
-	bool DrawEditorButton(const Rect& rect, StringView label, const bool selected = false)
+	bool DrawEditorButton(const Rect& rect, const StringView label, const bool selected)
 	{
 		static const Font buttonFont{ 16, Typeface::Bold };
 		const bool hovered = rect.mouseOver();
@@ -34,11 +47,61 @@ namespace
 		return hovered && MouseL.down();
 	}
 
-	[[nodiscard]] StringView ToLabel(const MapEditorTool tool)
+	double GetPlacedModelSelectionRadius(const PlacedModel& placedModel)
+	{
+		switch (placedModel.type)
+		{
+		case PlaceableModelType::Mill:
+			return MillSelectionRadius;
+
+		case PlaceableModelType::Tree:
+			return TreeSelectionRadius;
+
+		case PlaceableModelType::Pine:
+			return PineSelectionRadius;
+
+		default:
+			return 2.0;
+		}
+	}
+
+	bool IsValidPlacedModelIndex(const MapData& mapData, const Optional<size_t>& index)
+	{
+		return index && (*index < mapData.placedModels.size());
+	}
+
+    Optional<size_t> HitTestPlacedModel(const Array<PlacedModel>& placedModels, const MainSupport::AppCamera3D& camera)
+	{
+		const Optional<Ray> cursorRay = MainSupport::TryScreenToRay(camera, Cursor::PosF());
+		if (not cursorRay)
+		{
+			return none;
+		}
+
+		double nearestDistance = Math::Inf;
+		Optional<size_t> nearestIndex;
+
+		for (size_t i = 0; i < placedModels.size(); ++i)
+		{
+			const Sphere interactionSphere{ placedModels[i].position.movedBy(0, 2.2, 0), GetPlacedModelSelectionRadius(placedModels[i]) };
+			if (const auto distance = cursorRay->intersects(interactionSphere))
+			{
+				if (*distance < nearestDistance)
+				{
+					nearestDistance = *distance;
+					nearestIndex = i;
+				}
+			}
+		}
+
+		return nearestIndex;
+	}
+
+	StringView ToLabel(const MapEditorTool tool)
 	{
 		switch (tool)
 		{
-        case MapEditorTool::SetPlayerBasePosition:
+		case MapEditorTool::SetPlayerBasePosition:
 			return U"自軍拠点";
 
 		case MapEditorTool::SetEnemyBasePosition:
@@ -46,6 +109,15 @@ namespace
 
 		case MapEditorTool::SetSapperRallyPoint:
 			return U"集結位置";
+
+		case MapEditorTool::SetBudgetArea:
+			return U"予算エリア";
+
+		case MapEditorTool::SetGunpowderArea:
+			return U"火薬エリア";
+
+		case MapEditorTool::SetManaArea:
+			return U"魔力エリア";
 
 		case MapEditorTool::PlaceMill:
 			return U"Mill 配置";
@@ -61,7 +133,7 @@ namespace
 		}
 	}
 
-	[[nodiscard]] Optional<PlaceableModelType> ToPlaceableModelType(const MapEditorTool tool)
+	Optional<PlaceableModelType> ToPlaceableModelType(const MapEditorTool tool)
 	{
 		switch (tool)
 		{
@@ -78,9 +150,60 @@ namespace
 			return none;
 		}
 	}
+
+	Optional<MainSupport::ResourceType> ToResourceType(const MapEditorTool tool)
+	{
+		switch (tool)
+		{
+		case MapEditorTool::SetBudgetArea:
+			return MainSupport::ResourceType::Budget;
+
+		case MapEditorTool::SetGunpowderArea:
+			return MainSupport::ResourceType::Gunpowder;
+
+		case MapEditorTool::SetManaArea:
+			return MainSupport::ResourceType::Mana;
+
+		default:
+			return none;
+		}
+	}
+
+	ColorF GetResourceAreaColor(const MainSupport::ResourceType type)
+	{
+		switch (type)
+		{
+		case MainSupport::ResourceType::Budget:
+			return ColorF{ 0.96, 0.82, 0.22, 0.60 };
+
+		case MainSupport::ResourceType::Gunpowder:
+			return ColorF{ 0.95, 0.42, 0.26, 0.60 };
+
+		case MainSupport::ResourceType::Mana:
+			return ColorF{ 0.42, 0.60, 0.98, 0.60 };
+
+		default:
+			return ColorF{ 0.25, 0.85, 0.98, 0.50 };
+		}
+	}
+
+	int32 FindResourceAreaIndex(const Array<ResourceArea>& resourceAreas, const MainSupport::ResourceType type)
+	{
+		for (size_t i = 0; i < resourceAreas.size(); ++i)
+		{
+			if (resourceAreas[i].type == type)
+			{
+				return static_cast<int32>(i);
+			}
+		}
+
+		return -1;
+	}
 }
 
-void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3D& camera, const bool canHandleSceneInput)
+using namespace MapEditorDetail;
+
+void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport::AppCamera3D& camera, const bool canHandleSceneInput)
 {
 	if (not state.enabled)
 	{
@@ -89,9 +212,40 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3
 	}
 
 	state.hoveredGroundPosition = GetGroundIntersection(camera);
+	if (not IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex))
+	{
+		state.selectedPlacedModelIndex.reset();
+	}
 
 	if (not canHandleSceneInput)
 	{
+		return;
+	}
+
+	if (state.selectionMode)
+	{
+		if (not MouseL.down())
+		{
+			return;
+		}
+
+		if (const auto selectedIndex = HitTestPlacedModel(mapData.placedModels, camera))
+		{
+			state.selectedPlacedModelIndex = *selectedIndex;
+			SetStatusMessage(state, U"{} を選択"_fmt(ToString(mapData.placedModels[*selectedIndex].type)));
+			return;
+		}
+
+		if (state.selectedPlacedModelIndex && state.hoveredGroundPosition)
+		{
+			PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
+			placedModel.position = *state.hoveredGroundPosition;
+			SetStatusMessage(state, U"{} を移動"_fmt(ToString(placedModel.type)));
+			return;
+		}
+
+		state.selectedPlacedModelIndex.reset();
+		SetStatusMessage(state, U"選択解除");
 		return;
 	}
 
@@ -102,7 +256,7 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3
 
 	const Vec3 position = *state.hoveredGroundPosition;
 
-   if (state.selectedTool == MapEditorTool::SetPlayerBasePosition)
+	if (state.selectedTool == MapEditorTool::SetPlayerBasePosition)
 	{
 		mapData.playerBasePosition = position;
 		SetStatusMessage(state, U"自軍拠点を更新");
@@ -123,111 +277,26 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3
 		return;
 	}
 
+	if (const auto resourceType = ToResourceType(state.selectedTool))
+	{
+		const int32 index = FindResourceAreaIndex(mapData.resourceAreas, *resourceType);
+
+		if (0 <= index)
+		{
+			mapData.resourceAreas[index].position = position;
+		}
+		else
+		{
+			mapData.resourceAreas << ResourceArea{ .type = *resourceType, .position = position, .radius = MainSupport::ResourceAreaDefaultRadius };
+		}
+
+		SetStatusMessage(state, U"{}を更新"_fmt(ToLabel(state.selectedTool)));
+		return;
+	}
+
 	if (const auto modelType = ToPlaceableModelType(state.selectedTool))
 	{
 		mapData.placedModels << PlacedModel{ .type = *modelType, .position = position };
 		SetStatusMessage(state, U"モデルを配置");
-	}
-}
-
-void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
-{
-    Cylinder{ mapData.playerBasePosition.movedBy(0, 0.28, 0), 0.24, 0.56 }.draw(ColorF{ 0.22, 0.82, 0.98 }.removeSRGBCurve());
-	Sphere{ mapData.playerBasePosition.movedBy(0, 0.74, 0), 0.22 }.draw(ColorF{ 0.40, 0.90, 1.0 }.removeSRGBCurve());
-	Cylinder{ mapData.enemyBasePosition.movedBy(0, 0.28, 0), 0.24, 0.56 }.draw(ColorF{ 0.98, 0.32, 0.28 }.removeSRGBCurve());
-	Sphere{ mapData.enemyBasePosition.movedBy(0, 0.74, 0), 0.22 }.draw(ColorF{ 1.0, 0.50, 0.45 }.removeSRGBCurve());
-	Cylinder{ mapData.sapperRallyPoint.movedBy(0, 0.28, 0), 0.18, 0.56 }.draw(ColorF{ 0.95, 0.82, 0.12 }.removeSRGBCurve());
-	Sphere{ mapData.sapperRallyPoint.movedBy(0, 0.68, 0), 0.20 }.draw(ColorF{ 0.98, 0.92, 0.35 }.removeSRGBCurve());
-
-	if (not state.enabled || not state.hoveredGroundPosition)
-	{
-		return;
-	}
-
-	const Vec3 hoverPosition = *state.hoveredGroundPosition;
-  const ColorF previewColor = (state.selectedTool == MapEditorTool::SetPlayerBasePosition)
-		? ColorF{ 0.25, 0.85, 0.98, 0.60 }
-		: (state.selectedTool == MapEditorTool::SetEnemyBasePosition)
-			? ColorF{ 0.98, 0.35, 0.30, 0.60 }
-			: (state.selectedTool == MapEditorTool::SetSapperRallyPoint)
-				? ColorF{ 0.98, 0.85, 0.25, 0.65 }
-				: ColorF{ 0.25, 0.85, 0.98, 0.50 };
-	Cylinder{ hoverPosition.movedBy(0, 0.06, 0), 0.35, 0.12 }.draw(previewColor.removeSRGBCurve());
-	Sphere{ hoverPosition.movedBy(0, 0.26, 0), 0.12 }.draw(previewColor.removeSRGBCurve());
-}
-
-void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView path, const Rect& panelRect)
-{
-	static const Font font{ 16 };
-	panelRect.draw(ColorF{ 0.98, 0.95 });
-	panelRect.drawFrame(2, 0, ColorF{ 0.25 });
-	font(U"Map Editor").draw((panelRect.x + 16), (panelRect.y + 12), ColorF{ 0.12 });
-	font(U"左クリック: 配置 / 設定").draw((panelRect.x + 16), (panelRect.y + 36), ColorF{ 0.18 });
-
-	const Array<MapEditorTool> tools{
-     MapEditorTool::SetPlayerBasePosition,
-		MapEditorTool::SetEnemyBasePosition,
-		MapEditorTool::SetSapperRallyPoint,
-		MapEditorTool::PlaceMill,
-		MapEditorTool::PlaceTree,
-		MapEditorTool::PlacePine,
-	};
-
-	for (size_t i = 0; i < tools.size(); ++i)
-	{
-		const int32 column = static_cast<int32>(i % 2);
-		const int32 row = static_cast<int32>(i / 2);
-		const Rect buttonRect{
-			(panelRect.x + 16 + (column * 156)),
-			(panelRect.y + 66 + (row * 42)),
-			144,
-			32,
-		};
-
-		if (DrawEditorButton(buttonRect, ToLabel(tools[i]), (state.selectedTool == tools[i])))
-		{
-			state.selectedTool = tools[i];
-		}
-	}
-
-   const Rect undoButton{ (panelRect.x + 16), (panelRect.y + 196), 92, 30 };
-	const Rect loadButton{ (panelRect.x + 116), (panelRect.y + 196), 92, 30 };
-	const Rect saveButton{ (panelRect.x + 216), (panelRect.y + 196), 92, 30 };
-
-	if (DrawEditorButton(undoButton, U"Undo"))
-	{
-		if (mapData.placedModels.isEmpty())
-		{
-			SetStatusMessage(state, U"削除対象なし");
-		}
-		else
-		{
-			mapData.placedModels.pop_back();
-			SetStatusMessage(state, U"最後の配置を削除");
-		}
-	}
-
-    if (DrawEditorButton(loadButton, U"再読込"))
-	{
-        const MapDataLoadResult loadResult = LoadMapDataWithStatus(path);
-		mapData = loadResult.mapData;
-		SetStatusMessage(state, loadResult.message.isEmpty() ? U"TOML を再読込" : loadResult.message);
-		state.hoveredGroundPosition.reset();
-	}
-
-	if (DrawEditorButton(saveButton, U"Save TOML"))
-	{
-		SetStatusMessage(state, SaveMapData(mapData, path) ? U"TOML 保存完了" : U"TOML 保存失敗");
-	}
-
-   font(U"Tool: {}"_fmt(ToLabel(state.selectedTool))).draw((panelRect.x + 16), (panelRect.y + 238), ColorF{ 0.15 });
-	font(U"Objects: {}"_fmt(mapData.placedModels.size())).draw((panelRect.x + 16), (panelRect.y + 262), ColorF{ 0.15 });
-	font(U"Player: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.playerBasePosition.x, mapData.playerBasePosition.y, mapData.playerBasePosition.z)).draw((panelRect.x + 16), (panelRect.y + 286), ColorF{ 0.15 });
-	font(U"Enemy: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.enemyBasePosition.x, mapData.enemyBasePosition.y, mapData.enemyBasePosition.z)).draw((panelRect.x + 16), (panelRect.y + 310), ColorF{ 0.15 });
-	font(U"Rally: {:.1f}, {:.1f}, {:.1f}"_fmt(mapData.sapperRallyPoint.x, mapData.sapperRallyPoint.y, mapData.sapperRallyPoint.z)).draw((panelRect.x + 16), (panelRect.y + 334), ColorF{ 0.15 });
-
-	if (Scene::Time() < state.statusMessageUntil)
-	{
-        font(state.statusMessage).draw((panelRect.x + 16), (panelRect.y + 358), ColorF{ 0.15 });
 	}
 }

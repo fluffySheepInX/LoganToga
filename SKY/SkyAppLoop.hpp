@@ -26,7 +26,7 @@ namespace SkyAppFlow
 		MainSupport::CameraSettings cameraSettings;
 		MainSupport::ModelHeightSettings modelHeightSettings;
 		MapData mapData = MakeDefaultMapData();
-		DebugCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
+      MainSupport::AppCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
 		Sky sky;
 		double skyTime = 0.5;
 		bool showUI = true;
@@ -36,6 +36,7 @@ namespace SkyAppFlow
 		Array<MainSupport::SpawnedSapper> spawnedSappers;
 		Array<MainSupport::SpawnedSapper> enemySappers;
 		Array<size_t> selectedSapperIndices;
+      Optional<size_t> selectedMillIndex;
 		SkyAppSupport::TimedMessage blacksmithMenuMessage;
 		SkyAppSupport::TimedMessage cameraSaveMessage;
 		SkyAppSupport::TimedMessage modelHeightMessage;
@@ -48,6 +49,9 @@ namespace SkyAppFlow
         MainSupport::ResourceStock playerResources;
 		MainSupport::ResourceStock enemyResources;
 		Array<MainSupport::ResourceAreaState> resourceAreaStates;
+        int32 playerTier = 1;
+      Array<double> millLastAttackTimes;
+      int32 startupCameraFreezeFrames = 2;
 		double nextEnemyReinforcementAt = 0.0;
 		size_t enemyReinforcementCount = 0;
 		Optional<bool> playerWon;
@@ -58,6 +62,7 @@ namespace SkyAppFlow
 		SkyAppSupport::SkyAppPanels panels;
 		bool isEditorMode = false;
 		bool showSapperMenu = false;
+      bool showMillStatusEditor = false;
 		bool isHoveringUI = false;
 		Vec3 birdRenderPosition = MainSupport::BirdDisplayPosition;
 		Vec3 ashigaruRenderPosition = MainSupport::AshigaruDisplayPosition;

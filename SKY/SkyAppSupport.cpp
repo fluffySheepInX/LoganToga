@@ -8,6 +8,26 @@ namespace SkyAppSupport
 	namespace
 	{
 		constexpr double MessageDisplaySeconds = 2.0;
+
+		[[nodiscard]] bool IsSafeCameraPair(const Vec3& eye, const Vec3& focus)
+		{
+			if ((not std::isfinite(eye.x)) || (not std::isfinite(eye.y)) || (not std::isfinite(eye.z))
+				|| (not std::isfinite(focus.x)) || (not std::isfinite(focus.y)) || (not std::isfinite(focus.z)))
+			{
+				return false;
+			}
+
+			const double distanceSq = (focus - eye).lengthSq();
+            if ((not std::isfinite(distanceSq)) || (distanceSq < Square(MinimumCameraEyeFocusDistance * 0.5)))
+			{
+				return false;
+			}
+
+			const Vec3 direction = ((focus - eye) / std::sqrt(distanceSq));
+			const double upAlignment = Abs(direction.dot(Vec3::Up()));
+			return std::isfinite(distanceSq)
+             && (upAlignment < 0.995);
+		}
 	}
 
    void TimedMessage::show(const StringView message, const double durationSeconds)
@@ -21,12 +41,13 @@ namespace SkyAppSupport
 		return (Scene::Time() < until);
 	}
 
-	bool SkyAppPanels::isHoveringUi(const bool showUI, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool modelHeightEditMode) const
+ bool SkyAppPanels::isHoveringUi(const bool showUI, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode) const
 	{
 		return (showUI && (skySettings.mouseOver() || cameraSettings.mouseOver() || miniMap.mouseOver()))
 			|| (isEditorMode && mapEditor.mouseOver())
 			|| (showBlacksmithMenu && blacksmithMenu.mouseOver())
 			|| (showSapperMenu && sapperMenu.mouseOver())
+         || (showMillStatusEditor && millStatusEditor.mouseOver())
 			|| (modelHeightEditMode && modelHeight.mouseOver())
 			|| uiToggle.mouseOver()
 			|| mapModeToggle.mouseOver()
@@ -36,8 +57,16 @@ namespace SkyAppSupport
 			|| timeSlider.mouseOver();
 	}
 
-	void UpdateCameraWheelZoom(DebugCamera3D& camera, CameraSettings& cameraSettings, const Vec3& playerBasePosition)
+   void UpdateCameraWheelZoom(AppCamera3D& camera, CameraSettings& cameraSettings, const Vec3& playerBasePosition)
 	{
+      EnsureValidCameraSettings(cameraSettings);
+		if (not IsSafeCameraPair(cameraSettings.eye, cameraSettings.focus))
+		{
+          ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"UpdateCameraWheelZoom: pre-setView cameraSettings");
+		}
+       ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"UpdateCameraWheelZoom: camera.setView (initial)");
+		camera.setView(cameraSettings.eye, cameraSettings.focus);
+
 		const double wheel = Mouse::Wheel();
 
 		if (wheel == 0.0)
@@ -55,7 +84,13 @@ namespace SkyAppSupport
 			{
 				const double targetDistance = Clamp((currentDistance * Math::Pow(CameraZoomFactorPerWheelStep, wheel)), CameraZoomMinDistance, CameraZoomMaxDistance);
 				cameraSettings.eye = (focusPosition + (eyeOffset * (targetDistance / currentDistance)));
-				cameraSettings.focus = focusPosition;
+               cameraSettings.focus = focusPosition;
+				EnsureValidCameraSettings(cameraSettings);
+				if (not IsSafeCameraPair(cameraSettings.eye, cameraSettings.focus))
+				{
+                  ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"UpdateCameraWheelZoom: post-zoom cameraSettings");
+				}
+               ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"UpdateCameraWheelZoom: camera.setView (post-zoom)");
 				camera.setView(cameraSettings.eye, cameraSettings.focus);
 			}
 		}

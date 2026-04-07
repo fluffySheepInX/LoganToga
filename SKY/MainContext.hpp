@@ -3,12 +3,14 @@
 
 namespace MainSupport
 {
+    using AppCamera3D = BasicCamera3D;
+
 	inline constexpr FilePathView CameraSettingsPath = U"settings/camera_settings.toml";
 	inline constexpr FilePathView MapDataPath = U"settings/map_data.toml";
 	inline constexpr FilePathView ModelHeightSettingsPath = U"settings/model_height_settings.toml";
 	inline constexpr FilePathView BirdModelPath = U"model/bird.glb";
 	inline constexpr FilePathView AshigaruModelPath = U"model/ashigaru_v2.1.glb";
-	inline constexpr Vec3 DefaultCameraEye{ 0, 3, -16 };
+    inline constexpr Vec3 DefaultCameraEye{ 0, 8, -16 };
 	inline constexpr Vec3 DefaultCameraFocus{ 0, 0, 0 };
 	inline constexpr Vec3 BirdDisplayPosition{ -10.5, 0, -2.5 };
 	inline constexpr Vec3 AshigaruDisplayPosition{ -5.5, 0, -2.5 };
@@ -22,8 +24,10 @@ namespace MainSupport
     inline constexpr double BaseMaxHitPoints = 260.0;
 	inline constexpr double BaseCombatRadius = 4.2;
  inline constexpr double StartingResources = 120.0;
+ inline constexpr double ManaIncomePerSecond = 18.0;
 	inline constexpr double ResourceIncomePerSecond = 18.0;
 	inline constexpr double SapperCost = 60.0;
+ inline constexpr double TierUpgradeBaseCost = 100.0;
    inline constexpr double ResourceAreaDefaultRadius = 5.0;
 	inline constexpr double ResourceAreaCaptureSeconds = 2.5;
 	inline constexpr double ResourceAreaIncomeIntervalSeconds = 3.0;
@@ -32,6 +36,14 @@ namespace MainSupport
 	inline constexpr double ManaAreaIncome = 20.0;
 	inline constexpr double EnemyReinforcementInterval = 6.0;
 	inline constexpr double EnemyAdvanceStopDistance = 4.8;
+    inline constexpr double MillDefenseRange = 6.5;
+	inline constexpr double MillDefenseDamage = 18.0;
+	inline constexpr double MillDefenseInterval = 1.2;
+    inline constexpr double MillSuppressionDuration = 2.4;
+	inline constexpr double MillSuppressionMoveSpeedMultiplier = 0.45;
+	inline constexpr double MillSuppressionAttackDamageMultiplier = 0.35;
+	inline constexpr double MillSuppressionAttackIntervalMultiplier = 2.4;
+    inline constexpr double MinimumCameraEyeFocusDistance = 0.5;
 	inline constexpr double CameraZoomMinDistance = 3.0;
 	inline constexpr double CameraZoomMaxDistance = 80.0;
 	inline constexpr double CameraZoomFactorPerWheelStep = 0.85;
@@ -43,6 +55,12 @@ namespace MainSupport
 	{
 		Player,
 		Enemy,
+	};
+
+	enum class SapperUnitType
+	{
+		Infantry,
+		ArcaneInfantry,
 	};
 
 	enum class ResourceType
@@ -83,11 +101,17 @@ namespace MainSupport
 		double moveDuration = 0.0;
         double facingYaw = BirdDisplayYaw;
 		UnitTeam team = UnitTeam::Player;
+        SapperUnitType unitType = SapperUnitType::Infantry;
 		double maxHitPoints = 100.0;
 		double hitPoints = 100.0;
+       double moveSpeed = 6.0;
 		double attackRange = 3.2;
-		double attackDamage = 12.0;
-		double attackInterval = 0.8;
+     double baseAttackDamage = 12.0;
+		double baseAttackInterval = 0.8;
+		double suppressedUntil = -1000.0;
+		double suppressedMoveSpeedMultiplier = 1.0;
+		double suppressedAttackDamageMultiplier = 1.0;
+		double suppressedAttackIntervalMultiplier = 1.0;
 		double lastAttackAt = -1000.0;
 	};
 

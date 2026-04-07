@@ -146,12 +146,19 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MapDataToml.cpp" />
     <ClCompile Include="MapEditor.cpp" />
+    <ClCompile Include="MapEditorPanel.cpp" />
+    <ClCompile Include="MapEditorScene.cpp" />
     <ClCompile Include="SkyApp.cpp" />
+    <ClCompile Include="SkyAppBattle.cpp" />
     <ClCompile Include="SkyAppLoop.cpp" />
     <ClCompile Include="SkyAppRender.cpp" />
+    <ClCompile Include="SkyAppRenderOverlay.cpp" />
+    <ClCompile Include="SkyAppRenderSappers.cpp" />
     <ClCompile Include="SkyAppSapper.cpp" />
     <ClCompile Include="SkyAppSupport.cpp" />
     <ClCompile Include="SkyAppUi.cpp" />
+    <ClCompile Include="SkyAppUiMillEditor.cpp" />
+    <ClCompile Include="SkyAppUiMiniMap.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -177,8 +184,10 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <None Include="BirdModelLoader.Static.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MapEditorInternal.hpp" />
     <ClInclude Include="SkyApp.hpp" />
     <ClInclude Include="SkyAppLoop.hpp" />
+    <ClInclude Include="SkyAppLoopInternal.hpp" />
     <ClInclude Include="SkyAppSupport.hpp" />
     <ClInclude Include="SkyAppUi.hpp" />
     <ClInclude Include="stdafx.h" />
@@ -190,4 +199,3 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
-

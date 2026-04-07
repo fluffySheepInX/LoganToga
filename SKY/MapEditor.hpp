@@ -7,6 +7,9 @@ enum class MapEditorTool
     SetPlayerBasePosition,
 	SetEnemyBasePosition,
 	SetSapperRallyPoint,
+  SetBudgetArea,
+	SetGunpowderArea,
+	SetManaArea,
 	PlaceMill,
 	PlaceTree,
 	PlacePine,
@@ -16,11 +19,13 @@ struct MapEditorState
 {
 	bool enabled = false;
 	MapEditorTool selectedTool = MapEditorTool::SetSapperRallyPoint;
+   bool selectionMode = false;
+	Optional<size_t> selectedPlacedModelIndex;
 	Optional<Vec3> hoveredGroundPosition;
 	String statusMessage;
 	double statusMessageUntil = 0.0;
 };
 
-void UpdateMapEditor(MapEditorState& state, MapData& mapData, const DebugCamera3D& camera, bool canHandleSceneInput);
+void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport::AppCamera3D& camera, bool canHandleSceneInput);
 void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData);
 void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, FilePathView path, const Rect& panelRect);

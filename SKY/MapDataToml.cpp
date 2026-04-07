@@ -3,6 +3,21 @@
 
 namespace
 {
+    [[nodiscard]] double SanitizeMillAttackRange(const double value)
+	{
+		return Clamp(value, 1.0, 20.0);
+	}
+
+	[[nodiscard]] double SanitizeMillAttackDamage(const double value)
+	{
+		return Clamp(value, 1.0, 80.0);
+	}
+
+	[[nodiscard]] double SanitizeMillAttackInterval(const double value)
+	{
+		return Clamp(value, 0.2, 5.0);
+	}
+
 	[[nodiscard]] Vec3 ReadTomlVec3(const TOMLReader& toml, const String& key, const Vec3& fallback)
 	{
 		try
@@ -259,6 +274,9 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 					mapData.placedModels << PlacedModel{
 						.type = *type,
 						.position = Vec3{ positionValues[0], positionValues[1], positionValues[2] },
+                      .attackRange = SanitizeMillAttackRange(objectTable[U"attackRange"].getOpt<double>().value_or(MainSupport::MillDefenseRange)),
+						.attackDamage = SanitizeMillAttackDamage(objectTable[U"attackDamage"].getOpt<double>().value_or(MainSupport::MillDefenseDamage)),
+						.attackInterval = SanitizeMillAttackInterval(objectTable[U"attackInterval"].getOpt<double>().value_or(MainSupport::MillDefenseInterval)),
 					};
 				}
 				catch (const std::exception&)
@@ -331,6 +349,14 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 		writer.writeln(U"[[objects]]");
 		writer.writeln(U"type = \"{}\""_fmt(ToString(object.type)));
 		WriteTomlVec3(writer, U"position", object.position);
+
+		if (object.type == PlaceableModelType::Mill)
+		{
+			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));
+			writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(object.attackDamage)));
+			writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(object.attackInterval)));
+		}
+
 		writer.writeln(U"");
 	}
 

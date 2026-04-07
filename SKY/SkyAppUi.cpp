@@ -1,4 +1,6 @@
-﻿# include "SkyAppUi.hpp"
+﻿# include "SkyAppLoopInternal.hpp"
+# include "SkyAppUi.hpp"
+# include "MainScene.hpp"
 # include "MainSettings.hpp"
 # include "MainUi.hpp"
 
@@ -8,44 +10,54 @@ namespace SkyAppSupport
 {
  namespace
 	{
-		[[nodiscard]] Vec2 ToMiniMapPoint(const RectF& mapRect, const double minX, const double minZ, const double worldSpan, const Vec3& worldPosition)
+      constexpr double ArcaneInfantryCost = 90.0;
+
+		[[nodiscard]] double GetSliderMin(const double value, const double defaultMin)
 		{
-			const double x = (worldPosition.x - minX) / worldSpan;
-			const double z = (worldPosition.z - minZ) / worldSpan;
-			return Vec2{ (mapRect.x + x * mapRect.w), (mapRect.bottomY() - z * mapRect.h) };
+			return Min(defaultMin, (value - 1.0));
 		}
 
-		[[nodiscard]] ColorF GetResourceTypeColor(const ResourceType type)
+		[[nodiscard]] double GetSliderMax(const double value, const double defaultMax)
 		{
-			switch (type)
+			return Max(defaultMax, (value + 1.0));
+		}
+
+		[[nodiscard]] double GetTierUpgradeCost(const int32 currentTier)
+		{
+			return (TierUpgradeBaseCost * Max(1, currentTier));
+		}
+
+		[[nodiscard]] StringView ToUnitDisplayName(const SapperUnitType unitType)
+		{
+			switch (unitType)
 			{
-			case ResourceType::Budget:
-				return ColorF{ 0.96, 0.82, 0.22, 0.78 };
+			case SapperUnitType::ArcaneInfantry:
+				return U"魔導兵(仮)";
 
-			case ResourceType::Gunpowder:
-				return ColorF{ 0.92, 0.42, 0.26, 0.78 };
-
-			case ResourceType::Mana:
-				return ColorF{ 0.42, 0.60, 0.98, 0.78 };
-
+			case SapperUnitType::Infantry:
 			default:
-				return ColorF{ 0.70, 0.70, 0.70, 0.78 };
+				return U"兵";
 			}
 		}
 
-		[[nodiscard]] ColorF GetOwnerFrameColor(const Optional<UnitTeam>& ownerTeam)
+		bool TrySpawnPlayerUnit(Array<SpawnedSapper>& spawnedSappers,
+			const Vec3& playerBasePosition,
+			const Vec3& rallyPoint,
+			ResourceStock& playerResources,
+			const SapperUnitType unitType,
+			const double manaCost,
+			TimedMessage& message)
 		{
-			if (ownerTeam && (*ownerTeam == UnitTeam::Player))
+			if (manaCost <= playerResources.mana)
 			{
-				return ColorF{ 0.96, 0.96, 1.0, 0.95 };
+				SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint, unitType);
+				playerResources.mana -= manaCost;
+				message.show(U"{}を出撃"_fmt(ToUnitDisplayName(unitType)));
+				return true;
 			}
 
-			if (ownerTeam && (*ownerTeam == UnitTeam::Enemy))
-			{
-				return ColorF{ 0.95, 0.35, 0.30, 0.95 };
-			}
-
-			return ColorF{ 0.65, 0.72, 0.82, 0.85 };
+			message.show(U"魔力不足");
+			return false;
 		}
 	}
 
@@ -76,22 +88,33 @@ namespace SkyAppSupport
 		SimpleGUI::CheckBox(sky.cloudsLightingEnabled, U"cloudsLighting", Vec2{ 280, 420 }, 220);
 	}
 
-	void DrawCameraSettingsPanel(DebugCamera3D& camera,
+ void DrawCameraSettingsPanel(AppCamera3D& camera,
 		CameraSettings& cameraSettings,
 		BirdModel& birdModel,
 		BirdModel& ashigaruModel,
 		TimedMessage& cameraSaveMessage,
 		const SkyAppPanels& panels)
 	{
+        Vec3 editedEye = cameraSettings.eye;
+		Vec3 editedFocus = cameraSettings.focus;
+		bool cameraChanged = false;
+
 		panels.cameraSettings.draw(ColorF{ 1.0, 0.92 });
 		SimpleGUI::GetFont()(U"Camera eye").draw(540, 28, ColorF{ 0.11 });
-		SimpleGUI::Slider(U"eyeX: {:.2f}"_fmt(cameraSettings.eye.x), cameraSettings.eye.x, -50.0, 50.0, Vec2{ 540, 60 }, 140, 180);
-		SimpleGUI::Slider(U"eyeY: {:.2f}"_fmt(cameraSettings.eye.y), cameraSettings.eye.y, -10.0, 50.0, Vec2{ 540, 100 }, 140, 180);
-		SimpleGUI::Slider(U"eyeZ: {:.2f}"_fmt(cameraSettings.eye.z), cameraSettings.eye.z, -50.0, 50.0, Vec2{ 540, 140 }, 140, 180);
+     cameraChanged = SimpleGUI::Slider(U"eyeX: {:.2f}"_fmt(editedEye.x), editedEye.x, GetSliderMin(cameraSettings.eye.x, -50.0), GetSliderMax(cameraSettings.eye.x, 50.0), Vec2{ 540, 60 }, 140, 180) || cameraChanged;
+		cameraChanged = SimpleGUI::Slider(U"eyeY: {:.2f}"_fmt(editedEye.y), editedEye.y, GetSliderMin(cameraSettings.eye.y, -10.0), GetSliderMax(cameraSettings.eye.y, 50.0), Vec2{ 540, 100 }, 140, 180) || cameraChanged;
+		cameraChanged = SimpleGUI::Slider(U"eyeZ: {:.2f}"_fmt(editedEye.z), editedEye.z, GetSliderMin(cameraSettings.eye.z, -50.0), GetSliderMax(cameraSettings.eye.z, 50.0), Vec2{ 540, 140 }, 140, 180) || cameraChanged;
 		SimpleGUI::GetFont()(U"Camera focus").draw(540, 190, ColorF{ 0.11 });
-		SimpleGUI::Slider(U"focusX: {:.2f}"_fmt(cameraSettings.focus.x), cameraSettings.focus.x, -50.0, 50.0, Vec2{ 540, 220 }, 140, 180);
-		SimpleGUI::Slider(U"focusY: {:.2f}"_fmt(cameraSettings.focus.y), cameraSettings.focus.y, -10.0, 50.0, Vec2{ 540, 260 }, 140, 180);
-		SimpleGUI::Slider(U"focusZ: {:.2f}"_fmt(cameraSettings.focus.z), cameraSettings.focus.z, -50.0, 50.0, Vec2{ 540, 300 }, 140, 180);
+      cameraChanged = SimpleGUI::Slider(U"focusX: {:.2f}"_fmt(editedFocus.x), editedFocus.x, GetSliderMin(cameraSettings.focus.x, -50.0), GetSliderMax(cameraSettings.focus.x, 50.0), Vec2{ 540, 220 }, 140, 180) || cameraChanged;
+		cameraChanged = SimpleGUI::Slider(U"focusY: {:.2f}"_fmt(editedFocus.y), editedFocus.y, GetSliderMin(cameraSettings.focus.y, -10.0), GetSliderMax(cameraSettings.focus.y, 50.0), Vec2{ 540, 260 }, 140, 180) || cameraChanged;
+		cameraChanged = SimpleGUI::Slider(U"focusZ: {:.2f}"_fmt(editedFocus.z), editedFocus.z, GetSliderMin(cameraSettings.focus.z, -50.0), GetSliderMax(cameraSettings.focus.z, 50.0), Vec2{ 540, 300 }, 140, 180) || cameraChanged;
+
+		if (cameraChanged)
+		{
+			cameraSettings.eye = editedEye;
+			cameraSettings.focus = editedFocus;
+			EnsureValidCameraSettings(cameraSettings);
+		}
 
 		if (DrawTextButton(Rect{ 540, 330, 150, 30 }, U"Save TOML"))
 		{
@@ -104,6 +127,8 @@ namespace SkyAppSupport
 		{
 			cameraSettings.eye = DefaultCameraEye;
 			cameraSettings.focus = DefaultCameraFocus;
+           EnsureValidCameraSettings(cameraSettings);
+			ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"DrawCameraSettingsPanel: reset button");
 			camera.setView(cameraSettings.eye, cameraSettings.focus);
 			cameraSaveMessage.show(U"Camera reset");
 		}
@@ -129,37 +154,46 @@ namespace SkyAppSupport
 
 	void DrawBlacksmithMenu(const SkyAppPanels& panels,
 		Array<SpawnedSapper>& spawnedSappers,
-     const Vec3& playerBasePosition,
+		const Vec3& playerBasePosition,
 		const Vec3& rallyPoint,
-        ResourceStock& playerResources,
+		ResourceStock& playerResources,
+        int32& playerTier,
 		const double sapperCost,
 		TimedMessage& blacksmithMenuMessage)
 	{
+       const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		panels.blacksmithMenu.draw(ColorF{ 0.98, 0.95 });
 		panels.blacksmithMenu.drawFrame(2, 0, ColorF{ 0.25 });
-		SimpleGUI::GetFont()(U"ユニット生産メニュー").draw((panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 12), ColorF{ 0.12 });
-      SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw((panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 34), ColorF{ 0.12 });
+       SimpleGUI::GetFont()(U"兵生産メニュー").draw((panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 12), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw((panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 34), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"魔力: {:.0f} / Tier {}"_fmt(playerResources.mana, playerTier)).draw((panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 54), ColorF{ 0.12 });
 
-       const Rect produceSapperButton{ (panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 58), (panels.blacksmithMenu.w - 32), 32 };
-		const Rect tierUpgradeButton{ (panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 96), (panels.blacksmithMenu.w - 32), 32 };
+       const Rect produceSapperButton{ (panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 84), (panels.blacksmithMenu.w - 32), 28 };
+        const Rect produceArcaneButton{ (panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 116), (panels.blacksmithMenu.w - 32), 28 };
+		const Rect tierUpgradeButton{ (panels.blacksmithMenu.x + 16), (panels.blacksmithMenu.y + 148), (panels.blacksmithMenu.w - 32), 28 };
 
-       if (DrawTextButton(produceSapperButton, U"工兵産出 ({:.0f})"_fmt(sapperCost)))
+      if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
 		{
-          if (sapperCost <= playerResources.budget)
+          TrySpawnPlayerUnit(spawnedSappers, playerBasePosition, rallyPoint, playerResources, SapperUnitType::Infantry, sapperCost, blacksmithMenuMessage);
+		}
+
+		if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(ArcaneInfantryCost)))
+		{
+			TrySpawnPlayerUnit(spawnedSappers, playerBasePosition, rallyPoint, playerResources, SapperUnitType::ArcaneInfantry, ArcaneInfantryCost, blacksmithMenuMessage);
+		}
+
+       if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
+		{
+           if (tierUpgradeCost <= playerResources.budget)
 			{
-					SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint);
-              playerResources.budget -= sapperCost;
-				blacksmithMenuMessage.show(U"工兵を産出");
+				playerResources.budget -= tierUpgradeCost;
+				++playerTier;
+				blacksmithMenuMessage.show(U"Tier {} に上昇"_fmt(playerTier));
 			}
 			else
 			{
-				blacksmithMenuMessage.show(U"資源不足");
+				blacksmithMenuMessage.show(U"予算不足");
 			}
-		}
-
-		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード"))
-		{
-			blacksmithMenuMessage.show(U"ティアアップグレードを選択");
 		}
 
 		if (blacksmithMenuMessage.isVisible())
@@ -168,201 +202,144 @@ namespace SkyAppSupport
 		}
 	}
 
-	void DrawMiniMap(const SkyAppPanels& panels,
-		const DebugCamera3D& camera,
-		const MapData& mapData,
-		const Array<SpawnedSapper>& spawnedSappers,
-     const Array<SpawnedSapper>& enemySappers,
-     const Array<ResourceAreaState>& resourceAreaStates,
-		const Array<size_t>& selectedSapperIndices)
-	{
-		const Rect panel = panels.miniMap;
-		const RectF mapRect{ (panel.x + 10), (panel.y + 30), (panel.w - 20), (panel.h - 40) };
-		Array<Vec3> boundsPoints{
-         mapData.playerBasePosition,
-			mapData.enemyBasePosition,
-			mapData.sapperRallyPoint,
-			camera.getEyePosition(),
-			camera.getFocusPosition(),
-		};
-
-		for (const auto& sapper : spawnedSappers)
-		{
-			boundsPoints << GetSpawnedSapperBasePosition(sapper);
-		}
-
-		for (const auto& enemySapper : enemySappers)
-		{
-			boundsPoints << GetSpawnedSapperBasePosition(enemySapper);
-		}
-
-		for (const auto& placedModel : mapData.placedModels)
-		{
-			boundsPoints << placedModel.position;
-		}
-
-		for (const auto& resourceArea : mapData.resourceAreas)
-		{
-			boundsPoints << resourceArea.position;
-		}
-
-		double minX = boundsPoints.front().x;
-		double maxX = boundsPoints.front().x;
-		double minZ = boundsPoints.front().z;
-		double maxZ = boundsPoints.front().z;
-
-		for (const auto& point : boundsPoints)
-		{
-			minX = Min(minX, point.x);
-			maxX = Max(maxX, point.x);
-			minZ = Min(minZ, point.z);
-			maxZ = Max(maxZ, point.z);
-		}
-
-		const double padding = 4.0;
-		minX -= padding;
-		maxX += padding;
-		minZ -= padding;
-		maxZ += padding;
-
-		const double centerX = ((minX + maxX) * 0.5);
-		const double centerZ = ((minZ + maxZ) * 0.5);
-		const double worldSpan = Max({ (maxX - minX), (maxZ - minZ), 20.0 });
-		minX = (centerX - worldSpan * 0.5);
-		minZ = (centerZ - worldSpan * 0.5);
-
-		panel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 });
-		panel.drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-		SimpleGUI::GetFont()(U"Mini Map").draw((panel.x + 10), (panel.y + 6), Palette::White);
-		SimpleGUI::GetFont()(U"N").drawAt((panel.x + panel.w * 0.5), (panel.y + 18), ColorF{ 0.85, 0.92, 1.0 });
-		mapRect.draw(ColorF{ 0.02, 0.03, 0.05, 0.96 });
-		mapRect.drawFrame(1, 0, ColorF{ 0.35, 0.45, 0.55, 0.85 });
-
-		for (const auto& placedModel : mapData.placedModels)
-		{
-			Circle{ ToMiniMapPoint(mapRect, minX, minZ, worldSpan, placedModel.position), 2.0 }.draw(ColorF{ 0.48, 0.58, 0.48, 0.85 });
-		}
-
-		for (size_t i = 0; i < mapData.resourceAreas.size(); ++i)
-		{
-			const ResourceArea& resourceArea = mapData.resourceAreas[i];
-			const Optional<UnitTeam> ownerTeam = ((i < resourceAreaStates.size()) ? resourceAreaStates[i].ownerTeam : none);
-			const Vec2 resourcePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, resourceArea.position);
-			const double radius = Max(5.0, (resourceArea.radius / worldSpan) * mapRect.w);
-			Circle{ resourcePoint, radius }.draw(GetResourceTypeColor(resourceArea.type));
-			Circle{ resourcePoint, radius }.drawFrame(2.0, GetOwnerFrameColor(ownerTeam));
-		}
-
-        const Vec2 blacksmithPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.playerBasePosition);
-		RectF{ Arg::center = blacksmithPoint, 8, 8 }.draw(ColorF{ 0.92, 0.74, 0.28, 0.95 });
-
-      const Vec2 enemyBasePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.enemyBasePosition);
-		RectF{ Arg::center = enemyBasePoint, 8, 8 }.draw(ColorF{ 0.92, 0.28, 0.24, 0.95 });
-
-		const Vec2 rallyPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.sapperRallyPoint);
-		Quad{
-			rallyPoint.movedBy(0, -6),
-			rallyPoint.movedBy(6, 0),
-			rallyPoint.movedBy(0, 6),
-			rallyPoint.movedBy(-6, 0)
-		}.draw(ColorF{ 0.45, 0.88, 0.98, 0.95 });
-
-		for (size_t i = 0; i < spawnedSappers.size(); ++i)
-		{
-			const Vec2 sapperPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, GetSpawnedSapperBasePosition(spawnedSappers[i]));
-           const bool isSelected = selectedSapperIndices.contains(i);
-
-			if (isSelected)
-			{
-				Circle{ sapperPoint, 7.0 }.drawFrame(2.0, ColorF{ 1.0, 0.95, 0.35, 0.95 });
-			}
-
-			Circle{ sapperPoint, 4.0 }.draw(isSelected ? ColorF{ 1.0, 0.96, 0.55, 0.98 } : ColorF{ 0.96, 0.96, 1.0, 0.95 });
-		}
-
-		for (const auto& enemySapper : enemySappers)
-		{
-			const Vec2 enemyPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, GetSpawnedSapperBasePosition(enemySapper));
-			RectF{ Arg::center = enemyPoint, 7, 7 }.draw(ColorF{ 0.95, 0.35, 0.30, 0.95 });
-		}
-
-		const Vec3 cameraPosition = camera.getEyePosition();
-		Vec3 cameraDirection = (camera.getFocusPosition() - cameraPosition);
-		cameraDirection.y = 0.0;
-
-		if (cameraDirection.lengthSq() < 0.0001)
-		{
-			cameraDirection = Vec3{ 0, 0, 1 };
-		}
-		else
-		{
-			cameraDirection = cameraDirection.normalized();
-		}
-
-		const Vec3 cameraWing = Vec3{ -cameraDirection.z, 0, cameraDirection.x };
-		const double cameraRange = Max(3.0, worldSpan * 0.12);
-		const Vec2 cameraCenter = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, cameraPosition);
-		const Vec2 cameraTip = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, (cameraPosition + cameraDirection * cameraRange));
-		const Vec2 cameraLeft = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, (cameraPosition + cameraDirection * cameraRange * 0.55 + cameraWing * cameraRange * 0.35));
-		const Vec2 cameraRight = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, (cameraPosition + cameraDirection * cameraRange * 0.55 - cameraWing * cameraRange * 0.35));
-
-		Line{ cameraCenter, cameraTip }.draw(2.0, ColorF{ 0.98, 0.5, 0.32, 0.95 });
-		Triangle{ cameraTip, cameraLeft, cameraRight }.draw(ColorF{ 0.98, 0.5, 0.32, 0.7 });
-		Circle{ cameraCenter, 4.0 }.draw(ColorF{ 1.0, 0.72, 0.52, 0.98 });
-	}
-
 	void DrawSapperMenu(const SkyAppPanels& panels,
 		Array<SpawnedSapper>& spawnedSappers,
-     const Vec3& playerBasePosition,
+		const Vec3& playerBasePosition,
 		const Vec3& rallyPoint,
-        ResourceStock& playerResources,
+		ResourceStock& playerResources,
+        int32& playerTier,
 		const double sapperCost,
 		TimedMessage& sapperMenuMessage)
 	{
+       const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		panels.sapperMenu.draw(ColorF{ 0.97, 0.95 });
 		panels.sapperMenu.drawFrame(2, 0, ColorF{ 0.25 });
-		SimpleGUI::GetFont()(U"工兵メニュー").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 12), ColorF{ 0.12 });
-       SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 38), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"生産").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 66), ColorF{ 0.22 });
-		SimpleGUI::GetFont()(U"スキル").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 156), ColorF{ 0.22 });
+       SimpleGUI::GetFont()(U"兵メニュー").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 12), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 38), ColorF{ 0.12 });
+       SimpleGUI::GetFont()(U"魔力: {:.0f} / Tier {}"_fmt(playerResources.mana, playerTier)).draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 60), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"生産").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 86), ColorF{ 0.22 });
+     SimpleGUI::GetFont()(U"スキル").draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y + 208), ColorF{ 0.22 });
 
-       const Rect produceSapperButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 90), (panels.sapperMenu.w - 32), 28 };
-		const Rect tierUpgradeButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 122), (panels.sapperMenu.w - 32), 28 };
-		const Rect scoutingSkillButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 180), (panels.sapperMenu.w - 32), 28 };
-		const Rect fortifySkillButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 212), (panels.sapperMenu.w - 32), 28 };
+       const Rect produceSapperButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 110), (panels.sapperMenu.w - 32), 28 };
+        const Rect produceArcaneButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 142), (panels.sapperMenu.w - 32), 28 };
+		const Rect tierUpgradeButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 174), (panels.sapperMenu.w - 32), 28 };
+		const Rect scoutingSkillButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 232), (panels.sapperMenu.w - 32), 28 };
+		const Rect fortifySkillButton{ (panels.sapperMenu.x + 16), (panels.sapperMenu.y + 264), (panels.sapperMenu.w - 32), 28 };
 
-       if (DrawTextButton(produceSapperButton, U"工兵産出 ({:.0f})"_fmt(sapperCost)))
+      if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
 		{
-          if (sapperCost <= playerResources.budget)
+          TrySpawnPlayerUnit(spawnedSappers, playerBasePosition, rallyPoint, playerResources, SapperUnitType::Infantry, sapperCost, sapperMenuMessage);
+		}
+
+		if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(ArcaneInfantryCost)))
+		{
+			TrySpawnPlayerUnit(spawnedSappers, playerBasePosition, rallyPoint, playerResources, SapperUnitType::ArcaneInfantry, ArcaneInfantryCost, sapperMenuMessage);
+		}
+
+       if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
+		{
+           if (tierUpgradeCost <= playerResources.budget)
 			{
-					SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint);
-              playerResources.budget -= sapperCost;
-				sapperMenuMessage.show(U"工兵を産出");
+				playerResources.budget -= tierUpgradeCost;
+				++playerTier;
+				sapperMenuMessage.show(U"Tier {} に上昇"_fmt(playerTier));
 			}
 			else
 			{
-				sapperMenuMessage.show(U"資源不足");
+				sapperMenuMessage.show(U"予算不足");
 			}
-		}
-
-		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード"))
-		{
-			sapperMenuMessage.show(U"ティアアップグレードを選択");
 		}
 
 		if (DrawTextButton(scoutingSkillButton, U"索敵スキル"))
 		{
-			sapperMenuMessage.show(U"工兵が索敵スキルを準備");
+         sapperMenuMessage.show(U"兵が索敵スキルを準備");
 		}
 
 		if (DrawTextButton(fortifySkillButton, U"陣地化スキル"))
 		{
-			sapperMenuMessage.show(U"工兵が陣地化スキルを準備");
+            sapperMenuMessage.show(U"兵が陣地化スキルを準備");
 		}
 
 		if (sapperMenuMessage.isVisible())
 		{
 			SimpleGUI::GetFont()(sapperMenuMessage.text).draw((panels.sapperMenu.x + 16), (panels.sapperMenu.y - 28), ColorF{ 0.12 });
 		}
+	}
+}
+
+namespace SkyAppFlow
+{
+	using namespace MainSupport;
+	using namespace SkyAppSupport;
+
+	void DrawHudUi(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
+	{
+		if (state.showUI)
+		{
+			DrawSkySettingsPanel(state.sky, frame.panels);
+			DrawCameraSettingsPanel(state.camera, state.cameraSettings, resources.birdModel, resources.ashigaruModel, state.cameraSaveMessage, frame.panels);
+		}
+
+		DrawMiniMap(frame.panels, state.camera, state.mapData, state.spawnedSappers, state.enemySappers, state.resourceAreaStates, state.selectedSapperIndices);
+
+		if (frame.isEditorMode)
+		{
+			DrawMapEditorPanel(state.mapEditor, state.mapData, MapDataPath, frame.panels.mapEditor);
+		}
+
+		if ((not frame.isEditorMode) && (not state.playerWon) && state.showBlacksmithMenu)
+		{
+           DrawBlacksmithMenu(frame.panels, state.spawnedSappers, state.mapData.playerBasePosition, state.mapData.sapperRallyPoint, state.playerResources, state.playerTier, SapperCost, state.blacksmithMenuMessage);
+		}
+
+		if ((not frame.isEditorMode) && (not state.playerWon) && (state.selectedSapperIndices.size() == 1))
+		{
+           DrawSapperMenu(frame.panels, state.spawnedSappers, state.mapData.playerBasePosition, state.mapData.sapperRallyPoint, state.playerResources, state.playerTier, SapperCost, state.blacksmithMenuMessage);
+		}
+
+		if (frame.showMillStatusEditor && state.selectedMillIndex)
+		{
+			DrawMillStatusEditor(frame.panels, state.mapData, *state.selectedMillIndex, MapDataPath, state.mapDataMessage);
+		}
+
+		if (DrawTextButton(frame.panels.mapModeToggle, frame.isEditorMode ? U"Map Edit: ON" : U"Map Edit: OFF"))
+		{
+			state.appMode = frame.isEditorMode ? AppMode::Play : AppMode::EditMap;
+			state.showBlacksmithMenu = false;
+			state.selectedSapperIndices.clear();
+			state.selectedMillIndex.reset();
+			state.selectionDragStart.reset();
+			state.mapEditor.hoveredGroundPosition.reset();
+		}
+
+		if (DrawTextButton(frame.panels.modelHeightModeToggle, state.modelHeightEditMode ? U"Model Height: ON" : U"Model Height: OFF"))
+		{
+			state.modelHeightEditMode = not state.modelHeightEditMode;
+		}
+
+		if (DrawTextButton(frame.panels.reloadMapButton, U"保存済みマップ再読込"))
+		{
+			const String loadMessage = ReloadMapAndResetMatch(state);
+			state.mapDataMessage.show(loadMessage.isEmpty() ? U"保存済みマップを再読込" : loadMessage, 4.0);
+		}
+
+		if (DrawTextButton(frame.panels.restartButton, U"試合リスタート"))
+		{
+			ResetMatch(state);
+			state.restartMessage.show(U"試合をリスタート");
+		}
+
+		if (state.mapDataMessage.isVisible())
+		{
+			SimpleGUI::GetFont()(state.mapDataMessage.text).draw(20, (Scene::Height() - 132), ColorF{ 0.12 });
+		}
+
+		if (state.restartMessage.isVisible())
+		{
+			SimpleGUI::GetFont()(state.restartMessage.text).draw(20, (Scene::Height() - 108), ColorF{ 0.12 });
+		}
+
+		SimpleGUI::CheckBox(state.showUI, U"UI", Vec2{ 20, Scene::Height() - 100 });
+		SimpleGUI::Slider(U"time: {:.2f}"_fmt(state.skyTime), state.skyTime, -2.0, 4.0, Vec2{ 20, Scene::Height() - 60 }, 120, Scene::Width() - 160);
 	}
 }
