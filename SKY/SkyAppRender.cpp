@@ -10,6 +10,8 @@ namespace SkyAppFlow
 {
 	namespace
 	{
+      constexpr int32 ResourceAreaRingSegments = 36;
+
 		[[nodiscard]] ColorF GetResourceAreaColor(const ResourceType type)
 		{
 			switch (type)
@@ -25,6 +27,20 @@ namespace SkyAppFlow
 
 			default:
 				return ColorF{ 0.72, 0.72, 0.72, 0.28 };
+			}
+		}
+
+		void DrawResourceAreaRing(const Vec3& position, const double radius, const ColorF& ringColor)
+		{
+			const double markerRadius = Clamp((radius * 0.055), 0.10, 0.22);
+			const ColorF shadowColor{ 0.02, 0.03, 0.05, 0.56 };
+
+			for (int32 i = 0; i < ResourceAreaRingSegments; ++i)
+			{
+				const double angle = (Math::TwoPi * i / ResourceAreaRingSegments);
+				const Vec3 offset{ Math::Cos(angle) * radius, 0.0, Math::Sin(angle) * radius };
+				Cylinder{ position.movedBy(offset).movedBy(0, 0.02, 0), (markerRadius + 0.03), 0.04 }.draw(shadowColor.removeSRGBCurve());
+				Cylinder{ position.movedBy(offset).movedBy(0, 0.025, 0), markerRadius, 0.03 }.draw(ringColor.removeSRGBCurve());
 			}
 		}
 
@@ -53,7 +69,7 @@ namespace SkyAppFlow
 		{
 			const ResourceArea& area = state.mapData.resourceAreas[i];
 			const ResourceAreaState resourceState = ((i < state.resourceAreaStates.size()) ? state.resourceAreaStates[i] : ResourceAreaState{});
-			Cylinder{ area.position.movedBy(0, 0.02, 0), area.radius, 0.04 }.draw(GetResourceAreaColor(area.type).removeSRGBCurve());
+           DrawResourceAreaRing(area.position, area.radius, GetResourceAreaColor(area.type));
 			Cylinder{ area.position.movedBy(0, 0.06, 0), Max(0.35, area.radius * 0.16), 0.12 }.draw(GetTeamColor(resourceState.ownerTeam).removeSRGBCurve());
 		}
 

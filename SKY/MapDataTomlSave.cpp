@@ -1,0 +1,79 @@
+﻿# include "MapDataTomlInternal.hpp"
+
+using namespace MapDataTomlDetail;
+
+bool SaveMapData(const MapData& mapData, FilePathView path)
+{
+	const FilePath directory = FileSystem::ParentPath(path);
+	if (not directory.isEmpty())
+	{
+		FileSystem::CreateDirectories(directory);
+	}
+
+	TextWriter writer{ path };
+
+	if (not writer)
+	{
+		return false;
+	}
+
+	WriteTomlVec3(writer, U"playerBasePosition", mapData.playerBasePosition);
+	WriteTomlVec3(writer, U"enemyBasePosition", mapData.enemyBasePosition);
+	WriteTomlVec3(writer, U"sapperRallyPoint", mapData.sapperRallyPoint);
+	writer.writeln(U"");
+
+	for (const auto& resourceArea : mapData.resourceAreas)
+	{
+		writer.writeln(U"[[resourceAreas]]");
+		writer.writeln(U"type = \"{}\""_fmt(ToString(resourceArea.type)));
+		WriteTomlVec3(writer, U"position", resourceArea.position);
+		writer.writeln(U"radius = {:.3f}"_fmt(resourceArea.radius));
+		writer.writeln(U"");
+	}
+
+	for (const auto& navPoint : mapData.navPoints)
+	{
+		writer.writeln(U"[[navPoints]]");
+		WriteTomlVec3(writer, U"position", navPoint.position);
+		writer.writeln(U"radius = {:.3f}"_fmt(SanitizeNavPointRadius(navPoint.radius)));
+		writer.writeln(U"");
+	}
+
+	for (const auto& navLink : mapData.navLinks)
+	{
+		if ((mapData.navPoints.size() <= navLink.fromIndex) || (mapData.navPoints.size() <= navLink.toIndex)
+			|| (navLink.fromIndex == navLink.toIndex))
+		{
+			continue;
+		}
+
+		writer.writeln(U"[[navLinks]]");
+		writer.writeln(U"from = {}"_fmt(navLink.fromIndex));
+		writer.writeln(U"to = {}"_fmt(navLink.toIndex));
+		writer.writeln(U"bidirectional = {}"_fmt(navLink.bidirectional ? U"true" : U"false"));
+		writer.writeln(U"costMultiplier = {:.3f}"_fmt(SanitizeNavLinkCostMultiplier(navLink.costMultiplier)));
+		writer.writeln(U"");
+	}
+
+	for (const auto& object : mapData.placedModels)
+	{
+		writer.writeln(U"[[objects]]");
+		writer.writeln(U"type = \"{}\""_fmt(ToString(object.type)));
+		WriteTomlVec3(writer, U"position", object.position);
+
+		if (object.type == PlaceableModelType::Mill)
+		{
+			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));
+			writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(object.attackDamage)));
+			writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(object.attackInterval)));
+			writer.writeln(U"suppressionDuration = {:.3f}"_fmt(SanitizeMillSuppressionDuration(object.suppressionDuration)));
+			writer.writeln(U"suppressionMoveSpeedMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionMoveSpeedMultiplier(object.suppressionMoveSpeedMultiplier)));
+			writer.writeln(U"suppressionAttackDamageMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackDamageMultiplier(object.suppressionAttackDamageMultiplier)));
+			writer.writeln(U"suppressionAttackIntervalMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackIntervalMultiplier(object.suppressionAttackIntervalMultiplier)));
+		}
+
+		writer.writeln(U"");
+	}
+
+	return true;
+}

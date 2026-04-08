@@ -11,6 +11,9 @@ namespace SkyAppSupport
 	{
 		constexpr double HealthBarWidth = 36.0;
 		constexpr double HealthBarHeight = 5.0;
+		constexpr ColorF SuppressionAccentColor{ 0.70, 0.90, 1.0, 0.95 };
+		constexpr ColorF SuppressionAuraColor{ 0.34, 0.68, 1.0, 0.18 };
+		constexpr ColorF SuppressionLabelColor{ 0.92, 0.98, 1.0, 0.96 };
 
         [[nodiscard]] Optional<Vec2> ProjectToScreen(const AppCamera3D& camera, const Vec3& worldPosition)
 		{
@@ -119,7 +122,13 @@ namespace SkyAppSupport
 			const RectF fillRect{ backRect.pos, (backRect.w * rate), backRect.h };
 			backRect.draw(ColorF{ 0.05, 0.05, 0.05, 0.85 });
 			fillRect.draw(fillColor);
-			backRect.drawFrame(1.0, ColorF{ 0.9, 0.9, 0.9, 0.65 });
+         backRect.drawFrame(1.0, IsSapperSuppressed(sapper) ? SuppressionAccentColor : ColorF{ 0.9, 0.9, 0.9, 0.65 });
+
+			if (IsSapperSuppressed(sapper))
+			{
+				RectF{ backRect.x, (backRect.y - 4), backRect.w, 2.0 }.draw(SuppressionAccentColor);
+				SimpleGUI::GetFont()(U"SUP").drawAt(screenAnchor->movedBy(0, -22), SuppressionLabelColor);
+			}
 		}
 	}
 
@@ -141,6 +150,13 @@ namespace SkyAppSupport
 				const double appearance = Max(0.72, (0.72 + 0.28 * EaseOutBack(popIn)));
              const ColorF unitColor = GetSpawnedSapperTint(sapper, color);
 				const ColorF tint{ unitColor.r * appearance, unitColor.g * appearance, unitColor.b * appearance, unitColor.a };
+
+				if (IsSapperSuppressed(sapper))
+				{
+					const double pulse = (0.82 + 0.18 * Periodic::Sine0_1(2.0s));
+					Sphere{ renderPosition.movedBy(0, 1.25, 0), (1.05 + 0.10 * pulse) }.draw(ColorF{ SuppressionAuraColor.r, SuppressionAuraColor.g, SuppressionAuraColor.b, (SuppressionAuraColor.a + 0.05 * pulse) }.removeSRGBCurve());
+				}
+
 				sapperModel.draw(renderPosition, GetSpawnedSapperYaw(sapper), tint.removeSRGBCurve());
 			}
 			else

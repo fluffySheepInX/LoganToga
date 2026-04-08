@@ -5,6 +5,7 @@
 void RunSkyApp()
 {
 	Window::Resize(1280, 720);
+  System::SetTerminationTriggers(UserAction::CloseButtonClicked);
 	SkyAppFlow::SkyAppResources resources;
 	SkyAppFlow::SkyAppState state;
 	SkyAppFlow::InitializeSkyAppState(state);

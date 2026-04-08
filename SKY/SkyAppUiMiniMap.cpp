@@ -1,4 +1,4 @@
-﻿# include "SkyAppUi.hpp"
+﻿# include "SkyAppUiInternal.hpp"
 
 using namespace MainSupport;
 
@@ -47,7 +47,8 @@ namespace SkyAppSupport
 		}
 	}
 
-	void DrawMiniMap(const SkyAppPanels& panels,
+    void DrawMiniMap(bool& isExpanded,
+		const SkyAppPanels& panels,
         const AppCamera3D& camera,
 		const MapData& mapData,
 		const Array<SpawnedSapper>& spawnedSappers,
@@ -56,7 +57,21 @@ namespace SkyAppSupport
 		const Array<size_t>& selectedSapperIndices)
 	{
 		const Rect panel = panels.miniMap;
-		const RectF mapRect{ (panel.x + 10), (panel.y + 30), (panel.w - 20), (panel.h - 40) };
+
+		if (UiInternal::DrawAccordionHeader(panel, U"Mini Map", isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White))
+		{
+			isExpanded = not isExpanded;
+		}
+
+		if (not isExpanded)
+		{
+			return;
+		}
+
+		panel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 });
+		panel.drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
+		UiInternal::DrawAccordionHeader(panel, U"Mini Map", isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White);
+		const RectF mapRect{ (panel.x + 10), (panel.y + SkyAppUiLayout::AccordionHeaderHeight + 10), (panel.w - 20), Max(0, (panel.h - SkyAppUiLayout::AccordionHeaderHeight - 20)) };
 		Array<Vec3> boundsPoints{
 			mapData.playerBasePosition,
 			mapData.enemyBasePosition,
@@ -110,10 +125,7 @@ namespace SkyAppSupport
 		minX = (centerX - worldSpan * 0.5);
 		minZ = (centerZ - worldSpan * 0.5);
 
-		panel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 });
-		panel.drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-		SimpleGUI::GetFont()(U"Mini Map").draw((panel.x + 10), (panel.y + 6), Palette::White);
-		SimpleGUI::GetFont()(U"N").drawAt((panel.x + panel.w * 0.5), (panel.y + 18), ColorF{ 0.85, 0.92, 1.0 });
+       SimpleGUI::GetFont()(U"N").drawAt((panel.x + panel.w * 0.5), (panel.y + SkyAppUiLayout::AccordionHeaderHeight + 8), ColorF{ 0.85, 0.92, 1.0 });
 		mapRect.draw(ColorF{ 0.02, 0.03, 0.05, 0.96 });
 		mapRect.drawFrame(1, 0, ColorF{ 0.35, 0.45, 0.55, 0.85 });
 
@@ -128,8 +140,10 @@ namespace SkyAppSupport
 			const Optional<UnitTeam> ownerTeam = ((i < resourceAreaStates.size()) ? resourceAreaStates[i].ownerTeam : none);
 			const Vec2 resourcePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, resourceArea.position);
 			const double radius = Max(5.0, (resourceArea.radius / worldSpan) * mapRect.w);
-			Circle{ resourcePoint, radius }.draw(GetResourceTypeColor(resourceArea.type));
-			Circle{ resourcePoint, radius }.drawFrame(2.0, GetOwnerFrameColor(ownerTeam));
+          Circle{ resourcePoint, (radius + 1.5) }.drawFrame(3.0, ColorF{ 0.02, 0.03, 0.05, 0.92 });
+			Circle{ resourcePoint, radius }.drawFrame(2.4, GetResourceTypeColor(resourceArea.type));
+			Circle{ resourcePoint, Max(2.2, (radius * 0.20)) }.draw(ColorF{ 0.02, 0.03, 0.05, 0.90 });
+			Circle{ resourcePoint, Max(1.4, (radius * 0.14)) }.draw(GetOwnerFrameColor(ownerTeam));
 		}
 
 		const Vec2 blacksmithPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.playerBasePosition);

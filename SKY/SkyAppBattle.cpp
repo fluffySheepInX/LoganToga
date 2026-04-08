@@ -8,6 +8,11 @@ namespace SkyAppFlow
 {
 	namespace
 	{
+        constexpr double MillLaserLifetime = 0.12;
+		constexpr double MillLaserThickness = 5.0;
+		constexpr Vec3 MillLaserMuzzleOffset{ 0.0, 4.6, 0.0 };
+		constexpr Vec3 MillLaserTargetOffset{ 0.0, 1.6, 0.0 };
+
 		void AddResource(ResourceStock& stock, const ResourceType type, const double amount)
 		{
 			switch (type)
@@ -68,7 +73,7 @@ namespace SkyAppFlow
 			if (moveImmediately)
 			{
 				const size_t enemyIndex = (state.enemySappers.size() - 1);
-				SetSpawnedSapperTarget(state.enemySappers[enemyIndex], GetSapperPopTargetPosition(state.mapData.playerBasePosition, enemyIndex));
+               SetSpawnedSapperTarget(state.enemySappers[enemyIndex], GetSapperPopTargetPosition(state.mapData.playerBasePosition, enemyIndex), state.mapData);
 			}
 
 			++state.enemyReinforcementCount;
@@ -112,6 +117,25 @@ namespace SkyAppFlow
 			{
 				state.millLastAttackTimes = Array<double>(state.mapData.placedModels.size(), -1000.0);
 			}
+		}
+
+		void EmitAttackEffect(SkyAppState& state,
+			const AttackEffectType type,
+			const Vec3& startPosition,
+			const Vec3& endPosition,
+			const ColorF& color,
+			const double lifetime,
+			const double thickness)
+		{
+			state.attackEffects << AttackEffectInstance{
+				.type = type,
+				.startPosition = startPosition,
+				.endPosition = endPosition,
+				.color = color,
+				.startedAt = Scene::Time(),
+				.lifetime = lifetime,
+				.thickness = thickness,
+			};
 		}
 
 		[[nodiscard]] Optional<size_t> FindMillTargetIndex(const Vec3& millPosition, const double attackRange, const Vec3& playerBasePosition, const Array<SpawnedSapper>& enemySappers)
@@ -176,12 +200,19 @@ namespace SkyAppFlow
 
 				state.millLastAttackTimes[i] = currentTime;
 				SpawnedSapper& target = state.enemySappers[*targetIndex];
+               EmitAttackEffect(state,
+					AttackEffectType::Laser,
+					(placedModel.position + MillLaserMuzzleOffset),
+					(GetSpawnedSapperRenderPosition(target) + MillLaserTargetOffset),
+					ColorF{ 0.40, 0.92, 1.0, 1.0 },
+					MillLaserLifetime,
+					MillLaserThickness);
 				target.hitPoints = Max(0.0, (target.hitPoints - Clamp(placedModel.attackDamage, 1.0, 80.0)));
                ApplySapperSuppression(target,
-					MillSuppressionDuration,
-					MillSuppressionMoveSpeedMultiplier,
-					MillSuppressionAttackDamageMultiplier,
-					MillSuppressionAttackIntervalMultiplier);
+                    Clamp(placedModel.suppressionDuration, 0.2, 10.0),
+					Clamp(placedModel.suppressionMoveSpeedMultiplier, 0.1, 1.0),
+					Clamp(placedModel.suppressionAttackDamageMultiplier, 0.1, 1.0),
+					Clamp(placedModel.suppressionAttackIntervalMultiplier, 1.0, 10.0));
 			}
 		}
 
@@ -288,6 +319,15 @@ namespace SkyAppFlow
 		}
 	}
 
+	void UpdateAttackEffects(SkyAppState& state)
+	{
+		const double currentTime = Scene::Time();
+		state.attackEffects.remove_if([currentTime](const AttackEffectInstance& effect)
+			{
+				return ((effect.lifetime <= 0.0) || ((effect.startedAt + effect.lifetime) <= currentTime));
+			});
+	}
+
 	bool IsValidMillIndex(const SkyAppState& state, const Optional<size_t>& millIndex)
 	{
 		return millIndex
@@ -306,6 +346,7 @@ namespace SkyAppFlow
 		state.playerBaseHitPoints = BaseMaxHitPoints;
 		state.enemyBaseHitPoints = BaseMaxHitPoints;
 		state.millLastAttackTimes = Array<double>(state.mapData.placedModels.size(), -1000.0);
+      state.attackEffects.clear();
 		ResetResourceState(state);
       state.playerTier = 1;
 		state.nextEnemyReinforcementAt = (Scene::Time() + EnemyReinforcementInterval);
@@ -341,9 +382,9 @@ namespace SkyAppFlow
 			const Vec3 desiredTarget = GetSapperPopTargetPosition(state.mapData.playerBasePosition, i);
 
 			if (EnemyAdvanceStopDistance < GetSpawnedSapperBasePosition(state.enemySappers[i]).distanceFrom(state.mapData.playerBasePosition)
-				&& 0.25 < state.enemySappers[i].targetPosition.distanceFrom(desiredTarget))
+             && 0.25 < state.enemySappers[i].destinationPosition.distanceFrom(desiredTarget))
 			{
-				SetSpawnedSapperTarget(state.enemySappers[i], desiredTarget);
+               SetSpawnedSapperTarget(state.enemySappers[i], desiredTarget, state.mapData);
 			}
 		}
 
@@ -351,6 +392,8 @@ namespace SkyAppFlow
 		ResolveSapperSpacingAgainstUnits(state.enemySappers, state.spawnedSappers);
 		ResolveSapperSpacingAgainstBase(state.spawnedSappers, state.mapData.enemyBasePosition);
 		ResolveSapperSpacingAgainstBase(state.enemySappers, state.mapData.playerBasePosition);
+        ResolveSapperSpacingAgainstObstacles(state.spawnedSappers, state.mapData);
+		ResolveSapperSpacingAgainstObstacles(state.enemySappers, state.mapData);
 		UpdateResourceAreas(state);
 		UpdateMillDefense(state);
 

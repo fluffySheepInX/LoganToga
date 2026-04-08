@@ -252,6 +252,14 @@ namespace MainSupport
 			return;
 		}
 
+		case PlaceableModelType::Rock:
+		{
+			Cylinder{ placedModel.position.movedBy(0, 0.45, 0), 2.1, 0.9 }.draw(ColorF{ 0.36, 0.39, 0.42 }.removeSRGBCurve());
+			Sphere{ placedModel.position.movedBy(0, 1.45, 0), 1.75 }.draw(ColorF{ 0.48, 0.50, 0.54 }.removeSRGBCurve());
+			Sphere{ placedModel.position.movedBy(-0.8, 1.1, 0.6), 0.82 }.draw(ColorF{ 0.42, 0.45, 0.50 }.removeSRGBCurve());
+			return;
+		}
+
 		default:
 			return;
 		}

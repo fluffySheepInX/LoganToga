@@ -41,20 +41,37 @@ namespace SkyAppSupport
 		return (Scene::Time() < until);
 	}
 
+   SkyAppPanels::SkyAppPanels(const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded)
+		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), miniMapExpanded) }
+       , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
+		, cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
+		, mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
+		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height()) }
+		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
+		, millStatusEditor{ SkyAppUiLayout::MillStatusEditor(Scene::Width(), Scene::Height()) }
+       , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
+		, resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height()) }
+     , escMenu{ SkyAppUiLayout::EscMenu(Scene::Width(), Scene::Height()) }
+		, uiToggle{ SkyAppUiLayout::UiToggle(Scene::Width(), Scene::Height()) }
+		, mapModeToggle{ SkyAppUiLayout::MapModeToggle(Scene::Width(), Scene::Height()) }
+		, modelHeightModeToggle{ SkyAppUiLayout::ModelHeightModeToggle(Scene::Width(), Scene::Height()) }
+		, timeSlider{ SkyAppUiLayout::TimeSlider(Scene::Width(), Scene::Height()) }
+	{
+	}
+
  bool SkyAppPanels::isHoveringUi(const bool showUI, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode) const
 	{
-		return (showUI && (skySettings.mouseOver() || cameraSettings.mouseOver() || miniMap.mouseOver()))
+       return (showUI && (skySettings.mouseOver() || cameraSettings.mouseOver()))
+			|| miniMap.mouseOver()
 			|| (isEditorMode && mapEditor.mouseOver())
 			|| (showBlacksmithMenu && blacksmithMenu.mouseOver())
 			|| (showSapperMenu && sapperMenu.mouseOver())
          || (showMillStatusEditor && millStatusEditor.mouseOver())
 			|| (modelHeightEditMode && modelHeight.mouseOver())
 			|| uiToggle.mouseOver()
-			|| mapModeToggle.mouseOver()
-			|| modelHeightModeToggle.mouseOver()
-            || reloadMapButton.mouseOver()
-			|| restartButton.mouseOver()
-			|| timeSlider.mouseOver();
+            || (showUI && mapModeToggle.mouseOver())
+            || (showUI && modelHeightModeToggle.mouseOver())
+          || (showUI && timeSlider.mouseOver());
 	}
 
    void UpdateCameraWheelZoom(AppCamera3D& camera, CameraSettings& cameraSettings, const Vec3& playerBasePosition)

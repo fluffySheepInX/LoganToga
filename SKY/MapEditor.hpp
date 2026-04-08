@@ -13,6 +13,9 @@ enum class MapEditorTool
 	PlaceMill,
 	PlaceTree,
 	PlacePine,
+    PlaceRock,
+	PlaceNavPoint,
+	LinkNavPoints,
 };
 
 struct MapEditorState
@@ -21,6 +24,9 @@ struct MapEditorState
 	MapEditorTool selectedTool = MapEditorTool::SetSapperRallyPoint;
    bool selectionMode = false;
 	Optional<size_t> selectedPlacedModelIndex;
+   Optional<size_t> selectedResourceAreaIndex;
+   Optional<size_t> selectedNavPointIndex;
+	Optional<size_t> pendingNavLinkStartIndex;
 	Optional<Vec3> hoveredGroundPosition;
 	String statusMessage;
 	double statusMessageUntil = 0.0;

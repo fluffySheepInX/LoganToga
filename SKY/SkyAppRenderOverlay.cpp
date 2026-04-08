@@ -10,6 +10,11 @@ namespace SkyAppFlow
 {
 	namespace
 	{
+           [[nodiscard]] ColorF WithAlphaScaled(const ColorF& color, const double alphaScale)
+			{
+				return ColorF{ color.r, color.g, color.b, Math::Saturate(color.a * alphaScale) };
+			}
+
 		[[nodiscard]] ColorF GetTeamColor(const Optional<UnitTeam>& team)
 		{
 			if (team && (*team == UnitTeam::Player))
@@ -68,6 +73,44 @@ namespace SkyAppFlow
 			}
 
 			return Vec2{ screenPosition.x, screenPosition.y };
+		}
+
+		void DrawLaserAttackEffect(const AppCamera3D& camera, const AttackEffectInstance& effect)
+		{
+			const Optional<Vec2> start = ProjectToScreen(camera, effect.startPosition);
+			const Optional<Vec2> end = ProjectToScreen(camera, effect.endPosition);
+
+			if ((not start) || (not end))
+			{
+				return;
+			}
+
+			const double elapsed = Max(0.0, (Scene::Time() - effect.startedAt));
+			const double fade = (1.0 - Math::Saturate(elapsed / Max(effect.lifetime, 0.001)));
+			if (fade <= 0.0)
+			{
+				return;
+			}
+
+			Line{ *start, *end }.draw((effect.thickness * 2.6), WithAlphaScaled(effect.color, (0.14 * fade)));
+			Line{ *start, *end }.draw((effect.thickness * 1.4), WithAlphaScaled(effect.color, (0.34 * fade)));
+			Line{ *start, *end }.draw(effect.thickness, WithAlphaScaled(ColorF{ 1.0, 1.0, 1.0, 1.0 }, (0.92 * fade)));
+			Circle{ *start, (effect.thickness * 0.8) }.draw(WithAlphaScaled(effect.color, (0.55 * fade)));
+			Circle{ *end, (effect.thickness * 1.2) }.draw(WithAlphaScaled(effect.color, (0.72 * fade)));
+			Circle{ *end, (effect.thickness * 0.55) }.draw(WithAlphaScaled(ColorF{ 1.0, 1.0, 1.0, 1.0 }, (0.95 * fade)));
+		}
+
+		void DrawAttackEffect(const AppCamera3D& camera, const AttackEffectInstance& effect)
+		{
+			switch (effect.type)
+			{
+			case AttackEffectType::Laser:
+				DrawLaserAttackEffect(camera, effect);
+				return;
+
+			default:
+				return;
+			}
 		}
 
 		[[nodiscard]] RectF GetSelectionRect(const Optional<Vec2>& selectionDragStart)
@@ -131,6 +174,11 @@ namespace SkyAppFlow
 			DrawSelectionIndicator(state.camera, state.mapData.playerBasePosition);
 		}
 
+		for (const auto& attackEffect : state.attackEffects)
+		{
+			DrawAttackEffect(state.camera, attackEffect);
+		}
+
 		if (IsValidMillIndex(state, state.selectedMillIndex))
 		{
 			DrawSelectionIndicator(state.camera, state.mapData.placedModels[*state.selectedMillIndex].position);
@@ -187,10 +235,10 @@ namespace SkyAppFlow
 
 		const Rect resourcePanel = frame.panels.resourcePanel;
 		resourcePanel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 }).drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-		SimpleGUI::GetFont()(U"資源").draw((resourcePanel.x + 12), (resourcePanel.y + 6), Palette::White);
-		SimpleGUI::GetFont()(U"予算 {:.0f}"_fmt(state.playerResources.budget)).draw((resourcePanel.x + 12), (resourcePanel.y + 28), ColorF{ 0.98, 0.90, 0.38 });
-		SimpleGUI::GetFont()(U"火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw((resourcePanel.x + 12), (resourcePanel.y + 48), ColorF{ 0.98, 0.56, 0.42 });
-		SimpleGUI::GetFont()(U"魔力 {:.0f}"_fmt(state.playerResources.mana)).draw((resourcePanel.x + 112), (resourcePanel.y + 48), ColorF{ 0.58, 0.72, 1.0 });
+        SimpleGUI::GetFont()(U"資源").draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
+		SimpleGUI::GetFont()(U"予算 {:.0f}"_fmt(state.playerResources.budget)).draw(SkyAppUiLayout::ResourcePanelBudgetPosition(resourcePanel), ColorF{ 0.98, 0.90, 0.38 });
+		SimpleGUI::GetFont()(U"火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw(SkyAppUiLayout::ResourcePanelGunpowderPosition(resourcePanel), ColorF{ 0.98, 0.56, 0.42 });
+		SimpleGUI::GetFont()(U"魔力 {:.0f}"_fmt(state.playerResources.mana)).draw(SkyAppUiLayout::ResourcePanelManaPosition(resourcePanel), ColorF{ 0.58, 0.72, 1.0 });
 		const double reinforcementSeconds = Max(0.0, (state.nextEnemyReinforcementAt - Scene::Time()));
 		const String reinforcementText = U"増援 {:.1f}s"_fmt(reinforcementSeconds);
 		DrawBaseStatusLabel(state.camera,

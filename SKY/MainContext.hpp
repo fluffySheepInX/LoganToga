@@ -96,6 +96,7 @@ namespace MainSupport
 		Vec3 startPosition;
 		Vec3 position;
 		Vec3 targetPosition;
+     Vec3 destinationPosition;
 		double spawnedAt = 0.0;
       double moveStartedAt = 0.0;
 		double moveDuration = 0.0;

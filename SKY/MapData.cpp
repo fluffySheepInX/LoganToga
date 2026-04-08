@@ -11,6 +11,19 @@ MapData MakeDefaultMapData()
 		ResourceArea{ .type = MainSupport::ResourceType::Gunpowder, .position = Vec3{ -6.5, 0.0, 9.0 }, .radius = 4.8 },
 		ResourceArea{ .type = MainSupport::ResourceType::Mana, .position = Vec3{ 1.0, 0.0, -2.0 }, .radius = 4.8 },
 	};
+    mapData.navPoints = {
+		NavPoint{ .position = mapData.playerBasePosition, .radius = 1.8 },
+		NavPoint{ .position = Vec3{ 12.0, 0.0, 4.5 }, .radius = 1.6 },
+		NavPoint{ .position = Vec3{ 12.0, 0.0, 10.5 }, .radius = 1.6 },
+		NavPoint{ .position = Vec3{ 5.0, 0.0, 13.0 }, .radius = 1.6 },
+		NavPoint{ .position = mapData.enemyBasePosition, .radius = 1.8 },
+	};
+	mapData.navLinks = {
+		NavLink{ .fromIndex = 0, .toIndex = 1 },
+		NavLink{ .fromIndex = 1, .toIndex = 2 },
+		NavLink{ .fromIndex = 2, .toIndex = 3 },
+		NavLink{ .fromIndex = 3, .toIndex = 4 },
+	};
 	mapData.placedModels = {
       PlacedModel{ .type = PlaceableModelType::Mill, .position = Vec3{ 4.5, 0, 6.0 } },
 		PlacedModel{ .type = PlaceableModelType::Mill, .position = Vec3{ 11.5, 0, 6.0 } },
@@ -33,6 +46,9 @@ StringView ToString(const PlaceableModelType type)
 
 	case PlaceableModelType::Pine:
 		return U"Pine";
+
+	case PlaceableModelType::Rock:
+		return U"Rock";
 
 	default:
 		return U"Tree";

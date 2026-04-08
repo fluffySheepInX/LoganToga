@@ -6,6 +6,22 @@
 
 namespace SkyAppFlow
 {
+  enum class AttackEffectType
+	{
+		Laser,
+	};
+
+	struct AttackEffectInstance
+	{
+		AttackEffectType type = AttackEffectType::Laser;
+		Vec3 startPosition{ 0, 0, 0 };
+		Vec3 endPosition{ 0, 0, 0 };
+		ColorF color{ 0.40, 0.92, 1.0, 1.0 };
+		double startedAt = 0.0;
+		double lifetime = 0.12;
+		double thickness = 5.0;
+	};
+
 	struct SkyAppResources
 	{
 		Mesh groundPlane;
@@ -30,6 +46,10 @@ namespace SkyAppFlow
 		Sky sky;
 		double skyTime = 0.5;
 		bool showUI = true;
+      bool skySettingsExpanded = true;
+		bool cameraSettingsExpanded = true;
+      bool miniMapExpanded = true;
+      bool showEscMenu = false;
 		MainSupport::AppMode appMode = MainSupport::AppMode::Play;
 		MapEditorState mapEditor;
 		bool showBlacksmithMenu = false;
@@ -51,6 +71,7 @@ namespace SkyAppFlow
 		Array<MainSupport::ResourceAreaState> resourceAreaStates;
         int32 playerTier = 1;
       Array<double> millLastAttackTimes;
+      Array<AttackEffectInstance> attackEffects;
       int32 startupCameraFreezeFrames = 2;
 		double nextEnemyReinforcementAt = 0.0;
 		size_t enemyReinforcementCount = 0;
@@ -63,6 +84,7 @@ namespace SkyAppFlow
 		bool isEditorMode = false;
 		bool showSapperMenu = false;
       bool showMillStatusEditor = false;
+      bool showEscMenu = false;
 		bool isHoveringUI = false;
 		Vec3 birdRenderPosition = MainSupport::BirdDisplayPosition;
 		Vec3 ashigaruRenderPosition = MainSupport::AshigaruDisplayPosition;

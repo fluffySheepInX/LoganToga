@@ -153,6 +153,10 @@ namespace SkyAppSupport
 		mill.attackRange = Clamp(mill.attackRange, 1.0, 20.0);
 		mill.attackDamage = Clamp(mill.attackDamage, 1.0, 80.0);
 		mill.attackInterval = Clamp(mill.attackInterval, 0.2, 5.0);
+		mill.suppressionDuration = Clamp(mill.suppressionDuration, 0.2, 10.0);
+		mill.suppressionMoveSpeedMultiplier = Clamp(mill.suppressionMoveSpeedMultiplier, 0.1, 1.0);
+		mill.suppressionAttackDamageMultiplier = Clamp(mill.suppressionAttackDamageMultiplier, 0.1, 1.0);
+		mill.suppressionAttackIntervalMultiplier = Clamp(mill.suppressionAttackIntervalMultiplier, 1.0, 10.0);
 
 		DrawMillParameterEditorRow(panel,
 			(panel.y + 62),
@@ -169,15 +173,39 @@ namespace SkyAppSupport
 			2,
 			mill.attackInterval,
 			MillParameterEditorSpec{ U"Interval", U"s", 0.2, 5.0, 0.1, 0.25, 0.5, 0.05, 2 });
+		DrawMillParameterEditorRow(panel,
+			(panel.y + 260),
+			3,
+			mill.suppressionDuration,
+			MillParameterEditorSpec{ U"Suppress Time", U"s", 0.2, 10.0, 0.1, 0.5, 1.0, 0.05, 2 });
+		DrawMillParameterEditorRow(panel,
+			(panel.y + 326),
+			4,
+			mill.suppressionMoveSpeedMultiplier,
+			MillParameterEditorSpec{ U"Move Rate", U"x", 0.1, 1.0, 0.05, 0.1, 0.2, 0.05, 2 });
+		DrawMillParameterEditorRow(panel,
+			(panel.y + 392),
+			5,
+			mill.suppressionAttackDamageMultiplier,
+			MillParameterEditorSpec{ U"Atk Damage Rate", U"x", 0.1, 1.0, 0.05, 0.1, 0.2, 0.05, 2 });
+		DrawMillParameterEditorRow(panel,
+			(panel.y + 458),
+			6,
+			mill.suppressionAttackIntervalMultiplier,
+			MillParameterEditorSpec{ U"Atk Interval Rate", U"x", 1.0, 10.0, 0.1, 0.5, 1.0, 0.05, 2 });
 
-		const Rect resetButton{ (panel.x + 16), (panel.y + 274), 136, 30 };
-		const Rect saveButton{ (panel.x + panel.w - 152), (panel.y + 274), 136, 30 };
+     const Rect resetButton{ (panel.x + 16), (panel.y + 540), 136, 30 };
+		const Rect saveButton{ (panel.x + panel.w - 152), (panel.y + 540), 136, 30 };
 
 		if (DrawTextButton(resetButton, U"推奨値に戻す"))
 		{
 			mill.attackRange = MillDefenseRange;
 			mill.attackDamage = MillDefenseDamage;
 			mill.attackInterval = MillDefenseInterval;
+          mill.suppressionDuration = MillSuppressionDuration;
+			mill.suppressionMoveSpeedMultiplier = MillSuppressionMoveSpeedMultiplier;
+			mill.suppressionAttackDamageMultiplier = MillSuppressionAttackDamageMultiplier;
+			mill.suppressionAttackIntervalMultiplier = MillSuppressionAttackIntervalMultiplier;
 			mapDataMessage.show(U"Mill ステータスを既定値に戻しました", 3.0);
 		}
 
