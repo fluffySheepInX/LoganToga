@@ -260,6 +260,27 @@ namespace MainSupport
 			return;
 		}
 
+		case PlaceableModelType::Wall:
+		{
+			const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
+			const Vec3 direction{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
+			const Vec3 halfDirection = (direction * (wallLength * 0.5));
+			const Vec3 start = (placedModel.position - halfDirection);
+			const Vec3 goal = (placedModel.position + halfDirection);
+			Line3D{ start.movedBy(0, 0.12, 0), goal.movedBy(0, 0.12, 0) }.draw(ColorF{ 0.62, 0.66, 0.72, 0.95 }.removeSRGBCurve());
+			Cylinder{ start.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
+			Cylinder{ goal.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
+
+			const int32 segmentCount = Max(1, static_cast<int32>(Math::Ceil(wallLength / 1.2)));
+			for (int32 i = 0; i <= segmentCount; ++i)
+			{
+				const double t = (static_cast<double>(i) / segmentCount);
+				const Vec3 position = start.lerp(goal, t);
+				Cylinder{ position.movedBy(0, 0.42, 0), 0.34, 0.84 }.draw(ColorF{ 0.58, 0.60, 0.65 }.removeSRGBCurve());
+			}
+			return;
+		}
+
 		default:
 			return;
 		}

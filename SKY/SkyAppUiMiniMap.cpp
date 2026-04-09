@@ -13,6 +13,14 @@ namespace SkyAppSupport
 			return Vec2{ (mapRect.x + x * mapRect.w), (mapRect.bottomY() - z * mapRect.h) };
 		}
 
+		[[nodiscard]] std::pair<Vec3, Vec3> GetWallEndpoints(const PlacedModel& placedModel)
+		{
+			const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
+			const Vec3 direction{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
+			const Vec3 halfDirection = (direction * (wallLength * 0.5));
+			return std::pair{ (placedModel.position - halfDirection), (placedModel.position + halfDirection) };
+		}
+
 		[[nodiscard]] ColorF GetResourceTypeColor(const ResourceType type)
 		{
 			switch (type)
@@ -47,8 +55,9 @@ namespace SkyAppSupport
 		}
 	}
 
-    void DrawMiniMap(bool& isExpanded,
+  void DrawMiniMap(bool& isExpanded,
 		const SkyAppPanels& panels,
+      const bool uiEditMode,
         const AppCamera3D& camera,
 		const MapData& mapData,
 		const Array<SpawnedSapper>& spawnedSappers,
@@ -57,8 +66,9 @@ namespace SkyAppSupport
 		const Array<size_t>& selectedSapperIndices)
 	{
 		const Rect panel = panels.miniMap;
+		const String title = (uiEditMode ? U"Mini Map [Drag]" : U"Mini Map");
 
-		if (UiInternal::DrawAccordionHeader(panel, U"Mini Map", isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White))
+      if (UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White) && (not uiEditMode))
 		{
 			isExpanded = not isExpanded;
 		}
@@ -70,7 +80,7 @@ namespace SkyAppSupport
 
 		panel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 });
 		panel.drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-		UiInternal::DrawAccordionHeader(panel, U"Mini Map", isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White);
+     UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White);
 		const RectF mapRect{ (panel.x + 10), (panel.y + SkyAppUiLayout::AccordionHeaderHeight + 10), (panel.w - 20), Max(0, (panel.h - SkyAppUiLayout::AccordionHeaderHeight - 20)) };
 		Array<Vec3> boundsPoints{
 			mapData.playerBasePosition,
@@ -92,7 +102,16 @@ namespace SkyAppSupport
 
 		for (const auto& placedModel : mapData.placedModels)
 		{
-			boundsPoints << placedModel.position;
+           if (placedModel.type == PlaceableModelType::Wall)
+			{
+				const auto [start, end] = GetWallEndpoints(placedModel);
+				boundsPoints << start;
+				boundsPoints << end;
+			}
+			else
+			{
+				boundsPoints << placedModel.position;
+			}
 		}
 
 		for (const auto& resourceArea : mapData.resourceAreas)
@@ -131,7 +150,19 @@ namespace SkyAppSupport
 
 		for (const auto& placedModel : mapData.placedModels)
 		{
-			Circle{ ToMiniMapPoint(mapRect, minX, minZ, worldSpan, placedModel.position), 2.0 }.draw(ColorF{ 0.48, 0.58, 0.48, 0.85 });
+         if (placedModel.type == PlaceableModelType::Wall)
+			{
+				const auto [start, end] = GetWallEndpoints(placedModel);
+				const Vec2 startPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, start);
+				const Vec2 endPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, end);
+				Line{ startPoint, endPoint }.draw(3.0, ColorF{ 0.78, 0.82, 0.88, 0.95 });
+				Circle{ startPoint, 2.2 }.draw(ColorF{ 0.60, 0.66, 0.74, 0.98 });
+				Circle{ endPoint, 2.2 }.draw(ColorF{ 0.60, 0.66, 0.74, 0.98 });
+			}
+			else
+			{
+				Circle{ ToMiniMapPoint(mapRect, minX, minZ, worldSpan, placedModel.position), 2.0 }.draw(ColorF{ 0.48, 0.58, 0.48, 0.85 });
+			}
 		}
 
 		for (size_t i = 0; i < mapData.resourceAreas.size(); ++i)

@@ -22,20 +22,14 @@ namespace SkyAppSupport
 
 	void DrawSkySettingsPanel(Sky& sky, bool& isExpanded, const SkyAppPanels& panels)
 	{
-		const Rect& panelRect = panels.skySettings;
-		if (UiInternal::DrawAccordionHeader(panelRect, U"Sky Settings", isExpanded, ColorF{ 1.0, 0.92 }))
-		{
-			isExpanded = not isExpanded;
-		}
-
-		if (not isExpanded)
+     if (not isExpanded)
 		{
 			return;
 		}
 
-		UiInternal::DrawPanelFrame(panelRect, U"", ColorF{ 1.0, 0.92 });
-		UiInternal::DrawAccordionHeader(panelRect, U"Sky Settings", isExpanded, ColorF{ 1.0, 0.92 });
-		constexpr int32 contentOffsetY = SkyAppUiLayout::AccordionHeaderHeight;
+		const Rect& panelRect = panels.skySettings;
+       UiInternal::DrawPanelFrame(panelRect, U"Sky Settings", ColorF{ 1.0, 0.92 });
+		constexpr int32 contentOffsetY = 36;
 		Rect{ panelRect.x, panelRect.y + contentOffsetY, panelRect.w, 76 }.draw();
 		SimpleGUI::GetFont()(U"zenith:").draw((panelRect.x + 8), (panelRect.y + contentOffsetY + 4), ColorF{ 0.11 });
 		Rect{ (panelRect.x + 80), (panelRect.y + contentOffsetY + 6), 28, 28 }.draw(sky.zenithColor.gamma(2.2)).drawFrame(1, 0, ColorF{ 0.5 });
@@ -72,20 +66,14 @@ namespace SkyAppSupport
 		Vec3 editedFocus = cameraSettings.focus;
 		bool cameraChanged = false;
 		const Rect& panelRect = panels.cameraSettings;
-		constexpr int32 contentOffsetY = SkyAppUiLayout::AccordionHeaderHeight;
-
-		if (UiInternal::DrawAccordionHeader(panelRect, U"Camera Settings", isExpanded, ColorF{ 1.0, 0.92 }))
-		{
-			isExpanded = not isExpanded;
-		}
 
 		if (not isExpanded)
 		{
 			return;
 		}
 
-		UiInternal::DrawPanelFrame(panelRect, U"", ColorF{ 1.0, 0.92 });
-		UiInternal::DrawAccordionHeader(panelRect, U"Camera Settings", isExpanded, ColorF{ 1.0, 0.92 });
+        constexpr int32 contentOffsetY = 20;
+		UiInternal::DrawPanelFrame(panelRect, U"Camera Settings", ColorF{ 1.0, 0.92 });
 		SimpleGUI::GetFont()(U"Camera eye").draw(SkyAppUiLayout::CameraPanelTextPosition(panelRect, 20, (32 + contentOffsetY)), ColorF{ 0.11 });
 		cameraChanged = SimpleGUI::Slider(U"eyeX: {:.2f}"_fmt(editedEye.x), editedEye.x, GetSliderMin(cameraSettings.eye.x, -50.0), GetSliderMax(cameraSettings.eye.x, 50.0), SkyAppUiLayout::CameraPanelSliderPosition(panelRect, (40 + contentOffsetY)), SkyAppUiLayout::CameraPanelSliderLabelWidth(), SkyAppUiLayout::CameraPanelSliderWidth()) || cameraChanged;
 		cameraChanged = SimpleGUI::Slider(U"eyeY: {:.2f}"_fmt(editedEye.y), editedEye.y, GetSliderMin(cameraSettings.eye.y, -10.0), GetSliderMax(cameraSettings.eye.y, 50.0), SkyAppUiLayout::CameraPanelSliderPosition(panelRect, (80 + contentOffsetY)), SkyAppUiLayout::CameraPanelSliderLabelWidth(), SkyAppUiLayout::CameraPanelSliderWidth()) || cameraChanged;

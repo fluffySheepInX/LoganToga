@@ -9,6 +9,7 @@ namespace MapEditorDetail
 		constexpr double TreeSelectionRadius = 2.2;
 		constexpr double PineSelectionRadius = 2.2;
 		constexpr double RockSelectionRadius = 2.8;
+           constexpr double WallSelectionPadding = 1.0;
 	}
 
 	Optional<Vec3> GetGroundIntersection(const MainSupport::AppCamera3D& camera)
@@ -64,6 +65,9 @@ namespace MapEditorDetail
 		case PlaceableModelType::Rock:
 			return RockSelectionRadius;
 
+		case PlaceableModelType::Wall:
+			return Max(1.6, (placedModel.wallLength * 0.5 + WallSelectionPadding));
+
 		default:
 			return 2.0;
 		}
@@ -72,6 +76,41 @@ namespace MapEditorDetail
 	double GetNavPointSelectionRadius(const NavPoint& navPoint)
 	{
 		return Max(0.6, navPoint.radius);
+	}
+
+	double ComputeWallYaw(const Vec3& startPosition, const Vec3& endPosition, const double fallbackYaw)
+	{
+		const Vec2 direction{ (endPosition.x - startPosition.x), (endPosition.z - startPosition.z) };
+		if (direction.lengthSq() <= 0.0001)
+		{
+			return fallbackYaw;
+		}
+
+		return Math::Atan2(direction.x, direction.y);
+	}
+
+	double ComputeWallLength(const Vec3& startPosition, const Vec3& endPosition, const double fallbackLength)
+	{
+		const double distance = startPosition.distanceFrom(endPosition);
+		if (distance <= 0.0001)
+		{
+			return Clamp(fallbackLength, 2.0, 80.0);
+		}
+
+		return Clamp(distance, 2.0, 80.0);
+	}
+
+	PlacedModel BuildWallFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, const double fallbackLength, const double fallbackYaw)
+	{
+		const double yaw = ComputeWallYaw(startPosition, endPosition, fallbackYaw);
+		const double wallLength = ComputeWallLength(startPosition, endPosition, fallbackLength);
+		const Vec3 direction{ Math::Sin(yaw), 0.0, Math::Cos(yaw) };
+		return PlacedModel{
+			.type = PlaceableModelType::Wall,
+			.position = (startPosition + (direction * (wallLength * 0.5))),
+			.yaw = yaw,
+			.wallLength = wallLength,
+		};
 	}
 
 	bool IsValidPlacedModelIndex(const MapData& mapData, const Optional<size_t>& index)
@@ -123,6 +162,9 @@ namespace MapEditorDetail
 		case MapEditorTool::PlaceRock:
 			return U"Rock 配置";
 
+		case MapEditorTool::PlaceWall:
+			return U"Wall 配置";
+
 		case MapEditorTool::PlaceNavPoint:
 			return U"NavPoint 配置";
 
@@ -149,6 +191,9 @@ namespace MapEditorDetail
 
 		case MapEditorTool::PlaceRock:
 			return PlaceableModelType::Rock;
+
+		case MapEditorTool::PlaceWall:
+			return PlaceableModelType::Wall;
 
 		default:
 			return none;

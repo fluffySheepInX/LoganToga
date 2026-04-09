@@ -9,7 +9,7 @@ namespace SkyAppFlow
 
 	void DrawHudUi(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 	{
-           if (HandleEscMenu(state, frame))
+     if (HandleEscMenu(resources, state, frame))
 			{
 				return;
 			}

@@ -12,6 +12,9 @@ namespace SkyAppFlow
 		constexpr double CameraKeyboardMoveSpeedMin = 4.0;
 		constexpr double CameraKeyboardMoveSpeedMax = 28.0;
 		constexpr double CameraKeyboardMoveSpeedDistanceFactor = 0.7;
+			constexpr double CameraMiddleDragPanPerPixelMin = 0.02;
+			constexpr double CameraMiddleDragPanPerPixelMax = 0.35;
+			constexpr double CameraMiddleDragPanPerPixelDistanceFactor = 0.0025;
 
 		[[nodiscard]] bool IsFiniteVec3Value(const Vec3& value)
 		{
@@ -87,6 +90,54 @@ namespace SkyAppFlow
 			camera.setView(cameraSettings.eye, cameraSettings.focus);
 		}
 
+			void UpdateCameraMiddleDragMovement(AppCamera3D& camera, CameraSettings& cameraSettings, const bool enabled)
+			{
+				static Optional<Vec2> previousCursorPos;
+
+				if ((not enabled) || (not MouseM.pressed()))
+				{
+					previousCursorPos.reset();
+					return;
+				}
+
+				const Vec2 currentCursorPos = Cursor::PosF();
+
+				if (not previousCursorPos)
+				{
+					previousCursorPos = currentCursorPos;
+					return;
+				}
+
+				const Vec2 cursorDelta = (currentCursorPos - *previousCursorPos);
+				previousCursorPos = currentCursorPos;
+
+				if ((cursorDelta.x == 0.0) && (cursorDelta.y == 0.0))
+				{
+					return;
+				}
+
+				const Vec3 viewDirection = (cameraSettings.focus - cameraSettings.eye);
+				Vec3 forward{ viewDirection.x, 0.0, viewDirection.z };
+				const double forwardLengthSq = forward.lengthSq();
+
+				if ((not std::isfinite(forwardLengthSq)) || (forwardLengthSq <= 0.0001))
+				{
+					return;
+				}
+
+				forward /= std::sqrt(forwardLengthSq);
+				const Vec3 right{ forward.z, 0.0, -forward.x };
+				const double cameraDistance = viewDirection.length();
+				const double panPerPixel = Clamp((cameraDistance * CameraMiddleDragPanPerPixelDistanceFactor), CameraMiddleDragPanPerPixelMin, CameraMiddleDragPanPerPixelMax);
+				const Vec3 delta = (((right * -cursorDelta.x) + (forward * cursorDelta.y)) * panPerPixel);
+
+				cameraSettings.eye += delta;
+				cameraSettings.focus += delta;
+				EnsureValidCameraSettings(cameraSettings);
+				ThrowIfInvalidCameraPair(cameraSettings.eye, cameraSettings.focus, U"UpdateCameraMiddleDragMovement");
+				camera.setView(cameraSettings.eye, cameraSettings.focus);
+			}
+
 		void ApplyCameraFallback(SkyAppState& state)
 		{
 			state.cameraSettings.eye = DefaultCameraEye;
@@ -115,6 +166,8 @@ namespace SkyAppFlow
 					|| ((Mouse::Wheel() != 0.0)
 						&& (not MouseL.pressed())
 						&& (not MouseR.pressed()))));
+
+				UpdateCameraMiddleDragMovement(state.camera, state.cameraSettings, ((not freezeStartupCameraUpdate) && allowCameraDragInput));
 
 			if ((not freezeStartupCameraUpdate) && allowCameraDragInput)
 			{

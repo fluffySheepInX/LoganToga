@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -155,6 +155,8 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MapEditorScene.cpp" />
     <ClCompile Include="SkyApp.cpp" />
     <ClCompile Include="SkyAppBattle.cpp" />
+    <ClCompile Include="SkyAppBattleCombat.cpp" />
+    <ClCompile Include="SkyAppBattleResources.cpp" />
     <ClCompile Include="SkyAppLoop.cpp" />
     <ClCompile Include="SkyAppLoopCamera.cpp" />
     <ClCompile Include="SkyAppLoopSelection.cpp" />
@@ -164,22 +166,31 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppSapper.cpp" />
     <ClCompile Include="SkyAppSapperCombat.cpp" />
     <ClCompile Include="SkyAppSapperMovement.cpp" />
+    <ClCompile Include="SkyAppSapperObstacles.cpp" />
+    <ClCompile Include="SkyAppSapperPathfinding.cpp" />
     <ClCompile Include="SkyAppSupport.cpp" />
     <ClCompile Include="SkyAppUi.cpp" />
     <ClCompile Include="SkyAppUiHud.cpp" />
     <ClCompile Include="SkyAppUiMenus.cpp" />
     <ClCompile Include="SkyAppUiMillEditor.cpp" />
     <ClCompile Include="SkyAppUiMiniMap.cpp" />
+    <ClCompile Include="SkyAppUiParameterEditor.cpp" />
     <ClCompile Include="SkyAppUiSettings.cpp" />
+    <ClCompile Include="SkyAppUiUnitEditor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SkyAppBattleScene.cpp" />
+    <ClCompile Include="SkyAppCampaignEditorScene.cpp" />
+    <ClCompile Include="SkyAppSceneCommon.cpp" />
+    <ClCompile Include="SkyAppTitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BirdModel.hpp" />
     <ClInclude Include="BirdModelLoader.hpp" />
     <ClInclude Include="BirdModelTypes.hpp" />
+    <ClInclude Include="CampaignData.hpp" />
     <ClInclude Include="MainContext.hpp" />
     <ClInclude Include="MainScene.hpp" />
     <ClInclude Include="MainSettings.hpp" />
@@ -199,14 +210,18 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   <ItemGroup>
     <ClInclude Include="MapEditorInternal.hpp" />
     <ClInclude Include="SkyApp.hpp" />
+    <ClInclude Include="SkyAppBattleInternal.hpp" />
     <ClInclude Include="SkyAppLoop.hpp" />
     <ClInclude Include="SkyAppLoopInternal.hpp" />
     <ClInclude Include="SkyAppSapperInternal.hpp" />
+    <ClInclude Include="SkyAppSapperMovementInternal.hpp" />
     <ClInclude Include="SkyAppSupport.hpp" />
     <ClInclude Include="SkyAppUi.hpp" />
     <ClInclude Include="SkyAppUiInternal.hpp" />
     <ClInclude Include="SkyAppUiLayout.hpp" />
+    <ClInclude Include="SkyAppUiParameterEditorInternal.hpp" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SkyAppInternal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

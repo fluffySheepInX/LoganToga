@@ -7,8 +7,6 @@ namespace SkyAppSupport
 {
 	namespace
 	{
-		constexpr double ArcaneInfantryCost = 90.0;
-
 		struct EscMenuItem
 		{
 			StringView label;
@@ -33,18 +31,37 @@ namespace SkyAppSupport
 			}
 		}
 
+        [[nodiscard]] String GetExplosionSkillLabel(const SapperUnitType selectedUnitType, const bool explosionSkillReady)
+		{
+         if (selectedUnitType != SapperUnitType::Infantry)
+			{
+				return U"爆破スキル [兵専用]";
+			}
+
+            if (!explosionSkillReady)
+			{
+				return U"爆破スキル [準備中]";
+			}
+
+			return U"爆破スキル ({:.0f} 火薬)"_fmt(SapperExplosionGunpowderCost);
+		}
+
 		bool TrySpawnPlayerUnit(Array<SpawnedSapper>& spawnedSappers,
          const MapData& mapData,
 			const Vec3& playerBasePosition,
 			const Vec3& rallyPoint,
 			ResourceStock& playerResources,
+          const UnitEditorSettings& unitEditorSettings,
 			const SapperUnitType unitType,
-			const double manaCost,
 			TimedMessage& message)
 		{
+           const UnitParameters& unitParameters = GetUnitParameters(unitEditorSettings, UnitTeam::Player, unitType);
+			const double manaCost = unitParameters.manaCost;
+
 			if (manaCost <= playerResources.mana)
 			{
               SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint, mapData, unitType);
+               ApplyUnitParameters(spawnedSappers.back(), unitParameters);
 				playerResources.mana -= manaCost;
 				message.show(U"{}を出撃"_fmt(ToUnitDisplayName(unitType)));
 				return true;
@@ -60,6 +77,10 @@ namespace SkyAppSupport
 		static constexpr EscMenuItem Items[]
 		{
 			{ U"Restart", EscMenuAction::Restart },
+           { U"Title", EscMenuAction::Title },
+			{ U"1280 x 720", EscMenuAction::Resize1280x720 },
+			{ U"1600 x 900", EscMenuAction::Resize1600x900 },
+			{ U"1920 x 1080", EscMenuAction::Resize1920x1080 },
 		};
 
 		Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.35 });
@@ -75,7 +96,8 @@ namespace SkyAppSupport
 			}
 		}
 
-		SimpleGUI::GetFont()(U"Press ESC to close").draw((panelRect.x + 16), (panelRect.y + 100), ColorF{ 0.18 });
+        SimpleGUI::GetFont()(U"Window: {} x {}"_fmt(Scene::Width(), Scene::Height())).draw((panelRect.x + 16), (panelRect.y + 236), ColorF{ 0.18 });
+		SimpleGUI::GetFont()(U"Press ESC to close").draw((panelRect.x + 16), (panelRect.y + 258), ColorF{ 0.18 });
 		return EscMenuAction::None;
 	}
 
@@ -86,9 +108,11 @@ namespace SkyAppSupport
 		const Vec3& rallyPoint,
 		ResourceStock& playerResources,
 		int32& playerTier,
-		const double sapperCost,
+        const UnitEditorSettings& unitEditorSettings,
 		TimedMessage& blacksmithMenuMessage)
 	{
+      const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
+		const double arcaneInfantryCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::ArcaneInfantry).manaCost;
 		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		const Rect& panelRect = panels.blacksmithMenu;
 		UiInternal::DrawPanelFrame(panelRect, U"兵生産メニュー");
@@ -101,12 +125,12 @@ namespace SkyAppSupport
 
 		if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, SapperUnitType::Infantry, sapperCost, blacksmithMenuMessage);
+           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::Infantry, blacksmithMenuMessage);
 		}
 
-		if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(ArcaneInfantryCost)))
+     if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(arcaneInfantryCost)))
 		{
-         TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, SapperUnitType::ArcaneInfantry, ArcaneInfantryCost, blacksmithMenuMessage);
+           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::ArcaneInfantry, blacksmithMenuMessage);
 		}
 
 		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
@@ -129,16 +153,20 @@ namespace SkyAppSupport
 		}
 	}
 
-	void DrawSapperMenu(const SkyAppPanels& panels,
+     SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
 		Array<SpawnedSapper>& spawnedSappers,
      const MapData& mapData,
 		const Vec3& playerBasePosition,
 		const Vec3& rallyPoint,
 		ResourceStock& playerResources,
 		int32& playerTier,
-		const double sapperCost,
+     const SapperUnitType selectedUnitType,
+		const bool explosionSkillReady,
+        const UnitEditorSettings& unitEditorSettings,
 		TimedMessage& sapperMenuMessage)
 	{
+      const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
+		const double arcaneInfantryCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::ArcaneInfantry).manaCost;
 		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		const Rect& panelRect = panels.sapperMenu;
 		UiInternal::DrawPanelFrame(panelRect, U"兵メニュー", ColorF{ 0.97, 0.95 });
@@ -152,15 +180,16 @@ namespace SkyAppSupport
 		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 174);
 		const Rect scoutingSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 232);
 		const Rect fortifySkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 264);
+			const Rect explosionSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 296);
 
 		if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, SapperUnitType::Infantry, sapperCost, sapperMenuMessage);
+           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::Infantry, sapperMenuMessage);
 		}
 
-		if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(ArcaneInfantryCost)))
+     if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(arcaneInfantryCost)))
 		{
-         TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, SapperUnitType::ArcaneInfantry, ArcaneInfantryCost, sapperMenuMessage);
+           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::ArcaneInfantry, sapperMenuMessage);
 		}
 
 		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
@@ -187,9 +216,16 @@ namespace SkyAppSupport
 			sapperMenuMessage.show(U"兵が陣地化スキルを準備");
 		}
 
+       if (DrawTextButton(explosionSkillButton, GetExplosionSkillLabel(selectedUnitType, explosionSkillReady)))
+			{
+				return SapperMenuAction::UseExplosionSkill;
+			}
+
 		if (sapperMenuMessage.isVisible())
 		{
 			SimpleGUI::GetFont()(sapperMenuMessage.text).draw(SkyAppUiLayout::MenuMessagePosition(panelRect), ColorF{ 0.12 });
 		}
+
+			return SapperMenuAction::None;
 	}
 }

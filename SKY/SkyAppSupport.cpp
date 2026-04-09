@@ -41,8 +41,8 @@ namespace SkyAppSupport
 		return (Scene::Time() < until);
 	}
 
-   SkyAppPanels::SkyAppPanels(const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded)
-		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), miniMapExpanded) }
+       SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded)
+		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, miniMapExpanded) }
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
 		, cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
 		, mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
@@ -50,27 +50,39 @@ namespace SkyAppSupport
 		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
 		, millStatusEditor{ SkyAppUiLayout::MillStatusEditor(Scene::Width(), Scene::Height()) }
        , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
-		, resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height()) }
+       , unitEditor{ SkyAppUiLayout::UnitEditor(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorPosition) }
+	   , unitEditorList{ SkyAppUiLayout::UnitEditorList(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorListPosition) }
+       , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition) }
      , escMenu{ SkyAppUiLayout::EscMenu(Scene::Width(), Scene::Height()) }
 		, uiToggle{ SkyAppUiLayout::UiToggle(Scene::Width(), Scene::Height()) }
 		, mapModeToggle{ SkyAppUiLayout::MapModeToggle(Scene::Width(), Scene::Height()) }
 		, modelHeightModeToggle{ SkyAppUiLayout::ModelHeightModeToggle(Scene::Width(), Scene::Height()) }
+     , unitEditorModeToggle{ SkyAppUiLayout::UnitEditorModeToggle(Scene::Width(), Scene::Height()) }
+     , skySettingsToggle{ SkyAppUiLayout::SkySettingsToggle(Scene::Width(), Scene::Height()) }
+		, cameraSettingsToggle{ SkyAppUiLayout::CameraSettingsToggle(Scene::Width(), Scene::Height()) }
+     , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
 		, timeSlider{ SkyAppUiLayout::TimeSlider(Scene::Width(), Scene::Height()) }
 	{
 	}
 
- bool SkyAppPanels::isHoveringUi(const bool showUI, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode) const
+  bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
 	{
-       return (showUI && (skySettings.mouseOver() || cameraSettings.mouseOver()))
+       return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver())))
 			|| miniMap.mouseOver()
+          || resourcePanel.mouseOver()
 			|| (isEditorMode && mapEditor.mouseOver())
 			|| (showBlacksmithMenu && blacksmithMenu.mouseOver())
 			|| (showSapperMenu && sapperMenu.mouseOver())
          || (showMillStatusEditor && millStatusEditor.mouseOver())
 			|| (modelHeightEditMode && modelHeight.mouseOver())
+          || (showUnitEditor && (unitEditor.mouseOver() || unitEditorList.mouseOver()))
 			|| uiToggle.mouseOver()
             || (showUI && mapModeToggle.mouseOver())
             || (showUI && modelHeightModeToggle.mouseOver())
+            || (showUI && unitEditorModeToggle.mouseOver())
+            || (showUI && skySettingsToggle.mouseOver())
+			|| (showUI && cameraSettingsToggle.mouseOver())
+            || (showUI && uiEditModeToggle.mouseOver())
           || (showUI && timeSlider.mouseOver());
 	}
 

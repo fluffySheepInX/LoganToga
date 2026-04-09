@@ -10,7 +10,17 @@ namespace SkyAppFlow
 	using namespace MainSupport;
 	using namespace SkyAppSupport;
 
-	bool HandleEscMenu(SkyAppState& state, const SkyAppFrameState& frame)
+	namespace
+	{
+		void ResizeBattleWindow(SkyAppResources& resources, SkyAppState& state, const Size& size)
+		{
+			Window::Resize(size);
+			resources.renderTexture = MSRenderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
+			state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.camera.getEyePosition(), state.camera.getFocusPosition() };
+		}
+	}
+
+   bool HandleEscMenu(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		if (not state.showEscMenu)
 		{
@@ -22,6 +32,26 @@ namespace SkyAppFlow
 		case EscMenuAction::Restart:
 			ResetMatch(state);
 			state.restartMessage.show(U"試合をリスタート");
+			state.showEscMenu = false;
+			break;
+
+		case EscMenuAction::Title:
+			state.requestTitleScene = true;
+			state.showEscMenu = false;
+			break;
+
+		case EscMenuAction::Resize1280x720:
+			ResizeBattleWindow(resources, state, Size{ 1280, 720 });
+			state.showEscMenu = false;
+			break;
+
+		case EscMenuAction::Resize1600x900:
+			ResizeBattleWindow(resources, state, Size{ 1600, 900 });
+			state.showEscMenu = false;
+			break;
+
+		case EscMenuAction::Resize1920x1080:
+			ResizeBattleWindow(resources, state, Size{ 1920, 1080 });
 			state.showEscMenu = false;
 			break;
 
@@ -40,14 +70,7 @@ namespace SkyAppFlow
 			return;
 		}
 
-		const bool wasSkySettingsExpanded = state.skySettingsExpanded;
-		const bool wasCameraSettingsExpanded = state.cameraSettingsExpanded;
 		DrawSkySettingsPanel(state.sky, state.skySettingsExpanded, frame.panels);
-
-		if ((not wasSkySettingsExpanded) && state.skySettingsExpanded)
-		{
-			state.cameraSettingsExpanded = false;
-		}
 
 		DrawCameraSettingsPanel(state.camera,
 			state.cameraSettings,
@@ -56,17 +79,13 @@ namespace SkyAppFlow
 			resources.ashigaruModel,
 			state.cameraSaveMessage,
 			frame.panels);
-
-		if ((not wasCameraSettingsExpanded) && state.cameraSettingsExpanded)
-		{
-			state.skySettingsExpanded = false;
-		}
 	}
 
 	void DrawContextHud(SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		DrawMiniMap(state.miniMapExpanded,
 			frame.panels,
+           state.uiEditMode,
 			state.camera,
 			state.mapData,
 			state.spawnedSappers,
@@ -76,7 +95,7 @@ namespace SkyAppFlow
 
 		if (frame.isEditorMode)
 		{
-			DrawMapEditorPanel(state.mapEditor, state.mapData, MapDataPath, frame.panels.mapEditor);
+            DrawMapEditorPanel(state.mapEditor, state.mapData, state.currentMapPath, frame.panels.mapEditor);
 		}
 
 		if ((not frame.isEditorMode) && (not state.playerWon) && state.showBlacksmithMenu)
@@ -88,21 +107,48 @@ namespace SkyAppFlow
 				state.mapData.sapperRallyPoint,
 				state.playerResources,
 				state.playerTier,
-				SapperCost,
+             state.unitEditorSettings,
 				state.blacksmithMenuMessage);
 		}
 
 		if ((not frame.isEditorMode) && (not state.playerWon) && (state.selectedSapperIndices.size() == 1))
 		{
-			DrawSapperMenu(frame.panels,
+            const size_t selectedIndex = state.selectedSapperIndices.front();
+            const SpawnedSapper* selectedSapper = ((selectedIndex < state.spawnedSappers.size())
+				? &state.spawnedSappers[selectedIndex]
+				: nullptr);
+			const SapperUnitType selectedUnitType = (selectedSapper
+				? selectedSapper->unitType
+				: SapperUnitType::Infantry);
+			const bool explosionSkillReady = (selectedSapper
+				? (Scene::Time() >= selectedSapper->explosionSkillCooldownUntil)
+				: false);
+
+			if (DrawSapperMenu(frame.panels,
 				state.spawnedSappers,
                state.mapData,
 				state.mapData.playerBasePosition,
 				state.mapData.sapperRallyPoint,
 				state.playerResources,
 				state.playerTier,
-				SapperCost,
-				state.blacksmithMenuMessage);
+               selectedUnitType,
+				explosionSkillReady,
+             state.unitEditorSettings,
+               state.blacksmithMenuMessage) == SapperMenuAction::UseExplosionSkill)
+			{
+				TryUsePlayerSapperExplosionSkill(state, selectedIndex);
+			}
+		}
+
+		if (frame.showUnitEditor)
+		{
+			DrawUnitEditor(frame.panels,
+               state.uiEditMode,
+				state.unitEditorSettings,
+				state.unitEditorSection,
+				state.spawnedSappers,
+				state.enemySappers,
+				state.unitEditorMessage);
 		}
 
 		if (frame.showMillStatusEditor && state.selectedMillIndex)
@@ -126,11 +172,47 @@ namespace SkyAppFlow
 			state.selectedMillIndex.reset();
 			state.selectionDragStart.reset();
 			state.mapEditor.hoveredGroundPosition.reset();
+           state.unitEditorMode = false;
+			state.modelHeightEditMode = false;
 		}
 
 		if (DrawTextButton(frame.panels.modelHeightModeToggle, state.modelHeightEditMode ? U"▲" : U"△"))
 		{
 			state.modelHeightEditMode = not state.modelHeightEditMode;
+           if (state.modelHeightEditMode)
+			{
+				state.unitEditorMode = false;
+			}
+		}
+
+		if (DrawTextButton(frame.panels.unitEditorModeToggle, state.unitEditorMode ? U"Unit" : U"unit"))
+		{
+			state.unitEditorMode = not state.unitEditorMode;
+			if (state.unitEditorMode)
+			{
+				state.modelHeightEditMode = false;
+			}
+		}
+
+		if (DrawTextButton(frame.panels.skySettingsToggle, state.skySettingsExpanded ? U"◆" : U"◇"))
+		{
+			state.skySettingsExpanded = not state.skySettingsExpanded;
+		}
+
+		if (DrawTextButton(frame.panels.cameraSettingsToggle, state.cameraSettingsExpanded ? U"◉" : U"◎"))
+		{
+			state.cameraSettingsExpanded = not state.cameraSettingsExpanded;
+		}
+
+		if (DrawTextButton(frame.panels.uiEditModeToggle, state.uiEditMode ? U"UI+" : U"ui+"))
+		{
+			state.uiEditMode = not state.uiEditMode;
+			state.uiPanelDrag.reset();
+
+			if (state.uiEditMode)
+			{
+				state.uiLayoutMessage.show(U"UI Edit: drag mini map / resource");
+			}
 		}
 	}
 

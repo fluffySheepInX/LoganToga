@@ -5,6 +5,9 @@ using namespace MapEditorDetail;
 namespace
 {
 	constexpr int32 ResourceAreaRingSegments = 28;
+	constexpr double WallPreviewThickness = 1.0;
+	constexpr double WallPreviewHeight = 2.0;
+	constexpr double WallPreviewMarkerSpacing = 1.2;
 
 	void DrawResourceAreaRing(const Vec3& position, const double radius, const ColorF& ringColor)
 	{
@@ -21,6 +24,30 @@ namespace
 
 		Cylinder{ position.movedBy(0, 0.05, 0), 0.15, 0.10 }.draw(ColorF{ 0.06, 0.08, 0.11, 0.92 }.removeSRGBCurve());
 		Sphere{ position.movedBy(0, 0.22, 0), 0.12 }.draw(ringColor.removeSRGBCurve());
+	}
+
+	Vec3 GetWallDirection(const PlacedModel& placedModel)
+	{
+		return Vec3{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
+	}
+
+	void DrawWallPreview(const PlacedModel& placedModel, const ColorF& wallColor)
+	{
+		const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
+		const Vec3 halfDirection = (GetWallDirection(placedModel) * (wallLength * 0.5));
+		const Vec3 start = (placedModel.position - halfDirection);
+		const Vec3 goal = (placedModel.position + halfDirection);
+		Line3D{ start.movedBy(0, 0.12, 0), goal.movedBy(0, 0.12, 0) }.draw(wallColor.removeSRGBCurve());
+		Cylinder{ start.movedBy(0, 0.5, 0), 0.28, WallPreviewHeight }.draw(wallColor.removeSRGBCurve());
+		Cylinder{ goal.movedBy(0, 0.5, 0), 0.28, WallPreviewHeight }.draw(wallColor.removeSRGBCurve());
+
+		const int32 segmentCount = Max(1, static_cast<int32>(Math::Ceil(wallLength / WallPreviewMarkerSpacing)));
+		for (int32 i = 0; i <= segmentCount; ++i)
+		{
+			const double t = (static_cast<double>(i) / segmentCount);
+			const Vec3 position = start.lerp(goal, t);
+			Cylinder{ position.movedBy(0, 0.4, 0), (WallPreviewThickness * 0.34), 0.8 }.draw(ColorF{ wallColor, 0.85 }.removeSRGBCurve());
+		}
 	}
 }
 
@@ -74,9 +101,16 @@ void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 	if (IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex))
 	{
 		const PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
-		const double radius = GetPlacedModelSelectionRadius(placedModel);
-		Cylinder{ placedModel.position.movedBy(0, 0.04, 0), radius, 0.08 }.draw(ColorF{ 1.0, 0.92, 0.28, 0.50 }.removeSRGBCurve());
-		Sphere{ placedModel.position.movedBy(0, 0.42, 0), 0.22 }.draw(ColorF{ 1.0, 0.96, 0.55, 0.70 }.removeSRGBCurve());
+       if (placedModel.type == PlaceableModelType::Wall)
+		{
+			DrawWallPreview(placedModel, ColorF{ 1.0, 0.92, 0.28, 0.70 });
+		}
+		else
+		{
+			const double radius = GetPlacedModelSelectionRadius(placedModel);
+			Cylinder{ placedModel.position.movedBy(0, 0.04, 0), radius, 0.08 }.draw(ColorF{ 1.0, 0.92, 0.28, 0.50 }.removeSRGBCurve());
+			Sphere{ placedModel.position.movedBy(0, 0.42, 0), 0.22 }.draw(ColorF{ 1.0, 0.96, 0.55, 0.70 }.removeSRGBCurve());
+		}
 	}
 
 	if (IsValidResourceAreaIndex(mapData, state.selectedResourceAreaIndex))
@@ -103,9 +137,18 @@ void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 		if (IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex))
 		{
 			const PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
-			const double radius = GetPlacedModelSelectionRadius(placedModel);
-			Cylinder{ hoverPosition.movedBy(0, 0.04, 0), radius, 0.08 }.draw(ColorF{ 0.25, 0.92, 0.98, 0.32 }.removeSRGBCurve());
-			Sphere{ hoverPosition.movedBy(0, 0.28, 0), 0.16 }.draw(ColorF{ 0.40, 0.96, 1.0, 0.56 }.removeSRGBCurve());
+           if (placedModel.type == PlaceableModelType::Wall)
+			{
+				PlacedModel previewWall = placedModel;
+				previewWall.position = hoverPosition;
+				DrawWallPreview(previewWall, ColorF{ 0.40, 0.96, 1.0, 0.72 });
+			}
+			else
+			{
+				const double radius = GetPlacedModelSelectionRadius(placedModel);
+				Cylinder{ hoverPosition.movedBy(0, 0.04, 0), radius, 0.08 }.draw(ColorF{ 0.25, 0.92, 0.98, 0.32 }.removeSRGBCurve());
+				Sphere{ hoverPosition.movedBy(0, 0.28, 0), 0.16 }.draw(ColorF{ 0.40, 0.96, 1.0, 0.56 }.removeSRGBCurve());
+			}
 		}
 
 		if (IsValidResourceAreaIndex(mapData, state.selectedResourceAreaIndex))
@@ -149,6 +192,17 @@ void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 			const NavPoint& navPoint = mapData.navPoints[*state.pendingNavLinkStartIndex];
 			Sphere{ navPoint.position.movedBy(0, 0.32, 0), 0.18 }.draw(ColorF{ 0.25, 0.92, 0.98, 0.95 }.removeSRGBCurve());
 		}
+		return;
+	}
+
+	if (state.selectedTool == MapEditorTool::PlaceWall)
+	{
+       PlacedModel previewWall = BuildWallFromStartAndEnd(hoverPosition, hoverPosition, 10.0, 0.0);
+		if (state.pendingWallPlacementStartPosition)
+		{
+            previewWall = BuildWallFromStartAndEnd(*state.pendingWallPlacementStartPosition, hoverPosition, 10.0, 0.0);
+		}
+		DrawWallPreview(previewWall, ColorF{ 0.42, 0.86, 0.98, 0.68 });
 		return;
 	}
 

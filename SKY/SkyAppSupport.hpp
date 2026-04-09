@@ -26,16 +26,22 @@ namespace SkyAppSupport
 		Rect sapperMenu;
 		Rect millStatusEditor;
 		Rect modelHeight;
+     Rect unitEditor;
+     Rect unitEditorList;
 		Rect resourcePanel;
       Rect escMenu;
 		Rect uiToggle;
 		Rect mapModeToggle;
 		Rect modelHeightModeToggle;
+        Rect unitEditorModeToggle;
+        Rect skySettingsToggle;
+		Rect cameraSettingsToggle;
+        Rect uiEditModeToggle;
 		Rect timeSlider;
 
-     SkyAppPanels(bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool miniMapExpanded = true);
+      SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool miniMapExpanded = true);
 
-      [[nodiscard]] bool isHoveringUi(bool showUI, bool isEditorMode, bool showBlacksmithMenu, bool showSapperMenu, bool showMillStatusEditor, bool modelHeightEditMode) const;
+       [[nodiscard]] bool isHoveringUi(bool showUI, bool showSkySettings, bool showCameraSettings, bool isEditorMode, bool showBlacksmithMenu, bool showSapperMenu, bool showMillStatusEditor, bool modelHeightEditMode, bool showUnitEditor) const;
 	};
 
 	[[nodiscard]] Vec3 GetSpawnedSapperBasePosition(const MainSupport::SpawnedSapper& sapper);
@@ -47,6 +53,7 @@ namespace SkyAppSupport
 	[[nodiscard]] double GetEffectiveSapperAttackDamage(const MainSupport::SpawnedSapper& sapper);
 	[[nodiscard]] double GetEffectiveSapperAttackInterval(const MainSupport::SpawnedSapper& sapper);
     [[nodiscard]] ColorF GetSpawnedSapperTint(const MainSupport::SpawnedSapper& sapper, const ColorF& baseColor);
+    void ApplyUnitParameters(MainSupport::SpawnedSapper& sapper, const MainSupport::UnitParameters& parameters);
 	void ApplySapperSuppression(MainSupport::SpawnedSapper& sapper, double durationSeconds, double moveSpeedMultiplier, double attackDamageMultiplier, double attackIntervalMultiplier);
    void UpdateSpawnedSappers(Array<MainSupport::SpawnedSapper>& spawnedSappers, const MapData& mapData);
     void ResolveSapperSpacingAgainstUnits(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Array<MainSupport::SpawnedSapper>& enemySappers);
@@ -63,5 +70,5 @@ namespace SkyAppSupport
  void DrawSpawnedSappers(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const ColorF& color);
 	void UpdateSkyFromTime(Sky& sky, double skyTime);
   void SpawnSapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& spawnPosition, const Vec3& rallyPoint, const MapData& mapData, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);
-   void SpawnEnemySapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& position, double facingYaw = MainSupport::BirdDisplayYaw);
+  void SpawnEnemySapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& position, double facingYaw = MainSupport::BirdDisplayYaw, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);
 }

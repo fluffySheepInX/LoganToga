@@ -3,10 +3,43 @@
 
 namespace MapEditorDetail
 {
-	Optional<size_t> HitTestPlacedModel(const Array<PlacedModel>& placedModels, const MainSupport::AppCamera3D& camera)
+ namespace
+	{
+		constexpr double WallSelectionHalfWidth = 1.25;
+
+		[[nodiscard]] Vec2 ToHorizontal(const Vec3& value)
+		{
+			return Vec2{ value.x, value.z };
+		}
+
+		[[nodiscard]] double DistanceSqPointToSegment(const Vec2& point, const Vec2& start, const Vec2& end)
+		{
+			const Vec2 segment = (end - start);
+			const double segmentLengthSq = segment.lengthSq();
+
+			if (segmentLengthSq <= 0.0001)
+			{
+				return point.distanceFromSq(start);
+			}
+
+			const double t = Clamp(((point - start).dot(segment) / segmentLengthSq), 0.0, 1.0);
+			return point.distanceFromSq(start + (segment * t));
+		}
+
+		[[nodiscard]] std::pair<Vec2, Vec2> GetWallEndpoints(const PlacedModel& placedModel)
+		{
+			const Vec2 center = ToHorizontal(placedModel.position);
+			const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
+			const Vec2 direction{ Math::Sin(placedModel.yaw), Math::Cos(placedModel.yaw) };
+			const Vec2 halfDirection = (direction * (wallLength * 0.5));
+			return { (center - halfDirection), (center + halfDirection) };
+		}
+	}
+
+	Optional<size_t> HitTestPlacedModel(const Array<PlacedModel>& placedModels, const MainSupport::AppCamera3D& camera, const Optional<Vec3>& hoveredGroundPosition)
 	{
 		const Optional<Ray> cursorRay = MainSupport::TryScreenToRay(camera, Cursor::PosF());
-		if (not cursorRay)
+      if ((not cursorRay) && (not hoveredGroundPosition))
 		{
 			return none;
 		}
@@ -16,15 +49,52 @@ namespace MapEditorDetail
 
 		for (size_t i = 0; i < placedModels.size(); ++i)
 		{
-			const Sphere interactionSphere{ placedModels[i].position.movedBy(0, 2.2, 0), GetPlacedModelSelectionRadius(placedModels[i]) };
-			if (const auto distance = cursorRay->intersects(interactionSphere))
+          if (placedModels[i].type == PlaceableModelType::Wall)
 			{
+				continue;
+			}
+
+			const Sphere interactionSphere{ placedModels[i].position.movedBy(0, 2.2, 0), GetPlacedModelSelectionRadius(placedModels[i]) };
+         if (cursorRay && cursorRay->intersects(interactionSphere))
+			{
+                const auto distance = cursorRay->intersects(interactionSphere);
 				if (*distance < nearestDistance)
 				{
 					nearestDistance = *distance;
 					nearestIndex = i;
 				}
 			}
+		}
+
+		if (nearestIndex)
+		{
+			return nearestIndex;
+		}
+
+		if (not hoveredGroundPosition)
+		{
+			return none;
+		}
+
+		double nearestWallDistanceSq = Math::Inf;
+		const Vec2 hoverPoint = ToHorizontal(*hoveredGroundPosition);
+
+		for (size_t i = 0; i < placedModels.size(); ++i)
+		{
+			if (placedModels[i].type != PlaceableModelType::Wall)
+			{
+				continue;
+			}
+
+			const auto [start, end] = GetWallEndpoints(placedModels[i]);
+			const double distanceSq = DistanceSqPointToSegment(hoverPoint, start, end);
+			if ((Square(WallSelectionHalfWidth) < distanceSq) || (distanceSq >= nearestWallDistanceSq))
+			{
+				continue;
+			}
+
+			nearestWallDistanceSq = distanceSq;
+			nearestIndex = i;
 		}
 
 		return nearestIndex;

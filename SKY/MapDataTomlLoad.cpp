@@ -99,9 +99,12 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 					mapData.placedModels << PlacedModel{
 						.type = *type,
 						.position = Vec3{ positionValues[0], positionValues[1], positionValues[2] },
+                       .yaw = objectTable[U"yaw"].getOpt<double>().value_or(0.0),
+						.wallLength = SanitizeWallLength(objectTable[U"wallLength"].getOpt<double>().value_or(10.0)),
 						.attackRange = SanitizeMillAttackRange(objectTable[U"attackRange"].getOpt<double>().value_or(MainSupport::MillDefenseRange)),
 						.attackDamage = SanitizeMillAttackDamage(objectTable[U"attackDamage"].getOpt<double>().value_or(MainSupport::MillDefenseDamage)),
 						.attackInterval = SanitizeMillAttackInterval(objectTable[U"attackInterval"].getOpt<double>().value_or(MainSupport::MillDefenseInterval)),
+                        .attackTargetCount = SanitizeMillAttackTargetCount(objectTable[U"attackTargetCount"].getOpt<int64>().value_or(MainSupport::MillDefenseTargetCount)),
 						.suppressionDuration = SanitizeMillSuppressionDuration(objectTable[U"suppressionDuration"].getOpt<double>().value_or(MainSupport::MillSuppressionDuration)),
 						.suppressionMoveSpeedMultiplier = SanitizeMillSuppressionMoveSpeedMultiplier(objectTable[U"suppressionMoveSpeedMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionMoveSpeedMultiplier)),
 						.suppressionAttackDamageMultiplier = SanitizeMillSuppressionAttackDamageMultiplier(objectTable[U"suppressionAttackDamageMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionAttackDamageMultiplier)),

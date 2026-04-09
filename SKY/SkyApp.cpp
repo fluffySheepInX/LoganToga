@@ -1,17 +1,22 @@
-﻿# include <Siv3D.hpp>
-# include "SkyApp.hpp"
-# include "SkyAppLoop.hpp"
+﻿# include "SkyApp.hpp"
+# include "SkyAppInternal.hpp"
 
 void RunSkyApp()
 {
 	Window::Resize(1280, 720);
-  System::SetTerminationTriggers(UserAction::CloseButtonClicked);
-	SkyAppFlow::SkyAppResources resources;
-	SkyAppFlow::SkyAppState state;
-	SkyAppFlow::InitializeSkyAppState(state);
+	System::SetTerminationTriggers(UserAction::CloseButtonClicked);
+
+    SkyAppInternal::App manager;
+	SkyAppInternal::AddTitleScene(manager);
+	SkyAppInternal::AddCampaignEditorScene(manager);
+	SkyAppInternal::AddBattleScene(manager);
+	manager.init(U"Battle", 0);
 
 	while (System::Update())
 	{
-		SkyAppFlow::RunSkyAppFrame(resources, state);
+		if (not manager.update())
+		{
+			break;
+		}
 	}
 }

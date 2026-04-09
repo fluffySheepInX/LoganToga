@@ -7,6 +7,7 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 	if (not state.enabled)
 	{
 		state.hoveredGroundPosition.reset();
+     state.pendingWallPlacementStartPosition.reset();
 		return;
 	}
 
@@ -33,6 +34,11 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 		return;
 	}
 
+	if (state.selectedTool != MapEditorTool::PlaceWall)
+	{
+		state.pendingWallPlacementStartPosition.reset();
+	}
+
 	if (state.selectionMode)
 	{
 		if (not MouseL.down())
@@ -49,7 +55,7 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 			return;
 		}
 
-		if (const auto selectedIndex = HitTestPlacedModel(mapData.placedModels, camera))
+        if (const auto selectedIndex = HitTestPlacedModel(mapData.placedModels, camera, state.hoveredGroundPosition))
 		{
 			state.selectedPlacedModelIndex = *selectedIndex;
             state.selectedResourceAreaIndex.reset();
@@ -94,7 +100,29 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 		state.selectedPlacedModelIndex.reset();
      state.selectedResourceAreaIndex.reset();
 		state.selectedNavPointIndex.reset();
+       state.pendingWallPlacementStartPosition.reset();
 		SetStatusMessage(state, U"選択解除");
+		return;
+	}
+
+	if (state.selectedTool == MapEditorTool::PlaceWall)
+	{
+		if (MouseL.down() && state.hoveredGroundPosition)
+		{
+			state.pendingWallPlacementStartPosition = *state.hoveredGroundPosition;
+			return;
+		}
+
+		if (state.pendingWallPlacementStartPosition && MouseL.up())
+		{
+			const Vec3 wallPosition = *state.pendingWallPlacementStartPosition;
+			const Vec3 wallEndPosition = state.hoveredGroundPosition.value_or(wallPosition);
+          mapData.placedModels << BuildWallFromStartAndEnd(wallPosition, wallEndPosition, 10.0, 0.0);
+			state.pendingWallPlacementStartPosition.reset();
+			SetStatusMessage(state, U"Wall を配置");
+			return;
+		}
+
 		return;
 	}
 
@@ -173,7 +201,7 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 
 	if (const auto modelType = ToPlaceableModelType(state.selectedTool))
 	{
-		mapData.placedModels << PlacedModel{ .type = *modelType, .position = position };
+        mapData.placedModels << PlacedModel{ .type = *modelType, .position = position, .yaw = 0.0, .wallLength = 10.0 };
 		SetStatusMessage(state, U"モデルを配置");
 	}
 }

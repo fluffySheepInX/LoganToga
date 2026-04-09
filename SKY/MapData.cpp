@@ -50,6 +50,9 @@ StringView ToString(const PlaceableModelType type)
 	case PlaceableModelType::Rock:
 		return U"Rock";
 
+	case PlaceableModelType::Wall:
+		return U"Wall";
+
 	default:
 		return U"Tree";
 	}

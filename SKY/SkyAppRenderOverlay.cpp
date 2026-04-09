@@ -100,12 +100,43 @@ namespace SkyAppFlow
 			Circle{ *end, (effect.thickness * 0.55) }.draw(WithAlphaScaled(ColorF{ 1.0, 1.0, 1.0, 1.0 }, (0.95 * fade)));
 		}
 
+		void DrawExplosionAttackEffect(const AppCamera3D& camera, const AttackEffectInstance& effect)
+		{
+			const Optional<Vec2> center = ProjectToScreen(camera, effect.startPosition);
+			const Optional<Vec2> edge = ProjectToScreen(camera, effect.startPosition.movedBy(effect.radius, 0, 0));
+
+			if ((not center) || (not edge))
+			{
+				return;
+			}
+
+			const double elapsed = Max(0.0, (Scene::Time() - effect.startedAt));
+			const double duration = Max(effect.lifetime, 0.001);
+			const double t = Math::Saturate(elapsed / duration);
+			const double fade = (1.0 - t);
+			if (fade <= 0.0)
+			{
+				return;
+			}
+
+			const double baseRadius = Max(8.0, center->distanceFrom(*edge));
+			const double outerRadius = (baseRadius * (0.35 + t * 1.15));
+			const double innerRadius = (outerRadius * 0.52);
+			Circle{ *center, outerRadius }.drawFrame((effect.thickness * 0.55), WithAlphaScaled(effect.color, (0.88 * fade)));
+			Circle{ *center, innerRadius }.draw(WithAlphaScaled(ColorF{ 1.0, 0.92, 0.72, 1.0 }, (0.24 * fade)));
+			Circle{ *center, (effect.thickness * (0.55 + 0.85 * fade)) }.draw(WithAlphaScaled(ColorF{ 1.0, 1.0, 1.0, 1.0 }, (0.92 * fade)));
+		}
+
 		void DrawAttackEffect(const AppCamera3D& camera, const AttackEffectInstance& effect)
 		{
 			switch (effect.type)
 			{
 			case AttackEffectType::Laser:
 				DrawLaserAttackEffect(camera, effect);
+				return;
+
+			case AttackEffectType::Explosion:
+				DrawExplosionAttackEffect(camera, effect);
 				return;
 
 			default:
@@ -235,12 +266,16 @@ namespace SkyAppFlow
 
 		const Rect resourcePanel = frame.panels.resourcePanel;
 		resourcePanel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 }).drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-        SimpleGUI::GetFont()(U"資源").draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
+        SimpleGUI::GetFont()(state.uiEditMode ? U"資源 [Drag]" : U"資源").draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
 		SimpleGUI::GetFont()(U"予算 {:.0f}"_fmt(state.playerResources.budget)).draw(SkyAppUiLayout::ResourcePanelBudgetPosition(resourcePanel), ColorF{ 0.98, 0.90, 0.38 });
 		SimpleGUI::GetFont()(U"火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw(SkyAppUiLayout::ResourcePanelGunpowderPosition(resourcePanel), ColorF{ 0.98, 0.56, 0.42 });
 		SimpleGUI::GetFont()(U"魔力 {:.0f}"_fmt(state.playerResources.mana)).draw(SkyAppUiLayout::ResourcePanelManaPosition(resourcePanel), ColorF{ 0.58, 0.72, 1.0 });
-		const double reinforcementSeconds = Max(0.0, (state.nextEnemyReinforcementAt - Scene::Time()));
-		const String reinforcementText = U"増援 {:.1f}s"_fmt(reinforcementSeconds);
+        if (state.uiLayoutMessage.isVisible())
+		{
+			const Vec2 messagePosition{ static_cast<double>(resourcePanel.x), static_cast<double>(Min((resourcePanel.bottomY() + 8), (Scene::Height() - 28))) };
+			SimpleGUI::GetFont()(state.uiLayoutMessage.text).draw(messagePosition, ColorF{ 0.98, 0.92, 0.72 });
+		}
+     const String enemyStatusText = U"魔力 {:.0f}"_fmt(state.enemyResources.mana);
 		DrawBaseStatusLabel(state.camera,
 			state.mapData.playerBasePosition,
 			U"自軍拠点",
@@ -254,7 +289,7 @@ namespace SkyAppFlow
 			state.enemyBaseHitPoints,
 			ColorF{ 0.96, 0.28, 0.24, 0.95 },
 			ColorF{ 0.12, 0.08, 0.08, 0.88 },
-			reinforcementText);
+         enemyStatusText);
 
 		if (state.modelHeightEditMode)
 		{
@@ -274,6 +309,7 @@ namespace SkyAppFlow
 			overlay.draw(ColorF{ 0.06, 0.06, 0.08, 0.88 }).drawFrame(3, 0, *state.playerWon ? ColorF{ 0.45, 0.92, 0.56 } : ColorF{ 0.96, 0.38, 0.30 });
 			SimpleGUI::GetFont()(*state.playerWon ? U"Victory" : U"Defeat").drawAt(overlay.center().movedBy(0, -18), Palette::White);
 			SimpleGUI::GetFont()(*state.playerWon ? U"Enemy base destroyed" : U"Player base destroyed").drawAt(overlay.center().movedBy(0, 18), ColorF{ 0.92 });
+           SimpleGUI::GetFont()(U"Press Enter or Click").drawAt(overlay.center().movedBy(0, 48), ColorF{ 0.92, 0.92, 0.82, 0.95 });
 		}
 	}
 }

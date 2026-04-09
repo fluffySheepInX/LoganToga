@@ -8,11 +8,25 @@ namespace SkyAppUiLayout
 		inline constexpr int32 PanelMargin = 20;
 		inline constexpr int32 PanelGap = 20;
 		inline constexpr int32 RightColumnWidth = 220;
+      inline constexpr int32 ResourcePanelHeight = 84;
 		inline constexpr int32 BottomControlYOffset = 100;
        inline constexpr int32 AccordionHeaderHeight = 36;
             inline constexpr int32 MiniMapExpandedHeight = 220;
          inline constexpr int32 SkySettingsExpandedHeight = 466;
 			inline constexpr int32 CameraSettingsExpandedHeight = 416;
+
+		[[nodiscard]] inline int32 RightColumnX(const int32 sceneWidth)
+		{
+			return Max(PanelMargin, (sceneWidth - RightColumnWidth - PanelMargin));
+		}
+
+		[[nodiscard]] inline Point ClampPanelPosition(const Point& position, const int32 panelWidth, const int32 panelHeight, const int32 sceneWidth, const int32 sceneHeight)
+		{
+			return Point{
+				Clamp(position.x, 0, Max(0, (sceneWidth - panelWidth))),
+				Clamp(position.y, 0, Max(0, (sceneHeight - panelHeight)))
+			};
+		}
 	}
 
  [[nodiscard]] inline int32 AccordionPanelHeight(const bool expanded, const int32 expandedHeight)
@@ -20,30 +34,59 @@ namespace SkyAppUiLayout
 		return expanded ? expandedHeight : AccordionHeaderHeight;
 	}
 
-  [[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = true)
+    [[nodiscard]] inline Point DefaultMiniMapPosition(const int32 sceneWidth)
 	{
-		(void)sceneHeight;
-        return Rect{ Max(PanelMargin, (sceneWidth - RightColumnWidth - PanelMargin)), 124, 220, AccordionPanelHeight(expanded, MiniMapExpandedHeight) };
+		return Point{ RightColumnX(sceneWidth), (PanelMargin + ResourcePanelHeight + PanelGap) };
+	}
+
+	[[nodiscard]] inline Point DefaultResourcePanelPosition(const int32 sceneWidth)
+	{
+		return Point{ RightColumnX(sceneWidth), PanelMargin };
+	}
+
+	[[nodiscard]] inline Point DefaultUnitEditorPosition(const int32 sceneWidth)
+	{
+		return Point{ (sceneWidth - 340), 124 };
+	}
+
+	[[nodiscard]] inline Point DefaultUnitEditorListPosition()
+	{
+		return Point{ 20, 124 };
+	}
+
+	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = true)
+	{
+      const int32 panelHeight = AccordionPanelHeight(expanded, MiniMapExpandedHeight);
+		const Point clampedPosition = ClampPanelPosition(position, RightColumnWidth, panelHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, RightColumnWidth, panelHeight };
+	}
+
+	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = true)
+	{
+		return MiniMap(sceneWidth, sceneHeight, DefaultMiniMapPosition(sceneWidth), expanded);
 	}
 
  [[nodiscard]] inline Rect SkySettings(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = true)
 	{
         (void)sceneWidth;
 		(void)sceneHeight;
-        return Rect{ 20, 20, 480, AccordionPanelHeight(expanded, SkySettingsExpandedHeight) };
+      (void)expanded;
+		return Rect{ 20, 20, 480, SkySettingsExpandedHeight };
 	}
 
   [[nodiscard]] inline Rect CameraSettings(const int32 sceneWidth, const int32 sceneHeight, const bool skySettingsExpanded = true, const bool expanded = true)
 	{
      (void)sceneWidth;
 		(void)sceneHeight;
-      return Rect{ (20 + 480 + PanelGap), (SkySettings(sceneWidth, sceneHeight, skySettingsExpanded).y), 360, AccordionPanelHeight(expanded, CameraSettingsExpandedHeight) };
+       (void)skySettingsExpanded;
+		(void)expanded;
+		return Rect{ (20 + 480 + PanelGap), 20, 360, CameraSettingsExpandedHeight };
 	}
 
  [[nodiscard]] inline Rect MapEditor(const int32 sceneWidth, const int32 sceneHeight)
 	{
         (void)sceneHeight;
-		return Rect{ (sceneWidth - 360), 20, 340, 580 };
+        return Rect{ (sceneWidth - 360), 20, 340, 660 };
 	}
 
  [[nodiscard]] inline Rect BlacksmithMenu(const int32 sceneWidth, const int32 sceneHeight)
@@ -53,7 +96,7 @@ namespace SkyAppUiLayout
 
  [[nodiscard]] inline Rect SapperMenu(const int32 sceneWidth, const int32 sceneHeight)
 	{
-        return Rect{ (sceneWidth - 340), (sceneHeight - 324), 320, 284 };
+           return Rect{ (sceneWidth - 340), (sceneHeight - 396), 320, 356 };
 	}
 
  [[nodiscard]] inline Rect MillStatusEditor(const int32 sceneWidth, const int32 sceneHeight)
@@ -69,10 +112,38 @@ namespace SkyAppUiLayout
 		return Rect{ cameraPanel.x, (cameraPanel.bottomY() + PanelGap), 400, 300 };
 	}
 
-   [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight)
+	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-      (void)sceneHeight;
-		return Rect{ Max(PanelMargin, (sceneWidth - RightColumnWidth - PanelMargin)), 20, 220, 84 };
+		const int32 panelHeight = Max(520, (sceneHeight - 164));
+		const Point clampedPosition = ClampPanelPosition(position, 340, panelHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, 340, panelHeight };
+	}
+
+	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		return UnitEditor(sceneWidth, sceneHeight, DefaultUnitEditorPosition(sceneWidth));
+	}
+
+	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
+	{
+		const Point clampedPosition = ClampPanelPosition(position, 240, 320, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, 240, 320 };
+	}
+
+	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		return UnitEditorList(sceneWidth, sceneHeight, DefaultUnitEditorListPosition());
+	}
+
+ [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
+	{
+        const Point clampedPosition = ClampPanelPosition(position, RightColumnWidth, ResourcePanelHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, RightColumnWidth, ResourcePanelHeight };
+	}
+
+	[[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		return ResourcePanel(sceneWidth, sceneHeight, DefaultResourcePanelPosition(sceneWidth));
 	}
 
     [[nodiscard]] inline Rect UiToggle(const int32 sceneWidth, const int32 sceneHeight)
@@ -84,18 +155,42 @@ namespace SkyAppUiLayout
    [[nodiscard]] inline Rect MapModeToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
      (void)sceneWidth;
-      return Rect{ 180, (sceneHeight - BottomControlYOffset), 44, 36 };
+     return Rect{ 168, (sceneHeight - BottomControlYOffset), 44, 36 };
 	}
 
    [[nodiscard]] inline Rect ModelHeightModeToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
      (void)sceneWidth;
-        return Rect{ 244, (sceneHeight - BottomControlYOffset), 44, 36 };
+       return Rect{ 220, (sceneHeight - BottomControlYOffset), 44, 36 };
+	}
+
+	[[nodiscard]] inline Rect UnitEditorModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 272, (sceneHeight - BottomControlYOffset), 60, 36 };
+	}
+
+	[[nodiscard]] inline Rect SkySettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 340, (sceneHeight - BottomControlYOffset), 44, 36 };
+	}
+
+	[[nodiscard]] inline Rect CameraSettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 392, (sceneHeight - BottomControlYOffset), 44, 36 };
+	}
+
+	[[nodiscard]] inline Rect UiEditModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 444, (sceneHeight - BottomControlYOffset), 84, 36 };
 	}
 
  [[nodiscard]] inline Rect EscMenu(const int32 sceneWidth, const int32 sceneHeight)
 	{
-      return Rect{ ((sceneWidth - 280) / 2), ((sceneHeight - 140) / 2), 280, 140 };
+      return Rect{ ((sceneWidth - 280) / 2), ((sceneHeight - 300) / 2), 280, 300 };
 	}
 
   [[nodiscard]] inline Rect TimeSlider(const int32 sceneWidth, const int32 sceneHeight)

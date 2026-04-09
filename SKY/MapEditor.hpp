@@ -14,6 +14,7 @@ enum class MapEditorTool
 	PlaceTree,
 	PlacePine,
     PlaceRock,
+  PlaceWall,
 	PlaceNavPoint,
 	LinkNavPoints,
 };
@@ -27,6 +28,7 @@ struct MapEditorState
    Optional<size_t> selectedResourceAreaIndex;
    Optional<size_t> selectedNavPointIndex;
 	Optional<size_t> pendingNavLinkStartIndex;
+   Optional<Vec3> pendingWallPlacementStartPosition;
 	Optional<Vec3> hoveredGroundPosition;
 	String statusMessage;
 	double statusMessageUntil = 0.0;

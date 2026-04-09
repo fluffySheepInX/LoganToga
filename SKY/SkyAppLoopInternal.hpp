@@ -16,7 +16,8 @@ namespace SkyAppFlow
 	String ReloadMapAndResetMatch(SkyAppState& state);
  void UpdateAttackEffects(SkyAppState& state);
 	void UpdateBattleState(SkyAppState& state);
-    [[nodiscard]] bool HandleEscMenu(SkyAppState& state, const SkyAppFrameState& frame);
+    [[nodiscard]] bool TryUsePlayerSapperExplosionSkill(SkyAppState& state, size_t selectedSapperIndex);
+        [[nodiscard]] bool HandleEscMenu(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame);
 	void DrawSettingsHud(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame);
 	void DrawContextHud(SkyAppState& state, const SkyAppFrameState& frame);
 	void DrawHudModeToggles(SkyAppState& state, const SkyAppFrameState& frame);

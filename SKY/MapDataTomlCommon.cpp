@@ -18,6 +18,11 @@ namespace MapDataTomlDetail
 		return Clamp(value, 0.2, 5.0);
 	}
 
+	int32 SanitizeMillAttackTargetCount(const int64 value)
+	{
+		return Clamp<int32>(static_cast<int32>(value), 1, 6);
+	}
+
 	double SanitizeMillSuppressionDuration(const double value)
 	{
 		return Clamp(value, 0.2, 10.0);
@@ -46,6 +51,11 @@ namespace MapDataTomlDetail
 	double SanitizeNavLinkCostMultiplier(const double value)
 	{
 		return Clamp(value, 0.1, 10.0);
+	}
+
+	double SanitizeWallLength(const double value)
+	{
+		return Clamp(value, 2.0, 80.0);
 	}
 
 	Vec3 ReadTomlVec3(const TOMLReader& toml, const String& key, const Vec3& fallback)
@@ -186,6 +196,11 @@ namespace MapDataTomlDetail
 		if (value == U"Rock")
 		{
 			return PlaceableModelType::Rock;
+		}
+
+		if (value == U"Wall")
+		{
+			return PlaceableModelType::Wall;
 		}
 
 		return none;

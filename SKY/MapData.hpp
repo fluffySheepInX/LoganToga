@@ -7,16 +7,20 @@ enum class PlaceableModelType
 	Mill,
 	Tree,
 	Pine,
-  Rock,
+ Rock,
+	Wall,
 };
 
 struct PlacedModel
 {
 	PlaceableModelType type = PlaceableModelType::Tree;
 	Vec3 position{ 0, 0, 0 };
+   double yaw = 0.0;
+	double wallLength = 10.0;
   double attackRange = MainSupport::MillDefenseRange;
 	double attackDamage = MainSupport::MillDefenseDamage;
 	double attackInterval = MainSupport::MillDefenseInterval;
+    int32 attackTargetCount = MainSupport::MillDefenseTargetCount;
   double suppressionDuration = MainSupport::MillSuppressionDuration;
 	double suppressionMoveSpeedMultiplier = MainSupport::MillSuppressionMoveSpeedMultiplier;
 	double suppressionAttackDamageMultiplier = MainSupport::MillSuppressionAttackDamageMultiplier;

@@ -8,6 +8,8 @@ namespace MainSupport
 	inline constexpr FilePathView CameraSettingsPath = U"settings/camera_settings.toml";
 	inline constexpr FilePathView MapDataPath = U"settings/map_data.toml";
 	inline constexpr FilePathView ModelHeightSettingsPath = U"settings/model_height_settings.toml";
+    inline constexpr FilePathView UnitSettingsPath = U"settings/unit_settings.toml";
+    inline constexpr FilePathView UiLayoutSettingsPath = U"settings/ui_layout_settings.toml";
 	inline constexpr FilePathView BirdModelPath = U"model/bird.glb";
 	inline constexpr FilePathView AshigaruModelPath = U"model/ashigaru_v2.1.glb";
     inline constexpr Vec3 DefaultCameraEye{ 0, 8, -16 };
@@ -27,6 +29,7 @@ namespace MainSupport
  inline constexpr double ManaIncomePerSecond = 18.0;
 	inline constexpr double ResourceIncomePerSecond = 18.0;
 	inline constexpr double SapperCost = 60.0;
+   inline constexpr double ArcaneInfantryCost = 90.0;
  inline constexpr double TierUpgradeBaseCost = 100.0;
    inline constexpr double ResourceAreaDefaultRadius = 5.0;
 	inline constexpr double ResourceAreaCaptureSeconds = 2.5;
@@ -34,11 +37,19 @@ namespace MainSupport
 	inline constexpr double BudgetAreaIncome = 45.0;
 	inline constexpr double GunpowderAreaIncome = 25.0;
 	inline constexpr double ManaAreaIncome = 20.0;
+   inline constexpr double SapperExplosionGunpowderCost = 20.0;
+	inline constexpr double SapperExplosionRadius = 3.6;
+	inline constexpr double SapperExplosionDamage = 48.0;
+	inline constexpr double SapperExplosionBaseDamage = 36.0;
+	inline constexpr double SapperExplosionCooldownSeconds = 3.0;
 	inline constexpr double EnemyReinforcementInterval = 6.0;
+ inline constexpr double EnemyAiDecisionInterval = 1.0;
+	inline constexpr double EnemyStrongUnitProductionCooldown = 3.0;
 	inline constexpr double EnemyAdvanceStopDistance = 4.8;
     inline constexpr double MillDefenseRange = 6.5;
 	inline constexpr double MillDefenseDamage = 18.0;
 	inline constexpr double MillDefenseInterval = 1.2;
+  inline constexpr int32 MillDefenseTargetCount = 2;
     inline constexpr double MillSuppressionDuration = 2.4;
 	inline constexpr double MillSuppressionMoveSpeedMultiplier = 0.45;
 	inline constexpr double MillSuppressionAttackDamageMultiplier = 0.35;
@@ -63,6 +74,12 @@ namespace MainSupport
 		ArcaneInfantry,
 	};
 
+	enum class MovementType
+	{
+		Infantry,
+		Tank,
+	};
+
 	enum class ResourceType
 	{
 		Budget,
@@ -85,6 +102,90 @@ namespace MainSupport
 		double incomeProgress = 0.0;
 	};
 
+	struct UnitParameters
+	{
+		MovementType movementType = MovementType::Infantry;
+		double maxHitPoints = 100.0;
+		double moveSpeed = 6.0;
+		double attackRange = 3.2;
+		double attackDamage = 12.0;
+		double attackInterval = 0.8;
+		double manaCost = SapperCost;
+	};
+
+	[[nodiscard]] inline UnitParameters MakeDefaultUnitParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		switch (unitType)
+		{
+		case SapperUnitType::ArcaneInfantry:
+			return UnitParameters{
+				.movementType = MovementType::Infantry,
+				.maxHitPoints = ((team == UnitTeam::Enemy) ? 180.0 : 150.0),
+				.moveSpeed = 5.4,
+				.attackRange = 3.8,
+				.attackDamage = ((team == UnitTeam::Enemy) ? 19.0 : 20.0),
+				.attackInterval = 1.05,
+				.manaCost = ArcaneInfantryCost,
+			};
+
+		case SapperUnitType::Infantry:
+		default:
+			return UnitParameters{
+				.movementType = MovementType::Infantry,
+				.maxHitPoints = ((team == UnitTeam::Enemy) ? 120.0 : 100.0),
+				.moveSpeed = 6.0,
+				.attackRange = ((team == UnitTeam::Enemy) ? 3.0 : 3.2),
+				.attackDamage = ((team == UnitTeam::Enemy) ? 10.0 : 12.0),
+				.attackInterval = ((team == UnitTeam::Enemy) ? 0.95 : 0.8),
+				.manaCost = SapperCost,
+			};
+		}
+	}
+
+	struct UnitEditorSettings
+	{
+		UnitParameters playerInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::Infantry);
+		UnitParameters playerArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::ArcaneInfantry);
+		UnitParameters enemyInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::Infantry);
+		UnitParameters enemyArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::ArcaneInfantry);
+	};
+
+	enum class UnitEditorSection
+	{
+		PlayerInfantry,
+		PlayerArcaneInfantry,
+		EnemyInfantry,
+		EnemyArcaneInfantry,
+	};
+
+	[[nodiscard]] inline const UnitParameters& GetUnitParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		if (team == UnitTeam::Enemy)
+		{
+			return (unitType == SapperUnitType::ArcaneInfantry)
+				? settings.enemyArcaneInfantry
+				: settings.enemyInfantry;
+		}
+
+		return (unitType == SapperUnitType::ArcaneInfantry)
+			? settings.playerArcaneInfantry
+			: settings.playerInfantry;
+	}
+
+	[[nodiscard]] inline UnitParameters& GetUnitParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		if (team == UnitTeam::Enemy)
+		{
+			return (unitType == SapperUnitType::ArcaneInfantry)
+				? settings.enemyArcaneInfantry
+				: settings.enemyInfantry;
+		}
+
+		return (unitType == SapperUnitType::ArcaneInfantry)
+			? settings.playerArcaneInfantry
+			: settings.playerInfantry;
+	}
+
 	struct CameraSettings
 	{
 		Vec3 eye = DefaultCameraEye;
@@ -103,6 +204,7 @@ namespace MainSupport
         double facingYaw = BirdDisplayYaw;
 		UnitTeam team = UnitTeam::Player;
         SapperUnitType unitType = SapperUnitType::Infantry;
+        MovementType movementType = MovementType::Infantry;
 		double maxHitPoints = 100.0;
 		double hitPoints = 100.0;
        double moveSpeed = 6.0;
@@ -114,6 +216,7 @@ namespace MainSupport
 		double suppressedAttackDamageMultiplier = 1.0;
 		double suppressedAttackIntervalMultiplier = 1.0;
 		double lastAttackAt = -1000.0;
+      double explosionSkillCooldownUntil = -1000.0;
 	};
 
 	struct ModelHeightSettings
@@ -122,9 +225,23 @@ namespace MainSupport
 		double ashigaruOffsetY = 0.0;
 	};
 
+	struct UiLayoutSettings
+	{
+		Point miniMapPosition{ 0, 0 };
+		Point resourcePanelPosition{ 0, 0 };
+      Point unitEditorPosition{ 0, 0 };
+		Point unitEditorListPosition{ 0, 0 };
+	};
+
 	enum class AppMode
 	{
 		Play,
 		EditMap,
+	};
+
+	enum class EnemyBattlePlan
+	{
+		SecureResources,
+		AssaultBase,
 	};
 }

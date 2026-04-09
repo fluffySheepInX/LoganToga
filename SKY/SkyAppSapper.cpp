@@ -7,6 +7,19 @@ namespace SkyAppSupport
 {
 	namespace SapperInternal
 	{
+       [[nodiscard]] double GetSapperMoveProgressT(const SpawnedSapper& sapper, const double linearT)
+		{
+			switch (sapper.movementType)
+			{
+			case MovementType::Tank:
+				return EaseInOutCubic(linearT);
+
+			case MovementType::Infantry:
+			default:
+				return linearT;
+			}
+		}
+
 		[[nodiscard]] double ToSapperYaw(const Vec3& direction, const double fallbackYaw)
 		{
 			const Vec2 horizontalDirection{ direction.x, direction.z };
@@ -96,6 +109,17 @@ namespace SkyAppSupport
 		return (Scene::Time() < sapper.suppressedUntil);
 	}
 
+	void ApplyUnitParameters(SpawnedSapper& sapper, const UnitParameters& parameters)
+	{
+		sapper.movementType = parameters.movementType;
+		sapper.maxHitPoints = Max(1.0, parameters.maxHitPoints);
+		sapper.hitPoints = sapper.maxHitPoints;
+		sapper.moveSpeed = Max(SapperInternal::MinimumSapperMoveSpeed, parameters.moveSpeed);
+		sapper.attackRange = Max(0.5, parameters.attackRange);
+		sapper.baseAttackDamage = Max(0.0, parameters.attackDamage);
+		sapper.baseAttackInterval = Max(0.05, parameters.attackInterval);
+	}
+
 	double GetEffectiveSapperMoveSpeed(const SpawnedSapper& sapper)
 	{
 		const double multiplier = (IsSapperSuppressed(sapper)
@@ -157,7 +181,7 @@ namespace SkyAppSupport
 		}
 
 		const double elapsed = (Scene::Time() - sapper.moveStartedAt);
-		const double moveT = EaseInOutCubic(Min(elapsed / sapper.moveDuration, 1.0));
+       const double moveT = SapperInternal::GetSapperMoveProgressT(sapper, Min(elapsed / sapper.moveDuration, 1.0));
 		return sapper.startPosition.lerp(sapper.targetPosition, moveT);
 	}
 
@@ -194,17 +218,13 @@ namespace SkyAppSupport
 			.facingYaw = SapperInternal::ToSapperYaw((targetPosition - startPosition), BirdDisplayYaw),
 			.team = UnitTeam::Player,
 			.unitType = unitType,
-			.maxHitPoints = 100.0,
-			.hitPoints = 100.0,
-			.moveSpeed = SapperInternal::DefaultSapperMoveSpeed,
-			.attackRange = 3.2,
-			.baseAttackDamage = 12.0,
-			.baseAttackInterval = 0.8,
+           .movementType = MovementType::Infantry,
 		};
+       ApplyUnitParameters(spawnedSappers.back(), MakeDefaultUnitParameters(UnitTeam::Player, unitType));
        SetSpawnedSapperTarget(spawnedSappers.back(), targetPosition, mapData);
 	}
 
-	void SpawnEnemySapper(Array<SpawnedSapper>& spawnedSappers, const Vec3& position, const double facingYaw)
+   void SpawnEnemySapper(Array<SpawnedSapper>& spawnedSappers, const Vec3& position, const double facingYaw, const SapperUnitType unitType)
 	{
 		const double spawnTime = Scene::Time();
 		spawnedSappers << SpawnedSapper{
@@ -217,13 +237,9 @@ namespace SkyAppSupport
 			.moveDuration = 0.0,
 			.facingYaw = facingYaw,
 			.team = UnitTeam::Enemy,
-			.unitType = SapperUnitType::Infantry,
-			.maxHitPoints = 120.0,
-			.hitPoints = 120.0,
-			.moveSpeed = SapperInternal::DefaultSapperMoveSpeed,
-			.attackRange = 3.0,
-			.baseAttackDamage = 10.0,
-			.baseAttackInterval = 0.95,
+           .unitType = unitType,
+           .movementType = MovementType::Infantry,
 		};
+      ApplyUnitParameters(spawnedSappers.back(), MakeDefaultUnitParameters(UnitTeam::Enemy, unitType));
 	}
 }

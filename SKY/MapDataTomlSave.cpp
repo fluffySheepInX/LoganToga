@@ -61,11 +61,18 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 		writer.writeln(U"type = \"{}\""_fmt(ToString(object.type)));
 		WriteTomlVec3(writer, U"position", object.position);
 
+        if (object.type == PlaceableModelType::Wall)
+		{
+			writer.writeln(U"yaw = {:.6f}"_fmt(object.yaw));
+			writer.writeln(U"wallLength = {:.3f}"_fmt(SanitizeWallLength(object.wallLength)));
+		}
+
 		if (object.type == PlaceableModelType::Mill)
 		{
 			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));
 			writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(object.attackDamage)));
 			writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(object.attackInterval)));
+           writer.writeln(U"attackTargetCount = {}"_fmt(SanitizeMillAttackTargetCount(object.attackTargetCount)));
 			writer.writeln(U"suppressionDuration = {:.3f}"_fmt(SanitizeMillSuppressionDuration(object.suppressionDuration)));
 			writer.writeln(U"suppressionMoveSpeedMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionMoveSpeedMultiplier(object.suppressionMoveSpeedMultiplier)));
 			writer.writeln(U"suppressionAttackDamageMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackDamageMultiplier(object.suppressionAttackDamageMultiplier)));
