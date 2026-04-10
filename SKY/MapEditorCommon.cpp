@@ -8,6 +8,7 @@ namespace MapEditorDetail
 		constexpr double MillSelectionRadius = 4.5;
 		constexpr double TreeSelectionRadius = 2.2;
 		constexpr double PineSelectionRadius = 2.2;
+     constexpr double GrassPatchSelectionRadius = 2.6;
 		constexpr double RockSelectionRadius = 2.8;
            constexpr double WallSelectionPadding = 1.0;
 	}
@@ -62,11 +63,17 @@ namespace MapEditorDetail
 		case PlaceableModelType::Pine:
 			return PineSelectionRadius;
 
+		case PlaceableModelType::GrassPatch:
+			return GrassPatchSelectionRadius;
+
 		case PlaceableModelType::Rock:
 			return RockSelectionRadius;
 
 		case PlaceableModelType::Wall:
 			return Max(1.6, (placedModel.wallLength * 0.5 + WallSelectionPadding));
+
+		case PlaceableModelType::Road:
+			return Max(2.4, (Max(placedModel.roadLength, placedModel.roadWidth) * 0.55));
 
 		default:
 			return 2.0;
@@ -113,6 +120,20 @@ namespace MapEditorDetail
 		};
 	}
 
+	PlacedModel BuildRoadFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, const double fallbackLength, const double fallbackWidth, const double fallbackYaw)
+	{
+		const double yaw = ComputeWallYaw(startPosition, endPosition, fallbackYaw);
+		const double roadLength = ComputeWallLength(startPosition, endPosition, fallbackLength);
+		const Vec3 direction{ Math::Sin(yaw), 0.0, Math::Cos(yaw) };
+		return PlacedModel{
+			.type = PlaceableModelType::Road,
+			.position = (startPosition + (direction * (roadLength * 0.5))),
+			.yaw = yaw,
+			.roadLength = roadLength,
+			.roadWidth = Clamp(fallbackWidth, 2.0, 80.0),
+		};
+	}
+
 	bool IsValidPlacedModelIndex(const MapData& mapData, const Optional<size_t>& index)
 	{
 		return index && (*index < mapData.placedModels.size());
@@ -150,6 +171,21 @@ namespace MapEditorDetail
 		case MapEditorTool::SetManaArea:
 			return U"魔力エリア";
 
+		case MapEditorTool::PaintGrass:
+			return U"草地 塗り";
+
+		case MapEditorTool::PaintDirt:
+			return U"土地 塗り";
+
+		case MapEditorTool::PaintSand:
+			return U"砂地 塗り";
+
+		case MapEditorTool::PaintRock:
+			return U"岩地 塗り";
+
+		case MapEditorTool::EraseTerrain:
+			return U"地表 削除";
+
 		case MapEditorTool::PlaceMill:
 			return U"Mill 配置";
 
@@ -159,11 +195,17 @@ namespace MapEditorDetail
 		case MapEditorTool::PlacePine:
 			return U"Pine 配置";
 
+		case MapEditorTool::PlaceGrassPatch:
+			return U"GrassTile 配置";
+
 		case MapEditorTool::PlaceRock:
 			return U"Rock 配置";
 
 		case MapEditorTool::PlaceWall:
 			return U"Wall 配置";
+
+		case MapEditorTool::PlaceRoad:
+			return U"Road 配置";
 
 		case MapEditorTool::PlaceNavPoint:
 			return U"NavPoint 配置";
@@ -189,11 +231,38 @@ namespace MapEditorDetail
 		case MapEditorTool::PlacePine:
 			return PlaceableModelType::Pine;
 
+		case MapEditorTool::PlaceGrassPatch:
+			return PlaceableModelType::GrassPatch;
+
 		case MapEditorTool::PlaceRock:
 			return PlaceableModelType::Rock;
 
 		case MapEditorTool::PlaceWall:
 			return PlaceableModelType::Wall;
+
+		case MapEditorTool::PlaceRoad:
+			return PlaceableModelType::Road;
+
+		default:
+			return none;
+		}
+	}
+
+	Optional<TerrainCellType> ToTerrainCellType(const MapEditorTool tool)
+	{
+		switch (tool)
+		{
+		case MapEditorTool::PaintGrass:
+			return TerrainCellType::Grass;
+
+		case MapEditorTool::PaintDirt:
+			return TerrainCellType::Dirt;
+
+		case MapEditorTool::PaintSand:
+			return TerrainCellType::Sand;
+
+		case MapEditorTool::PaintRock:
+			return TerrainCellType::Rock;
 
 		default:
 			return none;

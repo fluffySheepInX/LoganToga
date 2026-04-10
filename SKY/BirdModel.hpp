@@ -45,6 +45,7 @@ private:
 		   uint32 vertexCount = 0;
 		   DynamicMesh dynamicMesh;
 		   ColorF materialColor{ 1.0, 1.0, 1.0, 1.0 };
+          Texture diffuseTexture;
 	   };
 
 	   void evaluateAnimationPose();

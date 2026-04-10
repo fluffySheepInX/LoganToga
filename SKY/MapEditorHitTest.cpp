@@ -6,6 +6,11 @@ namespace MapEditorDetail
  namespace
 	{
 		constexpr double WallSelectionHalfWidth = 1.25;
+		constexpr double RoadCornerHandleRadius = 1.35;
+     constexpr double RoadRotationHandleRadius = 1.6;
+		constexpr double RoadRotationHandleOffset = 2.4;
+		constexpr double MinRoadSpan = 2.0;
+		constexpr double MaxRoadSpan = 80.0;
 
 		[[nodiscard]] Vec2 ToHorizontal(const Vec3& value)
 		{
@@ -34,6 +39,136 @@ namespace MapEditorDetail
 			const Vec2 halfDirection = (direction * (wallLength * 0.5));
 			return { (center - halfDirection), (center + halfDirection) };
 		}
+
+		[[nodiscard]] double ClampRoadSpan(const double value)
+		{
+			return Clamp(value, MinRoadSpan, MaxRoadSpan);
+		}
+
+		[[nodiscard]] Vec2 GetRoadForwardDirection(const PlacedModel& placedModel)
+		{
+			return Vec2{ Math::Sin(placedModel.yaw), Math::Cos(placedModel.yaw) };
+		}
+
+		[[nodiscard]] Vec2 GetRoadRightDirection(const PlacedModel& placedModel)
+		{
+			const Vec2 forward = GetRoadForwardDirection(placedModel);
+			return Vec2{ forward.y, -forward.x };
+		}
+
+		[[nodiscard]] Vec2 ToRoadLocal(const PlacedModel& placedModel, const Vec3& position)
+		{
+			const Vec2 delta = (ToHorizontal(position) - ToHorizontal(placedModel.position));
+			const Vec2 forward = GetRoadForwardDirection(placedModel);
+			const Vec2 right = GetRoadRightDirection(placedModel);
+			return Vec2{ delta.dot(forward), delta.dot(right) };
+		}
+
+		[[nodiscard]] std::pair<int32, int32> GetRoadCornerSigns(const int32 cornerIndex)
+		{
+			switch (cornerIndex)
+			{
+			case 0:
+				return { 1, 1 };
+
+			case 1:
+				return { 1, -1 };
+
+			case 2:
+				return { -1, -1 };
+
+			case 3:
+			default:
+				return { -1, 1 };
+			}
+		}
+
+		[[nodiscard]] bool IsPointInsideRoad(const PlacedModel& placedModel, const Vec3& position)
+		{
+			const Vec2 local = ToRoadLocal(placedModel, position);
+			return (Abs(local.x) <= (ClampRoadSpan(placedModel.roadLength) * 0.5))
+				&& (Abs(local.y) <= (ClampRoadSpan(placedModel.roadWidth) * 0.5));
+		}
+	}
+
+	Array<Vec3> GetRoadCorners(const PlacedModel& placedModel)
+	{
+		const Vec2 center = ToHorizontal(placedModel.position);
+		const Vec2 forward = (GetRoadForwardDirection(placedModel) * (ClampRoadSpan(placedModel.roadLength) * 0.5));
+		const Vec2 right = (GetRoadRightDirection(placedModel) * (ClampRoadSpan(placedModel.roadWidth) * 0.5));
+
+		return {
+			Vec3{ center.x + forward.x + right.x, 0.0, center.y + forward.y + right.y },
+			Vec3{ center.x + forward.x - right.x, 0.0, center.y + forward.y - right.y },
+			Vec3{ center.x - forward.x - right.x, 0.0, center.y - forward.y - right.y },
+			Vec3{ center.x - forward.x + right.x, 0.0, center.y - forward.y + right.y },
+		};
+	}
+
+	Vec3 GetRoadRotationHandlePosition(const PlacedModel& placedModel)
+	{
+		const Vec2 center = ToHorizontal(placedModel.position);
+		const Vec2 forward = GetRoadForwardDirection(placedModel);
+		const Vec2 offset = (forward * ((ClampRoadSpan(placedModel.roadLength) * 0.5) + RoadRotationHandleOffset));
+		return Vec3{ center.x + offset.x, placedModel.position.y, center.y + offset.y };
+	}
+
+	Optional<int32> HitTestRoadCornerHandle(const PlacedModel& placedModel, const Optional<Vec3>& hoveredGroundPosition)
+	{
+		if ((placedModel.type != PlaceableModelType::Road) || (not hoveredGroundPosition))
+		{
+			return none;
+		}
+
+		double nearestDistanceSq = Square(RoadCornerHandleRadius);
+		Optional<int32> nearestCornerIndex;
+		const Array<Vec3> corners = GetRoadCorners(placedModel);
+
+		for (int32 i = 0; i < static_cast<int32>(corners.size()); ++i)
+		{
+			const double distanceSq = corners[static_cast<size_t>(i)].distanceFromSq(*hoveredGroundPosition);
+			if (distanceSq >= nearestDistanceSq)
+			{
+				continue;
+			}
+
+			nearestDistanceSq = distanceSq;
+			nearestCornerIndex = i;
+		}
+
+		return nearestCornerIndex;
+	}
+
+	bool HitTestRoadRotationHandle(const PlacedModel& placedModel, const Optional<Vec3>& hoveredGroundPosition)
+	{
+		if ((placedModel.type != PlaceableModelType::Road) || (not hoveredGroundPosition))
+		{
+			return false;
+		}
+
+		return (GetRoadRotationHandlePosition(placedModel).distanceFromSq(*hoveredGroundPosition) <= Square(RoadRotationHandleRadius));
+	}
+
+	void ResizeRoadFromCorner(PlacedModel& placedModel, const int32 draggedCornerIndex, const Vec3& draggedPosition, const Vec3& fixedCornerPosition)
+	{
+		if (placedModel.type != PlaceableModelType::Road)
+		{
+			return;
+		}
+
+		const auto [forwardSign, rightSign] = GetRoadCornerSigns(draggedCornerIndex);
+		const Vec2 diagonal = (ToHorizontal(draggedPosition) - ToHorizontal(fixedCornerPosition));
+		const Vec2 forward = GetRoadForwardDirection(placedModel);
+		const Vec2 right = GetRoadRightDirection(placedModel);
+		const double roadLength = ClampRoadSpan(Abs(diagonal.dot(forward)));
+		const double roadWidth = ClampRoadSpan(Abs(diagonal.dot(right)));
+		const Vec2 center = ToHorizontal(fixedCornerPosition)
+			+ (forward * (forwardSign * roadLength * 0.5))
+			+ (right * (rightSign * roadWidth * 0.5));
+
+		placedModel.position = Vec3{ center.x, fixedCornerPosition.y, center.y };
+		placedModel.roadLength = roadLength;
+		placedModel.roadWidth = roadWidth;
 	}
 
 	Optional<size_t> HitTestPlacedModel(const Array<PlacedModel>& placedModels, const MainSupport::AppCamera3D& camera, const Optional<Vec3>& hoveredGroundPosition)
@@ -49,7 +184,8 @@ namespace MapEditorDetail
 
 		for (size_t i = 0; i < placedModels.size(); ++i)
 		{
-          if (placedModels[i].type == PlaceableModelType::Wall)
+         if ((placedModels[i].type == PlaceableModelType::Wall)
+				|| (placedModels[i].type == PlaceableModelType::Road))
 			{
 				continue;
 			}
@@ -76,25 +212,34 @@ namespace MapEditorDetail
 			return none;
 		}
 
-		double nearestWallDistanceSq = Math::Inf;
+       double nearestGroundSelectionDistanceSq = Math::Inf;
 		const Vec2 hoverPoint = ToHorizontal(*hoveredGroundPosition);
 
 		for (size_t i = 0; i < placedModels.size(); ++i)
 		{
-			if (placedModels[i].type != PlaceableModelType::Wall)
+           if (placedModels[i].type == PlaceableModelType::Wall)
 			{
+               const auto [start, end] = GetWallEndpoints(placedModels[i]);
+				const double distanceSq = DistanceSqPointToSegment(hoverPoint, start, end);
+				if ((Square(WallSelectionHalfWidth) < distanceSq) || (distanceSq >= nearestGroundSelectionDistanceSq))
+				{
+					continue;
+				}
+
+				nearestGroundSelectionDistanceSq = distanceSq;
+				nearestIndex = i;
 				continue;
 			}
 
-			const auto [start, end] = GetWallEndpoints(placedModels[i]);
-			const double distanceSq = DistanceSqPointToSegment(hoverPoint, start, end);
-			if ((Square(WallSelectionHalfWidth) < distanceSq) || (distanceSq >= nearestWallDistanceSq))
+            if ((placedModels[i].type == PlaceableModelType::Road) && IsPointInsideRoad(placedModels[i], *hoveredGroundPosition))
 			{
-				continue;
+               const double distanceSq = ToRoadLocal(placedModels[i], *hoveredGroundPosition).lengthSq();
+				if (distanceSq < nearestGroundSelectionDistanceSq)
+				{
+					nearestGroundSelectionDistanceSq = distanceSq;
+					nearestIndex = i;
+				}
 			}
-
-			nearestWallDistanceSq = distanceSq;
-			nearestIndex = i;
 		}
 
 		return nearestIndex;

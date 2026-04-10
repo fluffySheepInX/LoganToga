@@ -8,6 +8,10 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 	{
 		state.hoveredGroundPosition.reset();
      state.pendingWallPlacementStartPosition.reset();
+     state.pendingRoadPlacementStartPosition.reset();
+        state.roadResizeDrag.reset();
+        state.roadRotateDrag.reset();
+     state.lastTerrainPaintCell.reset();
 		return;
 	}
 
@@ -15,6 +19,8 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 	if (not IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex))
 	{
 		state.selectedPlacedModelIndex.reset();
+       state.roadResizeDrag.reset();
+       state.roadRotateDrag.reset();
 	}
 	if (not IsValidResourceAreaIndex(mapData, state.selectedResourceAreaIndex))
 	{
@@ -34,16 +40,111 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 		return;
 	}
 
+	if (not MouseL.pressed())
+	{
+		state.lastTerrainPaintCell.reset();
+       state.roadResizeDrag.reset();
+       state.roadRotateDrag.reset();
+	}
+
 	if (state.selectedTool != MapEditorTool::PlaceWall)
 	{
 		state.pendingWallPlacementStartPosition.reset();
 	}
 
+	if (state.selectedTool != MapEditorTool::PlaceRoad)
+	{
+		state.pendingRoadPlacementStartPosition.reset();
+	}
+
 	if (state.selectionMode)
 	{
+     if (state.roadRotateDrag && MouseL.pressed())
+		{
+			if (IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex)
+				&& state.hoveredGroundPosition
+				&& (mapData.placedModels[*state.selectedPlacedModelIndex].type == PlaceableModelType::Road)
+				&& (*state.selectedPlacedModelIndex == state.roadRotateDrag->placedModelIndex))
+			{
+				PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
+				placedModel.yaw = ComputeWallYaw(placedModel.position, *state.hoveredGroundPosition, placedModel.yaw);
+				SetStatusMessage(state, U"Road を回転");
+				return;
+			}
+
+			state.roadRotateDrag.reset();
+		}
+
+      if (state.roadResizeDrag && MouseL.pressed())
+		{
+			if (IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex)
+				&& state.hoveredGroundPosition
+				&& (mapData.placedModels[*state.selectedPlacedModelIndex].type == PlaceableModelType::Road)
+				&& (*state.selectedPlacedModelIndex == state.roadResizeDrag->placedModelIndex))
+			{
+				PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
+				ResizeRoadFromCorner(placedModel, state.roadResizeDrag->draggedCornerIndex, *state.hoveredGroundPosition, state.roadResizeDrag->fixedCornerPosition);
+				SetStatusMessage(state, U"Road を引き延ばし");
+				return;
+			}
+
+			state.roadResizeDrag.reset();
+		}
+
 		if (not MouseL.down())
 		{
+            if (MouseL.pressed() && state.selectedNavPointIndex && state.hoveredGroundPosition)
+			{
+				NavPoint& navPoint = mapData.navPoints[*state.selectedNavPointIndex];
+				navPoint.position = *state.hoveredGroundPosition;
+				SetStatusMessage(state, U"NavPoint {} を移動"_fmt(*state.selectedNavPointIndex));
+				return;
+			}
+
+          if (MouseL.pressed() && state.selectedPlacedModelIndex && state.hoveredGroundPosition)
+			{
+				PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
+				placedModel.position = *state.hoveredGroundPosition;
+				SetStatusMessage(state, U"{} を移動"_fmt(ToString(placedModel.type)));
+				return;
+			}
+
+         if (MouseL.pressed() && state.selectedResourceAreaIndex && state.hoveredGroundPosition)
+			{
+				ResourceArea& resourceArea = mapData.resourceAreas[*state.selectedResourceAreaIndex];
+				resourceArea.position = *state.hoveredGroundPosition;
+				SetStatusMessage(state, U"{} を移動"_fmt(ToString(resourceArea.type)));
+				return;
+			}
+
 			return;
+		}
+
+		if (IsValidPlacedModelIndex(mapData, state.selectedPlacedModelIndex)
+			&& state.hoveredGroundPosition
+			&& (mapData.placedModels[*state.selectedPlacedModelIndex].type == PlaceableModelType::Road))
+		{
+			const PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
+         if (HitTestRoadRotationHandle(placedModel, state.hoveredGroundPosition))
+			{
+				state.roadRotateDrag = RoadRotateDragState{
+					.placedModelIndex = *state.selectedPlacedModelIndex,
+				};
+				SetStatusMessage(state, U"Road をドラッグして回転");
+				return;
+			}
+
+			if (const auto cornerIndex = HitTestRoadCornerHandle(placedModel, state.hoveredGroundPosition))
+			{
+				const Array<Vec3> corners = GetRoadCorners(placedModel);
+				state.roadResizeDrag = RoadResizeDragState{
+					.placedModelIndex = *state.selectedPlacedModelIndex,
+					.draggedCornerIndex = *cornerIndex,
+					.fixedCornerPosition = corners[static_cast<size_t>((*cornerIndex + 2) % static_cast<int32>(corners.size()))],
+				};
+				SetStatusMessage(state, U"Road の角をドラッグして引き延ばし");
+				return;
+			}
 		}
 
 		if (const auto selectedIndex = HitTestNavPoint(mapData.navPoints, camera))
@@ -55,10 +156,10 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 			return;
 		}
 
-        if (const auto selectedIndex = HitTestPlacedModel(mapData.placedModels, camera, state.hoveredGroundPosition))
+		if (const auto selectedIndex = HitTestPlacedModel(mapData.placedModels, camera, state.hoveredGroundPosition))
 		{
 			state.selectedPlacedModelIndex = *selectedIndex;
-            state.selectedResourceAreaIndex.reset();
+			state.selectedResourceAreaIndex.reset();
 			state.selectedNavPointIndex.reset();
 			SetStatusMessage(state, U"{} を選択"_fmt(ToString(mapData.placedModels[*selectedIndex].type)));
 			return;
@@ -68,40 +169,64 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 		{
 			state.selectedResourceAreaIndex = *selectedIndex;
 			state.selectedPlacedModelIndex.reset();
-           state.selectedNavPointIndex.reset();
+		   state.selectedNavPointIndex.reset();
 			SetStatusMessage(state, U"{} を選択"_fmt(ToString(mapData.resourceAreas[*selectedIndex].type)));
 			return;
 		}
 
-		if (state.selectedNavPointIndex && state.hoveredGroundPosition)
-		{
-			NavPoint& navPoint = mapData.navPoints[*state.selectedNavPointIndex];
-			navPoint.position = *state.hoveredGroundPosition;
-			SetStatusMessage(state, U"NavPoint {} を移動"_fmt(*state.selectedNavPointIndex));
-			return;
-		}
-
-		if (state.selectedPlacedModelIndex && state.hoveredGroundPosition)
-		{
-			PlacedModel& placedModel = mapData.placedModels[*state.selectedPlacedModelIndex];
-			placedModel.position = *state.hoveredGroundPosition;
-			SetStatusMessage(state, U"{} を移動"_fmt(ToString(placedModel.type)));
-			return;
-		}
-
-		if (state.selectedResourceAreaIndex && state.hoveredGroundPosition)
-		{
-			ResourceArea& resourceArea = mapData.resourceAreas[*state.selectedResourceAreaIndex];
-			resourceArea.position = *state.hoveredGroundPosition;
-			SetStatusMessage(state, U"{} を移動"_fmt(ToString(resourceArea.type)));
-			return;
-		}
-
 		state.selectedPlacedModelIndex.reset();
-     state.selectedResourceAreaIndex.reset();
+	 state.selectedResourceAreaIndex.reset();
 		state.selectedNavPointIndex.reset();
-       state.pendingWallPlacementStartPosition.reset();
+     state.pendingRoadPlacementStartPosition.reset();
+	   state.pendingWallPlacementStartPosition.reset();
 		SetStatusMessage(state, U"選択解除");
+		return;
+	}
+
+	if ((ToTerrainCellType(state.selectedTool) || (state.selectedTool == MapEditorTool::EraseTerrain))
+		&& state.hoveredGroundPosition && MouseL.pressed())
+	{
+		const Point cell = ToTerrainCell(*state.hoveredGroundPosition);
+		if (state.lastTerrainPaintCell && (*state.lastTerrainPaintCell == cell))
+		{
+			return;
+		}
+
+		state.lastTerrainPaintCell = cell;
+		if (const auto terrainType = ToTerrainCellType(state.selectedTool))
+		{
+			SetTerrainCell(mapData.terrainCells, cell, *terrainType, state.selectedTerrainColor);
+			SetStatusMessage(state, U"{} を塗布"_fmt(ToLabel(state.selectedTool)));
+		}
+		else if (RemoveTerrainCell(mapData.terrainCells, cell))
+		{
+			SetStatusMessage(state, U"地表セルを削除");
+		}
+
+		return;
+	}
+
+   if (state.selectedTool == MapEditorTool::PlaceRoad)
+	{
+        if (MouseL.down() && state.hoveredGroundPosition)
+		{
+			state.pendingRoadPlacementStartPosition = *state.hoveredGroundPosition;
+			return;
+		}
+
+		if (state.pendingRoadPlacementStartPosition && MouseL.up())
+		{
+			const Vec3 roadPosition = *state.pendingRoadPlacementStartPosition;
+			const Vec3 roadDirectionTarget = state.hoveredGroundPosition.value_or(roadPosition);
+            mapData.placedModels << BuildRoadFromStartAndEnd(roadPosition, roadDirectionTarget, 8.0, 4.0, 0.0);
+			state.pendingRoadPlacementStartPosition.reset();
+			state.selectedPlacedModelIndex = (mapData.placedModels.size() - 1);
+			state.selectedResourceAreaIndex.reset();
+			state.selectedNavPointIndex.reset();
+			SetStatusMessage(state, U"Road を配置");
+			return;
+		}
+
 		return;
 	}
 

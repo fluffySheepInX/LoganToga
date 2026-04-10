@@ -1,5 +1,18 @@
 ﻿# include "MapData.hpp"
 
+namespace
+{
+	[[nodiscard]] ColorF MultiplyColor(const ColorF& baseColor, const ColorF& tintColor)
+	{
+		return ColorF{
+			(baseColor.r * tintColor.r),
+			(baseColor.g * tintColor.g),
+			(baseColor.b * tintColor.b),
+			0.96,
+		};
+	}
+}
+
 MapData MakeDefaultMapData()
 {
 	MapData mapData;
@@ -47,14 +60,41 @@ StringView ToString(const PlaceableModelType type)
 	case PlaceableModelType::Pine:
 		return U"Pine";
 
+	case PlaceableModelType::GrassPatch:
+		return U"GrassPatch";
+
 	case PlaceableModelType::Rock:
 		return U"Rock";
 
 	case PlaceableModelType::Wall:
 		return U"Wall";
 
+	case PlaceableModelType::Road:
+		return U"Road";
+
 	default:
 		return U"Tree";
+	}
+}
+
+StringView ToString(const TerrainCellType type)
+{
+	switch (type)
+	{
+	case TerrainCellType::Grass:
+		return U"Grass";
+
+	case TerrainCellType::Dirt:
+		return U"Dirt";
+
+	case TerrainCellType::Sand:
+		return U"Sand";
+
+	case TerrainCellType::Rock:
+		return U"Rock";
+
+	default:
+		return U"Grass";
 	}
 }
 
@@ -74,4 +114,87 @@ StringView ToString(const MainSupport::ResourceType type)
 	default:
 		return U"Budget";
 	}
+}
+
+Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell)
+{
+	for (size_t i = 0; i < terrainCells.size(); ++i)
+	{
+		if (terrainCells[i].cell == cell)
+		{
+			return i;
+		}
+	}
+
+	return none;
+}
+
+Point ToTerrainCell(const Vec3& position)
+{
+	return Point{
+     static_cast<int32>(Floor(position.x / TerrainCellSize)),
+		static_cast<int32>(Floor(position.z / TerrainCellSize)),
+	};
+}
+
+Vec3 ToTerrainCellCenter(const Point& cell)
+{
+	return Vec3{
+		((static_cast<double>(cell.x) + 0.5) * TerrainCellSize),
+		0.0,
+		((static_cast<double>(cell.y) + 0.5) * TerrainCellSize),
+	};
+}
+
+ColorF GetTerrainCellBaseColor(const TerrainCellType type)
+{
+	switch (type)
+	{
+	case TerrainCellType::Grass:
+		return ColorF{ 0.42, 0.72, 0.34 };
+
+	case TerrainCellType::Dirt:
+		return ColorF{ 0.56, 0.38, 0.22 };
+
+	case TerrainCellType::Sand:
+		return ColorF{ 0.84, 0.76, 0.46 };
+
+	case TerrainCellType::Rock:
+		return ColorF{ 0.52, 0.54, 0.58 };
+
+	default:
+		return ColorF{ 0.42, 0.72, 0.34 };
+	}
+}
+
+ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell)
+{
+	return MultiplyColor(GetTerrainCellBaseColor(terrainCell.type), ColorF{ terrainCell.color });
+}
+
+void SetTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell, const TerrainCellType type, const Color& color)
+{
+	if (const auto index = FindTerrainCellIndex(terrainCells, cell))
+	{
+		terrainCells[*index].type = type;
+		terrainCells[*index].color = color;
+		return;
+	}
+
+	terrainCells << TerrainCell{
+		.cell = cell,
+		.type = type,
+		.color = color,
+	};
+}
+
+bool RemoveTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell)
+{
+	if (const auto index = FindTerrainCellIndex(terrainCells, cell))
+	{
+		terrainCells.erase(terrainCells.begin() + *index);
+		return true;
+	}
+
+	return false;
 }

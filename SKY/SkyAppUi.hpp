@@ -50,14 +50,8 @@ namespace SkyAppSupport
  [[nodiscard]] EscMenuAction DrawEscMenu(const Rect& panelRect);
      [[nodiscard]] SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
 		Array<MainSupport::SpawnedSapper>& spawnedSappers,
-        const MapData& mapData,
-     const Vec3& playerBasePosition,
-		const Vec3& rallyPoint,
      MainSupport::ResourceStock& playerResources,
-      int32& playerTier,
-       MainSupport::SapperUnitType selectedUnitType,
-		  bool explosionSkillReady,
-      const MainSupport::UnitEditorSettings& unitEditorSettings,
+        size_t selectedSapperIndex,
 		TimedMessage& sapperMenuMessage);
     void DrawUnitEditor(const SkyAppPanels& panels,
         bool uiEditMode,

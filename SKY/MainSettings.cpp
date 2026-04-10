@@ -166,6 +166,11 @@ namespace MainSupport
 			settings.ashigaruOffsetY = *value;
 		}
 
+		if (const auto value = toml[U"sugoiCarOffsetY"].getOpt<double>())
+		{
+			settings.sugoiCarOffsetY = *value;
+		}
+
 		return settings;
 	}
 
@@ -182,6 +187,7 @@ namespace MainSupport
 
 		writer.writeln(U"birdOffsetY = {:.3f}"_fmt(settings.birdOffsetY));
 		writer.writeln(U"ashigaruOffsetY = {:.3f}"_fmt(settings.ashigaruOffsetY));
+        writer.writeln(U"sugoiCarOffsetY = {:.3f}"_fmt(settings.sugoiCarOffsetY));
 		return true;
 	}
 
@@ -247,8 +253,10 @@ namespace MainSupport
 
 		LoadUnitParameterGroup(toml, U"playerInfantry", settings.playerInfantry);
 		LoadUnitParameterGroup(toml, U"playerArcaneInfantry", settings.playerArcaneInfantry);
+     LoadUnitParameterGroup(toml, U"playerSugoiCar", settings.playerSugoiCar);
 		LoadUnitParameterGroup(toml, U"enemyInfantry", settings.enemyInfantry);
 		LoadUnitParameterGroup(toml, U"enemyArcaneInfantry", settings.enemyArcaneInfantry);
+        LoadUnitParameterGroup(toml, U"enemySugoiCar", settings.enemySugoiCar);
 		return settings;
 	}
 
@@ -267,9 +275,13 @@ namespace MainSupport
 		writer.writeln(U"");
 		SaveUnitParameterGroup(writer, U"playerArcaneInfantry", settings.playerArcaneInfantry);
 		writer.writeln(U"");
+       SaveUnitParameterGroup(writer, U"playerSugoiCar", settings.playerSugoiCar);
+		writer.writeln(U"");
 		SaveUnitParameterGroup(writer, U"enemyInfantry", settings.enemyInfantry);
 		writer.writeln(U"");
 		SaveUnitParameterGroup(writer, U"enemyArcaneInfantry", settings.enemyArcaneInfantry);
+        writer.writeln(U"");
+		SaveUnitParameterGroup(writer, U"enemySugoiCar", settings.enemySugoiCar);
 		return true;
 	}
 }

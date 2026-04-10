@@ -2,6 +2,14 @@
 
 using namespace MapDataTomlDetail;
 
+namespace
+{
+	void WriteTomlColor(TextWriter& writer, const String& key, const Color& value)
+	{
+		writer.writeln(U"{} = [{}, {}, {}, {}]"_fmt(key, value.r, value.g, value.b, value.a));
+	}
+}
+
 bool SaveMapData(const MapData& mapData, FilePathView path)
 {
 	const FilePath directory = FileSystem::ParentPath(path);
@@ -28,6 +36,16 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 		writer.writeln(U"type = \"{}\""_fmt(ToString(resourceArea.type)));
 		WriteTomlVec3(writer, U"position", resourceArea.position);
 		writer.writeln(U"radius = {:.3f}"_fmt(resourceArea.radius));
+		writer.writeln(U"");
+	}
+
+	for (const auto& terrainCell : mapData.terrainCells)
+	{
+		writer.writeln(U"[[terrainCells]]");
+		writer.writeln(U"x = {}"_fmt(terrainCell.cell.x));
+		writer.writeln(U"z = {}"_fmt(terrainCell.cell.y));
+		writer.writeln(U"type = \"{}\""_fmt(ToString(terrainCell.type)));
+		WriteTomlColor(writer, U"color", terrainCell.color);
 		writer.writeln(U"");
 	}
 
@@ -65,6 +83,13 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 		{
 			writer.writeln(U"yaw = {:.6f}"_fmt(object.yaw));
 			writer.writeln(U"wallLength = {:.3f}"_fmt(SanitizeWallLength(object.wallLength)));
+		}
+
+		if (object.type == PlaceableModelType::Road)
+		{
+			writer.writeln(U"yaw = {:.6f}"_fmt(object.yaw));
+			writer.writeln(U"roadLength = {:.3f}"_fmt(SanitizeRoadSpan(object.roadLength)));
+			writer.writeln(U"roadWidth = {:.3f}"_fmt(SanitizeRoadSpan(object.roadWidth)));
 		}
 
 		if (object.type == PlaceableModelType::Mill)

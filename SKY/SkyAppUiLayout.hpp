@@ -8,7 +8,10 @@ namespace SkyAppUiLayout
 		inline constexpr int32 PanelMargin = 20;
 		inline constexpr int32 PanelGap = 20;
 		inline constexpr int32 RightColumnWidth = 220;
-      inline constexpr int32 ResourcePanelHeight = 84;
+      inline constexpr int32 ResourcePanelIconButtonSize = 36;
+		inline constexpr int32 ResourcePanelIconButtonGap = 8;
+     inline constexpr int32 ResourcePanelCollapsedHeight = 84;
+		inline constexpr int32 ResourcePanelExpandedHeight = 196;
 		inline constexpr int32 BottomControlYOffset = 100;
        inline constexpr int32 AccordionHeaderHeight = 36;
             inline constexpr int32 MiniMapExpandedHeight = 220;
@@ -36,7 +39,7 @@ namespace SkyAppUiLayout
 
     [[nodiscard]] inline Point DefaultMiniMapPosition(const int32 sceneWidth)
 	{
-		return Point{ RightColumnX(sceneWidth), (PanelMargin + ResourcePanelHeight + PanelGap) };
+       return Point{ RightColumnX(sceneWidth), (PanelMargin + ResourcePanelExpandedHeight + PanelGap) };
 	}
 
 	[[nodiscard]] inline Point DefaultResourcePanelPosition(const int32 sceneWidth)
@@ -91,7 +94,7 @@ namespace SkyAppUiLayout
 
  [[nodiscard]] inline Rect BlacksmithMenu(const int32 sceneWidth, const int32 sceneHeight)
 	{
-        return Rect{ (sceneWidth - 320), (sceneHeight - 224), 300, 184 };
+       return Rect{ (sceneWidth - 320), (sceneHeight - 256), 300, 216 };
 	}
 
  [[nodiscard]] inline Rect SapperMenu(const int32 sceneWidth, const int32 sceneHeight)
@@ -109,7 +112,7 @@ namespace SkyAppUiLayout
      (void)sceneWidth;
 		(void)sceneHeight;
      const Rect cameraPanel = CameraSettings(sceneWidth, sceneHeight, skySettingsExpanded, cameraSettingsExpanded);
-		return Rect{ cameraPanel.x, (cameraPanel.bottomY() + PanelGap), 400, 300 };
+     return Rect{ cameraPanel.x, (cameraPanel.bottomY() + PanelGap), 460, 320 };
 	}
 
 	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
@@ -126,8 +129,8 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-		const Point clampedPosition = ClampPanelPosition(position, 240, 320, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, 240, 320 };
+      const Point clampedPosition = ClampPanelPosition(position, 240, 440, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, 240, 440 };
 	}
 
 	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight)
@@ -135,15 +138,26 @@ namespace SkyAppUiLayout
 		return UnitEditorList(sceneWidth, sceneHeight, DefaultUnitEditorListPosition());
 	}
 
- [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
+    [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = false)
 	{
-        const Point clampedPosition = ClampPanelPosition(position, RightColumnWidth, ResourcePanelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, RightColumnWidth, ResourcePanelHeight };
+     const int32 panelHeight = (expanded ? ResourcePanelExpandedHeight : ResourcePanelCollapsedHeight);
+		const Point clampedPosition = ClampPanelPosition(position, RightColumnWidth, panelHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, RightColumnWidth, panelHeight };
 	}
 
-	[[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight)
+    [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = false)
 	{
-		return ResourcePanel(sceneWidth, sceneHeight, DefaultResourcePanelPosition(sceneWidth));
+        return ResourcePanel(sceneWidth, sceneHeight, DefaultResourcePanelPosition(sceneWidth), expanded);
+	}
+
+	[[nodiscard]] inline Rect ResourcePanelCameraHomeButton(const Rect& resourcePanel)
+	{
+		return Rect{
+			Max(0, (resourcePanel.x - ResourcePanelIconButtonGap - ResourcePanelIconButtonSize)),
+			resourcePanel.y,
+			ResourcePanelIconButtonSize,
+			ResourcePanelIconButtonSize
+		};
 	}
 
     [[nodiscard]] inline Rect UiToggle(const int32 sceneWidth, const int32 sceneHeight)
@@ -186,6 +200,12 @@ namespace SkyAppUiLayout
 	{
 		(void)sceneWidth;
 		return Rect{ 444, (sceneHeight - BottomControlYOffset), 84, 36 };
+	}
+
+	[[nodiscard]] inline Rect ResourceAdjustToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 536, (sceneHeight - BottomControlYOffset), 88, 36 };
 	}
 
  [[nodiscard]] inline Rect EscMenu(const int32 sceneWidth, const int32 sceneHeight)

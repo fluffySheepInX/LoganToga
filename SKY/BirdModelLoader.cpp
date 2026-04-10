@@ -34,6 +34,80 @@ namespace
 		return Quaternion{ value.x, value.y, value.z, value.w };
 	}
 
+	[[nodiscard]] Texture LoadAssimpTexture(const aiTexture* texture)
+	{
+		if ((texture == nullptr) || (texture->pcData == nullptr))
+		{
+			return{};
+		}
+
+		if (texture->mHeight == 0)
+		{
+			return Texture{ MemoryReader{ texture->pcData, texture->mWidth }, TextureDesc::MippedSRGB };
+		}
+
+		Image image{ texture->mWidth, texture->mHeight };
+
+		for (uint32 y = 0; y < texture->mHeight; ++y)
+		{
+			for (uint32 x = 0; x < texture->mWidth; ++x)
+			{
+				const aiTexel& texel = texture->pcData[(y * texture->mWidth + x)];
+				image[y][x] = Color{ texel.r, texel.g, texel.b, texel.a };
+			}
+		}
+
+		return Texture{ image, TextureDesc::MippedSRGB };
+	}
+
+	[[nodiscard]] Texture LoadMaterialTexture(const aiScene* scene, const aiMaterial* material, FilePathView modelPath)
+	{
+		if ((scene == nullptr) || (material == nullptr))
+		{
+			return{};
+		}
+
+		auto tryLoadTexture = [&](const aiTextureType textureType)
+			{
+				aiString texturePath;
+				if (material->GetTexture(textureType, 0, &texturePath) != aiReturn_SUCCESS)
+				{
+					return Texture{};
+				}
+
+				const String sivTexturePath = ToSivString(texturePath);
+				if (sivTexturePath.isEmpty())
+				{
+					return Texture{};
+				}
+
+				if (texturePath.C_Str()[0] == '*')
+				{
+					return LoadAssimpTexture(scene->GetEmbeddedTexture(texturePath.C_Str()));
+				}
+
+				const FilePath resolvedPath = (FileSystem::ParentPath(modelPath) + sivTexturePath);
+				if (FileSystem::Exists(resolvedPath))
+				{
+					return Texture{ resolvedPath, TextureDesc::MippedSRGB };
+				}
+
+				if (FileSystem::Exists(sivTexturePath))
+				{
+					return Texture{ sivTexturePath, TextureDesc::MippedSRGB };
+				}
+
+				return Texture{};
+			};
+
+		if (Texture texture = tryLoadTexture(aiTextureType_BASE_COLOR))
+		{
+			return texture;
+		}
+
+		return tryLoadTexture(aiTextureType_DIFFUSE);
+	}
+
 	struct ImportedStaticMesh
 	{
 		Mesh mesh;

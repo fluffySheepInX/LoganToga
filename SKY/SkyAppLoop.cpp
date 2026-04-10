@@ -13,7 +13,7 @@ namespace SkyAppFlow
 		SkyAppFrameState BuildFrameState(SkyAppState& state)
 		{
 			SkyAppFrameState frame;
-          frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.miniMapExpanded };
+        frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.miniMapExpanded, state.showResourceAdjustUi };
 			frame.isEditorMode = (state.appMode == AppMode::EditMap);
 			frame.showEscMenu = state.showEscMenu;
 			state.mapEditor.enabled = frame.isEditorMode;
@@ -27,6 +27,7 @@ namespace SkyAppFlow
           frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
 			frame.birdRenderPosition = BirdDisplayPosition.movedBy(0, state.modelHeightSettings.birdOffsetY, 0);
 			frame.ashigaruRenderPosition = AshigaruDisplayPosition.movedBy(0, state.modelHeightSettings.ashigaruOffsetY, 0);
+           frame.sugoiCarRenderPosition = SugoiCarDisplayPosition.movedBy(0, state.modelHeightSettings.sugoiCarOffsetY, 0);
 			return frame;
 		}
 
@@ -152,19 +153,96 @@ namespace SkyAppFlow
 		}
 	}
 
+	namespace
+	{
+		inline constexpr StringView GrassPatchModelFileName = U"grass2.obj";
+		inline constexpr StringView RoadTextureFileName = U"road.jpg";
+		inline constexpr StringView SugoiCarModelBaseName = U"sugoiCar";
+
+		[[nodiscard]] FilePath ResolveGrassPatchModelPath()
+		{
+			const Array<FilePath> candidates{
+				FilePath{ U"example/obj/" } + GrassPatchModelFileName,
+				FilePath{ GrassPatchModelFileName },
+				FilePath{ U"qqq/App/example/obj/" } + GrassPatchModelFileName,
+			};
+
+			for (const auto& candidate : candidates)
+			{
+				if (FileSystem::Exists(candidate))
+				{
+					return candidate;
+				}
+			}
+
+			return FilePath{ U"example/obj/" } + GrassPatchModelFileName;
+		}
+
+		[[nodiscard]] FilePath ResolveRoadTexturePath()
+		{
+			const Array<FilePath> candidates{
+				FilePath{ U"example/" } + RoadTextureFileName,
+				FilePath{ U"App/example/" } + RoadTextureFileName,
+				FilePath{ U"SKY/App/example/" } + RoadTextureFileName,
+				FilePath{ RoadTextureFileName },
+			};
+
+			for (const auto& candidate : candidates)
+			{
+				if (FileSystem::Exists(candidate))
+				{
+					return candidate;
+				}
+			}
+
+			return FilePath{ U"example/" } + RoadTextureFileName;
+		}
+
+		[[nodiscard]] FilePath ResolveSugoiCarModelPath()
+		{
+			const Array<FilePath> candidates{
+              FilePath{ SugoiCarModelPath },
+				FilePath{ U"App/model/" } + SugoiCarModelBaseName + U".glb",
+				FilePath{ U"SKY/App/model/" } + SugoiCarModelBaseName + U".glb",
+				FilePath{ U"example/obj/" } + SugoiCarModelBaseName + U".glb",
+				FilePath{ U"example/obj/" } + SugoiCarModelBaseName + U".obj",
+				FilePath{ U"App/example/obj/" } + SugoiCarModelBaseName + U".glb",
+				FilePath{ U"App/example/obj/" } + SugoiCarModelBaseName + U".obj",
+				FilePath{ U"SKY/App/example/obj/" } + SugoiCarModelBaseName + U".glb",
+				FilePath{ U"SKY/App/example/obj/" } + SugoiCarModelBaseName + U".obj",
+				FilePath{ SugoiCarModelBaseName } + U".glb",
+				FilePath{ SugoiCarModelBaseName } + U".obj",
+			};
+
+			for (const auto& candidate : candidates)
+			{
+				if (FileSystem::Exists(candidate))
+				{
+					return candidate;
+				}
+			}
+
+           return FilePath{ U"SKY/App/model/" } + SugoiCarModelBaseName + U".glb";
+		}
+	}
+
 	SkyAppResources::SkyAppResources()
 		: groundPlane{ MeshData::OneSidedPlane(2000, { 400, 400 }) }
 		, groundTexture{ U"example/texture/ground.jpg", TextureDesc::MippedSRGB }
+      , roadTexture{ ResolveRoadTexturePath(), TextureDesc::MippedSRGB }
 		, blacksmithModel{ U"example/obj/blacksmith.obj" }
 		, millModel{ U"example/obj/mill.obj" }
 		, treeModel{ U"example/obj/tree.obj" }
 		, pineModel{ U"example/obj/pine.obj" }
+     , grassPatchModel{ ResolveGrassPatchModelPath() }
 		, birdModel{ BirdModelPath, BirdDisplayHeight }
 		, ashigaruModel{ AshigaruModelPath, BirdDisplayHeight }
+     , sugoiCarModel{ ResolveSugoiCarModelPath(), BirdDisplayHeight }
 		, renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes }
 	{
 		Model::RegisterDiffuseTextures(treeModel, TextureDesc::MippedSRGB);
 		Model::RegisterDiffuseTextures(pineModel, TextureDesc::MippedSRGB);
+       Model::RegisterDiffuseTextures(grassPatchModel, TextureDesc::MippedSRGB);
 	}
 
 	void InitializeSkyAppState(SkyAppState& state)
@@ -191,6 +269,7 @@ namespace SkyAppFlow
 	{
 		resources.birdModel.update(Scene::DeltaTime());
 		resources.ashigaruModel.update(Scene::DeltaTime());
+     resources.sugoiCarModel.update(Scene::DeltaTime());
      UpdateSpawnedSappers(state.spawnedSappers, state.mapData);
 		UpdateSpawnedSappers(state.enemySappers, state.mapData);
 

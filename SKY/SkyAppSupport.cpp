@@ -41,7 +41,7 @@ namespace SkyAppSupport
 		return (Scene::Time() < until);
 	}
 
-       SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded)
+      SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded)
 		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, miniMapExpanded) }
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
 		, cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
@@ -52,7 +52,7 @@ namespace SkyAppSupport
        , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
        , unitEditor{ SkyAppUiLayout::UnitEditor(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorPosition) }
 	   , unitEditorList{ SkyAppUiLayout::UnitEditorList(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorListPosition) }
-       , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition) }
+        , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition, resourceAdjustExpanded) }
      , escMenu{ SkyAppUiLayout::EscMenu(Scene::Width(), Scene::Height()) }
 		, uiToggle{ SkyAppUiLayout::UiToggle(Scene::Width(), Scene::Height()) }
 		, mapModeToggle{ SkyAppUiLayout::MapModeToggle(Scene::Width(), Scene::Height()) }
@@ -61,6 +61,7 @@ namespace SkyAppSupport
      , skySettingsToggle{ SkyAppUiLayout::SkySettingsToggle(Scene::Width(), Scene::Height()) }
 		, cameraSettingsToggle{ SkyAppUiLayout::CameraSettingsToggle(Scene::Width(), Scene::Height()) }
      , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
+     , resourceAdjustToggle{ SkyAppUiLayout::ResourceAdjustToggle(Scene::Width(), Scene::Height()) }
 		, timeSlider{ SkyAppUiLayout::TimeSlider(Scene::Width(), Scene::Height()) }
 	{
 	}
@@ -70,6 +71,7 @@ namespace SkyAppSupport
        return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver())))
 			|| miniMap.mouseOver()
           || resourcePanel.mouseOver()
+          || SkyAppUiLayout::ResourcePanelCameraHomeButton(resourcePanel).mouseOver()
 			|| (isEditorMode && mapEditor.mouseOver())
 			|| (showBlacksmithMenu && blacksmithMenu.mouseOver())
 			|| (showSapperMenu && sapperMenu.mouseOver())
@@ -83,6 +85,7 @@ namespace SkyAppSupport
             || (showUI && skySettingsToggle.mouseOver())
 			|| (showUI && cameraSettingsToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
+            || (showUI && resourceAdjustToggle.mouseOver())
           || (showUI && timeSlider.mouseOver());
 	}
 

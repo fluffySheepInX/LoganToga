@@ -150,6 +150,15 @@ namespace SkyAppSupport
 
 		switch (sapper.unitType)
 		{
+        case SapperUnitType::SugoiCar:
+			tint = ColorF{
+				Clamp(baseColor.r * 1.15 + 0.12, 0.0, 1.0),
+				Clamp(baseColor.g * 1.00 + 0.08, 0.0, 1.0),
+				Clamp(baseColor.b * 0.62 + 0.02, 0.0, 1.0),
+				baseColor.a,
+			};
+			break;
+
 		case SapperUnitType::ArcaneInfantry:
 			tint = ColorF{
 				Clamp(baseColor.r * 0.62 + 0.18, 0.0, 1.0),

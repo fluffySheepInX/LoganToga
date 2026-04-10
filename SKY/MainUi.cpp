@@ -3,6 +3,60 @@
 
 namespace MainSupport
 {
+ namespace
+	{
+		[[nodiscard]] StringView ToModelHeightTargetLabel(const ModelHeightTarget target)
+		{
+			switch (target)
+			{
+			case ModelHeightTarget::Ashigaru:
+				return U"ashigaru";
+
+			case ModelHeightTarget::SugoiCar:
+				return U"sugoiCar";
+
+			case ModelHeightTarget::Bird:
+			default:
+				return U"bird";
+			}
+		}
+
+		[[nodiscard]] double& GetModelHeightOffset(ModelHeightSettings& modelHeightSettings, const ModelHeightTarget target)
+		{
+			switch (target)
+			{
+			case ModelHeightTarget::Ashigaru:
+				return modelHeightSettings.ashigaruOffsetY;
+
+			case ModelHeightTarget::SugoiCar:
+				return modelHeightSettings.sugoiCarOffsetY;
+
+			case ModelHeightTarget::Bird:
+			default:
+				return modelHeightSettings.birdOffsetY;
+			}
+		}
+
+		[[nodiscard]] double GetModelHeightWorldY(const ModelHeightTarget target,
+			const Vec3& birdRenderPosition,
+			const Vec3& ashigaruRenderPosition,
+			const Vec3& sugoiCarRenderPosition)
+		{
+			switch (target)
+			{
+			case ModelHeightTarget::Ashigaru:
+				return ashigaruRenderPosition.y;
+
+			case ModelHeightTarget::SugoiCar:
+				return sugoiCarRenderPosition.y;
+
+			case ModelHeightTarget::Bird:
+			default:
+				return birdRenderPosition.y;
+			}
+		}
+	}
+
 	bool DrawTextButton(const Rect& rect, StringView label)
 	{
 		static const Font buttonFont{ 18, Typeface::Bold };
@@ -42,59 +96,89 @@ namespace MainSupport
 	}
 
 	void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
+     ModelHeightTarget& activeTarget,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,
 		const Vec3& birdRenderPosition,
-		const Vec3& ashigaruRenderPosition)
+     const Vec3& ashigaruRenderPosition,
+		const Vec3& sugoiCarRenderPosition)
 	{
+        const Rect listPanel{ panelRect.x, panelRect.y, 156, panelRect.h };
+		const Rect detailPanel{ (panelRect.x + 164), panelRect.y, (panelRect.w - 164), panelRect.h };
+		const Array<ModelHeightTarget> targets{
+			ModelHeightTarget::Bird,
+			ModelHeightTarget::Ashigaru,
+			ModelHeightTarget::SugoiCar,
+		};
+		double& activeOffset = GetModelHeightOffset(modelHeightSettings, activeTarget);
+		activeOffset = Clamp(activeOffset, ModelHeightOffsetMin, ModelHeightOffsetMax);
+
 		panelRect.draw(ColorF{ 1.0, 0.92 });
 		panelRect.drawFrame(2, 0, ColorF{ 0.25 });
 		SimpleGUI::GetFont()(U"Model Height Editor").draw((panelRect.x + 16), (panelRect.y + 12), ColorF{ 0.12 });
-		SimpleGUI::Slider(U"bird offset Y: {:.3f}"_fmt(modelHeightSettings.birdOffsetY), modelHeightSettings.birdOffsetY, ModelHeightOffsetMin, ModelHeightOffsetMax, Vec2{ panelRect.x + 16.0, panelRect.y + 44.0 }, 180, 360);
-		SimpleGUI::Slider(U"ashigaru offset Y: {:.3f}"_fmt(modelHeightSettings.ashigaruOffsetY), modelHeightSettings.ashigaruOffsetY, ModelHeightOffsetMin, ModelHeightOffsetMax, Vec2{ panelRect.x + 16.0, panelRect.y + 84.0 }, 180, 360);
+        Rect{ (listPanel.rightX() + 3), (panelRect.y + 8), 1, (panelRect.h - 16) }.draw(ColorF{ 0.72, 0.72, 0.74 });
+		SimpleGUI::GetFont()(U"Targets").draw((listPanel.x + 16), (listPanel.y + 38), ColorF{ 0.18 });
 
-		if (DrawTextButton(Rect{ panelRect.x + 16, panelRect.y + 124, 88, 30 }, U"bird -0.1"))
+		for (size_t i = 0; i < targets.size(); ++i)
 		{
-			modelHeightSettings.birdOffsetY = Max(ModelHeightOffsetMin, (modelHeightSettings.birdOffsetY - 0.1));
+			const ModelHeightTarget target = targets[i];
+			const Rect buttonRect{ (listPanel.x + 12), (listPanel.y + 64 + static_cast<int32>(i) * 58), 132, 48 };
+			const bool selected = (activeTarget == target);
+			const bool hovered = buttonRect.mouseOver();
+			buttonRect.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
+				.drawFrame(1, 0, selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 });
+			SimpleGUI::GetFont()(ToModelHeightTargetLabel(target)).draw((buttonRect.x + 10), (buttonRect.y + 6), selected ? ColorF{ 0.98 } : ColorF{ 0.14 });
+			SimpleGUI::GetFont()(U"Y {:.3f}"_fmt(GetModelHeightOffset(modelHeightSettings, target))).draw((buttonRect.x + 10), (buttonRect.y + 26), selected ? ColorF{ 0.96 } : ColorF{ 0.28 });
+
+			if (hovered && MouseL.down())
+			{
+				activeTarget = target;
+			}
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 112, panelRect.y + 124, 88, 30 }, U"bird +0.1"))
+		SimpleGUI::GetFont()(U"Target: {}"_fmt(ToModelHeightTargetLabel(activeTarget))).draw((detailPanel.x + 16), (detailPanel.y + 38), ColorF{ 0.14 });
+		SimpleGUI::Slider(U"offset Y: {:.3f}"_fmt(activeOffset), activeOffset, ModelHeightOffsetMin, ModelHeightOffsetMax, Vec2{ detailPanel.x + 16.0, detailPanel.y + 70.0 }, 180, 260);
+
+      if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 112, 56, 28 }, U"-1.0"))
 		{
-			modelHeightSettings.birdOffsetY = Min(ModelHeightOffsetMax, (modelHeightSettings.birdOffsetY + 0.1));
+           activeOffset = Max(ModelHeightOffsetMin, (activeOffset - 1.0));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 208, panelRect.y + 124, 88, 30 }, U"bird -0.01"))
+     if (DrawTextButton(Rect{ detailPanel.x + 80, detailPanel.y + 112, 56, 28 }, U"-0.1"))
 		{
-			modelHeightSettings.birdOffsetY = Max(ModelHeightOffsetMin, (modelHeightSettings.birdOffsetY - 0.01));
+           activeOffset = Max(ModelHeightOffsetMin, (activeOffset - 0.1));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 304, panelRect.y + 124, 88, 30 }, U"bird +0.01"))
+        if (DrawTextButton(Rect{ detailPanel.x + 144, detailPanel.y + 112, 56, 28 }, U"-0.01"))
 		{
-			modelHeightSettings.birdOffsetY = Min(ModelHeightOffsetMax, (modelHeightSettings.birdOffsetY + 0.01));
+          activeOffset = Max(ModelHeightOffsetMin, (activeOffset - 0.01));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 16, panelRect.y + 160, 88, 30 }, U"ashi -0.1"))
+        if (DrawTextButton(Rect{ detailPanel.x + 208, detailPanel.y + 112, 56, 28 }, U"+0.01"))
 		{
-			modelHeightSettings.ashigaruOffsetY = Max(ModelHeightOffsetMin, (modelHeightSettings.ashigaruOffsetY - 0.1));
+          activeOffset = Min(ModelHeightOffsetMax, (activeOffset + 0.01));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 112, panelRect.y + 160, 88, 30 }, U"ashi +0.1"))
+      if (DrawTextButton(Rect{ detailPanel.x + 272, detailPanel.y + 112, 56, 28 }, U"+0.1"))
 		{
-			modelHeightSettings.ashigaruOffsetY = Min(ModelHeightOffsetMax, (modelHeightSettings.ashigaruOffsetY + 0.1));
+           activeOffset = Min(ModelHeightOffsetMax, (activeOffset + 0.1));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 208, panelRect.y + 160, 88, 30 }, U"ashi -0.01"))
+     if (DrawTextButton(Rect{ detailPanel.x + 336, detailPanel.y + 112, 56, 28 }, U"+1.0"))
 		{
-			modelHeightSettings.ashigaruOffsetY = Max(ModelHeightOffsetMin, (modelHeightSettings.ashigaruOffsetY - 0.01));
+           activeOffset = Min(ModelHeightOffsetMax, (activeOffset + 1.0));
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 304, panelRect.y + 160, 88, 30 }, U"ashi +0.01"))
+        if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 152, 118, 30 }, U"Reset Target"))
 		{
-			modelHeightSettings.ashigaruOffsetY = Min(ModelHeightOffsetMax, (modelHeightSettings.ashigaruOffsetY + 0.01));
+          activeOffset = 0.0;
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 16, panelRect.y + 200, 120, 30 }, U"Save"))
+        SimpleGUI::GetFont()(U"world Y: {:.3f}"_fmt(GetModelHeightWorldY(activeTarget, birdRenderPosition, ashigaruRenderPosition, sugoiCarRenderPosition))).draw((detailPanel.x + 16), (detailPanel.y + 196), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"range: [{:.1f}, {:.1f}]"_fmt(ModelHeightOffsetMin, ModelHeightOffsetMax)).draw((detailPanel.x + 16), (detailPanel.y + 220), ColorF{ 0.12 });
+
+      if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 252, 92, 30 }, U"Save"))
 		{
 			modelHeightMessage = SaveModelHeightSettings(modelHeightSettings)
 				? U"Saved: {}"_fmt(ModelHeightSettingsPath)
@@ -102,14 +186,14 @@ namespace MainSupport
 			modelHeightMessageUntil = (Scene::Time() + 2.0);
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 144, panelRect.y + 200, 120, 30 }, U"Reload"))
+       if (DrawTextButton(Rect{ detailPanel.x + 116, detailPanel.y + 252, 92, 30 }, U"Reload"))
 		{
 			modelHeightSettings = LoadModelHeightSettings();
 			modelHeightMessage = U"Reloaded";
 			modelHeightMessageUntil = (Scene::Time() + 2.0);
 		}
 
-		if (DrawTextButton(Rect{ panelRect.x + 272, panelRect.y + 200, 120, 30 }, U"Reset"))
+        if (DrawTextButton(Rect{ detailPanel.x + 216, detailPanel.y + 252, 92, 30 }, U"Reset All"))
 		{
 			modelHeightSettings = {};
 			modelHeightMessage = U"Offsets reset";
@@ -118,10 +202,7 @@ namespace MainSupport
 
 		if (Scene::Time() < modelHeightMessageUntil)
 		{
-			SimpleGUI::GetFont()(modelHeightMessage).draw((panelRect.x + 16), (panelRect.y + 238), ColorF{ 0.12 });
+         SimpleGUI::GetFont()(modelHeightMessage).draw((detailPanel.x + 16), (detailPanel.y + 290), ColorF{ 0.12 });
 		}
-
-		SimpleGUI::GetFont()(U"bird world Y: {:.3f}"_fmt(birdRenderPosition.y)).draw((panelRect.x + 16), (panelRect.y + 262), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"ashigaru world Y: {:.3f}"_fmt(ashigaruRenderPosition.y)).draw((panelRect.x + 208), (panelRect.y + 262), ColorF{ 0.12 });
 	}
 }

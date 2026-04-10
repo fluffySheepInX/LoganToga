@@ -28,12 +28,15 @@ namespace SkyAppFlow
 	{
 		Mesh groundPlane;
 		Texture groundTexture;
+      Texture roadTexture;
 		Model blacksmithModel;
 		Model millModel;
 		Model treeModel;
 		Model pineModel;
+        Model grassPatchModel;
 		BirdModel birdModel;
 		BirdModel ashigaruModel;
+      BirdModel sugoiCarModel;
 		MSRenderTexture renderTexture;
 
 		SkyAppResources();
@@ -87,13 +90,16 @@ namespace SkyAppFlow
        SkyAppSupport::TimedMessage uiLayoutMessage;
        SkyAppSupport::TimedMessage unitEditorMessage;
 		bool modelHeightEditMode = false;
+      MainSupport::ModelHeightTarget modelHeightTarget = MainSupport::ModelHeightTarget::Bird;
       bool unitEditorMode = false;
+       bool showResourceAdjustUi = false;
       bool requestTitleScene = false;
 		Optional<Vec2> selectionDragStart;
 		double playerBaseHitPoints = MainSupport::BaseMaxHitPoints;
 		double enemyBaseHitPoints = MainSupport::BaseMaxHitPoints;
         MainSupport::ResourceStock playerResources;
 		MainSupport::ResourceStock enemyResources;
+       MainSupport::ResourceStock initialPlayerResources{ .budget = MainSupport::StartingResources };
 		Array<MainSupport::ResourceAreaState> resourceAreaStates;
        MainSupport::UnitEditorSettings unitEditorSettings;
 		MainSupport::UnitEditorSection unitEditorSection = MainSupport::UnitEditorSection::PlayerInfantry;
@@ -121,6 +127,7 @@ namespace SkyAppFlow
 		bool isHoveringUI = false;
 		Vec3 birdRenderPosition = MainSupport::BirdDisplayPosition;
 		Vec3 ashigaruRenderPosition = MainSupport::AshigaruDisplayPosition;
+      Vec3 sugoiCarRenderPosition = MainSupport::SugoiCarDisplayPosition;
 	};
 
 	void InitializeSkyAppState(SkyAppState& state);

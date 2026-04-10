@@ -32,8 +32,10 @@ namespace SkyAppSupport
 		const Array<UnitEditorSection> sections{
 			UnitEditorSection::PlayerInfantry,
 			UnitEditorSection::PlayerArcaneInfantry,
+           UnitEditorSection::PlayerSugoiCar,
 			UnitEditorSection::EnemyInfantry,
 			UnitEditorSection::EnemyArcaneInfantry,
+          UnitEditorSection::EnemySugoiCar,
 		};
 		const auto countUnits = [&](const UnitEditorSection section)
 			{

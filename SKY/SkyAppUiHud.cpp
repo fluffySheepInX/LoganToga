@@ -114,26 +114,11 @@ namespace SkyAppFlow
 		if ((not frame.isEditorMode) && (not state.playerWon) && (state.selectedSapperIndices.size() == 1))
 		{
             const size_t selectedIndex = state.selectedSapperIndices.front();
-            const SpawnedSapper* selectedSapper = ((selectedIndex < state.spawnedSappers.size())
-				? &state.spawnedSappers[selectedIndex]
-				: nullptr);
-			const SapperUnitType selectedUnitType = (selectedSapper
-				? selectedSapper->unitType
-				: SapperUnitType::Infantry);
-			const bool explosionSkillReady = (selectedSapper
-				? (Scene::Time() >= selectedSapper->explosionSkillCooldownUntil)
-				: false);
 
 			if (DrawSapperMenu(frame.panels,
 				state.spawnedSappers,
-               state.mapData,
-				state.mapData.playerBasePosition,
-				state.mapData.sapperRallyPoint,
 				state.playerResources,
-				state.playerTier,
-               selectedUnitType,
-				explosionSkillReady,
-             state.unitEditorSettings,
+                selectedIndex,
                state.blacksmithMenuMessage) == SapperMenuAction::UseExplosionSkill)
 			{
 				TryUsePlayerSapperExplosionSkill(state, selectedIndex);
@@ -213,6 +198,11 @@ namespace SkyAppFlow
 			{
 				state.uiLayoutMessage.show(U"UI Edit: drag mini map / resource");
 			}
+		}
+
+		if (DrawTextButton(frame.panels.resourceAdjustToggle, state.showResourceAdjustUi ? U"資源+" : U"資源"))
+		{
+			state.showResourceAdjustUi = not state.showResourceAdjustUi;
 		}
 	}
 

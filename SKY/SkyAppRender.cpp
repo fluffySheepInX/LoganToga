@@ -12,6 +12,12 @@ namespace SkyAppFlow
 	{
       constexpr int32 ResourceAreaRingSegments = 36;
 
+		void DrawTerrainCellOverlay(const TerrainCell& terrainCell)
+		{
+			const Vec3 center = ToTerrainCellCenter(terrainCell.cell).movedBy(0, 0.01, 0);
+			Box{ center, TerrainCellSize, 0.02, TerrainCellSize }.draw(GetTerrainCellDrawColor(terrainCell).removeSRGBCurve());
+		}
+
 		[[nodiscard]] ColorF GetResourceAreaColor(const ResourceType type)
 		{
 			switch (type)
@@ -63,6 +69,10 @@ namespace SkyAppFlow
 	void RenderWorld(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		resources.groundPlane.draw(resources.groundTexture);
+        for (const auto& terrainCell : state.mapData.terrainCells)
+		{
+			DrawTerrainCellOverlay(terrainCell);
+		}
 		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
 
 		for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
@@ -83,9 +93,13 @@ namespace SkyAppFlow
 		{
 			resources.ashigaruModel.draw(frame.ashigaruRenderPosition, BirdDisplayYaw, ColorF{ 0.95, 0.92, 0.90 }.removeSRGBCurve());
 		}
+      if (resources.sugoiCarModel.isLoaded())
+		{
+			resources.sugoiCarModel.draw(frame.sugoiCarRenderPosition, BirdDisplayYaw, ColorF{ 0.96, 0.94, 0.92 }.removeSRGBCurve());
+		}
 		for (const auto& placedModel : state.mapData.placedModels)
 		{
-			DrawPlacedModel(placedModel, resources.millModel, resources.treeModel, resources.pineModel);
+         DrawPlacedModel(placedModel, resources.millModel, resources.treeModel, resources.pineModel, resources.grassPatchModel, resources.roadTexture);
 		}
 
 		if (IsValidMillIndex(state, state.selectedMillIndex))
@@ -96,8 +110,8 @@ namespace SkyAppFlow
 			Cylinder{ selectedMill.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
 		}
 
-		DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, ColorF{ 0.92, 0.95, 1.0 });
-		DrawSpawnedSappers(state.enemySappers, resources.ashigaruModel, ColorF{ 1.0, 0.78, 0.74 });
+       DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.sugoiCarModel, ColorF{ 0.92, 0.95, 1.0 });
+		DrawSpawnedSappers(state.enemySappers, resources.ashigaruModel, resources.sugoiCarModel, ColorF{ 1.0, 0.78, 0.74 });
 		DrawMapEditorScene(state.mapEditor, state.mapData);
 		UpdateSkyFromTime(state.sky, state.skyTime);
 		state.sky.draw();

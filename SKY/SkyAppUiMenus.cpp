@@ -7,6 +7,8 @@ namespace SkyAppSupport
 {
 	namespace
 	{
+      constexpr int32 MinimumSapperTier = 1;
+
 		struct EscMenuItem
 		{
 			StringView label;
@@ -18,10 +20,56 @@ namespace SkyAppSupport
 			return (TierUpgradeBaseCost * Max(1, currentTier));
 		}
 
+		void ApplySapperTierStatUpgrade(SpawnedSapper& sapper)
+		{
+			constexpr double multiplier = (1.0 + SapperTierStatBonusRate);
+			sapper.maxHitPoints = Max(1.0, (sapper.maxHitPoints * multiplier));
+			sapper.hitPoints = Min(sapper.maxHitPoints, Max(0.0, (sapper.hitPoints * multiplier)));
+			sapper.moveSpeed = Max(0.1, (sapper.moveSpeed * multiplier));
+			sapper.attackRange = Max(0.5, (sapper.attackRange * multiplier));
+			sapper.baseAttackDamage = Max(0.0, (sapper.baseAttackDamage * multiplier));
+			sapper.baseAttackInterval = Max(0.05, (sapper.baseAttackInterval / multiplier));
+		}
+
+		void SetSapperTier(SpawnedSapper& sapper, const int32 tier)
+		{
+			const int32 clampedTier = Clamp(tier, MinimumSapperTier, MaximumSapperTier);
+			sapper.tier = MinimumSapperTier;
+
+			for (int32 currentTier = MinimumSapperTier; currentTier < clampedTier; ++currentTier)
+			{
+				ApplySapperTierStatUpgrade(sapper);
+				++sapper.tier;
+			}
+		}
+
+		[[nodiscard]] String GetProductionTierUpgradeLabel(const int32 playerTier)
+		{
+			if (playerTier >= MaximumSapperTier)
+			{
+				return U"生産ティアアップ [最大]";
+			}
+
+			return U"生産ティアアップ ({:.0f} 予算)"_fmt(GetTierUpgradeCost(playerTier));
+		}
+
+		[[nodiscard]] String GetSapperTierUpgradeLabel(const SpawnedSapper& sapper)
+		{
+			if (sapper.tier >= MaximumSapperTier)
+			{
+				return U"ティアアップ [最大]";
+			}
+
+			return U"ティアアップ (+{}% / {:.0f} 予算)"_fmt(static_cast<int32>(SapperTierStatBonusRate * 100.0), GetTierUpgradeCost(sapper.tier));
+		}
+
 		[[nodiscard]] StringView ToUnitDisplayName(const SapperUnitType unitType)
 		{
 			switch (unitType)
 			{
+            case SapperUnitType::SugoiCar:
+				return U"すごい車(仮)";
+
 			case SapperUnitType::ArcaneInfantry:
 				return U"魔導兵(仮)";
 
@@ -51,6 +99,7 @@ namespace SkyAppSupport
 			const Vec3& playerBasePosition,
 			const Vec3& rallyPoint,
 			ResourceStock& playerResources,
+         const int32 playerTier,
           const UnitEditorSettings& unitEditorSettings,
 			const SapperUnitType unitType,
 			TimedMessage& message)
@@ -62,8 +111,9 @@ namespace SkyAppSupport
 			{
               SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint, mapData, unitType);
                ApplyUnitParameters(spawnedSappers.back(), unitParameters);
+               SetSapperTier(spawnedSappers.back(), playerTier);
 				playerResources.mana -= manaCost;
-				message.show(U"{}を出撃"_fmt(ToUnitDisplayName(unitType)));
+                message.show(U"{}を出撃 (Tier {})"_fmt(ToUnitDisplayName(unitType), spawnedSappers.back().tier));
 				return true;
 			}
 
@@ -111,35 +161,47 @@ namespace SkyAppSupport
         const UnitEditorSettings& unitEditorSettings,
 		TimedMessage& blacksmithMenuMessage)
 	{
-      const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
+     playerTier = Clamp(playerTier, MinimumSapperTier, MaximumSapperTier);
+		const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
 		const double arcaneInfantryCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::ArcaneInfantry).manaCost;
+      const double sugoiCarCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::SugoiCar).manaCost;
 		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		const Rect& panelRect = panels.blacksmithMenu;
 		UiInternal::DrawPanelFrame(panelRect, U"兵生産メニュー");
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 34), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"魔力: {:.0f} / Tier {}"_fmt(playerResources.mana, playerTier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 54), ColorF{ 0.12 });
+      SimpleGUI::GetFont()(U"魔力: {:.0f} / 生産T {}/{}"_fmt(playerResources.mana, playerTier, MaximumSapperTier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 54), ColorF{ 0.12 });
 
 		const Rect produceSapperButton = SkyAppUiLayout::MenuWideButton(panelRect, 84);
 		const Rect produceArcaneButton = SkyAppUiLayout::MenuWideButton(panelRect, 116);
-		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 148);
+      const Rect produceSugoiCarButton = SkyAppUiLayout::MenuWideButton(panelRect, 148);
+		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 180);
 
 		if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::Infantry, blacksmithMenuMessage);
+           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::Infantry, blacksmithMenuMessage);
 		}
 
      if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(arcaneInfantryCost)))
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::ArcaneInfantry, blacksmithMenuMessage);
+         TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::ArcaneInfantry, blacksmithMenuMessage);
 		}
 
-		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
+		if (DrawTextButton(produceSugoiCarButton, U"すごい車(仮) ({:.0f} 魔力)"_fmt(sugoiCarCost)))
 		{
-			if (tierUpgradeCost <= playerResources.budget)
+			TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::SugoiCar, blacksmithMenuMessage);
+		}
+
+      if (DrawTextButton(tierUpgradeButton, GetProductionTierUpgradeLabel(playerTier)))
+		{
+          if (playerTier >= MaximumSapperTier)
+			{
+				blacksmithMenuMessage.show(U"生産Tierは最大です");
+			}
+			else if (tierUpgradeCost <= playerResources.budget)
 			{
 				playerResources.budget -= tierUpgradeCost;
 				++playerTier;
-				blacksmithMenuMessage.show(U"Tier {} に上昇"_fmt(playerTier));
+             blacksmithMenuMessage.show(U"生産Tier {} に上昇"_fmt(playerTier));
 			}
 			else
 			{
@@ -153,52 +215,46 @@ namespace SkyAppSupport
 		}
 	}
 
-     SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
+    SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
 		Array<SpawnedSapper>& spawnedSappers,
-     const MapData& mapData,
-		const Vec3& playerBasePosition,
-		const Vec3& rallyPoint,
 		ResourceStock& playerResources,
-		int32& playerTier,
-     const SapperUnitType selectedUnitType,
-		const bool explosionSkillReady,
-        const UnitEditorSettings& unitEditorSettings,
+     const size_t selectedSapperIndex,
 		TimedMessage& sapperMenuMessage)
 	{
-      const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
-		const double arcaneInfantryCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::ArcaneInfantry).manaCost;
-		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
+     if (selectedSapperIndex >= spawnedSappers.size())
+		{
+			return SapperMenuAction::None;
+		}
+
+		SpawnedSapper& selectedSapper = spawnedSappers[selectedSapperIndex];
+		selectedSapper.tier = Clamp(selectedSapper.tier, MinimumSapperTier, MaximumSapperTier);
+		const SapperUnitType selectedUnitType = selectedSapper.unitType;
+		const bool explosionSkillReady = (Scene::Time() >= selectedSapper.explosionSkillCooldownUntil);
+      const double tierUpgradeCost = GetTierUpgradeCost(selectedSapper.tier);
 		const Rect& panelRect = panels.sapperMenu;
 		UiInternal::DrawPanelFrame(panelRect, U"兵メニュー", ColorF{ 0.97, 0.95 });
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 38), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"魔力: {:.0f} / Tier {}"_fmt(playerResources.mana, playerTier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 60), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"生産").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 86), ColorF{ 0.22 });
-		SimpleGUI::GetFont()(U"スキル").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 208), ColorF{ 0.22 });
+       SimpleGUI::GetFont()(U"魔力: {:.0f} / 選択T {}"_fmt(playerResources.mana, selectedSapper.tier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 60), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"強化").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 86), ColorF{ 0.22 });
+		SimpleGUI::GetFont()(U"スキル").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 144), ColorF{ 0.22 });
 
-		const Rect produceSapperButton = SkyAppUiLayout::MenuWideButton(panelRect, 110);
-		const Rect produceArcaneButton = SkyAppUiLayout::MenuWideButton(panelRect, 142);
-		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 174);
-		const Rect scoutingSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 232);
-		const Rect fortifySkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 264);
-			const Rect explosionSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 296);
+        const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 110);
+		const Rect scoutingSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 168);
+		const Rect fortifySkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 200);
+		const Rect explosionSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 232);
 
-		if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
+      if (DrawTextButton(tierUpgradeButton, GetSapperTierUpgradeLabel(selectedSapper)))
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::Infantry, sapperMenuMessage);
-		}
-
-     if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(arcaneInfantryCost)))
-		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, unitEditorSettings, SapperUnitType::ArcaneInfantry, sapperMenuMessage);
-		}
-
-		if (DrawTextButton(tierUpgradeButton, U"ティアアップグレード ({:.0f} 予算)"_fmt(tierUpgradeCost)))
-		{
-			if (tierUpgradeCost <= playerResources.budget)
+          if (selectedSapper.tier >= MaximumSapperTier)
+			{
+				sapperMenuMessage.show(U"このユニットは最大Tierです");
+			}
+			else if (tierUpgradeCost <= playerResources.budget)
 			{
 				playerResources.budget -= tierUpgradeCost;
-				++playerTier;
-				sapperMenuMessage.show(U"Tier {} に上昇"_fmt(playerTier));
+               ApplySapperTierStatUpgrade(selectedSapper);
+				++selectedSapper.tier;
+				sapperMenuMessage.show(U"{} が Tier {} に上昇 (+{}%)"_fmt(ToUnitDisplayName(selectedUnitType), selectedSapper.tier, static_cast<int32>(SapperTierStatBonusRate * 100.0)));
 			}
 			else
 			{

@@ -11,6 +11,8 @@ namespace SkyAppSupport
 	{
 		constexpr double HealthBarWidth = 36.0;
 		constexpr double HealthBarHeight = 5.0;
+           constexpr double TierBadgeWidth = 34.0;
+			constexpr double TierBadgeHeight = 18.0;
 		constexpr ColorF SuppressionAccentColor{ 0.70, 0.90, 1.0, 0.95 };
 		constexpr ColorF SuppressionAuraColor{ 0.34, 0.68, 1.0, 0.18 };
 		constexpr ColorF SuppressionLabelColor{ 0.92, 0.98, 1.0, 0.96 };
@@ -129,10 +131,20 @@ namespace SkyAppSupport
 				RectF{ backRect.x, (backRect.y - 4), backRect.w, 2.0 }.draw(SuppressionAccentColor);
 				SimpleGUI::GetFont()(U"SUP").drawAt(screenAnchor->movedBy(0, -22), SuppressionLabelColor);
 			}
+
+			if (sapper.tier > 1)
+			{
+				const double tierRate = Math::Saturate((sapper.tier - 1.0) / Max(1.0, static_cast<double>(MaximumSapperTier - 1)));
+				const RoundRect tierBadge{ Arg::center = screenAnchor->movedBy(0, -34), TierBadgeWidth, TierBadgeHeight, 4.0 };
+				const ColorF badgeColor{ 1.0, (0.76 + 0.16 * tierRate), (0.22 + 0.18 * tierRate), 0.94 };
+				tierBadge.draw(badgeColor);
+				tierBadge.drawFrame(1.5, ColorF{ 0.45, 0.25, 0.06, 0.92 });
+				SimpleGUI::GetFont()(U"T{}"_fmt(sapper.tier)).drawAt(tierBadge.center(), ColorF{ 0.30, 0.18, 0.04, 0.98 });
+			}
 		}
 	}
 
-	void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const ColorF& color)
+  void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const BirdModel& sugoiCarModel, const ColorF& color)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
@@ -144,8 +156,9 @@ namespace SkyAppSupport
 			const double elapsed = (Scene::Time() - sapper.spawnedAt);
 			const double popIn = Min(elapsed / 0.25, 1.0);
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
+			const BirdModel& drawModel = ((sapper.unitType == SapperUnitType::SugoiCar) ? sugoiCarModel : sapperModel);
 
-			if (sapperModel.isLoaded())
+         if (drawModel.isLoaded())
 			{
 				const double appearance = Max(0.72, (0.72 + 0.28 * EaseOutBack(popIn)));
              const ColorF unitColor = GetSpawnedSapperTint(sapper, color);
@@ -157,7 +170,7 @@ namespace SkyAppSupport
 					Sphere{ renderPosition.movedBy(0, 1.25, 0), (1.05 + 0.10 * pulse) }.draw(ColorF{ SuppressionAuraColor.r, SuppressionAuraColor.g, SuppressionAuraColor.b, (SuppressionAuraColor.a + 0.05 * pulse) }.removeSRGBCurve());
 				}
 
-				sapperModel.draw(renderPosition, GetSpawnedSapperYaw(sapper), tint.removeSRGBCurve());
+              drawModel.draw(renderPosition, GetSpawnedSapperYaw(sapper), tint.removeSRGBCurve());
 			}
 			else
 			{

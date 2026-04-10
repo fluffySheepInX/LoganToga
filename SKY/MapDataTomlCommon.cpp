@@ -58,6 +58,11 @@ namespace MapDataTomlDetail
 		return Clamp(value, 2.0, 80.0);
 	}
 
+	double SanitizeRoadSpan(const double value)
+	{
+		return Clamp(value, 2.0, 80.0);
+	}
+
 	Vec3 ReadTomlVec3(const TOMLReader& toml, const String& key, const Vec3& fallback)
 	{
 		try
@@ -193,6 +198,11 @@ namespace MapDataTomlDetail
 			return PlaceableModelType::Pine;
 		}
 
+		if (value == U"GrassPatch")
+		{
+			return PlaceableModelType::GrassPatch;
+		}
+
 		if (value == U"Rock")
 		{
 			return PlaceableModelType::Rock;
@@ -201,6 +211,36 @@ namespace MapDataTomlDetail
 		if (value == U"Wall")
 		{
 			return PlaceableModelType::Wall;
+		}
+
+	if (value == U"Road")
+	{
+		return PlaceableModelType::Road;
+	}
+
+		return none;
+	}
+
+	Optional<TerrainCellType> ParseTerrainCellType(const String& value)
+	{
+		if (value == U"Grass")
+		{
+			return TerrainCellType::Grass;
+		}
+
+		if (value == U"Dirt")
+		{
+			return TerrainCellType::Dirt;
+		}
+
+		if (value == U"Sand")
+		{
+			return TerrainCellType::Sand;
+		}
+
+		if (value == U"Rock")
+		{
+			return TerrainCellType::Rock;
 		}
 
 		return none;

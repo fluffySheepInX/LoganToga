@@ -52,4 +52,5 @@ struct BirdModelSubMeshInfo
 	uint32 vertexCount = 0;
 	Array<TriangleIndex32> localIndices;
 	ColorF materialColor{ 1.0, 1.0, 1.0, 1.0 };
+  Texture diffuseTexture;
 };

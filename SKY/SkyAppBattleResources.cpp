@@ -52,7 +52,7 @@ namespace SkyAppFlow
 	{
 		void ResetResourceState(SkyAppState& state)
 		{
-			state.playerResources = ResourceStock{ .budget = StartingResources };
+               state.playerResources = state.initialPlayerResources;
 			state.enemyResources = {};
 			state.resourceAreaStates = Array<ResourceAreaState>(state.mapData.resourceAreas.size());
 		}

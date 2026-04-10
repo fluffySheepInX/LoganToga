@@ -2,6 +2,44 @@
 
 using namespace MapDataTomlDetail;
 
+namespace
+{
+	[[nodiscard]] Color ReadTomlColor(const TOMLValue& tomlValue, const String& key, const Color& fallback)
+	{
+		try
+		{
+			Array<int32> values;
+			values.reserve(4);
+
+			for (const auto& value : tomlValue[key].arrayView())
+			{
+				values << Clamp<int32>(static_cast<int32>(value.get<int64>()), 0, 255);
+
+				if (values.size() >= 4)
+				{
+					break;
+				}
+			}
+
+			if (values.size() < 3)
+			{
+				return fallback;
+			}
+
+			return Color{
+				static_cast<uint8>(values[0]),
+				static_cast<uint8>(values[1]),
+				static_cast<uint8>(values[2]),
+				static_cast<uint8>((values.size() >= 4) ? values[3] : 255),
+			};
+		}
+		catch (const std::exception&)
+		{
+			return fallback;
+		}
+	}
+}
+
 MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 {
 	MapDataLoadResult result;
@@ -101,6 +139,8 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 						.position = Vec3{ positionValues[0], positionValues[1], positionValues[2] },
                        .yaw = objectTable[U"yaw"].getOpt<double>().value_or(0.0),
 						.wallLength = SanitizeWallLength(objectTable[U"wallLength"].getOpt<double>().value_or(10.0)),
+                       .roadLength = SanitizeRoadSpan(objectTable[U"roadLength"].getOpt<double>().value_or(8.0)),
+						.roadWidth = SanitizeRoadSpan(objectTable[U"roadWidth"].getOpt<double>().value_or(4.0)),
 						.attackRange = SanitizeMillAttackRange(objectTable[U"attackRange"].getOpt<double>().value_or(MainSupport::MillDefenseRange)),
 						.attackDamage = SanitizeMillAttackDamage(objectTable[U"attackDamage"].getOpt<double>().value_or(MainSupport::MillDefenseDamage)),
 						.attackInterval = SanitizeMillAttackInterval(objectTable[U"attackInterval"].getOpt<double>().value_or(MainSupport::MillDefenseInterval)),
@@ -125,6 +165,50 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 		if (0 < skippedObjectCount)
 		{
 			AppendLoadMessage(result.message, U"objects の一部を読み飛ばし");
+		}
+	}
+
+	if (HasTomlTableArraySection(path, U"terrainCells"))
+	{
+		mapData.terrainCells.clear();
+		size_t skippedTerrainCellCount = 0;
+
+		try
+		{
+			for (const auto& terrainCellTable : toml[U"terrainCells"].tableArrayView())
+			{
+				try
+				{
+					const Optional<int64> cellX = terrainCellTable[U"x"].getOpt<int64>();
+					const Optional<int64> cellZ = terrainCellTable[U"z"].getOpt<int64>();
+					const Optional<TerrainCellType> type = ParseTerrainCellType(terrainCellTable[U"type"].get<String>());
+
+					if ((not cellX) || (not cellZ) || (not type))
+					{
+						++skippedTerrainCellCount;
+						continue;
+					}
+
+					mapData.terrainCells << TerrainCell{
+						.cell = Point{ static_cast<int32>(*cellX), static_cast<int32>(*cellZ) },
+						.type = *type,
+						.color = ReadTomlColor(terrainCellTable, U"color", Color{ 255, 255, 255 }),
+					};
+				}
+				catch (const std::exception&)
+				{
+					++skippedTerrainCellCount;
+				}
+			}
+		}
+		catch (const std::exception&)
+		{
+			AppendLoadMessage(result.message, U"terrainCells の読込に失敗したため地表装飾を省略");
+		}
+
+		if (0 < skippedTerrainCellCount)
+		{
+			AppendLoadMessage(result.message, U"terrainCells の一部を読み飛ばし");
 		}
 	}
 

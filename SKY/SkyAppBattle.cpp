@@ -15,6 +15,11 @@ namespace SkyAppFlow
 
       [[nodiscard]] Optional<SapperUnitType> GetEnemyProducibleUnitType(const SkyAppState& state)
 		{
+         if (GetEnemyUnitCost(state, SapperUnitType::SugoiCar) <= state.enemyResources.mana)
+			{
+				return SapperUnitType::SugoiCar;
+			}
+
           if (GetEnemyUnitCost(state, SapperUnitType::ArcaneInfantry) <= state.enemyResources.mana)
 			{
 				return SapperUnitType::ArcaneInfantry;
@@ -105,7 +110,10 @@ namespace SkyAppFlow
 
 			state.nextEnemyAiDecisionAt = (Scene::Time() + EnemyAiDecisionInterval);
 
-               if (GetEnemyProducibleUnitType(state) == SapperUnitType::ArcaneInfantry)
+         const Optional<SapperUnitType> producibleUnitType = GetEnemyProducibleUnitType(state);
+			if (producibleUnitType
+				&& ((*producibleUnitType == SapperUnitType::ArcaneInfantry)
+					|| (*producibleUnitType == SapperUnitType::SugoiCar)))
 			{
 				state.enemyBattlePlan = EnemyBattlePlan::AssaultBase;
 				state.enemyTargetResourceAreaIndex.reset();

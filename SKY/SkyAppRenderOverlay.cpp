@@ -63,6 +63,83 @@ namespace SkyAppFlow
 			return U"中立";
 		}
 
+		[[nodiscard]] double& GetResourceValue(ResourceStock& resources, const ResourceType type)
+		{
+			switch (type)
+			{
+			case ResourceType::Budget:
+				return resources.budget;
+
+			case ResourceType::Gunpowder:
+				return resources.gunpowder;
+
+			case ResourceType::Mana:
+				return resources.mana;
+
+			default:
+				return resources.budget;
+			}
+		}
+
+		[[nodiscard]] double GetResourceAdjustStep(const ResourceType type)
+		{
+			switch (type)
+			{
+			case ResourceType::Budget:
+				return 50.0;
+
+			case ResourceType::Gunpowder:
+				return 10.0;
+
+			case ResourceType::Mana:
+				return 10.0;
+
+			default:
+				return 10.0;
+			}
+		}
+
+		[[nodiscard]] ColorF GetResourceTextColor(const ResourceType type)
+		{
+			switch (type)
+			{
+			case ResourceType::Budget:
+				return ColorF{ 0.98, 0.90, 0.38 };
+
+			case ResourceType::Gunpowder:
+				return ColorF{ 0.98, 0.56, 0.42 };
+
+			case ResourceType::Mana:
+				return ColorF{ 0.58, 0.72, 1.0 };
+
+			default:
+				return Palette::White;
+			}
+		}
+
+		void DrawInitialResourceEditorRow(SkyAppState& state, const Rect& resourcePanel, const ResourceType type, const int32 yOffset)
+		{
+			double& initialValue = GetResourceValue(state.initialPlayerResources, type);
+			double& currentValue = GetResourceValue(state.playerResources, type);
+			const double step = GetResourceAdjustStep(type);
+			const Rect minusButton{ (resourcePanel.rightX() - 84), (resourcePanel.y + yOffset), 32, 22 };
+			const Rect plusButton{ (resourcePanel.rightX() - 44), (resourcePanel.y + yOffset), 32, 22 };
+
+			SimpleGUI::GetFont()(U"初期 {} {:.0f}"_fmt(ToDisplayLabel(type), initialValue)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + yOffset + 1) }, GetResourceTextColor(type));
+
+			if (DrawTextButton(minusButton, U"-"))
+			{
+				initialValue = Max(0.0, (initialValue - step));
+				currentValue = initialValue;
+			}
+
+			if (DrawTextButton(plusButton, U"+"))
+			{
+				initialValue += step;
+				currentValue = initialValue;
+			}
+		}
+
         [[nodiscard]] Optional<Vec2> ProjectToScreen(const AppCamera3D& camera, const Vec3& worldPosition)
 		{
 			const Float3 screenPosition = camera.worldToScreenPoint(Float3{ static_cast<float>(worldPosition.x), static_cast<float>(worldPosition.y), static_cast<float>(worldPosition.z) });
@@ -142,6 +219,30 @@ namespace SkyAppFlow
 			default:
 				return;
 			}
+		}
+
+		[[nodiscard]] bool DrawResourcePanelCameraHomeButton(const Rect& buttonRect)
+		{
+			const bool hovered = buttonRect.mouseOver();
+			const ColorF backgroundColor = hovered
+				? ColorF{ 0.82, 0.88, 0.96, 0.96 }
+				: ColorF{ 0.72, 0.78, 0.86, 0.90 };
+			const ColorF frameColor = hovered
+				? ColorF{ 0.96, 0.98, 1.0, 0.98 }
+				: ColorF{ 0.46, 0.52, 0.60, 0.95 };
+			const ColorF iconColor{ 0.12, 0.15, 0.20, 0.96 };
+
+			buttonRect.draw(backgroundColor).drawFrame(1, 0, frameColor);
+
+			const Vec2 center = buttonRect.center();
+			const Vec2 roofTop = center.movedBy(0, -10);
+			const Vec2 roofLeft = center.movedBy(-10, -2);
+			const Vec2 roofRight = center.movedBy(10, -2);
+			Line{ roofLeft, roofTop }.draw(2.2, iconColor);
+			Line{ roofTop, roofRight }.draw(2.2, iconColor);
+			RectF{ Arg::center = center.movedBy(0, 7), 16, 12 }.drawFrame(2.0, iconColor);
+			Line{ center.movedBy(0, 4), center.movedBy(0, 13) }.draw(2.0, iconColor);
+			return hovered && MouseL.down();
 		}
 
 		[[nodiscard]] RectF GetSelectionRect(const Optional<Vec2>& selectionDragStart)
@@ -265,11 +366,26 @@ namespace SkyAppFlow
 		}
 
 		const Rect resourcePanel = frame.panels.resourcePanel;
+      const Rect resourcePanelCameraHomeButton = SkyAppUiLayout::ResourcePanelCameraHomeButton(resourcePanel);
+		if (DrawResourcePanelCameraHomeButton(resourcePanelCameraHomeButton))
+		{
+			ResetCameraToPlayerBase(state);
+		}
+
 		resourcePanel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 }).drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-        SimpleGUI::GetFont()(state.uiEditMode ? U"資源 [Drag]" : U"資源").draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
-		SimpleGUI::GetFont()(U"予算 {:.0f}"_fmt(state.playerResources.budget)).draw(SkyAppUiLayout::ResourcePanelBudgetPosition(resourcePanel), ColorF{ 0.98, 0.90, 0.38 });
-		SimpleGUI::GetFont()(U"火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw(SkyAppUiLayout::ResourcePanelGunpowderPosition(resourcePanel), ColorF{ 0.98, 0.56, 0.42 });
-		SimpleGUI::GetFont()(U"魔力 {:.0f}"_fmt(state.playerResources.mana)).draw(SkyAppUiLayout::ResourcePanelManaPosition(resourcePanel), ColorF{ 0.58, 0.72, 1.0 });
+      SimpleGUI::GetFont()(state.uiEditMode ? U"資源 [Drag]" : (state.showResourceAdjustUi ? U"資源 / 初期値" : U"資源")).draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
+		SimpleGUI::GetFont()(U"現在 予算 {:.0f}"_fmt(state.playerResources.budget)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 28) }, ColorF{ 0.98, 0.90, 0.38 });
+		SimpleGUI::GetFont()(U"現在 火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 48) }, ColorF{ 0.98, 0.56, 0.42 });
+		SimpleGUI::GetFont()(U"現在 魔力 {:.0f}"_fmt(state.playerResources.mana)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 68) }, ColorF{ 0.58, 0.72, 1.0 });
+
+		if (state.showResourceAdjustUi)
+		{
+			Line{ (resourcePanel.x + 12), (resourcePanel.y + 92), (resourcePanel.rightX() - 12), (resourcePanel.y + 92) }.draw(1.0, ColorF{ 0.72, 0.78, 0.86, 0.45 });
+			SimpleGUI::GetFont()(U"テスト用 初期資源").draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 100) }, ColorF{ 0.90, 0.94, 0.98, 0.95 });
+			DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Budget, 122);
+			DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Gunpowder, 148);
+			DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Mana, 174);
+		}
         if (state.uiLayoutMessage.isVisible())
 		{
 			const Vec2 messagePosition{ static_cast<double>(resourcePanel.x), static_cast<double>(Min((resourcePanel.bottomY() + 8), (Scene::Height() - 28))) };
@@ -293,7 +409,7 @@ namespace SkyAppFlow
 
 		if (state.modelHeightEditMode)
 		{
-			DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.birdRenderPosition, frame.ashigaruRenderPosition);
+          DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.birdRenderPosition, frame.ashigaruRenderPosition, frame.sugoiCarRenderPosition);
 		}
 
 		if ((not frame.isEditorMode) && state.selectionDragStart && MouseL.pressed() && (not frame.isHoveringUI))

@@ -77,6 +77,7 @@
 				rd.globalVertexStart = subMeshInfo.globalVertexStart;
 				rd.vertexCount = subMeshInfo.vertexCount;
 				rd.materialColor = subMeshInfo.materialColor;
+				rd.diffuseTexture = subMeshInfo.diffuseTexture;
 
 				const Array<Vertex3D> subVertices(m_bindPoseVertices.begin() + rd.globalVertexStart,
 					m_bindPoseVertices.begin() + rd.globalVertexStart + rd.vertexCount);
@@ -129,7 +130,15 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
 				color.b * subMesh.materialColor.b,
 				color.a * subMesh.materialColor.a,
 			};
-			subMesh.dynamicMesh.draw(position, Quaternion::RotateY(yaw), meshColor);
+
+			if (subMesh.diffuseTexture)
+			{
+				subMesh.dynamicMesh.draw(position, Quaternion::RotateY(yaw), subMesh.diffuseTexture, meshColor);
+			}
+			else
+			{
+				subMesh.dynamicMesh.draw(position, Quaternion::RotateY(yaw), meshColor);
+			}
 		}
 		return;
 	}

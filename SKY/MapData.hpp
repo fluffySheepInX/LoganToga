@@ -7,9 +7,21 @@ enum class PlaceableModelType
 	Mill,
 	Tree,
 	Pine,
+  GrassPatch,
  Rock,
 	Wall,
+  Road,
 };
+
+enum class TerrainCellType
+{
+	Grass,
+	Dirt,
+	Sand,
+	Rock,
+};
+
+inline constexpr double TerrainCellSize = 2.0;
 
 struct PlacedModel
 {
@@ -17,6 +29,8 @@ struct PlacedModel
 	Vec3 position{ 0, 0, 0 };
    double yaw = 0.0;
 	double wallLength = 10.0;
+   double roadLength = 8.0;
+	double roadWidth = 4.0;
   double attackRange = MainSupport::MillDefenseRange;
 	double attackDamage = MainSupport::MillDefenseDamage;
 	double attackInterval = MainSupport::MillDefenseInterval;
@@ -48,6 +62,13 @@ struct NavLink
 	double costMultiplier = 1.0;
 };
 
+struct TerrainCell
+{
+	Point cell{ 0, 0 };
+	TerrainCellType type = TerrainCellType::Grass;
+	Color color{ 255, 255, 255 };
+};
+
 struct MapData
 {
  Vec3 playerBasePosition{ 8.0, 0.0, 4.0 };
@@ -56,6 +77,7 @@ struct MapData
     Array<ResourceArea> resourceAreas;
     Array<NavPoint> navPoints;
 	Array<NavLink> navLinks;
+    Array<TerrainCell> terrainCells;
 	Array<PlacedModel> placedModels;
 };
 
@@ -70,4 +92,12 @@ struct MapDataLoadResult
 [[nodiscard]] MapData LoadMapData(FilePathView path);
 bool SaveMapData(const MapData& mapData, FilePathView path);
 [[nodiscard]] StringView ToString(PlaceableModelType type);
+[[nodiscard]] StringView ToString(TerrainCellType type);
 [[nodiscard]] StringView ToString(MainSupport::ResourceType type);
+[[nodiscard]] Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell);
+[[nodiscard]] Point ToTerrainCell(const Vec3& position);
+[[nodiscard]] Vec3 ToTerrainCellCenter(const Point& cell);
+[[nodiscard]] ColorF GetTerrainCellBaseColor(TerrainCellType type);
+[[nodiscard]] ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell);
+void SetTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell, TerrainCellType type, const Color& color);
+bool RemoveTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell);

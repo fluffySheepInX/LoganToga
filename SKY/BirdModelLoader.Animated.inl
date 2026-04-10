@@ -194,6 +194,7 @@
 				}
 
 				subMeshInfo.materialColor = ColorF{ baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+               subMeshInfo.diffuseTexture = LoadMaterialTexture(scene, material, path);
 			}
 
 			for (uint32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)

@@ -178,11 +178,17 @@ namespace SkyAppSupport
 			case UnitEditorSection::PlayerArcaneInfantry:
 				return U"Player Arcane";
 
+			case UnitEditorSection::PlayerSugoiCar:
+				return U"Player SugoiCar";
+
 			case UnitEditorSection::EnemyInfantry:
 				return U"Enemy Infantry";
 
 			case UnitEditorSection::EnemyArcaneInfantry:
 				return U"Enemy Arcane";
+
+			case UnitEditorSection::EnemySugoiCar:
+				return U"Enemy SugoiCar";
 
 			case UnitEditorSection::PlayerInfantry:
 			default:
@@ -196,10 +202,12 @@ namespace SkyAppSupport
 			{
 			case UnitEditorSection::EnemyInfantry:
 			case UnitEditorSection::EnemyArcaneInfantry:
+         case UnitEditorSection::EnemySugoiCar:
 				return UnitTeam::Enemy;
 
 			case UnitEditorSection::PlayerInfantry:
 			case UnitEditorSection::PlayerArcaneInfantry:
+            case UnitEditorSection::PlayerSugoiCar:
 			default:
 				return UnitTeam::Player;
 			}
@@ -209,6 +217,10 @@ namespace SkyAppSupport
 		{
 			switch (section)
 			{
+           case UnitEditorSection::PlayerSugoiCar:
+			case UnitEditorSection::EnemySugoiCar:
+				return SapperUnitType::SugoiCar;
+
 			case UnitEditorSection::PlayerArcaneInfantry:
 			case UnitEditorSection::EnemyArcaneInfantry:
 				return SapperUnitType::ArcaneInfantry;
@@ -227,11 +239,17 @@ namespace SkyAppSupport
 			case UnitEditorSection::PlayerArcaneInfantry:
 				return 100;
 
-			case UnitEditorSection::EnemyInfantry:
+          case UnitEditorSection::PlayerSugoiCar:
 				return 200;
 
+			case UnitEditorSection::EnemyInfantry:
+             return 300;
+
 			case UnitEditorSection::EnemyArcaneInfantry:
-				return 300;
+             return 400;
+
+			case UnitEditorSection::EnemySugoiCar:
+				return 500;
 
 			case UnitEditorSection::PlayerInfantry:
 			default:
@@ -246,7 +264,7 @@ namespace SkyAppSupport
 			parameters.attackRange = Clamp(parameters.attackRange, 0.5, 12.0);
 			parameters.attackDamage = Clamp(parameters.attackDamage, 0.0, 80.0);
 			parameters.attackInterval = Clamp(parameters.attackInterval, 0.05, 5.0);
-			parameters.manaCost = Clamp(parameters.manaCost, 0.0, 300.0);
+           parameters.manaCost = Clamp(parameters.manaCost, 0.0, 800.0);
 		}
 
 		void DrawMovementTypeSelector(const Rect& panel, const double top, MovementType& movementType)
@@ -286,9 +304,9 @@ namespace SkyAppSupport
 		{
            const int32 cardX = (panel.x + 10);
 			const int32 cardWidth = (panel.w - 20);
-			const int32 cardHeight = 64;
-            const int32 cardTop = (panel.y + 112);
-			const int32 cardStep = 68;
+            const int32 cardHeight = 60;
+			const int32 cardTop = (panel.y + 100);
+			const int32 cardStep = 62;
 
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 0), cardWidth, cardHeight },
 				(sliderBase + 0),
@@ -313,7 +331,7 @@ namespace SkyAppSupport
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 5), cardWidth, cardHeight },
 				(sliderBase + 5),
 				parameters.manaCost,
-				MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 300.0, 1.0, 5.0, 10.0, 1.0, 0 });
+              MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 800.0, 1.0, 5.0, 10.0, 1.0, 0 });
 		}
 	}
 }

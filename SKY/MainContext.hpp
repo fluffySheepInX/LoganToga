@@ -12,10 +12,12 @@ namespace MainSupport
     inline constexpr FilePathView UiLayoutSettingsPath = U"settings/ui_layout_settings.toml";
 	inline constexpr FilePathView BirdModelPath = U"model/bird.glb";
 	inline constexpr FilePathView AshigaruModelPath = U"model/ashigaru_v2.1.glb";
+    inline constexpr FilePathView SugoiCarModelPath = U"model/sugoiCar.glb";
     inline constexpr Vec3 DefaultCameraEye{ 0, 8, -16 };
 	inline constexpr Vec3 DefaultCameraFocus{ 0, 0, 0 };
 	inline constexpr Vec3 BirdDisplayPosition{ -10.5, 0, -2.5 };
 	inline constexpr Vec3 AshigaruDisplayPosition{ -5.5, 0, -2.5 };
+ inline constexpr Vec3 SugoiCarDisplayPosition{ -0.5, 0, -2.5 };
 	inline constexpr double BirdDisplayYaw = 0_deg;
     inline constexpr double SapperFacingYawOffset = 180_deg;
 	inline constexpr Vec3 BlacksmithPosition{ 8, 0, 4 };
@@ -30,7 +32,10 @@ namespace MainSupport
 	inline constexpr double ResourceIncomePerSecond = 18.0;
 	inline constexpr double SapperCost = 60.0;
    inline constexpr double ArcaneInfantryCost = 90.0;
+   inline constexpr double SugoiCarCost = 140.0;
  inline constexpr double TierUpgradeBaseCost = 100.0;
+ inline constexpr int32 MaximumSapperTier = 10;
+	inline constexpr double SapperTierStatBonusRate = 0.10;
    inline constexpr double ResourceAreaDefaultRadius = 5.0;
 	inline constexpr double ResourceAreaCaptureSeconds = 2.5;
 	inline constexpr double ResourceAreaIncomeIntervalSeconds = 3.0;
@@ -72,6 +77,7 @@ namespace MainSupport
 	{
 		Infantry,
 		ArcaneInfantry,
+      SugoiCar,
 	};
 
 	enum class MovementType
@@ -117,6 +123,17 @@ namespace MainSupport
 	{
 		switch (unitType)
 		{
+        case SapperUnitType::SugoiCar:
+			return UnitParameters{
+				.movementType = MovementType::Tank,
+				.maxHitPoints = ((team == UnitTeam::Enemy) ? 300.0 : 260.0),
+				.moveSpeed = 4.8,
+				.attackRange = 4.6,
+				.attackDamage = ((team == UnitTeam::Enemy) ? 24.0 : 28.0),
+				.attackInterval = 1.15,
+				.manaCost = SugoiCarCost,
+			};
+
 		case SapperUnitType::ArcaneInfantry:
 			return UnitParameters{
 				.movementType = MovementType::Infantry,
@@ -146,44 +163,84 @@ namespace MainSupport
 	{
 		UnitParameters playerInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::Infantry);
 		UnitParameters playerArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::ArcaneInfantry);
+        UnitParameters playerSugoiCar = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::SugoiCar);
 		UnitParameters enemyInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::Infantry);
 		UnitParameters enemyArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::ArcaneInfantry);
+      UnitParameters enemySugoiCar = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::SugoiCar);
 	};
 
 	enum class UnitEditorSection
 	{
 		PlayerInfantry,
 		PlayerArcaneInfantry,
+      PlayerSugoiCar,
 		EnemyInfantry,
 		EnemyArcaneInfantry,
+      EnemySugoiCar,
 	};
 
 	[[nodiscard]] inline const UnitParameters& GetUnitParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
 		if (team == UnitTeam::Enemy)
 		{
-			return (unitType == SapperUnitType::ArcaneInfantry)
-				? settings.enemyArcaneInfantry
-				: settings.enemyInfantry;
+         switch (unitType)
+			{
+			case SapperUnitType::SugoiCar:
+				return settings.enemySugoiCar;
+
+			case SapperUnitType::ArcaneInfantry:
+				return settings.enemyArcaneInfantry;
+
+			case SapperUnitType::Infantry:
+			default:
+				return settings.enemyInfantry;
+			}
 		}
 
-		return (unitType == SapperUnitType::ArcaneInfantry)
-			? settings.playerArcaneInfantry
-			: settings.playerInfantry;
+     switch (unitType)
+		{
+		case SapperUnitType::SugoiCar:
+			return settings.playerSugoiCar;
+
+		case SapperUnitType::ArcaneInfantry:
+			return settings.playerArcaneInfantry;
+
+		case SapperUnitType::Infantry:
+		default:
+			return settings.playerInfantry;
+		}
 	}
 
 	[[nodiscard]] inline UnitParameters& GetUnitParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
 		if (team == UnitTeam::Enemy)
 		{
-			return (unitType == SapperUnitType::ArcaneInfantry)
-				? settings.enemyArcaneInfantry
-				: settings.enemyInfantry;
+         switch (unitType)
+			{
+			case SapperUnitType::SugoiCar:
+				return settings.enemySugoiCar;
+
+			case SapperUnitType::ArcaneInfantry:
+				return settings.enemyArcaneInfantry;
+
+			case SapperUnitType::Infantry:
+			default:
+				return settings.enemyInfantry;
+			}
 		}
 
-		return (unitType == SapperUnitType::ArcaneInfantry)
-			? settings.playerArcaneInfantry
-			: settings.playerInfantry;
+     switch (unitType)
+		{
+		case SapperUnitType::SugoiCar:
+			return settings.playerSugoiCar;
+
+		case SapperUnitType::ArcaneInfantry:
+			return settings.playerArcaneInfantry;
+
+		case SapperUnitType::Infantry:
+		default:
+			return settings.playerInfantry;
+		}
 	}
 
 	struct CameraSettings
@@ -205,6 +262,7 @@ namespace MainSupport
 		UnitTeam team = UnitTeam::Player;
         SapperUnitType unitType = SapperUnitType::Infantry;
         MovementType movementType = MovementType::Infantry;
+        int32 tier = 1;
 		double maxHitPoints = 100.0;
 		double hitPoints = 100.0;
        double moveSpeed = 6.0;
@@ -223,6 +281,14 @@ namespace MainSupport
 	{
 		double birdOffsetY = 0.0;
 		double ashigaruOffsetY = 0.0;
+      double sugoiCarOffsetY = 0.0;
+	};
+
+	enum class ModelHeightTarget
+	{
+		Bird,
+		Ashigaru,
+		SugoiCar,
 	};
 
 	struct UiLayoutSettings
