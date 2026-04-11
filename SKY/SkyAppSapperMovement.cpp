@@ -38,6 +38,25 @@ namespace SkyAppSupport
 	{
 		for (auto& sapper : spawnedSappers)
 		{
+         if (IsSapperRetreatOrdered(sapper))
+			{
+				if (sapper.retreatReturnAt <= Scene::Time())
+				{
+					sapper.position = sapper.retreatReturnPosition;
+					sapper.startPosition = sapper.retreatReturnPosition;
+					sapper.targetPosition = sapper.retreatReturnPosition;
+					sapper.destinationPosition = sapper.retreatReturnPosition;
+					sapper.moveStartedAt = Scene::Time();
+					sapper.moveDuration = 0.0;
+					sapper.hitPoints = sapper.maxHitPoints;
+					sapper.suppressedUntil = -1000.0;
+					sapper.retreatDisappearAt = -1000.0;
+					sapper.retreatReturnAt = -1000.0;
+				}
+
+				continue;
+			}
+
 			if (sapper.moveDuration <= 0.0)
 			{
 				continue;

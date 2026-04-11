@@ -63,20 +63,15 @@ namespace SkyAppSupport
 			return U"ティアアップ (+{}% / {:.0f} 予算)"_fmt(static_cast<int32>(SapperTierStatBonusRate * 100.0), GetTierUpgradeCost(sapper.tier));
 		}
 
+		[[nodiscard]] String GetProductionUnitLabel(const UnitEditorSettings& unitEditorSettings, const SapperUnitType unitType)
+		{
+			const double manaCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, unitType).manaCost;
+         return U"{}を出撃 ({:.0f} 魔力)"_fmt(GetUnitDisplayName(unitType), manaCost);
+		}
+
 		[[nodiscard]] StringView ToUnitDisplayName(const SapperUnitType unitType)
 		{
-			switch (unitType)
-			{
-            case SapperUnitType::SugoiCar:
-				return U"すごい車(仮)";
-
-			case SapperUnitType::ArcaneInfantry:
-				return U"魔導兵(仮)";
-
-			case SapperUnitType::Infantry:
-			default:
-				return U"兵";
-			}
+           return GetUnitDisplayName(unitType);
 		}
 
         [[nodiscard]] String GetExplosionSkillLabel(const SapperUnitType selectedUnitType, const bool explosionSkillReady)
@@ -101,6 +96,7 @@ namespace SkyAppSupport
 			ResourceStock& playerResources,
          const int32 playerTier,
           const UnitEditorSettings& unitEditorSettings,
+          const ModelHeightSettings& modelHeightSettings,
 			const SapperUnitType unitType,
 			TimedMessage& message)
 		{
@@ -112,6 +108,7 @@ namespace SkyAppSupport
               SpawnSapper(spawnedSappers, playerBasePosition, rallyPoint, mapData, unitType);
                ApplyUnitParameters(spawnedSappers.back(), unitParameters);
                SetSapperTier(spawnedSappers.back(), playerTier);
+               SetSpawnedSapperTarget(spawnedSappers.back(), rallyPoint, mapData, modelHeightSettings);
 				playerResources.mana -= manaCost;
                 message.show(U"{}を出撃 (Tier {})"_fmt(ToUnitDisplayName(unitType), spawnedSappers.back().tier));
 				return true;
@@ -159,37 +156,30 @@ namespace SkyAppSupport
 		ResourceStock& playerResources,
 		int32& playerTier,
         const UnitEditorSettings& unitEditorSettings,
+        const ModelHeightSettings& modelHeightSettings,
 		TimedMessage& blacksmithMenuMessage)
 	{
      playerTier = Clamp(playerTier, MinimumSapperTier, MaximumSapperTier);
-		const double sapperCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::Infantry).manaCost;
-		const double arcaneInfantryCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::ArcaneInfantry).manaCost;
-      const double sugoiCarCost = GetUnitParameters(unitEditorSettings, UnitTeam::Player, SapperUnitType::SugoiCar).manaCost;
 		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		const Rect& panelRect = panels.blacksmithMenu;
 		UiInternal::DrawPanelFrame(panelRect, U"兵生産メニュー");
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 34), ColorF{ 0.12 });
       SimpleGUI::GetFont()(U"魔力: {:.0f} / 生産T {}/{}"_fmt(playerResources.mana, playerTier, MaximumSapperTier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 54), ColorF{ 0.12 });
 
-		const Rect produceSapperButton = SkyAppUiLayout::MenuWideButton(panelRect, 84);
-		const Rect produceArcaneButton = SkyAppUiLayout::MenuWideButton(panelRect, 116);
-      const Rect produceSugoiCarButton = SkyAppUiLayout::MenuWideButton(panelRect, 148);
-		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, 180);
-
-		if (DrawTextButton(produceSapperButton, U"兵を出撃 ({:.0f} 魔力)"_fmt(sapperCost)))
+     const int32 productionButtonTop = 84;
+		const int32 menuButtonStep = 32;
+		for (size_t index = 0; index < GetUnitDefinitions().size(); ++index)
 		{
-           TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::Infantry, blacksmithMenuMessage);
+			const SapperUnitType unitType = GetUnitDefinitions()[index].unitType;
+			const Rect produceButton = SkyAppUiLayout::MenuWideButton(panelRect, (productionButtonTop + static_cast<int32>(index) * menuButtonStep));
+
+			if (DrawTextButton(produceButton, GetProductionUnitLabel(unitEditorSettings, unitType)))
+			{
+				TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, modelHeightSettings, unitType, blacksmithMenuMessage);
+			}
 		}
 
-     if (DrawTextButton(produceArcaneButton, U"魔導兵(仮) ({:.0f} 魔力)"_fmt(arcaneInfantryCost)))
-		{
-         TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::ArcaneInfantry, blacksmithMenuMessage);
-		}
-
-		if (DrawTextButton(produceSugoiCarButton, U"すごい車(仮) ({:.0f} 魔力)"_fmt(sugoiCarCost)))
-		{
-			TrySpawnPlayerUnit(spawnedSappers, mapData, playerBasePosition, rallyPoint, playerResources, playerTier, unitEditorSettings, SapperUnitType::SugoiCar, blacksmithMenuMessage);
-		}
+		const Rect tierUpgradeButton = SkyAppUiLayout::MenuWideButton(panelRect, (productionButtonTop + static_cast<int32>(GetUnitDefinitions().size()) * menuButtonStep));
 
       if (DrawTextButton(tierUpgradeButton, GetProductionTierUpgradeLabel(playerTier)))
 		{
@@ -242,6 +232,7 @@ namespace SkyAppSupport
 		const Rect scoutingSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 168);
 		const Rect fortifySkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 200);
 		const Rect explosionSkillButton = SkyAppUiLayout::MenuWideButton(panelRect, 232);
+		const Rect retreatButton = SkyAppUiLayout::MenuWideButton(panelRect, 264);
 
       if (DrawTextButton(tierUpgradeButton, GetSapperTierUpgradeLabel(selectedSapper)))
 		{
@@ -276,6 +267,11 @@ namespace SkyAppSupport
 			{
 				return SapperMenuAction::UseExplosionSkill;
 			}
+
+		if (DrawTextButton(retreatButton, U"撤退 [3秒後離脱]"))
+		{
+			return SapperMenuAction::Retreat;
+		}
 
 		if (sapperMenuMessage.isVisible())
 		{

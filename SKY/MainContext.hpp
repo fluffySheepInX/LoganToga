@@ -120,6 +120,7 @@ namespace MainSupport
 		double maxHitPoints = 100.0;
 		double moveSpeed = 6.0;
 		double attackRange = 3.2;
+     double stopDistance = 0.2;
 		double attackDamage = 12.0;
 		double attackInterval = 0.8;
 		double manaCost = SapperCost;
@@ -128,131 +129,242 @@ namespace MainSupport
 		double footprintHalfLength = 0.0;
 	};
 
+	enum class UnitRenderModel
+	{
+		Bird,
+		Ashigaru,
+		SugoiCar,
+	};
+
+	struct UnitDefinition
+	{
+		SapperUnitType unitType = SapperUnitType::Infantry;
+		StringView settingsKeySuffix;
+		StringView displayName;
+		StringView playerEditorSectionLabel;
+		StringView enemyEditorSectionLabel;
+      UnitRenderModel playerRenderModel = UnitRenderModel::Bird;
+		UnitRenderModel enemyRenderModel = UnitRenderModel::Ashigaru;
+		UnitParameters playerDefaults;
+		UnitParameters enemyDefaults;
+	};
+
+	[[nodiscard]] inline const Array<UnitDefinition>& GetUnitDefinitions()
+	{
+		static const Array<UnitDefinition> Definitions{
+			UnitDefinition{
+				.unitType = SapperUnitType::Infantry,
+				.settingsKeySuffix = U"Infantry",
+				.displayName = U"兵",
+				.playerEditorSectionLabel = U"Player Infantry",
+				.enemyEditorSectionLabel = U"Enemy Infantry",
+               .playerRenderModel = UnitRenderModel::Bird,
+				.enemyRenderModel = UnitRenderModel::Ashigaru,
+				.playerDefaults = UnitParameters{
+					.movementType = MovementType::Infantry,
+					.maxHitPoints = 100.0,
+					.moveSpeed = 6.0,
+					.attackRange = 3.2,
+					.stopDistance = 0.15,
+					.attackDamage = 12.0,
+					.attackInterval = 0.8,
+					.manaCost = SapperCost,
+				},
+				.enemyDefaults = UnitParameters{
+					.movementType = MovementType::Infantry,
+					.maxHitPoints = 120.0,
+					.moveSpeed = 6.0,
+					.attackRange = 3.0,
+					.stopDistance = 0.15,
+					.attackDamage = 10.0,
+					.attackInterval = 0.95,
+					.manaCost = SapperCost,
+				},
+			},
+			UnitDefinition{
+				.unitType = SapperUnitType::ArcaneInfantry,
+				.settingsKeySuffix = U"ArcaneInfantry",
+				.displayName = U"魔導兵(仮)",
+				.playerEditorSectionLabel = U"Player Arcane",
+				.enemyEditorSectionLabel = U"Enemy Arcane",
+               .playerRenderModel = UnitRenderModel::Bird,
+				.enemyRenderModel = UnitRenderModel::Ashigaru,
+				.playerDefaults = UnitParameters{
+					.movementType = MovementType::Infantry,
+					.maxHitPoints = 150.0,
+					.moveSpeed = 5.4,
+					.attackRange = 3.8,
+					.stopDistance = 0.35,
+					.attackDamage = 20.0,
+					.attackInterval = 1.05,
+					.manaCost = ArcaneInfantryCost,
+				},
+				.enemyDefaults = UnitParameters{
+					.movementType = MovementType::Infantry,
+					.maxHitPoints = 180.0,
+					.moveSpeed = 5.4,
+					.attackRange = 3.8,
+					.stopDistance = 0.35,
+					.attackDamage = 19.0,
+					.attackInterval = 1.05,
+					.manaCost = ArcaneInfantryCost,
+				},
+			},
+			UnitDefinition{
+				.unitType = SapperUnitType::SugoiCar,
+				.settingsKeySuffix = U"SugoiCar",
+				.displayName = U"すごい車(仮)",
+				.playerEditorSectionLabel = U"Player SugoiCar",
+				.enemyEditorSectionLabel = U"Enemy SugoiCar",
+               .playerRenderModel = UnitRenderModel::SugoiCar,
+				.enemyRenderModel = UnitRenderModel::SugoiCar,
+				.playerDefaults = UnitParameters{
+					.movementType = MovementType::Tank,
+					.maxHitPoints = 260.0,
+					.moveSpeed = 4.8,
+					.attackRange = 4.6,
+					.stopDistance = 0.5,
+					.attackDamage = 28.0,
+					.attackInterval = 1.15,
+					.manaCost = SugoiCarCost,
+					.footprintType = UnitFootprintType::Capsule,
+					.footprintRadius = 0.95,
+					.footprintHalfLength = 2.05,
+				},
+				.enemyDefaults = UnitParameters{
+					.movementType = MovementType::Tank,
+					.maxHitPoints = 300.0,
+					.moveSpeed = 4.8,
+					.attackRange = 4.6,
+					.stopDistance = 0.5,
+					.attackDamage = 24.0,
+					.attackInterval = 1.15,
+					.manaCost = SugoiCarCost,
+					.footprintType = UnitFootprintType::Capsule,
+					.footprintRadius = 0.95,
+					.footprintHalfLength = 2.05,
+				},
+			},
+		};
+
+		return Definitions;
+	}
+
+	[[nodiscard]] inline const UnitDefinition& GetUnitDefinition(const SapperUnitType unitType)
+	{
+		for (const auto& definition : GetUnitDefinitions())
+		{
+			if (definition.unitType == unitType)
+			{
+				return definition;
+			}
+		}
+
+		return GetUnitDefinitions().front();
+	}
+
+	[[nodiscard]] inline const UnitParameters& GetDefaultUnitParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyDefaults : definition.playerDefaults);
+	}
+
+	[[nodiscard]] inline StringView GetUnitDisplayName(const SapperUnitType unitType)
+	{
+		return GetUnitDefinition(unitType).displayName;
+	}
+
+	[[nodiscard]] inline StringView GetUnitEditorSectionLabel(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyEditorSectionLabel : definition.playerEditorSectionLabel);
+	}
+
+	[[nodiscard]] inline UnitRenderModel GetUnitRenderModel(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyRenderModel : definition.playerRenderModel);
+	}
+
+	[[nodiscard]] inline String GetUnitSettingsGroupKey(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return (((team == UnitTeam::Enemy) ? U"enemy" : U"player") + String{ GetUnitDefinition(unitType).settingsKeySuffix });
+	}
+
+	[[nodiscard]] inline size_t GetUnitTeamIndex(const UnitTeam team)
+	{
+		return ((team == UnitTeam::Enemy) ? 1 : 0);
+	}
+
+	[[nodiscard]] inline size_t GetUnitDefinitionIndex(const SapperUnitType unitType)
+	{
+		const auto& definitions = GetUnitDefinitions();
+
+		for (size_t index = 0; index < definitions.size(); ++index)
+		{
+			if (definitions[index].unitType == unitType)
+			{
+				return index;
+			}
+		}
+
+		return 0;
+	}
+
+	[[nodiscard]] inline size_t GetUnitParameterSlotIndex(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return (GetUnitTeamIndex(team) * GetUnitDefinitions().size() + GetUnitDefinitionIndex(unitType));
+	}
+
 	[[nodiscard]] inline UnitParameters MakeDefaultUnitParameters(const UnitTeam team, const SapperUnitType unitType)
 	{
-		switch (unitType)
-		{
-        case SapperUnitType::SugoiCar:
-			return UnitParameters{
-				.movementType = MovementType::Tank,
-				.maxHitPoints = ((team == UnitTeam::Enemy) ? 300.0 : 260.0),
-				.moveSpeed = 4.8,
-				.attackRange = 4.6,
-				.attackDamage = ((team == UnitTeam::Enemy) ? 24.0 : 28.0),
-				.attackInterval = 1.15,
-				.manaCost = SugoiCarCost,
-              .footprintType = UnitFootprintType::Capsule,
-				.footprintRadius = 0.95,
-				.footprintHalfLength = 2.05,
-			};
-
-		case SapperUnitType::ArcaneInfantry:
-			return UnitParameters{
-				.movementType = MovementType::Infantry,
-				.maxHitPoints = ((team == UnitTeam::Enemy) ? 180.0 : 150.0),
-				.moveSpeed = 5.4,
-				.attackRange = 3.8,
-				.attackDamage = ((team == UnitTeam::Enemy) ? 19.0 : 20.0),
-				.attackInterval = 1.05,
-				.manaCost = ArcaneInfantryCost,
-			};
-
-		case SapperUnitType::Infantry:
-		default:
-			return UnitParameters{
-				.movementType = MovementType::Infantry,
-				.maxHitPoints = ((team == UnitTeam::Enemy) ? 120.0 : 100.0),
-				.moveSpeed = 6.0,
-				.attackRange = ((team == UnitTeam::Enemy) ? 3.0 : 3.2),
-				.attackDamage = ((team == UnitTeam::Enemy) ? 10.0 : 12.0),
-				.attackInterval = ((team == UnitTeam::Enemy) ? 0.95 : 0.8),
-				.manaCost = SapperCost,
-			};
-		}
+       return GetDefaultUnitParameters(team, unitType);
 	}
 
 	struct UnitEditorSettings
 	{
-		UnitParameters playerInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::Infantry);
-		UnitParameters playerArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::ArcaneInfantry);
-        UnitParameters playerSugoiCar = MakeDefaultUnitParameters(UnitTeam::Player, SapperUnitType::SugoiCar);
-		UnitParameters enemyInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::Infantry);
-		UnitParameters enemyArcaneInfantry = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::ArcaneInfantry);
-      UnitParameters enemySugoiCar = MakeDefaultUnitParameters(UnitTeam::Enemy, SapperUnitType::SugoiCar);
+      Array<UnitParameters> parameters;
+
+		UnitEditorSettings()
+		{
+			parameters.resize(GetUnitDefinitions().size() * 2);
+
+			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
+			{
+				for (const auto& definition : GetUnitDefinitions())
+				{
+					parameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultUnitParameters(team, definition.unitType);
+				}
+			}
+		}
 	};
 
-	enum class UnitEditorSection
+    struct UnitEditorSelection
 	{
-		PlayerInfantry,
-		PlayerArcaneInfantry,
-      PlayerSugoiCar,
-		EnemyInfantry,
-		EnemyArcaneInfantry,
-      EnemySugoiCar,
+		UnitTeam team = UnitTeam::Player;
+		SapperUnitType unitType = SapperUnitType::Infantry;
+
+		[[nodiscard]] bool operator==(const UnitEditorSelection& other) const
+		{
+			return ((team == other.team) && (unitType == other.unitType));
+		}
+	};
+
+	enum class UnitEditorPage
+	{
+		Basic,
+		Combat,
+		Footprint,
 	};
 
 	[[nodiscard]] inline const UnitParameters& GetUnitParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
-		if (team == UnitTeam::Enemy)
-		{
-         switch (unitType)
-			{
-			case SapperUnitType::SugoiCar:
-				return settings.enemySugoiCar;
-
-			case SapperUnitType::ArcaneInfantry:
-				return settings.enemyArcaneInfantry;
-
-			case SapperUnitType::Infantry:
-			default:
-				return settings.enemyInfantry;
-			}
-		}
-
-     switch (unitType)
-		{
-		case SapperUnitType::SugoiCar:
-			return settings.playerSugoiCar;
-
-		case SapperUnitType::ArcaneInfantry:
-			return settings.playerArcaneInfantry;
-
-		case SapperUnitType::Infantry:
-		default:
-			return settings.playerInfantry;
-		}
+        return settings.parameters[GetUnitParameterSlotIndex(team, unitType)];
 	}
 
 	[[nodiscard]] inline UnitParameters& GetUnitParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
-		if (team == UnitTeam::Enemy)
-		{
-         switch (unitType)
-			{
-			case SapperUnitType::SugoiCar:
-				return settings.enemySugoiCar;
-
-			case SapperUnitType::ArcaneInfantry:
-				return settings.enemyArcaneInfantry;
-
-			case SapperUnitType::Infantry:
-			default:
-				return settings.enemyInfantry;
-			}
-		}
-
-     switch (unitType)
-		{
-		case SapperUnitType::SugoiCar:
-			return settings.playerSugoiCar;
-
-		case SapperUnitType::ArcaneInfantry:
-			return settings.playerArcaneInfantry;
-
-		case SapperUnitType::Infantry:
-		default:
-			return settings.playerInfantry;
-		}
+        return settings.parameters[GetUnitParameterSlotIndex(team, unitType)];
 	}
 
 	struct CameraSettings
@@ -267,6 +379,7 @@ namespace MainSupport
 		Vec3 position;
 		Vec3 targetPosition;
      Vec3 destinationPosition;
+     Vec3 retreatReturnPosition{ 0, 0, 0 };
 		double spawnedAt = 0.0;
       double moveStartedAt = 0.0;
 		double moveDuration = 0.0;
@@ -279,6 +392,7 @@ namespace MainSupport
 		double hitPoints = 100.0;
        double moveSpeed = 6.0;
 		double attackRange = 3.2;
+        double stopDistance = 0.2;
      double baseAttackDamage = 12.0;
 		double baseAttackInterval = 0.8;
        UnitFootprintType footprintType = UnitFootprintType::Circle;
@@ -290,6 +404,8 @@ namespace MainSupport
 		double suppressedAttackIntervalMultiplier = 1.0;
 		double lastAttackAt = -1000.0;
       double explosionSkillCooldownUntil = -1000.0;
+      double retreatDisappearAt = -1000.0;
+		double retreatReturnAt = -1000.0;
 	};
 
 	struct ModelHeightSettings
@@ -311,6 +427,22 @@ namespace MainSupport
 		Ashigaru,
 		SugoiCar,
 	};
+
+	[[nodiscard]] inline ModelHeightTarget ToModelHeightTarget(const UnitRenderModel renderModel)
+	{
+		switch (renderModel)
+		{
+		case UnitRenderModel::Ashigaru:
+			return ModelHeightTarget::Ashigaru;
+
+		case UnitRenderModel::SugoiCar:
+			return ModelHeightTarget::SugoiCar;
+
+		case UnitRenderModel::Bird:
+		default:
+			return ModelHeightTarget::Bird;
+		}
+	}
 
 	[[nodiscard]] inline double& GetModelScale(ModelHeightSettings& settings, const ModelHeightTarget target)
 	{
@@ -346,12 +478,12 @@ namespace MainSupport
 
 	[[nodiscard]] inline double GetModelScaleForUnit(const ModelHeightSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
-		if (unitType == SapperUnitType::SugoiCar)
-		{
-			return GetModelScale(settings, ModelHeightTarget::SugoiCar);
-		}
+       return GetModelScale(settings, ToModelHeightTarget(GetUnitRenderModel(team, unitType)));
+	}
 
-		return GetModelScale(settings, (team == UnitTeam::Enemy) ? ModelHeightTarget::Ashigaru : ModelHeightTarget::Bird);
+	[[nodiscard]] inline UnitRenderModel GetSpawnedSapperRenderModel(const SpawnedSapper& sapper)
+	{
+		return GetUnitRenderModel(sapper.team, sapper.unitType);
 	}
 
 	[[nodiscard]] inline double GetSpawnedSapperModelScale(const ModelHeightSettings& settings, const SpawnedSapper& sapper)

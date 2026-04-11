@@ -20,7 +20,7 @@ namespace SkyAppSupport
 		}
 	}
 
-	void DrawSkySettingsPanel(Sky& sky, bool& isExpanded, const SkyAppPanels& panels)
+   void DrawSkySettingsPanel(Sky& sky, double& skyTime, bool& isExpanded, const SkyAppPanels& panels)
 	{
      if (not isExpanded)
 		{
@@ -28,8 +28,13 @@ namespace SkyAppSupport
 		}
 
 		const Rect& panelRect = panels.skySettings;
+     const Rect timePanelRect = SkyAppUiLayout::SkySettingsTimePanel(panelRect);
        UiInternal::DrawPanelFrame(panelRect, U"Sky Settings", ColorF{ 1.0, 0.92 });
+        UiInternal::DrawPanelFrame(timePanelRect, U"Sky Time", ColorF{ 1.0, 0.92 });
 		constexpr int32 contentOffsetY = 36;
+      constexpr double SkyTimeMin = -2.0;
+		constexpr double SkyTimeMax = 4.0;
+		constexpr double SkyTimeSmallStep = 0.01;
 		Rect{ panelRect.x, panelRect.y + contentOffsetY, panelRect.w, 76 }.draw();
 		SimpleGUI::GetFont()(U"zenith:").draw((panelRect.x + 8), (panelRect.y + contentOffsetY + 4), ColorF{ 0.11 });
 		Rect{ (panelRect.x + 80), (panelRect.y + contentOffsetY + 6), 28, 28 }.draw(sky.zenithColor.gamma(2.2)).drawFrame(1, 0, ColorF{ 0.5 });
@@ -52,6 +57,24 @@ namespace SkyAppSupport
 		SimpleGUI::CheckBox(sky.sunEnabled, U"sun", Vec2{ panelRect.x + 0.0, panelRect.y + contentOffsetY + 400.0 }, 120, false);
 		SimpleGUI::CheckBox(sky.cloudsEnabled, U"clouds", Vec2{ panelRect.x + 130.0, panelRect.y + contentOffsetY + 400.0 }, 120);
 		SimpleGUI::CheckBox(sky.cloudsLightingEnabled, U"cloudsLighting", Vec2{ panelRect.x + 260.0, panelRect.y + contentOffsetY + 400.0 }, 220);
+
+		SimpleGUI::Slider(U"time: {:.2f}"_fmt(skyTime),
+			skyTime,
+			SkyTimeMin,
+			SkyTimeMax,
+			SkyAppUiLayout::SkySettingsTimeSliderPosition(timePanelRect),
+			SkyAppUiLayout::SkySettingsTimeSliderLabelWidth(),
+			SkyAppUiLayout::SkySettingsTimeSliderTrackWidth(timePanelRect));
+
+		if (DrawTextButton(SkyAppUiLayout::SkySettingsTimeStepButton(timePanelRect, 0), U"-S"))
+		{
+			skyTime = Max(SkyTimeMin, (skyTime - SkyTimeSmallStep));
+		}
+
+		if (DrawTextButton(SkyAppUiLayout::SkySettingsTimeStepButton(timePanelRect, 1), U"+S"))
+		{
+			skyTime = Min(SkyTimeMax, (skyTime + SkyTimeSmallStep));
+		}
 	}
 
 	void DrawCameraSettingsPanel(AppCamera3D& camera,

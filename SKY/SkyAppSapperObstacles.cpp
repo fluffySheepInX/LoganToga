@@ -197,7 +197,7 @@ namespace SkyAppSupport
 	{
 		for (auto& sapper : spawnedSappers)
 		{
-			if (sapper.hitPoints <= 0.0)
+            if (not IsSpawnedSapperCombatActive(sapper))
 			{
 				continue;
 			}

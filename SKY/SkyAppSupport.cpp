@@ -8,6 +8,8 @@ namespace SkyAppSupport
 	namespace
 	{
 		constexpr double MessageDisplaySeconds = 2.0;
+		constexpr double RetreatDisappearDelaySeconds = 3.0;
+		constexpr double RetreatRespawnDelaySeconds = 8.0;
 
 		[[nodiscard]] bool IsSafeCameraPair(const Vec3& eye, const Vec3& focus)
 		{
@@ -39,6 +41,43 @@ namespace SkyAppSupport
 	bool TimedMessage::isVisible() const
 	{
 		return (Scene::Time() < until);
+	}
+
+	bool IsSapperRetreatOrdered(const SpawnedSapper& sapper)
+	{
+		return (sapper.retreatDisappearAt > -999.0);
+	}
+
+	bool IsSapperRetreatedHidden(const SpawnedSapper& sapper)
+	{
+		return IsSapperRetreatOrdered(sapper)
+			&& (sapper.retreatDisappearAt <= Scene::Time())
+			&& (Scene::Time() < sapper.retreatReturnAt);
+	}
+
+	bool IsSpawnedSapperSelectable(const SpawnedSapper& sapper)
+	{
+		return (sapper.hitPoints > 0.0)
+			&& (not IsSapperRetreatOrdered(sapper));
+	}
+
+	bool IsSpawnedSapperCombatActive(const SpawnedSapper& sapper)
+	{
+		return (sapper.hitPoints > 0.0)
+			&& (not IsSapperRetreatOrdered(sapper));
+	}
+
+	void OrderSapperRetreat(SpawnedSapper& sapper, const Vec3& rallyPoint)
+	{
+		const double now = Scene::Time();
+		sapper.startPosition = sapper.position;
+		sapper.targetPosition = sapper.position;
+		sapper.destinationPosition = sapper.position;
+		sapper.moveStartedAt = now;
+		sapper.moveDuration = 0.0;
+		sapper.retreatReturnPosition = Vec3{ rallyPoint.x, 0.0, rallyPoint.z };
+		sapper.retreatDisappearAt = (now + RetreatDisappearDelaySeconds);
+		sapper.retreatReturnAt = (sapper.retreatDisappearAt + RetreatRespawnDelaySeconds);
 	}
 
       SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded)
@@ -78,6 +117,7 @@ namespace SkyAppSupport
          || (showMillStatusEditor && millStatusEditor.mouseOver())
 			|| (modelHeightEditMode && modelHeight.mouseOver())
           || (showUnitEditor && (unitEditor.mouseOver() || unitEditorList.mouseOver()))
+         || (showUI && showSkySettings && SkyAppUiLayout::SkySettingsTimePanel(skySettings).mouseOver())
 			|| uiToggle.mouseOver()
             || (showUI && mapModeToggle.mouseOver())
             || (showUI && modelHeightModeToggle.mouseOver())
@@ -85,8 +125,7 @@ namespace SkyAppSupport
             || (showUI && skySettingsToggle.mouseOver())
 			|| (showUI && cameraSettingsToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
-            || (showUI && resourceAdjustToggle.mouseOver())
-          || (showUI && timeSlider.mouseOver());
+         || (showUI && resourceAdjustToggle.mouseOver());
 	}
 
    void UpdateCameraWheelZoom(AppCamera3D& camera, CameraSettings& cameraSettings, const Vec3& playerBasePosition)

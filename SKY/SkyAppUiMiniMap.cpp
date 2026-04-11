@@ -92,7 +92,10 @@ namespace SkyAppSupport
 
 		for (const auto& sapper : spawnedSappers)
 		{
-			boundsPoints << GetSpawnedSapperBasePosition(sapper);
+           if (not IsSapperRetreatedHidden(sapper))
+			{
+				boundsPoints << GetSpawnedSapperBasePosition(sapper);
+			}
 		}
 
 		for (const auto& enemySapper : enemySappers)
@@ -193,6 +196,11 @@ namespace SkyAppSupport
 
 		for (size_t i = 0; i < spawnedSappers.size(); ++i)
 		{
+           if (IsSapperRetreatedHidden(spawnedSappers[i]))
+			{
+				continue;
+			}
+
 			const Vec2 sapperPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, GetSpawnedSapperBasePosition(spawnedSappers[i]));
 			const bool isSelected = selectedSapperIndices.contains(i);
 

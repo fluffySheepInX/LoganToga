@@ -21,6 +21,22 @@ namespace SkyAppSupport
 			}
 		}
 
+		StringView ToUnitEditorPageLabel(const UnitEditorPage page)
+		{
+			switch (page)
+			{
+			case UnitEditorPage::Combat:
+				return U"Combat";
+
+			case UnitEditorPage::Footprint:
+				return U"Footprint";
+
+			case UnitEditorPage::Basic:
+			default:
+				return U"Basic";
+			}
+		}
+
 		StringView ToUnitFootprintTypeLabel(const UnitFootprintType footprintType)
 		{
 			switch (footprintType)
@@ -142,12 +158,13 @@ namespace SkyAppSupport
 			DrawMillDragSlider(RectF{ (panel.x + 16), (top + 50), (panel.w - 32), 8 }, sliderId, value, spec);
 		}
 
-		void DrawMillParameterEditorCard(const Rect& rect,
+      bool DrawMillParameterEditorCard(const Rect& rect,
 			const int32 sliderId,
 			double& value,
 			const MillParameterEditorSpec& spec)
 		{
 			value = Clamp(RoundMillParameterValue(value, spec.sliderRoundStep), spec.minValue, spec.maxValue);
+			const bool hovered = rect.mouseOver();
 
 			rect.draw(ColorF{ 1.0, 1.0, 1.0, 0.76 })
 				.drawFrame(1, 0, ColorF{ 0.80, 0.82, 0.86, 0.85 });
@@ -182,92 +199,17 @@ namespace SkyAppSupport
 			}
 
 			DrawMillDragSlider(RectF{ (rect.x + paddingX), sliderY, (rect.w - paddingX * 2), 8 }, sliderId, value, spec);
+           return hovered;
 		}
 
-		StringView ToUnitEditorSectionLabel(const UnitEditorSection section)
+      StringView ToUnitEditorSectionLabel(const UnitTeam team, const SapperUnitType unitType)
 		{
-			switch (section)
-			{
-			case UnitEditorSection::PlayerArcaneInfantry:
-				return U"Player Arcane";
-
-			case UnitEditorSection::PlayerSugoiCar:
-				return U"Player SugoiCar";
-
-			case UnitEditorSection::EnemyInfantry:
-				return U"Enemy Infantry";
-
-			case UnitEditorSection::EnemyArcaneInfantry:
-				return U"Enemy Arcane";
-
-			case UnitEditorSection::EnemySugoiCar:
-				return U"Enemy SugoiCar";
-
-			case UnitEditorSection::PlayerInfantry:
-			default:
-				return U"Player Infantry";
-			}
+         return GetUnitEditorSectionLabel(team, unitType);
 		}
 
-		UnitTeam ToUnitEditorTeam(const UnitEditorSection section)
+       int32 ToUnitEditorSliderBase(const UnitTeam team, const SapperUnitType unitType)
 		{
-			switch (section)
-			{
-			case UnitEditorSection::EnemyInfantry:
-			case UnitEditorSection::EnemyArcaneInfantry:
-         case UnitEditorSection::EnemySugoiCar:
-				return UnitTeam::Enemy;
-
-			case UnitEditorSection::PlayerInfantry:
-			case UnitEditorSection::PlayerArcaneInfantry:
-            case UnitEditorSection::PlayerSugoiCar:
-			default:
-				return UnitTeam::Player;
-			}
-		}
-
-		SapperUnitType ToUnitEditorUnitType(const UnitEditorSection section)
-		{
-			switch (section)
-			{
-           case UnitEditorSection::PlayerSugoiCar:
-			case UnitEditorSection::EnemySugoiCar:
-				return SapperUnitType::SugoiCar;
-
-			case UnitEditorSection::PlayerArcaneInfantry:
-			case UnitEditorSection::EnemyArcaneInfantry:
-				return SapperUnitType::ArcaneInfantry;
-
-			case UnitEditorSection::PlayerInfantry:
-			case UnitEditorSection::EnemyInfantry:
-			default:
-				return SapperUnitType::Infantry;
-			}
-		}
-
-		int32 ToUnitEditorSliderBase(const UnitEditorSection section)
-		{
-			switch (section)
-			{
-			case UnitEditorSection::PlayerArcaneInfantry:
-				return 100;
-
-          case UnitEditorSection::PlayerSugoiCar:
-				return 200;
-
-			case UnitEditorSection::EnemyInfantry:
-             return 300;
-
-			case UnitEditorSection::EnemyArcaneInfantry:
-             return 400;
-
-			case UnitEditorSection::EnemySugoiCar:
-				return 500;
-
-			case UnitEditorSection::PlayerInfantry:
-			default:
-				return 0;
-			}
+            return static_cast<int32>(GetUnitParameterSlotIndex(team, unitType) * 100);
 		}
 
 		void ClampUnitParameters(UnitParameters& parameters)
@@ -275,6 +217,7 @@ namespace SkyAppSupport
            parameters.maxHitPoints = Clamp(parameters.maxHitPoints, 1.0, 1000.0);
 			parameters.moveSpeed = Clamp(parameters.moveSpeed, 0.5, 24.0);
 			parameters.attackRange = Clamp(parameters.attackRange, 0.5, 24.0);
+           parameters.stopDistance = Clamp(parameters.stopDistance, 0.0, 24.0);
 			parameters.attackDamage = Clamp(parameters.attackDamage, 0.0, 160.0);
 			parameters.attackInterval = Clamp(parameters.attackInterval, 0.05, 10.0);
 		   parameters.manaCost = Clamp(parameters.manaCost, 0.0, 1600.0);
@@ -336,38 +279,62 @@ namespace SkyAppSupport
 			}
 		}
 
-       void DrawUnitParameterRows(const Rect& panel, const int32 sliderBase, UnitParameters& parameters, const int32 top)
+       void DrawUnitParameterRows(const Rect& panel, const int32 sliderBase, UnitParameters& parameters, const UnitEditorPage page, const int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect)
 		{
-           const int32 cardX = (panel.x + 10);
+          const int32 cardX = (panel.x + 10);
 			const int32 cardWidth = (panel.w - 20);
-                const int32 cardHeight = 76;
-          const int32 cardTop = top;
-          const int32 cardStep = 80;
+            const int32 cardHeight = 76;
+			const int32 cardTop = top;
+			const int32 cardStep = 80;
+			const auto drawUnitCard = [&](const int32 rowIndex, const int32 sliderId, double& value, const MillParameterEditorSpec& spec, const StringView description)
+				{
+                  const Rect cardRect{ cardX, (cardTop + cardStep * rowIndex), cardWidth, cardHeight };
+					if (DrawMillParameterEditorCard(cardRect, sliderId, value, spec))
+					{
+						hoveredDescription = String{ description };
+                       hoveredRect = cardRect;
+					}
+				};
 
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 0), cardWidth, cardHeight },
-				(sliderBase + 0),
-				parameters.maxHitPoints,
-                MillParameterEditorSpec{ U"Max HP", U"", 1.0, 1000.0, 5.0, 20.0, 50.0, 1.0, 0 });
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 1), cardWidth, cardHeight },
-				(sliderBase + 1),
-				parameters.moveSpeed,
-              MillParameterEditorSpec{ U"Move Speed", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 });
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 2), cardWidth, cardHeight },
-				(sliderBase + 2),
-				parameters.attackRange,
-                MillParameterEditorSpec{ U"Attack Range", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 });
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 3), cardWidth, cardHeight },
-				(sliderBase + 3),
-				parameters.attackDamage,
-               MillParameterEditorSpec{ U"Attack Damage", U"", 0.0, 160.0, 1.0, 5.0, 10.0, 1.0, 0 });
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 4), cardWidth, cardHeight },
-				(sliderBase + 4),
-				parameters.attackInterval,
-              MillParameterEditorSpec{ U"Attack Interval", U"s", 0.05, 10.0, 0.05, 0.25, 0.5, 0.05, 2 });
-			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 5), cardWidth, cardHeight },
-				(sliderBase + 5),
-				parameters.manaCost,
-                  MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 1600.0, 1.0, 5.0, 10.0, 1.0, 0 });
+			switch (page)
+			{
+			case UnitEditorPage::Combat:
+             drawUnitCard(0, (sliderBase + 2), parameters.attackRange,
+					MillParameterEditorSpec{ U"Attack Range", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"敵へ攻撃できる距離です。青い円で表示され、射程内に入った相手へ通常攻撃を行います。");
+				drawUnitCard(1, (sliderBase + 3), parameters.stopDistance,
+					MillParameterEditorSpec{ U"Stop Distance", U"", 0.0, 24.0, 0.05, 0.25, 0.5, 0.05, 2 },
+					U"交戦時に保ちたい距離です。オレンジの円で表示され、既存出撃ユニットも Apply 後にこの距離へ寄ります。");
+				drawUnitCard(2, (sliderBase + 4), parameters.attackDamage,
+					MillParameterEditorSpec{ U"Attack Damage", U"", 0.0, 160.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"1回の攻撃で与える基本ダメージです。耐久との兼ね合いで戦闘時間が大きく変わります。");
+				drawUnitCard(3, (sliderBase + 5), parameters.attackInterval,
+					MillParameterEditorSpec{ U"Attack Interval", U"s", 0.05, 10.0, 0.05, 0.25, 0.5, 0.05, 2 },
+					U"攻撃の待ち時間です。小さいほど手数が増え、継続火力が上がります。");
+				return;
+
+			case UnitEditorPage::Footprint:
+             drawUnitCard(0, (sliderBase + 7), parameters.footprintRadius,
+					MillParameterEditorSpec{ U"Footprint Radius", U"", 0.1, 4.0, 0.05, 0.1, 0.25, 0.05, 2 },
+					U"ユニットの横幅に相当する当たり判定半径です。接触距離、選択しやすさ、障害物回避にも影響します。");
+				drawUnitCard(1, (sliderBase + 8), parameters.footprintHalfLength,
+					MillParameterEditorSpec{ U"Footprint HalfLength", U"", 0.0, 6.0, 0.05, 0.25, 0.5, 0.05, 2 },
+					U"Capsule 型フットプリントの前後半長です。車のような縦長ユニットで長さ方向の接触判定を調整します。");
+				return;
+
+			case UnitEditorPage::Basic:
+			default:
+             drawUnitCard(0, (sliderBase + 0), parameters.maxHitPoints,
+					MillParameterEditorSpec{ U"Max HP", U"", 1.0, 1000.0, 5.0, 20.0, 50.0, 1.0, 0 },
+					U"最大耐久です。高いほど前線に残りやすくなりますが、倒しにくさも増えます。");
+				drawUnitCard(1, (sliderBase + 1), parameters.moveSpeed,
+					MillParameterEditorSpec{ U"Move Speed", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"移動速度です。集結、追撃、引き撃ち、資源エリアへの到達速度に影響します。");
+				drawUnitCard(2, (sliderBase + 6), parameters.manaCost,
+					MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 1600.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"出撃時に必要な魔力です。強さだけでなく量産しやすさの調整にも使います。");
+				return;
+			}
 		}
 	}
 }

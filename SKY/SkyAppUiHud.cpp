@@ -70,7 +70,7 @@ namespace SkyAppFlow
 			return;
 		}
 
-		DrawSkySettingsPanel(state.sky, state.skySettingsExpanded, frame.panels);
+       DrawSkySettingsPanel(state.sky, state.skyTime, state.skySettingsExpanded, frame.panels);
 
 		DrawCameraSettingsPanel(state.camera,
 			state.cameraSettings,
@@ -108,6 +108,7 @@ namespace SkyAppFlow
 				state.playerResources,
 				state.playerTier,
              state.unitEditorSettings,
+               state.modelHeightSettings,
 				state.blacksmithMenuMessage);
 		}
 
@@ -115,13 +116,18 @@ namespace SkyAppFlow
 		{
             const size_t selectedIndex = state.selectedSapperIndices.front();
 
-			if (DrawSapperMenu(frame.panels,
+			const SapperMenuAction menuAction = DrawSapperMenu(frame.panels,
 				state.spawnedSappers,
 				state.playerResources,
-                selectedIndex,
-               state.blacksmithMenuMessage) == SapperMenuAction::UseExplosionSkill)
+				selectedIndex,
+				state.blacksmithMenuMessage);
+			if (menuAction == SapperMenuAction::UseExplosionSkill)
 			{
 				TryUsePlayerSapperExplosionSkill(state, selectedIndex);
+			}
+			else if (menuAction == SapperMenuAction::Retreat)
+			{
+				TryOrderPlayerSapperRetreat(state, selectedIndex);
 			}
 		}
 
@@ -130,7 +136,8 @@ namespace SkyAppFlow
 			DrawUnitEditor(frame.panels,
                state.uiEditMode,
 				state.unitEditorSettings,
-				state.unitEditorSection,
+                state.unitEditorSelection,
+               state.unitEditorPage,
 				state.spawnedSappers,
 				state.enemySappers,
 				state.unitEditorMessage);
@@ -222,15 +229,5 @@ namespace SkyAppFlow
 
 		SimpleGUI::CheckBox(state.showUI, U"UI", SkyAppUiLayout::UiTogglePosition(frame.panels.uiToggle));
 
-		if (state.showUI)
-		{
-			SimpleGUI::Slider(U"time: {:.2f}"_fmt(state.skyTime),
-				state.skyTime,
-				-2.0,
-				4.0,
-				SkyAppUiLayout::TimeSliderPosition(frame.panels.timeSlider),
-				SkyAppUiLayout::TimeSliderLabelWidth(),
-				SkyAppUiLayout::TimeSliderTrackWidth(frame.panels.timeSlider));
-		}
 	}
 }

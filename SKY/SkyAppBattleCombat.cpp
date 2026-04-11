@@ -167,6 +167,32 @@ namespace SkyAppFlow
 		return true;
 	}
 
+	bool TryOrderPlayerSapperRetreat(SkyAppState& state, const size_t selectedSapperIndex)
+	{
+		if (selectedSapperIndex >= state.spawnedSappers.size())
+		{
+			return false;
+		}
+
+		SpawnedSapper& sapper = state.spawnedSappers[selectedSapperIndex];
+		if (sapper.hitPoints <= 0.0)
+		{
+			state.blacksmithMenuMessage.show(U"兵が行動不能");
+			return false;
+		}
+
+		if (IsSapperRetreatOrdered(sapper))
+		{
+			state.blacksmithMenuMessage.show(U"すでに撤退中");
+			return false;
+		}
+
+		OrderSapperRetreat(sapper, state.mapData.sapperRallyPoint);
+		state.blacksmithMenuMessage.show(U"撤退命令: 3秒後に離脱");
+		state.selectedSapperIndices.clear();
+		return true;
+	}
+
 	namespace BattleDetail
 	{
         void SpawnEnemyUnit(SkyAppState& state, const SapperUnitType unitType, const bool moveImmediately)
@@ -204,7 +230,7 @@ namespace SkyAppFlow
 
 			for (auto& attacker : attackers)
 			{
-				if (attacker.hitPoints <= 0.0)
+              if (not IsSpawnedSapperCombatActive(attacker))
 				{
 					continue;
 				}

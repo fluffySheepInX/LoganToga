@@ -144,7 +144,7 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-        const int32 panelHeight = Max(660, (sceneHeight - 84));
+     const int32 panelHeight = Max(748, (sceneHeight - 84));
 		const Point clampedPosition = ClampPanelPosition(position, 340, panelHeight, sceneWidth, sceneHeight);
 		return Rect{ clampedPosition.x, clampedPosition.y, 340, panelHeight };
 	}
@@ -273,6 +273,31 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline int32 TimeSliderTrackWidth(const Rect& timeSlider)
 	{
 		return Max(0, (timeSlider.w - (TimeSliderLabelWidth() + 20)));
+	}
+
+	[[nodiscard]] inline Rect SkySettingsTimePanel(const Rect& skySettingsPanel)
+	{
+		return Rect{ skySettingsPanel.x, (skySettingsPanel.bottomY() + 8), skySettingsPanel.w, 92 };
+	}
+
+	[[nodiscard]] inline Vec2 SkySettingsTimeSliderPosition(const Rect& timePanel)
+	{
+		return Vec2{ static_cast<double>(timePanel.x + 12), static_cast<double>(timePanel.y + 14) };
+	}
+
+	[[nodiscard]] inline int32 SkySettingsTimeSliderLabelWidth()
+	{
+		return 120;
+	}
+
+	[[nodiscard]] inline int32 SkySettingsTimeSliderTrackWidth(const Rect& timePanel)
+	{
+		return Max(0, (timePanel.w - 24 - (SkySettingsTimeSliderLabelWidth() + 20)));
+	}
+
+	[[nodiscard]] inline Rect SkySettingsTimeStepButton(const Rect& timePanel, const int32 index)
+	{
+		return Rect{ (timePanel.x + 12 + index * 70), (timePanel.y + 52), 62, 28 };
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelTitlePosition(const Rect& resourcePanel)

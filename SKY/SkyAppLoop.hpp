@@ -103,7 +103,8 @@ namespace SkyAppFlow
        MainSupport::ResourceStock initialPlayerResources{ .budget = MainSupport::StartingResources };
 		Array<MainSupport::ResourceAreaState> resourceAreaStates;
        MainSupport::UnitEditorSettings unitEditorSettings;
-		MainSupport::UnitEditorSection unitEditorSection = MainSupport::UnitEditorSection::PlayerInfantry;
+      MainSupport::UnitEditorSelection unitEditorSelection;
+       MainSupport::UnitEditorPage unitEditorPage = MainSupport::UnitEditorPage::Basic;
         int32 playerTier = 1;
       Array<double> millLastAttackTimes;
       Array<AttackEffectInstance> attackEffects;

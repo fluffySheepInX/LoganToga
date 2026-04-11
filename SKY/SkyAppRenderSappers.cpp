@@ -9,6 +9,22 @@ namespace SkyAppSupport
 {
 	namespace
 	{
+     [[nodiscard]] const BirdModel& SelectUnitRenderModel(const UnitRenderModel renderModel, const BirdModel& birdModel, const BirdModel& ashigaruModel, const BirdModel& sugoiCarModel)
+		{
+			switch (renderModel)
+			{
+			case UnitRenderModel::Ashigaru:
+				return ashigaruModel;
+
+			case UnitRenderModel::SugoiCar:
+				return sugoiCarModel;
+
+			case UnitRenderModel::Bird:
+			default:
+				return birdModel;
+			}
+		}
+
 		constexpr double HealthBarWidth = 36.0;
 		constexpr double HealthBarHeight = 5.0;
       constexpr int32 AttackRangeSegmentCount = 56;
@@ -63,6 +79,11 @@ namespace SkyAppSupport
 
 		for (size_t i = 0; i < spawnedSappers.size(); ++i)
 		{
+            if (not IsSpawnedSapperSelectable(spawnedSappers[i]))
+			{
+				continue;
+			}
+
             const double scale = Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, spawnedSappers[i]));
 			const Vec3 hitCenter = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, (1.4 * scale), 0);
 			const Sphere hitSphere{ hitCenter, Max(0.45, (1.2 * scale)) };
@@ -84,11 +105,19 @@ namespace SkyAppSupport
 	{
 		const Vec3 rangeCenter = GetSpawnedSapperBasePosition(sapper).movedBy(0, 0.05, 0);
 		const double pulse = (0.76 + (0.24 * Periodic::Sine0_1(1.4s)));
-		const ColorF outerColor{ 1.0, 0.80, 0.24, 0.16 + 0.10 * pulse };
-		const ColorF innerColor{ 1.0, 0.93, 0.52, 0.72 + 0.12 * pulse };
+        const ColorF attackOuterColor{ 0.38, 0.74, 1.0, 0.14 + 0.10 * pulse };
+		const ColorF attackInnerColor{ 0.68, 0.88, 1.0, 0.74 + 0.10 * pulse };
+		const ColorF stopOuterColor{ 1.0, 0.48, 0.22, 0.16 + 0.12 * pulse };
+		const ColorF stopInnerColor{ 1.0, 0.72, 0.44, 0.82 + 0.10 * pulse };
 
-		DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 5.0, outerColor);
-		DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 2.2, innerColor);
+       DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 5.0, attackOuterColor);
+		DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 2.2, attackInnerColor);
+
+		if (0.0 < sapper.stopDistance)
+		{
+			DrawProjectedCircumference(camera, rangeCenter, sapper.stopDistance, 4.2, stopOuterColor);
+			DrawProjectedCircumference(camera, rangeCenter, sapper.stopDistance, 1.8, stopInnerColor);
+		}
 	}
 
    void DrawSelectedSapperRing(const AppCamera3D& camera, const SpawnedSapper& sapper)
@@ -139,7 +168,7 @@ namespace SkyAppSupport
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
-			if (sapper.hitPoints <= 0.0)
+            if ((sapper.hitPoints <= 0.0) || IsSapperRetreatedHidden(sapper))
 			{
 				continue;
 			}
@@ -176,11 +205,11 @@ namespace SkyAppSupport
 		}
 	}
 
-    void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const BirdModel& sugoiCarModel, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
+      void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& birdModel, const BirdModel& ashigaruModel, const BirdModel& sugoiCarModel, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
-			if (sapper.hitPoints <= 0.0)
+            if ((sapper.hitPoints <= 0.0) || IsSapperRetreatedHidden(sapper))
 			{
 				continue;
 			}
@@ -188,12 +217,9 @@ namespace SkyAppSupport
 			const double elapsed = (Scene::Time() - sapper.spawnedAt);
 			const double popIn = Min(elapsed / 0.25, 1.0);
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
-			const BirdModel& drawModel = ((sapper.unitType == SapperUnitType::SugoiCar) ? sugoiCarModel : sapperModel);
-          const double drawScale = (sapper.unitType == SapperUnitType::SugoiCar)
-				? GetModelScale(modelHeightSettings, ModelHeightTarget::SugoiCar)
-				: ((sapper.team == UnitTeam::Enemy)
-					? GetModelScale(modelHeightSettings, ModelHeightTarget::Ashigaru)
-					: GetModelScale(modelHeightSettings, ModelHeightTarget::Bird));
+         const UnitRenderModel renderModel = GetSpawnedSapperRenderModel(sapper);
+			const BirdModel& drawModel = SelectUnitRenderModel(renderModel, birdModel, ashigaruModel, sugoiCarModel);
+			const double drawScale = GetModelScale(modelHeightSettings, ToModelHeightTarget(renderModel));
 
          if (drawModel.isLoaded())
 			{

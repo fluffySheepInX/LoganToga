@@ -172,7 +172,7 @@ namespace SkyAppSupport
 
       [[nodiscard]] double GetSapperCombatStopDistance(const SpawnedSapper& attacker, const SpawnedSapper& defender, const ModelHeightSettings& modelHeightSettings)
 		{
-            return (attacker.attackRange
+            return (Max(0.0, attacker.stopDistance)
 				+ Max(0.1, (attacker.footprintRadius * Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, attacker))))
 				+ Max(0.1, (defender.footprintRadius * Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, defender)))));
 		}
@@ -192,9 +192,9 @@ namespace SkyAppSupport
 			const ClosestSegmentPoints closestPoints = GetClosestPointsOnSegments(attackerSegment.start, attackerSegment.end, defenderSegment.start, defenderSegment.end);
 			const double surfaceDistance = (closestPoints.centerDistance - attackerSegment.radius - defenderSegment.radius);
 			const Vec2 separationDirection = GetSeparationDirection(closestPoints.pointB, closestPoints.pointA, (GetSpawnedSapperBasePosition(attacker) - GetSpawnedSapperBasePosition(defender)));
-			const double pushBackDistance = Max(0.0, (attacker.attackRange - surfaceDistance));
+         const double stopDistanceDelta = (Max(0.0, attacker.stopDistance) - surfaceDistance);
 			const Vec3 attackerPosition = GetSpawnedSapperBasePosition(attacker);
-			return attackerPosition.movedBy((separationDirection.x * pushBackDistance), 0, (separationDirection.y * pushBackDistance));
+         return attackerPosition.movedBy((separationDirection.x * stopDistanceDelta), 0, (separationDirection.y * stopDistanceDelta));
 		}
 
        [[nodiscard]] double GetSapperBaseCombatSurfaceDistance(const SpawnedSapper& attacker, const Vec3& basePosition, const double baseRadius, const ModelHeightSettings& modelHeightSettings)
@@ -212,9 +212,9 @@ namespace SkyAppSupport
 			const Vec2 closestPoint = ClosestPointOnSegment(baseCenter, attackerSegment.start, attackerSegment.end);
 			const double surfaceDistance = (closestPoint.distanceFrom(baseCenter) - attackerSegment.radius - baseRadius);
 			const Vec2 separationDirection = GetSeparationDirection(baseCenter, closestPoint, (GetSpawnedSapperBasePosition(attacker) - basePosition));
-			const double pushBackDistance = Max(0.0, (attacker.attackRange - surfaceDistance));
+         const double stopDistanceDelta = (Max(0.0, attacker.stopDistance) - surfaceDistance);
 			const Vec3 attackerPosition = GetSpawnedSapperBasePosition(attacker);
-			return attackerPosition.movedBy((separationDirection.x * pushBackDistance), 0, (separationDirection.y * pushBackDistance));
+         return attackerPosition.movedBy((separationDirection.x * stopDistanceDelta), 0, (separationDirection.y * stopDistanceDelta));
 		}
 
 		[[nodiscard]] Optional<double> GetPlacedModelObstacleRadius(const PlacedModel& placedModel)
@@ -248,7 +248,7 @@ namespace SkyAppSupport
 
 			for (size_t i = 0; i < candidates.size(); ++i)
 			{
-				if (candidates[i].hitPoints <= 0.0)
+             if (not IsSpawnedSapperCombatActive(candidates[i]))
 				{
 					continue;
 				}
@@ -278,6 +278,7 @@ namespace SkyAppSupport
 		sapper.hitPoints = sapper.maxHitPoints;
 		sapper.moveSpeed = Max(SapperInternal::MinimumSapperMoveSpeed, parameters.moveSpeed);
 		sapper.attackRange = Max(0.5, parameters.attackRange);
+        sapper.stopDistance = Clamp(parameters.stopDistance, 0.0, 24.0);
 		sapper.baseAttackDamage = Max(0.0, parameters.attackDamage);
 		sapper.baseAttackInterval = Max(0.05, parameters.attackInterval);
        sapper.footprintType = parameters.footprintType;

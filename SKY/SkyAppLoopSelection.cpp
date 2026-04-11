@@ -74,6 +74,11 @@ namespace SkyAppFlow
 
 			for (size_t i = 0; i < spawnedSappers.size(); ++i)
 			{
+             if (not IsSpawnedSapperSelectable(spawnedSappers[i]))
+				{
+					continue;
+				}
+
                const double scale = Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, spawnedSappers[i]));
 				const Vec3 renderPosition = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, (1.4 * scale), 0);
 				const Float3 screenPosition = camera.worldToScreenPoint(Float3{ static_cast<float>(renderPosition.x), static_cast<float>(renderPosition.y), static_cast<float>(renderPosition.z) });
@@ -160,7 +165,7 @@ namespace SkyAppFlow
 
 					for (const size_t selectedIndex : state.selectedSapperIndices)
 					{
-						if (selectedIndex < state.spawnedSappers.size())
+                        if ((selectedIndex < state.spawnedSappers.size()) && IsSpawnedSapperSelectable(state.spawnedSappers[selectedIndex]))
 						{
 							validSelectedSapperIndices << selectedIndex;
 						}

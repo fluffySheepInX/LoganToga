@@ -100,6 +100,7 @@ namespace
 		LoadUnitParameterValue(toml, (String{ prefix } + U"MaxHitPoints"), parameters.maxHitPoints);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"MoveSpeed"), parameters.moveSpeed);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackRange"), parameters.attackRange);
+        LoadUnitParameterValue(toml, (String{ prefix } + U"StopDistance"), parameters.stopDistance);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackDamage"), parameters.attackDamage);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackInterval"), parameters.attackInterval);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"ManaCost"), parameters.manaCost);
@@ -113,6 +114,7 @@ namespace
 		writer.writeln(U"{}MaxHitPoints = {:.3f}"_fmt(prefix, parameters.maxHitPoints));
 		writer.writeln(U"{}MoveSpeed = {:.3f}"_fmt(prefix, parameters.moveSpeed));
 		writer.writeln(U"{}AttackRange = {:.3f}"_fmt(prefix, parameters.attackRange));
+        writer.writeln(U"{}StopDistance = {:.3f}"_fmt(prefix, parameters.stopDistance));
 		writer.writeln(U"{}AttackDamage = {:.3f}"_fmt(prefix, parameters.attackDamage));
 		writer.writeln(U"{}AttackInterval = {:.3f}"_fmt(prefix, parameters.attackInterval));
 		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(prefix, parameters.manaCost));
@@ -284,12 +286,16 @@ namespace MainSupport
 			return settings;
 		}
 
-		LoadUnitParameterGroup(toml, U"playerInfantry", settings.playerInfantry);
-		LoadUnitParameterGroup(toml, U"playerArcaneInfantry", settings.playerArcaneInfantry);
-     LoadUnitParameterGroup(toml, U"playerSugoiCar", settings.playerSugoiCar);
-		LoadUnitParameterGroup(toml, U"enemyInfantry", settings.enemyInfantry);
-		LoadUnitParameterGroup(toml, U"enemyArcaneInfantry", settings.enemyArcaneInfantry);
-        LoadUnitParameterGroup(toml, U"enemySugoiCar", settings.enemySugoiCar);
+       for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
+		{
+			for (const auto& unitDefinition : GetUnitDefinitions())
+			{
+				LoadUnitParameterGroup(toml,
+					GetUnitSettingsGroupKey(team, unitDefinition.unitType),
+					GetUnitParameters(settings, team, unitDefinition.unitType));
+			}
+		}
+
 		return settings;
 	}
 
@@ -304,17 +310,23 @@ namespace MainSupport
 			return false;
 		}
 
-		SaveUnitParameterGroup(writer, U"playerInfantry", settings.playerInfantry);
-		writer.writeln(U"");
-		SaveUnitParameterGroup(writer, U"playerArcaneInfantry", settings.playerArcaneInfantry);
-		writer.writeln(U"");
-       SaveUnitParameterGroup(writer, U"playerSugoiCar", settings.playerSugoiCar);
-		writer.writeln(U"");
-		SaveUnitParameterGroup(writer, U"enemyInfantry", settings.enemyInfantry);
-		writer.writeln(U"");
-		SaveUnitParameterGroup(writer, U"enemyArcaneInfantry", settings.enemyArcaneInfantry);
-        writer.writeln(U"");
-		SaveUnitParameterGroup(writer, U"enemySugoiCar", settings.enemySugoiCar);
+     bool needsBlankLine = false;
+		for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
+		{
+			for (const auto& unitDefinition : GetUnitDefinitions())
+			{
+				if (needsBlankLine)
+				{
+					writer.writeln(U"");
+				}
+
+				SaveUnitParameterGroup(writer,
+					GetUnitSettingsGroupKey(team, unitDefinition.unitType),
+					GetUnitParameters(settings, team, unitDefinition.unitType));
+				needsBlankLine = true;
+			}
+		}
+
 		return true;
 	}
 }

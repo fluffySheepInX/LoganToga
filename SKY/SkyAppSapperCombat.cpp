@@ -9,7 +9,7 @@ namespace SkyAppSupport
 	{
 		for (auto& sapper : spawnedSappers)
 		{
-			if (sapper.hitPoints <= 0.0)
+            if (not IsSpawnedSapperCombatActive(sapper))
 			{
 				continue;
 			}
@@ -21,7 +21,7 @@ namespace SkyAppSupport
 
 			for (const auto& enemySapper : enemySappers)
 			{
-				if (enemySapper.hitPoints <= 0.0)
+               if (not IsSpawnedSapperCombatActive(enemySapper))
 				{
 					continue;
 				}
@@ -54,7 +54,7 @@ namespace SkyAppSupport
 	{
 		for (auto& sapper : spawnedSappers)
 		{
-			if (sapper.hitPoints <= 0.0)
+            if (not IsSpawnedSapperCombatActive(sapper))
 			{
 				continue;
 			}
@@ -79,7 +79,7 @@ namespace SkyAppSupport
 	{
 		for (auto& attacker : attackers)
 		{
-			if (attacker.hitPoints <= 0.0)
+          if (not IsSpawnedSapperCombatActive(attacker))
 			{
 				continue;
 			}

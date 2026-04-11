@@ -144,6 +144,11 @@ namespace SkyAppFlow
 		{
 			for (size_t i = 0; i < state.enemySappers.size(); ++i)
 			{
+                if (not IsSpawnedSapperCombatActive(state.enemySappers[i]))
+				{
+					continue;
+				}
+
              Vec3 desiredTarget = GetSapperPopTargetPosition(state.mapData.playerBasePosition, i);
 
 				if ((state.enemyBattlePlan == EnemyBattlePlan::SecureResources)

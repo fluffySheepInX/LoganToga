@@ -19,9 +19,10 @@ namespace SkyAppSupport
 		{
 			None,
 			UseExplosionSkill,
+          Retreat,
 		};
 
-    void DrawSkySettingsPanel(Sky& sky, bool& isExpanded, const SkyAppPanels& panels);
+  void DrawSkySettingsPanel(Sky& sky, double& skyTime, bool& isExpanded, const SkyAppPanels& panels);
  void DrawCameraSettingsPanel(MainSupport::AppCamera3D& camera,
 		MainSupport::CameraSettings& cameraSettings,
        bool& isExpanded,
@@ -37,6 +38,7 @@ namespace SkyAppSupport
      MainSupport::ResourceStock& playerResources,
       int32& playerTier,
       const MainSupport::UnitEditorSettings& unitEditorSettings,
+       const MainSupport::ModelHeightSettings& modelHeightSettings,
 		TimedMessage& blacksmithMenuMessage);
   void DrawMiniMap(bool& isExpanded,
 		const SkyAppPanels& panels,
@@ -56,7 +58,8 @@ namespace SkyAppSupport
     void DrawUnitEditor(const SkyAppPanels& panels,
         bool uiEditMode,
 		MainSupport::UnitEditorSettings& unitEditorSettings,
-		MainSupport::UnitEditorSection& activeSection,
+      MainSupport::UnitEditorSelection& activeSelection,
+      MainSupport::UnitEditorPage& activePage,
 		Array<MainSupport::SpawnedSapper>& spawnedSappers,
 		Array<MainSupport::SpawnedSapper>& enemySappers,
 		TimedMessage& unitEditorMessage);

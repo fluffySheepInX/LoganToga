@@ -110,8 +110,8 @@ namespace SkyAppFlow
 			Cylinder{ selectedMill.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
 		}
 
-          DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
-		DrawSpawnedSappers(state.enemySappers, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
+           DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+		DrawSpawnedSappers(state.enemySappers, resources.birdModel, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
 		DrawMapEditorScene(state.mapEditor, state.mapData);
 		UpdateSkyFromTime(state.sky, state.skyTime);
 		state.sky.draw();
