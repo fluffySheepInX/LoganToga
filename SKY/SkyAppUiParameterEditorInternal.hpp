@@ -20,6 +20,7 @@ namespace SkyAppSupport
 
 		[[nodiscard]] String FormatMillParameterValue(double value, int32 decimals, StringView suffix);
 		[[nodiscard]] StringView ToMovementTypeLabel(MainSupport::MovementType movementType);
+     [[nodiscard]] StringView ToUnitAiRoleLabel(MainSupport::UnitAiRole aiRole);
        [[nodiscard]] StringView ToUnitFootprintTypeLabel(MainSupport::UnitFootprintType footprintType);
 		[[nodiscard]] double RoundMillParameterValue(double value, double roundStep);
 		void ApplyMillParameterDelta(double& value, const MillParameterEditorSpec& spec, double delta);
@@ -32,6 +33,7 @@ namespace SkyAppSupport
        [[nodiscard]] int32 ToUnitEditorSliderBase(MainSupport::UnitTeam team, MainSupport::SapperUnitType unitType);
 		void ClampUnitParameters(MainSupport::UnitParameters& parameters);
 		void DrawMovementTypeSelector(const Rect& panel, double top, MainSupport::MovementType& movementType);
+      void DrawUnitAiRoleSelector(const Rect& panel, double top, MainSupport::UnitAiRole& aiRole);
        void DrawFootprintTypeSelector(const Rect& panel, double top, MainSupport::UnitParameters& parameters);
 		void ApplyUnitParametersToSpawned(Array<MainSupport::SpawnedSapper>& sappers,
 			MainSupport::UnitTeam team,

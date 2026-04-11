@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include <array>
 # include "BirdModel.hpp"
 # include "MapData.hpp"
 # include "MapEditor.hpp"
@@ -34,10 +35,31 @@ namespace SkyAppFlow
 		Model treeModel;
 		Model pineModel;
         Model grassPatchModel;
-		BirdModel birdModel;
-		BirdModel ashigaruModel;
-      BirdModel sugoiCarModel;
+      std::array<UnitModel, MainSupport::UnitRenderModelCount> unitRenderModels;
 		MSRenderTexture renderTexture;
+
+       [[nodiscard]] UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel)
+		{
+			return unitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+		}
+
+     [[nodiscard]] const UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel) const
+		{
+			return unitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+		}
+
+		[[nodiscard]] SkyAppSupport::UnitRenderModelRegistryView GetUnitRenderModelRegistry() const
+		{
+			SkyAppSupport::UnitRenderModelRegistryView registry;
+
+			for (const MainSupport::UnitRenderModel renderModel : MainSupport::GetUnitRenderModels())
+			{
+				const size_t index = MainSupport::GetUnitRenderModelIndex(renderModel);
+				registry.models[index] = &unitRenderModels[index];
+			}
+
+			return registry;
+		}
 
 		SkyAppResources();
 	};
@@ -91,7 +113,7 @@ namespace SkyAppFlow
        SkyAppSupport::TimedMessage uiLayoutMessage;
        SkyAppSupport::TimedMessage unitEditorMessage;
 		bool modelHeightEditMode = false;
-      MainSupport::ModelHeightTarget modelHeightTarget = MainSupport::ModelHeightTarget::Bird;
+      MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
       bool unitEditorMode = false;
        bool showResourceAdjustUi = false;
       bool requestTitleScene = false;
@@ -112,6 +134,7 @@ namespace SkyAppFlow
 		double nextEnemyReinforcementAt = 0.0;
 		size_t enemyReinforcementCount = 0;
        MainSupport::EnemyBattlePlan enemyBattlePlan = MainSupport::EnemyBattlePlan::SecureResources;
+      MainSupport::EnemyBattlePlanOverride enemyBattlePlanOverride = MainSupport::EnemyBattlePlanOverride::Auto;
 		Optional<size_t> enemyTargetResourceAreaIndex;
 		double nextEnemyAiDecisionAt = 0.0;
 		double nextEnemyProductionAt = 0.0;
@@ -127,9 +150,12 @@ namespace SkyAppFlow
      bool showUnitEditor = false;
       bool showEscMenu = false;
 		bool isHoveringUI = false;
-		Vec3 birdRenderPosition = MainSupport::BirdDisplayPosition;
-		Vec3 ashigaruRenderPosition = MainSupport::AshigaruDisplayPosition;
-      Vec3 sugoiCarRenderPosition = MainSupport::SugoiCarDisplayPosition;
+     std::array<Vec3, MainSupport::UnitRenderModelCount> previewRenderPositions{};
+
+		[[nodiscard]] const Vec3& GetPreviewRenderPosition(const MainSupport::UnitRenderModel renderModel) const
+		{
+			return previewRenderPositions[MainSupport::GetUnitRenderModelIndex(renderModel)];
+		}
 	};
 
 	void InitializeSkyAppState(SkyAppState& state);

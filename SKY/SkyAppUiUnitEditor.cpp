@@ -127,7 +127,10 @@ namespace SkyAppSupport
 		UnitParameters& parameters = GetUnitParameters(unitEditorSettings, team, unitType);
 		ClampUnitParameters(parameters);
      Rect{ detailPanel.x, (detailPanel.bottomY() - 46), detailPanel.w, 1 }.draw(ColorF{ 0.80, 0.78, 0.72 });
-     SimpleGUI::GetFont()(ToUnitEditorSectionLabel(team, unitType)).draw((detailPanel.x + 16), (detailPanel.y + 38), ColorF{ 0.16 });
+       const Rect selectedUnitRect{ (detailPanel.x + 12), (detailPanel.y + 34), (detailPanel.w - 24), 34 };
+		selectedUnitRect.rounded(10).draw(ColorF{ 0.92, 0.96, 1.0, 0.82 });
+		selectedUnitRect.rounded(10).drawFrame(1, 0, ColorF{ 0.74, 0.80, 0.90, 0.90 });
+		 SimpleGUI::GetFont()(ToUnitEditorSectionLabel(team, unitType)).draw((selectedUnitRect.x + 12), (selectedUnitRect.y + 6), ColorF{ 0.16 });
 
 		const Array<UnitEditorPage> pages{
 			UnitEditorPage::Basic,
@@ -137,7 +140,7 @@ namespace SkyAppSupport
 		for (size_t i = 0; i < pages.size(); ++i)
 		{
 			const UnitEditorPage page = pages[i];
-			const Rect pageButton{ (detailPanel.x + 16 + static_cast<int32>(i) * 102), (detailPanel.y + 70), 94, 28 };
+          const Rect pageButton{ (detailPanel.x + 16 + static_cast<int32>(i) * 102), (detailPanel.y + 78), 94, 28 };
 			const bool selected = (activePage == page);
 			const bool hovered = pageButton.mouseOver();
 			pageButton.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
@@ -170,10 +173,12 @@ namespace SkyAppSupport
 
 		if (activePage == UnitEditorPage::Basic)
 		{
-			DrawMovementTypeSelector(detailPanel, (detailPanel.y + 116), parameters.movementType);
-           const Rect typeLabelRect{ (detailPanel.x + 16), (detailPanel.y + 112), 88, 28 };
-			const Rect infantryButton{ (detailPanel.x + detailPanel.w - 146), (detailPanel.y + 114), 64, 24 };
-			const Rect tankButton{ (detailPanel.x + detailPanel.w - 74), (detailPanel.y + 114), 58, 24 };
+          SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), ColorF{ 0.18 });
+			Rect{ (detailPanel.x + 86), (detailPanel.y + 130), (detailPanel.w - 102), 1 }.draw(ColorF{ 0.78, 0.82, 0.88 });
+			DrawMovementTypeSelector(detailPanel, (detailPanel.y + 138), parameters.movementType);
+			   const Rect typeLabelRect{ (detailPanel.x + 16), (detailPanel.y + 134), 88, 28 };
+			const Rect infantryButton{ (detailPanel.x + detailPanel.w - 146), (detailPanel.y + 136), 64, 24 };
+			const Rect tankButton{ (detailPanel.x + detailPanel.w - 74), (detailPanel.y + 136), 58, 24 };
 			if (typeLabelRect.mouseOver())
 			{
 				hoveredDescription = U"移動タイプです。Infantry は素直な歩兵挙動、Tank は車両向けの重い移動カーブになります。";
@@ -189,13 +194,45 @@ namespace SkyAppSupport
 				hoveredDescription = U"車両向けの移動タイプです。動き出しと停止がやや重く、車らしい進行になります。";
                hoveredRect = tankButton;
 			}
+
+			if (team == UnitTeam::Enemy)
+			{
+              DrawUnitAiRoleSelector(detailPanel, (detailPanel.y + 174), parameters.aiRole);
+				const Rect aiRoleLabelRect{ (detailPanel.x + 16), (detailPanel.y + 170), 96, 28 };
+				const Rect secureButton{ (detailPanel.x + detailPanel.w - 236), (detailPanel.y + 172), 72, 24 };
+				const Rect assaultButton{ (detailPanel.x + detailPanel.w - 156), (detailPanel.y + 172), 72, 24 };
+				const Rect supportButton{ (detailPanel.x + detailPanel.w - 76), (detailPanel.y + 172), 64, 24 };
+
+				if (aiRoleLabelRect.mouseOver())
+				{
+					hoveredDescription = U"敵 AI の役割です。資源確保を優先するか、拠点突撃を優先するか、味方支援に回るかを決めます。";
+					hoveredRect = aiRoleLabelRect;
+				}
+				else if (secureButton.mouseOver())
+				{
+					hoveredDescription = U"資源エリア確保を優先する役割です。未確保やプレイヤー支配中の資源地点へ向かいやすくなります。";
+					hoveredRect = secureButton;
+				}
+				else if (assaultButton.mouseOver())
+				{
+					hoveredDescription = U"敵拠点への攻勢を優先する役割です。資源よりもプレイヤー本拠地へ進軍しやすくなります。";
+					hoveredRect = assaultButton;
+				}
+				else if (supportButton.mouseOver())
+				{
+					hoveredDescription = U"味方主力の近くで行動する支援役です。近い非 Support 味方を追従し、いなければ前線寄りの集結地点へ向かいます。";
+					hoveredRect = supportButton;
+				}
+			}
 		}
 		else if (activePage == UnitEditorPage::Footprint)
 		{
-			DrawFootprintTypeSelector(detailPanel, (detailPanel.y + 116), parameters);
-           const Rect footprintLabelRect{ (detailPanel.x + 16), (detailPanel.y + 112), 120, 28 };
-			const Rect circleButton{ (detailPanel.x + detailPanel.w - 152), (detailPanel.y + 114), 64, 24 };
-			const Rect capsuleButton{ (detailPanel.x + detailPanel.w - 80), (detailPanel.y + 114), 64, 24 };
+          SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), ColorF{ 0.18 });
+			Rect{ (detailPanel.x + 86), (detailPanel.y + 130), (detailPanel.w - 102), 1 }.draw(ColorF{ 0.78, 0.82, 0.88 });
+			DrawFootprintTypeSelector(detailPanel, (detailPanel.y + 138), parameters);
+			   const Rect footprintLabelRect{ (detailPanel.x + 16), (detailPanel.y + 134), 120, 28 };
+			const Rect circleButton{ (detailPanel.x + detailPanel.w - 152), (detailPanel.y + 136), 64, 24 };
+			const Rect capsuleButton{ (detailPanel.x + detailPanel.w - 80), (detailPanel.y + 136), 64, 24 };
 			if (footprintLabelRect.mouseOver())
 			{
 				hoveredDescription = U"接触判定の形です。Circle は丸、Capsule は前後に長い形で、車や横幅のある機体に向きます。";
@@ -213,7 +250,10 @@ namespace SkyAppSupport
 			}
 		}
 
-          DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), parameters, activePage, (detailPanel.y + 154), hoveredDescription, hoveredRect);
+       const int32 parameterRowsTop = ((activePage == UnitEditorPage::Basic) && (team == UnitTeam::Enemy))
+         ? (detailPanel.y + 212)
+			: ((activePage == UnitEditorPage::Combat) ? (detailPanel.y + 146) : (detailPanel.y + 176));
+		DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), parameters, activePage, parameterRowsTop, hoveredDescription, hoveredRect);
 		ClampUnitParameters(parameters);
 
 		const Rect resetButton{ (detailPanel.x + 16), (detailPanel.y + detailPanel.h - 36), 92, 28 };

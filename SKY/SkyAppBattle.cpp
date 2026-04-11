@@ -8,6 +8,19 @@ namespace SkyAppFlow
 {
    namespace
 	{
+       [[nodiscard]] EnemyBattlePlan DetermineAutoEnemyBattlePlan(const SkyAppState& state, const Optional<SapperUnitType>& producibleUnitType)
+		{
+			if (producibleUnitType
+				&& (GetUnitAiRole(state.unitEditorSettings, UnitTeam::Enemy, *producibleUnitType) == UnitAiRole::AssaultBase))
+			{
+				return EnemyBattlePlan::AssaultBase;
+			}
+
+			return state.enemyTargetResourceAreaIndex
+				? EnemyBattlePlan::SecureResources
+				: EnemyBattlePlan::AssaultBase;
+		}
+
        [[nodiscard]] double GetEnemyUnitCost(const SkyAppState& state, const SapperUnitType unitType)
 		{
            return GetUnitParameters(state.unitEditorSettings, UnitTeam::Enemy, unitType).manaCost;
@@ -15,22 +28,24 @@ namespace SkyAppFlow
 
       [[nodiscard]] Optional<SapperUnitType> GetEnemyProducibleUnitType(const SkyAppState& state)
 		{
-         if (GetEnemyUnitCost(state, SapperUnitType::SugoiCar) <= state.enemyResources.mana)
-			{
-				return SapperUnitType::SugoiCar;
-			}
+                Optional<SapperUnitType> bestUnitType;
+             int32 bestPriority = std::numeric_limits<int32>::lowest();
 
-          if (GetEnemyUnitCost(state, SapperUnitType::ArcaneInfantry) <= state.enemyResources.mana)
-			{
-				return SapperUnitType::ArcaneInfantry;
-			}
+				for (const auto& unitDefinition : GetUnitDefinitions())
+				{
+					if (GetEnemyUnitCost(state, unitDefinition.unitType) > state.enemyResources.mana)
+					{
+						continue;
+					}
 
-			if (GetEnemyUnitCost(state, SapperUnitType::Infantry) <= state.enemyResources.mana)
-			{
-				return SapperUnitType::Infantry;
-			}
+					if (bestPriority < unitDefinition.enemyProductionPriority)
+					{
+						bestPriority = unitDefinition.enemyProductionPriority;
+						bestUnitType = unitDefinition.unitType;
+					}
+				}
 
-			  return none;
+				return bestUnitType;
 		}
 
 		[[nodiscard]] double GetEnemyResourceAreaPriority(const SkyAppState& state, const size_t areaIndex)
@@ -101,6 +116,92 @@ namespace SkyAppFlow
 			return bestIndex;
 		}
 
+		[[nodiscard]] Vec3 GetEnemyAssaultTargetPosition(const SkyAppState& state, const size_t formationIndex)
+		{
+			return GetSapperPopTargetPosition(state.mapData.playerBasePosition, formationIndex);
+		}
+
+		[[nodiscard]] Vec3 GetEnemyResourceCaptureTargetPosition(const SkyAppState& state, const size_t formationIndex)
+		{
+			if (state.enemyTargetResourceAreaIndex
+				&& (*state.enemyTargetResourceAreaIndex < state.mapData.resourceAreas.size()))
+			{
+				return GetSapperPopTargetPosition(state.mapData.resourceAreas[*state.enemyTargetResourceAreaIndex].position, formationIndex);
+			}
+
+			return GetEnemyAssaultTargetPosition(state, formationIndex);
+		}
+
+		[[nodiscard]] Optional<Vec3> FindEnemySupportAnchorPosition(const SkyAppState& state, const size_t supportIndex)
+		{
+			if (supportIndex >= state.enemySappers.size())
+			{
+				return none;
+			}
+
+			const Vec3 supportPosition = GetSpawnedSapperBasePosition(state.enemySappers[supportIndex]);
+			double nearestDistanceSq = Math::Inf;
+			Optional<Vec3> anchorPosition;
+
+			for (size_t i = 0; i < state.enemySappers.size(); ++i)
+			{
+				if ((i == supportIndex) || (not IsSpawnedSapperCombatActive(state.enemySappers[i])))
+				{
+					continue;
+				}
+
+               if (state.enemySappers[i].aiRole == UnitAiRole::Support)
+				{
+					continue;
+				}
+
+				const Vec3 candidatePosition = GetSpawnedSapperBasePosition(state.enemySappers[i]);
+				const double distanceSq = supportPosition.distanceFromSq(candidatePosition);
+				if (distanceSq < nearestDistanceSq)
+				{
+					nearestDistanceSq = distanceSq;
+					anchorPosition = candidatePosition;
+				}
+			}
+
+			return anchorPosition;
+		}
+
+		[[nodiscard]] Vec3 GetEnemySupportTargetPosition(const SkyAppState& state, const size_t formationIndex)
+		{
+			if (const Optional<Vec3> supportAnchor = FindEnemySupportAnchorPosition(state, formationIndex))
+			{
+				return GetSapperPopTargetPosition(*supportAnchor, formationIndex);
+			}
+
+			const Vec3 strategicObjective = ((state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
+				? GetEnemyResourceCaptureTargetPosition(state, formationIndex)
+				: GetEnemyAssaultTargetPosition(state, formationIndex));
+			const Vec3 stagingPosition = state.mapData.enemyBasePosition.lerp(strategicObjective, 0.55);
+			return GetSapperPopTargetPosition(stagingPosition, formationIndex);
+		}
+
+		[[nodiscard]] Vec3 GetEnemyAdvanceTargetPosition(const SkyAppState& state, const size_t formationIndex)
+		{
+			if (formationIndex >= state.enemySappers.size())
+			{
+				return GetEnemyAssaultTargetPosition(state, formationIndex);
+			}
+
+         switch (state.enemySappers[formationIndex].aiRole)
+			{
+			case UnitAiRole::Support:
+				return GetEnemySupportTargetPosition(state, formationIndex);
+
+			case UnitAiRole::AssaultBase:
+				return GetEnemyAssaultTargetPosition(state, formationIndex);
+
+			case UnitAiRole::SecureResources:
+			default:
+				return GetEnemyResourceCaptureTargetPosition(state, formationIndex);
+			}
+		}
+
 		void UpdateEnemyBattlePlan(SkyAppState& state)
 		{
 			if (Scene::Time() < state.nextEnemyAiDecisionAt)
@@ -109,21 +210,25 @@ namespace SkyAppFlow
 			}
 
 			state.nextEnemyAiDecisionAt = (Scene::Time() + EnemyAiDecisionInterval);
+			state.enemyTargetResourceAreaIndex = FindPriorityEnemyResourceArea(state);
 
          const Optional<SapperUnitType> producibleUnitType = GetEnemyProducibleUnitType(state);
-			if (producibleUnitType
-				&& ((*producibleUnitType == SapperUnitType::ArcaneInfantry)
-					|| (*producibleUnitType == SapperUnitType::SugoiCar)))
+          switch (state.enemyBattlePlanOverride)
 			{
-				state.enemyBattlePlan = EnemyBattlePlan::AssaultBase;
-				state.enemyTargetResourceAreaIndex.reset();
+           case EnemyBattlePlanOverride::ForceSecureResources:
+				state.enemyBattlePlan = EnemyBattlePlan::SecureResources;
 				return;
+
+			case EnemyBattlePlanOverride::ForceAssaultBase:
+				state.enemyBattlePlan = EnemyBattlePlan::AssaultBase;
+				return;
+
+			case EnemyBattlePlanOverride::Auto:
+			default:
+				break;
 			}
 
-			state.enemyTargetResourceAreaIndex = FindPriorityEnemyResourceArea(state);
-			state.enemyBattlePlan = (state.enemyTargetResourceAreaIndex
-				? EnemyBattlePlan::SecureResources
-				: EnemyBattlePlan::AssaultBase);
+         state.enemyBattlePlan = DetermineAutoEnemyBattlePlan(state, producibleUnitType);
 		}
 
       void TryProduceEnemyUnit(SkyAppState& state)
@@ -149,14 +254,7 @@ namespace SkyAppFlow
 					continue;
 				}
 
-             Vec3 desiredTarget = GetSapperPopTargetPosition(state.mapData.playerBasePosition, i);
-
-				if ((state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
-					&& state.enemyTargetResourceAreaIndex
-					&& (*state.enemyTargetResourceAreaIndex < state.mapData.resourceAreas.size()))
-				{
-					desiredTarget = GetSapperPopTargetPosition(state.mapData.resourceAreas[*state.enemyTargetResourceAreaIndex].position, i);
-				}
+              const Vec3 desiredTarget = GetEnemyAdvanceTargetPosition(state, i);
 
 				if (EnemyAdvanceStopDistance < GetSpawnedSapperBasePosition(state.enemySappers[i]).distanceFrom(state.mapData.playerBasePosition)
 					&& 0.25 < state.enemySappers[i].destinationPosition.distanceFrom(desiredTarget))

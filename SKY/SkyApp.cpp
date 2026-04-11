@@ -9,6 +9,7 @@ void RunSkyApp()
     SkyAppInternal::App manager;
 	SkyAppInternal::AddTitleScene(manager);
 	SkyAppInternal::AddCampaignEditorScene(manager);
+    SkyAppInternal::AddDialogueScene(manager);
 	SkyAppInternal::AddBattleScene(manager);
 	manager.init(U"Battle", 0);
 

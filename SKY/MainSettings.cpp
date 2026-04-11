@@ -85,11 +85,47 @@ namespace
 		}
 	}
 
+	[[nodiscard]] MainSupport::UnitAiRole ParseUnitAiRole(const StringView value)
+	{
+		if (value == U"AssaultBase")
+		{
+			return MainSupport::UnitAiRole::AssaultBase;
+		}
+
+		if (value == U"Support")
+		{
+			return MainSupport::UnitAiRole::Support;
+		}
+
+		return MainSupport::UnitAiRole::SecureResources;
+	}
+
+	[[nodiscard]] StringView ToTomlUnitAiRole(const MainSupport::UnitAiRole aiRole)
+	{
+		switch (aiRole)
+		{
+		case MainSupport::UnitAiRole::AssaultBase:
+			return U"AssaultBase";
+
+		case MainSupport::UnitAiRole::Support:
+			return U"Support";
+
+		case MainSupport::UnitAiRole::SecureResources:
+		default:
+			return U"SecureResources";
+		}
+	}
+
 	void LoadUnitParameterGroup(const TOMLReader& toml, const StringView prefix, MainSupport::UnitParameters& parameters)
 	{
         if (const auto movementType = toml[(String{ prefix } + U"MovementType")].getOpt<String>())
 		{
 			parameters.movementType = ((*movementType == U"Tank") ? MainSupport::MovementType::Tank : MainSupport::MovementType::Infantry);
+		}
+
+		if (const auto aiRole = toml[(String{ prefix } + U"AiRole")].getOpt<String>())
+		{
+			parameters.aiRole = ParseUnitAiRole(*aiRole);
 		}
 
 		if (const auto footprintType = toml[(String{ prefix } + U"FootprintType")].getOpt<String>())
@@ -111,6 +147,7 @@ namespace
 	void SaveUnitParameterGroup(TextWriter& writer, const StringView prefix, const MainSupport::UnitParameters& parameters)
 	{
         writer.writeln(U"{}MovementType = \"{}\""_fmt(prefix, (parameters.movementType == MainSupport::MovementType::Tank) ? U"Tank" : U"Infantry"));
+        writer.writeln(U"{}AiRole = \"{}\""_fmt(prefix, ToTomlUnitAiRole(parameters.aiRole)));
 		writer.writeln(U"{}MaxHitPoints = {:.3f}"_fmt(prefix, parameters.maxHitPoints));
 		writer.writeln(U"{}MoveSpeed = {:.3f}"_fmt(prefix, parameters.moveSpeed));
 		writer.writeln(U"{}AttackRange = {:.3f}"_fmt(prefix, parameters.attackRange));
@@ -168,34 +205,18 @@ namespace MainSupport
 
 		ModelHeightSettings settings;
 
-		if (const auto value = toml[U"birdOffsetY"].getOpt<double>())
+       for (const UnitRenderModel renderModel : GetUnitRenderModels())
 		{
-			settings.birdOffsetY = *value;
-		}
+          const StringView key = GetUnitRenderModelLabel(renderModel);
+			if (const auto value = toml[(key + U"OffsetY")].getOpt<double>())
+			{
+				GetModelHeightOffset(settings, renderModel) = *value;
+			}
 
-		if (const auto value = toml[U"ashigaruOffsetY"].getOpt<double>())
-		{
-			settings.ashigaruOffsetY = *value;
-		}
-
-		if (const auto value = toml[U"sugoiCarOffsetY"].getOpt<double>())
-		{
-			settings.sugoiCarOffsetY = *value;
-		}
-
-		if (const auto value = toml[U"birdScale"].getOpt<double>())
-		{
-			settings.birdScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
-		}
-
-		if (const auto value = toml[U"ashigaruScale"].getOpt<double>())
-		{
-			settings.ashigaruScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
-		}
-
-		if (const auto value = toml[U"sugoiCarScale"].getOpt<double>())
-		{
-			settings.sugoiCarScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
+			if (const auto value = toml[(key + U"Scale")].getOpt<double>())
+			{
+				GetModelScale(settings, renderModel) = Clamp(*value, ModelScaleMin, ModelScaleMax);
+			}
 		}
 
 		return settings;
@@ -212,12 +233,12 @@ namespace MainSupport
 			return false;
 		}
 
-		writer.writeln(U"birdOffsetY = {:.3f}"_fmt(settings.birdOffsetY));
-		writer.writeln(U"ashigaruOffsetY = {:.3f}"_fmt(settings.ashigaruOffsetY));
-        writer.writeln(U"sugoiCarOffsetY = {:.3f}"_fmt(settings.sugoiCarOffsetY));
-        writer.writeln(U"birdScale = {:.3f}"_fmt(Clamp(settings.birdScale, ModelScaleMin, ModelScaleMax)));
-		writer.writeln(U"ashigaruScale = {:.3f}"_fmt(Clamp(settings.ashigaruScale, ModelScaleMin, ModelScaleMax)));
-		writer.writeln(U"sugoiCarScale = {:.3f}"_fmt(Clamp(settings.sugoiCarScale, ModelScaleMin, ModelScaleMax)));
+      for (const UnitRenderModel renderModel : GetUnitRenderModels())
+		{
+			const StringView key = GetUnitRenderModelLabel(renderModel);
+			writer.writeln(U"{}OffsetY = {:.3f}"_fmt(key, GetModelHeightOffset(settings, renderModel)));
+			writer.writeln(U"{}Scale = {:.3f}"_fmt(key, Clamp(GetModelScale(settings, renderModel), ModelScaleMin, ModelScaleMax)));
+		}
 		return true;
 	}
 

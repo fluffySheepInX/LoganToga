@@ -125,9 +125,9 @@ namespace SkyAppFlow
 			return false;
 		}
 
-		if (sapper.unitType != SapperUnitType::Infantry)
+        if (not CanUnitUseExplosionSkill(sapper.unitType))
 		{
-			state.blacksmithMenuMessage.show(U"爆破スキルは兵専用");
+         state.blacksmithMenuMessage.show(GetExplosionSkillDeniedMessage(sapper.unitType));
 			return false;
 		}
 
@@ -231,6 +231,11 @@ namespace SkyAppFlow
 			for (auto& attacker : attackers)
 			{
               if (not IsSpawnedSapperCombatActive(attacker))
+				{
+					continue;
+				}
+
+				if ((attacker.team == UnitTeam::Enemy) && (attacker.aiRole != UnitAiRole::AssaultBase))
 				{
 					continue;
 				}

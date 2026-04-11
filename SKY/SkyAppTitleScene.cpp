@@ -1,19 +1,11 @@
 ﻿# include "SkyAppInternal.hpp"
+# include "SkyAppTitleSceneInternal.hpp"
 
 namespace SkyAppInternal
 {
 	namespace
 	{
-		void DrawCampaignRow(const RectF& rect, const Font& titleFont, const Font& infoFont, const SkyCampaign::CampaignDefinition& campaign, const bool selected)
-		{
-			const bool hovered = rect.mouseOver();
-			rect.rounded(12).draw(selected
-				? ColorF{ 0.20, 0.30, 0.44, 0.96 }
-				: (hovered ? ColorF{ 0.14, 0.20, 0.30, 0.92 } : ColorF{ 0.10, 0.14, 0.22, 0.88 }));
-			rect.rounded(12).drawFrame(2, 0, selected ? ColorF{ 0.92, 0.96, 1.0, 0.92 } : ColorF{ 0.42, 0.52, 0.64, 0.82 });
-			titleFont(campaign.displayName).draw(rect.pos.movedBy(14, 10), Palette::White);
-			infoFont(U"Missions: {}"_fmt(campaign.missions.size())).draw(rect.pos.movedBy(14, 38), ColorF{ 0.82, 0.89, 0.98, 0.92 });
-		}
+     using namespace TitleSceneDetail;
 
 		class SkyTitleScene : public App::Scene
 		{
@@ -32,6 +24,36 @@ namespace SkyAppInternal
 			{
 				auto& data = getData();
 				const bool hasSelection = (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size()));
+
+				if (data.pendingDeleteCampaignId)
+				{
+					if (IsRectButtonClicked(GetDeleteConfirmButton()))
+					{
+						if (SkyCampaign::DeleteCampaign(*data.pendingDeleteCampaignId))
+						{
+							data.titleMessage = U"Deleted: {}"_fmt(data.pendingDeleteCampaignName);
+						}
+						else
+						{
+							data.titleMessage = U"Delete failed: {}"_fmt(data.pendingDeleteCampaignName);
+						}
+
+						data.titleMessageUntil = (Scene::Time() + 3.0);
+						data.pendingDeleteCampaignId.reset();
+						data.pendingDeleteCampaignName.clear();
+						ReloadCampaigns(data);
+						return;
+					}
+
+					if (IsRectButtonClicked(GetDeleteCancelButton()) || KeyEscape.down())
+					{
+						data.pendingDeleteCampaignId.reset();
+						data.pendingDeleteCampaignName.clear();
+						return;
+					}
+
+					return;
+				}
 
 				for (size_t i = 0; i < data.campaigns.size(); ++i)
 				{
@@ -59,30 +81,30 @@ namespace SkyAppInternal
 					return;
 				}
 
-				if (IsRectButtonClicked(GetEditCampaignButton(), hasSelection))
+				if (IsRectButtonClicked(GetSelectedPlayButton(), hasSelection))
+				{
+					if (StartSelectedCampaign(data, false))
+					{
+						changeScene(data.dialogueSceneLines.isEmpty() ? U"Battle" : U"Dialogue", 0);
+						return;
+					}
+				}
+
+				if (IsRectButtonClicked(GetSelectedContinueButton(), hasSelection && CanContinueSelectedCampaign(data)))
+				{
+					if (StartSelectedCampaign(data, true))
+					{
+						changeScene(data.dialogueSceneLines.isEmpty() ? U"Battle" : U"Dialogue", 0);
+						return;
+					}
+				}
+
+             if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedEditButton(), hasSelection))
 				{
 					if (const auto* campaign = FindSelectedCampaign(data))
 					{
 						LoadCampaignIntoEditor(data, *campaign);
 						changeScene(U"CampaignEditor", 0);
-						return;
-					}
-				}
-
-				if (IsRectButtonClicked(GetPlayCampaignButton(), hasSelection))
-				{
-					if (StartSelectedCampaign(data, false))
-					{
-						changeScene(U"Battle", 0);
-						return;
-					}
-				}
-
-				if (IsRectButtonClicked(GetContinueCampaignButton(), hasSelection && CanContinueSelectedCampaign(data)))
-				{
-					if (StartSelectedCampaign(data, true))
-					{
-						changeScene(U"Battle", 0);
 						return;
 					}
 				}
@@ -93,21 +115,13 @@ namespace SkyAppInternal
 					return;
 				}
 
-				if (IsRectButtonClicked(GetDeleteCampaignButton(), hasSelection))
+               if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedDeleteButton(), hasSelection))
 				{
 					if (const auto* campaign = FindSelectedCampaign(data))
 					{
-						if (SkyCampaign::DeleteCampaign(campaign->id))
-						{
-							data.titleMessage = U"Deleted: {}"_fmt(campaign->displayName);
-						}
-						else
-						{
-							data.titleMessage = U"Delete failed: {}"_fmt(campaign->displayName);
-						}
-
-						data.titleMessageUntil = (Scene::Time() + 3.0);
-						ReloadCampaigns(data);
+                      data.pendingDeleteCampaignId = campaign->id;
+						data.pendingDeleteCampaignName = campaign->displayName;
+						return;
 					}
 				}
 			}
@@ -115,6 +129,7 @@ namespace SkyAppInternal
 			void draw() const override
 			{
 				const auto& data = getData();
+             Optional<std::pair<RectF, String>> hoveredTooltip;
 				Scene::Rect().draw(ColorF{ 0.06, 0.10, 0.16 });
 				const RectF leftPanel{ 80, 28, 360, 664 };
 				const RectF rightPanel{ 480, 28, 720, 664 };
@@ -131,10 +146,6 @@ namespace SkyAppInternal
 
 				DrawRectButton(GetBattleButton(), m_buttonFont, U"Battle Start");
 				DrawRectButton(GetCampaignEditorButton(), m_buttonFont, U"Campaign Editor");
-				DrawRectButton(GetEditCampaignButton(), m_buttonFont, U"Edit Selected Campaign", (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size())));
-				DrawRectButton(GetPlayCampaignButton(), m_buttonFont, U"Play Selected Campaign", (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size())));
-				DrawRectButton(GetContinueCampaignButton(), m_buttonFont, U"Continue Campaign", (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size()) && CanContinueSelectedCampaign(data)));
-				DrawRectButton(GetDeleteCampaignButton(), m_buttonFont, U"Delete Selected Campaign", (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size())));
 				DrawRectButton(GetExitButton(), m_buttonFont, U"Exit");
 
 				m_buttonFont(U"Campaigns").draw(rightPanel.pos.movedBy(24, 20), ColorF{ 0.96, 0.98, 1.0 });
@@ -147,14 +158,44 @@ namespace SkyAppInternal
 				{
 					for (size_t i = 0; i < data.campaigns.size(); ++i)
 					{
-						DrawCampaignRow(GetCampaignRow(i), m_infoFont, m_campaignRowFont, data.campaigns[i], (data.selectedCampaignIndex && (*data.selectedCampaignIndex == i)));
+                       const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(data.campaigns[i].id);
+						DrawCampaignRow(GetCampaignRow(i), m_infoFont, m_campaignRowFont, data.campaigns[i], progress.clearCount, (data.selectedCampaignIndex && (*data.selectedCampaignIndex == i)));
 					}
 
 					if (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size()))
 					{
 						const auto& campaign = data.campaigns[*data.selectedCampaignIndex];
 						const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(campaign.id);
-						m_infoFont(U"Selected: {}"_fmt(campaign.displayName)).draw(rightPanel.pos.movedBy(24, 420), Palette::White);
+                        const bool hasSelection = true;
+                        m_infoFont(U"Selected: {}"_fmt(FormatCampaignTitle(campaign, progress.clearCount))).draw(rightPanel.pos.movedBy(24, 420), Palette::White);
+                      DrawPlayAttentionEffect(GetSelectedPlayButton());
+                        DrawCampaignActionButton(GetSelectedPlayButton(), CampaignActionIcon::Play, hasSelection);
+						DrawCampaignActionButton(GetSelectedContinueButton(), CampaignActionIcon::Continue, CanContinueSelectedCampaign(data));
+
+						if (GetSelectedPlayButton().mouseOver())
+						{
+							hoveredTooltip = std::pair{ GetSelectedPlayButton(), String{ U"Play" } };
+						}
+						else if (GetSelectedContinueButton().mouseOver())
+						{
+							hoveredTooltip = std::pair{ GetSelectedContinueButton(), String{ U"Continue" } };
+						}
+
+						if (ShowDebugCampaignButtons)
+						{
+							DrawCampaignActionButton(GetSelectedEditButton(), CampaignActionIcon::Edit, hasSelection);
+							DrawCampaignActionButton(GetSelectedDeleteButton(), CampaignActionIcon::Delete, hasSelection);
+
+							if (GetSelectedEditButton().mouseOver())
+							{
+								hoveredTooltip = std::pair{ GetSelectedEditButton(), String{ U"Edit" } };
+							}
+							else if (GetSelectedDeleteButton().mouseOver())
+							{
+								hoveredTooltip = std::pair{ GetSelectedDeleteButton(), String{ U"Delete" } };
+							}
+						}
+
 						m_infoFont(campaign.description.isEmpty() ? U"説明なし" : campaign.description).draw(rightPanel.pos.movedBy(24, 450), ColorF{ 0.82, 0.89, 0.98, 0.92 });
 						m_infoFont(U"1st Map: {}"_fmt(campaign.missions.front().mapFile)).draw(rightPanel.pos.movedBy(24, 480), ColorF{ 0.76, 0.84, 0.94, 0.90 });
 						m_infoFont(SkyCampaign::HasCampaignProgress(campaign.id)
@@ -169,6 +210,24 @@ namespace SkyAppInternal
 				if (Scene::Time() < data.titleMessageUntil)
 				{
 					m_infoFont(data.titleMessage).draw(leftPanel.pos.movedBy(26, 622), ColorF{ 1.0, 0.94, 0.72, 0.96 });
+				}
+
+				if (hoveredTooltip)
+				{
+					DrawCampaignActionTooltip(hoveredTooltip->first, hoveredTooltip->second);
+				}
+
+				if (data.pendingDeleteCampaignId)
+				{
+					Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.42 });
+					const RectF dialog = GetDeleteDialogRect();
+					dialog.rounded(20).draw(ColorF{ 0.08, 0.13, 0.21, 0.98 });
+					dialog.rounded(20).drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.94, 0.84 });
+					m_buttonFont(U"Delete Campaign?").draw(dialog.pos.movedBy(22, 18), Palette::White);
+					m_infoFont(U"{} を削除します"_fmt(data.pendingDeleteCampaignName)).draw(dialog.pos.movedBy(24, 64), ColorF{ 0.90, 0.94, 1.0, 0.96 });
+					m_infoFont(U"progress も削除されます").draw(dialog.pos.movedBy(24, 92), ColorF{ 1.0, 0.88, 0.76, 0.96 });
+					DrawRectButton(GetDeleteConfirmButton(), m_infoFont, U"Delete");
+					DrawRectButton(GetDeleteCancelButton(), m_infoFont, U"Cancel");
 				}
 			}
 
@@ -188,24 +247,24 @@ namespace SkyAppInternal
 				return RectF{ 120, 314, 280, 52 };
 			}
 
-			[[nodiscard]] RectF GetEditCampaignButton() const
+           [[nodiscard]] RectF GetSelectedEditButton() const
 			{
-				return RectF{ 120, 382, 280, 52 };
+              return RectF{ 1010, 414, 40, 40 };
 			}
 
-			[[nodiscard]] RectF GetPlayCampaignButton() const
+           [[nodiscard]] RectF GetSelectedPlayButton() const
 			{
-				return RectF{ 120, 450, 280, 52 };
+              return RectF{ 1058, 414, 40, 40 };
 			}
 
-			[[nodiscard]] RectF GetContinueCampaignButton() const
+           [[nodiscard]] RectF GetSelectedContinueButton() const
 			{
-				return RectF{ 120, 518, 280, 52 };
+              return RectF{ 1106, 414, 40, 40 };
 			}
 
-			[[nodiscard]] RectF GetDeleteCampaignButton() const
+         [[nodiscard]] RectF GetSelectedDeleteButton() const
 			{
-				return RectF{ 120, 586, 280, 52 };
+              return RectF{ 1154, 414, 40, 40 };
 			}
 
 			[[nodiscard]] RectF GetExitButton() const
@@ -213,15 +272,34 @@ namespace SkyAppInternal
 				return RectF{ 120, 654, 280, 52 };
 			}
 
+			[[nodiscard]] RectF GetDeleteDialogRect() const
+			{
+				return RectF{ Arg::center = Scene::CenterF(), 360, 180 };
+			}
+
+			[[nodiscard]] RectF GetDeleteConfirmButton() const
+			{
+				const RectF dialog = GetDeleteDialogRect();
+				return RectF{ dialog.x + 32, dialog.y + 122, 128, 36 };
+			}
+
+			[[nodiscard]] RectF GetDeleteCancelButton() const
+			{
+				const RectF dialog = GetDeleteDialogRect();
+				return RectF{ dialog.x + 200, dialog.y + 122, 128, 36 };
+			}
+
 			[[nodiscard]] RectF GetCampaignRow(const size_t index) const
 			{
 				return RectF{ 504, (150 + static_cast<double>(index) * 72.0), 672, 60 };
 			}
 		};
+
 	}
 
 	void AddTitleScene(App& manager)
 	{
 		manager.add<SkyTitleScene>(U"Title");
 	}
+
 }

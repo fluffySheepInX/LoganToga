@@ -64,9 +64,23 @@ namespace SkyAppFlow
 
 			return ColorF{ 0.72, 0.78, 0.84, 0.90 };
 		}
+
+		void DrawPreviewUnitRenderModel(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame, const UnitRenderModel renderModel)
+		{
+          const UnitModel& previewModel = resources.GetUnitRenderModel(renderModel);
+			if (not previewModel.isLoaded())
+			{
+				return;
+			}
+
+         previewModel.draw(frame.GetPreviewRenderPosition(renderModel),
+				BirdDisplayYaw,
+                GetUnitRenderModelPreviewColor(renderModel).removeSRGBCurve(),
+                GetModelScale(state.modelHeightSettings, renderModel));
+		}
 	}
 
-	void RenderWorld(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
+ void RenderWorld(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		resources.groundPlane.draw(resources.groundTexture);
         for (const auto& terrainCell : state.mapData.terrainCells)
@@ -85,18 +99,23 @@ namespace SkyAppFlow
 
 		resources.blacksmithModel.draw(state.mapData.playerBasePosition);
 		resources.blacksmithModel.draw(state.mapData.enemyBasePosition);
-		if (resources.birdModel.isLoaded())
+     for (const UnitRenderModel renderModel : GetUnitRenderModels())
 		{
-            resources.birdModel.draw(frame.birdRenderPosition, BirdDisplayYaw, ColorF{ 0.92, 0.95, 1.0 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::Bird));
+         DrawPreviewUnitRenderModel(resources, state, frame, renderModel);
 		}
-		if (resources.ashigaruModel.isLoaded())
+
+		if (frame.showUnitEditor)
 		{
-           resources.ashigaruModel.draw(frame.ashigaruRenderPosition, BirdDisplayYaw, ColorF{ 0.95, 0.92, 0.90 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::Ashigaru));
+			const UnitEditorSelection& previewSelection = state.unitEditorSelection;
+			const UnitParameters& previewParameters = GetUnitParameters(state.unitEditorSettings, previewSelection.team, previewSelection.unitType);
+			const UnitRenderModel previewRenderModel = GetUnitRenderModel(previewSelection.team, previewSelection.unitType);
+           const Vec3 previewPosition = frame.GetPreviewRenderPosition(previewRenderModel);
+			const ColorF previewColor = ((previewSelection.team == UnitTeam::Enemy)
+				? ColorF{ 1.0, 0.76, 0.68, 0.72 }
+				: ColorF{ 0.86, 0.94, 1.0, 0.72 });
+			DrawUnitFootprintPreview(previewPosition, BirdDisplayYaw, previewParameters, previewColor);
 		}
-      if (resources.sugoiCarModel.isLoaded())
-		{
-           resources.sugoiCarModel.draw(frame.sugoiCarRenderPosition, BirdDisplayYaw, ColorF{ 0.96, 0.94, 0.92 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::SugoiCar));
-		}
+
 		for (const auto& placedModel : state.mapData.placedModels)
 		{
          DrawPlacedModel(placedModel, resources.millModel, resources.treeModel, resources.pineModel, resources.grassPatchModel, resources.roadTexture);
@@ -110,10 +129,10 @@ namespace SkyAppFlow
 			Cylinder{ selectedMill.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
 		}
 
-           DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
-		DrawSpawnedSappers(state.enemySappers, resources.birdModel, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
+       const UnitRenderModelRegistryView renderModels = resources.GetUnitRenderModelRegistry();
+		DrawSpawnedSappers(state.spawnedSappers, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+		DrawSpawnedSappers(state.enemySappers, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
 		DrawMapEditorScene(state.mapEditor, state.mapData);
-		UpdateSkyFromTime(state.sky, state.skyTime);
 		state.sky.draw();
 	}
 }

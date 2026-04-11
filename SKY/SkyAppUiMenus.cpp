@@ -76,9 +76,9 @@ namespace SkyAppSupport
 
         [[nodiscard]] String GetExplosionSkillLabel(const SapperUnitType selectedUnitType, const bool explosionSkillReady)
 		{
-         if (selectedUnitType != SapperUnitType::Infantry)
+          if (not CanUnitUseExplosionSkill(selectedUnitType))
 			{
-				return U"爆破スキル [兵専用]";
+              return String{ GetExplosionSkillUnavailableLabel(selectedUnitType) };
 			}
 
             if (!explosionSkillReady)

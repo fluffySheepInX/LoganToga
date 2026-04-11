@@ -2,10 +2,10 @@
 # include <Siv3D.hpp>
 # include "BirdModelTypes.hpp"
 
-class BirdModel
+class UnitModel
 {
 public:
-	explicit BirdModel(FilePathView path, double displayHeight);
+    explicit UnitModel(FilePathView path, double displayHeight, UnitModelProceduralAnimationType proceduralAnimationType = UnitModelProceduralAnimationType::None);
 
 	void update(double deltaTime);
 
@@ -18,9 +18,9 @@ public:
 	[[nodiscard]] double animationTime() const noexcept;
 	[[nodiscard]] size_t currentClipIndex() const noexcept;
 	void setClipIndex(size_t index);
-	[[nodiscard]] const Array<BirdModelNode>& nodes() const noexcept;
-	[[nodiscard]] const Array<BirdModelBone>& bones() const noexcept;
-	[[nodiscard]] const Array<BirdModelAnimationClip>& animations() const noexcept;
+   [[nodiscard]] const Array<UnitModelNode>& nodes() const noexcept;
+	[[nodiscard]] const Array<UnitModelBone>& bones() const noexcept;
+	[[nodiscard]] const Array<UnitModelAnimationClip>& animations() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentLocalTransforms() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentWorldTransforms() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentBoneTransforms() const noexcept;
@@ -49,7 +49,8 @@ private:
 	   };
 
 	   void evaluateAnimationPose();
-	   void applyProceduralWingFlap();
+     void applyProceduralAnimation();
+	   void applyBirdWingFlap();
 	   void refreshWorldTransforms();
 	   void refreshBoneTransforms();
 	   void refreshSkinnedMesh();
@@ -57,11 +58,12 @@ private:
 	   Mesh m_mesh;
 	   DynamicMesh m_dynamicMesh;
 	   bool m_loaded = false;
+      UnitModelProceduralAnimationType m_proceduralAnimationType = UnitModelProceduralAnimationType::None;
 	   double m_animationTime = 0.0;
 	   size_t m_currentClipIndex = 0;
-	   Array<BirdModelNode> m_nodes;
-	   Array<BirdModelBone> m_bones;
-	   Array<BirdModelAnimationClip> m_animations;
+       Array<UnitModelNode> m_nodes;
+	   Array<UnitModelBone> m_bones;
+	   Array<UnitModelAnimationClip> m_animations;
 	   Array<Vertex3D> m_bindPoseVertices;
 	   Array<Vertex3D> m_deformedVertices;
 	   Array<TriangleIndex32> m_indices;
@@ -72,3 +74,5 @@ private:
 	   Array<Mat4x4> m_currentWorldTransforms;
 	   Array<Mat4x4> m_currentBoneTransforms;
    };
+
+using BirdModel = UnitModel;

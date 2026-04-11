@@ -4,14 +4,12 @@
 
 namespace MainSupport
 {
-	bool DrawTextButton(const Rect& rect, StringView label);
-	void DrawAnimationClipSelector(BirdModel& model, StringView title, int32 x, int32 y, int32 width);
+    bool DrawTextButton(const Rect& rect, StringView label);
+	void DrawAnimationClipSelector(UnitModel& model, StringView title, int32 x, int32 y, int32 width);
 	void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
-     ModelHeightTarget& activeTarget,
+        UnitRenderModel& activeRenderModel,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,
-		const Vec3& birdRenderPosition,
-        const Vec3& ashigaruRenderPosition,
-		const Vec3& sugoiCarRenderPosition);
+         const std::array<Vec3, UnitRenderModelCount>& previewRenderPositions);
 }

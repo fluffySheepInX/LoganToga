@@ -14,16 +14,24 @@ namespace SkyAppInternal
 		bool launchBattleInMapEditor = false;
 		String titleMessage;
 		double titleMessageUntil = 0.0;
+        Optional<String> pendingDeleteCampaignId;
+		String pendingDeleteCampaignName;
 		TextEditState campaignNameState;
 		TextEditState campaignDescriptionState;
 		Array<TextEditState> missionNameStates;
 		Array<TextEditState> missionMapPathStates;
+        Array<TextEditState> missionPreDialogueStates;
+		Array<TextEditState> missionPostDialogueStates;
 		Optional<size_t> selectedEditorMissionIndex;
 		int32 editorMissionListOffset = 0;
 		String editorMessage;
 		double editorMessageUntil = 0.0;
 		FilePath pendingBattleMapPath = FilePath{ MainSupport::MapDataPath };
 		Optional<String> editingCampaignId;
+      String dialogueSceneTitle;
+		Array<String> dialogueSceneLines;
+		size_t dialogueSceneLineIndex = 0;
+		String dialogueNextScene = U"Title";
 	};
 
 	using App = SceneManager<String, SkyAppData>;
@@ -44,10 +52,13 @@ namespace SkyAppInternal
 	[[nodiscard]] bool CanContinueSelectedCampaign(const SkyAppData& data);
 	[[nodiscard]] bool StartSelectedCampaign(SkyAppData& data, bool continueFromProgress);
 	[[nodiscard]] FilePath EnsureEditorMissionMapPath(SkyAppData& data);
+ [[nodiscard]] Array<String> SplitDialogueText(StringView text);
+	void PrepareDialogueScene(SkyAppData& data, StringView title, const Array<String>& lines, StringView nextScene);
 	[[nodiscard]] bool IsRectButtonClicked(const RectF& rect, bool enabled = true);
 	void DrawRectButton(const RectF& rect, const Font& font, StringView label, bool enabled = true);
 
 	void AddTitleScene(App& manager);
 	void AddCampaignEditorScene(App& manager);
+  void AddDialogueScene(App& manager);
 	void AddBattleScene(App& manager);
 }

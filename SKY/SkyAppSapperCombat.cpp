@@ -59,6 +59,11 @@ namespace SkyAppSupport
 				continue;
 			}
 
+			if ((sapper.team == UnitTeam::Enemy) && (sapper.aiRole != UnitAiRole::AssaultBase))
+			{
+				continue;
+			}
+
 			const Vec3 sapperPosition = GetSpawnedSapperBasePosition(sapper);
          const double surfaceDistance = SapperInternal::GetSapperBaseCombatSurfaceDistance(sapper, enemyBasePosition, BaseCombatRadius, modelHeightSettings);
 

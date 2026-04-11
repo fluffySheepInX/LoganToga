@@ -21,6 +21,34 @@ namespace SkyAppSupport
 			}
 		}
 
+		void DrawUnitParameterSectionHeader(const Rect& panel,
+			const int32 top,
+			const StringView title,
+			const StringView caption)
+		{
+			const Rect sectionRect{ (panel.x + 8), top, (panel.w - 16), 38 };
+			sectionRect.rounded(10).draw(ColorF{ 0.90, 0.94, 1.0, 0.70 });
+			sectionRect.rounded(10).drawFrame(1, 0, ColorF{ 0.74, 0.80, 0.90, 0.86 });
+			SimpleGUI::GetFont()(title).draw((sectionRect.x + 12), (sectionRect.y + 6), ColorF{ 0.14 });
+			SimpleGUI::GetFont()(caption).draw((sectionRect.x + 12), (sectionRect.y + 22), ColorF{ 0.28, 0.42, 0.58, 0.92 });
+		}
+
+		StringView ToUnitAiRoleLabel(const UnitAiRole aiRole)
+		{
+			switch (aiRole)
+			{
+			case UnitAiRole::AssaultBase:
+				return U"AssaultBase";
+
+			case UnitAiRole::Support:
+				return U"Support";
+
+			case UnitAiRole::SecureResources:
+			default:
+				return U"SecureResources";
+			}
+		}
+
 		StringView ToUnitEditorPageLabel(const UnitEditorPage page)
 		{
 			switch (page)
@@ -34,6 +62,31 @@ namespace SkyAppSupport
 			case UnitEditorPage::Basic:
 			default:
 				return U"Basic";
+			}
+		}
+
+		void DrawUnitAiRoleSelector(const Rect& panel, const double top, UnitAiRole& aiRole)
+		{
+			SimpleGUI::GetFont()(U"AI Role").draw((panel.x + 16), top, ColorF{ 0.14 });
+			SimpleGUI::GetFont()(ToUnitAiRoleLabel(aiRole)).draw((panel.x + 108), top, ColorF{ 0.28 });
+
+			const Rect secureButton{ (panel.x + panel.w - 236), static_cast<int32>(top - 2), 72, 24 };
+			const Rect assaultButton{ (panel.x + panel.w - 156), static_cast<int32>(top - 2), 72, 24 };
+			const Rect supportButton{ (panel.x + panel.w - 76), static_cast<int32>(top - 2), 64, 24 };
+
+			if (DrawMillStepButton(secureButton, U"Secure"))
+			{
+				aiRole = UnitAiRole::SecureResources;
+			}
+
+			if (DrawMillStepButton(assaultButton, U"Assault"))
+			{
+				aiRole = UnitAiRole::AssaultBase;
+			}
+
+			if (DrawMillStepButton(supportButton, U"Support"))
+			{
+				aiRole = UnitAiRole::Support;
 			}
 		}
 
@@ -281,11 +334,19 @@ namespace SkyAppSupport
 
        void DrawUnitParameterRows(const Rect& panel, const int32 sliderBase, UnitParameters& parameters, const UnitEditorPage page, const int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect)
 		{
-          const int32 cardX = (panel.x + 10);
+           const StringView sectionTitle = (page == UnitEditorPage::Combat)
+				? U"Combat Stats"
+				: ((page == UnitEditorPage::Footprint) ? U"Collision Stats" : U"Core Stats");
+			const StringView sectionCaption = (page == UnitEditorPage::Combat)
+				? U"S / M / L buttons = small / medium / large step"
+				: U"Slider for rough tuning, S / M / L for precise step edits";
+			DrawUnitParameterSectionHeader(panel, top, sectionTitle, sectionCaption);
+
+			  const int32 cardX = (panel.x + 10);
 			const int32 cardWidth = (panel.w - 20);
-            const int32 cardHeight = 76;
-			const int32 cardTop = top;
-			const int32 cardStep = 80;
+				const int32 cardHeight = 82;
+			const int32 cardTop = (top + 48);
+			const int32 cardStep = 88;
 			const auto drawUnitCard = [&](const int32 rowIndex, const int32 sliderId, double& value, const MillParameterEditorSpec& spec, const StringView description)
 				{
                   const Rect cardRect{ cardX, (cardTop + cardStep * rowIndex), cardWidth, cardHeight };

@@ -54,3 +54,19 @@ struct BirdModelSubMeshInfo
 	ColorF materialColor{ 1.0, 1.0, 1.0, 1.0 };
   Texture diffuseTexture;
 };
+
+enum class UnitModelProceduralAnimationType
+{
+	None,
+	BirdWingFlap,
+};
+
+template <class Type>
+using UnitModelAnimationKey = BirdModelAnimationKey<Type>;
+
+using UnitModelNode = BirdModelNode;
+using UnitModelBoneWeight = BirdModelBoneWeight;
+using UnitModelBone = BirdModelBone;
+using UnitModelAnimationChannel = BirdModelAnimationChannel;
+using UnitModelAnimationClip = BirdModelAnimationClip;
+using UnitModelSubMeshInfo = BirdModelSubMeshInfo;

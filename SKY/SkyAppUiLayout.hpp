@@ -144,7 +144,7 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-     const int32 panelHeight = Max(748, (sceneHeight - 84));
+         const int32 panelHeight = Clamp((sceneHeight - PanelMargin * 2), 420, 748);
 		const Point clampedPosition = ClampPanelPosition(position, 340, panelHeight, sceneWidth, sceneHeight);
 		return Rect{ clampedPosition.x, clampedPosition.y, 340, panelHeight };
 	}
@@ -233,6 +233,12 @@ namespace SkyAppUiLayout
 	{
 		(void)sceneWidth;
 		return Rect{ 536, (sceneHeight - BottomControlYOffset), 88, 36 };
+	}
+
+	[[nodiscard]] inline Rect EnemyPlanToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		return Rect{ 632, (sceneHeight - BottomControlYOffset), 110, 36 };
 	}
 
  [[nodiscard]] inline Rect EscMenu(const int32 sceneWidth, const int32 sceneHeight)

@@ -1,4 +1,4 @@
-﻿void BirdModel::evaluateAnimationPose()
+﻿void UnitModel::evaluateAnimationPose()
 {
 	if (m_currentLocalTransforms.size() != m_nodes.size())
 	{
@@ -12,17 +12,17 @@
 
 	if (m_animations.isEmpty() || m_currentClipIndex >= m_animations.size())
 	{
-		applyProceduralWingFlap();
+      applyProceduralAnimation();
 		refreshWorldTransforms();
 		return;
 	}
 
-	const BirdModelAnimationClip& clip = m_animations[m_currentClipIndex];
+  const UnitModelAnimationClip& clip = m_animations[m_currentClipIndex];
 	const double ticksPerSecond = (0.0 < clip.ticksPerSecond) ? clip.ticksPerSecond : 25.0;
 	const double clipTime = (0.0 < clip.duration)
 		? (Math::Fraction((m_animationTime * ticksPerSecond) / clip.duration) * clip.duration)
 		: 0.0;
- Array<const BirdModelAnimationChannel*> channelsByNodeIndex(m_nodes.size(), nullptr);
+  Array<const UnitModelAnimationChannel*> channelsByNodeIndex(m_nodes.size(), nullptr);
 
 	for (const auto& channel : clip.channels)
 	{
@@ -36,7 +36,7 @@
 	{
 		NodeTransformParts transform = DecomposeTransform(m_nodes[nodeIndex].localTransform);
 
-     if (const BirdModelAnimationChannel* channel = channelsByNodeIndex[nodeIndex])
+     if (const UnitModelAnimationChannel* channel = channelsByNodeIndex[nodeIndex])
 		{
           transform.translation = SampleVectorKey(channel->positionKeys, clipTime, transform.translation);
 			transform.rotation = SampleQuaternionKey(channel->rotationKeys, clipTime, transform.rotation);
@@ -49,7 +49,22 @@
 	refreshWorldTransforms();
 }
 
-void BirdModel::applyProceduralWingFlap()
+void UnitModel::applyProceduralAnimation()
+
+{
+	switch (m_proceduralAnimationType)
+	{
+ case UnitModelProceduralAnimationType::BirdWingFlap:
+		applyBirdWingFlap();
+		return;
+
+ case UnitModelProceduralAnimationType::None:
+	default:
+		return;
+	}
+}
+
+void UnitModel::applyBirdWingFlap()
 {
 	constexpr double FlapFrequency = 3.0;
 	const double flapPhase = (m_animationTime * Math::TwoPi * FlapFrequency);
@@ -82,7 +97,7 @@ void BirdModel::applyProceduralWingFlap()
 	}
 }
 
-void BirdModel::refreshWorldTransforms()
+void UnitModel::refreshWorldTransforms()
 {
 	if (m_currentWorldTransforms.size() != m_nodes.size())
 	{
@@ -106,7 +121,7 @@ void BirdModel::refreshWorldTransforms()
 	refreshBoneTransforms();
 }
 
-void BirdModel::refreshBoneTransforms()
+void UnitModel::refreshBoneTransforms()
 {
 	if (m_currentBoneTransforms.size() != m_bones.size())
 	{
@@ -115,7 +130,7 @@ void BirdModel::refreshBoneTransforms()
 
 	for (size_t boneIndex = 0; boneIndex < m_bones.size(); ++boneIndex)
 	{
-		const BirdModelBone& bone = m_bones[boneIndex];
+     const UnitModelBone& bone = m_bones[boneIndex];
 
 		if ((bone.nodeIndex < 0) || (m_currentWorldTransforms.size() <= static_cast<size_t>(bone.nodeIndex)))
 		{
@@ -129,7 +144,7 @@ void BirdModel::refreshBoneTransforms()
 	refreshSkinnedMesh();
 }
 
-void BirdModel::refreshSkinnedMesh()
+void UnitModel::refreshSkinnedMesh()
 {
 	if (m_bindPoseVertices.isEmpty() || m_indices.isEmpty())
 	{

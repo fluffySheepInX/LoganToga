@@ -27,11 +27,17 @@ namespace SkyAppInternal
 		data.missionNameStates.front().text = U"Mission 1";
 		data.missionMapPathStates = { TextEditState{} };
 		data.missionMapPathStates.front().text = MainSupport::MapDataPath;
+        data.missionPreDialogueStates = { TextEditState{} };
+		data.missionPostDialogueStates = { TextEditState{} };
 		data.selectedEditorMissionIndex = 0;
 		data.editorMissionListOffset = 0;
 		data.editorMessage.clear();
 		data.editorMessageUntil = 0.0;
 		data.editingCampaignId.reset();
+       data.dialogueSceneTitle.clear();
+		data.dialogueSceneLines.clear();
+		data.dialogueSceneLineIndex = 0;
+		data.dialogueNextScene = U"Title";
 	}
 
 	void LoadCampaignIntoEditor(SkyAppData& data, const SkyCampaign::CampaignDefinition& definition)
@@ -42,6 +48,8 @@ namespace SkyAppInternal
 		data.campaignDescriptionState.text = definition.description;
 		data.missionNameStates.clear();
 		data.missionMapPathStates.clear();
+		data.missionPreDialogueStates.clear();
+		data.missionPostDialogueStates.clear();
 
 		for (const auto& mission : definition.missions)
 		{
@@ -52,6 +60,14 @@ namespace SkyAppInternal
 			TextEditState missionMapPathState;
 			missionMapPathState.text = mission.mapFile;
 			data.missionMapPathStates << missionMapPathState;
+
+			TextEditState missionPreDialogueState;
+			missionPreDialogueState.text = mission.preDialogueLines.join(U" | ");
+			data.missionPreDialogueStates << missionPreDialogueState;
+
+			TextEditState missionPostDialogueState;
+			missionPostDialogueState.text = mission.postDialogueLines.join(U" | ");
+			data.missionPostDialogueStates << missionPostDialogueState;
 		}
 
 		if (data.missionNameStates.isEmpty())
@@ -75,6 +91,16 @@ namespace SkyAppInternal
 			TextEditState state;
 			state.text = MainSupport::MapDataPath;
 			data.missionMapPathStates << state;
+		}
+
+		while (data.missionPreDialogueStates.size() < data.missionNameStates.size())
+		{
+			data.missionPreDialogueStates << TextEditState{};
+		}
+
+		while (data.missionPostDialogueStates.size() < data.missionNameStates.size())
+		{
+			data.missionPostDialogueStates << TextEditState{};
 		}
 
 		while (data.missionNameStates.size() < data.missionMapPathStates.size())
@@ -115,6 +141,8 @@ namespace SkyAppInternal
 		missionMapPathState.text = MainSupport::MapDataPath;
 		data.missionNameStates << missionNameState;
 		data.missionMapPathStates << missionMapPathState;
+      data.missionPreDialogueStates << TextEditState{};
+		data.missionPostDialogueStates << TextEditState{};
 		data.selectedEditorMissionIndex = (data.missionNameStates.size() - 1);
 		ClampEditorMissionSelection(data);
 	}
@@ -127,6 +155,8 @@ namespace SkyAppInternal
 		{
 			data.missionNameStates.front().text = U"Mission 1";
 			data.missionMapPathStates.front().text = MainSupport::MapDataPath;
+            data.missionPreDialogueStates.front().clear();
+			data.missionPostDialogueStates.front().clear();
 			data.selectedEditorMissionIndex = 0;
 			return;
 		}
@@ -134,6 +164,8 @@ namespace SkyAppInternal
 		const size_t index = *data.selectedEditorMissionIndex;
 		data.missionNameStates.erase(data.missionNameStates.begin() + index);
 		data.missionMapPathStates.erase(data.missionMapPathStates.begin() + index);
+		data.missionPreDialogueStates.erase(data.missionPreDialogueStates.begin() + index);
+		data.missionPostDialogueStates.erase(data.missionPostDialogueStates.begin() + index);
 
 		if (data.missionNameStates.size() <= index)
 		{
@@ -156,8 +188,33 @@ namespace SkyAppInternal
 
 		std::swap(data.missionNameStates[index], data.missionNameStates[targetIndex]);
 		std::swap(data.missionMapPathStates[index], data.missionMapPathStates[targetIndex]);
+     std::swap(data.missionPreDialogueStates[index], data.missionPreDialogueStates[targetIndex]);
+		std::swap(data.missionPostDialogueStates[index], data.missionPostDialogueStates[targetIndex]);
 		data.selectedEditorMissionIndex = static_cast<size_t>(targetIndex);
 		ClampEditorMissionSelection(data);
+	}
+
+	Array<String> SplitDialogueText(const StringView text)
+	{
+		Array<String> lines;
+		for (const auto& part : String{ text }.split(U'|'))
+		{
+			const String trimmed = part.trimmed();
+			if (not trimmed.isEmpty())
+			{
+				lines << trimmed;
+			}
+		}
+
+		return lines;
+	}
+
+	void PrepareDialogueScene(SkyAppData& data, const StringView title, const Array<String>& lines, const StringView nextScene)
+	{
+		data.dialogueSceneTitle = title;
+		data.dialogueSceneLines = lines;
+		data.dialogueSceneLineIndex = 0;
+		data.dialogueNextScene = nextScene;
 	}
 
 	SkyCampaign::CampaignDefinition BuildCampaignDefinition(const SkyAppData& data)
@@ -175,6 +232,8 @@ namespace SkyAppInternal
 			definition.missions << SkyCampaign::CampaignMissionDefinition{
 				.displayName = missionName.isEmpty() ? U"Mission {}"_fmt(i + 1) : missionName,
 				.mapFile = mapFile.isEmpty() ? FilePath{ MainSupport::MapDataPath } : FilePath{ mapFile },
+              .preDialogueLines = SplitDialogueText(data.missionPreDialogueStates[i].text),
+				.postDialogueLines = SplitDialogueText(data.missionPostDialogueStates[i].text),
 			};
 		}
 
@@ -251,6 +310,15 @@ namespace SkyAppInternal
 		data.battleReturnScene = U"Title";
 		data.launchBattleInMapEditor = false;
 		data.pendingBattleMapPath = campaign->missions[missionIndex].mapFile;
+		data.dialogueSceneTitle.clear();
+		data.dialogueSceneLines.clear();
+		data.dialogueSceneLineIndex = 0;
+		data.dialogueNextScene = U"Title";
+
+		if (not campaign->missions[missionIndex].preDialogueLines.isEmpty())
+		{
+			PrepareDialogueScene(data, campaign->missions[missionIndex].displayName, campaign->missions[missionIndex].preDialogueLines, U"Battle");
+		}
 		return true;
 	}
 

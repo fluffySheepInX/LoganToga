@@ -70,6 +70,7 @@ namespace SkyAppInternal
 							else
 							{
 								progress.currentMissionIndex = (campaign->missions.size() - 1);
+                              ++progress.clearCount;
 								progress.completed = true;
 							}
 						}
@@ -89,12 +90,30 @@ namespace SkyAppInternal
 					if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
 					{
 						const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(*data.activeCampaignId);
+						const size_t currentMissionIndex = Min(data.activeCampaignMissionIndex.value_or(0), (campaign->missions.size() - 1));
+						Array<String> dialogueLines = campaign->missions[currentMissionIndex].postDialogueLines;
 
 						if ((not progress.completed) && (progress.currentMissionIndex < campaign->missions.size()))
 						{
+                         dialogueLines.append(campaign->missions[progress.currentMissionIndex].preDialogueLines);
 							data.activeCampaignMissionIndex = progress.currentMissionIndex;
 							data.pendingBattleMapPath = campaign->missions[progress.currentMissionIndex].mapFile;
+
+							if (not dialogueLines.isEmpty())
+							{
+								PrepareDialogueScene(data, campaign->missions[currentMissionIndex].displayName, dialogueLines, U"Battle");
+								changeScene(U"Dialogue", 0);
+								return;
+							}
+
 							changeScene(U"Battle", 0);
+							return;
+						}
+
+						if (not dialogueLines.isEmpty())
+						{
+							PrepareDialogueScene(data, campaign->missions[currentMissionIndex].displayName, dialogueLines, U"Title");
+							changeScene(U"Dialogue", 0);
 							return;
 						}
 					}

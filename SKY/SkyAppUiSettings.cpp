@@ -80,8 +80,8 @@ namespace SkyAppSupport
 	void DrawCameraSettingsPanel(AppCamera3D& camera,
 		CameraSettings& cameraSettings,
 		bool& isExpanded,
-		BirdModel& birdModel,
-		BirdModel& ashigaruModel,
+       UnitModel& birdModel,
+		UnitModel& ashigaruModel,
 		TimedMessage& cameraSaveMessage,
 		const SkyAppPanels& panels)
 	{

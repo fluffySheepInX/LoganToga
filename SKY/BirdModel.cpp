@@ -39,7 +39,7 @@ namespace
 		return transformedNormal.normalized();
 	}
 
-	[[nodiscard]] Float3 SampleVectorKey(const Array<BirdModelAnimationKey<Float3>>& keys, const double time, const Float3& fallback)
+   [[nodiscard]] Float3 SampleVectorKey(const Array<UnitModelAnimationKey<Float3>>& keys, const double time, const Float3& fallback)
 	{
 		if (keys.isEmpty())
 		{
@@ -72,7 +72,7 @@ namespace
 		return keys.back().value;
 	}
 
-	[[nodiscard]] Quaternion SampleQuaternionKey(const Array<BirdModelAnimationKey<Quaternion>>& keys, const double time, const Quaternion& fallback)
+   [[nodiscard]] Quaternion SampleQuaternionKey(const Array<UnitModelAnimationKey<Quaternion>>& keys, const double time, const Quaternion& fallback)
 	{
 		if (keys.isEmpty())
 		{

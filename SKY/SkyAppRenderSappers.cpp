@@ -9,20 +9,15 @@ namespace SkyAppSupport
 {
 	namespace
 	{
-     [[nodiscard]] const BirdModel& SelectUnitRenderModel(const UnitRenderModel renderModel, const BirdModel& birdModel, const BirdModel& ashigaruModel, const BirdModel& sugoiCarModel)
+        [[nodiscard]] const UnitModel& SelectUnitRenderModel(const UnitRenderModelRegistryView& renderModels, const UnitRenderModel renderModel)
 		{
-			switch (renderModel)
+            const size_t index = GetUnitRenderModelIndex(renderModel);
+			if ((index < renderModels.models.size()) && renderModels.models[index])
 			{
-			case UnitRenderModel::Ashigaru:
-				return ashigaruModel;
-
-			case UnitRenderModel::SugoiCar:
-				return sugoiCarModel;
-
-			case UnitRenderModel::Bird:
-			default:
-				return birdModel;
+             return *renderModels.models[index];
 			}
+
+			return *renderModels.models[GetUnitRenderModelIndex(UnitRenderModel::Bird)];
 		}
 
 		constexpr double HealthBarWidth = 36.0;
@@ -34,6 +29,81 @@ namespace SkyAppSupport
 		constexpr ColorF SuppressionAccentColor{ 0.70, 0.90, 1.0, 0.95 };
 		constexpr ColorF SuppressionAuraColor{ 0.34, 0.68, 1.0, 0.18 };
 		constexpr ColorF SuppressionLabelColor{ 0.92, 0.98, 1.0, 0.96 };
+		constexpr int32 FootprintMarkerSegments = 40;
+		constexpr double FootprintMarkerHeight = 0.028;
+		constexpr double FootprintBaseY = 0.018;
+
+		[[nodiscard]] Vec2 ToFootprintForward(const double facingYaw)
+		{
+			const double angle = (facingYaw - BirdDisplayYaw - SapperFacingYawOffset);
+			return Vec2{ Math::Sin(angle), Math::Cos(angle) };
+		}
+
+		void DrawFootprintMarker(const Vec3& position, const double radius, const ColorF& color)
+		{
+			const ColorF shadowColor{ 0.02, 0.03, 0.05, (0.28 + color.a * 0.30) };
+			Cylinder{ position.movedBy(0, FootprintBaseY, 0), (radius + 0.02), (FootprintMarkerHeight + 0.01) }.draw(shadowColor.removeSRGBCurve());
+			Cylinder{ position.movedBy(0, FootprintBaseY + 0.008, 0), radius, FootprintMarkerHeight }.draw(color.removeSRGBCurve());
+		}
+
+		void DrawFootprintPolyline(const Array<Vec3>& points, const double markerRadius, const ColorF& color)
+		{
+			for (const Vec3& point : points)
+			{
+				DrawFootprintMarker(point, markerRadius, color);
+			}
+		}
+
+		void DrawCircleFootprint(const Vec3& position, const double radius, const ColorF& color)
+		{
+			Array<Vec3> points;
+			points.reserve(FootprintMarkerSegments);
+
+			for (int32 i = 0; i < FootprintMarkerSegments; ++i)
+			{
+				const double angle = (Math::TwoPi * i / FootprintMarkerSegments);
+				points << position.movedBy(Math::Cos(angle) * radius, 0, Math::Sin(angle) * radius);
+			}
+
+			DrawFootprintPolyline(points, Clamp(radius * 0.11, 0.07, 0.16), color);
+		}
+
+		void DrawCapsuleFootprint(const Vec3& position, const double facingYaw, const double radius, const double halfLength, const ColorF& color)
+		{
+			if (halfLength <= 0.01)
+			{
+				DrawCircleFootprint(position, radius, color);
+				return;
+			}
+
+			const Vec2 axis = ToFootprintForward(facingYaw).normalized_or(Vec2{ 0, 1 });
+			Array<Vec3> points;
+			points.reserve(FootprintMarkerSegments);
+
+			for (int32 i = 0; i < FootprintMarkerSegments; ++i)
+			{
+				const double angle = (Math::TwoPi * i / FootprintMarkerSegments);
+				const Vec2 direction{ Math::Cos(angle), Math::Sin(angle) };
+				const Vec2 axisOffset = (Math::Sign(direction.dot(axis)) * halfLength * axis);
+				const Vec2 point = (axisOffset + direction * radius);
+				points << position.movedBy(point.x, 0, point.y);
+			}
+
+			DrawFootprintPolyline(points, Clamp(radius * 0.11, 0.07, 0.16), color);
+			DrawFootprintMarker(position.movedBy(axis.x * (halfLength + radius), 0, axis.y * (halfLength + radius)), Clamp(radius * 0.16, 0.08, 0.19), ColorF{ Min(color.r + 0.10, 1.0), Min(color.g + 0.10, 1.0), Min(color.b + 0.06, 1.0), Min(color.a + 0.10, 1.0) });
+		}
+
+		void DrawFootprint(const Vec3& position, const double facingYaw, const UnitParameters& parameters, const ColorF& color)
+		{
+			const double radius = Max(0.1, parameters.footprintRadius);
+			if (parameters.footprintType == UnitFootprintType::Capsule)
+			{
+				DrawCapsuleFootprint(position, facingYaw, radius, Max(0.0, parameters.footprintHalfLength), color);
+				return;
+			}
+
+			DrawCircleFootprint(position, radius, color);
+		}
 
         [[nodiscard]] Optional<Vec2> ProjectToScreen(const AppCamera3D& camera, const Vec3& worldPosition)
 		{
@@ -99,6 +169,34 @@ namespace SkyAppSupport
 		}
 
 		return hitIndex;
+	}
+
+	void DrawSelectedSapperFootprint(const SpawnedSapper& sapper, const ColorF& color)
+	{
+		if ((sapper.hitPoints <= 0.0) || IsSapperRetreatedHidden(sapper))
+		{
+			return;
+		}
+
+		const UnitParameters parameters{
+			.movementType = sapper.movementType,
+			.aiRole = UnitAiRole::SecureResources,
+			.maxHitPoints = sapper.maxHitPoints,
+			.moveSpeed = sapper.moveSpeed,
+			.attackRange = sapper.attackRange,
+			.stopDistance = sapper.stopDistance,
+			.attackDamage = sapper.baseAttackDamage,
+			.attackInterval = sapper.baseAttackInterval,
+			.footprintType = sapper.footprintType,
+			.footprintRadius = sapper.footprintRadius,
+			.footprintHalfLength = sapper.footprintHalfLength,
+		};
+		DrawFootprint(GetSpawnedSapperBasePosition(sapper), GetSpawnedSapperYaw(sapper), parameters, color);
+	}
+
+	void DrawUnitFootprintPreview(const Vec3& position, const double yaw, const UnitParameters& parameters, const ColorF& color)
+	{
+		DrawFootprint(position, yaw, parameters, color);
 	}
 
 	void DrawSelectedSapperAttackRange(const AppCamera3D& camera, const SpawnedSapper& sapper)
@@ -205,7 +303,7 @@ namespace SkyAppSupport
 		}
 	}
 
-      void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& birdModel, const BirdModel& ashigaruModel, const BirdModel& sugoiCarModel, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
+  void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
@@ -218,8 +316,8 @@ namespace SkyAppSupport
 			const double popIn = Min(elapsed / 0.25, 1.0);
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
          const UnitRenderModel renderModel = GetSpawnedSapperRenderModel(sapper);
-			const BirdModel& drawModel = SelectUnitRenderModel(renderModel, birdModel, ashigaruModel, sugoiCarModel);
-			const double drawScale = GetModelScale(modelHeightSettings, ToModelHeightTarget(renderModel));
+           const UnitModel& drawModel = SelectUnitRenderModel(renderModels, renderModel);
+          const double drawScale = GetModelScale(modelHeightSettings, renderModel);
 
          if (drawModel.isLoaded())
 			{

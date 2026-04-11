@@ -101,12 +101,20 @@ namespace SkyAppSupport
 		, cameraSettingsToggle{ SkyAppUiLayout::CameraSettingsToggle(Scene::Width(), Scene::Height()) }
      , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
      , resourceAdjustToggle{ SkyAppUiLayout::ResourceAdjustToggle(Scene::Width(), Scene::Height()) }
+     , enemyPlanToggle{ SkyAppUiLayout::EnemyPlanToggle(Scene::Width(), Scene::Height()) }
 		, timeSlider{ SkyAppUiLayout::TimeSlider(Scene::Width(), Scene::Height()) }
 	{
 	}
 
   bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
 	{
+      const bool hoveringEnemyPlanToggle =
+		#if _DEBUG
+			(showUI && enemyPlanToggle.mouseOver());
+		#else
+			false;
+		#endif
+
        return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver())))
 			|| miniMap.mouseOver()
           || resourcePanel.mouseOver()
@@ -125,7 +133,8 @@ namespace SkyAppSupport
             || (showUI && skySettingsToggle.mouseOver())
 			|| (showUI && cameraSettingsToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
-         || (showUI && resourceAdjustToggle.mouseOver());
+        || (showUI && resourceAdjustToggle.mouseOver())
+         || hoveringEnemyPlanToggle;
 	}
 
    void UpdateCameraWheelZoom(AppCamera3D& camera, CameraSettings& cameraSettings, const Vec3& playerBasePosition)

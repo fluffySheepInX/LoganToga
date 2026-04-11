@@ -1,6 +1,7 @@
-﻿BirdModel::BirdModel(FilePathView path, const double displayHeight)
+﻿UnitModel::UnitModel(FilePathView path, const double displayHeight, const UnitModelProceduralAnimationType proceduralAnimationType)
 {
-	const BirdModelAsset imported = LoadBirdModelAsset(path, displayHeight);
+    const UnitModelAsset imported = LoadUnitModelAsset(path, displayHeight);
+ m_proceduralAnimationType = proceduralAnimationType;
  const auto initializeImportedAsset = [this, &imported]()
 	{
 		m_mesh = imported.mesh;
@@ -105,13 +106,13 @@
 	evaluateAnimationPose();
 }
 
-void BirdModel::update(const double deltaTime)
+void UnitModel::update(const double deltaTime)
 {
 	m_animationTime += deltaTime;
 	evaluateAnimationPose();
 }
 
-void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color, const double scale) const
+void UnitModel::draw(const Vec3& position, const double yaw, const ColorF& color, const double scale) const
 {
 	if (not m_loaded)
 	{
@@ -156,7 +157,7 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
  m_mesh.draw(modelTransform, color);
 }
 
-Optional<Vec3> BirdModel::groundContactPoint(const Vec3& position, const double yaw, const double scale) const
+Optional<Vec3> UnitModel::groundContactPoint(const Vec3& position, const double yaw, const double scale) const
 {
 	const Array<Vertex3D>* vertices = nullptr;
 
@@ -203,27 +204,27 @@ Optional<Vec3> BirdModel::groundContactPoint(const Vec3& position, const double 
   return (position + (Quaternion::RotateY(yaw) * (localGroundPoint * scale)));
 }
 
-bool BirdModel::isLoaded() const noexcept
+bool UnitModel::isLoaded() const noexcept
 {
 	return m_loaded;
 }
 
-bool BirdModel::hasAnimations() const noexcept
+bool UnitModel::hasAnimations() const noexcept
 {
 	return (not m_animations.isEmpty());
 }
 
-double BirdModel::animationTime() const noexcept
+double UnitModel::animationTime() const noexcept
 {
 	return m_animationTime;
 }
 
-size_t BirdModel::currentClipIndex() const noexcept
+size_t UnitModel::currentClipIndex() const noexcept
 {
 	return m_currentClipIndex;
 }
 
-void BirdModel::setClipIndex(const size_t index)
+void UnitModel::setClipIndex(const size_t index)
 {
 	if (index < m_animations.size() && index != m_currentClipIndex)
 	{
@@ -232,32 +233,32 @@ void BirdModel::setClipIndex(const size_t index)
 	}
 }
 
-const Array<BirdModelNode>& BirdModel::nodes() const noexcept
+const Array<UnitModelNode>& UnitModel::nodes() const noexcept
 {
 	return m_nodes;
 }
 
-const Array<BirdModelBone>& BirdModel::bones() const noexcept
+const Array<UnitModelBone>& UnitModel::bones() const noexcept
 {
 	return m_bones;
 }
 
-const Array<BirdModelAnimationClip>& BirdModel::animations() const noexcept
+const Array<UnitModelAnimationClip>& UnitModel::animations() const noexcept
 {
 	return m_animations;
 }
 
-const Array<Mat4x4>& BirdModel::currentLocalTransforms() const noexcept
+const Array<Mat4x4>& UnitModel::currentLocalTransforms() const noexcept
 {
 	return m_currentLocalTransforms;
 }
 
-const Array<Mat4x4>& BirdModel::currentWorldTransforms() const noexcept
+const Array<Mat4x4>& UnitModel::currentWorldTransforms() const noexcept
 {
 	return m_currentWorldTransforms;
 }
 
-const Array<Mat4x4>& BirdModel::currentBoneTransforms() const noexcept
+const Array<Mat4x4>& UnitModel::currentBoneTransforms() const noexcept
 {
 	return m_currentBoneTransforms;
 }

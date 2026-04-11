@@ -26,8 +26,8 @@ namespace SkyAppSupport
  void DrawCameraSettingsPanel(MainSupport::AppCamera3D& camera,
 		MainSupport::CameraSettings& cameraSettings,
        bool& isExpanded,
-		BirdModel& birdModel,
-		BirdModel& ashigaruModel,
+       UnitModel& birdModel,
+		UnitModel& ashigaruModel,
 		TimedMessage& cameraSaveMessage,
 		const SkyAppPanels& panels);
 	void DrawBlacksmithMenu(const SkyAppPanels& panels,

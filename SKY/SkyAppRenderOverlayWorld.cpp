@@ -81,20 +81,13 @@ namespace SkyAppFlow
 	{
 		void DrawGroundContactOverlays(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 		{
-              if (const auto birdGroundPoint = resources.birdModel.groundContactPoint(frame.birdRenderPosition, BirdDisplayYaw, GetModelScale(state.modelHeightSettings, ModelHeightTarget::Bird)))
+         for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
-				DrawGroundContactOverlay(state.camera, *birdGroundPoint);
-			}
-
-              if (const auto ashigaruGroundPoint = resources.ashigaruModel.groundContactPoint(frame.ashigaruRenderPosition, BirdDisplayYaw, GetModelScale(state.modelHeightSettings, ModelHeightTarget::Ashigaru)))
-			{
-				DrawGroundContactOverlay(state.camera, *ashigaruGroundPoint);
-			}
-
-				if (const auto sugoiCarGroundPoint = resources.sugoiCarModel.groundContactPoint(frame.sugoiCarRenderPosition, BirdDisplayYaw, GetModelScale(state.modelHeightSettings, ModelHeightTarget::SugoiCar)))
+                if (const auto groundPoint = resources.GetUnitRenderModel(renderModel).groundContactPoint(frame.GetPreviewRenderPosition(renderModel), BirdDisplayYaw, GetModelScale(state.modelHeightSettings, renderModel)))
 				{
-					DrawGroundContactOverlay(state.camera, *sugoiCarGroundPoint);
+					DrawGroundContactOverlay(state.camera, *groundPoint);
 				}
+			}
 		}
 
 		void DrawBattleOverlays(SkyAppState& state, const SkyAppFrameState& frame)
@@ -118,6 +111,7 @@ namespace SkyAppFlow
 			{
 				if (selectedIndex < state.spawnedSappers.size())
 				{
+                   DrawSelectedSapperFootprint(state.spawnedSappers[selectedIndex]);
 					DrawSelectedSapperAttackRange(state.camera, state.spawnedSappers[selectedIndex]);
 					DrawSelectedSapperRing(state.camera, state.spawnedSappers[selectedIndex]);
 				}

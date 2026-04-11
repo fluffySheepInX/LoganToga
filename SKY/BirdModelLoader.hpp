@@ -19,3 +19,10 @@ struct BirdModelAsset
 };
 
 [[nodiscard]] BirdModelAsset LoadBirdModelAsset(FilePathView path, double displayHeight);
+
+using UnitModelAsset = BirdModelAsset;
+
+[[nodiscard]] inline UnitModelAsset LoadUnitModelAsset(FilePathView path, const double displayHeight)
+{
+	return LoadBirdModelAsset(path, displayHeight);
+}

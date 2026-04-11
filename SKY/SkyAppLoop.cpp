@@ -10,24 +10,31 @@ namespace SkyAppFlow
 {
 	namespace Detail
 	{
-		SkyAppFrameState BuildFrameState(SkyAppState& state)
+        void NormalizeFrameStateInputs(SkyAppState& state)
+		{
+			state.mapEditor.enabled = (state.appMode == AppMode::EditMap);
+
+			if (not IsValidMillIndex(state, state.selectedMillIndex))
+			{
+				state.selectedMillIndex.reset();
+			}
+		}
+
+		SkyAppFrameState BuildFrameState(const SkyAppState& state)
 		{
 			SkyAppFrameState frame;
         frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.miniMapExpanded, state.showResourceAdjustUi };
 			frame.isEditorMode = (state.appMode == AppMode::EditMap);
 			frame.showEscMenu = state.showEscMenu;
-			state.mapEditor.enabled = frame.isEditorMode;
-			if (not IsValidMillIndex(state, state.selectedMillIndex))
-			{
-				state.selectedMillIndex.reset();
-			}
+           const bool hasValidSelectedMill = IsValidMillIndex(state, state.selectedMillIndex);
 			frame.showSapperMenu = ((state.selectedSapperIndices.size() == 1) && (not state.playerWon));
-			frame.showMillStatusEditor = ((not frame.isEditorMode) && IsValidMillIndex(state, state.selectedMillIndex));
+            frame.showMillStatusEditor = ((not frame.isEditorMode) && hasValidSelectedMill);
             frame.showUnitEditor = (state.showUI && state.unitEditorMode && (not frame.isEditorMode) && (not state.playerWon));
           frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
-			frame.birdRenderPosition = BirdDisplayPosition.movedBy(0, state.modelHeightSettings.birdOffsetY, 0);
-			frame.ashigaruRenderPosition = AshigaruDisplayPosition.movedBy(0, state.modelHeightSettings.ashigaruOffsetY, 0);
-           frame.sugoiCarRenderPosition = SugoiCarDisplayPosition.movedBy(0, state.modelHeightSettings.sugoiCarOffsetY, 0);
+            for (const UnitRenderModel renderModel : GetUnitRenderModels())
+			{
+				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.modelHeightSettings, renderModel), 0);
+			}
 			return frame;
 		}
 
@@ -248,9 +255,11 @@ namespace SkyAppFlow
 		, treeModel{ U"example/obj/tree.obj" }
 		, pineModel{ U"example/obj/pine.obj" }
      , grassPatchModel{ ResolveGrassPatchModelPath() }
-		, birdModel{ BirdModelPath, BirdDisplayHeight }
-		, ashigaruModel{ AshigaruModelPath, BirdDisplayHeight }
-     , sugoiCarModel{ ResolveSugoiCarModelPath(), BirdDisplayHeight }
+      , unitRenderModels{ {
+          UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
+			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
+			UnitModel{ ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
+		} }
 		, renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes }
 	{
 		Model::RegisterDiffuseTextures(treeModel, TextureDesc::MippedSRGB);
@@ -280,9 +289,11 @@ namespace SkyAppFlow
 
 	void RunSkyAppFrame(SkyAppResources& resources, SkyAppState& state)
 	{
-		resources.birdModel.update(Scene::DeltaTime());
-		resources.ashigaruModel.update(Scene::DeltaTime());
-     resources.sugoiCarModel.update(Scene::DeltaTime());
+     for (auto& renderModel : resources.unitRenderModels)
+		{
+			renderModel.update(Scene::DeltaTime());
+		}
+
      UpdateSpawnedSappers(state.spawnedSappers, state.mapData, state.modelHeightSettings);
 		UpdateSpawnedSappers(state.enemySappers, state.mapData, state.modelHeightSettings);
 
@@ -292,6 +303,7 @@ namespace SkyAppFlow
 		}
 
 		UpdateAttackEffects(state);
+		UpdateSkyFromTime(state.sky, state.skyTime);
 
 		state.selectedSapperIndices.remove_if([&state](const size_t index)
 			{
@@ -305,7 +317,8 @@ namespace SkyAppFlow
            state.uiPanelDrag.reset();
 		}
 
-          SkyAppFrameState frame = Detail::BuildFrameState(state);
+      Detail::NormalizeFrameStateInputs(state);
+		  SkyAppFrameState frame = Detail::BuildFrameState(state);
 		Detail::HandleUiEditInput(state, frame);
 
 		{

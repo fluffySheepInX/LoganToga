@@ -1,12 +1,18 @@
 ﻿# pragma once
+# include <array>
 # include "MainContext.hpp"
 # include "MapData.hpp"
 # include "SkyAppUiLayout.hpp"
 
-class BirdModel;
+class UnitModel;
 
 namespace SkyAppSupport
 {
+ struct UnitRenderModelRegistryView
+	{
+       std::array<const UnitModel*, MainSupport::UnitRenderModelCount> models{};
+	};
+
 	struct TimedMessage
 	{
 		String text;
@@ -38,6 +44,7 @@ namespace SkyAppSupport
 		Rect cameraSettingsToggle;
         Rect uiEditModeToggle;
         Rect resourceAdjustToggle;
+        Rect enemyPlanToggle;
 		Rect timeSlider;
 
       SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool miniMapExpanded = true, bool resourceAdjustExpanded = false);
@@ -71,11 +78,13 @@ namespace SkyAppSupport
 	void RemoveDefeatedSappers(Array<MainSupport::SpawnedSapper>& spawnedSappers);
  [[nodiscard]] Optional<size_t> HitTestSpawnedSapper(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const MainSupport::AppCamera3D& camera, const MainSupport::ModelHeightSettings& modelHeightSettings);
   void DrawSelectedSapperAttackRange(const MainSupport::AppCamera3D& camera, const MainSupport::SpawnedSapper& sapper);
+  void DrawSelectedSapperFootprint(const MainSupport::SpawnedSapper& sapper, const ColorF& color = ColorF{ 0.96, 0.98, 1.0, 0.78 });
+	void DrawUnitFootprintPreview(const Vec3& position, double yaw, const MainSupport::UnitParameters& parameters, const ColorF& color = ColorF{ 0.90, 0.96, 1.0, 0.72 });
 	void DrawSelectedSapperRing(const MainSupport::AppCamera3D& camera, const MainSupport::SpawnedSapper& sapper);
 	void DrawSelectedSapperIcon(const MainSupport::AppCamera3D& camera, const MainSupport::SpawnedSapper& sapper);
     void DrawSapperHealthBars(const MainSupport::AppCamera3D& camera, const Array<MainSupport::SpawnedSapper>& spawnedSappers, const ColorF& fillColor);
-	 void UpdateCameraWheelZoom(MainSupport::AppCamera3D& camera, MainSupport::CameraSettings& cameraSettings, const Vec3& playerBasePosition);
-       void DrawSpawnedSappers(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const BirdModel& birdModel, const BirdModel& ashigaruModel, const BirdModel& sugoiCarModel, const MainSupport::ModelHeightSettings& modelHeightSettings, const ColorF& color);
+      void UpdateCameraWheelZoom(MainSupport::AppCamera3D& camera, MainSupport::CameraSettings& cameraSettings, const Vec3& playerBasePosition);
+		   void DrawSpawnedSappers(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const MainSupport::ModelHeightSettings& modelHeightSettings, const ColorF& color);
 	void UpdateSkyFromTime(Sky& sky, double skyTime);
   void SpawnSapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& spawnPosition, const Vec3& rallyPoint, const MapData& mapData, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);
   void SpawnEnemySapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& position, double facingYaw = MainSupport::BirdDisplayYaw, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);

@@ -189,12 +189,19 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppCampaignEditorScene.cpp" />
     <ClCompile Include="SkyAppSceneCommon.cpp" />
     <ClCompile Include="SkyAppTitleScene.cpp" />
+    <ClCompile Include="SkyAppSapperSpawn.cpp" />
+    <ClCompile Include="SkyAppSapperState.cpp" />
+    <ClCompile Include="SkyAppCampaignDescriptionEditorScene.cpp" />
+    <ClCompile Include="SkyAppMissionDialogueEditorScene.cpp" />
+    <ClCompile Include="SkyAppDialogueScene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppContextTypes.hpp" />
     <ClInclude Include="BirdModel.hpp" />
     <ClInclude Include="BirdModelLoader.hpp" />
     <ClInclude Include="BirdModelTypes.hpp" />
     <ClInclude Include="CampaignData.hpp" />
+    <ClInclude Include="MainConstants.hpp" />
     <ClInclude Include="MainContext.hpp" />
     <ClInclude Include="MainScene.hpp" />
     <ClInclude Include="MainSettings.hpp" />
@@ -202,6 +209,13 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="MapData.hpp" />
     <ClInclude Include="MapDataTomlInternal.hpp" />
     <ClInclude Include="MapEditor.hpp" />
+    <ClInclude Include="RenderContext.hpp" />
+    <ClInclude Include="SkyAppTitleSceneInternal.hpp" />
+    <ClInclude Include="UnitContext.hpp" />
+    <ClInclude Include="SpawnedSapper.hpp" />
+    <ClInclude Include="UnitDefinitions.hpp" />
+    <ClInclude Include="UnitEditorContext.hpp" />
+    <ClInclude Include="UnitTypes.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -227,6 +241,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SkyAppUiParameterEditorInternal.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SkyAppInternal.hpp" />
+    <ClInclude Include="SkyAppCampaignEditorSceneInternal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

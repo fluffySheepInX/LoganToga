@@ -9,60 +9,20 @@ namespace MainSupport
 		inline constexpr double ScaleButtonStepMedium = 0.1;
 		inline constexpr double ScaleButtonStepSmall = 0.01;
 
-		[[nodiscard]] StringView ToModelHeightTargetLabel(const ModelHeightTarget target)
+           [[nodiscard]] StringView ToModelHeightTargetLabel(const UnitRenderModel renderModel)
 		{
-			switch (target)
-			{
-			case ModelHeightTarget::Ashigaru:
-				return U"ashigaru";
-
-			case ModelHeightTarget::SugoiCar:
-				return U"sugoiCar";
-
-			case ModelHeightTarget::Bird:
-			default:
-				return U"bird";
-			}
+             return GetUnitRenderModelLabel(renderModel);
 		}
 
-		[[nodiscard]] double GetActiveModelScale(const ModelHeightSettings& modelHeightSettings, const ModelHeightTarget target)
+            [[nodiscard]] double GetActiveModelScale(const ModelHeightSettings& modelHeightSettings, const UnitRenderModel renderModel)
 		{
-			return GetModelScale(modelHeightSettings, target);
+              return GetModelScale(modelHeightSettings, renderModel);
 		}
 
-		[[nodiscard]] double& GetModelHeightOffset(ModelHeightSettings& modelHeightSettings, const ModelHeightTarget target)
+            [[nodiscard]] double GetModelHeightWorldY(const UnitRenderModel renderModel,
+				const std::array<Vec3, UnitRenderModelCount>& previewRenderPositions)
 		{
-			switch (target)
-			{
-			case ModelHeightTarget::Ashigaru:
-				return modelHeightSettings.ashigaruOffsetY;
-
-			case ModelHeightTarget::SugoiCar:
-				return modelHeightSettings.sugoiCarOffsetY;
-
-			case ModelHeightTarget::Bird:
-			default:
-				return modelHeightSettings.birdOffsetY;
-			}
-		}
-
-		[[nodiscard]] double GetModelHeightWorldY(const ModelHeightTarget target,
-			const Vec3& birdRenderPosition,
-			const Vec3& ashigaruRenderPosition,
-			const Vec3& sugoiCarRenderPosition)
-		{
-			switch (target)
-			{
-			case ModelHeightTarget::Ashigaru:
-				return ashigaruRenderPosition.y;
-
-			case ModelHeightTarget::SugoiCar:
-				return sugoiCarRenderPosition.y;
-
-			case ModelHeightTarget::Bird:
-			default:
-				return birdRenderPosition.y;
-			}
+             return previewRenderPositions[GetUnitRenderModelIndex(renderModel)].y;
 		}
 	}
 
@@ -76,7 +36,7 @@ namespace MainSupport
 		return hovered && MouseL.down();
 	}
 
-	void DrawAnimationClipSelector(BirdModel& model, StringView title, const int32 x, const int32 y, const int32 width)
+ void DrawAnimationClipSelector(UnitModel& model, StringView title, const int32 x, const int32 y, const int32 width)
 	{
 		if (not model.hasAnimations())
 		{
@@ -105,23 +65,16 @@ namespace MainSupport
 	}
 
 	void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
-     ModelHeightTarget& activeTarget,
+        UnitRenderModel& activeRenderModel,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,
-		const Vec3& birdRenderPosition,
-     const Vec3& ashigaruRenderPosition,
-		const Vec3& sugoiCarRenderPosition)
+         const std::array<Vec3, UnitRenderModelCount>& previewRenderPositions)
 	{
         const Rect listPanel{ panelRect.x, panelRect.y, 156, panelRect.h };
 		const Rect detailPanel{ (panelRect.x + 164), panelRect.y, (panelRect.w - 164), panelRect.h };
-		const Array<ModelHeightTarget> targets{
-			ModelHeightTarget::Bird,
-			ModelHeightTarget::Ashigaru,
-			ModelHeightTarget::SugoiCar,
-		};
-		double& activeOffset = GetModelHeightOffset(modelHeightSettings, activeTarget);
-     double& activeScale = GetModelScale(modelHeightSettings, activeTarget);
+         double& activeOffset = GetModelHeightOffset(modelHeightSettings, activeRenderModel);
+		 double& activeScale = GetModelScale(modelHeightSettings, activeRenderModel);
 		activeOffset = Clamp(activeOffset, ModelHeightOffsetMin, ModelHeightOffsetMax);
 		activeScale = Clamp(activeScale, ModelScaleMin, ModelScaleMax);
 
@@ -131,24 +84,26 @@ namespace MainSupport
         Rect{ (listPanel.rightX() + 3), (panelRect.y + 8), 1, (panelRect.h - 16) }.draw(ColorF{ 0.72, 0.72, 0.74 });
 		SimpleGUI::GetFont()(U"Targets").draw((listPanel.x + 16), (listPanel.y + 38), ColorF{ 0.18 });
 
-		for (size_t i = 0; i < targets.size(); ++i)
+         int32 targetIndex = 0;
+			for (const UnitRenderModel renderModel : GetUnitRenderModels())
 		{
-			const ModelHeightTarget target = targets[i];
-			const Rect buttonRect{ (listPanel.x + 12), (listPanel.y + 64 + static_cast<int32>(i) * 58), 132, 48 };
-			const bool selected = (activeTarget == target);
+                const Rect buttonRect{ (listPanel.x + 12), (listPanel.y + 64 + targetIndex * 58), 132, 48 };
+				const bool selected = (activeRenderModel == renderModel);
 			const bool hovered = buttonRect.mouseOver();
 			buttonRect.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
 				.drawFrame(1, 0, selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 });
-			SimpleGUI::GetFont()(ToModelHeightTargetLabel(target)).draw((buttonRect.x + 10), (buttonRect.y + 6), selected ? ColorF{ 0.98 } : ColorF{ 0.14 });
-			SimpleGUI::GetFont()(U"Y {:.3f}"_fmt(GetModelHeightOffset(modelHeightSettings, target))).draw((buttonRect.x + 10), (buttonRect.y + 26), selected ? ColorF{ 0.96 } : ColorF{ 0.28 });
+               SimpleGUI::GetFont()(ToModelHeightTargetLabel(renderModel)).draw((buttonRect.x + 10), (buttonRect.y + 6), selected ? ColorF{ 0.98 } : ColorF{ 0.14 });
+				SimpleGUI::GetFont()(U"Y {:.3f}"_fmt(GetModelHeightOffset(modelHeightSettings, renderModel))).draw((buttonRect.x + 10), (buttonRect.y + 26), selected ? ColorF{ 0.96 } : ColorF{ 0.28 });
 
 			if (hovered && MouseL.down())
 			{
-				activeTarget = target;
+                  activeRenderModel = renderModel;
 			}
+
+				++targetIndex;
 		}
 
-		SimpleGUI::GetFont()(U"Target: {}"_fmt(ToModelHeightTargetLabel(activeTarget))).draw((detailPanel.x + 16), (detailPanel.y + 38), ColorF{ 0.14 });
+           SimpleGUI::GetFont()(U"Target: {}"_fmt(ToModelHeightTargetLabel(activeRenderModel))).draw((detailPanel.x + 16), (detailPanel.y + 38), ColorF{ 0.14 });
 		SimpleGUI::Slider(U"offset Y: {:.3f}"_fmt(activeOffset), activeOffset, ModelHeightOffsetMin, ModelHeightOffsetMax, Vec2{ detailPanel.x + 16.0, detailPanel.y + 70.0 }, 180, 260);
 
       if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 112, 56, 28 }, U"-1.0"))
@@ -219,8 +174,8 @@ namespace MainSupport
 			activeScale = 1.0;
 		}
 
-         SimpleGUI::GetFont()(U"world Y: {:.3f}"_fmt(GetModelHeightWorldY(activeTarget, birdRenderPosition, ashigaruRenderPosition, sugoiCarRenderPosition))).draw((detailPanel.x + 16), (detailPanel.y + 286), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"scale: {:.3f}"_fmt(GetActiveModelScale(modelHeightSettings, activeTarget))).draw((detailPanel.x + 16), (detailPanel.y + 310), ColorF{ 0.12 });
+             SimpleGUI::GetFont()(U"world Y: {:.3f}"_fmt(GetModelHeightWorldY(activeRenderModel, previewRenderPositions))).draw((detailPanel.x + 16), (detailPanel.y + 286), ColorF{ 0.12 });
+			SimpleGUI::GetFont()(U"scale: {:.3f}"_fmt(GetActiveModelScale(modelHeightSettings, activeRenderModel))).draw((detailPanel.x + 16), (detailPanel.y + 310), ColorF{ 0.12 });
 		SimpleGUI::GetFont()(U"Y [{:.1f}, {:.1f}] / Scale [{:.2f}, {:.2f}]"_fmt(ModelHeightOffsetMin, ModelHeightOffsetMax, ModelScaleMin, ModelScaleMax)).draw((detailPanel.x + 16), (detailPanel.y + 334), ColorF{ 0.12 });
 
        if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 364, 92, 30 }, U"Save"))

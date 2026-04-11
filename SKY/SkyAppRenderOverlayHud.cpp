@@ -167,7 +167,7 @@ namespace SkyAppFlow
 				{
 					frame.panels.modelHeight.drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.96, 0.72 });
 				}
-				DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.birdRenderPosition, frame.ashigaruRenderPosition, frame.sugoiCarRenderPosition);
+               DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.previewRenderPositions);
 			}
 		}
 

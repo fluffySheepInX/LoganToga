@@ -11,6 +11,8 @@ namespace SkyCampaign
 	{
 		String displayName = U"Mission 1";
 		FilePath mapFile = FilePath{ MainSupport::MapDataPath };
+      Array<String> preDialogueLines;
+		Array<String> postDialogueLines;
 	};
 
 	struct CampaignDefinition
@@ -27,6 +29,7 @@ namespace SkyCampaign
 		String campaignId;
 		size_t unlockedMissionCount = 1;
 		size_t currentMissionIndex = 0;
+     size_t clearCount = 0;
 		bool completed = false;
 	};
 
@@ -128,6 +131,53 @@ namespace SkyCampaign
 		{
 			return FileSystem::PathAppend(CampaignProgressDirectoryPath, (String{ id } + U".progress.toml"));
 		}
+
+		[[nodiscard]] inline Array<String> ReadStringArray(const TOMLValue& value)
+		{
+			Array<String> results;
+
+			if (value.isEmpty() || (not value.isArray()))
+			{
+				return results;
+			}
+
+			try
+			{
+				for (const auto& item : value.arrayView())
+				{
+					if (const auto line = item.getOpt<String>())
+					{
+						results << *line;
+					}
+				}
+			}
+			catch (const std::exception&)
+			{
+			}
+
+			return results;
+		}
+
+		inline void WriteStringArray(TextWriter& writer, const StringView key, const Array<String>& values)
+		{
+			if (values.isEmpty())
+			{
+				return;
+			}
+
+			String line = U"{} = ["_fmt(key);
+			for (size_t i = 0; i < values.size(); ++i)
+			{
+				if (0 < i)
+				{
+					line += U", ";
+				}
+
+				line += U"\"{}\""_fmt(EscapeTomlString(values[i]));
+			}
+			line += U"]";
+			writer.writeln(line);
+		}
 	}
 
 	[[nodiscard]] inline Array<CampaignDefinition> LoadCampaignDefinitions()
@@ -162,6 +212,8 @@ namespace SkyCampaign
 					definition.missions << CampaignMissionDefinition{
 						.displayName = missionTable[U"displayName"].getOpt<String>().value_or(U"Mission {}"_fmt(definition.missions.size() + 1)),
 						.mapFile = missionTable[U"mapFile"].getOpt<String>().value_or(FilePath{ MainSupport::MapDataPath }),
+                      .preDialogueLines = Detail::ReadStringArray(missionTable[U"preDialogue"]),
+						.postDialogueLines = Detail::ReadStringArray(missionTable[U"postDialogue"]),
 					};
 				}
 			}
@@ -209,6 +261,8 @@ namespace SkyCampaign
 				definition.missions << CampaignMissionDefinition{
 					.displayName = missionTable[U"displayName"].getOpt<String>().value_or(U"Mission {}"_fmt(definition.missions.size() + 1)),
 					.mapFile = missionTable[U"mapFile"].getOpt<String>().value_or(FilePath{ MainSupport::MapDataPath }),
+                  .preDialogueLines = Detail::ReadStringArray(missionTable[U"preDialogue"]),
+					.postDialogueLines = Detail::ReadStringArray(missionTable[U"postDialogue"]),
 				};
 			}
 		}
@@ -260,6 +314,8 @@ namespace SkyCampaign
 			writer.writeln(U"[[missions]]");
 			writer.writeln(U"displayName = \"{}\""_fmt(Detail::EscapeTomlString(mission.displayName.isEmpty() ? U"Mission {}"_fmt(i + 1) : mission.displayName)));
 			writer.writeln(U"mapFile = \"{}\""_fmt(Detail::EscapeTomlString(mission.mapFile.isEmpty() ? FilePath{ MainSupport::MapDataPath } : mission.mapFile)));
+            Detail::WriteStringArray(writer, U"preDialogue", mission.preDialogueLines);
+			Detail::WriteStringArray(writer, U"postDialogue", mission.postDialogueLines);
 			writer.writeln(U"");
 		}
 
@@ -284,6 +340,7 @@ namespace SkyCampaign
 
 		progress.unlockedMissionCount = static_cast<size_t>(Max<int64>(1, toml[U"unlockedMissionCount"].getOpt<int64>().value_or(1)));
 		progress.currentMissionIndex = static_cast<size_t>(Max<int64>(0, toml[U"currentMissionIndex"].getOpt<int64>().value_or(0)));
+     progress.clearCount = static_cast<size_t>(Max<int64>(0, toml[U"clearCount"].getOpt<int64>().value_or(0)));
 		progress.completed = toml[U"completed"].getOpt<bool>().value_or(false);
 		return progress;
 	}
@@ -305,6 +362,7 @@ namespace SkyCampaign
 		writer.writeln(U"campaignId = \"{}\""_fmt(Detail::EscapeTomlString(progress.campaignId)));
 		writer.writeln(U"unlockedMissionCount = {}"_fmt(Max<size_t>(1, progress.unlockedMissionCount)));
 		writer.writeln(U"currentMissionIndex = {}"_fmt(progress.currentMissionIndex));
+     writer.writeln(U"clearCount = {}"_fmt(progress.clearCount));
 		writer.writeln(U"completed = {}"_fmt(progress.completed ? U"true" : U"false"));
 		return true;
 	}
