@@ -164,6 +164,8 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppLoopSelection.cpp" />
     <ClCompile Include="SkyAppRender.cpp" />
     <ClCompile Include="SkyAppRenderOverlay.cpp" />
+    <ClCompile Include="SkyAppRenderOverlayHud.cpp" />
+    <ClCompile Include="SkyAppRenderOverlayWorld.cpp" />
     <ClCompile Include="SkyAppRenderSappers.cpp" />
     <ClCompile Include="SkyAppSapper.cpp" />
     <ClCompile Include="SkyAppSapperCombat.cpp" />
@@ -215,6 +217,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SkyAppBattleInternal.hpp" />
     <ClInclude Include="SkyAppLoop.hpp" />
     <ClInclude Include="SkyAppLoopInternal.hpp" />
+    <ClInclude Include="SkyAppRenderOverlayInternal.hpp" />
     <ClInclude Include="SkyAppSapperInternal.hpp" />
     <ClInclude Include="SkyAppSapperMovementInternal.hpp" />
     <ClInclude Include="SkyAppSupport.hpp" />

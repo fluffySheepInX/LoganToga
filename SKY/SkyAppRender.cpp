@@ -87,15 +87,15 @@ namespace SkyAppFlow
 		resources.blacksmithModel.draw(state.mapData.enemyBasePosition);
 		if (resources.birdModel.isLoaded())
 		{
-			resources.birdModel.draw(frame.birdRenderPosition, BirdDisplayYaw, ColorF{ 0.92, 0.95, 1.0 }.removeSRGBCurve());
+            resources.birdModel.draw(frame.birdRenderPosition, BirdDisplayYaw, ColorF{ 0.92, 0.95, 1.0 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::Bird));
 		}
 		if (resources.ashigaruModel.isLoaded())
 		{
-			resources.ashigaruModel.draw(frame.ashigaruRenderPosition, BirdDisplayYaw, ColorF{ 0.95, 0.92, 0.90 }.removeSRGBCurve());
+           resources.ashigaruModel.draw(frame.ashigaruRenderPosition, BirdDisplayYaw, ColorF{ 0.95, 0.92, 0.90 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::Ashigaru));
 		}
       if (resources.sugoiCarModel.isLoaded())
 		{
-			resources.sugoiCarModel.draw(frame.sugoiCarRenderPosition, BirdDisplayYaw, ColorF{ 0.96, 0.94, 0.92 }.removeSRGBCurve());
+           resources.sugoiCarModel.draw(frame.sugoiCarRenderPosition, BirdDisplayYaw, ColorF{ 0.96, 0.94, 0.92 }.removeSRGBCurve(), GetModelScale(state.modelHeightSettings, ModelHeightTarget::SugoiCar));
 		}
 		for (const auto& placedModel : state.mapData.placedModels)
 		{
@@ -110,8 +110,8 @@ namespace SkyAppFlow
 			Cylinder{ selectedMill.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
 		}
 
-       DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.sugoiCarModel, ColorF{ 0.92, 0.95, 1.0 });
-		DrawSpawnedSappers(state.enemySappers, resources.ashigaruModel, resources.sugoiCarModel, ColorF{ 1.0, 0.78, 0.74 });
+          DrawSpawnedSappers(state.spawnedSappers, resources.birdModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+		DrawSpawnedSappers(state.enemySappers, resources.ashigaruModel, resources.sugoiCarModel, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
 		DrawMapEditorScene(state.mapEditor, state.mapData);
 		UpdateSkyFromTime(state.sky, state.skyTime);
 		state.sky.draw();

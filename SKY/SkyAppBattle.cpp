@@ -156,7 +156,7 @@ namespace SkyAppFlow
 				if (EnemyAdvanceStopDistance < GetSpawnedSapperBasePosition(state.enemySappers[i]).distanceFrom(state.mapData.playerBasePosition)
 					&& 0.25 < state.enemySappers[i].destinationPosition.distanceFrom(desiredTarget))
 				{
-					SetSpawnedSapperTarget(state.enemySappers[i], desiredTarget, state.mapData);
+                    SetSpawnedSapperTarget(state.enemySappers[i], desiredTarget, state.mapData, state.modelHeightSettings);
 				}
 			}
 		}
@@ -235,17 +235,17 @@ namespace SkyAppFlow
        TryProduceEnemyUnit(state);
       UpdateEnemyAdvanceTargets(state);
 
-		ResolveSapperSpacingAgainstUnits(state.spawnedSappers, state.enemySappers);
-		ResolveSapperSpacingAgainstUnits(state.enemySappers, state.spawnedSappers);
-		ResolveSapperSpacingAgainstBase(state.spawnedSappers, state.mapData.enemyBasePosition);
-		ResolveSapperSpacingAgainstBase(state.enemySappers, state.mapData.playerBasePosition);
-      ResolveSapperSpacingAgainstObstacles(state.spawnedSappers, state.mapData);
-		ResolveSapperSpacingAgainstObstacles(state.enemySappers, state.mapData);
+     ResolveSapperSpacingAgainstUnits(state.spawnedSappers, state.enemySappers, state.modelHeightSettings);
+		ResolveSapperSpacingAgainstUnits(state.enemySappers, state.spawnedSappers, state.modelHeightSettings);
+		ResolveSapperSpacingAgainstBase(state.spawnedSappers, state.mapData.enemyBasePosition, state.modelHeightSettings);
+		ResolveSapperSpacingAgainstBase(state.enemySappers, state.mapData.playerBasePosition, state.modelHeightSettings);
+        ResolveSapperSpacingAgainstObstacles(state.spawnedSappers, state.mapData, state.modelHeightSettings);
+		ResolveSapperSpacingAgainstObstacles(state.enemySappers, state.mapData, state.modelHeightSettings);
      BattleDetail::UpdateResourceAreas(state);
 		BattleDetail::UpdateMillDefense(state);
 
-		UpdateAutoCombat(state.spawnedSappers, state.enemySappers);
-		UpdateAutoCombat(state.enemySappers, state.spawnedSappers);
+     UpdateAutoCombat(state.spawnedSappers, state.enemySappers, state.modelHeightSettings);
+		UpdateAutoCombat(state.enemySappers, state.spawnedSappers, state.modelHeightSettings);
       BattleDetail::UpdateBaseCombat(state.spawnedSappers, state.mapData.enemyBasePosition, state.enemyBaseHitPoints);
 		BattleDetail::UpdateBaseCombat(state.enemySappers, state.mapData.playerBasePosition, state.playerBaseHitPoints);
 		RemoveDefeatedSappers(state.spawnedSappers);

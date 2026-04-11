@@ -92,12 +92,19 @@ namespace
 			parameters.movementType = ((*movementType == U"Tank") ? MainSupport::MovementType::Tank : MainSupport::MovementType::Infantry);
 		}
 
+		if (const auto footprintType = toml[(String{ prefix } + U"FootprintType")].getOpt<String>())
+		{
+			parameters.footprintType = ((*footprintType == U"Capsule") ? MainSupport::UnitFootprintType::Capsule : MainSupport::UnitFootprintType::Circle);
+		}
+
 		LoadUnitParameterValue(toml, (String{ prefix } + U"MaxHitPoints"), parameters.maxHitPoints);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"MoveSpeed"), parameters.moveSpeed);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackRange"), parameters.attackRange);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackDamage"), parameters.attackDamage);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackInterval"), parameters.attackInterval);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"ManaCost"), parameters.manaCost);
+       LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintRadius"), parameters.footprintRadius);
+		LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintHalfLength"), parameters.footprintHalfLength);
 	}
 
 	void SaveUnitParameterGroup(TextWriter& writer, const StringView prefix, const MainSupport::UnitParameters& parameters)
@@ -109,6 +116,9 @@ namespace
 		writer.writeln(U"{}AttackDamage = {:.3f}"_fmt(prefix, parameters.attackDamage));
 		writer.writeln(U"{}AttackInterval = {:.3f}"_fmt(prefix, parameters.attackInterval));
 		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(prefix, parameters.manaCost));
+       writer.writeln(U"{}FootprintType = \"{}\""_fmt(prefix, (parameters.footprintType == MainSupport::UnitFootprintType::Capsule) ? U"Capsule" : U"Circle"));
+		writer.writeln(U"{}FootprintRadius = {:.3f}"_fmt(prefix, parameters.footprintRadius));
+		writer.writeln(U"{}FootprintHalfLength = {:.3f}"_fmt(prefix, parameters.footprintHalfLength));
 	}
 }
 
@@ -171,6 +181,21 @@ namespace MainSupport
 			settings.sugoiCarOffsetY = *value;
 		}
 
+		if (const auto value = toml[U"birdScale"].getOpt<double>())
+		{
+			settings.birdScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
+		}
+
+		if (const auto value = toml[U"ashigaruScale"].getOpt<double>())
+		{
+			settings.ashigaruScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
+		}
+
+		if (const auto value = toml[U"sugoiCarScale"].getOpt<double>())
+		{
+			settings.sugoiCarScale = Clamp(*value, ModelScaleMin, ModelScaleMax);
+		}
+
 		return settings;
 	}
 
@@ -188,6 +213,9 @@ namespace MainSupport
 		writer.writeln(U"birdOffsetY = {:.3f}"_fmt(settings.birdOffsetY));
 		writer.writeln(U"ashigaruOffsetY = {:.3f}"_fmt(settings.ashigaruOffsetY));
         writer.writeln(U"sugoiCarOffsetY = {:.3f}"_fmt(settings.sugoiCarOffsetY));
+        writer.writeln(U"birdScale = {:.3f}"_fmt(Clamp(settings.birdScale, ModelScaleMin, ModelScaleMax)));
+		writer.writeln(U"ashigaruScale = {:.3f}"_fmt(Clamp(settings.ashigaruScale, ModelScaleMin, ModelScaleMax)));
+		writer.writeln(U"sugoiCarScale = {:.3f}"_fmt(Clamp(settings.sugoiCarScale, ModelScaleMin, ModelScaleMax)));
 		return true;
 	}
 
@@ -196,6 +224,7 @@ namespace MainSupport
 		UiLayoutSettings settings{
 			.miniMapPosition = SkyAppUiLayout::DefaultMiniMapPosition(sceneWidth),
 			.resourcePanelPosition = SkyAppUiLayout::DefaultResourcePanelPosition(sceneWidth),
+          .modelHeightPosition = SkyAppUiLayout::DefaultModelHeightPosition(sceneWidth, sceneHeight),
           .unitEditorPosition = SkyAppUiLayout::DefaultUnitEditorPosition(sceneWidth),
 			.unitEditorListPosition = SkyAppUiLayout::DefaultUnitEditorListPosition(),
 		};
@@ -209,15 +238,18 @@ namespace MainSupport
 
 		settings.miniMapPosition = ReadTomlPoint(toml, U"miniMap", settings.miniMapPosition);
 		settings.resourcePanelPosition = ReadTomlPoint(toml, U"resourcePanel", settings.resourcePanelPosition);
+      settings.modelHeightPosition = ReadTomlPoint(toml, U"modelHeight", settings.modelHeightPosition);
 		settings.unitEditorPosition = ReadTomlPoint(toml, U"unitEditor", settings.unitEditorPosition);
 		settings.unitEditorListPosition = ReadTomlPoint(toml, U"unitEditorList", settings.unitEditorListPosition);
 
 		const Rect miniMapRect = SkyAppUiLayout::MiniMap(sceneWidth, sceneHeight, settings.miniMapPosition, true);
 		const Rect resourcePanelRect = SkyAppUiLayout::ResourcePanel(sceneWidth, sceneHeight, settings.resourcePanelPosition);
+        const Rect modelHeightRect = SkyAppUiLayout::ModelHeight(sceneWidth, sceneHeight, settings.modelHeightPosition);
        const Rect unitEditorRect = SkyAppUiLayout::UnitEditor(sceneWidth, sceneHeight, settings.unitEditorPosition);
 		const Rect unitEditorListRect = SkyAppUiLayout::UnitEditorList(sceneWidth, sceneHeight, settings.unitEditorListPosition);
 		settings.miniMapPosition = Point{ miniMapRect.x, miniMapRect.y };
 		settings.resourcePanelPosition = Point{ resourcePanelRect.x, resourcePanelRect.y };
+      settings.modelHeightPosition = Point{ modelHeightRect.x, modelHeightRect.y };
         settings.unitEditorPosition = Point{ unitEditorRect.x, unitEditorRect.y };
 		settings.unitEditorListPosition = Point{ unitEditorListRect.x, unitEditorListRect.y };
 		return settings;
@@ -236,6 +268,7 @@ namespace MainSupport
 
 		writer.writeln(U"miniMap = [{}, {}]"_fmt(settings.miniMapPosition.x, settings.miniMapPosition.y));
 		writer.writeln(U"resourcePanel = [{}, {}]"_fmt(settings.resourcePanelPosition.x, settings.resourcePanelPosition.y));
+     writer.writeln(U"modelHeight = [{}, {}]"_fmt(settings.modelHeightPosition.x, settings.modelHeightPosition.y));
         writer.writeln(U"unitEditor = [{}, {}]"_fmt(settings.unitEditorPosition.x, settings.unitEditorPosition.y));
 		writer.writeln(U"unitEditorList = [{}, {}]"_fmt(settings.unitEditorListPosition.x, settings.unitEditorListPosition.y));
 		return true;

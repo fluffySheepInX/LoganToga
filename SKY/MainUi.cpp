@@ -5,6 +5,10 @@ namespace MainSupport
 {
  namespace
 	{
+       inline constexpr double ScaleButtonStepLarge = 0.5;
+		inline constexpr double ScaleButtonStepMedium = 0.1;
+		inline constexpr double ScaleButtonStepSmall = 0.01;
+
 		[[nodiscard]] StringView ToModelHeightTargetLabel(const ModelHeightTarget target)
 		{
 			switch (target)
@@ -19,6 +23,11 @@ namespace MainSupport
 			default:
 				return U"bird";
 			}
+		}
+
+		[[nodiscard]] double GetActiveModelScale(const ModelHeightSettings& modelHeightSettings, const ModelHeightTarget target)
+		{
+			return GetModelScale(modelHeightSettings, target);
 		}
 
 		[[nodiscard]] double& GetModelHeightOffset(ModelHeightSettings& modelHeightSettings, const ModelHeightTarget target)
@@ -112,11 +121,13 @@ namespace MainSupport
 			ModelHeightTarget::SugoiCar,
 		};
 		double& activeOffset = GetModelHeightOffset(modelHeightSettings, activeTarget);
+     double& activeScale = GetModelScale(modelHeightSettings, activeTarget);
 		activeOffset = Clamp(activeOffset, ModelHeightOffsetMin, ModelHeightOffsetMax);
+		activeScale = Clamp(activeScale, ModelScaleMin, ModelScaleMax);
 
 		panelRect.draw(ColorF{ 1.0, 0.92 });
 		panelRect.drawFrame(2, 0, ColorF{ 0.25 });
-		SimpleGUI::GetFont()(U"Model Height Editor").draw((panelRect.x + 16), (panelRect.y + 12), ColorF{ 0.12 });
+      SimpleGUI::GetFont()(U"Unit Height / Scale Editor").draw((panelRect.x + 16), (panelRect.y + 12), ColorF{ 0.12 });
         Rect{ (listPanel.rightX() + 3), (panelRect.y + 8), 1, (panelRect.h - 16) }.draw(ColorF{ 0.72, 0.72, 0.74 });
 		SimpleGUI::GetFont()(U"Targets").draw((listPanel.x + 16), (listPanel.y + 38), ColorF{ 0.18 });
 
@@ -170,15 +181,49 @@ namespace MainSupport
            activeOffset = Min(ModelHeightOffsetMax, (activeOffset + 1.0));
 		}
 
-        if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 152, 118, 30 }, U"Reset Target"))
+      SimpleGUI::Slider(U"scale: {:.3f}"_fmt(activeScale), activeScale, ModelScaleMin, ModelScaleMax, Vec2{ detailPanel.x + 16.0, detailPanel.y + 158.0 }, 180, 260);
+
+		if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 200, 56, 28 }, U"-0.5"))
 		{
-          activeOffset = 0.0;
+			activeScale = Max(ModelScaleMin, (activeScale - ScaleButtonStepLarge));
 		}
 
-        SimpleGUI::GetFont()(U"world Y: {:.3f}"_fmt(GetModelHeightWorldY(activeTarget, birdRenderPosition, ashigaruRenderPosition, sugoiCarRenderPosition))).draw((detailPanel.x + 16), (detailPanel.y + 196), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"range: [{:.1f}, {:.1f}]"_fmt(ModelHeightOffsetMin, ModelHeightOffsetMax)).draw((detailPanel.x + 16), (detailPanel.y + 220), ColorF{ 0.12 });
+		if (DrawTextButton(Rect{ detailPanel.x + 80, detailPanel.y + 200, 56, 28 }, U"-0.1"))
+		{
+			activeScale = Max(ModelScaleMin, (activeScale - ScaleButtonStepMedium));
+		}
 
-      if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 252, 92, 30 }, U"Save"))
+		if (DrawTextButton(Rect{ detailPanel.x + 144, detailPanel.y + 200, 56, 28 }, U"-0.01"))
+		{
+			activeScale = Max(ModelScaleMin, (activeScale - ScaleButtonStepSmall));
+		}
+
+		if (DrawTextButton(Rect{ detailPanel.x + 208, detailPanel.y + 200, 56, 28 }, U"+0.01"))
+		{
+			activeScale = Min(ModelScaleMax, (activeScale + ScaleButtonStepSmall));
+		}
+
+		if (DrawTextButton(Rect{ detailPanel.x + 272, detailPanel.y + 200, 56, 28 }, U"+0.1"))
+		{
+			activeScale = Min(ModelScaleMax, (activeScale + ScaleButtonStepMedium));
+		}
+
+		if (DrawTextButton(Rect{ detailPanel.x + 336, detailPanel.y + 200, 56, 28 }, U"+0.5"))
+		{
+			activeScale = Min(ModelScaleMax, (activeScale + ScaleButtonStepLarge));
+		}
+
+			if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 242, 118, 30 }, U"Reset Target"))
+		{
+             activeOffset = 0.0;
+			activeScale = 1.0;
+		}
+
+         SimpleGUI::GetFont()(U"world Y: {:.3f}"_fmt(GetModelHeightWorldY(activeTarget, birdRenderPosition, ashigaruRenderPosition, sugoiCarRenderPosition))).draw((detailPanel.x + 16), (detailPanel.y + 286), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"scale: {:.3f}"_fmt(GetActiveModelScale(modelHeightSettings, activeTarget))).draw((detailPanel.x + 16), (detailPanel.y + 310), ColorF{ 0.12 });
+		SimpleGUI::GetFont()(U"Y [{:.1f}, {:.1f}] / Scale [{:.2f}, {:.2f}]"_fmt(ModelHeightOffsetMin, ModelHeightOffsetMax, ModelScaleMin, ModelScaleMax)).draw((detailPanel.x + 16), (detailPanel.y + 334), ColorF{ 0.12 });
+
+       if (DrawTextButton(Rect{ detailPanel.x + 16, detailPanel.y + 364, 92, 30 }, U"Save"))
 		{
 			modelHeightMessage = SaveModelHeightSettings(modelHeightSettings)
 				? U"Saved: {}"_fmt(ModelHeightSettingsPath)
@@ -186,23 +231,23 @@ namespace MainSupport
 			modelHeightMessageUntil = (Scene::Time() + 2.0);
 		}
 
-       if (DrawTextButton(Rect{ detailPanel.x + 116, detailPanel.y + 252, 92, 30 }, U"Reload"))
+        if (DrawTextButton(Rect{ detailPanel.x + 116, detailPanel.y + 364, 92, 30 }, U"Reload"))
 		{
 			modelHeightSettings = LoadModelHeightSettings();
 			modelHeightMessage = U"Reloaded";
 			modelHeightMessageUntil = (Scene::Time() + 2.0);
 		}
 
-        if (DrawTextButton(Rect{ detailPanel.x + 216, detailPanel.y + 252, 92, 30 }, U"Reset All"))
+         if (DrawTextButton(Rect{ detailPanel.x + 216, detailPanel.y + 364, 92, 30 }, U"Reset All"))
 		{
 			modelHeightSettings = {};
-			modelHeightMessage = U"Offsets reset";
+          modelHeightMessage = U"Offsets / scales reset";
 			modelHeightMessageUntil = (Scene::Time() + 2.0);
 		}
 
 		if (Scene::Time() < modelHeightMessageUntil)
 		{
-         SimpleGUI::GetFont()(modelHeightMessage).draw((detailPanel.x + 16), (detailPanel.y + 290), ColorF{ 0.12 });
+             SimpleGUI::GetFont()(modelHeightMessage).draw((detailPanel.x + 16), (detailPanel.y + 400), ColorF{ 0.12 });
 		}
 	}
 }

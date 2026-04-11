@@ -12,15 +12,19 @@ namespace SkyAppSupport
 		inline constexpr double MaximumSuppressionAttackIntervalMultiplier = 10.0;
 		inline constexpr double MinimumSapperMoveDuration = 0.08;
 		inline constexpr double MinimumSapperTurnDistanceSq = 0.0001;
-		inline constexpr double SapperBodyRadius = 1.2;
+           inline constexpr double SapperBodyRadius = 1.2;
 		inline constexpr double RockObstacleRadius = 2.6;
 		inline constexpr double ObstacleAvoidancePadding = 0.3;
 
 		[[nodiscard]] double ToSapperYaw(const Vec3& direction, double fallbackYaw);
 		[[nodiscard]] Vec3 ToHorizontalDirectionOrFallback(const Vec3& direction, const Vec3& fallback);
-		[[nodiscard]] double GetSapperCombatStopDistance(const MainSupport::SpawnedSapper& attacker, const MainSupport::SpawnedSapper& defender);
+       [[nodiscard]] double GetSapperCombatStopDistance(const MainSupport::SpawnedSapper& attacker, const MainSupport::SpawnedSapper& defender, const MainSupport::ModelHeightSettings& modelHeightSettings);
+		[[nodiscard]] double GetSapperCombatSurfaceDistance(const MainSupport::SpawnedSapper& attacker, const MainSupport::SpawnedSapper& defender, const MainSupport::ModelHeightSettings& modelHeightSettings);
+		[[nodiscard]] Vec3 GetSapperCombatStopPosition(const MainSupport::SpawnedSapper& attacker, const MainSupport::SpawnedSapper& defender, const MainSupport::ModelHeightSettings& modelHeightSettings);
+		[[nodiscard]] double GetSapperBaseCombatSurfaceDistance(const MainSupport::SpawnedSapper& attacker, const Vec3& basePosition, double baseRadius, const MainSupport::ModelHeightSettings& modelHeightSettings);
+		[[nodiscard]] Vec3 GetSapperBaseCombatStopPosition(const MainSupport::SpawnedSapper& attacker, const Vec3& basePosition, double baseRadius, const MainSupport::ModelHeightSettings& modelHeightSettings);
 		[[nodiscard]] Optional<double> GetPlacedModelObstacleRadius(const PlacedModel& placedModel);
 		void StopSapperAtPosition(MainSupport::SpawnedSapper& sapper, const Vec3& position);
-		[[nodiscard]] Optional<size_t> FindNearestSapperInRange(const MainSupport::SpawnedSapper& source, const Array<MainSupport::SpawnedSapper>& candidates);
+     [[nodiscard]] Optional<size_t> FindNearestSapperInRange(const MainSupport::SpawnedSapper& source, const Array<MainSupport::SpawnedSapper>& candidates, const MainSupport::ModelHeightSettings& modelHeightSettings);
 	}
 }

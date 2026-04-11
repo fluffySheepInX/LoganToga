@@ -111,7 +111,7 @@ void BirdModel::update(const double deltaTime)
 	evaluateAnimationPose();
 }
 
-void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color) const
+void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color, const double scale) const
 {
 	if (not m_loaded)
 	{
@@ -119,6 +119,10 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
 	}
 
 	const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
+	const Mat4x4 modelTransform = Mat4x4::Identity()
+		.scaled(scale)
+		.rotated(Quaternion::RotateY(yaw))
+		.translated(position);
 
 	if (not m_subMeshes.isEmpty())
 	{
@@ -133,11 +137,11 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
 
 			if (subMesh.diffuseTexture)
 			{
-				subMesh.dynamicMesh.draw(position, Quaternion::RotateY(yaw), subMesh.diffuseTexture, meshColor);
+                subMesh.dynamicMesh.draw(modelTransform, subMesh.diffuseTexture, meshColor);
 			}
 			else
 			{
-				subMesh.dynamicMesh.draw(position, Quaternion::RotateY(yaw), meshColor);
+                subMesh.dynamicMesh.draw(modelTransform, meshColor);
 			}
 		}
 		return;
@@ -145,14 +149,14 @@ void BirdModel::draw(const Vec3& position, const double yaw, const ColorF& color
 
 	if (not m_deformedVertices.isEmpty() && not m_indices.isEmpty())
 	{
-		m_dynamicMesh.draw(position, Quaternion::RotateY(yaw), color);
+      m_dynamicMesh.draw(modelTransform, color);
 		return;
 	}
 
-	m_mesh.draw(position, Quaternion::RotateY(yaw), color);
+ m_mesh.draw(modelTransform, color);
 }
 
-Optional<Vec3> BirdModel::groundContactPoint(const Vec3& position, const double yaw) const
+Optional<Vec3> BirdModel::groundContactPoint(const Vec3& position, const double yaw, const double scale) const
 {
 	const Array<Vertex3D>* vertices = nullptr;
 
@@ -196,7 +200,7 @@ Optional<Vec3> BirdModel::groundContactPoint(const Vec3& position, const double 
 		localGroundPoint.z /= static_cast<double>(groundVertexCount);
 	}
 
-	return (position + (Quaternion::RotateY(yaw) * localGroundPoint));
+  return (position + (Quaternion::RotateY(yaw) * (localGroundPoint * scale)));
 }
 
 bool BirdModel::isLoaded() const noexcept

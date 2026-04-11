@@ -46,6 +46,7 @@ namespace SkyAppFlow
 	{
 		MiniMap,
 		ResourcePanel,
+       ModelHeight,
       UnitEditor,
 	};
 

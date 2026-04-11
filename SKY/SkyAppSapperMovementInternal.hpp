@@ -10,7 +10,8 @@ namespace SkyAppSupport
 		[[nodiscard]] double GetObstacleCoreRadius(const PlacedModel& placedModel);
 		[[nodiscard]] bool IsObstacleModel(const PlacedModel& placedModel);
 		[[nodiscard]] Vec2 GetClosestPointOnObstacle(const PlacedModel& placedModel, const Vec2& point);
-		[[nodiscard]] bool IsPathSegmentBlocked(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels);
-		[[nodiscard]] Vec3 ClampReachablePointOnSegment(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels);
+       [[nodiscard]] double GetScaledSapperBodyRadius(const MainSupport::SpawnedSapper& sapper, const MainSupport::ModelHeightSettings& modelHeightSettings);
+		[[nodiscard]] bool IsPathSegmentBlocked(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels, double sapperBodyRadius);
+		[[nodiscard]] Vec3 ClampReachablePointOnSegment(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels, double sapperBodyRadius);
 	}
 }

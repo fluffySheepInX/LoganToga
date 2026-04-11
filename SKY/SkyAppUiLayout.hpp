@@ -8,6 +8,8 @@ namespace SkyAppUiLayout
 		inline constexpr int32 PanelMargin = 20;
 		inline constexpr int32 PanelGap = 20;
 		inline constexpr int32 RightColumnWidth = 220;
+      inline constexpr int32 ModelHeightPanelWidth = 460;
+        inline constexpr int32 ModelHeightPanelHeight = 420;
       inline constexpr int32 ResourcePanelIconButtonSize = 36;
 		inline constexpr int32 ResourcePanelIconButtonGap = 8;
      inline constexpr int32 ResourcePanelCollapsedHeight = 84;
@@ -30,6 +32,14 @@ namespace SkyAppUiLayout
 				Clamp(position.y, 0, Max(0, (sceneHeight - panelHeight)))
 			};
 		}
+	}
+
+	inline constexpr int32 UiEditGridCellSize = 8;
+	inline constexpr int32 UiEditGridMajorLineSpan = 4;
+
+	[[nodiscard]] inline int32 SnapToUiEditGrid(const int32 value)
+	{
+		return static_cast<int32>(Math::Round(static_cast<double>(value) / UiEditGridCellSize) * UiEditGridCellSize);
 	}
 
  [[nodiscard]] inline int32 AccordionPanelHeight(const bool expanded, const int32 expandedHeight)
@@ -55,6 +65,18 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Point DefaultUnitEditorListPosition()
 	{
 		return Point{ 20, 124 };
+	}
+
+	[[nodiscard]] inline Point DefaultModelHeightPosition(const int32 sceneWidth, const int32 sceneHeight)
+	{
+		(void)sceneWidth;
+		(void)sceneHeight;
+		return Point{ (20 + 480 + PanelGap), (20 + CameraSettingsExpandedHeight + PanelGap) };
+	}
+
+	[[nodiscard]] inline Point SnapToUiEditGrid(const Point& position)
+	{
+		return Point{ SnapToUiEditGrid(position.x), SnapToUiEditGrid(position.y) };
 	}
 
 	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = true)
@@ -107,17 +129,22 @@ namespace SkyAppUiLayout
        return Rect{ (sceneWidth - 340), Max(20, (sceneHeight - 620)), 320, 580 };
 	}
 
- [[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const bool skySettingsExpanded = true, const bool cameraSettingsExpanded = true)
+    [[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-     (void)sceneWidth;
-		(void)sceneHeight;
-     const Rect cameraPanel = CameraSettings(sceneWidth, sceneHeight, skySettingsExpanded, cameraSettingsExpanded);
-     return Rect{ cameraPanel.x, (cameraPanel.bottomY() + PanelGap), 460, 320 };
+      const Point clampedPosition = ClampPanelPosition(position, ModelHeightPanelWidth, ModelHeightPanelHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, ModelHeightPanelWidth, ModelHeightPanelHeight };
+	}
+
+	[[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const bool skySettingsExpanded = true, const bool cameraSettingsExpanded = true)
+	{
+		(void)skySettingsExpanded;
+		(void)cameraSettingsExpanded;
+		return ModelHeight(sceneWidth, sceneHeight, DefaultModelHeightPosition(sceneWidth, sceneHeight));
 	}
 
 	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-		const int32 panelHeight = Max(520, (sceneHeight - 164));
+        const int32 panelHeight = Max(660, (sceneHeight - 84));
 		const Point clampedPosition = ClampPanelPosition(position, 340, panelHeight, sceneWidth, sceneHeight);
 		return Rect{ clampedPosition.x, clampedPosition.y, 340, panelHeight };
 	}

@@ -9,8 +9,8 @@ public:
 
 	void update(double deltaTime);
 
-	void draw(const Vec3& position, double yaw, const ColorF& color = Palette::White) const;
-	[[nodiscard]] Optional<Vec3> groundContactPoint(const Vec3& position, double yaw) const;
+    void draw(const Vec3& position, double yaw, const ColorF& color = Palette::White, double scale = 1.0) const;
+	[[nodiscard]] Optional<Vec3> groundContactPoint(const Vec3& position, double yaw, double scale = 1.0) const;
 
 	[[nodiscard]] bool isLoaded() const noexcept;
 	[[nodiscard]] bool hasAnimations() const noexcept;

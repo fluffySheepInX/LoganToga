@@ -77,6 +77,11 @@ namespace SkyAppSupport
 {
 	namespace SapperMovementDetail
 	{
+        double GetScaledSapperBodyRadius(const SpawnedSapper& sapper, const ModelHeightSettings& modelHeightSettings)
+		{
+			return Max(0.1, (SapperInternal::SapperBodyRadius * Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, sapper))));
+		}
+
 		Vec2 ToHorizontal(const Vec3& value)
 		{
 			return Vec2{ value.x, value.z };
@@ -122,7 +127,7 @@ namespace SkyAppSupport
 			return ToHorizontal(placedModel.position);
 		}
 
-		bool IsPathSegmentBlocked(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels)
+      bool IsPathSegmentBlocked(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels, const double sapperBodyRadius)
 		{
 			const Vec2 start2 = ToHorizontal(start);
 			const Vec2 goal2 = ToHorizontal(goal);
@@ -139,7 +144,7 @@ namespace SkyAppSupport
 					continue;
 				}
 
-				const double requiredDistance = (GetObstacleCoreRadius(placedModel) + SapperInternal::SapperBodyRadius + SapperInternal::ObstacleAvoidancePadding);
+             const double requiredDistance = (GetObstacleCoreRadius(placedModel) + sapperBodyRadius + SapperInternal::ObstacleAvoidancePadding);
 				if (IsWallObstacle(placedModel))
 				{
 					const auto [wallStart, wallGoal] = GetWallSegment(placedModel);
@@ -160,7 +165,7 @@ namespace SkyAppSupport
 			return false;
 		}
 
-		Vec3 ClampReachablePointOnSegment(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels)
+      Vec3 ClampReachablePointOnSegment(const Vec3& start, const Vec3& goal, const Array<PlacedModel>& placedModels, const double sapperBodyRadius)
 		{
 			if ((goal - start).lengthSq() <= 0.0001)
 			{
@@ -173,7 +178,7 @@ namespace SkyAppSupport
 			{
 				const double mid = ((low + high) * 0.5);
 				const Vec3 candidate = start.lerp(goal, mid);
-				if (IsPathSegmentBlocked(start, candidate, placedModels))
+               if (IsPathSegmentBlocked(start, candidate, placedModels, sapperBodyRadius))
 				{
 					high = mid;
 				}
@@ -188,7 +193,7 @@ namespace SkyAppSupport
 		}
 	}
 
-	void ResolveSapperSpacingAgainstObstacles(Array<SpawnedSapper>& spawnedSappers, const MapData& mapData)
+ void ResolveSapperSpacingAgainstObstacles(Array<SpawnedSapper>& spawnedSappers, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& sapper : spawnedSappers)
 		{
@@ -201,6 +206,7 @@ namespace SkyAppSupport
 			const Vec3 finalDestination = sapper.destinationPosition;
 			Vec3 adjustedPosition = GetSpawnedSapperBasePosition(sapper);
 			bool adjusted = false;
+			const double sapperBodyRadius = SapperMovementDetail::GetScaledSapperBodyRadius(sapper, modelHeightSettings);
 
 			for (const auto& placedModel : mapData.placedModels)
 			{
@@ -209,7 +215,7 @@ namespace SkyAppSupport
 					continue;
 				}
 
-				const double requiredDistance = (SapperMovementDetail::GetObstacleCoreRadius(placedModel) + SapperInternal::SapperBodyRadius + SapperInternal::ObstacleAvoidancePadding);
+               const double requiredDistance = (SapperMovementDetail::GetObstacleCoreRadius(placedModel) + sapperBodyRadius + SapperInternal::ObstacleAvoidancePadding);
 				const Vec2 adjustedPosition2 = SapperMovementDetail::ToHorizontal(adjustedPosition);
 				const Vec2 closestObstaclePoint = SapperMovementDetail::GetClosestPointOnObstacle(placedModel, adjustedPosition2);
 				const Vec2 toObstacle2 = (closestObstaclePoint - adjustedPosition2);
@@ -269,7 +275,7 @@ namespace SkyAppSupport
 				sapper.startPosition = sapper.position;
 				sapper.moveStartedAt = Scene::Time();
 				sapper.moveDuration = 0.0;
-				SetSpawnedSapperTarget(sapper, finalDestination, mapData);
+              SetSpawnedSapperTarget(sapper, finalDestination, mapData, modelHeightSettings);
 			}
 		}
 	}

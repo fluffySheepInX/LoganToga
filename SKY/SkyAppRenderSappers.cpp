@@ -11,6 +11,8 @@ namespace SkyAppSupport
 	{
 		constexpr double HealthBarWidth = 36.0;
 		constexpr double HealthBarHeight = 5.0;
+      constexpr int32 AttackRangeSegmentCount = 56;
+		constexpr double Tau = 6.283185307179586;
            constexpr double TierBadgeWidth = 34.0;
 			constexpr double TierBadgeHeight = 18.0;
 		constexpr ColorF SuppressionAccentColor{ 0.70, 0.90, 1.0, 0.95 };
@@ -28,9 +30,27 @@ namespace SkyAppSupport
 
 			return Vec2{ screenPosition.x, screenPosition.y };
 		}
+
+		void DrawProjectedCircumference(const AppCamera3D& camera, const Vec3& center, const double radius, const double thickness, const ColorF& color)
+		{
+			for (int32 i = 0; i < AttackRangeSegmentCount; ++i)
+			{
+				const double startAngle = (Tau * i / AttackRangeSegmentCount);
+				const double endAngle = (Tau * (i + 1) / AttackRangeSegmentCount);
+				const Vec3 worldStart = center.movedBy((Math::Cos(startAngle) * radius), 0, (Math::Sin(startAngle) * radius));
+				const Vec3 worldEnd = center.movedBy((Math::Cos(endAngle) * radius), 0, (Math::Sin(endAngle) * radius));
+				const Optional<Vec2> screenStart = ProjectToScreen(camera, worldStart);
+				const Optional<Vec2> screenEnd = ProjectToScreen(camera, worldEnd);
+
+				if (screenStart && screenEnd)
+				{
+					Line{ *screenStart, *screenEnd }.draw(thickness, color);
+				}
+			}
+		}
 	}
 
-  Optional<size_t> HitTestSpawnedSapper(const Array<SpawnedSapper>& spawnedSappers, const AppCamera3D& camera)
+  Optional<size_t> HitTestSpawnedSapper(const Array<SpawnedSapper>& spawnedSappers, const AppCamera3D& camera, const ModelHeightSettings& modelHeightSettings)
 	{
 		const Optional<Ray> cursorRay = TryScreenToRay(camera, Cursor::PosF());
 		if (not cursorRay)
@@ -43,8 +63,9 @@ namespace SkyAppSupport
 
 		for (size_t i = 0; i < spawnedSappers.size(); ++i)
 		{
-			const Vec3 hitCenter = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, 1.4, 0);
-			const Sphere hitSphere{ hitCenter, 1.2 };
+            const double scale = Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, spawnedSappers[i]));
+			const Vec3 hitCenter = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, (1.4 * scale), 0);
+			const Sphere hitSphere{ hitCenter, Max(0.45, (1.2 * scale)) };
 
 			if (const auto distance = cursorRay->intersects(hitSphere))
 			{
@@ -57,6 +78,17 @@ namespace SkyAppSupport
 		}
 
 		return hitIndex;
+	}
+
+	void DrawSelectedSapperAttackRange(const AppCamera3D& camera, const SpawnedSapper& sapper)
+	{
+		const Vec3 rangeCenter = GetSpawnedSapperBasePosition(sapper).movedBy(0, 0.05, 0);
+		const double pulse = (0.76 + (0.24 * Periodic::Sine0_1(1.4s)));
+		const ColorF outerColor{ 1.0, 0.80, 0.24, 0.16 + 0.10 * pulse };
+		const ColorF innerColor{ 1.0, 0.93, 0.52, 0.72 + 0.12 * pulse };
+
+		DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 5.0, outerColor);
+		DrawProjectedCircumference(camera, rangeCenter, sapper.attackRange, 2.2, innerColor);
 	}
 
    void DrawSelectedSapperRing(const AppCamera3D& camera, const SpawnedSapper& sapper)
@@ -144,7 +176,7 @@ namespace SkyAppSupport
 		}
 	}
 
-  void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const BirdModel& sugoiCarModel, const ColorF& color)
+    void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const BirdModel& sapperModel, const BirdModel& sugoiCarModel, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
@@ -157,6 +189,11 @@ namespace SkyAppSupport
 			const double popIn = Min(elapsed / 0.25, 1.0);
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
 			const BirdModel& drawModel = ((sapper.unitType == SapperUnitType::SugoiCar) ? sugoiCarModel : sapperModel);
+          const double drawScale = (sapper.unitType == SapperUnitType::SugoiCar)
+				? GetModelScale(modelHeightSettings, ModelHeightTarget::SugoiCar)
+				: ((sapper.team == UnitTeam::Enemy)
+					? GetModelScale(modelHeightSettings, ModelHeightTarget::Ashigaru)
+					: GetModelScale(modelHeightSettings, ModelHeightTarget::Bird));
 
          if (drawModel.isLoaded())
 			{
@@ -170,7 +207,7 @@ namespace SkyAppSupport
 					Sphere{ renderPosition.movedBy(0, 1.25, 0), (1.05 + 0.10 * pulse) }.draw(ColorF{ SuppressionAuraColor.r, SuppressionAuraColor.g, SuppressionAuraColor.b, (SuppressionAuraColor.a + 0.05 * pulse) }.removeSRGBCurve());
 				}
 
-              drawModel.draw(renderPosition, GetSpawnedSapperYaw(sapper), tint.removeSRGBCurve());
+                drawModel.draw(renderPosition, GetSpawnedSapperYaw(sapper), tint.removeSRGBCurve(), drawScale);
 			}
 			else
 			{

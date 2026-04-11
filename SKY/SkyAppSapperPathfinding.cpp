@@ -17,7 +17,7 @@ namespace
 		Array<Optional<size_t>> previousIndices;
 	};
 
-	[[nodiscard]] NavRouteSearch BuildNavRouteSearch(const Vec3& start, const MapData& mapData)
+ [[nodiscard]] NavRouteSearch BuildNavRouteSearch(const Vec3& start, const MapData& mapData, const double sapperBodyRadius)
 	{
 		NavRouteSearch result{
 			.bestDistances = Array<double>(mapData.navPoints.size(), Math::Inf),
@@ -27,7 +27,7 @@ namespace
 
 		for (size_t i = 0; i < mapData.navPoints.size(); ++i)
 		{
-			if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(start, mapData.navPoints[i].position, mapData.placedModels))
+          if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(start, mapData.navPoints[i].position, mapData.placedModels, sapperBodyRadius))
 			{
 				result.bestDistances[i] = start.distanceFrom(mapData.navPoints[i].position);
 			}
@@ -62,7 +62,7 @@ namespace
 							|| (mapData.navPoints.size() <= fromIndex)
 							|| (mapData.navPoints.size() <= toIndex)
 							|| visited[toIndex]
-							|| SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(mapData.navPoints[fromIndex].position, mapData.navPoints[toIndex].position, mapData.placedModels))
+                     || SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(mapData.navPoints[fromIndex].position, mapData.navPoints[toIndex].position, mapData.placedModels, sapperBodyRadius))
 						{
 							return;
 						}
@@ -99,23 +99,24 @@ namespace
 		return nextIndex;
 	}
 
-	[[nodiscard]] RoutePlan BuildRoutePlan(const Vec3& start, const Vec3& destination, const MapData& mapData)
+  [[nodiscard]] RoutePlan BuildRoutePlan(const SpawnedSapper& sapper, const Vec3& start, const Vec3& destination, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
 	{
 		const Vec3 groundedDestination{ destination.x, 0.0, destination.z };
+		const double sapperBodyRadius = SkyAppSupport::SapperMovementDetail::GetScaledSapperBodyRadius(sapper, modelHeightSettings);
 
-		if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(start, groundedDestination, mapData.placedModels))
+        if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(start, groundedDestination, mapData.placedModels, sapperBodyRadius))
 		{
 			return RoutePlan{ .nextTarget = groundedDestination, .resolvedDestination = groundedDestination };
 		}
 
 		if (mapData.navPoints.isEmpty())
 		{
-			const Vec3 reachablePoint = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(start, groundedDestination, mapData.placedModels);
+            const Vec3 reachablePoint = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(start, groundedDestination, mapData.placedModels, sapperBodyRadius);
 			return RoutePlan{ .nextTarget = reachablePoint, .resolvedDestination = reachablePoint };
 		}
 
-		const NavRouteSearch navRouteSearch = BuildNavRouteSearch(start, mapData);
-		const Vec3 directFallback = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(start, groundedDestination, mapData.placedModels);
+      const NavRouteSearch navRouteSearch = BuildNavRouteSearch(start, mapData, sapperBodyRadius);
+		const Vec3 directFallback = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(start, groundedDestination, mapData.placedModels, sapperBodyRadius);
 		double bestGapDistanceSq = groundedDestination.distanceFromSq(directFallback);
 		double bestTravelDistance = start.distanceFrom(directFallback);
 		RoutePlan bestFallbackPlan{ .nextTarget = directFallback, .resolvedDestination = directFallback };
@@ -129,7 +130,7 @@ namespace
 				continue;
 			}
 
-			if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(mapData.navPoints[i].position, groundedDestination, mapData.placedModels))
+            if (not SkyAppSupport::SapperMovementDetail::IsPathSegmentBlocked(mapData.navPoints[i].position, groundedDestination, mapData.placedModels, sapperBodyRadius))
 			{
 				const double candidateRouteDistance = (navRouteSearch.bestDistances[i] + mapData.navPoints[i].position.distanceFrom(groundedDestination));
 				if (candidateRouteDistance < bestGoalRouteDistance)
@@ -139,7 +140,7 @@ namespace
 				}
 			}
 
-			const Vec3 candidateReachablePoint = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(mapData.navPoints[i].position, groundedDestination, mapData.placedModels);
+           const Vec3 candidateReachablePoint = SkyAppSupport::SapperMovementDetail::ClampReachablePointOnSegment(mapData.navPoints[i].position, groundedDestination, mapData.placedModels, sapperBodyRadius);
 			const double candidateGapDistanceSq = groundedDestination.distanceFromSq(candidateReachablePoint);
 			const double candidateTravelDistance = (navRouteSearch.bestDistances[i] + mapData.navPoints[i].position.distanceFrom(candidateReachablePoint));
 
@@ -197,11 +198,11 @@ namespace
 
 namespace SkyAppSupport
 {
-	void SetSpawnedSapperTarget(SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData)
+  void SetSpawnedSapperTarget(SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
 	{
 		const Vec3 currentPosition = GetSpawnedSapperBasePosition(sapper);
 		const Vec3 groundedTargetPosition{ targetPosition.x, 0.0, targetPosition.z };
-		const RoutePlan routePlan = BuildRoutePlan(currentPosition, groundedTargetPosition, mapData);
+       const RoutePlan routePlan = BuildRoutePlan(sapper, currentPosition, groundedTargetPosition, mapData, modelHeightSettings);
 		sapper.destinationPosition = routePlan.resolvedDestination;
 
 		if (currentPosition.distanceFrom(routePlan.resolvedDestination) <= 0.05)

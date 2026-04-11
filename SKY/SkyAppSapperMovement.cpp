@@ -34,7 +34,7 @@ namespace SkyAppSupport
 		sapper.moveDuration = Max(SapperInternal::MinimumSapperMoveDuration, (remainingDistance / GetEffectiveSapperMoveSpeed(sapper)));
 	}
 
-	void UpdateSpawnedSappers(Array<SpawnedSapper>& spawnedSappers, const MapData& mapData)
+ void UpdateSpawnedSappers(Array<SpawnedSapper>& spawnedSappers, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& sapper : spawnedSappers)
 		{
@@ -54,7 +54,7 @@ namespace SkyAppSupport
 
 				if (0.05 < sapper.position.distanceFrom(sapper.destinationPosition))
 				{
-					SetSpawnedSapperTarget(sapper, sapper.destinationPosition, mapData);
+                    SetSpawnedSapperTarget(sapper, sapper.destinationPosition, mapData, modelHeightSettings);
 				}
 			}
 		}

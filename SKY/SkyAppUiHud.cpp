@@ -196,7 +196,7 @@ namespace SkyAppFlow
 
 			if (state.uiEditMode)
 			{
-				state.uiLayoutMessage.show(U"UI Edit: drag mini map / resource");
+               state.uiLayoutMessage.show(U"UI Edit: drag panels / grid snap");
 			}
 		}
 

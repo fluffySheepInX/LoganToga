@@ -38,6 +38,9 @@ namespace SkyAppFlow
 			case UiLayoutPanel::MiniMap:
 				return settings.miniMapPosition;
 
+			case UiLayoutPanel::ModelHeight:
+				return settings.modelHeightPosition;
+
 			case UiLayoutPanel::UnitEditor:
 				return settings.unitEditorPosition;
 
@@ -77,6 +80,10 @@ namespace SkyAppFlow
 				{
 					beginDrag(UiLayoutPanel::MiniMap, frame.panels.miniMap);
 				}
+                else if (state.modelHeightEditMode && frame.panels.modelHeight.mouseOver())
+				{
+					beginDrag(UiLayoutPanel::ModelHeight, frame.panels.modelHeight);
+				}
                else if (frame.panels.unitEditor.mouseOver())
 				{
 					beginDrag(UiLayoutPanel::UnitEditor, frame.panels.unitEditor);
@@ -94,13 +101,19 @@ namespace SkyAppFlow
 			{
 				Point& panelPosition = GetUiPanelPosition(state.uiLayoutSettings, state.uiPanelDrag->panel);
 				const Point previousPosition = panelPosition;
-				const Point requestedPosition = (Cursor::Pos() - state.uiPanelDrag->grabOffset);
+                const Point requestedPosition = SkyAppUiLayout::SnapToUiEditGrid(Cursor::Pos() - state.uiPanelDrag->grabOffset);
 
 				if (state.uiPanelDrag->panel == UiLayoutPanel::MiniMap)
 				{
 					const Rect rect = SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), requestedPosition, state.miniMapExpanded);
 					panelPosition = Point{ rect.x, rect.y };
                    movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				}
+             else if (state.uiPanelDrag->panel == UiLayoutPanel::ModelHeight)
+				{
+					const Rect rect = SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), requestedPosition);
+					panelPosition = Point{ rect.x, rect.y };
+					movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
 				}
                 else if (state.uiPanelDrag->panel == UiLayoutPanel::UnitEditor)
 				{
@@ -270,8 +283,8 @@ namespace SkyAppFlow
 		resources.birdModel.update(Scene::DeltaTime());
 		resources.ashigaruModel.update(Scene::DeltaTime());
      resources.sugoiCarModel.update(Scene::DeltaTime());
-     UpdateSpawnedSappers(state.spawnedSappers, state.mapData);
-		UpdateSpawnedSappers(state.enemySappers, state.mapData);
+     UpdateSpawnedSappers(state.spawnedSappers, state.mapData, state.modelHeightSettings);
+		UpdateSpawnedSappers(state.enemySappers, state.mapData, state.modelHeightSettings);
 
 		if (not state.playerWon)
 		{

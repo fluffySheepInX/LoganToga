@@ -21,6 +21,19 @@ namespace SkyAppSupport
 			}
 		}
 
+		StringView ToUnitFootprintTypeLabel(const UnitFootprintType footprintType)
+		{
+			switch (footprintType)
+			{
+			case UnitFootprintType::Capsule:
+				return U"Capsule";
+
+			case UnitFootprintType::Circle:
+			default:
+				return U"Circle";
+			}
+		}
+
 		StringView ToMovementTypeLabel(const MovementType movementType)
 		{
 			switch (movementType)
@@ -259,12 +272,14 @@ namespace SkyAppSupport
 
 		void ClampUnitParameters(UnitParameters& parameters)
 		{
-			parameters.maxHitPoints = Clamp(parameters.maxHitPoints, 1.0, 500.0);
-			parameters.moveSpeed = Clamp(parameters.moveSpeed, 0.5, 12.0);
-			parameters.attackRange = Clamp(parameters.attackRange, 0.5, 12.0);
-			parameters.attackDamage = Clamp(parameters.attackDamage, 0.0, 80.0);
-			parameters.attackInterval = Clamp(parameters.attackInterval, 0.05, 5.0);
-           parameters.manaCost = Clamp(parameters.manaCost, 0.0, 800.0);
+           parameters.maxHitPoints = Clamp(parameters.maxHitPoints, 1.0, 1000.0);
+			parameters.moveSpeed = Clamp(parameters.moveSpeed, 0.5, 24.0);
+			parameters.attackRange = Clamp(parameters.attackRange, 0.5, 24.0);
+			parameters.attackDamage = Clamp(parameters.attackDamage, 0.0, 160.0);
+			parameters.attackInterval = Clamp(parameters.attackInterval, 0.05, 10.0);
+		   parameters.manaCost = Clamp(parameters.manaCost, 0.0, 1600.0);
+           parameters.footprintRadius = Clamp(parameters.footprintRadius, 0.1, 4.0);
+			parameters.footprintHalfLength = Clamp(parameters.footprintHalfLength, 0.0, 6.0);
 		}
 
 		void DrawMovementTypeSelector(const Rect& panel, const double top, MovementType& movementType)
@@ -285,6 +300,27 @@ namespace SkyAppSupport
 			}
 		}
 
+		void DrawFootprintTypeSelector(const Rect& panel, const double top, UnitParameters& parameters)
+		{
+			SimpleGUI::GetFont()(U"Footprint").draw((panel.x + 16), top, ColorF{ 0.14 });
+			SimpleGUI::GetFont()(ToUnitFootprintTypeLabel(parameters.footprintType)).draw((panel.x + 108), top, ColorF{ 0.28 });
+
+			const Rect circleButton{ (panel.x + panel.w - 152), static_cast<int32>(top - 2), 64, 24 };
+			const Rect capsuleButton{ (panel.x + panel.w - 80), static_cast<int32>(top - 2), 64, 24 };
+
+			if (DrawMillStepButton(circleButton, U"Circle"))
+			{
+				parameters.footprintType = UnitFootprintType::Circle;
+			}
+
+			if (DrawMillStepButton(capsuleButton, U"Capsule"))
+			{
+				parameters.footprintType = UnitFootprintType::Capsule;
+				parameters.footprintHalfLength = Max(parameters.footprintHalfLength,
+					parameters.footprintRadius * ((parameters.movementType == MovementType::Tank) ? 2.0 : 1.1));
+			}
+		}
+
 		void ApplyUnitParametersToSpawned(Array<SpawnedSapper>& sappers, const UnitTeam team, const SapperUnitType unitType, const UnitParameters& parameters)
 		{
 			for (auto& sapper : sappers)
@@ -300,38 +336,38 @@ namespace SkyAppSupport
 			}
 		}
 
-		void DrawUnitParameterRows(const Rect& panel, const int32 sliderBase, UnitParameters& parameters)
+       void DrawUnitParameterRows(const Rect& panel, const int32 sliderBase, UnitParameters& parameters, const int32 top)
 		{
            const int32 cardX = (panel.x + 10);
 			const int32 cardWidth = (panel.w - 20);
-            const int32 cardHeight = 60;
-			const int32 cardTop = (panel.y + 100);
-			const int32 cardStep = 62;
+                const int32 cardHeight = 76;
+          const int32 cardTop = top;
+          const int32 cardStep = 80;
 
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 0), cardWidth, cardHeight },
 				(sliderBase + 0),
 				parameters.maxHitPoints,
-				MillParameterEditorSpec{ U"Max HP", U"", 1.0, 500.0, 5.0, 20.0, 50.0, 1.0, 0 });
+                MillParameterEditorSpec{ U"Max HP", U"", 1.0, 1000.0, 5.0, 20.0, 50.0, 1.0, 0 });
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 1), cardWidth, cardHeight },
 				(sliderBase + 1),
 				parameters.moveSpeed,
-				MillParameterEditorSpec{ U"Move Speed", U"", 0.5, 12.0, 0.1, 0.5, 1.0, 0.05, 2 });
+              MillParameterEditorSpec{ U"Move Speed", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 });
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 2), cardWidth, cardHeight },
 				(sliderBase + 2),
 				parameters.attackRange,
-				MillParameterEditorSpec{ U"Attack Range", U"", 0.5, 12.0, 0.1, 0.5, 1.0, 0.05, 2 });
+                MillParameterEditorSpec{ U"Attack Range", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 });
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 3), cardWidth, cardHeight },
 				(sliderBase + 3),
 				parameters.attackDamage,
-				MillParameterEditorSpec{ U"Attack Damage", U"", 0.0, 80.0, 1.0, 5.0, 10.0, 1.0, 0 });
+               MillParameterEditorSpec{ U"Attack Damage", U"", 0.0, 160.0, 1.0, 5.0, 10.0, 1.0, 0 });
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 4), cardWidth, cardHeight },
 				(sliderBase + 4),
 				parameters.attackInterval,
-				MillParameterEditorSpec{ U"Attack Interval", U"s", 0.05, 5.0, 0.05, 0.25, 0.5, 0.05, 2 });
+              MillParameterEditorSpec{ U"Attack Interval", U"s", 0.05, 10.0, 0.05, 0.25, 0.5, 0.05, 2 });
 			DrawMillParameterEditorCard(Rect{ cardX, (cardTop + cardStep * 5), cardWidth, cardHeight },
 				(sliderBase + 5),
 				parameters.manaCost,
-              MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 800.0, 1.0, 5.0, 10.0, 1.0, 0 });
+                  MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 1600.0, 1.0, 5.0, 10.0, 1.0, 0 });
 		}
 	}
 }

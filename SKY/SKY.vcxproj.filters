@@ -279,6 +279,12 @@
     <ClCompile Include="MainSceneIndicators.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SkyAppRenderOverlayWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppRenderOverlayHud.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BirdModel.hpp">
@@ -351,6 +357,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SkyAppInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppRenderOverlayInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -86,6 +86,12 @@ namespace MainSupport
 		Tank,
 	};
 
+	enum class UnitFootprintType
+	{
+		Circle,
+		Capsule,
+	};
+
 	enum class ResourceType
 	{
 		Budget,
@@ -117,6 +123,9 @@ namespace MainSupport
 		double attackDamage = 12.0;
 		double attackInterval = 0.8;
 		double manaCost = SapperCost;
+      UnitFootprintType footprintType = UnitFootprintType::Circle;
+		double footprintRadius = 1.2;
+		double footprintHalfLength = 0.0;
 	};
 
 	[[nodiscard]] inline UnitParameters MakeDefaultUnitParameters(const UnitTeam team, const SapperUnitType unitType)
@@ -132,6 +141,9 @@ namespace MainSupport
 				.attackDamage = ((team == UnitTeam::Enemy) ? 24.0 : 28.0),
 				.attackInterval = 1.15,
 				.manaCost = SugoiCarCost,
+              .footprintType = UnitFootprintType::Capsule,
+				.footprintRadius = 0.95,
+				.footprintHalfLength = 2.05,
 			};
 
 		case SapperUnitType::ArcaneInfantry:
@@ -269,6 +281,9 @@ namespace MainSupport
 		double attackRange = 3.2;
      double baseAttackDamage = 12.0;
 		double baseAttackInterval = 0.8;
+       UnitFootprintType footprintType = UnitFootprintType::Circle;
+		double footprintRadius = 1.2;
+		double footprintHalfLength = 0.0;
 		double suppressedUntil = -1000.0;
 		double suppressedMoveSpeedMultiplier = 1.0;
 		double suppressedAttackDamageMultiplier = 1.0;
@@ -282,7 +297,13 @@ namespace MainSupport
 		double birdOffsetY = 0.0;
 		double ashigaruOffsetY = 0.0;
       double sugoiCarOffsetY = 0.0;
+      double birdScale = 1.0;
+		double ashigaruScale = 1.0;
+		double sugoiCarScale = 1.0;
 	};
+
+	inline constexpr double ModelScaleMin = 0.25;
+	inline constexpr double ModelScaleMax = 4.0;
 
 	enum class ModelHeightTarget
 	{
@@ -291,10 +312,58 @@ namespace MainSupport
 		SugoiCar,
 	};
 
+	[[nodiscard]] inline double& GetModelScale(ModelHeightSettings& settings, const ModelHeightTarget target)
+	{
+		switch (target)
+		{
+		case ModelHeightTarget::Ashigaru:
+			return settings.ashigaruScale;
+
+		case ModelHeightTarget::SugoiCar:
+			return settings.sugoiCarScale;
+
+		case ModelHeightTarget::Bird:
+		default:
+			return settings.birdScale;
+		}
+	}
+
+	[[nodiscard]] inline double GetModelScale(const ModelHeightSettings& settings, const ModelHeightTarget target)
+	{
+		switch (target)
+		{
+		case ModelHeightTarget::Ashigaru:
+			return settings.ashigaruScale;
+
+		case ModelHeightTarget::SugoiCar:
+			return settings.sugoiCarScale;
+
+		case ModelHeightTarget::Bird:
+		default:
+			return settings.birdScale;
+		}
+	}
+
+	[[nodiscard]] inline double GetModelScaleForUnit(const ModelHeightSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		if (unitType == SapperUnitType::SugoiCar)
+		{
+			return GetModelScale(settings, ModelHeightTarget::SugoiCar);
+		}
+
+		return GetModelScale(settings, (team == UnitTeam::Enemy) ? ModelHeightTarget::Ashigaru : ModelHeightTarget::Bird);
+	}
+
+	[[nodiscard]] inline double GetSpawnedSapperModelScale(const ModelHeightSettings& settings, const SpawnedSapper& sapper)
+	{
+		return GetModelScaleForUnit(settings, sapper.team, sapper.unitType);
+	}
+
 	struct UiLayoutSettings
 	{
 		Point miniMapPosition{ 0, 0 };
 		Point resourcePanelPosition{ 0, 0 };
+     Point modelHeightPosition{ 0, 0 };
       Point unitEditorPosition{ 0, 0 };
 		Point unitEditorListPosition{ 0, 0 };
 	};

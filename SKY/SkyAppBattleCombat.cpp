@@ -184,7 +184,7 @@ namespace SkyAppFlow
 			if (moveImmediately)
 			{
 				const size_t enemyIndex = (state.enemySappers.size() - 1);
-				SetSpawnedSapperTarget(state.enemySappers[enemyIndex], GetSapperPopTargetPosition(state.mapData.playerBasePosition, enemyIndex), state.mapData);
+                SetSpawnedSapperTarget(state.enemySappers[enemyIndex], GetSapperPopTargetPosition(state.mapData.playerBasePosition, enemyIndex), state.mapData, state.modelHeightSettings);
 			}
 
 			++state.enemyReinforcementCount;

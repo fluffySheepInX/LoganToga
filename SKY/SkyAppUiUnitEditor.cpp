@@ -78,7 +78,8 @@ namespace SkyAppSupport
      Rect{ detailPanel.x, (detailPanel.bottomY() - 46), detailPanel.w, 1 }.draw(ColorF{ 0.80, 0.78, 0.72 });
 		SimpleGUI::GetFont()(ToUnitEditorSectionLabel(activeSection)).draw((detailPanel.x + 16), (detailPanel.y + 38), ColorF{ 0.16 });
 		DrawMovementTypeSelector(detailPanel, (detailPanel.y + 70), parameters.movementType);
-		DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(activeSection), parameters);
+      DrawFootprintTypeSelector(detailPanel, (detailPanel.y + 100), parameters);
+		DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(activeSection), parameters, (detailPanel.y + 128));
 		ClampUnitParameters(parameters);
 
 		const Rect resetButton{ (detailPanel.x + 16), (detailPanel.y + detailPanel.h - 36), 92, 28 };

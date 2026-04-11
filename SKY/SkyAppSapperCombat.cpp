@@ -5,7 +5,7 @@ using namespace MainSupport;
 
 namespace SkyAppSupport
 {
-	void ResolveSapperSpacingAgainstUnits(Array<SpawnedSapper>& spawnedSappers, const Array<SpawnedSapper>& enemySappers)
+   void ResolveSapperSpacingAgainstUnits(Array<SpawnedSapper>& spawnedSappers, const Array<SpawnedSapper>& enemySappers, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& sapper : spawnedSappers)
 		{
@@ -27,17 +27,18 @@ namespace SkyAppSupport
 				}
 
 				const Vec3 enemyPosition = GetSpawnedSapperBasePosition(enemySapper);
-				const double distanceSq = sapperPosition.distanceFromSq(enemyPosition);
-				const double stopDistance = SapperInternal::GetSapperCombatStopDistance(sapper, enemySapper);
+                const double surfaceDistance = SapperInternal::GetSapperCombatSurfaceDistance(sapper, enemySapper, modelHeightSettings);
 
-				if ((Square(stopDistance) < distanceSq) || (distanceSq >= nearestDistanceSq))
+               if ((sapper.attackRange < surfaceDistance) || (surfaceDistance >= nearestDistanceSq))
 				{
 					continue;
 				}
 
-				const Vec3 separationDirection = SapperInternal::ToHorizontalDirectionOrFallback((sapperPosition - enemyPosition), (sapperPosition - sapper.targetPosition));
-				nearestDistanceSq = distanceSq;
-				stopPosition = (enemyPosition + separationDirection * stopDistance);
+               const double facingYaw = SapperInternal::ToSapperYaw((enemyPosition - sapperPosition), sapper.facingYaw);
+				SpawnedSapper orientedSapper = sapper;
+				orientedSapper.facingYaw = facingYaw;
+				nearestDistanceSq = surfaceDistance;
+                stopPosition = SapperInternal::GetSapperCombatStopPosition(orientedSapper, enemySapper, modelHeightSettings);
 				targetPosition = enemyPosition;
 			}
 
@@ -49,7 +50,7 @@ namespace SkyAppSupport
 		}
 	}
 
-	void ResolveSapperSpacingAgainstBase(Array<SpawnedSapper>& spawnedSappers, const Vec3& enemyBasePosition)
+   void ResolveSapperSpacingAgainstBase(Array<SpawnedSapper>& spawnedSappers, const Vec3& enemyBasePosition, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& sapper : spawnedSappers)
 		{
@@ -59,21 +60,22 @@ namespace SkyAppSupport
 			}
 
 			const Vec3 sapperPosition = GetSpawnedSapperBasePosition(sapper);
-			const double stopDistance = (sapper.attackRange + BaseCombatRadius);
-			const double distanceSq = sapperPosition.distanceFromSq(enemyBasePosition);
+         const double surfaceDistance = SapperInternal::GetSapperBaseCombatSurfaceDistance(sapper, enemyBasePosition, BaseCombatRadius, modelHeightSettings);
 
-			if (Square(stopDistance) < distanceSq)
+          if (sapper.attackRange < surfaceDistance)
 			{
 				continue;
 			}
 
-			const Vec3 separationDirection = SapperInternal::ToHorizontalDirectionOrFallback((sapperPosition - enemyBasePosition), (sapperPosition - sapper.targetPosition));
-			sapper.facingYaw = SapperInternal::ToSapperYaw((enemyBasePosition - sapperPosition), sapper.facingYaw);
-			SapperInternal::StopSapperAtPosition(sapper, (enemyBasePosition + separationDirection * stopDistance));
+           const double facingYaw = SapperInternal::ToSapperYaw((enemyBasePosition - sapperPosition), sapper.facingYaw);
+			SpawnedSapper orientedSapper = sapper;
+			orientedSapper.facingYaw = facingYaw;
+			sapper.facingYaw = facingYaw;
+         SapperInternal::StopSapperAtPosition(sapper, SapperInternal::GetSapperBaseCombatStopPosition(orientedSapper, enemyBasePosition, BaseCombatRadius, modelHeightSettings));
 		}
 	}
 
-	void UpdateAutoCombat(Array<SpawnedSapper>& attackers, Array<SpawnedSapper>& defenders)
+ void UpdateAutoCombat(Array<SpawnedSapper>& attackers, Array<SpawnedSapper>& defenders, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& attacker : attackers)
 		{
@@ -82,7 +84,7 @@ namespace SkyAppSupport
 				continue;
 			}
 
-			const Optional<size_t> targetIndex = SapperInternal::FindNearestSapperInRange(attacker, defenders);
+         const Optional<size_t> targetIndex = SapperInternal::FindNearestSapperInRange(attacker, defenders, modelHeightSettings);
 
 			if (not targetIndex)
 			{

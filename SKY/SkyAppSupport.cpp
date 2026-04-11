@@ -49,7 +49,7 @@ namespace SkyAppSupport
 		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height()) }
 		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
 		, millStatusEditor{ SkyAppUiLayout::MillStatusEditor(Scene::Width(), Scene::Height()) }
-       , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
+          , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), uiLayoutSettings.modelHeightPosition) }
        , unitEditor{ SkyAppUiLayout::UnitEditor(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorPosition) }
 	   , unitEditorList{ SkyAppUiLayout::UnitEditorList(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorListPosition) }
         , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition, resourceAdjustExpanded) }

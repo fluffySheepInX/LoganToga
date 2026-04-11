@@ -68,13 +68,14 @@ namespace SkyAppFlow
 			return RectF{ Min(start.x, end.x), Min(start.y, end.y), Abs(end.x - start.x), Abs(end.y - start.y) };
 		}
 
-		[[nodiscard]] Array<size_t> CollectSappersInSelectionRect(const AppCamera3D& camera, const Array<SpawnedSapper>& spawnedSappers, const RectF& selectionRect)
+        [[nodiscard]] Array<size_t> CollectSappersInSelectionRect(const AppCamera3D& camera, const Array<SpawnedSapper>& spawnedSappers, const RectF& selectionRect, const ModelHeightSettings& modelHeightSettings)
 		{
 			Array<size_t> indices;
 
 			for (size_t i = 0; i < spawnedSappers.size(); ++i)
 			{
-				const Vec3 renderPosition = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, 1.4, 0);
+               const double scale = Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, spawnedSappers[i]));
+				const Vec3 renderPosition = GetSpawnedSapperRenderPosition(spawnedSappers[i]).movedBy(0, (1.4 * scale), 0);
 				const Float3 screenPosition = camera.worldToScreenPoint(Float3{ static_cast<float>(renderPosition.x), static_cast<float>(renderPosition.y), static_cast<float>(renderPosition.z) });
 
 				if (screenPosition.z <= 0.0f)
@@ -82,7 +83,7 @@ namespace SkyAppFlow
 					continue;
 				}
 
-				if (selectionRect.intersects(Circle{ Vec2{ screenPosition.x, screenPosition.y }, 12.0 }))
+               if (selectionRect.intersects(Circle{ Vec2{ screenPosition.x, screenPosition.y }, Max(4.0, (12.0 * scale)) }))
 				{
 					indices << i;
 				}
@@ -105,7 +106,7 @@ namespace SkyAppFlow
 			const Sphere playerBaseInteractionSphere{ state.mapData.playerBasePosition + Vec3{ 0, 4.0, 0 }, 4.5 };
 			const Optional<Ray> cursorRay = TryScreenToRay(state.camera, Cursor::PosF());
 			const bool blacksmithHovered = (cursorRay && playerBaseInteractionSphere.intersects(*cursorRay).has_value());
-			const Optional<size_t> hoveredSapperIndex = (frame.isEditorMode ? none : HitTestSpawnedSapper(state.spawnedSappers, state.camera));
+         const Optional<size_t> hoveredSapperIndex = (frame.isEditorMode ? none : HitTestSpawnedSapper(state.spawnedSappers, state.camera, state.modelHeightSettings));
 			const Optional<size_t> hoveredMillIndex = (frame.isEditorMode ? none : HitTestMill(state.mapData.placedModels, cursorRay));
 
 			if ((not frame.isEditorMode) && (not state.playerWon) && (not frame.isHoveringUI) && MouseL.down())
@@ -119,7 +120,7 @@ namespace SkyAppFlow
 
 				if ((SelectionDragThreshold <= selectionRect.w) || (SelectionDragThreshold <= selectionRect.h))
 				{
-					state.selectedSapperIndices = CollectSappersInSelectionRect(state.camera, state.spawnedSappers, selectionRect);
+                 state.selectedSapperIndices = CollectSappersInSelectionRect(state.camera, state.spawnedSappers, selectionRect, state.modelHeightSettings);
 					state.selectedMillIndex.reset();
 					state.showBlacksmithMenu = false;
 				}
@@ -167,7 +168,7 @@ namespace SkyAppFlow
 
 					for (size_t i = 0; i < validSelectedSapperIndices.size(); ++i)
 					{
-						SetSpawnedSapperTarget(state.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.mapData);
+                     SetSpawnedSapperTarget(state.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.mapData, state.modelHeightSettings);
 					}
 
 					state.selectedSapperIndices = validSelectedSapperIndices;
