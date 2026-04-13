@@ -1,5 +1,6 @@
 ﻿# include "SkyAppLoopInternal.hpp"
 # include "SkyAppUi.hpp"
+# include "SkyAppUiInternal.hpp"
 # include "MapEditor.hpp"
 # include "MainUi.hpp"
 
@@ -12,26 +13,26 @@ namespace SkyAppFlow
 
 	namespace
 	{
-       inline constexpr bool ShowDebugEnemyBattlePlanToggle =
+		inline constexpr bool ShowDebugEnemyBattlePlanToggle =
 		#if _DEBUG
 			true;
 		#else
 			false;
 		#endif
 
-		[[nodiscard]] MainSupport::EnemyBattlePlanOverride GetNextEnemyBattlePlanOverride(const MainSupport::EnemyBattlePlanOverride mode)
+		[[nodiscard]] EnemyBattlePlanOverride GetNextEnemyBattlePlanOverride(const EnemyBattlePlanOverride mode)
 		{
 			switch (mode)
 			{
-			case MainSupport::EnemyBattlePlanOverride::Auto:
-				return MainSupport::EnemyBattlePlanOverride::ForceSecureResources;
+			case EnemyBattlePlanOverride::Auto:
+				return EnemyBattlePlanOverride::ForceSecureResources;
 
-			case MainSupport::EnemyBattlePlanOverride::ForceSecureResources:
-				return MainSupport::EnemyBattlePlanOverride::ForceAssaultBase;
+			case EnemyBattlePlanOverride::ForceSecureResources:
+				return EnemyBattlePlanOverride::ForceAssaultBase;
 
-			case MainSupport::EnemyBattlePlanOverride::ForceAssaultBase:
+			case EnemyBattlePlanOverride::ForceAssaultBase:
 			default:
-				return MainSupport::EnemyBattlePlanOverride::Auto;
+				return EnemyBattlePlanOverride::Auto;
 			}
 		}
 
@@ -39,15 +40,15 @@ namespace SkyAppFlow
 		{
 			switch (state.enemyBattlePlanOverride)
 			{
-			case MainSupport::EnemyBattlePlanOverride::ForceSecureResources:
+			case EnemyBattlePlanOverride::ForceSecureResources:
 				return U"固定:資源";
 
-			case MainSupport::EnemyBattlePlanOverride::ForceAssaultBase:
+			case EnemyBattlePlanOverride::ForceAssaultBase:
 				return U"固定:拠点";
 
-			case MainSupport::EnemyBattlePlanOverride::Auto:
+			case EnemyBattlePlanOverride::Auto:
 			default:
-				return (state.enemyBattlePlan == MainSupport::EnemyBattlePlan::SecureResources)
+				return (state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
 					? U"自動:資源"
 					: U"自動:拠点";
 			}
@@ -57,23 +58,16 @@ namespace SkyAppFlow
 		{
 			switch (state.enemyBattlePlanOverride)
 			{
-			case MainSupport::EnemyBattlePlanOverride::ForceSecureResources:
+			case EnemyBattlePlanOverride::ForceSecureResources:
 				return U"敵全体方針: 資源確保に固定";
 
-			case MainSupport::EnemyBattlePlanOverride::ForceAssaultBase:
+			case EnemyBattlePlanOverride::ForceAssaultBase:
 				return U"敵全体方針: 拠点攻撃に固定";
 
-			case MainSupport::EnemyBattlePlanOverride::Auto:
+			case EnemyBattlePlanOverride::Auto:
 			default:
 				return U"敵全体方針: 状況から自動決定";
 			}
-		}
-
-		void ResizeBattleWindow(SkyAppResources& resources, SkyAppState& state, const Size& size)
-		{
-			Window::Resize(size);
-			resources.renderTexture = MSRenderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
-			state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.camera.getEyePosition(), state.camera.getFocusPosition() };
 		}
 
 		void DrawBottomToggleTooltip(const Rect& anchorRect, const StringView label)
@@ -85,143 +79,26 @@ namespace SkyAppFlow
 			tooltipRect.rounded(8).drawFrame(1, 0, ColorF{ 0.72, 0.82, 0.94, 0.84 });
 			SimpleGUI::GetFont()(label).drawAt(tooltipRect.center(), Palette::White);
 		}
-	}
 
-   bool HandleEscMenu(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
-	{
-		if (not state.showEscMenu)
+		[[nodiscard]] bool IsBottomControlRevealHotZoneHovered()
 		{
-			return false;
-		}
-
-		switch (DrawEscMenu(frame.panels.escMenu))
-		{
-		case EscMenuAction::Restart:
-			ResetMatch(state);
-			state.restartMessage.show(U"試合をリスタート");
-			state.showEscMenu = false;
-			break;
-
-		case EscMenuAction::Title:
-			state.requestTitleScene = true;
-			state.showEscMenu = false;
-			break;
-
-		case EscMenuAction::Resize1280x720:
-			ResizeBattleWindow(resources, state, Size{ 1280, 720 });
-			state.showEscMenu = false;
-			break;
-
-		case EscMenuAction::Resize1600x900:
-			ResizeBattleWindow(resources, state, Size{ 1600, 900 });
-			state.showEscMenu = false;
-			break;
-
-		case EscMenuAction::Resize1920x1080:
-			ResizeBattleWindow(resources, state, Size{ 1920, 1080 });
-			state.showEscMenu = false;
-			break;
-
-		case EscMenuAction::None:
-		default:
-			break;
-		}
-
-		return true;
-	}
-
-	void DrawSettingsHud(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
-	{
-		if (not state.showUI)
-		{
-			return;
-		}
-
-       DrawSkySettingsPanel(state.sky, state.skyTime, state.skySettingsExpanded, frame.panels);
-
-		DrawCameraSettingsPanel(state.camera,
-			state.cameraSettings,
-			state.cameraSettingsExpanded,
-            resources.GetUnitRenderModel(UnitRenderModel::Bird),
-			resources.GetUnitRenderModel(UnitRenderModel::Ashigaru),
-			state.cameraSaveMessage,
-			frame.panels);
-	}
-
-	void DrawContextHud(SkyAppState& state, const SkyAppFrameState& frame)
-	{
-		DrawMiniMap(state.miniMapExpanded,
-			frame.panels,
-           state.uiEditMode,
-			state.camera,
-			state.mapData,
-			state.spawnedSappers,
-			state.enemySappers,
-			state.resourceAreaStates,
-			state.selectedSapperIndices);
-
-		if (frame.isEditorMode)
-		{
-            DrawMapEditorPanel(state.mapEditor, state.mapData, state.currentMapPath, frame.panels.mapEditor);
-		}
-
-		if ((not frame.isEditorMode) && (not state.playerWon) && state.showBlacksmithMenu)
-		{
-			DrawBlacksmithMenu(frame.panels,
-				state.spawnedSappers,
-               state.mapData,
-				state.mapData.playerBasePosition,
-				state.mapData.sapperRallyPoint,
-				state.playerResources,
-				state.playerTier,
-             state.unitEditorSettings,
-               state.modelHeightSettings,
-				state.blacksmithMenuMessage);
-		}
-
-		if ((not frame.isEditorMode) && (not state.playerWon) && (state.selectedSapperIndices.size() == 1))
-		{
-            const size_t selectedIndex = state.selectedSapperIndices.front();
-
-			const SapperMenuAction menuAction = DrawSapperMenu(frame.panels,
-				state.spawnedSappers,
-				state.playerResources,
-				selectedIndex,
-				state.blacksmithMenuMessage);
-			if (menuAction == SapperMenuAction::UseExplosionSkill)
-			{
-				TryUsePlayerSapperExplosionSkill(state, selectedIndex);
-			}
-			else if (menuAction == SapperMenuAction::Retreat)
-			{
-				TryOrderPlayerSapperRetreat(state, selectedIndex);
-			}
-		}
-
-		if (frame.showUnitEditor)
-		{
-			DrawUnitEditor(frame.panels,
-               state.uiEditMode,
-				state.unitEditorSettings,
-                state.unitEditorSelection,
-               state.unitEditorPage,
-				state.spawnedSappers,
-				state.enemySappers,
-				state.unitEditorMessage);
-		}
-
-		if (frame.showMillStatusEditor && state.selectedMillIndex)
-		{
-			DrawMillStatusEditor(frame.panels, state.mapData, *state.selectedMillIndex, MapDataPath, state.mapDataMessage);
+			return SkyAppUiLayout::BottomControlRevealHotZone(Scene::Width(), Scene::Height()).mouseOver();
 		}
 	}
 
 	void DrawHudModeToggles(SkyAppState& state, const SkyAppFrameState& frame)
 	{
+		if (IsBottomControlRevealHotZoneHovered())
+		{
+			state.showUI = true;
+		}
+
 		if (not state.showUI)
 		{
 			return;
 		}
+
+		UiInternal::DrawNinePatchPanelFrame(frame.panels.uiToggle, U"", ColorF{ 1.0, 0.92 });
 
 		String hoveredTooltip;
 		Optional<Rect> hoveredTooltipRect;
@@ -234,7 +111,7 @@ namespace SkyAppFlow
 			state.selectedMillIndex.reset();
 			state.selectionDragStart.reset();
 			state.mapEditor.hoveredGroundPosition.reset();
-           state.unitEditorMode = false;
+			state.unitEditorMode = false;
 			state.modelHeightEditMode = false;
 		}
 		if (frame.panels.mapModeToggle.mouseOver())
@@ -246,7 +123,7 @@ namespace SkyAppFlow
 		if (DrawTextButton(frame.panels.modelHeightModeToggle, state.modelHeightEditMode ? U"▲" : U"△"))
 		{
 			state.modelHeightEditMode = not state.modelHeightEditMode;
-           if (state.modelHeightEditMode)
+			if (state.modelHeightEditMode)
 			{
 				state.unitEditorMode = false;
 			}
@@ -291,6 +168,16 @@ namespace SkyAppFlow
 			hoveredTooltipRect = frame.panels.cameraSettingsToggle;
 		}
 
+		if (DrawTextButton(frame.panels.terrainVisualToggle, state.terrainVisualSettingsExpanded ? U"地" : U"土"))
+		{
+			state.terrainVisualSettingsExpanded = not state.terrainVisualSettingsExpanded;
+		}
+		if (frame.panels.terrainVisualToggle.mouseOver())
+		{
+			hoveredTooltip = U"地面ノイズ設定";
+			hoveredTooltipRect = frame.panels.terrainVisualToggle;
+		}
+
 		if (DrawTextButton(frame.panels.uiEditModeToggle, state.uiEditMode ? U"UI+" : U"ui+"))
 		{
 			state.uiEditMode = not state.uiEditMode;
@@ -298,7 +185,7 @@ namespace SkyAppFlow
 
 			if (state.uiEditMode)
 			{
-               state.uiLayoutMessage.show(U"UI Edit: drag panels / grid snap");
+				state.uiLayoutMessage.show(U"UI Edit: drag panels / grid snap");
 			}
 		}
 		if (frame.panels.uiEditModeToggle.mouseOver())
@@ -311,7 +198,7 @@ namespace SkyAppFlow
 		{
 			state.showResourceAdjustUi = not state.showResourceAdjustUi;
 		}
-       if (frame.panels.resourceAdjustToggle.mouseOver())
+		if (frame.panels.resourceAdjustToggle.mouseOver())
 		{
 			hoveredTooltip = U"資源量の手動調整";
 			hoveredTooltipRect = frame.panels.resourceAdjustToggle;
@@ -339,6 +226,11 @@ namespace SkyAppFlow
 
 	void DrawHudFooter(SkyAppState& state, const SkyAppFrameState& frame)
 	{
+		if (not state.showUI)
+		{
+			return;
+		}
+
 		if (state.mapDataMessage.isVisible())
 		{
 			const Vec2 messagePosition = SkyAppUiLayout::BottomMessagePosition(frame.panels.uiToggle, 0);
@@ -351,7 +243,17 @@ namespace SkyAppFlow
 			SimpleGUI::GetFont()(state.restartMessage.text).draw(messagePosition, ColorF{ 0.12 });
 		}
 
-		SimpleGUI::CheckBox(state.showUI, U"UI", SkyAppUiLayout::UiTogglePosition(frame.panels.uiToggle));
+		DrawCheckBox(SkyAppUiLayout::UiToggleCheckBox(frame.panels.uiToggle), state.showUI, U"UI");
 
+		if (state.showUI)
+		{
+            const Rect& anchorToggle = ShowDebugEnemyBattlePlanToggle ? frame.panels.enemyPlanToggle : frame.panels.resourceAdjustToggle;
+			const Rect editorTextColorsButtonRect = SkyAppUiLayout::BottomEditorTextColorsButton(anchorToggle);
+
+			if (UiInternal::DrawEditorIconButton(editorTextColorsButtonRect, U"色"))
+			{
+				UiInternal::OpenSharedEditorTextColorEditor();
+			}
+		}
 	}
 }

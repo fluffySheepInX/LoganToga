@@ -44,27 +44,27 @@ namespace SkyAppInternal
 				const int32 preMaxScrollLine = Max(0, static_cast<int32>(preWrappedLines.size()) - preVisibleLineCount);
 				const int32 postMaxScrollLine = Max(0, static_cast<int32>(postWrappedLines.size()) - postVisibleLineCount);
 
-				m_titleFont(U"Mission Dialogue").draw(panel.pos.movedBy(28, 24), Palette::White);
-				m_labelFont(U"{}"_fmt(data.missionNameStates[m_missionIndex].text.isEmpty() ? U"Mission" : data.missionNameStates[m_missionIndex].text)).draw(panel.pos.movedBy(30, 68), ColorF{ 0.84, 0.90, 0.98, 0.92 });
-              m_labelFont(U"Custom multiline editor / Enter: newline / Wheel: scroll").draw(panel.pos.movedBy(30, 96), ColorF{ 1.0, 0.94, 0.72, 0.92 });
+                m_titleFont(U"Mission Dialogue").draw(panel.pos.movedBy(28, 24), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
+				m_labelFont(U"{}"_fmt(data.missionNameStates[m_missionIndex].text.isEmpty() ? U"Mission" : data.missionNameStates[m_missionIndex].text)).draw(panel.pos.movedBy(30, 68), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
+				m_labelFont(U"Custom multiline editor / Enter: newline / Wheel: scroll").draw(panel.pos.movedBy(30, 96), SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor());
 
-				m_labelFont(U"Pre Dialogue").draw(panel.pos.movedBy(30, 148), Palette::White);
+                m_labelFont(U"Pre Dialogue").draw(panel.pos.movedBy(30, 148), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
              HandleEditorFocus(preEditorRect, preWrappedLines, lineHeight, true);
 				if (preEditorRect.mouseOver())
 				{
 					m_preScrollLine = Clamp((m_preScrollLine - static_cast<int32>(Mouse::Wheel())), 0, preMaxScrollLine);
 				}
 				DrawTextEditor(preEditorRect, preWrappedLines, lineHeight, preVisibleLineCount, m_preScrollLine, m_preCursorIndex, (m_focusedField == DialogueEditorField::Pre), m_preText);
-				m_labelFont(U"Preview: {}"_fmt(MakeDialogueSummary(m_preText))).draw(panel.pos.movedBy(30, 302), ColorF{ 0.82, 0.89, 0.98, 0.92 });
+                m_labelFont(U"Preview: {}"_fmt(MakeDialogueSummary(m_preText))).draw(panel.pos.movedBy(30, 302), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 
-             m_labelFont(U"Post Dialogue").draw(panel.pos.movedBy(30, 336), Palette::White);
+             m_labelFont(U"Post Dialogue").draw(panel.pos.movedBy(30, 336), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 				HandleEditorFocus(postEditorRect, postWrappedLines, lineHeight, false);
 				if (postEditorRect.mouseOver())
 				{
 					m_postScrollLine = Clamp((m_postScrollLine - static_cast<int32>(Mouse::Wheel())), 0, postMaxScrollLine);
 				}
 				DrawTextEditor(postEditorRect, postWrappedLines, lineHeight, postVisibleLineCount, m_postScrollLine, m_postCursorIndex, (m_focusedField == DialogueEditorField::Post), m_postText);
-				m_labelFont(U"Preview: {}"_fmt(MakeDialogueSummary(m_postText))).draw(panel.pos.movedBy(30, 490), ColorF{ 0.82, 0.89, 0.98, 0.92 });
+                m_labelFont(U"Preview: {}"_fmt(MakeDialogueSummary(m_postText))).draw(panel.pos.movedBy(30, 490), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 
 				if (m_focusedField == DialogueEditorField::Pre)
 				{
@@ -160,7 +160,7 @@ namespace SkyAppInternal
 							break;
 						}
 
-						m_textFont(wrappedLines[lineIndex].text).draw(rect.pos.movedBy(16, 12 + i * lineHeight), Palette::White);
+                        m_textFont(wrappedLines[lineIndex].text).draw(rect.pos.movedBy(16, 12 + i * lineHeight), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 					}
 
 					if (focused)
@@ -168,7 +168,7 @@ namespace SkyAppInternal
 						const Vec2 caretPos = GetCursorDrawPosition(wrappedLines, rect, lineHeight, cursorIndex, scrollLine, text);
 						if ((rect.y + 8) <= caretPos.y && caretPos.y <= (rect.bottomY() - 24))
 						{
-							Line{ caretPos, caretPos.movedBy(0, 22) }.draw(2.0, ColorF{ 1.0, 0.95, 0.72, (0.55 + 0.45 * Periodic::Sine0_1(1.0s)) });
+                          Line{ caretPos, caretPos.movedBy(0, 22) }.draw(2.0, ColorF{ SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().r, SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().g, SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().b, (0.55 + 0.45 * Periodic::Sine0_1(1.0s)) });
 						}
 					}
 

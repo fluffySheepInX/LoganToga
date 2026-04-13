@@ -62,16 +62,16 @@ namespace SkyAppSupport
 
        const Rect listPanel = panels.unitEditorList;
 		const Rect detailPanel = panels.unitEditor;
-       UiInternal::DrawPanelFrame(listPanel, uiEditMode ? U"Target Units [Drag]" : U"Target Units", ColorF{ 0.98, 0.95 });
-		UiInternal::DrawPanelFrame(detailPanel, uiEditMode ? U"Unit Parameters [Drag]" : U"Unit Parameters", ColorF{ 0.98, 0.95 });
+      UiInternal::DrawNinePatchPanelFrame(listPanel, uiEditMode ? U"Target Units [Drag]" : U"Target Units", ColorF{ 0.98, 0.95 });
+		UiInternal::DrawNinePatchPanelFrame(detailPanel, uiEditMode ? U"Unit Parameters [Drag]" : U"Unit Parameters", ColorF{ 0.98, 0.95 });
 
 		if (uiEditMode)
 		{
-			SimpleGUI::GetFont()(U"Drag either panel to move the editor").draw((listPanel.x + 16), (listPanel.y + 34), ColorF{ 0.18 });
+         SimpleGUI::GetFont()(U"Drag either panel to move the editor").draw((listPanel.x + 16), (listPanel.y + 34), UiInternal::EditorTextOnLightSecondaryColor());
 			return;
 		}
 
-		SimpleGUI::GetFont()(U"Select target").draw((listPanel.x + 16), (listPanel.y + 34), ColorF{ 0.18 });
+        SimpleGUI::GetFont()(U"Select target").draw((listPanel.x + 16), (listPanel.y + 34), UiInternal::EditorTextOnLightSecondaryColor());
 
         Array<UnitEditorSelection> selections;
 		selections.reserve(GetUnitDefinitions().size() * 2);
@@ -104,8 +104,8 @@ namespace SkyAppSupport
 				const bool hovered = rect.mouseOver();
 				rect.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
 					.drawFrame(1, 0, selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 });
-              SimpleGUI::GetFont()(ToUnitEditorSectionLabel(selection.team, selection.unitType)).draw((rect.x + 12), (rect.y + 8), selected ? ColorF{ 0.98 } : ColorF{ 0.14 });
-				SimpleGUI::GetFont()(U"live {}"_fmt(countUnits(selection))).draw((rect.x + 12), (rect.y + 30), selected ? ColorF{ 0.96 } : ColorF{ 0.28 });
+             SimpleGUI::GetFont()(ToUnitEditorSectionLabel(selection.team, selection.unitType)).draw((rect.x + 12), (rect.y + 8), selected ? UiInternal::EditorTextOnSelectedPrimaryColor() : UiInternal::EditorTextOnCardPrimaryColor());
+				SimpleGUI::GetFont()(U"live {}"_fmt(countUnits(selection))).draw((rect.x + 12), (rect.y + 30), selected ? UiInternal::EditorTextOnSelectedSecondaryColor() : UiInternal::EditorTextOnCardSecondaryColor());
                if (hovered)
 				{
 					hoveredDescription = U"編集対象のユニット種別です。Reset / Apply / Save はこの選択中ユニット設定に対して作用します。";
@@ -130,7 +130,7 @@ namespace SkyAppSupport
        const Rect selectedUnitRect{ (detailPanel.x + 12), (detailPanel.y + 34), (detailPanel.w - 24), 34 };
 		selectedUnitRect.rounded(10).draw(ColorF{ 0.92, 0.96, 1.0, 0.82 });
 		selectedUnitRect.rounded(10).drawFrame(1, 0, ColorF{ 0.74, 0.80, 0.90, 0.90 });
-		 SimpleGUI::GetFont()(ToUnitEditorSectionLabel(team, unitType)).draw((selectedUnitRect.x + 12), (selectedUnitRect.y + 6), ColorF{ 0.16 });
+        SimpleGUI::GetFont()(ToUnitEditorSectionLabel(team, unitType)).draw((selectedUnitRect.x + 12), (selectedUnitRect.y + 6), UiInternal::EditorTextOnCardPrimaryColor());
 
 		const Array<UnitEditorPage> pages{
 			UnitEditorPage::Basic,
@@ -145,7 +145,7 @@ namespace SkyAppSupport
 			const bool hovered = pageButton.mouseOver();
 			pageButton.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
 				.drawFrame(1, 0, selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 });
-			SimpleGUI::GetFont()(ToUnitEditorPageLabel(page)).drawAt(pageButton.center(), selected ? ColorF{ 0.98 } : ColorF{ 0.14 });
+           SimpleGUI::GetFont()(ToUnitEditorPageLabel(page)).drawAt(pageButton.center(), selected ? UiInternal::EditorTextOnSelectedPrimaryColor() : UiInternal::EditorTextOnCardPrimaryColor());
            if (hovered)
 			{
                hoveredRect = pageButton;
@@ -173,7 +173,7 @@ namespace SkyAppSupport
 
 		if (activePage == UnitEditorPage::Basic)
 		{
-          SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), ColorF{ 0.18 });
+         SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), UiInternal::EditorTextOnLightSecondaryColor());
 			Rect{ (detailPanel.x + 86), (detailPanel.y + 130), (detailPanel.w - 102), 1 }.draw(ColorF{ 0.78, 0.82, 0.88 });
 			DrawMovementTypeSelector(detailPanel, (detailPanel.y + 138), parameters.movementType);
 			   const Rect typeLabelRect{ (detailPanel.x + 16), (detailPanel.y + 134), 88, 28 };
@@ -227,7 +227,7 @@ namespace SkyAppSupport
 		}
 		else if (activePage == UnitEditorPage::Footprint)
 		{
-          SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), ColorF{ 0.18 });
+         SimpleGUI::GetFont()(U"Setup").draw((detailPanel.x + 16), (detailPanel.y + 118), UiInternal::EditorTextOnLightSecondaryColor());
 			Rect{ (detailPanel.x + 86), (detailPanel.y + 130), (detailPanel.w - 102), 1 }.draw(ColorF{ 0.78, 0.82, 0.88 });
 			DrawFootprintTypeSelector(detailPanel, (detailPanel.y + 138), parameters);
 			   const Rect footprintLabelRect{ (detailPanel.x + 16), (detailPanel.y + 134), 120, 28 };
@@ -258,7 +258,8 @@ namespace SkyAppSupport
 
 		const Rect resetButton{ (detailPanel.x + 16), (detailPanel.y + detailPanel.h - 36), 92, 28 };
 		const Rect applyButton{ (detailPanel.x + 116), (detailPanel.y + detailPanel.h - 36), 92, 28 };
-		const Rect saveButton{ (detailPanel.x + detailPanel.w - 108), (detailPanel.y + detailPanel.h - 36), 92, 28 };
+       const Rect editorTextColorsButton{ (detailPanel.rightX() - 40), (detailPanel.y + detailPanel.h - 34), 24, 24 };
+		const Rect saveButton{ (editorTextColorsButton.x - 100), (detailPanel.y + detailPanel.h - 36), 92, 28 };
 		if (resetButton.mouseOver())
 		{
 			hoveredDescription = U"この選択ユニット種別の値を既定値へ戻します。保存前でも editor 上の値は即時変更されます。";
@@ -273,6 +274,11 @@ namespace SkyAppSupport
 		{
 			hoveredDescription = U"現在の unit editor 設定を TOML に保存します。次回起動時もこの値を読み込みます。";
            hoveredRect = saveButton;
+		}
+		else if (editorTextColorsButton.mouseOver())
+		{
+			hoveredDescription = U"editor 系 UI の共通文字色設定を開きます。保存すると各 editor の文字色に反映されます。";
+			hoveredRect = editorTextColorsButton;
 		}
 
 		if (DrawTextButton(resetButton, U"Reset"))
@@ -292,9 +298,14 @@ namespace SkyAppSupport
 			unitEditorMessage.show(SaveUnitEditorSettings(unitEditorSettings) ? U"Unit 設定を保存" : U"Unit 設定保存失敗", 3.0);
 		}
 
+		if (UiInternal::DrawEditorIconButton(editorTextColorsButton, U"色"))
+		{
+			UiInternal::OpenSharedEditorTextColorEditor();
+		}
+
 		if (unitEditorMessage.isVisible())
 		{
-            SimpleGUI::GetFont()(unitEditorMessage.text).draw((detailPanel.x + 16), (detailPanel.y + detailPanel.h - 66), ColorF{ 0.12 });
+          SimpleGUI::GetFont()(unitEditorMessage.text).draw((detailPanel.x + 16), (detailPanel.y + detailPanel.h - 66), UiInternal::EditorTextOnLightPrimaryColor());
 		}
 
 		if (hoveredRect && (not hoveredDescription.isEmpty()))
@@ -312,10 +323,10 @@ namespace SkyAppSupport
 			const Rect tooltipRect{ tooltipX, tooltipY, tooltipWidth, tooltipHeight };
 			tooltipRect.draw(ColorF{ 0.97, 0.98, 1.0, 0.96 })
 				.drawFrame(2, 0, ColorF{ 0.70, 0.78, 0.88, 0.95 });
-			SimpleGUI::GetFont()(U"Help").draw((tooltipRect.x + 12), (tooltipRect.y + 8), ColorF{ 0.18 });
+         SimpleGUI::GetFont()(U"Help").draw((tooltipRect.x + 12), (tooltipRect.y + 8), UiInternal::EditorTextOnCardSecondaryColor());
          for (size_t i = 0; i < tooltipLines.size(); ++i)
 			{
-				SimpleGUI::GetFont()(tooltipLines[i]).draw((tooltipRect.x + 12), (tooltipRect.y + 32 + static_cast<int32>(i) * 22), ColorF{ 0.14 });
+               SimpleGUI::GetFont()(tooltipLines[i]).draw((tooltipRect.x + 12), (tooltipRect.y + 32 + static_cast<int32>(i) * 22), UiInternal::EditorTextOnCardPrimaryColor());
 			}
 		}
 	}

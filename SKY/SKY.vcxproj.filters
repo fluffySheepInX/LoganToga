@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -174,10 +174,22 @@
     <ClCompile Include="SkyAppSupport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TerrainSurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SkyAppUi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SkyAppUiHud.cpp">
+    <ClCompile Include="SkyAppUiHudBottomBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudEscMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppUiMenus.cpp">
@@ -207,13 +219,31 @@
     <ClCompile Include="MapEditorPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MapEditorPanelCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapEditorPanelSelectionDetail.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapEditorPanelTools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SkyAppRenderSappers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppRenderOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SkyAppUiSettings.cpp">
+    <ClCompile Include="SkyAppUiSettingsCommon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiSkySettingsPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiCameraSettingsPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiTerrainVisualSettingsPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppSapperMovement.cpp">
@@ -300,6 +330,30 @@
     <ClCompile Include="SkyAppDialogueScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MainSettingsModelHeight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSettingsEditorTextColors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSettingsUiLayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSettingsUnitEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudEscMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiHudBottomBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BirdModel.hpp">
@@ -315,6 +369,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MapEditor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MapEditorPanelInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MainContext.hpp">
@@ -386,6 +443,9 @@
     <ClInclude Include="RenderContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TerrainSurface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="AppContextTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -405,6 +465,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SkyAppTitleSceneInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainContextTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainSettingsInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiEditorTextColorsInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiEditorTextColorEditorInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiPanelFrameInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiSettingsInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

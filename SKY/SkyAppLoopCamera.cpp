@@ -160,8 +160,10 @@ namespace SkyAppFlow
 			ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: state.camera.setView (initial)");
 			state.camera.setView(state.cameraSettings.eye, state.cameraSettings.focus);
 			const bool freezeStartupCameraUpdate = (0 < state.startupCameraFreezeFrames);
+            const bool hoveringMapEditorPanel = (frame.isEditorMode && state.mapEditor.enabled && frame.panels.mapEditor.mouseOver());
 			const bool allowCameraDragInput = ((not frame.showEscMenu) && (not frame.isHoveringUI));
 			const bool allowCameraWheelInput = ((not frame.showEscMenu)
+                && (not hoveringMapEditorPanel)
 				&& ((not frame.isHoveringUI)
 					|| ((Mouse::Wheel() != 0.0)
 						&& (not MouseL.pressed())

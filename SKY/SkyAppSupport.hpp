@@ -27,6 +27,7 @@ namespace SkyAppSupport
       Rect miniMap;
 		Rect skySettings;
 		Rect cameraSettings;
+     Rect terrainSettings;
 		Rect mapEditor;
 		Rect blacksmithMenu;
 		Rect sapperMenu;
@@ -42,14 +43,15 @@ namespace SkyAppSupport
         Rect unitEditorModeToggle;
         Rect skySettingsToggle;
 		Rect cameraSettingsToggle;
+      Rect terrainVisualToggle;
         Rect uiEditModeToggle;
         Rect resourceAdjustToggle;
         Rect enemyPlanToggle;
 		Rect timeSlider;
 
-      SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool miniMapExpanded = true, bool resourceAdjustExpanded = false);
+     SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool terrainSettingsExpanded = true, bool miniMapExpanded = true, bool resourceAdjustExpanded = false);
 
-       [[nodiscard]] bool isHoveringUi(bool showUI, bool showSkySettings, bool showCameraSettings, bool isEditorMode, bool showBlacksmithMenu, bool showSapperMenu, bool showMillStatusEditor, bool modelHeightEditMode, bool showUnitEditor) const;
+        [[nodiscard]] bool isHoveringUi(bool showUI, bool showSkySettings, bool showCameraSettings, bool showTerrainSettings, bool isEditorMode, bool showBlacksmithMenu, bool showSapperMenu, bool showMillStatusEditor, bool modelHeightEditMode, bool showUnitEditor) const;
 	};
 
 	[[nodiscard]] bool IsSapperRetreatOrdered(const MainSupport::SpawnedSapper& sapper);

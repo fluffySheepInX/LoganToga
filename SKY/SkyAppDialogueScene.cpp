@@ -25,6 +25,19 @@ namespace SkyAppInternal
 					return;
 				}
 
+				if (KeyControl.down() || MouseR.down())
+				{
+					if ((data.dialogueSceneLineIndex + 1) < data.dialogueSceneLines.size())
+					{
+						data.dialogueSceneLineIndex = (data.dialogueSceneLines.size() - 1);
+					}
+					else
+					{
+						FinalizeDialogue(data);
+					}
+					return;
+				}
+
 				if (KeyEnter.down() || KeySpace.down() || MouseL.down())
 				{
 					if ((data.dialogueSceneLineIndex + 1) < data.dialogueSceneLines.size())
@@ -53,7 +66,8 @@ namespace SkyAppInternal
 					? U""
 					: data.dialogueSceneLines[Min(data.dialogueSceneLineIndex, (data.dialogueSceneLines.size() - 1))];
 				m_textFont(line).draw(RectF{ 138, 220, 1004, 180 }, ColorF{ 0.96, 0.98, 1.0 });
-				m_infoFont(U"Enter / Space / Click to continue").draw(panel.pos.movedBy(30, 460), ColorF{ 1.0, 0.94, 0.72, 0.96 });
+             m_infoFont(U"Enter / Space / Click: next").draw(panel.pos.movedBy(30, 438), ColorF{ 1.0, 0.94, 0.72, 0.96 });
+				m_infoFont(U"Ctrl / Right Click: skip to end").draw(panel.pos.movedBy(30, 464), ColorF{ 0.86, 0.91, 0.98, 0.92 });
 			}
 
 		private:

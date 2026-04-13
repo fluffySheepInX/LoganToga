@@ -55,6 +55,49 @@ namespace SkyAppInternal
 					return;
 				}
 
+				if (data.pendingResetCampaignId)
+				{
+					if (IsRectButtonClicked(GetDeleteConfirmButton()))
+					{
+						if (SkyCampaign::DeleteCampaignProgress(*data.pendingResetCampaignId))
+						{
+							data.titleMessage = U"Progress reset: {}"_fmt(data.pendingResetCampaignName);
+						}
+						else
+						{
+							data.titleMessage = U"Reset failed: {}"_fmt(data.pendingResetCampaignName);
+						}
+
+						data.titleMessageUntil = (Scene::Time() + 3.0);
+						data.pendingResetCampaignId.reset();
+						data.pendingResetCampaignName.clear();
+						return;
+					}
+
+					if (IsRectButtonClicked(GetDeleteCancelButton()) || KeyEscape.down())
+					{
+						data.pendingResetCampaignId.reset();
+						data.pendingResetCampaignName.clear();
+						return;
+					}
+
+					return;
+				}
+
+				if (not data.campaigns.isEmpty())
+				{
+					if (KeyUp.down())
+					{
+						const size_t currentIndex = data.selectedCampaignIndex.value_or(0);
+						data.selectedCampaignIndex = ((currentIndex == 0) ? (data.campaigns.size() - 1) : (currentIndex - 1));
+					}
+					else if (KeyDown.down())
+					{
+						const size_t currentIndex = data.selectedCampaignIndex.value_or(0);
+						data.selectedCampaignIndex = ((currentIndex + 1) % data.campaigns.size());
+					}
+				}
+
 				for (size_t i = 0; i < data.campaigns.size(); ++i)
 				{
 					if (GetCampaignRow(i).leftClicked())
@@ -81,7 +124,19 @@ namespace SkyAppInternal
 					return;
 				}
 
-				if (IsRectButtonClicked(GetSelectedPlayButton(), hasSelection))
+             const bool hasCurrentSelection = (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size()));
+
+				if (IsRectButtonClicked(GetSelectedResetButton(), hasCurrentSelection && CanResetSelectedCampaign(data)))
+				{
+					if (const auto* campaign = FindSelectedCampaign(data))
+					{
+						data.pendingResetCampaignId = campaign->id;
+						data.pendingResetCampaignName = campaign->displayName;
+						return;
+					}
+				}
+
+				if (IsRectButtonClicked(GetSelectedPlayButton(), hasCurrentSelection))
 				{
 					if (StartSelectedCampaign(data, false))
 					{
@@ -90,7 +145,7 @@ namespace SkyAppInternal
 					}
 				}
 
-				if (IsRectButtonClicked(GetSelectedContinueButton(), hasSelection && CanContinueSelectedCampaign(data)))
+                if (IsRectButtonClicked(GetSelectedContinueButton(), hasCurrentSelection && CanContinueSelectedCampaign(data)))
 				{
 					if (StartSelectedCampaign(data, true))
 					{
@@ -99,7 +154,7 @@ namespace SkyAppInternal
 					}
 				}
 
-             if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedEditButton(), hasSelection))
+                if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedEditButton(), hasCurrentSelection))
 				{
 					if (const auto* campaign = FindSelectedCampaign(data))
 					{
@@ -115,7 +170,7 @@ namespace SkyAppInternal
 					return;
 				}
 
-               if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedDeleteButton(), hasSelection))
+                if (ShowDebugCampaignButtons && IsRectButtonClicked(GetSelectedDeleteButton(), hasCurrentSelection))
 				{
 					if (const auto* campaign = FindSelectedCampaign(data))
 					{
@@ -143,6 +198,7 @@ namespace SkyAppInternal
 				m_infoFont(U"起動直後は今まで通り Battle 直行").draw(leftPanel.pos.movedBy(26, 114), ColorF{ 0.84, 0.90, 0.98, 0.86 });
 				m_infoFont(U"保存済み Campaign は右側に表示").draw(leftPanel.pos.movedBy(26, 142), ColorF{ 0.84, 0.90, 0.98, 0.86 });
 				m_infoFont(U"Enter でもバトル開始").draw(leftPanel.pos.movedBy(26, 176), ColorF{ 1.0, 0.94, 0.72, 0.92 });
+				m_infoFont(U"↑↓ で Campaign 選択").draw(leftPanel.pos.movedBy(26, 204), ColorF{ 0.84, 0.90, 0.98, 0.86 });
 
 				DrawRectButton(GetBattleButton(), m_buttonFont, U"Battle Start");
 				DrawRectButton(GetCampaignEditorButton(), m_buttonFont, U"Campaign Editor");
@@ -158,21 +214,28 @@ namespace SkyAppInternal
 				{
 					for (size_t i = 0; i < data.campaigns.size(); ++i)
 					{
-                       const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(data.campaigns[i].id);
-						DrawCampaignRow(GetCampaignRow(i), m_infoFont, m_campaignRowFont, data.campaigns[i], progress.clearCount, (data.selectedCampaignIndex && (*data.selectedCampaignIndex == i)));
+                      const bool hasProgress = SkyCampaign::HasCampaignProgress(data.campaigns[i].id);
+						const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(data.campaigns[i].id);
+						DrawCampaignRow(GetCampaignRow(i), m_infoFont, m_campaignRowFont, data.campaigns[i], progress, hasProgress, (data.selectedCampaignIndex && (*data.selectedCampaignIndex == i)));
 					}
 
 					if (data.selectedCampaignIndex && (*data.selectedCampaignIndex < data.campaigns.size()))
 					{
 						const auto& campaign = data.campaigns[*data.selectedCampaignIndex];
 						const SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(campaign.id);
+                     const bool canResetSelection = SkyCampaign::HasCampaignProgress(campaign.id);
                         const bool hasSelection = true;
                         m_infoFont(U"Selected: {}"_fmt(FormatCampaignTitle(campaign, progress.clearCount))).draw(rightPanel.pos.movedBy(24, 420), Palette::White);
-                      DrawPlayAttentionEffect(GetSelectedPlayButton());
+                     DrawCampaignActionButton(GetSelectedResetButton(), CampaignActionIcon::Reset, canResetSelection);
+						DrawPlayAttentionEffect(GetSelectedPlayButton());
                         DrawCampaignActionButton(GetSelectedPlayButton(), CampaignActionIcon::Play, hasSelection);
 						DrawCampaignActionButton(GetSelectedContinueButton(), CampaignActionIcon::Continue, CanContinueSelectedCampaign(data));
 
-						if (GetSelectedPlayButton().mouseOver())
+                        if (GetSelectedResetButton().mouseOver())
+						{
+							hoveredTooltip = std::pair{ GetSelectedResetButton(), String{ U"Reset" } };
+						}
+						else if (GetSelectedPlayButton().mouseOver())
 						{
 							hoveredTooltip = std::pair{ GetSelectedPlayButton(), String{ U"Play" } };
 						}
@@ -229,6 +292,19 @@ namespace SkyAppInternal
 					DrawRectButton(GetDeleteConfirmButton(), m_infoFont, U"Delete");
 					DrawRectButton(GetDeleteCancelButton(), m_infoFont, U"Cancel");
 				}
+
+				if (data.pendingResetCampaignId)
+				{
+					Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.42 });
+					const RectF dialog = GetDeleteDialogRect();
+					dialog.rounded(20).draw(ColorF{ 0.08, 0.13, 0.21, 0.98 });
+					dialog.rounded(20).drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.94, 0.84 });
+					m_buttonFont(U"Reset Progress?").draw(dialog.pos.movedBy(22, 18), Palette::White);
+					m_infoFont(U"{} の progress をリセットします"_fmt(data.pendingResetCampaignName)).draw(dialog.pos.movedBy(24, 64), ColorF{ 0.90, 0.94, 1.0, 0.96 });
+					m_infoFont(U"クリア回数と Continue 状態が消えます").draw(dialog.pos.movedBy(24, 92), ColorF{ 1.0, 0.88, 0.76, 0.96 });
+					DrawRectButton(GetDeleteConfirmButton(), m_infoFont, U"Reset");
+					DrawRectButton(GetDeleteCancelButton(), m_infoFont, U"Cancel");
+				}
 			}
 
 		private:
@@ -250,6 +326,11 @@ namespace SkyAppInternal
            [[nodiscard]] RectF GetSelectedEditButton() const
 			{
               return RectF{ 1010, 414, 40, 40 };
+			}
+
+			[[nodiscard]] RectF GetSelectedResetButton() const
+			{
+				return RectF{ 962, 414, 40, 40 };
 			}
 
            [[nodiscard]] RectF GetSelectedPlayButton() const
@@ -292,6 +373,16 @@ namespace SkyAppInternal
 			[[nodiscard]] RectF GetCampaignRow(const size_t index) const
 			{
 				return RectF{ 504, (150 + static_cast<double>(index) * 72.0), 672, 60 };
+			}
+
+			[[nodiscard]] bool CanResetSelectedCampaign(const SkyAppData& data) const
+			{
+				if (const auto* campaign = FindSelectedCampaign(data))
+				{
+					return SkyCampaign::HasCampaignProgress(campaign->id);
+				}
+
+				return false;
 			}
 		};
 

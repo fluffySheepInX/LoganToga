@@ -16,6 +16,8 @@ namespace SkyAppInternal
 		double titleMessageUntil = 0.0;
         Optional<String> pendingDeleteCampaignId;
 		String pendingDeleteCampaignName;
+        Optional<String> pendingResetCampaignId;
+		String pendingResetCampaignName;
 		TextEditState campaignNameState;
 		TextEditState campaignDescriptionState;
 		Array<TextEditState> missionNameStates;
@@ -44,6 +46,7 @@ namespace SkyAppInternal
 	void LoadCampaignIntoEditor(SkyAppData& data, const SkyCampaign::CampaignDefinition& definition);
 	void ClampEditorMissionSelection(SkyAppData& data);
 	void AddEditorMission(SkyAppData& data);
+ void DuplicateSelectedEditorMission(SkyAppData& data);
 	void RemoveSelectedEditorMission(SkyAppData& data);
 	void MoveSelectedEditorMission(SkyAppData& data, int32 direction);
 	[[nodiscard]] SkyCampaign::CampaignDefinition BuildCampaignDefinition(const SkyAppData& data);

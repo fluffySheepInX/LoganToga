@@ -20,17 +20,29 @@ namespace SkyAppFlow
 			}
 		}
 
+		void RefreshTerrainSurface(SkyAppState& state)
+		{
+			const uint64 revision = ComputeTerrainSurfaceRevision(state.mapData, state.terrainVisualSettings);
+			if ((state.terrainSurfaceRevision == revision) && (not state.terrainSurface.cells.isEmpty()))
+			{
+				return;
+			}
+
+			state.terrainSurface = BuildTerrainSurface(state.mapData, state.terrainVisualSettings);
+			state.terrainSurfaceRevision = revision;
+		}
+
 		SkyAppFrameState BuildFrameState(const SkyAppState& state)
 		{
 			SkyAppFrameState frame;
-        frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.miniMapExpanded, state.showResourceAdjustUi };
+          frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.miniMapExpanded, state.showResourceAdjustUi };
 			frame.isEditorMode = (state.appMode == AppMode::EditMap);
 			frame.showEscMenu = state.showEscMenu;
            const bool hasValidSelectedMill = IsValidMillIndex(state, state.selectedMillIndex);
 			frame.showSapperMenu = ((state.selectedSapperIndices.size() == 1) && (not state.playerWon));
             frame.showMillStatusEditor = ((not frame.isEditorMode) && hasValidSelectedMill);
             frame.showUnitEditor = (state.showUI && state.unitEditorMode && (not frame.isEditorMode) && (not state.playerWon));
-          frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
+           frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
             for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
 				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.modelHeightSettings, renderModel), 0);
@@ -47,6 +59,9 @@ namespace SkyAppFlow
 
 			case UiLayoutPanel::ModelHeight:
 				return settings.modelHeightPosition;
+
+			case UiLayoutPanel::TerrainVisualSettings:
+				return settings.terrainVisualSettingsPosition;
 
 			case UiLayoutPanel::UnitEditor:
 				return settings.unitEditorPosition;
@@ -91,6 +106,10 @@ namespace SkyAppFlow
 				{
 					beginDrag(UiLayoutPanel::ModelHeight, frame.panels.modelHeight);
 				}
+                else if (state.terrainVisualSettingsExpanded && SkyAppUiLayout::TerrainVisualPanelDragHandle(frame.panels.terrainSettings).mouseOver())
+				{
+					beginDrag(UiLayoutPanel::TerrainVisualSettings, frame.panels.terrainSettings);
+				}
                else if (frame.panels.unitEditor.mouseOver())
 				{
 					beginDrag(UiLayoutPanel::UnitEditor, frame.panels.unitEditor);
@@ -119,6 +138,12 @@ namespace SkyAppFlow
              else if (state.uiPanelDrag->panel == UiLayoutPanel::ModelHeight)
 				{
 					const Rect rect = SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), requestedPosition);
+					panelPosition = Point{ rect.x, rect.y };
+					movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				}
+             else if (state.uiPanelDrag->panel == UiLayoutPanel::TerrainVisualSettings)
+				{
+					const Rect rect = SkyAppUiLayout::TerrainVisualSettings(Scene::Width(), Scene::Height(), requestedPosition);
 					panelPosition = Point{ rect.x, rect.y };
 					movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
 				}
@@ -278,6 +303,8 @@ namespace SkyAppFlow
         state.currentMapPath = MainSupport::MapDataPath;
 		const MapDataLoadResult initialMapDataLoad = LoadMapDataWithStatus(MapDataPath);
 		state.mapData = initialMapDataLoad.mapData;
+      state.terrainSurfaceRevision = 0;
+		Detail::RefreshTerrainSurface(state);
 		state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.cameraSettings.eye, state.cameraSettings.focus };
 		ResetMatch(state);
 
@@ -304,6 +331,7 @@ namespace SkyAppFlow
 
 		UpdateAttackEffects(state);
 		UpdateSkyFromTime(state.sky, state.skyTime);
+		Detail::RefreshTerrainSurface(state);
 
 		state.selectedSapperIndices.remove_if([&state](const size_t index)
 			{

@@ -1,4 +1,5 @@
 ﻿# include "SkyAppLoopInternal.hpp"
+# include "SkyAppUiInternal.hpp"
 
 using namespace MainSupport;
 
@@ -18,5 +19,6 @@ namespace SkyAppFlow
 			DrawContextHud(state, frame);
 			DrawHudModeToggles(state, frame);
 			DrawHudFooter(state, frame);
+           UiInternal::DrawSharedEditorTextColorEditor();
 	}
 }

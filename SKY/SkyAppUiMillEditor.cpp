@@ -13,6 +13,8 @@ namespace SkyAppSupport
 			Attack,
 			Suppression,
 		};
+
+		inline constexpr int32 EditorIconButtonSize = 24;
 	}
 
 	void DrawMillStatusEditor(const SkyAppPanels& panels,
@@ -41,8 +43,8 @@ namespace SkyAppSupport
 		panel.drawFrame(2, 0, ColorF{ 0.25 });
 		Rect{ panel.x, (headerRect.bottomY() - 1), panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
 		Rect{ panel.x, footerRect.y, panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
-		SimpleGUI::GetFont()(U"Mill Status Editor").draw((panel.x + 16), (panel.y + 10), ColorF{ 0.12 });
-		SimpleGUI::GetFont()(U"Pos: {:.1f}, {:.1f}, {:.1f}"_fmt(mill.position.x, mill.position.y, mill.position.z)).draw((panel.x + 16), (panel.y + 32), ColorF{ 0.20 });
+       SimpleGUI::GetFont()(U"Mill Status Editor").draw((panel.x + 16), (panel.y + 10), UiInternal::EditorTextOnLightPrimaryColor());
+		SimpleGUI::GetFont()(U"Pos: {:.1f}, {:.1f}, {:.1f}"_fmt(mill.position.x, mill.position.y, mill.position.z)).draw((panel.x + 16), (panel.y + 32), UiInternal::EditorTextOnLightSecondaryColor());
 
 		mill.attackRange = Clamp(mill.attackRange, 1.0, 20.0);
 		mill.attackDamage = Clamp(mill.attackDamage, 1.0, 80.0);
@@ -70,8 +72,8 @@ namespace SkyAppSupport
 		const Rect suppressionCategoryButton{ (contentPanel.rightX() - 144), (contentPanel.y + 8), 136, 30 };
 		drawCategoryButton(attackCategoryButton, MillEditorCategory::Attack, U"攻撃");
 		drawCategoryButton(suppressionCategoryButton, MillEditorCategory::Suppression, U"制圧");
-		SimpleGUI::GetFont()((currentCategory == MillEditorCategory::Attack) ? U"攻撃パラメータ" : U"制圧パラメータ")
-			.draw((contentPanel.x + 12), (contentPanel.y + 46), ColorF{ 0.22 });
+     SimpleGUI::GetFont()((currentCategory == MillEditorCategory::Attack) ? U"攻撃パラメータ" : U"制圧パラメータ")
+			.draw((contentPanel.x + 12), (contentPanel.y + 46), UiInternal::EditorTextOnLightSecondaryColor());
 
        const auto drawParameterRow = [&](const double top, const int32 sliderId, double& value, const MillParameterEditorSpec& spec)
 			{
@@ -98,8 +100,9 @@ namespace SkyAppSupport
 			drawParameterRow((rowTop + rowStep * 3), 13, mill.suppressionAttackIntervalMultiplier, MillParameterEditorSpec{ U"Atk Interval Rate", U"x", 1.0, 10.0, 0.1, 0.5, 1.0, 0.05, 2 });
 		}
 
-     const Rect resetButton{ (footerRect.x + 12), (footerRect.y + 9), 136, 32 };
-		const Rect saveButton{ (footerRect.rightX() - 148), (footerRect.y + 9), 136, 32 };
+        const Rect resetButton{ (footerRect.x + 12), (footerRect.y + 9), 136, 32 };
+		const Rect editorTextColorsButton{ (footerRect.rightX() - EditorIconButtonSize - 12), (footerRect.y + 13), EditorIconButtonSize, EditorIconButtonSize };
+		const Rect saveButton{ (editorTextColorsButton.x - 144), (footerRect.y + 9), 136, 32 };
 
 		if (DrawTextButton(resetButton, U"推奨値に戻す"))
 		{
@@ -117,6 +120,11 @@ namespace SkyAppSupport
        if (DrawTextButton(saveButton, U"TOML保存"))
 		{
 			mapDataMessage.show(SaveMapData(mapData, path) ? U"Mill ステータスを保存" : U"Mill ステータス保存失敗", 3.0);
+		}
+
+		if (UiInternal::DrawEditorIconButton(editorTextColorsButton, U"色"))
+		{
+			UiInternal::OpenSharedEditorTextColorEditor();
 		}
 	}
 }

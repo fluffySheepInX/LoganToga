@@ -6,6 +6,7 @@ namespace SkyAppInternal::TitleSceneDetail
 	enum class CampaignActionIcon
 	{
 		Edit,
+       Reset,
 		Play,
 		Continue,
 		Delete,
@@ -36,6 +37,15 @@ namespace SkyAppInternal::TitleSceneDetail
 			Line{ rect.x + 12, rect.y + 28, rect.x + 27, rect.y + 13 }.draw(3.0, iconColor);
 			Line{ rect.x + 24, rect.y + 10, rect.x + 30, rect.y + 16 }.draw(3.0, iconColor);
 			Line{ rect.x + 11, rect.y + 30, rect.x + 16, rect.y + 25 }.draw(3.0, iconColor);
+			break;
+
+		case CampaignActionIcon::Reset:
+			Line{ rect.x + 26, rect.y + 14, rect.x + 16, rect.y + 14 }.draw(3.0, iconColor);
+			Line{ rect.x + 16, rect.y + 14, rect.x + 16, rect.y + 22 }.draw(3.0, iconColor);
+			Line{ rect.x + 16, rect.y + 22, rect.x + 28, rect.y + 22 }.draw(3.0, iconColor);
+			Triangle{ Vec2{ rect.x + 28, rect.y + 22 }, Vec2{ rect.x + 22, rect.y + 17 }, Vec2{ rect.x + 22, rect.y + 27 } }.draw(iconColor);
+			Line{ rect.x + 14, rect.y + 26, rect.x + 24, rect.y + 26 }.draw(3.0, iconColor);
+			Line{ rect.x + 24, rect.y + 26, rect.x + 24, rect.y + 18 }.draw(3.0, iconColor);
 			break;
 
 		case CampaignActionIcon::Play:
@@ -87,14 +97,39 @@ namespace SkyAppInternal::TitleSceneDetail
 			: U"{} ★*{}"_fmt(campaign.displayName, clearCount);
 	}
 
-	inline void DrawCampaignRow(const RectF& rect, const Font& titleFont, const Font& infoFont, const SkyCampaign::CampaignDefinition& campaign, const size_t clearCount, const bool selected)
+  inline void DrawCampaignRow(const RectF& rect,
+		const Font& titleFont,
+		const Font& infoFont,
+		const SkyCampaign::CampaignDefinition& campaign,
+		const SkyCampaign::CampaignProgress& progress,
+		const bool hasProgress,
+		const bool selected)
 	{
 		const bool hovered = rect.mouseOver();
 		rect.rounded(12).draw(selected
 			? ColorF{ 0.20, 0.30, 0.44, 0.96 }
 			: (hovered ? ColorF{ 0.14, 0.20, 0.30, 0.92 } : ColorF{ 0.10, 0.14, 0.22, 0.88 }));
 		rect.rounded(12).drawFrame(2, 0, selected ? ColorF{ 0.92, 0.96, 1.0, 0.92 } : ColorF{ 0.42, 0.52, 0.64, 0.82 });
-     titleFont(FormatCampaignTitle(campaign, clearCount)).draw(rect.pos.movedBy(14, 10), Palette::White);
-		infoFont(U"Missions: {}"_fmt(campaign.missions.size())).draw(rect.pos.movedBy(14, 38), ColorF{ 0.82, 0.89, 0.98, 0.92 });
+       titleFont(FormatCampaignTitle(campaign, progress.clearCount)).draw(rect.pos.movedBy(14, 10), Palette::White);
+
+		const String progressLabel = (not hasProgress)
+			? U"Not started"
+			: (progress.completed
+				? U"Complete"
+				: U"Mission {} / {}"_fmt(Min(progress.currentMissionIndex + 1, campaign.missions.size()), campaign.missions.size()));
+		infoFont(U"Missions: {}  |  {}"_fmt(campaign.missions.size(), progressLabel)).draw(rect.pos.movedBy(14, 35), ColorF{ 0.82, 0.89, 0.98, 0.92 });
+
+		const RectF progressBackRect{ rect.x + 14, rect.y + 52, rect.w - 28, 4 };
+		progressBackRect.draw(ColorF{ 0.08, 0.10, 0.14, 0.84 });
+		const double progressRate = (not hasProgress)
+			? 0.0
+			: (progress.completed
+				? 1.0
+				: (static_cast<double>(Min(progress.currentMissionIndex, campaign.missions.size())) / Max(1.0, static_cast<double>(campaign.missions.size()))));
+		if (progressRate > 0.0)
+		{
+			RectF{ progressBackRect.pos, (progressBackRect.w * progressRate), progressBackRect.h }.draw(ColorF{ 1.0, 0.92, 0.42, 0.92 });
+		}
+		progressBackRect.drawFrame(1, 0, ColorF{ 0.78, 0.86, 0.96, 0.48 });
 	}
 }

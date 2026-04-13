@@ -36,9 +36,9 @@ namespace SkyAppInternal
 				const int32 visibleLineCount = Max(1, static_cast<int32>((editorRect.h - 24.0) / lineHeight));
 				const int32 maxScrollLine = Max(0, static_cast<int32>(wrappedLines.size()) - visibleLineCount);
 
-				m_titleFont(U"Campaign Description").draw(panel.pos.movedBy(26, 22), Palette::White);
-				m_labelFont(U"Campaign 全体説明を編集します").draw(panel.pos.movedBy(28, 66), ColorF{ 0.84, 0.90, 0.98, 0.92 });
-				m_labelFont(U"Description").draw(panel.pos.movedBy(28, 118), Palette::White);
+                m_titleFont(U"Campaign Description").draw(panel.pos.movedBy(26, 22), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
+				m_labelFont(U"Campaign 全体説明を編集します").draw(panel.pos.movedBy(28, 66), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
+				m_labelFont(U"Description").draw(panel.pos.movedBy(28, 118), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 
 				if (editorRect.leftClicked())
 				{
@@ -88,7 +88,7 @@ namespace SkyAppInternal
 							break;
 						}
 
-						m_textFont(wrappedLines[lineIndex].text).draw(editorRect.pos.movedBy(16, 12 + i * lineHeight), Palette::White);
+                        m_textFont(wrappedLines[lineIndex].text).draw(editorRect.pos.movedBy(16, 12 + i * lineHeight), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 					}
 
 					if (m_isFocused && Cursor::Pos().x >= 0)
@@ -96,7 +96,7 @@ namespace SkyAppInternal
 						const Vec2 caretPos = GetCursorDrawPosition(wrappedLines, editorRect, lineHeight, m_cursorIndex, m_scrollLine);
 						if ((editorRect.y + 8) <= caretPos.y && caretPos.y <= (editorRect.bottomY() - 24))
 						{
-							Line{ caretPos, caretPos.movedBy(0, 22) }.draw(2.0, ColorF{ 1.0, 0.95, 0.72, (0.55 + 0.45 * Periodic::Sine0_1(1.0s)) });
+                          Line{ caretPos, caretPos.movedBy(0, 22) }.draw(2.0, ColorF{ SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().r, SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().g, SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor().b, (0.55 + 0.45 * Periodic::Sine0_1(1.0s)) });
 						}
 					}
 
@@ -114,7 +114,7 @@ namespace SkyAppInternal
 
 				hintRect.rounded(12).draw(ColorF{ 0.09, 0.13, 0.20, 0.84 });
 				hintRect.rounded(12).drawFrame(1, 0, ColorF{ 0.34, 0.46, 0.62, 0.70 });
-				m_labelFont(U"Enter: newline / Wheel: scroll / Apply で反映 / Cancel で元に戻す").draw(hintRect.pos.movedBy(14, 10), ColorF{ 0.84, 0.90, 0.98, 0.92 });
+                m_labelFont(U"Enter: newline / Wheel: scroll / Apply で反映 / Cancel で元に戻す").draw(hintRect.pos.movedBy(14, 10), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 
 				DrawEditorActionButton(GetApplyButton(), m_buttonFont, U"Apply", EditorActionButtonStyle::Primary);
 				DrawEditorActionButton(GetCancelButton(), m_labelFont, U"Cancel", EditorActionButtonStyle::Back);

@@ -385,4 +385,10 @@ namespace SkyCampaign
 
 		return removed;
 	}
+
+	inline bool DeleteCampaignProgress(const StringView campaignId)
+	{
+		const String progressPath = Detail::MakeCampaignProgressFilePath(campaignId);
+		return (not FileSystem::Exists(progressPath)) || FileSystem::Remove(progressPath);
+	}
 }

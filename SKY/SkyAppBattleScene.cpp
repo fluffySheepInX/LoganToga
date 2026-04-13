@@ -85,6 +85,14 @@ namespace SkyAppInternal
 					m_campaignResultHandled = true;
 				}
 
+				if (m_state.playerWon && (not *m_state.playerWon) && KeyR.down())
+				{
+					SkyAppFlow::ResetMatch(m_state);
+					m_campaignResultHandled = false;
+					m_state.restartMessage.show(U"試合をリスタート");
+					return;
+				}
+
 				if (data.activeCampaignId && m_state.playerWon && (KeyEnter.down() || MouseL.down()))
 				{
 					if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
@@ -124,6 +132,15 @@ namespace SkyAppInternal
 					return;
 				}
 
+				if ((not data.activeCampaignId) && m_state.playerWon && (KeyEnter.down() || MouseL.down()))
+				{
+					const String returnScene = data.battleReturnScene;
+					data.launchBattleInMapEditor = false;
+					data.battleReturnScene = U"Title";
+					changeScene(returnScene, 0);
+					return;
+				}
+
 				if (m_state.requestTitleScene)
 				{
 					m_state.requestTitleScene = false;
@@ -135,6 +152,70 @@ namespace SkyAppInternal
 					data.launchBattleInMapEditor = false;
 					data.battleReturnScene = U"Title";
 					changeScene(returnScene, 0);
+				}
+			}
+
+			void draw() const override
+			{
+				if (not m_state.playerWon)
+				{
+					return;
+				}
+
+				const auto& data = getData();
+				Array<String> hintLines;
+
+				if (*m_state.playerWon)
+				{
+					if (data.activeCampaignId)
+					{
+						if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
+						{
+							const size_t currentMissionIndex = Min(data.activeCampaignMissionIndex.value_or(0), (campaign->missions.size() - 1));
+							const size_t nextMissionIndex = (currentMissionIndex + 1);
+							if (nextMissionIndex < campaign->missions.size())
+							{
+								hintLines << U"Enter / Click: Next Mission";
+								hintLines << U"Next: {}"_fmt(campaign->missions[nextMissionIndex].displayName);
+							}
+							else
+							{
+								hintLines << U"Enter / Click: Return to Title";
+								hintLines << U"Campaign Complete";
+							}
+						}
+					}
+					else
+					{
+						hintLines << U"Enter / Click: Return to {}"_fmt(data.battleReturnScene);
+					}
+				}
+				else
+				{
+					if (data.activeCampaignId)
+					{
+						if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
+						{
+							const size_t missionIndex = Min(data.activeCampaignMissionIndex.value_or(0), (campaign->missions.size() - 1));
+							hintLines << U"Enter / Click: Retry Mission";
+							hintLines << U"Mission: {}"_fmt(campaign->missions[missionIndex].displayName);
+						}
+					}
+					else
+					{
+						hintLines << U"Enter / Click: Return to {}"_fmt(data.battleReturnScene);
+					}
+
+					hintLines << U"R: Quick Retry";
+				}
+
+				const RectF infoRect{ Arg::center = Scene::CenterF().movedBy(0, 122), 420, (48 + hintLines.size() * 28) };
+				infoRect.rounded(18).draw(ColorF{ 0.04, 0.06, 0.10, 0.74 });
+				infoRect.rounded(18).drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.94, 0.54 });
+
+				for (size_t i = 0; i < hintLines.size(); ++i)
+				{
+					SimpleGUI::GetFont()(hintLines[i]).drawAt(infoRect.center().movedBy(0, (-14 + static_cast<double>(i) * 26.0)), Palette::White);
 				}
 			}
 

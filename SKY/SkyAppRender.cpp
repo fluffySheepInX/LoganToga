@@ -11,11 +11,76 @@ namespace SkyAppFlow
 	namespace
 	{
       constexpr int32 ResourceAreaRingSegments = 36;
+		constexpr double TerrainCellOverlayY = 0.01;
+		constexpr double TerrainCellOverlayHeight = 0.02;
+		constexpr double TerrainFadeOverlayY = 0.016;
+		constexpr double TerrainFadeOverlayHeight = 0.014;
+		constexpr double TerrainFadeStripWidth = (TerrainCellSize * 0.34);
+		constexpr double TerrainFadeInset = (TerrainCellSize * 0.08);
 
-		void DrawTerrainCellOverlay(const TerrainCell& terrainCell)
+		[[nodiscard]] int64 ToTerrainCellKey(const Point& cell)
 		{
-			const Vec3 center = ToTerrainCellCenter(terrainCell.cell).movedBy(0, 0.01, 0);
-			Box{ center, TerrainCellSize, 0.02, TerrainCellSize }.draw(GetTerrainCellDrawColor(terrainCell).removeSRGBCurve());
+			return (static_cast<int64>(cell.x) << 32)
+				^ static_cast<uint32>(cell.y);
+		}
+
+		[[nodiscard]] bool ShouldDrawTerrainFade(const ColorF& a, const ColorF& b)
+		{
+			return ((Abs(a.r - b.r) + Abs(a.g - b.g) + Abs(a.b - b.b) + Abs(a.a - b.a)) > 0.08);
+		}
+
+		void DrawTerrainEdgeFade(const Vec3& center,
+			const Point& direction,
+			const ColorF& fromColor,
+			const ColorF& toColor)
+		{
+			const ColorF outerColor = ColorF{ fromColor.lerp(toColor, 0.32), 0.34 };
+			const ColorF innerColor = ColorF{ fromColor.lerp(toColor, 0.62), 0.56 };
+			const double stripCenterOffset = ((TerrainCellSize - TerrainFadeStripWidth) * 0.5);
+
+			if (direction.x != 0)
+			{
+				const double offsetX = (stripCenterOffset * direction.x);
+				Box{ center.movedBy(offsetX, TerrainFadeOverlayY, 0), TerrainFadeStripWidth, TerrainFadeOverlayHeight, (TerrainCellSize - TerrainFadeInset) }.draw(outerColor.removeSRGBCurve());
+				Box{ center.movedBy(offsetX, TerrainFadeOverlayY + 0.002, 0), (TerrainFadeStripWidth * 0.58), TerrainFadeOverlayHeight * 0.72, (TerrainCellSize - TerrainFadeInset * 1.6) }.draw(innerColor.removeSRGBCurve());
+				return;
+			}
+
+			const double offsetZ = (stripCenterOffset * direction.y);
+			Box{ center.movedBy(0, TerrainFadeOverlayY, offsetZ), (TerrainCellSize - TerrainFadeInset), TerrainFadeOverlayHeight, TerrainFadeStripWidth }.draw(outerColor.removeSRGBCurve());
+			Box{ center.movedBy(0, TerrainFadeOverlayY + 0.002, offsetZ), (TerrainCellSize - TerrainFadeInset * 1.6), TerrainFadeOverlayHeight * 0.72, (TerrainFadeStripWidth * 0.58) }.draw(innerColor.removeSRGBCurve());
+		}
+
+         void DrawTerrainCellOverlay(const TerrainSurfaceCell& terrainCell,
+			const HashTable<int64, const TerrainSurfaceCell*>& terrainLookup)
+		{
+          const Vec3 center = ToTerrainCellCenter(terrainCell.cell).movedBy(0, TerrainCellOverlayY, 0);
+            const ColorF cellColor = terrainCell.finalColor;
+			if (cellColor.a <= 0.01)
+			{
+				return;
+			}
+
+			Box{ center, TerrainCellSize, TerrainCellOverlayHeight, TerrainCellSize }.draw(cellColor.removeSRGBCurve());
+
+			for (const Point direction : { Point{ 1, 0 }, Point{ -1, 0 }, Point{ 0, 1 }, Point{ 0, -1 } })
+			{
+				const Point neighborCellPosition = (terrainCell.cell + direction);
+				const auto it = terrainLookup.find(ToTerrainCellKey(neighborCellPosition));
+
+				if ((it == terrainLookup.end()) || (it->second == nullptr))
+				{
+					continue;
+				}
+
+              const TerrainSurfaceCell& neighborCell = *it->second;
+				if (not ShouldDrawTerrainFade(cellColor, neighborCell.finalColor))
+				{
+					continue;
+				}
+
+             DrawTerrainEdgeFade(center, direction, cellColor, neighborCell.finalColor);
+			}
 		}
 
 		[[nodiscard]] ColorF GetResourceAreaColor(const ResourceType type)
@@ -83,9 +148,17 @@ namespace SkyAppFlow
  void RenderWorld(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		resources.groundPlane.draw(resources.groundTexture);
-        for (const auto& terrainCell : state.mapData.terrainCells)
+         HashTable<int64, const TerrainSurfaceCell*> terrainLookup;
+		terrainLookup.reserve(state.terrainSurface.cells.size());
+
+      for (const auto& terrainCell : state.terrainSurface.cells)
 		{
-			DrawTerrainCellOverlay(terrainCell);
+			terrainLookup.emplace(ToTerrainCellKey(terrainCell.cell), &terrainCell);
+		}
+
+          for (const auto& terrainCell : state.terrainSurface.cells)
+		{
+            DrawTerrainCellOverlay(terrainCell, terrainLookup);
 		}
 		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
 

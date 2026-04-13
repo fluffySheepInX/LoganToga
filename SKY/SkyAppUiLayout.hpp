@@ -15,10 +15,18 @@ namespace SkyAppUiLayout
      inline constexpr int32 ResourcePanelCollapsedHeight = 84;
 		inline constexpr int32 ResourcePanelExpandedHeight = 196;
 		inline constexpr int32 BottomControlYOffset = 100;
+     inline constexpr int32 BottomControlPanelWidth = 804;
+		inline constexpr int32 BottomControlPanelHeight = 52;
+		inline constexpr int32 BottomControlCheckBoxWidth = 96;
+		inline constexpr int32 BottomControlButtonGap = 8;
+       inline constexpr int32 BottomEditorIconButtonSize = 24;
+		inline constexpr int32 BottomEditorIconButtonGap = 8;
        inline constexpr int32 AccordionHeaderHeight = 36;
             inline constexpr int32 MiniMapExpandedHeight = 220;
          inline constexpr int32 SkySettingsExpandedHeight = 466;
 			inline constexpr int32 CameraSettingsExpandedHeight = 416;
+           inline constexpr int32 TerrainVisualSettingsPanelWidth = 420;
+           inline constexpr int32 TerrainVisualSettingsExpandedHeight = 560;
 
 		[[nodiscard]] inline int32 RightColumnX(const int32 sceneWidth)
 		{
@@ -74,6 +82,13 @@ namespace SkyAppUiLayout
 		return Point{ (20 + 480 + PanelGap), (20 + CameraSettingsExpandedHeight + PanelGap) };
 	}
 
+		[[nodiscard]] inline Point DefaultTerrainVisualSettingsPosition(const int32 sceneWidth, const int32 sceneHeight)
+		{
+			(void)sceneWidth;
+			(void)sceneHeight;
+			return Point{ (20 + 480 + PanelGap), (20 + CameraSettingsExpandedHeight + 16) };
+		}
+
 	[[nodiscard]] inline Point SnapToUiEditGrid(const Point& position)
 	{
 		return Point{ SnapToUiEditGrid(position.x), SnapToUiEditGrid(position.y) };
@@ -106,6 +121,21 @@ namespace SkyAppUiLayout
        (void)skySettingsExpanded;
 		(void)expanded;
 		return Rect{ (20 + 480 + PanelGap), 20, 360, CameraSettingsExpandedHeight };
+	}
+
+  [[nodiscard]] inline Rect TerrainVisualSettings(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
+	{
+      const Point clampedPosition = ClampPanelPosition(position, TerrainVisualSettingsPanelWidth, TerrainVisualSettingsExpandedHeight, sceneWidth, sceneHeight);
+		return Rect{ clampedPosition.x, clampedPosition.y, TerrainVisualSettingsPanelWidth, TerrainVisualSettingsExpandedHeight };
+	}
+
+	[[nodiscard]] inline Rect TerrainVisualSettings(const int32 sceneWidth, const int32 sceneHeight, const bool cameraSettingsExpanded = true, const bool expanded = true)
+	{
+		(void)sceneWidth;
+		(void)sceneHeight;
+		(void)cameraSettingsExpanded;
+		(void)expanded;
+       return TerrainVisualSettings(sceneWidth, sceneHeight, DefaultTerrainVisualSettingsPosition(sceneWidth, sceneHeight));
 	}
 
  [[nodiscard]] inline Rect MapEditor(const int32 sceneWidth, const int32 sceneHeight)
@@ -187,58 +217,80 @@ namespace SkyAppUiLayout
 		};
 	}
 
-    [[nodiscard]] inline Rect UiToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-      (void)sceneWidth;
-		return Rect{ 20, (sceneHeight - BottomControlYOffset), 140, 36 };
-	}
-
-   [[nodiscard]] inline Rect MapModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+ [[nodiscard]] inline Rect UiToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
      (void)sceneWidth;
-     return Rect{ 168, (sceneHeight - BottomControlYOffset), 44, 36 };
+		return Rect{ 20, (sceneHeight - BottomControlYOffset), BottomControlPanelWidth, BottomControlPanelHeight };
 	}
 
-   [[nodiscard]] inline Rect ModelHeightModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+ [[nodiscard]] inline Rect BottomControlRevealHotZone(const int32 sceneWidth, const int32 sceneHeight)
 	{
-     (void)sceneWidth;
-       return Rect{ 220, (sceneHeight - BottomControlYOffset), 44, 36 };
+		(void)sceneWidth;
+		return Rect{ 0, Max(0, (sceneHeight - 160)), 28, 160 };
+	}
+
+	[[nodiscard]] inline Rect UiToggleCheckBox(const Rect& uiToggle)
+	{
+		return Rect{ (uiToggle.x + 10), (uiToggle.y + 8), BottomControlCheckBoxWidth, 36 };
+	}
+
+	[[nodiscard]] inline Rect MapModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+      const Rect uiToggle = UiToggle(sceneWidth, sceneHeight);
+		return Rect{ (UiToggleCheckBox(uiToggle).rightX() + BottomControlButtonGap), (uiToggle.y + 8), 44, 36 };
+	}
+
+ [[nodiscard]] inline Rect ModelHeightModeToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+      const Rect anchorRect = MapModeToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 44, 36 };
 	}
 
 	[[nodiscard]] inline Rect UnitEditorModeToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 272, (sceneHeight - BottomControlYOffset), 60, 36 };
+       const Rect anchorRect = ModelHeightModeToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 60, 36 };
 	}
 
 	[[nodiscard]] inline Rect SkySettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 340, (sceneHeight - BottomControlYOffset), 44, 36 };
+       const Rect anchorRect = UnitEditorModeToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 44, 36 };
 	}
 
 	[[nodiscard]] inline Rect CameraSettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 392, (sceneHeight - BottomControlYOffset), 44, 36 };
+       const Rect anchorRect = SkySettingsToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 44, 36 };
+	}
+
+	[[nodiscard]] inline Rect TerrainVisualToggle(const int32 sceneWidth, const int32 sceneHeight)
+	{
+	const Rect anchorRect = CameraSettingsToggle(sceneWidth, sceneHeight);
+	return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 44, 36 };
 	}
 
 	[[nodiscard]] inline Rect UiEditModeToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 444, (sceneHeight - BottomControlYOffset), 84, 36 };
+       const Rect anchorRect = TerrainVisualToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 84, 36 };
 	}
 
 	[[nodiscard]] inline Rect ResourceAdjustToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 536, (sceneHeight - BottomControlYOffset), 88, 36 };
+       const Rect anchorRect = UiEditModeToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 88, 36 };
 	}
 
 	[[nodiscard]] inline Rect EnemyPlanToggle(const int32 sceneWidth, const int32 sceneHeight)
 	{
-		(void)sceneWidth;
-		return Rect{ 632, (sceneHeight - BottomControlYOffset), 110, 36 };
+       const Rect anchorRect = ResourceAdjustToggle(sceneWidth, sceneHeight);
+		return Rect{ (anchorRect.rightX() + BottomControlButtonGap), anchorRect.y, 110, 36 };
+	}
+
+	[[nodiscard]] inline Rect BottomEditorTextColorsButton(const Rect& anchorToggle)
+	{
+		return Rect{ (anchorToggle.rightX() + BottomEditorIconButtonGap), (anchorToggle.y + (anchorToggle.h - BottomEditorIconButtonSize) / 2), BottomEditorIconButtonSize, BottomEditorIconButtonSize };
 	}
 
  [[nodiscard]] inline Rect EscMenu(const int32 sceneWidth, const int32 sceneHeight)
@@ -256,14 +308,9 @@ namespace SkyAppUiLayout
 		return Rect{ panelRect.x, panelRect.y, panelRect.w, AccordionHeaderHeight };
 	}
 
-	[[nodiscard]] inline Vec2 UiTogglePosition(const Rect& uiToggle)
-	{
-		return Vec2{ static_cast<double>(uiToggle.x), static_cast<double>(uiToggle.y) };
-	}
-
 	[[nodiscard]] inline Vec2 BottomMessagePosition(const Rect& uiToggle, const int32 messageIndex)
 	{
-		return Vec2{ static_cast<double>(uiToggle.x), static_cast<double>(uiToggle.y - 32 + messageIndex * 24) };
+       return Vec2{ static_cast<double>(uiToggle.x + 12), static_cast<double>(uiToggle.y - 32 + messageIndex * 24) };
 	}
 
 	[[nodiscard]] inline Vec2 TimeSliderPosition(const Rect& timeSlider)
@@ -304,6 +351,36 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Rect SkySettingsTimeStepButton(const Rect& timePanel, const int32 index)
 	{
 		return Rect{ (timePanel.x + 12 + index * 70), (timePanel.y + 52), 62, 28 };
+	}
+
+	[[nodiscard]] inline Vec2 TerrainVisualPanelTextPosition(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
+	{
+		return Vec2{ static_cast<double>(panelRect.x + xOffset), static_cast<double>(panelRect.y + yOffset) };
+	}
+
+	[[nodiscard]] inline Vec2 TerrainVisualPanelSliderPosition(const Rect& panelRect, const int32 yOffset)
+	{
+		return Vec2{ static_cast<double>(panelRect.x + 12), static_cast<double>(panelRect.y + yOffset) };
+	}
+
+	[[nodiscard]] inline int32 TerrainVisualPanelSliderLabelWidth()
+	{
+     return 148;
+	}
+
+	[[nodiscard]] inline int32 TerrainVisualPanelSliderWidth()
+	{
+     return 236;
+	}
+
+	[[nodiscard]] inline Rect TerrainVisualPanelButtonRect(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
+	{
+		return Rect{ (panelRect.x + xOffset), (panelRect.y + yOffset), 92, 28 };
+	}
+
+	[[nodiscard]] inline Rect TerrainVisualPanelDragHandle(const Rect& panelRect)
+	{
+		return Rect{ (panelRect.rightX() - 88), (panelRect.y + 8), 72, 24 };
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelTitlePosition(const Rect& resourcePanel)

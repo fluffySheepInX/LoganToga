@@ -147,6 +147,26 @@ namespace SkyAppInternal
 		ClampEditorMissionSelection(data);
 	}
 
+	void DuplicateSelectedEditorMission(SkyAppData& data)
+	{
+		ClampEditorMissionSelection(data);
+		const size_t index = *data.selectedEditorMissionIndex;
+		const size_t insertIndex = (index + 1);
+
+		TextEditState missionNameState = data.missionNameStates[index];
+		if (missionNameState.text.trimmed().isEmpty())
+		{
+			missionNameState.text = U"Mission {}"_fmt(insertIndex + 1);
+		}
+
+		data.missionNameStates.insert(data.missionNameStates.begin() + insertIndex, missionNameState);
+		data.missionMapPathStates.insert(data.missionMapPathStates.begin() + insertIndex, data.missionMapPathStates[index]);
+		data.missionPreDialogueStates.insert(data.missionPreDialogueStates.begin() + insertIndex, data.missionPreDialogueStates[index]);
+		data.missionPostDialogueStates.insert(data.missionPostDialogueStates.begin() + insertIndex, data.missionPostDialogueStates[index]);
+		data.selectedEditorMissionIndex = insertIndex;
+		ClampEditorMissionSelection(data);
+	}
+
 	void RemoveSelectedEditorMission(SkyAppData& data)
 	{
 		ClampEditorMissionSelection(data);

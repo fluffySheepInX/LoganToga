@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "MainContext.hpp"
+# include "MainContextTypes.hpp"
 
 enum class PlaceableModelType
 {
@@ -99,5 +100,6 @@ bool SaveMapData(const MapData& mapData, FilePathView path);
 [[nodiscard]] Vec3 ToTerrainCellCenter(const Point& cell);
 [[nodiscard]] ColorF GetTerrainCellBaseColor(TerrainCellType type);
 [[nodiscard]] ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell);
+[[nodiscard]] ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell, const MainSupport::TerrainVisualSettings& settings);
 void SetTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell, TerrainCellType type, const Color& color);
 bool RemoveTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell);

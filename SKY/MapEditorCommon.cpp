@@ -1,5 +1,6 @@
 ﻿# include "MapEditorInternal.hpp"
 # include "MainScene.hpp"
+# include "SkyAppUiInternal.hpp"
 
 namespace MapEditorDetail
 {
@@ -46,7 +47,7 @@ namespace MapEditorDetail
 			? (hovered ? ColorF{ 0.52, 0.75, 0.95 } : ColorF{ 0.43, 0.67, 0.90 })
 			: (hovered ? ColorF{ 0.84 } : ColorF{ 0.74 });
 		rect.draw(fillColor).drawFrame(1, 0, ColorF{ 0.3 });
-		buttonFont(label).drawAt(rect.center(), ColorF{ 0.12 });
+        buttonFont(label).drawAt(rect.center(), selected ? SkyAppSupport::UiInternal::EditorTextOnSelectedPrimaryColor() : SkyAppSupport::UiInternal::EditorTextOnCardPrimaryColor());
 		return hovered && MouseL.down();
 	}
 

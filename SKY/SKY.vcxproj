@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -144,6 +144,10 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MainSceneIndicators.cpp" />
     <ClCompile Include="MainSceneModels.cpp" />
     <ClCompile Include="MainSettings.cpp" />
+    <ClCompile Include="MainSettingsEditorTextColors.cpp" />
+    <ClCompile Include="MainSettingsModelHeight.cpp" />
+    <ClCompile Include="MainSettingsUiLayout.cpp" />
+    <ClCompile Include="MainSettingsUnitEditor.cpp" />
     <ClCompile Include="MainUi.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MapDataToml.cpp" />
@@ -154,6 +158,9 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MapEditorCommon.cpp" />
     <ClCompile Include="MapEditorHitTest.cpp" />
     <ClCompile Include="MapEditorPanel.cpp" />
+    <ClCompile Include="MapEditorPanelCommands.cpp" />
+    <ClCompile Include="MapEditorPanelSelectionDetail.cpp" />
+    <ClCompile Include="MapEditorPanelTools.cpp" />
     <ClCompile Include="MapEditorScene.cpp" />
     <ClCompile Include="SkyApp.cpp" />
     <ClCompile Include="SkyAppBattle.cpp" />
@@ -173,13 +180,20 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppSapperObstacles.cpp" />
     <ClCompile Include="SkyAppSapperPathfinding.cpp" />
     <ClCompile Include="SkyAppSupport.cpp" />
+    <ClCompile Include="SkyAppUiHudBottomBar.cpp" />
+    <ClCompile Include="SkyAppUiHudContext.cpp" />
+    <ClCompile Include="SkyAppUiHudEscMenu.cpp" />
+    <ClCompile Include="SkyAppUiHudSettings.cpp" />
+    <ClCompile Include="TerrainSurface.cpp" />
     <ClCompile Include="SkyAppUi.cpp" />
-    <ClCompile Include="SkyAppUiHud.cpp" />
     <ClCompile Include="SkyAppUiMenus.cpp" />
     <ClCompile Include="SkyAppUiMillEditor.cpp" />
     <ClCompile Include="SkyAppUiMiniMap.cpp" />
     <ClCompile Include="SkyAppUiParameterEditor.cpp" />
-    <ClCompile Include="SkyAppUiSettings.cpp" />
+    <ClCompile Include="SkyAppUiSettingsCommon.cpp" />
+    <ClCompile Include="SkyAppUiSkySettingsPanel.cpp" />
+    <ClCompile Include="SkyAppUiCameraSettingsPanel.cpp" />
+    <ClCompile Include="SkyAppUiTerrainVisualSettingsPanel.cpp" />
     <ClCompile Include="SkyAppUiUnitEditor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -203,14 +217,21 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="CampaignData.hpp" />
     <ClInclude Include="MainConstants.hpp" />
     <ClInclude Include="MainContext.hpp" />
+    <ClInclude Include="MainContextTypes.hpp" />
     <ClInclude Include="MainScene.hpp" />
     <ClInclude Include="MainSettings.hpp" />
+    <ClInclude Include="MainSettingsInternal.hpp" />
     <ClInclude Include="MainUi.hpp" />
     <ClInclude Include="MapData.hpp" />
     <ClInclude Include="MapDataTomlInternal.hpp" />
     <ClInclude Include="MapEditor.hpp" />
+    <ClInclude Include="MapEditorPanelInternal.hpp" />
     <ClInclude Include="RenderContext.hpp" />
+    <ClInclude Include="TerrainSurface.hpp" />
     <ClInclude Include="SkyAppTitleSceneInternal.hpp" />
+    <ClInclude Include="SkyAppUiEditorTextColorEditorInternal.hpp" />
+    <ClInclude Include="SkyAppUiEditorTextColorsInternal.hpp" />
+    <ClInclude Include="SkyAppUiPanelFrameInternal.hpp" />
     <ClInclude Include="UnitContext.hpp" />
     <ClInclude Include="SpawnedSapper.hpp" />
     <ClInclude Include="UnitDefinitions.hpp" />
@@ -238,6 +259,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SkyAppUi.hpp" />
     <ClInclude Include="SkyAppUiInternal.hpp" />
     <ClInclude Include="SkyAppUiLayout.hpp" />
+    <ClInclude Include="SkyAppUiSettingsInternal.hpp" />
     <ClInclude Include="SkyAppUiParameterEditorInternal.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SkyAppInternal.hpp" />

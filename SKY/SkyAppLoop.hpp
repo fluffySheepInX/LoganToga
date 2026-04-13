@@ -4,6 +4,7 @@
 # include "MapData.hpp"
 # include "MapEditor.hpp"
 # include "SkyAppSupport.hpp"
+# include "TerrainSurface.hpp"
 
 namespace SkyAppFlow
 {
@@ -69,6 +70,7 @@ namespace SkyAppFlow
 		MiniMap,
 		ResourcePanel,
        ModelHeight,
+       TerrainVisualSettings,
       UnitEditor,
 	};
 
@@ -87,14 +89,18 @@ namespace SkyAppFlow
 		MainSupport::ModelHeightSettings modelHeightSettings;
      FilePath currentMapPath = FilePath{ MainSupport::MapDataPath };
 		MapData mapData = MakeDefaultMapData();
+     TerrainSurfaceData terrainSurface;
+		uint64 terrainSurfaceRevision = 0;
       MainSupport::AppCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
 		Sky sky;
 		double skyTime = 0.5;
-		bool showUI = true;
+     bool showUI = false;
      bool uiEditMode = false;
       bool skySettingsExpanded = false;
 		bool cameraSettingsExpanded = false;
+      bool terrainVisualSettingsExpanded = false;
       bool miniMapExpanded = true;
+        MainSupport::TerrainVisualSettings terrainVisualSettings;
      MainSupport::UiLayoutSettings uiLayoutSettings;
 	  Optional<UiPanelDragState> uiPanelDrag;
       bool showEscMenu = false;

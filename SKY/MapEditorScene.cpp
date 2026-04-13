@@ -96,6 +96,11 @@ namespace
 
 void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
 {
+  if (not state.enabled)
+	{
+		return;
+	}
+
   for (const auto& terrainCell : mapData.terrainCells)
 	{
 		DrawTerrainCell(terrainCell);

@@ -30,6 +30,10 @@ namespace SkyAppSupport
 		UnitModel& ashigaruModel,
 		TimedMessage& cameraSaveMessage,
 		const SkyAppPanels& panels);
+ void DrawTerrainVisualSettingsPanel(MainSupport::TerrainVisualSettings& settings,
+       bool uiEditMode,
+		bool& isExpanded,
+		const SkyAppPanels& panels);
 	void DrawBlacksmithMenu(const SkyAppPanels& panels,
 		Array<MainSupport::SpawnedSapper>& spawnedSappers,
         const MapData& mapData,

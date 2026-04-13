@@ -26,6 +26,14 @@ enum class MapEditorTool
 	LinkNavPoints,
 };
 
+enum class MapEditorToolCategory
+{
+	BasesAndResources,
+	Terrain,
+	Placement,
+	Navigation,
+};
+
 struct RoadResizeDragState
 {
 	size_t placedModelIndex = 0;
@@ -42,6 +50,8 @@ struct MapEditorState
 {
 	bool enabled = false;
 	MapEditorTool selectedTool = MapEditorTool::SetSapperRallyPoint;
+  MapEditorToolCategory activeToolCategory = MapEditorToolCategory::BasesAndResources;
+	int32 toolCategoryScrollRow = 0;
    bool selectionMode = false;
   bool showNavPoints = true;
 	bool showNavLinks = true;

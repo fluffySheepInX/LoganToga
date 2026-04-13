@@ -80,10 +80,11 @@ namespace SkyAppSupport
 		sapper.retreatReturnAt = (sapper.retreatDisappearAt + RetreatRespawnDelaySeconds);
 	}
 
-      SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded)
+    SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool terrainSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded)
 		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, miniMapExpanded) }
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
-		, cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
+        , cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
+		   , terrainSettings{ SkyAppUiLayout::TerrainVisualSettings(Scene::Width(), Scene::Height(), uiLayoutSettings.terrainVisualSettingsPosition) }
 		, mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
 		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height()) }
 		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
@@ -99,6 +100,7 @@ namespace SkyAppSupport
      , unitEditorModeToggle{ SkyAppUiLayout::UnitEditorModeToggle(Scene::Width(), Scene::Height()) }
      , skySettingsToggle{ SkyAppUiLayout::SkySettingsToggle(Scene::Width(), Scene::Height()) }
 		, cameraSettingsToggle{ SkyAppUiLayout::CameraSettingsToggle(Scene::Width(), Scene::Height()) }
+        , terrainVisualToggle{ SkyAppUiLayout::TerrainVisualToggle(Scene::Width(), Scene::Height()) }
      , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
      , resourceAdjustToggle{ SkyAppUiLayout::ResourceAdjustToggle(Scene::Width(), Scene::Height()) }
      , enemyPlanToggle{ SkyAppUiLayout::EnemyPlanToggle(Scene::Width(), Scene::Height()) }
@@ -106,7 +108,7 @@ namespace SkyAppSupport
 	{
 	}
 
-  bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
+    bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool showTerrainSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
 	{
       const bool hoveringEnemyPlanToggle =
 		#if _DEBUG
@@ -115,10 +117,18 @@ namespace SkyAppSupport
 			false;
 		#endif
 
-       return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver())))
+		const Rect editorTextColorsButtonRect =
+		#if _DEBUG
+			SkyAppUiLayout::BottomEditorTextColorsButton(enemyPlanToggle);
+		#else
+			SkyAppUiLayout::BottomEditorTextColorsButton(resourceAdjustToggle);
+		#endif
+
+      return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver()) || (showTerrainSettings && terrainSettings.mouseOver())))
 			|| miniMap.mouseOver()
           || resourcePanel.mouseOver()
           || SkyAppUiLayout::ResourcePanelCameraHomeButton(resourcePanel).mouseOver()
+          || SkyAppUiLayout::BottomControlRevealHotZone(Scene::Width(), Scene::Height()).mouseOver()
 			|| (isEditorMode && mapEditor.mouseOver())
 			|| (showBlacksmithMenu && blacksmithMenu.mouseOver())
 			|| (showSapperMenu && sapperMenu.mouseOver())
@@ -126,14 +136,16 @@ namespace SkyAppSupport
 			|| (modelHeightEditMode && modelHeight.mouseOver())
           || (showUnitEditor && (unitEditor.mouseOver() || unitEditorList.mouseOver()))
          || (showUI && showSkySettings && SkyAppUiLayout::SkySettingsTimePanel(skySettings).mouseOver())
-			|| uiToggle.mouseOver()
+         || (showUI && uiToggle.mouseOver())
             || (showUI && mapModeToggle.mouseOver())
             || (showUI && modelHeightModeToggle.mouseOver())
             || (showUI && unitEditorModeToggle.mouseOver())
             || (showUI && skySettingsToggle.mouseOver())
 			|| (showUI && cameraSettingsToggle.mouseOver())
+         || (showUI && terrainVisualToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
         || (showUI && resourceAdjustToggle.mouseOver())
+            || (showUI && editorTextColorsButtonRect.mouseOver())
          || hoveringEnemyPlanToggle;
 	}
 

@@ -29,8 +29,8 @@ namespace SkyAppSupport
 			const Rect sectionRect{ (panel.x + 8), top, (panel.w - 16), 38 };
 			sectionRect.rounded(10).draw(ColorF{ 0.90, 0.94, 1.0, 0.70 });
 			sectionRect.rounded(10).drawFrame(1, 0, ColorF{ 0.74, 0.80, 0.90, 0.86 });
-			SimpleGUI::GetFont()(title).draw((sectionRect.x + 12), (sectionRect.y + 6), ColorF{ 0.14 });
-			SimpleGUI::GetFont()(caption).draw((sectionRect.x + 12), (sectionRect.y + 22), ColorF{ 0.28, 0.42, 0.58, 0.92 });
+           SimpleGUI::GetFont()(title).draw((sectionRect.x + 12), (sectionRect.y + 6), UiInternal::EditorTextOnCardPrimaryColor());
+			SimpleGUI::GetFont()(caption).draw((sectionRect.x + 12), (sectionRect.y + 22), UiInternal::EditorTextOnCardSecondaryColor());
 		}
 
 		StringView ToUnitAiRoleLabel(const UnitAiRole aiRole)
@@ -67,8 +67,8 @@ namespace SkyAppSupport
 
 		void DrawUnitAiRoleSelector(const Rect& panel, const double top, UnitAiRole& aiRole)
 		{
-			SimpleGUI::GetFont()(U"AI Role").draw((panel.x + 16), top, ColorF{ 0.14 });
-			SimpleGUI::GetFont()(ToUnitAiRoleLabel(aiRole)).draw((panel.x + 108), top, ColorF{ 0.28 });
+         SimpleGUI::GetFont()(U"AI Role").draw((panel.x + 16), top, UiInternal::EditorTextOnLightPrimaryColor());
+			SimpleGUI::GetFont()(ToUnitAiRoleLabel(aiRole)).draw((panel.x + 108), top, UiInternal::EditorTextOnLightSecondaryColor());
 
 			const Rect secureButton{ (panel.x + panel.w - 236), static_cast<int32>(top - 2), 72, 24 };
 			const Rect assaultButton{ (panel.x + panel.w - 156), static_cast<int32>(top - 2), 72, 24 };
@@ -135,9 +135,9 @@ namespace SkyAppSupport
 		{
 			static const Font buttonFont{ 14, Typeface::Bold };
 			const bool hovered = rect.mouseOver();
-			rect.draw(hovered ? ColorF{ 0.90, 0.93, 0.98 } : ColorF{ 0.80, 0.84, 0.90 })
+            rect.draw(hovered ? ColorF{ 0.90, 0.93, 0.98 } : ColorF{ 0.80, 0.84, 0.90 })
 				.drawFrame(1, 0, ColorF{ 0.32, 0.38, 0.46 });
-			buttonFont(label).drawAt(rect.center(), ColorF{ 0.16 });
+           buttonFont(label).drawAt(rect.center(), UiInternal::EditorTextOnCardPrimaryColor());
 			return hovered && MouseL.down();
 		}
 
@@ -182,8 +182,8 @@ namespace SkyAppSupport
 		{
 			value = Clamp(RoundMillParameterValue(value, spec.sliderRoundStep), spec.minValue, spec.maxValue);
 
-			SimpleGUI::GetFont()(spec.label).draw((panel.x + 16), top, ColorF{ 0.14 });
-			SimpleGUI::GetFont()(FormatMillParameterValue(value, spec.decimals, spec.suffix)).draw((panel.x + panel.w - 108), top, ColorF{ 0.14 });
+           SimpleGUI::GetFont()(spec.label).draw((panel.x + 16), top, UiInternal::EditorTextOnCardPrimaryColor());
+			SimpleGUI::GetFont()(FormatMillParameterValue(value, spec.decimals, spec.suffix)).draw((panel.x + panel.w - 108), top, UiInternal::EditorTextOnCardPrimaryColor());
 
 			const int32 buttonWidth = 40;
 			const int32 buttonHeight = 24;
@@ -239,8 +239,8 @@ namespace SkyAppSupport
 				{ U"+L", spec.largeStep },
 			};
 
-			SimpleGUI::GetFont()(spec.label).draw((rect.x + paddingX), labelY, ColorF{ 0.14 });
-			SimpleGUI::GetFont()(FormatMillParameterValue(value, spec.decimals, spec.suffix)).draw((rect.rightX() - 74), labelY, ColorF{ 0.14 });
+           SimpleGUI::GetFont()(spec.label).draw((rect.x + paddingX), labelY, UiInternal::EditorTextOnCardPrimaryColor());
+			SimpleGUI::GetFont()(FormatMillParameterValue(value, spec.decimals, spec.suffix)).draw((rect.rightX() - 74), labelY, UiInternal::EditorTextOnCardPrimaryColor());
 
 			for (size_t i = 0; i < buttonSpecs.size(); ++i)
 			{
@@ -280,7 +280,7 @@ namespace SkyAppSupport
 
 		void DrawMovementTypeSelector(const Rect& panel, const double top, MovementType& movementType)
 		{
-         SimpleGUI::GetFont()(U"Type").draw((panel.x + 16), top, ColorF{ 0.14 });
+           SimpleGUI::GetFont()(U"Type").draw((panel.x + 16), top, UiInternal::EditorTextOnLightPrimaryColor());
 
             const Rect infantryButton{ (panel.x + panel.w - 146), static_cast<int32>(top - 2), 64, 24 };
 			const Rect tankButton{ (panel.x + panel.w - 74), static_cast<int32>(top - 2), 58, 24 };
@@ -298,8 +298,8 @@ namespace SkyAppSupport
 
 		void DrawFootprintTypeSelector(const Rect& panel, const double top, UnitParameters& parameters)
 		{
-			SimpleGUI::GetFont()(U"Footprint").draw((panel.x + 16), top, ColorF{ 0.14 });
-			SimpleGUI::GetFont()(ToUnitFootprintTypeLabel(parameters.footprintType)).draw((panel.x + 108), top, ColorF{ 0.28 });
+           SimpleGUI::GetFont()(U"Footprint").draw((panel.x + 16), top, UiInternal::EditorTextOnLightPrimaryColor());
+			SimpleGUI::GetFont()(ToUnitFootprintTypeLabel(parameters.footprintType)).draw((panel.x + 108), top, UiInternal::EditorTextOnLightSecondaryColor());
 
 			const Rect circleButton{ (panel.x + panel.w - 152), static_cast<int32>(top - 2), 64, 24 };
 			const Rect capsuleButton{ (panel.x + panel.w - 80), static_cast<int32>(top - 2), 64, 24 };

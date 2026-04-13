@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include "SkyAppInternal.hpp"
+# include "SkyAppUiInternal.hpp"
 
 namespace SkyAppInternal::CampaignEditorDetail
 {
@@ -14,7 +15,7 @@ namespace SkyAppInternal::CampaignEditorDetail
 	{
 		rect.rounded(18).draw(ColorF{ 0.10, 0.15, 0.24, 0.82 });
 		rect.rounded(18).drawFrame(1.5, 0, ColorF{ 0.34, 0.46, 0.62, 0.74 });
-		font(title).draw(rect.pos.movedBy(18, 14), Palette::White);
+        font(title).draw(rect.pos.movedBy(18, 14), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 	}
 
 	inline void DrawEditorActionButton(const RectF& rect, const Font& font, const StringView label, const EditorActionButtonStyle style, const bool enabled = true)
@@ -28,7 +29,7 @@ namespace SkyAppInternal::CampaignEditorDetail
 		{
 			fillColor = ColorF{ 0.16, 0.18, 0.22, 0.72 };
 			frameColor = ColorF{ 0.38, 0.44, 0.52, 0.72 };
-			textColor = ColorF{ 0.72, 0.76, 0.82, 1.0 };
+           textColor = SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor();
 		}
 		else
 		{
@@ -37,20 +38,20 @@ namespace SkyAppInternal::CampaignEditorDetail
 			case EditorActionButtonStyle::Primary:
 				fillColor = (hovered ? ColorF{ 0.34, 0.52, 0.88 } : ColorF{ 0.26, 0.42, 0.74 });
 				frameColor = ColorF{ 0.86, 0.93, 1.0, 0.92 };
-				textColor = ColorF{ 1.0, 1.0, 1.0, 1.0 };
+              textColor = SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor();
 				break;
 
 			case EditorActionButtonStyle::Back:
 				fillColor = (hovered ? ColorF{ 0.14, 0.20, 0.30 } : ColorF{ 0.11, 0.16, 0.24 });
 				frameColor = ColorF{ 0.56, 0.66, 0.80, 0.82 };
-				textColor = ColorF{ 0.94, 0.97, 1.0, 0.98 };
+             textColor = SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor();
 				break;
 
 			case EditorActionButtonStyle::Secondary:
 			default:
 				fillColor = (hovered ? ColorF{ 0.20, 0.30, 0.46 } : ColorF{ 0.15, 0.24, 0.38 });
 				frameColor = ColorF{ 0.74, 0.84, 0.96, 0.86 };
-				textColor = ColorF{ 0.96, 0.98, 1.0, 0.98 };
+             textColor = SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor();
 				break;
 			}
 		}
@@ -91,7 +92,7 @@ namespace SkyAppInternal::CampaignEditorDetail
 
 		for (size_t i = 0; i < lines.size(); ++i)
 		{
-            font(lines[i]).draw(popupRect.pos.movedBy(paddingX, paddingY + i * lineHeight), Palette::White);
+            font(lines[i]).draw(popupRect.pos.movedBy(paddingX, paddingY + i * lineHeight), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 		}
 
        const Vec2 arrowBase{ Clamp(rect.centerX(), popupRect.x + 18.0, popupRect.rightX() - 18.0), popupRect.bottomY() };

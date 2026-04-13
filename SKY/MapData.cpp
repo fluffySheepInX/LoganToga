@@ -11,6 +11,41 @@ namespace
 			0.96,
 		};
 	}
+
+	[[nodiscard]] double SampleTerrainNoise(const Vec2& worldPosition, const double scale)
+	{
+		const double frequency = Max(0.0001, scale);
+		const double coarse = (0.5 + 0.5 * Math::Sin(worldPosition.x * frequency * 0.83 + Math::Cos(worldPosition.y * frequency * 0.57) * 1.9));
+		const double detail = (0.5 + 0.5 * Math::Cos((worldPosition.x + worldPosition.y) * frequency * 1.74 + 0.85));
+		const double diagonal = (0.5 + 0.5 * Math::Sin((worldPosition.x * 0.62 - worldPosition.y * 1.28) * frequency * 1.37));
+		return Clamp((coarse * 0.54 + detail * 0.28 + diagonal * 0.18), 0.0, 1.0);
+	}
+
+	[[nodiscard]] ColorF ApplyTerrainNoise(const ColorF& color, const TerrainCell& terrainCell, const MainSupport::TerrainVisualSettings& settings)
+	{
+		if (not settings.noiseEnabled)
+		{
+			return color;
+		}
+
+		const double strength = Clamp(settings.noiseStrength, 0.0, 1.0);
+		const double scale = Clamp(settings.noiseScale, 0.04, 0.60);
+		const Vec3 center = ToTerrainCellCenter(terrainCell.cell);
+		const Vec2 worldPosition{ center.x, center.z };
+		const double primaryNoise = SampleTerrainNoise(worldPosition, scale);
+		const double detailNoise = SampleTerrainNoise((worldPosition + Vec2{ 17.3, -11.8 }), (scale * 2.35));
+		const double variation = ((primaryNoise - 0.5) * 2.0);
+		const double detailVariation = ((detailNoise - 0.5) * 2.0);
+		const double brightness = Clamp((1.0 + variation * (0.16 * strength) + detailVariation * (0.07 * strength)), 0.74, 1.26);
+		const double warmth = (detailVariation * 0.08 * strength);
+
+		ColorF result = color;
+		result.r = Clamp(result.r * brightness * (1.0 + warmth * 0.45), 0.0, 1.0);
+		result.g = Clamp(result.g * brightness * (1.0 + ((terrainCell.type == TerrainCellType::Grass) ? variation * 0.06 * strength : -Abs(variation) * 0.03 * strength)), 0.0, 1.0);
+		result.b = Clamp(result.b * brightness * (1.0 - warmth * 0.30), 0.0, 1.0);
+		result.a = color.a;
+		return result;
+	}
 }
 
 MapData MakeDefaultMapData()
@@ -170,6 +205,11 @@ ColorF GetTerrainCellBaseColor(const TerrainCellType type)
 ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell)
 {
 	return MultiplyColor(GetTerrainCellBaseColor(terrainCell.type), ColorF{ terrainCell.color });
+}
+
+ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell, const MainSupport::TerrainVisualSettings& settings)
+{
+	return ApplyTerrainNoise(GetTerrainCellDrawColor(terrainCell), terrainCell, settings);
 }
 
 void SetTerrainCell(Array<TerrainCell>& terrainCells, const Point& cell, const TerrainCellType type, const Color& color)
