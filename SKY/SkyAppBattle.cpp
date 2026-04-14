@@ -311,6 +311,9 @@ namespace SkyAppFlow
       state.attackEffects.clear();
 		BattleDetail::ResetResourceState(state);
 		state.playerTier = 1;
+     state.battleCommandSelectedSlotIndex = 0;
+		state.battleCommandUnlockedSlotCount = 1;
+     state.moveOrderIndicator.reset();
       state.enemyBattlePlan = EnemyBattlePlan::SecureResources;
 		state.enemyTargetResourceAreaIndex.reset();
 		state.nextEnemyAiDecisionAt = 0.0;

@@ -11,7 +11,11 @@ namespace SkyAppFlow
 	{
 		void NormalizeFrameStateInputs(SkyAppState& state)
 		{
+          constexpr int32 BattleCommandSlotCount = 4;
+
 			state.mapEditor.enabled = (state.appMode == AppMode::EditMap);
+			state.battleCommandUnlockedSlotCount = Clamp(state.battleCommandUnlockedSlotCount, 1, BattleCommandSlotCount);
+			state.battleCommandSelectedSlotIndex = Min(state.battleCommandSelectedSlotIndex, static_cast<size_t>(state.battleCommandUnlockedSlotCount - 1));
 
 			if (not IsValidMillIndex(state, state.selectedMillIndex))
 			{

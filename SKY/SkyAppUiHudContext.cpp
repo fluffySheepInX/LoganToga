@@ -30,13 +30,15 @@ namespace SkyAppFlow
 
 		if ((not frame.isEditorMode) && (not state.playerWon) && state.showBlacksmithMenu)
 		{
-			DrawBlacksmithMenu(frame.panels,
+            DrawBattleCommandMenu(frame.panels,
 				state.spawnedSappers,
 				state.mapData,
 				state.mapData.playerBasePosition,
 				state.mapData.sapperRallyPoint,
 				state.playerResources,
 				state.playerTier,
+               state.battleCommandSelectedSlotIndex,
+				state.battleCommandUnlockedSlotCount,
 				state.unitEditorSettings,
 				state.modelHeightSettings,
 				state.blacksmithMenuMessage);

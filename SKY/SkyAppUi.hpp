@@ -44,6 +44,18 @@ namespace SkyAppSupport
       const MainSupport::UnitEditorSettings& unitEditorSettings,
        const MainSupport::ModelHeightSettings& modelHeightSettings,
 		TimedMessage& blacksmithMenuMessage);
+    void DrawBattleCommandMenu(const SkyAppPanels& panels,
+		Array<MainSupport::SpawnedSapper>& spawnedSappers,
+		const MapData& mapData,
+		const Vec3& playerBasePosition,
+		const Vec3& rallyPoint,
+		MainSupport::ResourceStock& playerResources,
+		int32& playerTier,
+		size_t& selectedSlotIndex,
+		int32& unlockedSlotCount,
+		const MainSupport::UnitEditorSettings& unitEditorSettings,
+		const MainSupport::ModelHeightSettings& modelHeightSettings,
+		TimedMessage& battleCommandMessage);
   void DrawMiniMap(bool& isExpanded,
 		const SkyAppPanels& panels,
      bool uiEditMode,

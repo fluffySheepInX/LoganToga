@@ -173,7 +173,15 @@ namespace SkyAppFlow
 
 					for (size_t i = 0; i < validSelectedSapperIndices.size(); ++i)
 					{
-                     SetSpawnedSapperTarget(state.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.mapData, state.modelHeightSettings);
+                     SetSpawnedSapperMoveOrder(state.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.mapData, state.modelHeightSettings);
+					}
+
+					if (not validSelectedSapperIndices.isEmpty())
+					{
+						state.moveOrderIndicator = MoveOrderIndicator{
+							.position = *targetPosition,
+							.startedAt = Scene::Time(),
+						};
 					}
 
 					state.selectedSapperIndices = validSelectedSapperIndices;

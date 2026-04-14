@@ -167,6 +167,52 @@ namespace SkyAppFlow
 				return;
 			}
 		}
+
+		void DrawMoveOrderIndicator(const AppCamera3D& camera, const MoveOrderIndicator& indicator)
+		{
+			const double elapsed = Max(0.0, (Scene::Time() - indicator.startedAt));
+			const double duration = Max(indicator.lifetime, 0.001);
+			const double t = Math::Saturate(elapsed / duration);
+			const double fade = (1.0 - t);
+			if (fade <= 0.0)
+			{
+				return;
+			}
+
+			const double bobOffset = (-18.0 - 12.0 * Math::Sin(t * Math::TwoPi * 2.0));
+			const double ringPulse = (1.0 + 0.24 * Math::Sin(t * Math::TwoPi * 2.5));
+			const Optional<Vec2> groundAnchor = OverlayDetail::ProjectToScreen(camera, indicator.position.movedBy(0, 0.08, 0));
+			const Optional<Vec2> arrowAnchor = OverlayDetail::ProjectToScreen(camera, indicator.position.movedBy(0, 1.5, 0));
+
+			if ((not groundAnchor) || (not arrowAnchor))
+			{
+				return;
+			}
+
+			const Vec2 arrowCenter = arrowAnchor->movedBy(0, bobOffset);
+			const ColorF glowColor{ 0.26, 0.86, 1.0, 0.30 * fade };
+			const ColorF ringColor{ 0.58, 0.92, 1.0, 0.92 * fade };
+			const ColorF arrowColor{ 1.0, 0.96, 0.58, 0.96 * fade };
+			const ColorF outlineColor{ 0.22, 0.18, 0.06, 0.92 * fade };
+
+			Circle{ *groundAnchor, 28.0 * ringPulse }.drawFrame(6.0, glowColor);
+			Circle{ *groundAnchor, 18.0 + 3.0 * ringPulse }.drawFrame(2.5, ringColor);
+			Line{ arrowCenter.movedBy(0, 12), groundAnchor->movedBy(0, -6) }.draw(2.4, ColorF{ 0.70, 0.94, 1.0, 0.50 * fade });
+
+			const RectF shaftRect{ Arg::center = arrowCenter.movedBy(0, -14), 10, 18 };
+			shaftRect.rounded(3).draw(arrowColor);
+			shaftRect.rounded(3).drawFrame(1.5, outlineColor);
+			Triangle{
+				arrowCenter.movedBy(0, 12),
+				arrowCenter.movedBy(-13, -2),
+				arrowCenter.movedBy(13, -2)
+			}.draw(arrowColor);
+			Triangle{
+				arrowCenter.movedBy(0, 12),
+				arrowCenter.movedBy(-13, -2),
+				arrowCenter.movedBy(13, -2)
+			}.drawFrame(1.4, 0.0, outlineColor);
+		}
 	}
 
 	namespace OverlayDetail
@@ -192,6 +238,11 @@ namespace SkyAppFlow
 			for (const auto& attackEffect : state.attackEffects)
 			{
 				DrawAttackEffect(state.camera, attackEffect);
+			}
+
+			if (state.moveOrderIndicator)
+			{
+				DrawMoveOrderIndicator(state.camera, *state.moveOrderIndicator);
 			}
 
 			if (IsValidMillIndex(state, state.selectedMillIndex))

@@ -26,6 +26,13 @@ namespace SkyAppFlow
       double radius = 0.0;
 	};
 
+	struct MoveOrderIndicator
+	{
+		Vec3 position{ 0, 0, 0 };
+		double startedAt = 0.0;
+		double lifetime = 0.72;
+	};
+
 	struct SkyAppResources
 	{
 		Mesh groundPlane;
@@ -143,8 +150,11 @@ namespace SkyAppFlow
       MainSupport::UnitEditorSelection unitEditorSelection;
        MainSupport::UnitEditorPage unitEditorPage = MainSupport::UnitEditorPage::Basic;
         int32 playerTier = 1;
+        size_t battleCommandSelectedSlotIndex = 0;
+		int32 battleCommandUnlockedSlotCount = 1;
       Array<double> millLastAttackTimes;
       Array<AttackEffectInstance> attackEffects;
+      Optional<MoveOrderIndicator> moveOrderIndicator;
       int32 startupCameraFreezeFrames = 2;
 		double nextEnemyReinforcementAt = 0.0;
 		size_t enemyReinforcementCount = 0;

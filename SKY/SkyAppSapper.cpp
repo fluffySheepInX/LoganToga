@@ -33,6 +33,33 @@ namespace SkyAppSupport
 			return (BirdDisplayYaw + SapperFacingYawOffset + Math::Atan2(direction.x, direction.z));
 		}
 
+		[[nodiscard]] double BlendCombatFacingYaw(const SpawnedSapper& sapper, const double targetYaw)
+		{
+			if (sapper.movementType != MovementType::Tank)
+			{
+				return targetYaw;
+			}
+
+			double delta = (targetYaw - sapper.facingYaw);
+			while (Math::Pi < delta)
+			{
+				delta -= Math::TwoPi;
+			}
+
+			while (delta < -Math::Pi)
+			{
+				delta += Math::TwoPi;
+			}
+
+			const double maxTurnStep = (TankCombatTurnRate * Scene::DeltaTime());
+			if (Abs(delta) <= maxTurnStep)
+			{
+				return targetYaw;
+			}
+
+			return (sapper.facingYaw + Clamp(delta, -maxTurnStep, maxTurnStep));
+		}
+
 		[[nodiscard]] Vec3 ToHorizontalDirectionOrFallback(const Vec3& direction, const Vec3& fallback)
 		{
 			Vec3 horizontalDirection{ direction.x, 0.0, direction.z };
@@ -157,11 +184,24 @@ namespace SkyAppSupport
 			return direction.normalized();
 		}
 
+		[[nodiscard]] double GetSapperForwardExtent(const SpawnedSapper& sapper, const ModelHeightSettings& modelHeightSettings)
+		{
+			const double scale = Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, sapper));
+			const double radius = Max(0.1, (sapper.footprintRadius * scale));
+
+			if (sapper.footprintType != UnitFootprintType::Capsule)
+			{
+				return radius;
+			}
+
+			return (radius + Max(0.0, (sapper.footprintHalfLength * scale)));
+		}
+
       [[nodiscard]] double GetSapperCombatStopDistance(const SpawnedSapper& attacker, const SpawnedSapper& defender, const ModelHeightSettings& modelHeightSettings)
 		{
-            return (Max(0.0, attacker.stopDistance)
-				+ Max(0.1, (attacker.footprintRadius * Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, attacker))))
-				+ Max(0.1, (defender.footprintRadius * Max(ModelScaleMin, GetSpawnedSapperModelScale(modelHeightSettings, defender)))));
+         return (Max(0.0, attacker.stopDistance)
+				+ GetSapperForwardExtent(attacker, modelHeightSettings)
+				+ GetSapperForwardExtent(defender, modelHeightSettings));
 		}
 
        [[nodiscard]] double GetSapperCombatSurfaceDistance(const SpawnedSapper& attacker, const SpawnedSapper& defender, const ModelHeightSettings& modelHeightSettings)
@@ -174,14 +214,11 @@ namespace SkyAppSupport
 
         [[nodiscard]] Vec3 GetSapperCombatStopPosition(const SpawnedSapper& attacker, const SpawnedSapper& defender, const ModelHeightSettings& modelHeightSettings)
 		{
-         const FootprintSegment attackerSegment = GetFootprintSegment(attacker, modelHeightSettings);
-			const FootprintSegment defenderSegment = GetFootprintSegment(defender, modelHeightSettings);
-			const ClosestSegmentPoints closestPoints = GetClosestPointsOnSegments(attackerSegment.start, attackerSegment.end, defenderSegment.start, defenderSegment.end);
-			const double surfaceDistance = (closestPoints.centerDistance - attackerSegment.radius - defenderSegment.radius);
-			const Vec2 separationDirection = GetSeparationDirection(closestPoints.pointB, closestPoints.pointA, (GetSpawnedSapperBasePosition(attacker) - GetSpawnedSapperBasePosition(defender)));
-         const double stopDistanceDelta = (Max(0.0, attacker.stopDistance) - surfaceDistance);
 			const Vec3 attackerPosition = GetSpawnedSapperBasePosition(attacker);
-         return attackerPosition.movedBy((separationDirection.x * stopDistanceDelta), 0, (separationDirection.y * stopDistanceDelta));
+          const Vec3 defenderPosition = GetSpawnedSapperBasePosition(defender);
+			const Vec2 separationDirection = GetSeparationDirection(Vec2{ defenderPosition.x, defenderPosition.z }, Vec2{ attackerPosition.x, attackerPosition.z }, (attackerPosition - defenderPosition));
+			const double stopCenterDistance = GetSapperCombatStopDistance(attacker, defender, modelHeightSettings);
+			return defenderPosition.movedBy((separationDirection.x * stopCenterDistance), 0, (separationDirection.y * stopCenterDistance));
 		}
 
        [[nodiscard]] double GetSapperBaseCombatSurfaceDistance(const SpawnedSapper& attacker, const Vec3& basePosition, const double baseRadius, const ModelHeightSettings& modelHeightSettings)
@@ -194,14 +231,10 @@ namespace SkyAppSupport
 
         [[nodiscard]] Vec3 GetSapperBaseCombatStopPosition(const SpawnedSapper& attacker, const Vec3& basePosition, const double baseRadius, const ModelHeightSettings& modelHeightSettings)
 		{
-         const FootprintSegment attackerSegment = GetFootprintSegment(attacker, modelHeightSettings);
-			const Vec2 baseCenter{ basePosition.x, basePosition.z };
-			const Vec2 closestPoint = ClosestPointOnSegment(baseCenter, attackerSegment.start, attackerSegment.end);
-			const double surfaceDistance = (closestPoint.distanceFrom(baseCenter) - attackerSegment.radius - baseRadius);
-			const Vec2 separationDirection = GetSeparationDirection(baseCenter, closestPoint, (GetSpawnedSapperBasePosition(attacker) - basePosition));
-         const double stopDistanceDelta = (Max(0.0, attacker.stopDistance) - surfaceDistance);
 			const Vec3 attackerPosition = GetSpawnedSapperBasePosition(attacker);
-         return attackerPosition.movedBy((separationDirection.x * stopDistanceDelta), 0, (separationDirection.y * stopDistanceDelta));
+          const Vec2 separationDirection = GetSeparationDirection(Vec2{ basePosition.x, basePosition.z }, Vec2{ attackerPosition.x, attackerPosition.z }, (attackerPosition - basePosition));
+			const double stopCenterDistance = (Max(0.0, attacker.stopDistance) + GetSapperForwardExtent(attacker, modelHeightSettings) + baseRadius);
+			return basePosition.movedBy((separationDirection.x * stopCenterDistance), 0, (separationDirection.y * stopCenterDistance));
 		}
 
 		[[nodiscard]] Optional<double> GetPlacedModelObstacleRadius(const PlacedModel& placedModel)
@@ -214,6 +247,33 @@ namespace SkyAppSupport
 			default:
 				return none;
 			}
+		}
+
+		void MoveSapperTowardPosition(SpawnedSapper& sapper, const Vec3& position)
+		{
+			const Vec3 currentPosition = GetSpawnedSapperBasePosition(sapper);
+			const Vec3 groundedPosition{ position.x, 0.0, position.z };
+
+			if (currentPosition.distanceFromSq(groundedPosition) <= Square(0.05))
+			{
+				StopSapperAtPosition(sapper, groundedPosition);
+				return;
+			}
+
+			sapper.destinationPosition = groundedPosition;
+
+			if ((sapper.moveDuration > 0.0)
+				&& (sapper.targetPosition.distanceFromSq(groundedPosition) <= Square(0.2)))
+			{
+				return;
+			}
+
+			const double distance = currentPosition.distanceFrom(groundedPosition);
+			sapper.position = currentPosition;
+			sapper.startPosition = currentPosition;
+			sapper.targetPosition = groundedPosition;
+			sapper.moveStartedAt = Scene::Time();
+			sapper.moveDuration = Max(MinimumSapperMoveDuration, (distance / GetEffectiveSapperMoveSpeed(sapper)));
 		}
 
 		void StopSapperAtPosition(SpawnedSapper& sapper, const Vec3& position)

@@ -37,5 +37,6 @@ namespace MainSupport
 		double explosionSkillCooldownUntil = -1000.0;
 		double retreatDisappearAt = -1000.0;
 		double retreatReturnAt = -1000.0;
+      bool moveOrderActive = false;
 	};
 }

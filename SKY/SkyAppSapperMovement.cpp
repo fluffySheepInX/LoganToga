@@ -52,6 +52,7 @@ namespace SkyAppSupport
 					sapper.suppressedUntil = -1000.0;
 					sapper.retreatDisappearAt = -1000.0;
 					sapper.retreatReturnAt = -1000.0;
+                   sapper.moveOrderActive = false;
 				}
 
 				continue;
@@ -74,6 +75,10 @@ namespace SkyAppSupport
 				if (0.05 < sapper.position.distanceFrom(sapper.destinationPosition))
 				{
                     SetSpawnedSapperTarget(sapper, sapper.destinationPosition, mapData, modelHeightSettings);
+				}
+               else
+				{
+					sapper.moveOrderActive = false;
 				}
 			}
 		}

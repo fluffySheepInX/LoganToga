@@ -58,6 +58,7 @@ namespace SkyAppSupport
 	[[nodiscard]] bool IsSapperRetreatedHidden(const MainSupport::SpawnedSapper& sapper);
 	[[nodiscard]] bool IsSpawnedSapperSelectable(const MainSupport::SpawnedSapper& sapper);
 	[[nodiscard]] bool IsSpawnedSapperCombatActive(const MainSupport::SpawnedSapper& sapper);
+    [[nodiscard]] bool IsSapperMoveOrderActive(const MainSupport::SpawnedSapper& sapper);
 	void OrderSapperRetreat(MainSupport::SpawnedSapper& sapper, const Vec3& rallyPoint);
 
 	[[nodiscard]] Vec3 GetSpawnedSapperBasePosition(const MainSupport::SpawnedSapper& sapper);
@@ -75,6 +76,7 @@ namespace SkyAppSupport
     void ResolveSapperSpacingAgainstUnits(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Array<MainSupport::SpawnedSapper>& enemySappers, const MainSupport::ModelHeightSettings& modelHeightSettings);
 	void ResolveSapperSpacingAgainstBase(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& enemyBasePosition, const MainSupport::ModelHeightSettings& modelHeightSettings);
     void ResolveSapperSpacingAgainstObstacles(Array<MainSupport::SpawnedSapper>& spawnedSappers, const MapData& mapData, const MainSupport::ModelHeightSettings& modelHeightSettings);
+   void SetSpawnedSapperMoveOrder(MainSupport::SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData, const MainSupport::ModelHeightSettings& modelHeightSettings);
 	void SetSpawnedSapperTarget(MainSupport::SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData, const MainSupport::ModelHeightSettings& modelHeightSettings);
 	void UpdateAutoCombat(Array<MainSupport::SpawnedSapper>& attackers, Array<MainSupport::SpawnedSapper>& defenders, const MainSupport::ModelHeightSettings& modelHeightSettings);
 	void RemoveDefeatedSappers(Array<MainSupport::SpawnedSapper>& spawnedSappers);

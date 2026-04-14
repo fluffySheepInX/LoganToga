@@ -5,11 +5,34 @@ using namespace MainSupport;
 
 namespace SkyAppSupport
 {
+    namespace
+	{
+		[[nodiscard]] bool ShouldSkipCombatReposition(const SpawnedSapper& sapper, const Vec3& stopPosition, const double surfaceDistance)
+		{
+			const double positionError = GetSpawnedSapperBasePosition(sapper).distanceFrom(stopPosition);
+			const double desiredSurfaceDistance = Max(0.0, sapper.stopDistance);
+			const double surfaceError = Abs(surfaceDistance - desiredSurfaceDistance);
+			const double distanceThreshold = ((sapper.movementType == MovementType::Tank)
+				? (SapperInternal::CombatRepositionDistanceThreshold * 1.5)
+				: SapperInternal::CombatRepositionDistanceThreshold);
+			const double surfaceTolerance = ((sapper.movementType == MovementType::Tank)
+				? (SapperInternal::CombatSurfaceDistanceTolerance * 1.5)
+				: SapperInternal::CombatSurfaceDistanceTolerance);
+			return (positionError <= distanceThreshold)
+				|| (surfaceError <= surfaceTolerance);
+		}
+	}
+
    void ResolveSapperSpacingAgainstUnits(Array<SpawnedSapper>& spawnedSappers, const Array<SpawnedSapper>& enemySappers, const ModelHeightSettings& modelHeightSettings)
 	{
 		for (auto& sapper : spawnedSappers)
 		{
             if (not IsSpawnedSapperCombatActive(sapper))
+			{
+				continue;
+			}
+
+			if (IsSapperMoveOrderActive(sapper))
 			{
 				continue;
 			}
@@ -34,7 +57,7 @@ namespace SkyAppSupport
 					continue;
 				}
 
-               const double facingYaw = SapperInternal::ToSapperYaw((enemyPosition - sapperPosition), sapper.facingYaw);
+                const double facingYaw = SapperInternal::BlendCombatFacingYaw(sapper, SapperInternal::ToSapperYaw((enemyPosition - sapperPosition), sapper.facingYaw));
 				SpawnedSapper orientedSapper = sapper;
 				orientedSapper.facingYaw = facingYaw;
 				nearestDistanceSq = surfaceDistance;
@@ -44,8 +67,21 @@ namespace SkyAppSupport
 
 			if (stopPosition && targetPosition)
 			{
-				sapper.facingYaw = SapperInternal::ToSapperYaw((*targetPosition - sapperPosition), sapper.facingYaw);
-				SapperInternal::StopSapperAtPosition(sapper, *stopPosition);
+               sapper.facingYaw = SapperInternal::BlendCombatFacingYaw(sapper, SapperInternal::ToSapperYaw((*targetPosition - sapperPosition), sapper.facingYaw));
+
+				if (ShouldSkipCombatReposition(sapper, *stopPosition, nearestDistanceSq))
+				{
+					continue;
+				}
+
+                if (nearestDistanceSq <= (sapper.stopDistance + 0.05))
+				{
+					SapperInternal::StopSapperAtPosition(sapper, *stopPosition);
+				}
+				else
+				{
+					SapperInternal::MoveSapperTowardPosition(sapper, *stopPosition);
+				}
 			}
 		}
 	}
@@ -55,6 +91,11 @@ namespace SkyAppSupport
 		for (auto& sapper : spawnedSappers)
 		{
             if (not IsSpawnedSapperCombatActive(sapper))
+			{
+				continue;
+			}
+
+			if (IsSapperMoveOrderActive(sapper))
 			{
 				continue;
 			}
@@ -72,11 +113,25 @@ namespace SkyAppSupport
 				continue;
 			}
 
-           const double facingYaw = SapperInternal::ToSapperYaw((enemyBasePosition - sapperPosition), sapper.facingYaw);
+            const double facingYaw = SapperInternal::BlendCombatFacingYaw(sapper, SapperInternal::ToSapperYaw((enemyBasePosition - sapperPosition), sapper.facingYaw));
 			SpawnedSapper orientedSapper = sapper;
 			orientedSapper.facingYaw = facingYaw;
 			sapper.facingYaw = facingYaw;
-         SapperInternal::StopSapperAtPosition(sapper, SapperInternal::GetSapperBaseCombatStopPosition(orientedSapper, enemyBasePosition, BaseCombatRadius, modelHeightSettings));
+           const Vec3 stopPosition = SapperInternal::GetSapperBaseCombatStopPosition(orientedSapper, enemyBasePosition, BaseCombatRadius, modelHeightSettings);
+
+			if (ShouldSkipCombatReposition(sapper, stopPosition, surfaceDistance))
+			{
+				continue;
+			}
+
+			if (surfaceDistance <= (sapper.stopDistance + 0.05))
+			{
+				SapperInternal::StopSapperAtPosition(sapper, stopPosition);
+			}
+			else
+			{
+				SapperInternal::MoveSapperTowardPosition(sapper, stopPosition);
+			}
 		}
 	}
 
@@ -89,6 +144,11 @@ namespace SkyAppSupport
 				continue;
 			}
 
+			if (IsSapperMoveOrderActive(attacker))
+			{
+				continue;
+			}
+
          const Optional<size_t> targetIndex = SapperInternal::FindNearestSapperInRange(attacker, defenders, modelHeightSettings);
 
 			if (not targetIndex)
@@ -97,7 +157,7 @@ namespace SkyAppSupport
 			}
 
 			SpawnedSapper& target = defenders[*targetIndex];
-			attacker.facingYaw = SapperInternal::ToSapperYaw((GetSpawnedSapperBasePosition(target) - GetSpawnedSapperBasePosition(attacker)), attacker.facingYaw);
+          attacker.facingYaw = SapperInternal::BlendCombatFacingYaw(attacker, SapperInternal::ToSapperYaw((GetSpawnedSapperBasePosition(target) - GetSpawnedSapperBasePosition(attacker)), attacker.facingYaw));
 
 			if ((Scene::Time() - attacker.lastAttackAt) < GetEffectiveSapperAttackInterval(attacker))
 			{

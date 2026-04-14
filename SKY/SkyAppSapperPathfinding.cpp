@@ -198,6 +198,17 @@ namespace
 
 namespace SkyAppSupport
 {
+    void SetSpawnedSapperMoveOrder(SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
+	{
+		sapper.moveOrderActive = true;
+		SetSpawnedSapperTarget(sapper, targetPosition, mapData, modelHeightSettings);
+
+		if (GetSpawnedSapperBasePosition(sapper).distanceFrom(sapper.destinationPosition) <= 0.05)
+		{
+			sapper.moveOrderActive = false;
+		}
+	}
+
   void SetSpawnedSapperTarget(SpawnedSapper& sapper, const Vec3& targetPosition, const MapData& mapData, const ModelHeightSettings& modelHeightSettings)
 	{
 		const Vec3 currentPosition = GetSpawnedSapperBasePosition(sapper);

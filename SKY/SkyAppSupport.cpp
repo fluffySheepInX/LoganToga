@@ -67,6 +67,11 @@ namespace SkyAppSupport
 			&& (not IsSapperRetreatOrdered(sapper));
 	}
 
+	bool IsSapperMoveOrderActive(const SpawnedSapper& sapper)
+	{
+		return sapper.moveOrderActive;
+	}
+
 	void OrderSapperRetreat(SpawnedSapper& sapper, const Vec3& rallyPoint)
 	{
 		const double now = Scene::Time();
@@ -78,6 +83,7 @@ namespace SkyAppSupport
 		sapper.retreatReturnPosition = Vec3{ rallyPoint.x, 0.0, rallyPoint.z };
 		sapper.retreatDisappearAt = (now + RetreatDisappearDelaySeconds);
 		sapper.retreatReturnAt = (sapper.retreatDisappearAt + RetreatRespawnDelaySeconds);
+       sapper.moveOrderActive = false;
 	}
 
   SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool terrainSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded, const bool resourcePanelShowStoredHeight)
