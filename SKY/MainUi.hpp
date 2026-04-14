@@ -9,6 +9,8 @@ namespace MainSupport
 	void DrawAnimationClipSelector(UnitModel& model, StringView title, int32 x, int32 y, int32 width);
 	void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
         UnitRenderModel& activeRenderModel,
+     bool& textureMode,
+		TireTrackTextureSegment& activeTextureSegment,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,

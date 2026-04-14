@@ -56,8 +56,14 @@ namespace MapEditorDetail
 	{
 		const Rect infoSectionRect{ (panelRect.x + 12), (panelRect.y + 364), (panelRect.w - 24), 84 };
 		const int32 infoY = (infoSectionRect.y + 10);
+     String modeLine = U"Mode: {} / Tool: {}"_fmt(state.selectionMode ? U"Select" : U"Edit", ToLabel(state.selectedTool));
+		if (IsTerrainPaintTool(state.selectedTool))
+		{
+			modeLine += U" / Paint: {}"_fmt((state.terrainPaintMode == MapEditorTerrainPaintMode::SingleCell) ? U"1Cell" : U"Area");
+		}
+
 		DrawMapEditorPanelSection(infoSectionRect);
-		font(U"Mode: {} / Tool: {}"_fmt(state.selectionMode ? U"Select" : U"Edit", ToLabel(state.selectedTool))).draw((infoSectionRect.x + 10), infoY, SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());
+     font(modeLine).draw((infoSectionRect.x + 10), infoY, SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());
 		font(U"Obj {} / Area {} / Nav {} / Link {} / Terrain {}"_fmt(mapData.placedModels.size(), mapData.resourceAreas.size(), mapData.navPoints.size(), mapData.navLinks.size(), mapData.terrainCells.size())).draw((infoSectionRect.x + 10), (infoY + 20), SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());
 		font(U"P {:.0f}, {:.0f}, {:.0f} / E {:.0f}, {:.0f}, {:.0f}"_fmt(mapData.playerBasePosition.x, mapData.playerBasePosition.y, mapData.playerBasePosition.z, mapData.enemyBasePosition.x, mapData.enemyBasePosition.y, mapData.enemyBasePosition.z)).draw((infoSectionRect.x + 10), (infoY + 40), SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());
 		font(U"Rally {:.0f}, {:.0f}, {:.0f}"_fmt(mapData.sapperRallyPoint.x, mapData.sapperRallyPoint.y, mapData.sapperRallyPoint.z)).draw((infoSectionRect.x + 10), (infoY + 60), SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());

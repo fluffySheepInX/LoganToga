@@ -80,7 +80,7 @@ namespace SkyAppSupport
 		sapper.retreatReturnAt = (sapper.retreatDisappearAt + RetreatRespawnDelaySeconds);
 	}
 
-    SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool terrainSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded)
+  SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool terrainSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded, const bool resourcePanelShowStoredHeight)
 		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, miniMapExpanded) }
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
         , cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
@@ -92,7 +92,7 @@ namespace SkyAppSupport
           , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), uiLayoutSettings.modelHeightPosition) }
        , unitEditor{ SkyAppUiLayout::UnitEditor(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorPosition) }
 	   , unitEditorList{ SkyAppUiLayout::UnitEditorList(Scene::Width(), Scene::Height(), uiLayoutSettings.unitEditorListPosition) }
-        , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition, resourceAdjustExpanded) }
+           , resourcePanel{ SkyAppUiLayout::ResourcePanel(Scene::Width(), Scene::Height(), uiLayoutSettings.resourcePanelPosition, uiLayoutSettings.resourcePanelSize, resourceAdjustExpanded, resourcePanelShowStoredHeight) }
      , escMenu{ SkyAppUiLayout::EscMenu(Scene::Width(), Scene::Height()) }
 		, uiToggle{ SkyAppUiLayout::UiToggle(Scene::Width(), Scene::Height()) }
 		, mapModeToggle{ SkyAppUiLayout::MapModeToggle(Scene::Width(), Scene::Height()) }

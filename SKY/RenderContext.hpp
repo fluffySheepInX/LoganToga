@@ -15,15 +15,38 @@ namespace MainSupport
 	{
        std::array<double, UnitRenderModelCount> offsetY{};
 		std::array<double, UnitRenderModelCount> scale{};
+		std::array<double, 3> tireTrackYOffset{};
+		std::array<double, 3> tireTrackOpacity{};
+		std::array<double, 3> tireTrackSoftness{};
+		std::array<double, 3> tireTrackWarmth{};
 
 		ModelHeightSettings()
 		{
 			scale.fill(1.0);
+           tireTrackYOffset = { 0.018, 0.019, 0.020 };
+           tireTrackOpacity.fill(1.0);
+			tireTrackSoftness.fill(0.0);
+			tireTrackWarmth.fill(0.35);
 		}
 	};
 
 	inline constexpr double ModelScaleMin = 0.25;
 	inline constexpr double ModelScaleMax = 4.0;
+	inline constexpr double TireTrackYOffsetMin = -0.100;
+	inline constexpr double TireTrackYOffsetMax = 0.100;
+	inline constexpr double TireTrackOpacityMin = 0.0;
+	inline constexpr double TireTrackOpacityMax = 1.0;
+	inline constexpr double TireTrackSoftnessMin = 0.0;
+	inline constexpr double TireTrackSoftnessMax = 1.0;
+	inline constexpr double TireTrackWarmthMin = 0.0;
+	inline constexpr double TireTrackWarmthMax = 1.0;
+
+	enum class TireTrackTextureSegment
+	{
+		Start,
+		Middle,
+		End,
+	};
 
 	struct UnitRenderModelDefinition
 	{
@@ -77,6 +100,47 @@ namespace MainSupport
 		return GetUnitRenderModelDefinition(renderModel).proceduralAnimationType;
 	}
 
+	[[nodiscard]] inline constexpr size_t GetTireTrackTextureSegmentIndex(const TireTrackTextureSegment segment)
+	{
+		switch (segment)
+		{
+		case TireTrackTextureSegment::Start:
+			return 0;
+
+		case TireTrackTextureSegment::Middle:
+			return 1;
+
+		case TireTrackTextureSegment::End:
+		default:
+			return 2;
+		}
+	}
+
+	[[nodiscard]] inline StringView GetTireTrackTextureSegmentLabel(const TireTrackTextureSegment segment)
+	{
+		switch (segment)
+		{
+		case TireTrackTextureSegment::Start:
+			return U"start";
+
+		case TireTrackTextureSegment::Middle:
+			return U"middle";
+
+		case TireTrackTextureSegment::End:
+		default:
+			return U"end";
+		}
+	}
+
+	[[nodiscard]] inline constexpr std::array<TireTrackTextureSegment, 3> GetTireTrackTextureSegments()
+	{
+		return{
+			TireTrackTextureSegment::Start,
+			TireTrackTextureSegment::Middle,
+			TireTrackTextureSegment::End,
+		};
+	}
+
   [[nodiscard]] inline double& GetModelHeightOffset(ModelHeightSettings& settings, const UnitRenderModel renderModel)
 	{
      return settings.offsetY[GetUnitRenderModelIndex(renderModel)];
@@ -95,6 +159,46 @@ namespace MainSupport
 	[[nodiscard]] inline double GetModelScale(const ModelHeightSettings& settings, const UnitRenderModel renderModel)
 	{
 		return settings.scale[GetUnitRenderModelIndex(renderModel)];
+	}
+
+	[[nodiscard]] inline double& GetTireTrackYOffset(ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackYOffset[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double GetTireTrackYOffset(const ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackYOffset[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double& GetTireTrackOpacity(ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackOpacity[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double GetTireTrackOpacity(const ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackOpacity[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double& GetTireTrackSoftness(ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackSoftness[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double GetTireTrackSoftness(const ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackSoftness[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double& GetTireTrackWarmth(ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackWarmth[GetTireTrackTextureSegmentIndex(segment)];
+	}
+
+	[[nodiscard]] inline double GetTireTrackWarmth(const ModelHeightSettings& settings, const TireTrackTextureSegment segment)
+	{
+		return settings.tireTrackWarmth[GetTireTrackTextureSegmentIndex(segment)];
 	}
 
 	[[nodiscard]] inline double GetModelScaleForUnit(const ModelHeightSettings& settings, const UnitTeam team, const SapperUnitType unitType)

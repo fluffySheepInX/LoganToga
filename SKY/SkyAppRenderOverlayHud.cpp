@@ -1,4 +1,5 @@
 ﻿# include "SkyAppRenderOverlayInternal.hpp"
+# include "MainSettings.hpp"
 
 using namespace MainSupport;
 using namespace SkyAppSupport;
@@ -7,19 +8,22 @@ namespace SkyAppFlow
 {
 	namespace
 	{
-		void DrawInitialResourceEditorRow(SkyAppState& state, const Rect& resourcePanel, const ResourceType type, const int32 yOffset)
+      [[nodiscard]] bool DrawInitialResourceEditorRow(SkyAppState& state, const Rect& resourcePanel, const ResourceType type, const int32 yOffset)
 		{
 			double& initialValue = OverlayDetail::GetResourceValue(state.initialPlayerResources, type);
 			double& currentValue = OverlayDetail::GetResourceValue(state.playerResources, type);
 			const double step = OverlayDetail::GetResourceAdjustStep(type);
 			const Rect minusButton{ (resourcePanel.rightX() - 84), (resourcePanel.y + yOffset), 32, 22 };
 			const Rect plusButton{ (resourcePanel.rightX() - 44), (resourcePanel.y + yOffset), 32, 22 };
+			bool changed = false;
 
 			SimpleGUI::GetFont()(U"初期 {} {:.0f}"_fmt(OverlayDetail::ToDisplayLabel(type), initialValue)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + yOffset + 1) }, OverlayDetail::GetResourceTextColor(type));
 
 			if (DrawTextButton(minusButton, U"-"))
 			{
-				initialValue = Max(0.0, (initialValue - step));
+             const double nextValue = Max(0.0, (initialValue - step));
+				changed = (nextValue != initialValue);
+				initialValue = nextValue;
 				currentValue = initialValue;
 			}
 
@@ -27,7 +31,10 @@ namespace SkyAppFlow
 			{
 				initialValue += step;
 				currentValue = initialValue;
+               changed = true;
 			}
+
+			return changed;
 		}
 
 		[[nodiscard]] bool DrawResourcePanelCameraHomeButton(const Rect& buttonRect)
@@ -56,11 +63,9 @@ namespace SkyAppFlow
 
 		void DrawBaseStatusLabel(const AppCamera3D& camera,
 			const Vec3& basePosition,
-			const StringView label,
 			const double hitPoints,
 			const ColorF& fillColor,
-			const ColorF& panelColor,
-			const StringView secondaryText)
+           const ColorF& panelColor)
 		{
 			const Optional<Vec2> screenAnchor = OverlayDetail::ProjectToScreen(camera, basePosition.movedBy(0, 4.2, 0));
 
@@ -69,26 +74,39 @@ namespace SkyAppFlow
 				return;
 			}
 
-			const double panelHeight = (secondaryText.isEmpty() ? 58.0 : 78.0);
-			const RectF panel{ Arg::center = screenAnchor->movedBy(0, -16), 176, panelHeight };
+         const RectF panel{ Arg::center = screenAnchor->movedBy(0, -16), 156, 20 };
 			panel.draw(panelColor).drawFrame(2, 0, ColorF{ 0.92, 0.96, 1.0, 0.72 });
-			SimpleGUI::GetFont()(label).drawAt(panel.center().movedBy(0, secondaryText.isEmpty() ? -16 : -24), Palette::White);
 
-			const RectF backRect{ Arg::center = panel.center().movedBy(0, secondaryText.isEmpty() ? 2 : -2), 140, 8 };
+          const RectF backRect{ Arg::center = panel.center(), 140, 8 };
 			backRect.draw(ColorF{ 0.05, 0.05, 0.05, 0.88 });
 			RectF{ backRect.pos, (backRect.w * Math::Saturate(hitPoints / BaseMaxHitPoints)), backRect.h }.draw(fillColor);
 			backRect.drawFrame(1.0, ColorF{ 0.9, 0.95, 1.0, 0.55 });
-			SimpleGUI::GetFont()(U"{:.0f} / {:.0f}"_fmt(hitPoints, BaseMaxHitPoints)).drawAt(panel.center().movedBy(0, secondaryText.isEmpty() ? 16 : 14), ColorF{ 0.96, 0.98, 1.0 });
-
-			if (not secondaryText.isEmpty())
-			{
-				SimpleGUI::GetFont()(secondaryText).drawAt(panel.center().movedBy(0, 32), ColorF{ 1.0, 0.88, 0.88 });
-			}
 		}
 	}
 
 	namespace OverlayDetail
 	{
+        void DrawResourceLoadWarnings(const SkyAppResources& resources)
+		{
+			if (resources.loadWarnings.isEmpty())
+			{
+				return;
+			}
+
+			const double lineHeight = 22.0;
+			const double panelWidth = Min(680.0, Scene::Width() - 24.0);
+			const double panelHeight = (18.0 + resources.loadWarnings.size() * lineHeight + 16.0);
+			const RectF panel{ 12, 12, panelWidth, panelHeight };
+			panel.rounded(10).draw(ColorF{ 0.18, 0.08, 0.08, 0.94 })
+				.drawFrame(2.0, 0.0, ColorF{ 0.96, 0.54, 0.38, 0.96 });
+			SimpleGUI::GetFont()(U"Resource load warning").draw(panel.x + 12, panel.y + 8, ColorF{ 1.0, 0.94, 0.84, 0.98 });
+
+			for (size_t i = 0; i < resources.loadWarnings.size(); ++i)
+			{
+				SimpleGUI::GetFont()(resources.loadWarnings[i]).draw(panel.x + 12, panel.y + 30 + i * lineHeight, ColorF{ 1.0, 0.86, 0.78, 0.98 });
+			}
+		}
+
         void DrawUiEditGridOverlay(const SkyAppState& state)
 		{
 			if (not state.uiEditMode)
@@ -113,6 +131,8 @@ namespace SkyAppFlow
 		{
 			const Rect resourcePanel = frame.panels.resourcePanel;
 			const Rect resourcePanelCameraHomeButton = SkyAppUiLayout::ResourcePanelCameraHomeButton(resourcePanel);
+           const Rect resourcePanelResizeHandle = SkyAppUiLayout::ResourcePanelResizeHandle(resourcePanel);
+           bool resourceAdjustChanged = false;
 			if (DrawResourcePanelCameraHomeButton(resourcePanelCameraHomeButton))
 			{
 				ResetCameraToPlayerBase(state);
@@ -128,9 +148,27 @@ namespace SkyAppFlow
 			{
 				Line{ (resourcePanel.x + 12), (resourcePanel.y + 92), (resourcePanel.rightX() - 12), (resourcePanel.y + 92) }.draw(1.0, ColorF{ 0.72, 0.78, 0.86, 0.45 });
 				SimpleGUI::GetFont()(U"テスト用 初期資源").draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 100) }, ColorF{ 0.90, 0.94, 0.98, 0.95 });
-				DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Budget, 122);
-				DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Gunpowder, 148);
-				DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Mana, 174);
+              resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Budget, 122) || resourceAdjustChanged;
+				resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Gunpowder, 148) || resourceAdjustChanged;
+				resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Mana, 174) || resourceAdjustChanged;
+				Line{ (resourcePanel.x + 12), (resourcePanel.y + 202), (resourcePanel.rightX() - 12), (resourcePanel.y + 202) }.draw(1.0, ColorF{ 0.72, 0.78, 0.86, 0.35 });
+
+				const Rect resetButton{ (resourcePanel.x + 12), (resourcePanel.y + 212), (resourcePanel.w - 24), 28 };
+				if (DrawTextButton(resetButton, U"初期資源をリセット"))
+				{
+					const ResourceStock defaultResources{ .budget = StartingResources };
+					resourceAdjustChanged = ((state.initialPlayerResources.budget != defaultResources.budget)
+						|| (state.initialPlayerResources.gunpowder != defaultResources.gunpowder)
+						|| (state.initialPlayerResources.mana != defaultResources.mana))
+						|| resourceAdjustChanged;
+					state.initialPlayerResources = defaultResources;
+					state.playerResources = defaultResources;
+				}
+
+				if (resourceAdjustChanged)
+				{
+					SaveInitialPlayerResources(state.initialPlayerResources);
+				}
 			}
 
 			if (state.uiLayoutMessage.isVisible())
@@ -138,25 +176,27 @@ namespace SkyAppFlow
 				const Vec2 messagePosition{ static_cast<double>(resourcePanel.x), static_cast<double>(Min((resourcePanel.bottomY() + 8), (Scene::Height() - 28))) };
 				SimpleGUI::GetFont()(state.uiLayoutMessage.text).draw(messagePosition, ColorF{ 0.98, 0.92, 0.72 });
 			}
+
+			if (state.uiEditMode)
+			{
+				resourcePanelResizeHandle.draw(ColorF{ 0.80, 0.86, 0.96, 0.22 }).drawFrame(1.0, 0.0, ColorF{ 0.62, 0.72, 0.88, 0.52 });
+				Line{ resourcePanelResizeHandle.x + 6, resourcePanelResizeHandle.bottomY() - 2, resourcePanelResizeHandle.rightX() - 2, resourcePanelResizeHandle.y + 6 }.draw(1.4, ColorF{ 0.92, 0.96, 1.0, 0.88 });
+				Line{ resourcePanelResizeHandle.x + 10, resourcePanelResizeHandle.bottomY() - 2, resourcePanelResizeHandle.rightX() - 2, resourcePanelResizeHandle.y + 10 }.draw(1.2, ColorF{ 0.92, 0.96, 1.0, 0.72 });
+			}
 		}
 
 		void DrawBaseStatusOverlays(SkyAppState& state)
 		{
-			const String enemyStatusText = U"魔力 {:.0f}"_fmt(state.enemyResources.mana);
 			DrawBaseStatusLabel(state.camera,
 				state.mapData.playerBasePosition,
-				U"自軍拠点",
 				state.playerBaseHitPoints,
 				ColorF{ 0.36, 0.92, 0.46, 0.95 },
-				ColorF{ 0.08, 0.10, 0.12, 0.88 },
-				U"");
+               ColorF{ 0.08, 0.10, 0.12, 0.88 });
 			DrawBaseStatusLabel(state.camera,
 				state.mapData.enemyBasePosition,
-				U"敵拠点",
 				state.enemyBaseHitPoints,
 				ColorF{ 0.96, 0.28, 0.24, 0.95 },
-				ColorF{ 0.12, 0.08, 0.08, 0.88 },
-				enemyStatusText);
+               ColorF{ 0.12, 0.08, 0.08, 0.88 });
 		}
 
 		void DrawModelHeightOverlay(SkyAppState& state, const SkyAppFrameState& frame)
@@ -167,7 +207,7 @@ namespace SkyAppFlow
 				{
 					frame.panels.modelHeight.drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.96, 0.72 });
 				}
-               DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.previewRenderPositions);
+                DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightTextureMode, state.tireTrackTextureTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.previewRenderPositions);
 			}
 		}
 

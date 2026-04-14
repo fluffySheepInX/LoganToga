@@ -12,42 +12,17 @@ namespace SkyAppInternal
 			explicit SkyBattleScene(const InitData& init)
 				: App::Scene{ init }
 			{
-				SkyAppFlow::InitializeSkyAppState(m_state);
-				auto& data = getData();
-
-				const FilePath battleMapPath = data.pendingBattleMapPath;
-				m_state.currentMapPath = battleMapPath.isEmpty() ? FilePath{ MainSupport::MapDataPath } : battleMapPath;
-				if ((not battleMapPath.isEmpty()) && (battleMapPath != MainSupport::MapDataPath))
-				{
-					const MapDataLoadResult campaignMapLoad = LoadMapDataWithStatus(battleMapPath);
-					m_state.mapData = campaignMapLoad.mapData;
-					SkyAppFlow::ResetMatch(m_state);
-
-					if (not campaignMapLoad.message.isEmpty())
-					{
-						m_state.mapDataMessage.show(campaignMapLoad.message, 4.0);
-					}
-				}
-
-				if (data.activeCampaignId)
-				{
-					SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(*data.activeCampaignId);
-					progress.campaignId = *data.activeCampaignId;
-					progress.currentMissionIndex = data.activeCampaignMissionIndex.value_or(0);
-					progress.unlockedMissionCount = Max(progress.unlockedMissionCount, (progress.currentMissionIndex + 1));
-					progress.completed = false;
-					SkyCampaign::SaveCampaignProgress(progress);
-				}
-
-				if (data.launchBattleInMapEditor)
-				{
-					m_state.appMode = MainSupport::AppMode::EditMap;
-				}
 			}
 
 			void update() override
 			{
-				SkyAppFlow::RunSkyAppFrame(m_resources, m_state);
+                   if (m_loadPhase != LoadPhase::Ready)
+					{
+						updateLoading();
+						return;
+					}
+
+					SkyAppFlow::RunSkyAppFrame(*m_resources, m_state);
 				auto& data = getData();
 
 				if ((not m_campaignResultHandled) && data.activeCampaignId && m_state.playerWon)
@@ -157,6 +132,17 @@ namespace SkyAppInternal
 
 			void draw() const override
 			{
+                  if (m_loadPhase != LoadPhase::Ready)
+					{
+						Scene::Rect().draw(ColorF{ 0.03, 0.05, 0.09 });
+						const RectF loadingRect{ Arg::center = Scene::CenterF(), 420, 120 };
+						loadingRect.rounded(18).draw(ColorF{ 0.04, 0.06, 0.10, 0.82 });
+						loadingRect.rounded(18).drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.94, 0.54 });
+						SimpleGUI::GetFont()(GetLoadingMessage()).drawAt(loadingRect.center().movedBy(0, -12), Palette::White);
+						SimpleGUI::GetFont()(U"Please wait...").drawAt(loadingRect.center().movedBy(0, 20), ColorF{ 0.82, 0.88, 0.96 });
+						return;
+					}
+
 				if (not m_state.playerWon)
 				{
 					return;
@@ -220,8 +206,99 @@ namespace SkyAppInternal
 			}
 
 		private:
-			SkyAppFlow::SkyAppResources m_resources;
+                enum class LoadPhase
+				{
+					InitializeState,
+					LoadBattleMap,
+					UpdateCampaignProgress,
+					CreateResources,
+					Ready,
+				};
+
+				void updateLoading()
+				{
+					auto& data = getData();
+
+					switch (m_loadPhase)
+					{
+					case LoadPhase::InitializeState:
+						SkyAppFlow::InitializeSkyAppState(m_state);
+						if (data.launchBattleInMapEditor)
+						{
+							m_state.appMode = MainSupport::AppMode::EditMap;
+						}
+						m_loadPhase = LoadPhase::LoadBattleMap;
+						return;
+
+					case LoadPhase::LoadBattleMap:
+					{
+						const FilePath battleMapPath = data.pendingBattleMapPath;
+						m_state.currentMapPath = battleMapPath.isEmpty() ? FilePath{ MainSupport::MapDataPath } : battleMapPath;
+						if ((not battleMapPath.isEmpty()) && (battleMapPath != MainSupport::MapDataPath))
+						{
+							const MapDataLoadResult campaignMapLoad = LoadMapDataWithStatus(battleMapPath);
+							m_state.mapData = campaignMapLoad.mapData;
+							SkyAppFlow::ResetMatch(m_state);
+
+							if (not campaignMapLoad.message.isEmpty())
+							{
+								m_state.mapDataMessage.show(campaignMapLoad.message, 4.0);
+							}
+						}
+
+						m_loadPhase = LoadPhase::UpdateCampaignProgress;
+						return;
+					}
+
+					case LoadPhase::UpdateCampaignProgress:
+						if (data.activeCampaignId)
+						{
+							SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(*data.activeCampaignId);
+							progress.campaignId = *data.activeCampaignId;
+							progress.currentMissionIndex = data.activeCampaignMissionIndex.value_or(0);
+							progress.unlockedMissionCount = Max(progress.unlockedMissionCount, (progress.currentMissionIndex + 1));
+							progress.completed = false;
+							SkyCampaign::SaveCampaignProgress(progress);
+						}
+						m_loadPhase = LoadPhase::CreateResources;
+						return;
+
+					case LoadPhase::CreateResources:
+						m_resources.emplace();
+						m_loadPhase = LoadPhase::Ready;
+						return;
+
+					case LoadPhase::Ready:
+					default:
+						return;
+					}
+				}
+
+				[[nodiscard]] StringView GetLoadingMessage() const
+				{
+					switch (m_loadPhase)
+					{
+					case LoadPhase::InitializeState:
+						return U"Initializing battle state";
+
+					case LoadPhase::LoadBattleMap:
+						return U"Loading battle map";
+
+					case LoadPhase::UpdateCampaignProgress:
+						return U"Updating campaign progress";
+
+					case LoadPhase::CreateResources:
+						return U"Loading battle resources";
+
+					case LoadPhase::Ready:
+					default:
+						return U"Ready";
+					}
+				}
+
+				Optional<SkyAppFlow::SkyAppResources> m_resources;
 			SkyAppFlow::SkyAppState m_state;
+               LoadPhase m_loadPhase = LoadPhase::InitializeState;
 			bool m_campaignResultHandled = false;
 		};
 	}

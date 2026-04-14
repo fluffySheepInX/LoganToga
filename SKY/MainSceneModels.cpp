@@ -73,11 +73,88 @@ namespace
 		Box{ Vec3{ -rutOffset, 0.006, 0 }, 0.34, 0.008, Max(1.2, (roadLength - 0.6)) }.draw(ColorF{ 0.18, 0.15, 0.12, 0.20 }.removeSRGBCurve());
 		Box{ Vec3{ rutOffset, 0.006, 0 }, 0.34, 0.008, Max(1.2, (roadLength - 0.6)) }.draw(ColorF{ 0.18, 0.15, 0.12, 0.20 }.removeSRGBCurve());
 	}
+
+  [[nodiscard]] ColorF MakeTireTrackTint(const MainSupport::ModelHeightSettings& modelHeightSettings, const MainSupport::TireTrackTextureSegment segment)
+	{
+		const double warmth = MainSupport::GetTireTrackWarmth(modelHeightSettings, segment);
+		const double opacity = MainSupport::GetTireTrackOpacity(modelHeightSettings, segment);
+		const ColorF charcoal{ 0.08, 0.08, 0.08, opacity };
+		const ColorF earth{ 0.28, 0.20, 0.14, opacity };
+		return charcoal.lerp(earth, warmth);
+	}
+
+	void DrawTexturedGroundStripSegment(const Texture& texture, const Vec3& position, const double width, const double length, const double yaw, const ColorF& tint, const double softness, const double yOffset = 0.018)
+	{
+		if ((width <= 0.01) || (length <= 0.01))
+		{
+			return;
+		}
+
+		const ScopedRenderStates3D renderState{ GroundOverlayBlendState(), RasterizerState::SolidCullNone };
+
+		auto drawSegment = [&](const double drawWidth, const double drawLength, const double drawYOffset, const ColorF& drawTint)
+			{
+				const Transformer3D t{
+					Mat4x4::Identity()
+						.scaled(Float3{ static_cast<float>(drawWidth), 1.0f, static_cast<float>(drawLength) })
+						.rotated(Quaternion::RotateY(static_cast<float>(yaw)))
+						.translated(position.movedBy(0, drawYOffset, 0))
+				};
+				RoadPlaneMesh().draw(texture, drawTint.removeSRGBCurve());
+			};
+
+		if (0.001 < softness)
+		{
+			const double blurAlpha = (tint.a * softness * 0.42);
+			drawSegment(width * (1.0 + softness * 0.20), length * (1.0 + softness * 0.10), (yOffset + 0.0004), ColorF{ tint.r, tint.g, tint.b, blurAlpha });
+		}
+
+		drawSegment(width, length, yOffset, tint);
+	}
+
+    void DrawTireTrackDecal(const PlacedModel& placedModel, const MainSupport::ModelHeightSettings& modelHeightSettings, const Texture& startTexture, const Texture& middleTexture, const Texture& endTexture)
+	{
+		const double decalLength = Clamp(placedModel.roadLength, 2.0, 80.0);
+		const double decalWidth = Clamp(placedModel.roadWidth, 2.0, 80.0);
+		const double capLength = Min(decalWidth, (decalLength * 0.5));
+		const double centerLength = Max(0.0, (decalLength - (capLength * 2.0)));
+        const double middleTileLength = Max(0.5, capLength);
+       const double startYOffset = MainSupport::GetTireTrackYOffset(modelHeightSettings, MainSupport::TireTrackTextureSegment::Start);
+		const double middleYOffset = MainSupport::GetTireTrackYOffset(modelHeightSettings, MainSupport::TireTrackTextureSegment::Middle);
+		const double endYOffset = MainSupport::GetTireTrackYOffset(modelHeightSettings, MainSupport::TireTrackTextureSegment::End);
+        const double startSoftness = MainSupport::GetTireTrackSoftness(modelHeightSettings, MainSupport::TireTrackTextureSegment::Start);
+		const double middleSoftness = MainSupport::GetTireTrackSoftness(modelHeightSettings, MainSupport::TireTrackTextureSegment::Middle);
+		const double endSoftness = MainSupport::GetTireTrackSoftness(modelHeightSettings, MainSupport::TireTrackTextureSegment::End);
+		const ColorF startTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::Start);
+		const ColorF middleTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::Middle);
+		const ColorF endTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::End);
+		const Vec3 direction{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
+		const Vec3 startEdge = (placedModel.position - (direction * (decalLength * 0.5)));
+		const Vec3 endEdge = (placedModel.position + (direction * (decalLength * 0.5)));
+
+      DrawTexturedGroundStripSegment(startTexture, (startEdge + (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, startTint, startSoftness, startYOffset);
+
+		if (centerLength > 0.01)
+		{
+          Vec3 middleCursor = (startEdge + (direction * capLength));
+			double remainingLength = centerLength;
+
+			while (remainingLength > 0.01)
+			{
+				const double segmentLength = Min(middleTileLength, remainingLength);
+                DrawTexturedGroundStripSegment(middleTexture, (middleCursor + (direction * (segmentLength * 0.5))), decalWidth, segmentLength, placedModel.yaw, middleTint, middleSoftness, middleYOffset);
+				middleCursor += (direction * segmentLength);
+				remainingLength -= segmentLength;
+			}
+		}
+
+       DrawTexturedGroundStripSegment(endTexture, (endEdge - (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, endTint, endSoftness, endYOffset);
+	}
 }
 
 namespace MainSupport
 {
-	void DrawPlacedModel(const PlacedModel& placedModel, const Model& millModel, const Model& treeModel, const Model& pineModel, const Model& grassPatchModel, const Texture& roadTexture)
+  void DrawPlacedModel(const PlacedModel& placedModel, const ModelHeightSettings& modelHeightSettings, const Model& millModel, const Model& treeModel, const Model& pineModel, const Model& grassPatchModel, const Texture& roadTexture, const Texture& tireTrackStartTexture, const Texture& tireTrackMiddleTexture, const Texture& tireTrackEndTexture)
 	{
 		switch (placedModel.type)
 		{
@@ -154,6 +231,10 @@ namespace MainSupport
 			RoadPlaneMesh().draw(roadTexture);
 			return;
 		}
+
+		case PlaceableModelType::TireTrackDecal:
+            DrawTireTrackDecal(placedModel, modelHeightSettings, tireTrackStartTexture, tireTrackMiddleTexture, tireTrackEndTexture);
+			return;
 
 		default:
 			return;

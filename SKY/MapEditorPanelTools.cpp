@@ -68,6 +68,7 @@ namespace MapEditorDetail
 		case MapEditorTool::PlaceRock:
 		case MapEditorTool::PlaceWall:
 		case MapEditorTool::PlaceRoad:
+        case MapEditorTool::PlaceTireTrackDecal:
 			return MapEditorToolCategory::Placement;
 
 		case MapEditorTool::PlaceNavPoint:
@@ -99,6 +100,7 @@ namespace MapEditorDetail
 				MapEditorTool::PlaceRock,
 				MapEditorTool::PlaceWall,
 				MapEditorTool::PlaceRoad,
+              MapEditorTool::PlaceTireTrackDecal,
 			};
 
 		case MapEditorToolCategory::Navigation:
@@ -137,9 +139,19 @@ namespace MapEditorDetail
 			return U"左ドラッグ: Road の角度と長さを決定";
 		}
 
+		if (state.selectedTool == MapEditorTool::PlaceTireTrackDecal)
+		{
+			return U"左ドラッグ: タイヤ跡デカールの向きと長さを決定";
+		}
+
 		if (IsTerrainPaintTool(state.selectedTool))
 		{
-			return U"左ドラッグ: セル単位で地表を塗る / 削除";
+           if (state.terrainPaintMode == MapEditorTerrainPaintMode::Area)
+			{
+				return U"左ドラッグ: 指定範囲をまとめて塗る / 削除";
+			}
+
+			return U"左ドラッグ: 1マスずつ地表を塗る / 削除";
 		}
 
 		return U"左クリック: 配置 / 接続 / 設定";
@@ -151,7 +163,9 @@ namespace MapEditorDetail
 		state.roadRotateDrag.reset();
 		state.pendingWallPlacementStartPosition.reset();
 		state.pendingRoadPlacementStartPosition.reset();
+     state.pendingTireTrackPlacementStartPosition.reset();
 		state.lastTerrainPaintCell.reset();
+       state.pendingTerrainPaintRangeStartCell.reset();
 	}
 
 	void DrawMapEditorPanelSection(const Rect& rect)
@@ -171,6 +185,8 @@ namespace MapEditorDetail
 		const Rect selectionModeButton{ (panelRect.x + 180), (panelRect.y + 10), 140, 28 };
 		const Rect navPointVisibilityButton{ (panelRect.x + 16), (panelRect.y + 36), 144, 28 };
 		const Rect navLinkVisibilityButton{ (panelRect.x + 176), (panelRect.y + 36), 144, 28 };
+     const Rect terrainPaintSingleCellButton{ (panelRect.x + 176), (panelRect.y + 88), 68, 28 };
+		const Rect terrainPaintAreaButton{ (panelRect.x + 252), (panelRect.y + 88), 68, 28 };
 		const Rect toolSectionRect{ (panelRect.x + 12), (panelRect.y + 186), (panelRect.w - 24), 126 };
 		const Rect toolButtonArea{ (toolSectionRect.x + 4), (toolSectionRect.y + 34), (toolSectionRect.w - 8), 90 };
 		const auto selectTool = [&](const MapEditorTool tool)
@@ -200,16 +216,42 @@ namespace MapEditorDetail
 		if (DrawEditorButton(navPointVisibilityButton, state.showNavPoints ? U"NavPoint: 表示" : U"NavPoint: 非表示", state.showNavPoints))
 		{
 			state.showNavPoints = not state.showNavPoints;
+          if (not state.showNavPoints)
+			{
+				state.selectedNavPointIndex.reset();
+				state.pendingNavLinkStartIndex.reset();
+			}
 			SetStatusMessage(state, state.showNavPoints ? U"NavPoint を表示" : U"NavPoint を非表示");
 		}
 
 		if (DrawEditorButton(navLinkVisibilityButton, state.showNavLinks ? U"NavLink: 表示" : U"NavLink: 非表示", state.showNavLinks))
 		{
 			state.showNavLinks = not state.showNavLinks;
+         if (not state.showNavLinks)
+			{
+				state.pendingNavLinkStartIndex.reset();
+			}
 			SetStatusMessage(state, state.showNavLinks ? U"NavLink を表示" : U"NavLink を非表示");
 		}
 
 		font(GetOperationHint(state)).draw((panelRect.x + 16), (panelRect.y + 68), SkyAppSupport::UiInternal::EditorTextOnLightSecondaryColor());
+       if ((state.activeToolCategory == MapEditorToolCategory::Terrain) || IsTerrainPaintTool(state.selectedTool))
+		{
+			if (DrawEditorButton(terrainPaintSingleCellButton, U"1マス", (state.terrainPaintMode == MapEditorTerrainPaintMode::SingleCell)))
+			{
+				state.terrainPaintMode = MapEditorTerrainPaintMode::SingleCell;
+				ResetToolInteractionState(state);
+				SetStatusMessage(state, U"地形塗りを 1マス モードに変更");
+			}
+
+			if (DrawEditorButton(terrainPaintAreaButton, U"範囲", (state.terrainPaintMode == MapEditorTerrainPaintMode::Area)))
+			{
+				state.terrainPaintMode = MapEditorTerrainPaintMode::Area;
+				ResetToolInteractionState(state);
+				SetStatusMessage(state, U"地形塗りを 範囲 モードに変更");
+			}
+		}
+
 		font(U"Category").draw((panelRect.x + 16), (panelRect.y + 92), SkyAppSupport::UiInternal::EditorTextOnLightSecondaryColor());
 
 		for (size_t i = 0; i < categories.size(); ++i)

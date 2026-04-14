@@ -12,7 +12,7 @@ namespace SkyAppSupport
 			switch (sapper.movementType)
 			{
 			case MovementType::Tank:
-				return EaseInOutCubic(linearT);
+             return EaseOutCubic(linearT);
 
 			case MovementType::Infantry:
 			default:

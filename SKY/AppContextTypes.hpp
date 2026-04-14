@@ -7,6 +7,7 @@ namespace MainSupport
 	{
 		Point miniMapPosition{ 0, 0 };
 		Point resourcePanelPosition{ 0, 0 };
+      Point resourcePanelSize{ 0, 0 };
 		Point modelHeightPosition{ 0, 0 };
        Point terrainVisualSettingsPosition{ 0, 0 };
 		Point unitEditorPosition{ 0, 0 };

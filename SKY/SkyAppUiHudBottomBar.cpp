@@ -1,4 +1,5 @@
 ﻿# include "SkyAppLoopInternal.hpp"
+# include "SkyAppText.hpp"
 # include "SkyAppUi.hpp"
 # include "SkyAppUiInternal.hpp"
 # include "MapEditor.hpp"
@@ -10,6 +11,8 @@ namespace SkyAppFlow
 {
 	using namespace MainSupport;
 	using namespace SkyAppSupport;
+	using SkyAppText::TextId;
+	using SkyAppText::Tr;
 
 	namespace
 	{
@@ -36,37 +39,37 @@ namespace SkyAppFlow
 			}
 		}
 
-		[[nodiscard]] StringView GetEnemyBattlePlanToggleLabel(const SkyAppState& state)
+        [[nodiscard]] String GetEnemyBattlePlanToggleLabel(const SkyAppState& state)
 		{
 			switch (state.enemyBattlePlanOverride)
 			{
 			case EnemyBattlePlanOverride::ForceSecureResources:
-				return U"固定:資源";
+                return Tr(TextId::HudEnemyPlanFixedResource);
 
 			case EnemyBattlePlanOverride::ForceAssaultBase:
-				return U"固定:拠点";
+                return Tr(TextId::HudEnemyPlanFixedBase);
 
 			case EnemyBattlePlanOverride::Auto:
 			default:
 				return (state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
-					? U"自動:資源"
-					: U"自動:拠点";
+                  ? Tr(TextId::HudEnemyPlanAutoResource)
+					: Tr(TextId::HudEnemyPlanAutoBase);
 			}
 		}
 
-		[[nodiscard]] StringView GetEnemyBattlePlanToggleTooltip(const SkyAppState& state)
+      [[nodiscard]] String GetEnemyBattlePlanToggleTooltip(const SkyAppState& state)
 		{
 			switch (state.enemyBattlePlanOverride)
 			{
 			case EnemyBattlePlanOverride::ForceSecureResources:
-				return U"敵全体方針: 資源確保に固定";
+               return Tr(TextId::HudEnemyPlanTooltipFixedResource);
 
 			case EnemyBattlePlanOverride::ForceAssaultBase:
-				return U"敵全体方針: 拠点攻撃に固定";
+               return Tr(TextId::HudEnemyPlanTooltipFixedBase);
 
 			case EnemyBattlePlanOverride::Auto:
 			default:
-				return U"敵全体方針: 状況から自動決定";
+              return Tr(TextId::HudEnemyPlanTooltipAuto);
 			}
 		}
 
@@ -116,7 +119,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.mapModeToggle.mouseOver())
 		{
-			hoveredTooltip = frame.isEditorMode ? U"プレイ表示に戻す" : U"マップ編集モード";
+            hoveredTooltip = frame.isEditorMode ? Tr(TextId::HudTooltipReturnToPlay) : Tr(TextId::HudTooltipMapEditMode);
 			hoveredTooltipRect = frame.panels.mapModeToggle;
 		}
 
@@ -130,7 +133,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.modelHeightModeToggle.mouseOver())
 		{
-			hoveredTooltip = U"モデル高さ / スケール調整";
+         hoveredTooltip = Tr(TextId::HudTooltipModelHeightScale);
 			hoveredTooltipRect = frame.panels.modelHeightModeToggle;
 		}
 
@@ -144,7 +147,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.unitEditorModeToggle.mouseOver())
 		{
-			hoveredTooltip = U"ユニットパラメータエディタ";
+          hoveredTooltip = Tr(TextId::HudTooltipUnitParameterEditor);
 			hoveredTooltipRect = frame.panels.unitEditorModeToggle;
 		}
 
@@ -154,7 +157,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.skySettingsToggle.mouseOver())
 		{
-			hoveredTooltip = U"空設定パネル";
+         hoveredTooltip = Tr(TextId::HudTooltipSkySettingsPanel);
 			hoveredTooltipRect = frame.panels.skySettingsToggle;
 		}
 
@@ -164,7 +167,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.cameraSettingsToggle.mouseOver())
 		{
-			hoveredTooltip = U"カメラ設定パネル";
+           hoveredTooltip = Tr(TextId::HudTooltipCameraSettingsPanel);
 			hoveredTooltipRect = frame.panels.cameraSettingsToggle;
 		}
 
@@ -174,7 +177,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.terrainVisualToggle.mouseOver())
 		{
-			hoveredTooltip = U"地面ノイズ設定";
+            hoveredTooltip = Tr(TextId::HudTooltipTerrainNoiseSettings);
 			hoveredTooltipRect = frame.panels.terrainVisualToggle;
 		}
 
@@ -185,12 +188,12 @@ namespace SkyAppFlow
 
 			if (state.uiEditMode)
 			{
-				state.uiLayoutMessage.show(U"UI Edit: drag panels / grid snap");
+                state.uiLayoutMessage.show(Tr(TextId::HudUiEditModeActivated));
 			}
 		}
 		if (frame.panels.uiEditModeToggle.mouseOver())
 		{
-			hoveredTooltip = U"UI レイアウト編集";
+         hoveredTooltip = Tr(TextId::HudTooltipUiLayoutEdit);
 			hoveredTooltipRect = frame.panels.uiEditModeToggle;
 		}
 
@@ -200,7 +203,7 @@ namespace SkyAppFlow
 		}
 		if (frame.panels.resourceAdjustToggle.mouseOver())
 		{
-			hoveredTooltip = U"資源量の手動調整";
+           hoveredTooltip = Tr(TextId::HudTooltipManualResourceAdjust);
 			hoveredTooltipRect = frame.panels.resourceAdjustToggle;
 		}
 
@@ -243,7 +246,7 @@ namespace SkyAppFlow
 			SimpleGUI::GetFont()(state.restartMessage.text).draw(messagePosition, ColorF{ 0.12 });
 		}
 
-		DrawCheckBox(SkyAppUiLayout::UiToggleCheckBox(frame.panels.uiToggle), state.showUI, U"UI");
+     DrawCheckBox(SkyAppUiLayout::UiToggleCheckBox(frame.panels.uiToggle), state.showUI, Tr(TextId::CommonUi));
 
 		if (state.showUI)
 		{

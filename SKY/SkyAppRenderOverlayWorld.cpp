@@ -7,6 +7,98 @@ namespace SkyAppFlow
 {
 	namespace
 	{
+       [[nodiscard]] size_t GetResourceTypeIndex(const ResourceType type)
+		{
+			switch (type)
+			{
+			case ResourceType::Budget:
+				return 0;
+
+			case ResourceType::Gunpowder:
+				return 1;
+
+			case ResourceType::Mana:
+			default:
+				return 2;
+			}
+		}
+
+		[[nodiscard]] const Optional<Texture>& GetResourceAreaOverlayTexture(const ResourceType type)
+		{
+			static bool initialized = false;
+			static std::array<Optional<Texture>, 3> textures;
+
+			if (not initialized)
+			{
+				initialized = true;
+				const std::array<std::pair<ResourceType, std::array<FilePath, 4>>, 3> candidates{{
+					{ ResourceType::Budget, { U"App/texture/ui/resource_budget.png", U"App/ui/resource_budget.png", U"App/texture/resource_budget.png", U"App/resource_budget.png" } },
+					{ ResourceType::Gunpowder, { U"App/texture/ui/resource_gunpowder.png", U"App/ui/resource_gunpowder.png", U"App/texture/resource_gunpowder.png", U"App/resource_gunpowder.png" } },
+					{ ResourceType::Mana, { U"App/texture/ui/resource_mana.png", U"App/ui/resource_mana.png", U"App/texture/resource_mana.png", U"App/resource_mana.png" } },
+				}};
+
+				for (const auto& [resourceType, paths] : candidates)
+				{
+					for (const auto& path : paths)
+					{
+						if (FileSystem::Exists(path))
+						{
+							textures[GetResourceTypeIndex(resourceType)] = Texture{ path };
+							break;
+						}
+					}
+				}
+			}
+
+			return textures[GetResourceTypeIndex(type)];
+		}
+
+		void DrawFallbackResourceAreaIcon(const ResourceType type, const Vec2& center, const double size)
+		{
+			const ColorF accent = OverlayDetail::GetResourceTextColor(type);
+			const ColorF dark{ 0.10, 0.12, 0.16, 0.96 };
+
+			switch (type)
+			{
+			case ResourceType::Budget:
+				Circle{ center, (size * 0.28) }.draw(accent);
+				Circle{ center, (size * 0.28) }.drawFrame(2.0, ColorF{ 1.0, 0.97, 0.72, 0.95 });
+				Line{ center.movedBy(0, -(size * 0.18)), center.movedBy(0, (size * 0.18)) }.draw(2.2, dark);
+				Line{ center.movedBy(-(size * 0.12), -(size * 0.06)), center.movedBy((size * 0.12), -(size * 0.06)) }.draw(2.0, dark);
+				Line{ center.movedBy(-(size * 0.12), (size * 0.06)), center.movedBy((size * 0.12), (size * 0.06)) }.draw(2.0, dark);
+				return;
+
+			case ResourceType::Gunpowder:
+				RectF{ Arg::center = center.movedBy(0, (size * 0.05)), (size * 0.38), (size * 0.34) }.rounded(4).draw(accent).drawFrame(1.5, ColorF{ 0.98, 0.88, 0.82, 0.95 });
+				Triangle{ center.movedBy(0, -(size * 0.18)), center.movedBy(-(size * 0.10), -(size * 0.02)), center.movedBy((size * 0.10), -(size * 0.02)) }.draw(ColorF{ 0.98, 0.84, 0.42, 0.95 });
+				Line{ center.movedBy(0, -(size * 0.28)), center.movedBy(0, -(size * 0.14)) }.draw(2.0, ColorF{ 0.96, 0.94, 0.88, 0.95 });
+				return;
+
+			case ResourceType::Mana:
+			default:
+				Circle{ center, (size * 0.26) }.draw(accent);
+				Circle{ center.movedBy(-(size * 0.08), -(size * 0.08)), (size * 0.10) }.draw(ColorF{ 0.92, 0.97, 1.0, 0.92 });
+				Line{ center.movedBy(-(size * 0.18), 0), center.movedBy((size * 0.18), 0) }.draw(1.8, ColorF{ 0.92, 0.97, 1.0, 0.88 });
+				Line{ center.movedBy(0, -(size * 0.18)), center.movedBy(0, (size * 0.18)) }.draw(1.8, ColorF{ 0.92, 0.97, 1.0, 0.88 });
+				return;
+			}
+		}
+
+		void DrawResourceAreaIconBadge(const ResourceType type, const Optional<UnitTeam>& ownerTeam, const Vec2& center)
+		{
+			const RectF badgeRect{ Arg::center = center, 28, 28 };
+			badgeRect.rounded(8).draw(ColorF{ 0.08, 0.10, 0.12, 0.88 })
+				.drawFrame(1.5, 0.0, OverlayDetail::GetTeamColor(ownerTeam));
+
+			if (const auto& texture = GetResourceAreaOverlayTexture(type))
+			{
+               texture->resized(20, 20).drawAt(center);
+				return;
+			}
+
+			DrawFallbackResourceAreaIcon(type, center, 20.0);
+		}
+
 		void DrawLaserAttackEffect(const AppCamera3D& camera, const AttackEffectInstance& effect)
 		{
 			const Optional<Vec2> start = OverlayDetail::ProjectToScreen(camera, effect.startPosition);
@@ -144,8 +236,9 @@ namespace SkyAppFlow
 					continue;
 				}
 
-				const Vec2 anchor = *screenAnchor;
-				const RectF backRect{ Arg::center = anchor.movedBy(0, 16), 78, 6 };
+              const Vec2 anchor = *screenAnchor;
+				DrawResourceAreaIconBadge(area.type, areaState.ownerTeam, anchor.movedBy(0, -2));
+				const RectF backRect{ Arg::center = anchor.movedBy(0, 18), 78, 6 };
 				backRect.draw(ColorF{ 0.04, 0.05, 0.06, 0.88 });
 
 				if (areaState.capturingTeam)
@@ -158,7 +251,6 @@ namespace SkyAppFlow
 				}
 
 				backRect.drawFrame(1.0, ColorF{ 0.9, 0.95, 1.0, 0.55 });
-				SimpleGUI::GetFont()(U"{} [{}]"_fmt(ToDisplayLabel(area.type), ToOwnerLabel(areaState.ownerTeam))).drawAt(anchor.movedBy(0, -2), Palette::White);
 			}
 		}
 

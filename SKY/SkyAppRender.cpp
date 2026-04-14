@@ -191,7 +191,7 @@ namespace SkyAppFlow
 
 		for (const auto& placedModel : state.mapData.placedModels)
 		{
-         DrawPlacedModel(placedModel, resources.millModel, resources.treeModel, resources.pineModel, resources.grassPatchModel, resources.roadTexture);
+         DrawPlacedModel(placedModel, state.modelHeightSettings, resources.millModel, resources.treeModel, resources.pineModel, resources.grassPatchModel, resources.roadTexture, resources.tireTrackStartTexture, resources.tireTrackMiddleTexture, resources.tireTrackEndTexture);
 		}
 
 		if (IsValidMillIndex(state, state.selectedMillIndex))

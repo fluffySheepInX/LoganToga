@@ -218,6 +218,11 @@ namespace MapDataTomlDetail
 		return PlaceableModelType::Road;
 	}
 
+	if (value == U"TireTrackDecal")
+	{
+		return PlaceableModelType::TireTrackDecal;
+	}
+
 		return none;
 	}
 

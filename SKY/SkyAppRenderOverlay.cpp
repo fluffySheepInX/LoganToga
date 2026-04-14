@@ -11,6 +11,7 @@ namespace SkyAppFlow
 		resources.renderTexture.resolve();
 		Shader::LinearToScreen(resources.renderTexture);
 
+      OverlayDetail::DrawResourceLoadWarnings(resources);
       OverlayDetail::DrawUiEditGridOverlay(state);
 		OverlayDetail::DrawGroundContactOverlays(resources, state, frame);
 		OverlayDetail::DrawBattleOverlays(state, frame);

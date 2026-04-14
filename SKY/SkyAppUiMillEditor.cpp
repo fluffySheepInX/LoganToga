@@ -1,4 +1,5 @@
 ﻿# include "SkyAppUiParameterEditorInternal.hpp"
+# include "SkyAppUiPanelFrameInternal.hpp"
 # include "MainSettings.hpp"
 # include "MainUi.hpp"
 
@@ -37,13 +38,11 @@ namespace SkyAppSupport
 		const Rect contentPanel{ (panel.x + 8), (headerRect.bottomY() + 6), (panel.w - 16), (footerRect.y - headerRect.bottomY() - 12) };
 		static MillEditorCategory currentCategory = MillEditorCategory::Attack;
 
-		panel.draw(ColorF{ 0.97, 0.96, 0.94 });
-		headerRect.draw(ColorF{ 0.96, 0.95, 0.92 });
-		footerRect.draw(ColorF{ 0.95, 0.94, 0.91 });
-		panel.drawFrame(2, 0, ColorF{ 0.25 });
+     UiInternal::DrawNinePatchPanelFrame(panel, U"Mill Status Editor", ColorF{ 0.97, 0.96, 0.94 });
+		headerRect.draw(ColorF{ 0.96, 0.95, 0.92, 0.84 });
+		footerRect.draw(ColorF{ 0.95, 0.94, 0.91, 0.82 });
 		Rect{ panel.x, (headerRect.bottomY() - 1), panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
 		Rect{ panel.x, footerRect.y, panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
-       SimpleGUI::GetFont()(U"Mill Status Editor").draw((panel.x + 16), (panel.y + 10), UiInternal::EditorTextOnLightPrimaryColor());
 		SimpleGUI::GetFont()(U"Pos: {:.1f}, {:.1f}, {:.1f}"_fmt(mill.position.x, mill.position.y, mill.position.z)).draw((panel.x + 16), (panel.y + 32), UiInternal::EditorTextOnLightSecondaryColor());
 
 		mill.attackRange = Clamp(mill.attackRange, 1.0, 20.0);

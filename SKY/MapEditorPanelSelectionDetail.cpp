@@ -143,6 +143,46 @@ namespace MapEditorDetail
 					placedModel.yaw += 15_deg;
 				}
 			}
+           else if (placedModel.type == PlaceableModelType::TireTrackDecal)
+			{
+				const Rect lengthDownButton{ detailButtonX, (detailY + 24), 28, 28 };
+				const Rect lengthUpButton{ (detailButtonX + 60), (detailY + 24), 28, 28 };
+				const Rect widthDownButton{ detailButtonX, (detailY + 56), 28, 28 };
+				const Rect widthUpButton{ (detailButtonX + 60), (detailY + 56), 28, 28 };
+				const Rect yawDownButton{ detailButtonX, (detailY + 88), 28, 28 };
+				const Rect yawUpButton{ (detailButtonX + 60), (detailY + 88), 28, 28 };
+				font(U"Length: {:.1f} / Width: {:.1f} / Yaw: {:.0f}°"_fmt(placedModel.roadLength, placedModel.roadWidth, Math::ToDegrees(placedModel.yaw))).draw((detailSectionRect.x + 10), (detailY + 24), SkyAppSupport::UiInternal::EditorTextOnPanelPrimaryColor());
+
+				if (DrawEditorButton(lengthDownButton, U"-"))
+				{
+					placedModel.roadLength = Clamp((placedModel.roadLength - 1.0), 2.0, 80.0);
+				}
+
+				if (DrawEditorButton(lengthUpButton, U"+"))
+				{
+					placedModel.roadLength = Clamp((placedModel.roadLength + 1.0), 2.0, 80.0);
+				}
+
+				if (DrawEditorButton(widthDownButton, U"-"))
+				{
+					placedModel.roadWidth = Clamp((placedModel.roadWidth - 1.0), 2.0, 80.0);
+				}
+
+				if (DrawEditorButton(widthUpButton, U"+"))
+				{
+					placedModel.roadWidth = Clamp((placedModel.roadWidth + 1.0), 2.0, 80.0);
+				}
+
+				if (DrawEditorButton(yawDownButton, U"↺"))
+				{
+					placedModel.yaw -= 15_deg;
+				}
+
+				if (DrawEditorButton(yawUpButton, U"↻"))
+				{
+					placedModel.yaw += 15_deg;
+				}
+			}
 		}
 		else if (IsValidResourceAreaIndex(mapData, state.selectedResourceAreaIndex))
 		{

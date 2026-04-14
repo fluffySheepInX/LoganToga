@@ -76,6 +76,9 @@ namespace MapEditorDetail
 		case PlaceableModelType::Road:
 			return Max(2.4, (Max(placedModel.roadLength, placedModel.roadWidth) * 0.55));
 
+		case PlaceableModelType::TireTrackDecal:
+			return Max(1.8, (Max(placedModel.roadLength, placedModel.roadWidth) * 0.55));
+
 		default:
 			return 2.0;
 		}
@@ -131,6 +134,20 @@ namespace MapEditorDetail
 			.position = (startPosition + (direction * (roadLength * 0.5))),
 			.yaw = yaw,
 			.roadLength = roadLength,
+			.roadWidth = Clamp(fallbackWidth, 2.0, 80.0),
+		};
+	}
+
+	PlacedModel BuildTireTrackDecalFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, const double fallbackLength, const double fallbackWidth, const double fallbackYaw)
+	{
+		const double yaw = ComputeWallYaw(startPosition, endPosition, fallbackYaw);
+		const double decalLength = ComputeWallLength(startPosition, endPosition, fallbackLength);
+		const Vec3 direction{ Math::Sin(yaw), 0.0, Math::Cos(yaw) };
+		return PlacedModel{
+			.type = PlaceableModelType::TireTrackDecal,
+			.position = (startPosition + (direction * (decalLength * 0.5))),
+			.yaw = yaw,
+			.roadLength = decalLength,
 			.roadWidth = Clamp(fallbackWidth, 2.0, 80.0),
 		};
 	}
@@ -208,6 +225,9 @@ namespace MapEditorDetail
 		case MapEditorTool::PlaceRoad:
 			return U"Road 配置";
 
+		case MapEditorTool::PlaceTireTrackDecal:
+			return U"タイヤ跡 デカール";
+
 		case MapEditorTool::PlaceNavPoint:
 			return U"NavPoint 配置";
 
@@ -243,6 +263,9 @@ namespace MapEditorDetail
 
 		case MapEditorTool::PlaceRoad:
 			return PlaceableModelType::Road;
+
+		case MapEditorTool::PlaceTireTrackDecal:
+			return PlaceableModelType::TireTrackDecal;
 
 		default:
 			return none;

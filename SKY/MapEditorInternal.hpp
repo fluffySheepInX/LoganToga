@@ -12,6 +12,7 @@ namespace MapEditorDetail
   [[nodiscard]] double ComputeWallLength(const Vec3& startPosition, const Vec3& endPosition, double fallbackLength = 10.0);
   [[nodiscard]] PlacedModel BuildWallFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, double fallbackLength = 10.0, double fallbackYaw = 0.0);
   [[nodiscard]] PlacedModel BuildRoadFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, double fallbackLength = 8.0, double fallbackWidth = 4.0, double fallbackYaw = 0.0);
+  [[nodiscard]] PlacedModel BuildTireTrackDecalFromStartAndEnd(const Vec3& startPosition, const Vec3& endPosition, double fallbackLength = 6.0, double fallbackWidth = 2.0, double fallbackYaw = 0.0);
 	[[nodiscard]] bool IsValidPlacedModelIndex(const MapData& mapData, const Optional<size_t>& index);
     [[nodiscard]] bool IsValidResourceAreaIndex(const MapData& mapData, const Optional<size_t>& index);
 	[[nodiscard]] bool IsValidNavPointIndex(const MapData& mapData, const Optional<size_t>& index);

@@ -233,4 +233,49 @@ namespace MainSupport
 		writer.writeln(U"focus = [{:.3f}, {:.3f}, {:.3f}]"_fmt(settings.focus.x, settings.focus.y, settings.focus.z));
 		return true;
 	}
+
+	ResourceStock LoadInitialPlayerResources()
+	{
+		ResourceStock resources{ .budget = StartingResources };
+		const TOMLReader toml{ ResourceAdjustSettingsPath };
+
+		if (not toml)
+		{
+			return resources;
+		}
+
+		if (const auto loadedBudget = toml[U"budget"].getOpt<double>())
+		{
+			resources.budget = Max(0.0, *loadedBudget);
+		}
+
+		if (const auto loadedGunpowder = toml[U"gunpowder"].getOpt<double>())
+		{
+			resources.gunpowder = Max(0.0, *loadedGunpowder);
+		}
+
+		if (const auto loadedMana = toml[U"mana"].getOpt<double>())
+		{
+			resources.mana = Max(0.0, *loadedMana);
+		}
+
+		return resources;
+	}
+
+	bool SaveInitialPlayerResources(const ResourceStock& resources)
+	{
+		FileSystem::CreateDirectories(U"App/settings");
+
+		TextWriter writer{ ResourceAdjustSettingsPath };
+
+		if (not writer)
+		{
+			return false;
+		}
+
+		writer.writeln(U"budget = {:.3f}"_fmt(Max(0.0, resources.budget)));
+		writer.writeln(U"gunpowder = {:.3f}"_fmt(Max(0.0, resources.gunpowder)));
+		writer.writeln(U"mana = {:.3f}"_fmt(Max(0.0, resources.mana)));
+		return true;
+	}
 }

@@ -12,6 +12,7 @@ enum class PlaceableModelType
  Rock,
 	Wall,
   Road,
+  TireTrackDecal,
 };
 
 enum class TerrainCellType

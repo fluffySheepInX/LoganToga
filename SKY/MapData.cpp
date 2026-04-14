@@ -107,6 +107,9 @@ StringView ToString(const PlaceableModelType type)
 	case PlaceableModelType::Road:
 		return U"Road";
 
+	case PlaceableModelType::TireTrackDecal:
+		return U"TireTrackDecal";
+
 	default:
 		return U"Tree";
 	}

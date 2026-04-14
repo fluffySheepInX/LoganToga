@@ -92,6 +92,13 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 			writer.writeln(U"roadWidth = {:.3f}"_fmt(SanitizeRoadSpan(object.roadWidth)));
 		}
 
+		if (object.type == PlaceableModelType::TireTrackDecal)
+		{
+			writer.writeln(U"yaw = {:.6f}"_fmt(object.yaw));
+			writer.writeln(U"roadLength = {:.3f}"_fmt(SanitizeRoadSpan(object.roadLength)));
+			writer.writeln(U"roadWidth = {:.3f}"_fmt(SanitizeRoadSpan(object.roadWidth)));
+		}
+
 		if (object.type == PlaceableModelType::Mill)
 		{
 			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));

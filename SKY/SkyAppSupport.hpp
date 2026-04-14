@@ -49,7 +49,7 @@ namespace SkyAppSupport
         Rect enemyPlanToggle;
 		Rect timeSlider;
 
-     SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool terrainSettingsExpanded = true, bool miniMapExpanded = true, bool resourceAdjustExpanded = false);
+      SkyAppPanels(const MainSupport::UiLayoutSettings& uiLayoutSettings = MainSupport::UiLayoutSettings{}, bool skySettingsExpanded = true, bool cameraSettingsExpanded = true, bool terrainSettingsExpanded = true, bool miniMapExpanded = true, bool resourceAdjustExpanded = false, bool resourcePanelShowStoredHeight = false);
 
         [[nodiscard]] bool isHoveringUi(bool showUI, bool showSkySettings, bool showCameraSettings, bool showTerrainSettings, bool isEditorMode, bool showBlacksmithMenu, bool showSapperMenu, bool showMillStatusEditor, bool modelHeightEditMode, bool showUnitEditor) const;
 	};

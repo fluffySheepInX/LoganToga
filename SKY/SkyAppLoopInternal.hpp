@@ -5,7 +5,15 @@ namespace SkyAppFlow
 {
    namespace Detail
 	{
+      void NormalizeFrameStateInputs(SkyAppState& state);
+		void RefreshTerrainSurface(SkyAppState& state);
      [[nodiscard]] SkyAppFrameState BuildFrameState(const SkyAppState& state);
+
+		namespace UiEditInput
+		{
+			[[nodiscard]] bool Handle(SkyAppState& state, SkyAppFrameState& frame);
+		}
+
 		void UpdateCameraAndEditor(SkyAppState& state, const SkyAppFrameState& frame);
 		void HandleSelectionInput(SkyAppState& state, const SkyAppFrameState& frame);
 	}

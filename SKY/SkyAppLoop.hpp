@@ -31,11 +31,15 @@ namespace SkyAppFlow
 		Mesh groundPlane;
 		Texture groundTexture;
       Texture roadTexture;
+      Texture tireTrackStartTexture;
+		Texture tireTrackMiddleTexture;
+		Texture tireTrackEndTexture;
 		Model blacksmithModel;
 		Model millModel;
 		Model treeModel;
 		Model pineModel;
         Model grassPatchModel;
+        Array<String> loadWarnings;
       std::array<UnitModel, MainSupport::UnitRenderModelCount> unitRenderModels;
 		MSRenderTexture renderTexture;
 
@@ -77,8 +81,11 @@ namespace SkyAppFlow
 	struct UiPanelDragState
 	{
 		UiLayoutPanel panel = UiLayoutPanel::MiniMap;
+       bool resizing = false;
 		Point grabOffset{ 0, 0 };
 		Point startPosition{ 0, 0 };
+       Point startCursor{ 0, 0 };
+		Point startSize{ 0, 0 };
      MainSupport::UiLayoutSettings layoutAtDragStart;
 		bool moved = false;
 	};
@@ -119,7 +126,9 @@ namespace SkyAppFlow
        SkyAppSupport::TimedMessage uiLayoutMessage;
        SkyAppSupport::TimedMessage unitEditorMessage;
 		bool modelHeightEditMode = false;
+      bool modelHeightTextureMode = false;
       MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
+      MainSupport::TireTrackTextureSegment tireTrackTextureTarget = MainSupport::TireTrackTextureSegment::Start;
       bool unitEditorMode = false;
        bool showResourceAdjustUi = false;
       bool requestTitleScene = false;

@@ -22,6 +22,7 @@ enum class MapEditorTool
     PlaceRock,
   PlaceWall,
   PlaceRoad,
+  PlaceTireTrackDecal,
 	PlaceNavPoint,
 	LinkNavPoints,
 };
@@ -32,6 +33,12 @@ enum class MapEditorToolCategory
 	Terrain,
 	Placement,
 	Navigation,
+};
+
+enum class MapEditorTerrainPaintMode
+{
+	SingleCell,
+	Area,
 };
 
 struct RoadResizeDragState
@@ -61,10 +68,13 @@ struct MapEditorState
 	Optional<size_t> pendingNavLinkStartIndex;
    Optional<Vec3> pendingWallPlacementStartPosition;
     Optional<Vec3> pendingRoadPlacementStartPosition;
+    Optional<Vec3> pendingTireTrackPlacementStartPosition;
    Optional<RoadResizeDragState> roadResizeDrag;
    Optional<RoadRotateDragState> roadRotateDrag;
 	Optional<Vec3> hoveredGroundPosition;
    Optional<Point> lastTerrainPaintCell;
+    Optional<Point> pendingTerrainPaintRangeStartCell;
+	MapEditorTerrainPaintMode terrainPaintMode = MapEditorTerrainPaintMode::SingleCell;
 	Color selectedTerrainColor{ 255, 255, 255 };
 	String statusMessage;
 	double statusMessageUntil = 0.0;

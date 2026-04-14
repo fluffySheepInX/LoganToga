@@ -8,12 +8,14 @@ namespace SkyAppUiLayout
 		inline constexpr int32 PanelMargin = 20;
 		inline constexpr int32 PanelGap = 20;
 		inline constexpr int32 RightColumnWidth = 220;
+           inline constexpr int32 ResourcePanelMinWidth = RightColumnWidth;
+			inline constexpr int32 ResourcePanelResizeHandleSize = 18;
       inline constexpr int32 ModelHeightPanelWidth = 460;
         inline constexpr int32 ModelHeightPanelHeight = 420;
       inline constexpr int32 ResourcePanelIconButtonSize = 36;
 		inline constexpr int32 ResourcePanelIconButtonGap = 8;
-     inline constexpr int32 ResourcePanelCollapsedHeight = 84;
-		inline constexpr int32 ResourcePanelExpandedHeight = 196;
+      inline constexpr int32 ResourcePanelCollapsedHeight = 96;
+       inline constexpr int32 ResourcePanelExpandedHeight = 248;
 		inline constexpr int32 BottomControlYOffset = 100;
      inline constexpr int32 BottomControlPanelWidth = 804;
 		inline constexpr int32 BottomControlPanelHeight = 52;
@@ -64,6 +66,11 @@ namespace SkyAppUiLayout
 	{
 		return Point{ RightColumnX(sceneWidth), PanelMargin };
 	}
+
+		[[nodiscard]] inline Point DefaultResourcePanelSize()
+		{
+			return Point{ ResourcePanelMinWidth, ResourcePanelExpandedHeight };
+		}
 
 	[[nodiscard]] inline Point DefaultUnitEditorPosition(const int32 sceneWidth)
 	{
@@ -195,16 +202,38 @@ namespace SkyAppUiLayout
 		return UnitEditorList(sceneWidth, sceneHeight, DefaultUnitEditorListPosition());
 	}
 
-    [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = false)
+    [[nodiscard]] inline Point ClampResourcePanelSize(const Point& size, const Point& position, const int32 sceneWidth, const int32 sceneHeight, const bool expanded)
 	{
-     const int32 panelHeight = (expanded ? ResourcePanelExpandedHeight : ResourcePanelCollapsedHeight);
-		const Point clampedPosition = ClampPanelPosition(position, RightColumnWidth, panelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, RightColumnWidth, panelHeight };
+		const int32 minHeight = (expanded ? ResourcePanelExpandedHeight : ResourcePanelCollapsedHeight);
+		return Point{
+			Clamp(size.x, ResourcePanelMinWidth, Max(ResourcePanelMinWidth, (sceneWidth - position.x))),
+			Clamp(size.y, minHeight, Max(minHeight, (sceneHeight - position.y)))
+		};
 	}
 
-    [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = false)
+ [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const Point& size, const bool expanded = false, const bool showStoredHeight = false)
 	{
-        return ResourcePanel(sceneWidth, sceneHeight, DefaultResourcePanelPosition(sceneWidth), expanded);
+     const Point clampedSize = ClampResourcePanelSize(size, position, sceneWidth, sceneHeight, expanded);
+        const bool usesStoredHeight = (expanded || showStoredHeight);
+		const int32 panelHeight = (usesStoredHeight ? clampedSize.y : ResourcePanelCollapsedHeight);
+		const Point clampedPosition = ClampPanelPosition(position, clampedSize.x, panelHeight, sceneWidth, sceneHeight);
+		const Point reclampedSize = ClampResourcePanelSize(clampedSize, clampedPosition, sceneWidth, sceneHeight, expanded);
+      return Rect{ clampedPosition.x, clampedPosition.y, reclampedSize.x, (usesStoredHeight ? reclampedSize.y : ResourcePanelCollapsedHeight) };
+	}
+
+    [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = false, const bool showStoredHeight = false)
+	{
+      return ResourcePanel(sceneWidth, sceneHeight, position, DefaultResourcePanelSize(), expanded, showStoredHeight);
+	}
+
+   [[nodiscard]] inline Rect ResourcePanel(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = false, const bool showStoredHeight = false)
+	{
+          return ResourcePanel(sceneWidth, sceneHeight, DefaultResourcePanelPosition(sceneWidth), DefaultResourcePanelSize(), expanded, showStoredHeight);
+	}
+
+	[[nodiscard]] inline Rect ResourcePanelResizeHandle(const Rect& resourcePanel)
+	{
+		return Rect{ (resourcePanel.rightX() - ResourcePanelResizeHandleSize), (resourcePanel.bottomY() - ResourcePanelResizeHandleSize), ResourcePanelResizeHandleSize, ResourcePanelResizeHandleSize };
 	}
 
 	[[nodiscard]] inline Rect ResourcePanelCameraHomeButton(const Rect& resourcePanel)
