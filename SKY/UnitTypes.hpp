@@ -75,6 +75,19 @@ namespace MainSupport
 		double footprintHalfLength = 0.0;
 	};
 
+	struct ExplosionSkillParameters
+	{
+		double radius = SapperExplosionRadius;
+		double unitDamage = SapperExplosionDamage;
+		double baseDamage = SapperExplosionBaseDamage;
+		double cooldownSeconds = SapperExplosionCooldownSeconds;
+		double gunpowderCost = SapperExplosionGunpowderCost;
+		double effectLifetime = 0.42;
+		double effectThickness = 7.0;
+		double effectOffsetY = 1.1;
+		ColorF effectColor{ 1.0, 0.62, 0.24, 0.98 };
+	};
+
 	enum class UnitRenderModel
 	{
 		Bird,
@@ -118,5 +131,7 @@ namespace MainSupport
 		int32 enemyProductionPriority = 0;
 		UnitParameters playerDefaults;
 		UnitParameters enemyDefaults;
+      ExplosionSkillParameters playerExplosionDefaults;
+		ExplosionSkillParameters enemyExplosionDefaults;
 	};
 }

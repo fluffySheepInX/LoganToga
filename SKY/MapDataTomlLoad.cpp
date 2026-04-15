@@ -137,6 +137,18 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 					mapData.placedModels << PlacedModel{
 						.type = *type,
 						.position = Vec3{ positionValues[0], positionValues[1], positionValues[2] },
+                     .ownerTeam = [&]()
+						{
+							if (const auto ownerTeamValue = objectTable[U"ownerTeam"].getOpt<String>())
+							{
+								if (const auto ownerTeam = ParseUnitTeam(*ownerTeamValue))
+								{
+									return *ownerTeam;
+								}
+							}
+
+							return MainSupport::UnitTeam::Player;
+						}(),
                        .yaw = objectTable[U"yaw"].getOpt<double>().value_or(0.0),
 						.wallLength = SanitizeWallLength(objectTable[U"wallLength"].getOpt<double>().value_or(10.0)),
                        .roadLength = SanitizeRoadSpan(objectTable[U"roadLength"].getOpt<double>().value_or(8.0)),

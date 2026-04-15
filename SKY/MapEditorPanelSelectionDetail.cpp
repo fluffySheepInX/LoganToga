@@ -103,6 +103,24 @@ namespace MapEditorDetail
 					placedModel.yaw += 15_deg;
 				}
 			}
+          else if (placedModel.type == PlaceableModelType::Mill)
+			{
+				const Rect ownerPlayerButton{ detailButtonX - 96, (detailY + 24), 88, 28 };
+				const Rect ownerEnemyButton{ detailButtonX, (detailY + 24), 88, 28 };
+				font(U"Owner: {}"_fmt(ToString(placedModel.ownerTeam))).draw((detailSectionRect.x + 10), (detailY + 24), SkyAppSupport::UiInternal::EditorTextOnPanelPrimaryColor());
+
+				if (DrawEditorButton(ownerPlayerButton, U"Player", (placedModel.ownerTeam == MainSupport::UnitTeam::Player)))
+				{
+					placedModel.ownerTeam = MainSupport::UnitTeam::Player;
+					SetStatusMessage(state, U"Mill 所属を Player に変更");
+				}
+
+				if (DrawEditorButton(ownerEnemyButton, U"Enemy", (placedModel.ownerTeam == MainSupport::UnitTeam::Enemy)))
+				{
+					placedModel.ownerTeam = MainSupport::UnitTeam::Enemy;
+					SetStatusMessage(state, U"Mill 所属を Enemy に変更");
+				}
+			}
 			else if (placedModel.type == PlaceableModelType::Road)
 			{
 				const Rect lengthDownButton{ detailButtonX, (detailY + 24), 28, 28 };

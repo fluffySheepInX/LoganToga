@@ -11,6 +11,7 @@ namespace MapEditorDetail
 	[[nodiscard]] StringView GetOperationHint(const MapEditorState& state);
 	void ResetToolInteractionState(MapEditorState& state);
 	void DrawMapEditorPanelSection(const Rect& rect);
+  void DrawMillPlacementOwnerSelector(MapEditorState& state, const Rect& rect, const Font& font);
 	void DrawMapEditorToolSection(MapEditorState& state, const Rect& panelRect, const Font& font);
 	void DrawMapEditorCommandSection(MapEditorState& state, MapData& mapData, FilePathView path, const Rect& panelRect);
 	void DrawMapEditorInfoSection(const MapEditorState& state, const MapData& mapData, const Rect& panelRect, const Font& font);

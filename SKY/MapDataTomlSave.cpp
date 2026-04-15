@@ -101,6 +101,7 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 
 		if (object.type == PlaceableModelType::Mill)
 		{
+           writer.writeln(U"ownerTeam = \"{}\""_fmt(ToString(object.ownerTeam)));
 			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));
 			writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(object.attackDamage)));
 			writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(object.attackInterval)));

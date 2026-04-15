@@ -141,6 +141,10 @@ namespace
 	{
 		DrawGroundContactGrime(context.placedModel.position, 4.4, 3.1, ColorF{ 0.22, 0.18, 0.14, 0.36 }, ColorF{ 0.34, 0.28, 0.20, 0.22 });
 		DrawMillModel(context.renderResources.millModel, Mat4x4::Translate(context.placedModel.position));
+       const ColorF ownerTint = ((context.placedModel.ownerTeam == MainSupport::UnitTeam::Enemy)
+			? ColorF{ 1.0, 0.32, 0.26, 0.22 }
+			: ColorF{ 0.30, 0.58, 1.0, 0.22 });
+		Cylinder{ context.placedModel.position.movedBy(0, 0.06, 0), 3.3, 0.10 }.draw(ownerTint.removeSRGBCurve());
 	}
 
 	void DrawTreePlacedModel(const PlacedModelRenderContext& context)

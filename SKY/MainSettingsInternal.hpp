@@ -11,6 +11,8 @@ namespace MainSupport::SettingsDetail
 	[[nodiscard]] UnitAiRole ParseUnitAiRole(StringView value);
 	[[nodiscard]] StringView ToTomlUnitAiRole(UnitAiRole aiRole);
 	void LoadUnitParameterGroup(const TOMLReader& toml, StringView prefix, UnitParameters& parameters);
+   void LoadExplosionSkillParameterGroup(const TOMLReader& toml, StringView prefix, ExplosionSkillParameters& parameters);
 	void SaveUnitParameterGroup(TextWriter& writer, StringView prefix, const UnitParameters& parameters);
+   void SaveExplosionSkillParameterGroup(TextWriter& writer, StringView prefix, const ExplosionSkillParameters& parameters);
 	EditorTextColorSettings& CachedEditorTextColorSettings();
 }

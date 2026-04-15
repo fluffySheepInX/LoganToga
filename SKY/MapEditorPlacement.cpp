@@ -157,7 +157,7 @@ namespace MapEditorUpdateDetail
 
 		if (const auto modelType = MapEditorDetail::ToPlaceableModelType(state.selectedTool))
 		{
-			mapData.placedModels << PlacedModel{ .type = *modelType, .position = position, .yaw = 0.0, .wallLength = 10.0 };
+            mapData.placedModels << PlacedModel{ .type = *modelType, .position = position, .ownerTeam = (state.selectedTool == MapEditorTool::PlaceMill ? state.placementMillOwnerTeam : MainSupport::UnitTeam::Player), .yaw = 0.0, .wallLength = 10.0 };
 			MapEditorDetail::SetStatusMessage(state, U"モデルを配置");
 		}
 	}

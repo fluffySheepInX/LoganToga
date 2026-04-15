@@ -29,6 +29,7 @@ struct PlacedModel
 {
 	PlaceableModelType type = PlaceableModelType::Tree;
 	Vec3 position{ 0, 0, 0 };
+    MainSupport::UnitTeam ownerTeam = MainSupport::UnitTeam::Player;
    double yaw = 0.0;
 	double wallLength = 10.0;
    double roadLength = 8.0;
@@ -108,6 +109,7 @@ bool SaveMapData(const MapData& mapData, FilePathView path);
 [[nodiscard]] StringView ToString(PlaceableModelType type);
 [[nodiscard]] StringView ToString(TerrainCellType type);
 [[nodiscard]] StringView ToString(MainSupport::ResourceType type);
+[[nodiscard]] StringView ToString(MainSupport::UnitTeam team);
 [[nodiscard]] bool SupportsMillDefenseParameters(PlaceableModelType type);
 [[nodiscard]] MillDefenseParameters GetMillDefenseParameters(const PlacedModel& placedModel);
 [[nodiscard]] Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell);

@@ -6,11 +6,13 @@ namespace MainSupport
 	struct UnitEditorSettings
 	{
 		Array<UnitParameters> parameters;
+     Array<ExplosionSkillParameters> explosionSkillParameters;
 		Array<FilePath> modelPaths;
 
 		UnitEditorSettings()
 		{
 			parameters.resize(GetUnitDefinitions().size() * 2);
+         explosionSkillParameters.resize(GetUnitDefinitions().size() * 2);
 			modelPaths.resize(GetUnitDefinitions().size() * 2);
 
 			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
@@ -18,6 +20,7 @@ namespace MainSupport
 				for (const auto& definition : GetUnitDefinitions())
 				{
 					parameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultUnitParameters(team, definition.unitType);
+                   explosionSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultExplosionSkillParameters(team, definition.unitType);
 				}
 			}
 		}
@@ -39,6 +42,7 @@ namespace MainSupport
 		Basic,
 		Combat,
 		Footprint,
+      Skill,
 	};
 
 	[[nodiscard]] inline const UnitParameters& GetUnitParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
@@ -54,6 +58,16 @@ namespace MainSupport
 	[[nodiscard]] inline const FilePath& GetUnitModelPath(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
 		return settings.modelPaths[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline const ExplosionSkillParameters& GetExplosionSkillParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.explosionSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline ExplosionSkillParameters& GetExplosionSkillParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.explosionSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
 	}
 
 	[[nodiscard]] inline FilePath& GetUnitModelPath(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)

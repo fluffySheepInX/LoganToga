@@ -174,6 +174,25 @@ namespace MapEditorDetail
 		rect.rounded(10).drawFrame(1, 0, ColorF{ 0.76, 0.80, 0.88, 0.88 });
 	}
 
+	void DrawMillPlacementOwnerSelector(MapEditorState& state, const Rect& rect, const Font& font)
+	{
+		const Rect playerButton{ rect.x, rect.y + 20, (rect.w - 8) / 2, 28 };
+		const Rect enemyButton{ playerButton.rightX() + 8, rect.y + 20, (rect.w - 8) / 2, 28 };
+		font(U"Mill 所属").draw(rect.x, rect.y, SkyAppSupport::UiInternal::EditorTextOnLightSecondaryColor());
+
+		if (DrawEditorButton(playerButton, U"Player", (state.placementMillOwnerTeam == MainSupport::UnitTeam::Player)))
+		{
+			state.placementMillOwnerTeam = MainSupport::UnitTeam::Player;
+			SetStatusMessage(state, U"Mill 所属: Player");
+		}
+
+		if (DrawEditorButton(enemyButton, U"Enemy", (state.placementMillOwnerTeam == MainSupport::UnitTeam::Enemy)))
+		{
+			state.placementMillOwnerTeam = MainSupport::UnitTeam::Enemy;
+			SetStatusMessage(state, U"Mill 所属: Enemy");
+		}
+	}
+
 	void DrawMapEditorToolSection(MapEditorState& state, const Rect& panelRect, const Font& font)
 	{
 		const Array<MapEditorToolCategory> categories{
@@ -187,6 +206,7 @@ namespace MapEditorDetail
 		const Rect navLinkVisibilityButton{ (panelRect.x + 176), (panelRect.y + 36), 144, 28 };
      const Rect terrainPaintSingleCellButton{ (panelRect.x + 176), (panelRect.y + 88), 68, 28 };
 		const Rect terrainPaintAreaButton{ (panelRect.x + 252), (panelRect.y + 88), 68, 28 };
+     const Rect millOwnerRect{ (panelRect.x + 16), (panelRect.y + 118), 304, 52 };
 		const Rect toolSectionRect{ (panelRect.x + 12), (panelRect.y + 186), (panelRect.w - 24), 126 };
 		const Rect toolButtonArea{ (toolSectionRect.x + 4), (toolSectionRect.y + 34), (toolSectionRect.w - 8), 90 };
 		const auto selectTool = [&](const MapEditorTool tool)
@@ -235,6 +255,10 @@ namespace MapEditorDetail
 		}
 
 		font(GetOperationHint(state)).draw((panelRect.x + 16), (panelRect.y + 68), SkyAppSupport::UiInternal::EditorTextOnLightSecondaryColor());
+      if (state.selectedTool == MapEditorTool::PlaceMill)
+		{
+			DrawMillPlacementOwnerSelector(state, millOwnerRect, font);
+		}
        if ((state.activeToolCategory == MapEditorToolCategory::Terrain) || IsTerrainPaintTool(state.selectedTool))
 		{
 			if (DrawEditorButton(terrainPaintSingleCellButton, U"1マス", (state.terrainPaintMode == MapEditorTerrainPaintMode::SingleCell)))

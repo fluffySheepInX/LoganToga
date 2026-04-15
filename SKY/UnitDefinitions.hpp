@@ -232,4 +232,15 @@ namespace MainSupport
 	{
 		return GetDefaultUnitParameters(team, unitType);
 	}
+
+	[[nodiscard]] inline const ExplosionSkillParameters& GetDefaultExplosionSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyExplosionDefaults : definition.playerExplosionDefaults);
+	}
+
+	[[nodiscard]] inline ExplosionSkillParameters MakeDefaultExplosionSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return GetDefaultExplosionSkillParameters(team, unitType);
+	}
 }

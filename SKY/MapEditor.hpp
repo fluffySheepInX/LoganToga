@@ -58,6 +58,7 @@ struct MapEditorState
 	bool enabled = false;
 	MapEditorTool selectedTool = MapEditorTool::SetSapperRallyPoint;
   MapEditorToolCategory activeToolCategory = MapEditorToolCategory::BasesAndResources;
+    MainSupport::UnitTeam placementMillOwnerTeam = MainSupport::UnitTeam::Player;
 	int32 toolCategoryScrollRow = 0;
    bool selectionMode = false;
   bool showNavPoints = true;

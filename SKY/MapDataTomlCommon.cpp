@@ -226,6 +226,21 @@ namespace MapDataTomlDetail
 		return none;
 	}
 
+	Optional<MainSupport::UnitTeam> ParseUnitTeam(const String& value)
+	{
+		if (value == U"Player")
+		{
+			return MainSupport::UnitTeam::Player;
+		}
+
+		if (value == U"Enemy")
+		{
+			return MainSupport::UnitTeam::Enemy;
+		}
+
+		return none;
+	}
+
 	Optional<TerrainCellType> ParseTerrainCellType(const String& value)
 	{
 		if (value == U"Grass")

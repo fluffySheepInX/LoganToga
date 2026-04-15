@@ -53,6 +53,7 @@ namespace SkyAppFlow
 			const SapperMenuAction menuAction = DrawSapperMenu(frame.panels,
 				state.spawnedSappers,
 				state.playerResources,
+              state.unitEditorSettings,
 				selectedIndex,
 				state.blacksmithMenuMessage);
           if (menuAction == SapperMenuAction::UseScoutingSkill)

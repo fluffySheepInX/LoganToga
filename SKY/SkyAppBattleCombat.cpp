@@ -12,9 +12,6 @@ namespace SkyAppFlow
 		constexpr double MillLaserThickness = 5.0;
 		constexpr Vec3 MillLaserMuzzleOffset{ 0.0, 4.6, 0.0 };
 		constexpr Vec3 MillLaserTargetOffset{ 0.0, 1.6, 0.0 };
-		constexpr double SapperExplosionEffectLifetime = 0.42;
-		constexpr double SapperExplosionEffectThickness = 7.0;
-		constexpr Vec3 SapperExplosionEffectOffset{ 0.0, 1.1, 0.0 };
 		constexpr double SapperScoutingSkillDuration = 5.0;
 
 		void EnsureMillDefenseState(SkyAppState& state)
@@ -66,30 +63,30 @@ namespace SkyAppFlow
 			}
 		}
 
-        [[nodiscard]] Array<size_t> FindMillTargetIndices(const Vec3& millPosition,
+     [[nodiscard]] Array<size_t> FindMillTargetIndices(const Vec3& millPosition,
 			const double attackRange,
 			const int32 attackTargetCount,
-			const Vec3& playerBasePosition,
-			const Array<SpawnedSapper>& enemySappers)
+         const Vec3& defendedBasePosition,
+			const Array<SpawnedSapper>& targetSappers)
 		{
           Array<std::pair<double, size_t>> candidates;
 			const double rangeSq = Square(Max(1.0, attackRange));
 			const int32 maxTargetCount = Clamp(attackTargetCount, 1, 6);
 
-			for (size_t i = 0; i < enemySappers.size(); ++i)
+            for (size_t i = 0; i < targetSappers.size(); ++i)
 			{
-				if (enemySappers[i].hitPoints <= 0.0)
+               if (targetSappers[i].hitPoints <= 0.0)
 				{
 					continue;
 				}
 
-				const Vec3 enemyPosition = GetSpawnedSapperBasePosition(enemySappers[i]);
+               const Vec3 enemyPosition = GetSpawnedSapperBasePosition(targetSappers[i]);
 				if (rangeSq < millPosition.distanceFromSq(enemyPosition))
 				{
 					continue;
 				}
 
-				const double baseDistanceSq = enemyPosition.distanceFromSq(playerBasePosition);
+             const double baseDistanceSq = enemyPosition.distanceFromSq(defendedBasePosition);
                 candidates << std::pair<double, size_t>{ baseDistanceSq, i };
 			}
 
@@ -151,7 +148,17 @@ namespace SkyAppFlow
 			return false;
 		}
 
-		if (state.playerResources.gunpowder < SapperExplosionGunpowderCost)
+		const ExplosionSkillParameters& explosionSkill = GetExplosionSkillParameters(state.unitEditorSettings, sapper.team, sapper.unitType);
+		const double gunpowderCost = Clamp(explosionSkill.gunpowderCost, 0.0, 200.0);
+		const double cooldownSeconds = Clamp(explosionSkill.cooldownSeconds, 0.1, 30.0);
+		const double radius = Clamp(explosionSkill.radius, 0.5, 12.0);
+		const double unitDamage = Clamp(explosionSkill.unitDamage, 0.0, 300.0);
+		const double baseDamage = Clamp(explosionSkill.baseDamage, 0.0, 300.0);
+		const double effectLifetime = Clamp(explosionSkill.effectLifetime, 0.05, 2.0);
+		const double effectThickness = Clamp(explosionSkill.effectThickness, 1.0, 20.0);
+		const Vec3 effectOffset{ 0.0, Clamp(explosionSkill.effectOffsetY, 0.0, 4.0), 0.0 };
+
+     if (state.playerResources.gunpowder < gunpowderCost)
 		{
 			state.blacksmithMenuMessage.show(U"火薬不足");
 			return false;
@@ -164,23 +171,23 @@ namespace SkyAppFlow
 		}
 
 		const Vec3 explosionCenter = GetSpawnedSapperBasePosition(sapper);
-		state.playerResources.gunpowder -= SapperExplosionGunpowderCost;
-		sapper.explosionSkillCooldownUntil = (Scene::Time() + SapperExplosionCooldownSeconds);
+        state.playerResources.gunpowder -= gunpowderCost;
+		sapper.explosionSkillCooldownUntil = (Scene::Time() + cooldownSeconds);
 		sapper.lastAttackAt = Scene::Time();
 
 		EmitAttackEffect(state,
 			AttackEffectType::Explosion,
-			(explosionCenter + SapperExplosionEffectOffset),
-			(explosionCenter + SapperExplosionEffectOffset),
-			ColorF{ 1.0, 0.62, 0.24, 0.98 },
-			SapperExplosionEffectLifetime,
-			SapperExplosionEffectThickness,
-			SapperExplosionRadius);
+            (explosionCenter + effectOffset),
+			(explosionCenter + effectOffset),
+			explosionSkill.effectColor,
+			effectLifetime,
+			effectThickness,
+			radius);
 
-		ApplyExplosionDamage(state.enemySappers, explosionCenter, SapperExplosionRadius, SapperExplosionDamage);
-		if (GetSpawnedSapperBasePosition(sapper).distanceFromSq(state.mapData.enemyBasePosition) <= Square(SapperExplosionRadius + BaseCombatRadius))
+        ApplyExplosionDamage(state.enemySappers, explosionCenter, radius, unitDamage);
+		if (GetSpawnedSapperBasePosition(sapper).distanceFromSq(state.mapData.enemyBasePosition) <= Square(radius + BaseCombatRadius))
 		{
-			state.enemyBaseHitPoints = Max(0.0, (state.enemyBaseHitPoints - SapperExplosionBaseDamage));
+            state.enemyBaseHitPoints = Max(0.0, (state.enemyBaseHitPoints - baseDamage));
 		}
 
 		state.blacksmithMenuMessage.show(U"兵が爆破スキルを使用");
@@ -280,7 +287,7 @@ namespace SkyAppFlow
 
 		void UpdateMillDefense(SkyAppState& state)
 		{
-			if (state.playerBaseHitPoints <= 0.0)
+           if ((state.playerBaseHitPoints <= 0.0) && (state.enemyBaseHitPoints <= 0.0))
 			{
 				return;
 			}
@@ -303,11 +310,20 @@ namespace SkyAppFlow
 					continue;
 				}
 
+				const bool isEnemyMill = (placedModel.ownerTeam == UnitTeam::Enemy);
+				Array<SpawnedSapper>& targetSappers = (isEnemyMill ? state.spawnedSappers : state.enemySappers);
+				const Vec3& defendedBasePosition = (isEnemyMill ? state.mapData.enemyBasePosition : state.mapData.playerBasePosition);
+				const double defendedBaseHitPoints = (isEnemyMill ? state.enemyBaseHitPoints : state.playerBaseHitPoints);
+				if (defendedBaseHitPoints <= 0.0)
+				{
+					continue;
+				}
+
               const Array<size_t> targetIndices = FindMillTargetIndices(placedModel.position,
                     defenseParameters.attackRange,
 					defenseParameters.attackTargetCount,
-					state.mapData.playerBasePosition,
-					state.enemySappers);
+                   defendedBasePosition,
+					targetSappers);
 				if (targetIndices.isEmpty())
 				{
 					continue;
@@ -316,7 +332,7 @@ namespace SkyAppFlow
 				state.millLastAttackTimes[i] = currentTime;
                for (const size_t targetIndex : targetIndices)
 				{
-					SpawnedSapper& target = state.enemySappers[targetIndex];
+                    SpawnedSapper& target = targetSappers[targetIndex];
 					EmitAttackEffect(state,
 						AttackEffectType::Laser,
 						(placedModel.position + MillLaserMuzzleOffset),

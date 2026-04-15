@@ -171,19 +171,22 @@ namespace SkyAppSupport
            return GetUnitDisplayName(unitType);
 		}
 
-        [[nodiscard]] String GetExplosionSkillLabel(const SapperUnitType selectedUnitType, const bool explosionSkillReady)
+      [[nodiscard]] String GetExplosionSkillLabel(const UnitEditorSettings& unitEditorSettings, const SpawnedSapper& selectedSapper, const bool explosionSkillReady)
 		{
+           const SapperUnitType selectedUnitType = selectedSapper.unitType;
           if (not CanUnitUseExplosionSkill(selectedUnitType))
 			{
               return String{ GetExplosionSkillUnavailableLabel(selectedUnitType) };
 			}
+
+			const ExplosionSkillParameters& explosionSkill = GetExplosionSkillParameters(unitEditorSettings, selectedSapper.team, selectedUnitType);
 
             if (!explosionSkillReady)
 			{
 				return U"爆破スキル [準備中]";
 			}
 
-			return U"爆破スキル ({:.0f} 火薬)"_fmt(SapperExplosionGunpowderCost);
+          return U"爆破スキル ({:.0f} 火薬)"_fmt(Clamp(explosionSkill.gunpowderCost, 0.0, 200.0));
 		}
 
 		bool TrySpawnPlayerUnit(Array<SpawnedSapper>& spawnedSappers,
@@ -398,6 +401,7 @@ namespace SkyAppSupport
     SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
 		Array<SpawnedSapper>& spawnedSappers,
 		ResourceStock& playerResources,
+      const UnitEditorSettings& unitEditorSettings,
      const size_t selectedSapperIndex,
 		TimedMessage& sapperMenuMessage)
 	{
@@ -453,7 +457,7 @@ namespace SkyAppSupport
 			sapperMenuMessage.show(U"兵が陣地化スキルを準備");
 		}
 
-       if (DrawTextButton(explosionSkillButton, GetExplosionSkillLabel(selectedUnitType, explosionSkillReady)))
+     if (DrawTextButton(explosionSkillButton, GetExplosionSkillLabel(unitEditorSettings, selectedSapper, explosionSkillReady)))
 			{
 				return SapperMenuAction::UseExplosionSkill;
 			}

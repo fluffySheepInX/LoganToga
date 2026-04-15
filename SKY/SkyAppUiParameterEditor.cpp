@@ -59,6 +59,9 @@ namespace SkyAppSupport
 			case UnitEditorPage::Footprint:
 				return U"Footprint";
 
+			case UnitEditorPage::Skill:
+				return U"Skill";
+
 			case UnitEditorPage::Basic:
 			default:
 				return U"Basic";
@@ -279,6 +282,24 @@ namespace SkyAppSupport
 			parameters.footprintHalfLength = Clamp(parameters.footprintHalfLength, 0.0, 6.0);
 		}
 
+		void ClampExplosionSkillParameters(ExplosionSkillParameters& parameters)
+		{
+			parameters.radius = Clamp(parameters.radius, 0.5, 12.0);
+			parameters.unitDamage = Clamp(parameters.unitDamage, 0.0, 300.0);
+			parameters.baseDamage = Clamp(parameters.baseDamage, 0.0, 300.0);
+			parameters.cooldownSeconds = Clamp(parameters.cooldownSeconds, 0.1, 30.0);
+			parameters.gunpowderCost = Clamp(parameters.gunpowderCost, 0.0, 200.0);
+			parameters.effectLifetime = Clamp(parameters.effectLifetime, 0.05, 2.0);
+			parameters.effectThickness = Clamp(parameters.effectThickness, 1.0, 20.0);
+			parameters.effectOffsetY = Clamp(parameters.effectOffsetY, 0.0, 4.0);
+			parameters.effectColor = ColorF{
+				Clamp(parameters.effectColor.r, 0.0, 1.0),
+				Clamp(parameters.effectColor.g, 0.0, 1.0),
+				Clamp(parameters.effectColor.b, 0.0, 1.0),
+				Clamp(parameters.effectColor.a, 0.0, 1.0),
+			};
+		}
+
 		void DrawMovementTypeSelector(const Rect& panel, const double top, MovementType& movementType)
 		{
            SimpleGUI::GetFont()(U"Type").draw((panel.x + 16), top, UiInternal::EditorTextOnLightPrimaryColor());
@@ -400,6 +421,61 @@ namespace SkyAppSupport
 					U"出撃時に必要な魔力です。強さだけでなく量産しやすさの調整にも使います。");
 				return;
 			}
+		}
+
+		void DrawExplosionSkillParameterRows(const Rect& panel,
+			const int32 sliderBase,
+			ExplosionSkillParameters& parameters,
+			const int32 top,
+			String& hoveredDescription,
+			Optional<Rect>& hoveredRect)
+		{
+			ClampExplosionSkillParameters(parameters);
+			DrawUnitParameterSectionHeader(panel, top, U"Explosion Skill", U"Gameplay and effect tuning for the selected team/unit");
+
+			const int32 horizontalGap = 8;
+			const int32 cardX = (panel.x + 10);
+			const int32 cardWidth = ((panel.w - 20 - horizontalGap) / 2);
+			const int32 cardHeight = 78;
+			const int32 cardTop = (top + 48);
+			const int32 cardStep = 84;
+			const auto drawSkillCard = [&](const int32 index, const int32 sliderId, double& value, const MillParameterEditorSpec& spec, const StringView description)
+				{
+					const int32 column = (index % 2);
+					const int32 row = (index / 2);
+					const Rect cardRect{ (cardX + (cardWidth + horizontalGap) * column), (cardTop + cardStep * row), cardWidth, cardHeight };
+					if (DrawMillParameterEditorCard(cardRect, sliderId, value, spec))
+					{
+						hoveredDescription = String{ description };
+						hoveredRect = cardRect;
+					}
+				};
+
+			drawSkillCard(0, (sliderBase + 20), parameters.radius,
+				MillParameterEditorSpec{ U"Radius", U"", 0.5, 12.0, 0.1, 0.5, 1.0, 0.05, 2 },
+				U"爆破ダメージとリング演出の半径です。大きいほど巻き込みやすくなります。");
+			drawSkillCard(1, (sliderBase + 21), parameters.unitDamage,
+				MillParameterEditorSpec{ U"Unit Damage", U"", 0.0, 300.0, 1.0, 5.0, 10.0, 1.0, 0 },
+				U"爆風がユニットへ与えるダメージです。密集戦での突破力に直結します。");
+			drawSkillCard(2, (sliderBase + 22), parameters.baseDamage,
+				MillParameterEditorSpec{ U"Base Damage", U"", 0.0, 300.0, 1.0, 5.0, 10.0, 1.0, 0 },
+				U"敵拠点が爆風圏内にある時に与えるダメージです。拠点破壊の速さに影響します。");
+			drawSkillCard(3, (sliderBase + 23), parameters.cooldownSeconds,
+				MillParameterEditorSpec{ U"Cooldown", U"s", 0.1, 30.0, 0.1, 0.5, 1.0, 0.05, 2 },
+				U"同ユニットが再び爆破スキルを使えるまでの待ち時間です。");
+			drawSkillCard(4, (sliderBase + 24), parameters.gunpowderCost,
+				MillParameterEditorSpec{ U"Gunpowder", U"", 0.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+				U"爆破スキル発動時に消費する火薬です。兵メニューの表示コストにも反映されます。");
+			drawSkillCard(5, (sliderBase + 25), parameters.effectLifetime,
+				MillParameterEditorSpec{ U"Effect Time", U"s", 0.05, 2.0, 0.05, 0.1, 0.2, 0.05, 2 },
+				U"爆破リング演出の表示時間です。長いほど余韻が残ります。");
+			drawSkillCard(6, (sliderBase + 26), parameters.effectThickness,
+				MillParameterEditorSpec{ U"Effect Width", U"", 1.0, 20.0, 0.5, 1.0, 2.0, 0.1, 1 },
+				U"爆破リングの線の太さです。大きいほど強い印象のエフェクトになります。");
+			drawSkillCard(7, (sliderBase + 27), parameters.effectOffsetY,
+				MillParameterEditorSpec{ U"Effect Height", U"", 0.0, 4.0, 0.05, 0.1, 0.25, 0.05, 2 },
+				U"爆破エフェクトの表示高さです。モデル中心より上に出したい時に使います。");
+
 		}
 	}
 }

@@ -76,6 +76,7 @@ namespace SkyAppSupport
      [[nodiscard]] SapperMenuAction DrawSapperMenu(const SkyAppPanels& panels,
 		Array<MainSupport::SpawnedSapper>& spawnedSappers,
      MainSupport::ResourceStock& playerResources,
+     const MainSupport::UnitEditorSettings& unitEditorSettings,
         size_t selectedSapperIndex,
 		TimedMessage& sapperMenuMessage);
     void DrawUnitEditor(const SkyAppPanels& panels,

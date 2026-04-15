@@ -137,7 +137,14 @@ namespace SkyAppSupport
       const UnitTeam team = activeSelection.team;
 		const SapperUnitType unitType = activeSelection.unitType;
 		UnitParameters& parameters = GetUnitParameters(unitEditorSettings, team, unitType);
+        ExplosionSkillParameters& explosionSkillParameters = GetExplosionSkillParameters(unitEditorSettings, team, unitType);
+		const bool explosionSkillSupported = CanUnitUseExplosionSkill(unitType);
+		if ((activePage == UnitEditorPage::Skill) && (not explosionSkillSupported))
+		{
+			activePage = UnitEditorPage::Basic;
+		}
 		ClampUnitParameters(parameters);
+        ClampExplosionSkillParameters(explosionSkillParameters);
      Rect{ detailPanel.x, (detailPanel.bottomY() - 46), detailPanel.w, 1 }.draw(ColorF{ 0.80, 0.78, 0.72 });
        const Rect selectedUnitRect{ (detailPanel.x + 12), (detailPanel.y + 34), (detailPanel.w - 24), 34 };
 		selectedUnitRect.rounded(10).draw(ColorF{ 0.92, 0.96, 1.0, 0.82 });
@@ -148,16 +155,26 @@ namespace SkyAppSupport
 			UnitEditorPage::Basic,
 			UnitEditorPage::Combat,
 			UnitEditorPage::Footprint,
+          UnitEditorPage::Skill,
 		};
+       const int32 pageButtonGap = 8;
+		const int32 pageButtonWidth = Max(56, ((detailPanel.w - 32 - pageButtonGap * (static_cast<int32>(pages.size()) - 1)) / static_cast<int32>(pages.size())));
 		for (size_t i = 0; i < pages.size(); ++i)
 		{
 			const UnitEditorPage page = pages[i];
-          const Rect pageButton{ (detailPanel.x + 16 + static_cast<int32>(i) * 102), (detailPanel.y + 78), 94, 28 };
+            const bool enabled = ((page != UnitEditorPage::Skill) || explosionSkillSupported);
+			const Rect pageButton{ (detailPanel.x + 16 + static_cast<int32>(i) * (pageButtonWidth + pageButtonGap)), (detailPanel.y + 78), pageButtonWidth, 28 };
 			const bool selected = (activePage == page);
 			const bool hovered = pageButton.mouseOver();
-			pageButton.draw(selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
-				.drawFrame(1, 0, selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 });
-           SimpleGUI::GetFont()(ToUnitEditorPageLabel(page)).drawAt(pageButton.center(), selected ? UiInternal::EditorTextOnSelectedPrimaryColor() : UiInternal::EditorTextOnCardPrimaryColor());
+            pageButton.draw(enabled
+				? (selected ? ColorF{ 0.33, 0.53, 0.82 } : (hovered ? ColorF{ 0.94, 0.95, 0.98 } : ColorF{ 0.98, 0.97, 0.95 }))
+				: ColorF{ 0.90, 0.90, 0.92 })
+				.drawFrame(1, 0, enabled
+					? (selected ? ColorF{ 0.20, 0.32, 0.52 } : ColorF{ 0.58, 0.56, 0.52 })
+					: ColorF{ 0.68, 0.68, 0.72 });
+		   SimpleGUI::GetFont()(ToUnitEditorPageLabel(page)).drawAt(pageButton.center(), enabled
+				? (selected ? UiInternal::EditorTextOnSelectedPrimaryColor() : UiInternal::EditorTextOnCardPrimaryColor())
+				: ColorF{ 0.45, 0.45, 0.48 });
            if (hovered)
 			{
                hoveredRect = pageButton;
@@ -171,13 +188,19 @@ namespace SkyAppSupport
 					hoveredDescription = U"衝突・接触判定の調整ページです。大型ユニットや車の当たり判定調整に使います。";
 					break;
 
+				case UnitEditorPage::Skill:
+					hoveredDescription = explosionSkillSupported
+						? U"爆破スキルの範囲、威力、コスト、クールダウン、エフェクトを編集します。Player / Enemy は別々に調整されます。"
+						: U"このユニットは爆破スキル非対応です。";
+					break;
+
 				case UnitEditorPage::Basic:
 				default:
 					hoveredDescription = U"基本性能の調整ページです。耐久、移動速度、出撃コストを編集します。";
 					break;
 				}
 			}
-			if (hovered && MouseL.down())
+           if (enabled && hovered && MouseL.down())
 			{
 				activePage = page;
 			}
@@ -324,9 +347,17 @@ namespace SkyAppSupport
 
       const int32 parameterRowsTop = (activePage == UnitEditorPage::Basic)
 			? ((team == UnitTeam::Enemy) ? (detailPanel.y + 246) : (detailPanel.y + 210))
-			: ((activePage == UnitEditorPage::Combat) ? (detailPanel.y + 146) : (detailPanel.y + 176));
-		DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), parameters, activePage, parameterRowsTop, hoveredDescription, hoveredRect);
+         : ((activePage == UnitEditorPage::Footprint) ? (detailPanel.y + 176) : (detailPanel.y + 146));
+		if (activePage == UnitEditorPage::Skill)
+		{
+			DrawExplosionSkillParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), explosionSkillParameters, parameterRowsTop, hoveredDescription, hoveredRect);
+		}
+		else
+		{
+			DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), parameters, activePage, parameterRowsTop, hoveredDescription, hoveredRect);
+		}
 		ClampUnitParameters(parameters);
+		ClampExplosionSkillParameters(explosionSkillParameters);
 
 		const Rect resetButton{ (detailPanel.x + 16), (detailPanel.y + detailPanel.h - 36), 92, 28 };
 		const Rect applyButton{ (detailPanel.x + 116), (detailPanel.y + detailPanel.h - 36), 92, 28 };
@@ -334,12 +365,16 @@ namespace SkyAppSupport
 		const Rect saveButton{ (editorTextColorsButton.x - 100), (detailPanel.y + detailPanel.h - 36), 92, 28 };
 		if (resetButton.mouseOver())
 		{
-			hoveredDescription = U"この選択ユニット種別の値を既定値へ戻します。保存前でも editor 上の値は即時変更されます。";
+           hoveredDescription = (activePage == UnitEditorPage::Skill)
+				? U"この選択中の陣営 / ユニット種別の爆破スキル設定を既定値へ戻します。"
+				: U"この選択ユニット種別の値を既定値へ戻します。保存前でも editor 上の値は即時変更されます。";
            hoveredRect = resetButton;
 		}
 		else if (applyButton.mouseOver())
 		{
-			hoveredDescription = U"今いる同種ユニットへ設定を反映します。交戦距離や停止距離も次フレーム以降に更新されます。";
+           hoveredDescription = (activePage == UnitEditorPage::Skill)
+				? U"爆破スキル設定は即時反映です。次回のスキル使用時から、コスト・威力・エフェクトへ反映されます。"
+				: U"今いる同種ユニットへ設定を反映します。交戦距離や停止距離も次フレーム以降に更新されます。";
            hoveredRect = applyButton;
 		}
 		else if (saveButton.mouseOver())
@@ -355,15 +390,30 @@ namespace SkyAppSupport
 
 		if (DrawTextButton(resetButton, U"Reset"))
 		{
-			parameters = MakeDefaultUnitParameters(team, unitType);
-           GetUnitModelPath(unitEditorSettings, team, unitType).clear();
-			unitEditorMessage.show(U"ユニット設定を既定値に戻しました", 3.0);
+         if (activePage == UnitEditorPage::Skill)
+			{
+				explosionSkillParameters = MakeDefaultExplosionSkillParameters(team, unitType);
+				unitEditorMessage.show(U"爆破スキル設定を既定値に戻しました", 3.0);
+			}
+			else
+			{
+				parameters = MakeDefaultUnitParameters(team, unitType);
+				GetUnitModelPath(unitEditorSettings, team, unitType).clear();
+				unitEditorMessage.show(U"ユニット設定を既定値に戻しました", 3.0);
+			}
 		}
 
 		if (DrawTextButton(applyButton, U"Apply"))
 		{
-			ApplyUnitParametersToSpawned((team == UnitTeam::Player) ? spawnedSappers : enemySappers, team, unitType, parameters);
-			unitEditorMessage.show(U"出撃中ユニットへ反映しました", 3.0);
+           if (activePage == UnitEditorPage::Skill)
+			{
+				unitEditorMessage.show(U"爆破スキル設定は即時反映です", 3.0);
+			}
+			else
+			{
+				ApplyUnitParametersToSpawned((team == UnitTeam::Player) ? spawnedSappers : enemySappers, team, unitType, parameters);
+				unitEditorMessage.show(U"出撃中ユニットへ反映しました", 3.0);
+			}
 		}
 
 		if (DrawTextButton(saveButton, U"Save TOML"))

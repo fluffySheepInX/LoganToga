@@ -48,6 +48,21 @@ namespace
 	}
 }
 
+StringView ToString(const MainSupport::UnitTeam team)
+{
+	switch (team)
+	{
+	case MainSupport::UnitTeam::Player:
+		return U"Player";
+
+	case MainSupport::UnitTeam::Enemy:
+		return U"Enemy";
+
+	default:
+		return U"Player";
+	}
+}
+
 MapData MakeDefaultMapData()
 {
 	MapData mapData;

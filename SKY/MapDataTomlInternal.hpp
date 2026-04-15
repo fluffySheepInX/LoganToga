@@ -23,4 +23,5 @@ namespace MapDataTomlDetail
 	[[nodiscard]] Optional<PlaceableModelType> ParsePlaceableModelType(const String& value);
    [[nodiscard]] Optional<TerrainCellType> ParseTerrainCellType(const String& value);
 	[[nodiscard]] Optional<MainSupport::ResourceType> ParseResourceType(const String& value);
+   [[nodiscard]] Optional<MainSupport::UnitTeam> ParseUnitTeam(const String& value);
 }

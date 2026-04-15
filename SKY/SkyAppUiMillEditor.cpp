@@ -44,6 +44,7 @@ namespace SkyAppSupport
 		Rect{ panel.x, (headerRect.bottomY() - 1), panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
 		Rect{ panel.x, footerRect.y, panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });
 		SimpleGUI::GetFont()(U"Pos: {:.1f}, {:.1f}, {:.1f}"_fmt(mill.position.x, mill.position.y, mill.position.z)).draw((panel.x + 16), (panel.y + 32), UiInternal::EditorTextOnLightSecondaryColor());
+		SimpleGUI::GetFont()(U"Owner: {}"_fmt(ToString(mill.ownerTeam))).draw((panel.x + 220), (panel.y + 32), UiInternal::EditorTextOnLightSecondaryColor());
 
 		mill.attackRange = Clamp(mill.attackRange, 1.0, 20.0);
 		mill.attackDamage = Clamp(mill.attackDamage, 1.0, 80.0);

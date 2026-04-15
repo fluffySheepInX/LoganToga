@@ -201,6 +201,34 @@ namespace MainSupport::SettingsDetail
 		writer.writeln(U"{}FootprintRadius = {:.3f}"_fmt(prefix, parameters.footprintRadius));
 		writer.writeln(U"{}FootprintHalfLength = {:.3f}"_fmt(prefix, parameters.footprintHalfLength));
 	}
+
+	void LoadExplosionSkillParameterGroup(const TOMLReader& toml, StringView prefix, ExplosionSkillParameters& parameters)
+	{
+		const String explosionPrefix = (String{ prefix } + U"Explosion");
+		LoadUnitParameterValue(toml, (explosionPrefix + U"Radius"), parameters.radius);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"UnitDamage"), parameters.unitDamage);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"BaseDamage"), parameters.baseDamage);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"CooldownSeconds"), parameters.cooldownSeconds);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"GunpowderCost"), parameters.gunpowderCost);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectLifetime"), parameters.effectLifetime);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectThickness"), parameters.effectThickness);
+		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectOffsetY"), parameters.effectOffsetY);
+		parameters.effectColor = ReadTomlColorF(toml, (explosionPrefix + U"EffectColor"), parameters.effectColor);
+	}
+
+	void SaveExplosionSkillParameterGroup(TextWriter& writer, StringView prefix, const ExplosionSkillParameters& parameters)
+	{
+		const String explosionPrefix = (String{ prefix } + U"Explosion");
+		writer.writeln(U"{}Radius = {:.3f}"_fmt(explosionPrefix, parameters.radius));
+		writer.writeln(U"{}UnitDamage = {:.3f}"_fmt(explosionPrefix, parameters.unitDamage));
+		writer.writeln(U"{}BaseDamage = {:.3f}"_fmt(explosionPrefix, parameters.baseDamage));
+		writer.writeln(U"{}CooldownSeconds = {:.3f}"_fmt(explosionPrefix, parameters.cooldownSeconds));
+		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(explosionPrefix, parameters.gunpowderCost));
+		writer.writeln(U"{}EffectLifetime = {:.3f}"_fmt(explosionPrefix, parameters.effectLifetime));
+		writer.writeln(U"{}EffectThickness = {:.3f}"_fmt(explosionPrefix, parameters.effectThickness));
+		writer.writeln(U"{}EffectOffsetY = {:.3f}"_fmt(explosionPrefix, parameters.effectOffsetY));
+		WriteTomlColorF(writer, (explosionPrefix + U"EffectColor"), parameters.effectColor);
+	}
 }
 
 namespace MainSupport

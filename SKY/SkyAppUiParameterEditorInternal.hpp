@@ -32,6 +32,7 @@ namespace SkyAppSupport
        [[nodiscard]] StringView ToUnitEditorPageLabel(MainSupport::UnitEditorPage page);
        [[nodiscard]] int32 ToUnitEditorSliderBase(MainSupport::UnitTeam team, MainSupport::SapperUnitType unitType);
 		void ClampUnitParameters(MainSupport::UnitParameters& parameters);
+      void ClampExplosionSkillParameters(MainSupport::ExplosionSkillParameters& parameters);
 		void DrawMovementTypeSelector(const Rect& panel, double top, MainSupport::MovementType& movementType);
       void DrawUnitAiRoleSelector(const Rect& panel, double top, MainSupport::UnitAiRole& aiRole);
        void DrawFootprintTypeSelector(const Rect& panel, double top, MainSupport::UnitParameters& parameters);
@@ -40,5 +41,6 @@ namespace SkyAppSupport
 			MainSupport::SapperUnitType unitType,
 			const MainSupport::UnitParameters& parameters);
      void DrawUnitParameterRows(const Rect& panel, int32 sliderBase, MainSupport::UnitParameters& parameters, MainSupport::UnitEditorPage page, int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect);
+       void DrawExplosionSkillParameterRows(const Rect& panel, int32 sliderBase, MainSupport::ExplosionSkillParameters& parameters, int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect);
 	}
 }
