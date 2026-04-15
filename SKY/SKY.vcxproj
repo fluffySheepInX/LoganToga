@@ -244,6 +244,8 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="RenderContext.hpp" />
     <ClInclude Include="SkyAppText.hpp" />
     <ClInclude Include="SkyAppUiLayoutCommon.hpp" />
+    <ClInclude Include="SkyAppUiLayoutHud.hpp" />
+    <ClInclude Include="SkyAppUiLayoutMenu.hpp" />
     <ClInclude Include="SkyAppUiLayoutPanels.hpp" />
     <ClInclude Include="SkyAppUiLayoutProfile.hpp" />
     <ClInclude Include="TerrainSurface.hpp" />

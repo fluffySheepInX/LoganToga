@@ -74,7 +74,7 @@ namespace SkyAppSupport
 					continue;
 				}
 
-				ExpandBounds(minCell, maxCell, GetSpawnedSapperBasePosition(sapper), Max(settings.defaultUnitVisionRange, sapper.visionRange));
+             ExpandBounds(minCell, maxCell, GetSpawnedSapperBasePosition(sapper), Max(settings.defaultUnitVisionRange, GetEffectiveSapperVisionRange(sapper)));
 			}
 
 			const int32 padding = Max(1, settings.mapPaddingCells);
@@ -157,7 +157,7 @@ namespace SkyAppSupport
 
 			StampVisibility(fogOfWar,
 				GetSpawnedSapperBasePosition(sapper),
-				Max(0.5, (sapper.visionRange > 0.0) ? sapper.visionRange : settings.defaultUnitVisionRange));
+               Max(0.5, (sapper.visionRange > 0.0) ? GetEffectiveSapperVisionRange(sapper) : settings.defaultUnitVisionRange));
 		}
 
 		for (size_t i = 0; i < mapData.resourceAreas.size(); ++i)

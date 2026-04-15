@@ -1,4 +1,5 @@
 ﻿# include "SkyAppSupport.hpp"
+# include <memory>
 # include "BirdModel.hpp"
 # include "MainUi.hpp"
 # include "MainScene.hpp"
@@ -9,6 +10,28 @@ namespace SkyAppSupport
 {
 	namespace
 	{
+        [[nodiscard]] const UnitModel* TrySelectCustomUnitRenderModel(const UnitEditorSettings& unitEditorSettings, const SpawnedSapper& sapper)
+		{
+			const FilePath& modelPath = GetUnitModelPath(unitEditorSettings, sapper.team, sapper.unitType);
+			if (modelPath.isEmpty() || (not FileSystem::Exists(modelPath)))
+			{
+				return nullptr;
+			}
+
+			static HashTable<FilePath, std::shared_ptr<UnitModel>> cache;
+
+			if (const auto it = cache.find(modelPath); it != cache.end())
+			{
+				return (it->second && it->second->isLoaded()) ? it->second.get() : nullptr;
+			}
+
+			const UnitRenderModel baseRenderModel = GetSpawnedSapperRenderModel(sapper);
+			auto loadedModel = std::make_shared<UnitModel>(modelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(baseRenderModel));
+			const UnitModel* loadedModelPtr = (loadedModel->isLoaded() ? loadedModel.get() : nullptr);
+			cache.emplace(modelPath, std::move(loadedModel));
+			return loadedModelPtr;
+		}
+
         [[nodiscard]] const UnitModel& SelectUnitRenderModel(const UnitRenderModelRegistryView& renderModels, const UnitRenderModel renderModel)
 		{
             const size_t index = GetUnitRenderModelIndex(renderModel);
@@ -308,7 +331,7 @@ namespace SkyAppSupport
 		}
 	}
 
- void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const ModelHeightSettings& modelHeightSettings, const ColorF& color, const FogOfWarState* fogOfWar, const bool requireVisible)
+    void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const UnitEditorSettings& unitEditorSettings, const UnitRenderModelRegistryView& renderModels, const ModelHeightSettings& modelHeightSettings, const ColorF& color, const FogOfWarState* fogOfWar, const bool requireVisible)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
@@ -325,9 +348,10 @@ namespace SkyAppSupport
 			const double elapsed = (Scene::Time() - sapper.spawnedAt);
 			const double popIn = Min(elapsed / 0.25, 1.0);
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
-         const UnitRenderModel renderModel = GetSpawnedSapperRenderModel(sapper);
-           const UnitModel& drawModel = SelectUnitRenderModel(renderModels, renderModel);
-          const double drawScale = GetModelScale(modelHeightSettings, renderModel);
+            const UnitRenderModel renderModel = GetSpawnedSapperRenderModel(sapper);
+			const UnitModel* customModel = TrySelectCustomUnitRenderModel(unitEditorSettings, sapper);
+			const UnitModel& drawModel = (customModel ? *customModel : SelectUnitRenderModel(renderModels, renderModel));
+			const double drawScale = GetModelScale(modelHeightSettings, renderModel);
 
          if (drawModel.isLoaded())
 			{

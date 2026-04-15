@@ -47,6 +47,18 @@ namespace SkyAppSupport
 
 			return lines;
 		}
+
+		[[nodiscard]] String ToModelReferenceLabel(const UnitEditorSettings& unitEditorSettings, const UnitTeam team, const SapperUnitType unitType)
+		{
+			const FilePath& modelPath = GetUnitModelPath(unitEditorSettings, team, unitType);
+
+			if (modelPath.isEmpty())
+			{
+				return U"Default: {}"_fmt(GetUnitRenderModelLabel(GetUnitRenderModel(team, unitType)));
+			}
+
+			return FileSystem::FileName(modelPath);
+		}
 	}
 
 	void DrawUnitEditor(const SkyAppPanels& panels,
@@ -224,6 +236,66 @@ namespace SkyAppSupport
 					hoveredRect = supportButton;
 				}
 			}
+
+			const int32 modelRowY = ((team == UnitTeam::Enemy) ? (detailPanel.y + 206) : (detailPanel.y + 172));
+			const Rect modelLabelRect{ (detailPanel.x + 16), modelRowY, 90, 28 };
+			const Rect modelPathRect{ (detailPanel.x + 108), modelRowY, Max(96, detailPanel.w - 260), 28 };
+			const Rect browseButton{ (detailPanel.rightX() - 138), modelRowY, 58, 28 };
+			const Rect clearButton{ (detailPanel.rightX() - 72), modelRowY, 56, 28 };
+            FilePath& currentModelPath = GetUnitModelPath(unitEditorSettings, team, unitType);
+
+			modelPathRect.rounded(6).draw(ColorF{ 0.99, 0.99, 1.0, 0.92 });
+			modelPathRect.rounded(6).drawFrame(1, 0, ColorF{ 0.78, 0.80, 0.84 });
+			SimpleGUI::GetFont()(U"Model").draw((modelLabelRect.x), (modelLabelRect.y + 4), UiInternal::EditorTextOnLightSecondaryColor());
+			SimpleGUI::GetFont()(ToModelReferenceLabel(unitEditorSettings, team, unitType)).draw((modelPathRect.x + 10), (modelPathRect.y + 4), UiInternal::EditorTextOnCardPrimaryColor());
+
+			if (modelLabelRect.mouseOver())
+			{
+				hoveredDescription = U"このユニット種別の描画に使うモデル参照です。Browse でモデルファイルを選ぶと、そのモデルを優先して描画します。";
+				hoveredRect = modelPathRect;
+			}
+			else if (modelPathRect.mouseOver())
+			{
+				hoveredDescription = currentModelPath.isEmpty()
+					? U"現在は既定モデルを使用しています。"
+					: currentModelPath;
+				hoveredRect = modelPathRect;
+			}
+			else if (browseButton.mouseOver())
+			{
+				hoveredDescription = U"ファイルダイアログを開いて、このユニット種別の描画モデルを選択します。";
+				hoveredRect = browseButton;
+			}
+			else if (clearButton.mouseOver())
+			{
+				hoveredDescription = U"カスタムモデル指定を解除して、既定モデルへ戻します。";
+				hoveredRect = clearButton;
+			}
+
+			if (DrawTextButton(browseButton, U"Browse"))
+			{
+				if (const auto selectedPath = Dialog::OpenFile({ FileFilter::AllFiles() }))
+				{
+					const UnitRenderModel renderModel = GetUnitRenderModel(team, unitType);
+					const UnitModel previewModel{ *selectedPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(renderModel) };
+
+					if (previewModel.isLoaded())
+					{
+						currentModelPath = *selectedPath;
+						unitEditorMessage.show(U"モデル参照を更新しました", 3.0);
+					}
+					else
+					{
+						unitEditorMessage.show(U"モデル読み込み失敗", 3.0);
+					}
+				}
+			}
+
+			if (DrawTextButton(clearButton, U"Clear"))
+			{
+				currentModelPath.clear();
+				unitEditorMessage.show(U"既定モデルに戻しました", 3.0);
+			}
 		}
 		else if (activePage == UnitEditorPage::Footprint)
 		{
@@ -250,8 +322,8 @@ namespace SkyAppSupport
 			}
 		}
 
-       const int32 parameterRowsTop = ((activePage == UnitEditorPage::Basic) && (team == UnitTeam::Enemy))
-         ? (detailPanel.y + 212)
+      const int32 parameterRowsTop = (activePage == UnitEditorPage::Basic)
+			? ((team == UnitTeam::Enemy) ? (detailPanel.y + 246) : (detailPanel.y + 210))
 			: ((activePage == UnitEditorPage::Combat) ? (detailPanel.y + 146) : (detailPanel.y + 176));
 		DrawUnitParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), parameters, activePage, parameterRowsTop, hoveredDescription, hoveredRect);
 		ClampUnitParameters(parameters);
@@ -284,6 +356,7 @@ namespace SkyAppSupport
 		if (DrawTextButton(resetButton, U"Reset"))
 		{
 			parameters = MakeDefaultUnitParameters(team, unitType);
+           GetUnitModelPath(unitEditorSettings, team, unitType).clear();
 			unitEditorMessage.show(U"ユニット設定を既定値に戻しました", 3.0);
 		}
 

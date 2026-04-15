@@ -36,6 +36,7 @@ namespace MainSupport
 		double suppressedAttackIntervalMultiplier = 1.0;
 		double lastAttackAt = -1000.0;
 		double explosionSkillCooldownUntil = -1000.0;
+        double scoutingSkillUntil = -1000.0;
 		double retreatDisappearAt = -1000.0;
 		double retreatReturnAt = -1000.0;
       bool moveOrderActive = false;

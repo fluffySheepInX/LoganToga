@@ -24,6 +24,7 @@ namespace SkyAppFlow
 	String ReloadMapAndResetMatch(SkyAppState& state);
  void UpdateAttackEffects(SkyAppState& state);
 	void UpdateBattleState(SkyAppState& state);
+    [[nodiscard]] bool TryUsePlayerSapperScoutingSkill(SkyAppState& state, size_t selectedSapperIndex);
     [[nodiscard]] bool TryUsePlayerSapperExplosionSkill(SkyAppState& state, size_t selectedSapperIndex);
     [[nodiscard]] bool TryOrderPlayerSapperRetreat(SkyAppState& state, size_t selectedSapperIndex);
         [[nodiscard]] bool HandleEscMenu(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame);

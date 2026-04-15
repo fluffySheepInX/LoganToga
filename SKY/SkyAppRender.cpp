@@ -371,8 +371,8 @@ namespace SkyAppFlow
 		void DrawSpawnedUnits(const SkyAppResources& resources, const SkyAppState& state)
 		{
 			const UnitRenderModelRegistryView renderModels = resources.GetUnitRenderModelRegistry();
-			DrawSpawnedSappers(state.spawnedSappers, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
-			DrawSpawnedSappers(state.enemySappers, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 }, &state.fogOfWar, true);
+           DrawSpawnedSappers(state.spawnedSappers, state.unitEditorSettings, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+			DrawSpawnedSappers(state.enemySappers, state.unitEditorSettings, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 }, &state.fogOfWar, true);
 		}
 
 	}

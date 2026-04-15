@@ -68,54 +68,6 @@ namespace SkyAppUiLayout
 		return Rect{ (sceneWidth - 360), 20, 340, 660 };
 	}
 
-	[[nodiscard]] inline Rect BlacksmithMenu(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		return Rect{ (sceneWidth - 424), Max(20, (sceneHeight - 332)), 404, 312 };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandSlotButton(const Rect& panelRect, const int32 index)
-	{
-		constexpr int32 SlotWidth = 82;
-		constexpr int32 SlotHeight = 44;
-		constexpr int32 SlotGap = 8;
-		return Rect{ (panelRect.x + 16 + index * (SlotWidth + SlotGap)), (panelRect.y + 48), SlotWidth, SlotHeight };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandPortrait(const Rect& panelRect)
-	{
-		return Rect{ (panelRect.x + 16), (panelRect.y + 108), 148, 112 };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandDetail(const Rect& panelRect)
-	{
-		return Rect{ (panelRect.x + 178), (panelRect.y + 108), 210, 112 };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandPrimaryActionButton(const Rect& panelRect)
-	{
-		return Rect{ (panelRect.x + 194), (panelRect.y + 182), 178, 28 };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandTierUpButton(const Rect& panelRect)
-	{
-		return Rect{ (panelRect.x + 16), (panelRect.y + 252), 148, 40 };
-	}
-
-	[[nodiscard]] inline Rect BattleCommandMessageRect(const Rect& panelRect)
-	{
-		return Rect{ (panelRect.x + 178), (panelRect.y + 228), 210, 56 };
-	}
-
-	[[nodiscard]] inline Rect SapperMenu(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		return Rect{ (sceneWidth - 340), (sceneHeight - 396), 320, 356 };
-	}
-
-	[[nodiscard]] inline Rect MillStatusEditor(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		return Rect{ (sceneWidth - 340), Max(20, (sceneHeight - 620)), 320, 580 };
-	}
-
 	[[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
 		const auto& layout = Detail::LayoutProfile();
@@ -201,123 +153,9 @@ namespace SkyAppUiLayout
 		};
 	}
 
-	[[nodiscard]] inline Rect UiToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		(void)sceneWidth;
-		const auto& layout = Detail::LayoutProfile();
-		return Rect{ 20, (sceneHeight - layout.bottomControl.yOffset), layout.bottomControl.panelWidth, layout.bottomControl.panelHeight };
-	}
-
-	[[nodiscard]] inline Rect BottomControlRevealHotZone(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		(void)sceneWidth;
-		return Rect{ 0, Max(0, (sceneHeight - 160)), 28, 160 };
-	}
-
-	[[nodiscard]] inline Rect UiToggleCheckBox(const Rect& uiToggle)
-	{
-		return Rect{ (uiToggle.x + 10), (uiToggle.y + 8), Detail::LayoutProfile().bottomControl.checkBoxWidth, 36 };
-	}
-
-	[[nodiscard]] inline Rect MapModeToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect uiToggle = UiToggle(sceneWidth, sceneHeight);
-		return Rect{ (UiToggleCheckBox(uiToggle).rightX() + Detail::LayoutProfile().bottomControl.buttonGap), (uiToggle.y + 8), 44, 36 };
-	}
-
-	[[nodiscard]] inline Rect ModelHeightModeToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = MapModeToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 44, 36 };
-	}
-
-	[[nodiscard]] inline Rect UnitEditorModeToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = ModelHeightModeToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 60, 36 };
-	}
-
-	[[nodiscard]] inline Rect SkySettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = UnitEditorModeToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 44, 36 };
-	}
-
-	[[nodiscard]] inline Rect CameraSettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = SkySettingsToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 44, 36 };
-	}
-
-	[[nodiscard]] inline Rect TerrainVisualToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = CameraSettingsToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 44, 36 };
-	}
-
-	[[nodiscard]] inline Rect FogSettingsToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = TerrainVisualToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 52, 36 };
-	}
-
-	[[nodiscard]] inline Rect UiEditModeToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = FogSettingsToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 84, 36 };
-	}
-
-	[[nodiscard]] inline Rect ResourceAdjustToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = UiEditModeToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 88, 36 };
-	}
-
-	[[nodiscard]] inline Rect EnemyPlanToggle(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		const Rect anchorRect = ResourceAdjustToggle(sceneWidth, sceneHeight);
-		return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 110, 36 };
-	}
-
-	[[nodiscard]] inline Rect BottomEditorTextColorsButton(const Rect& anchorToggle)
-	{
-		const auto& layout = Detail::LayoutProfile();
-		return Rect{ (anchorToggle.rightX() + layout.bottomControl.editorIconButtonGap), (anchorToggle.y + (anchorToggle.h - layout.bottomControl.editorIconButtonSize) / 2), layout.bottomControl.editorIconButtonSize, layout.bottomControl.editorIconButtonSize };
-	}
-
-	[[nodiscard]] inline Rect EscMenu(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		return Rect{ ((sceneWidth - 280) / 2), ((sceneHeight - 300) / 2), 280, 300 };
-	}
-
-	[[nodiscard]] inline Rect TimeSlider(const int32 sceneWidth, const int32 sceneHeight)
-	{
-		return Rect{ 20, (sceneHeight - 60), Max(0, (sceneWidth - 40)), 36 };
-	}
-
 	[[nodiscard]] inline Rect AccordionHeaderRect(const Rect& panelRect)
 	{
 		return Rect{ panelRect.x, panelRect.y, panelRect.w, Detail::LayoutProfile().shared.accordionHeaderHeight };
-	}
-
-	[[nodiscard]] inline Vec2 BottomMessagePosition(const Rect& uiToggle, const int32 messageIndex)
-	{
-		return Vec2{ static_cast<double>(uiToggle.x + 12), static_cast<double>(uiToggle.y - 32 + messageIndex * 24) };
-	}
-
-	[[nodiscard]] inline Vec2 TimeSliderPosition(const Rect& timeSlider)
-	{
-		return Vec2{ static_cast<double>(timeSlider.x), static_cast<double>(timeSlider.y) };
-	}
-
-	[[nodiscard]] inline int32 TimeSliderLabelWidth()
-	{
-		return 120;
-	}
-
-	[[nodiscard]] inline int32 TimeSliderTrackWidth(const Rect& timeSlider)
-	{
-		return Max(0, (timeSlider.w - (TimeSliderLabelWidth() + 20)));
 	}
 
 	[[nodiscard]] inline Rect SkySettingsTimePanel(const Rect& skySettingsPanel)
@@ -398,21 +236,6 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Vec2 ResourcePanelManaPosition(const Rect& resourcePanel)
 	{
 		return Vec2{ static_cast<double>(resourcePanel.x + 112), static_cast<double>(resourcePanel.y + 48) };
-	}
-
-	[[nodiscard]] inline Vec2 MenuTextPosition(const Rect& panelRect, const int32 yOffset)
-	{
-		return Vec2{ static_cast<double>(panelRect.x + 16), static_cast<double>(panelRect.y + yOffset) };
-	}
-
-	[[nodiscard]] inline Rect MenuWideButton(const Rect& panelRect, const int32 yOffset)
-	{
-		return Rect{ (panelRect.x + 16), (panelRect.y + yOffset), (panelRect.w - 32), 28 };
-	}
-
-	[[nodiscard]] inline Vec2 MenuMessagePosition(const Rect& panelRect)
-	{
-		return Vec2{ static_cast<double>(panelRect.x + 16), static_cast<double>(panelRect.y - 28) };
 	}
 
 	[[nodiscard]] inline Vec2 CameraPanelTextPosition(const Rect& panelRect, const int32 xOffset, const int32 yOffset)

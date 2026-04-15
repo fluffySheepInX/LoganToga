@@ -72,6 +72,7 @@ namespace SkyAppSupport
 	[[nodiscard]] double GetEffectiveSapperMoveSpeed(const MainSupport::SpawnedSapper& sapper);
 	[[nodiscard]] double GetEffectiveSapperAttackDamage(const MainSupport::SpawnedSapper& sapper);
 	[[nodiscard]] double GetEffectiveSapperAttackInterval(const MainSupport::SpawnedSapper& sapper);
+   [[nodiscard]] double GetEffectiveSapperVisionRange(const MainSupport::SpawnedSapper& sapper);
     [[nodiscard]] ColorF GetSpawnedSapperTint(const MainSupport::SpawnedSapper& sapper, const ColorF& baseColor);
     void ApplyUnitParameters(MainSupport::SpawnedSapper& sapper, const MainSupport::UnitParameters& parameters);
     void ApplySapperSuppression(MainSupport::SpawnedSapper& sapper, double durationSeconds, double moveSpeedMultiplier, double attackDamageMultiplier, double attackIntervalMultiplier);
@@ -96,7 +97,7 @@ namespace SkyAppSupport
 	void DrawSelectedSapperIcon(const MainSupport::AppCamera3D& camera, const MainSupport::SpawnedSapper& sapper);
   void DrawSapperHealthBars(const MainSupport::AppCamera3D& camera, const Array<MainSupport::SpawnedSapper>& spawnedSappers, const ColorF& fillColor, const FogOfWarState* fogOfWar = nullptr, const bool requireVisible = false);
       void UpdateCameraWheelZoom(MainSupport::AppCamera3D& camera, MainSupport::CameraSettings& cameraSettings, const Vec3& playerBasePosition);
-          void DrawSpawnedSappers(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const MainSupport::ModelHeightSettings& modelHeightSettings, const ColorF& color, const FogOfWarState* fogOfWar = nullptr, const bool requireVisible = false);
+  void DrawSpawnedSappers(const Array<MainSupport::SpawnedSapper>& spawnedSappers, const MainSupport::UnitEditorSettings& unitEditorSettings, const UnitRenderModelRegistryView& renderModels, const MainSupport::ModelHeightSettings& modelHeightSettings, const ColorF& color, const FogOfWarState* fogOfWar = nullptr, const bool requireVisible = false);
 	void UpdateSkyFromTime(Sky& sky, double skyTime);
   void SpawnSapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& spawnPosition, const Vec3& rallyPoint, const MapData& mapData, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);
   void SpawnEnemySapper(Array<MainSupport::SpawnedSapper>& spawnedSappers, const Vec3& position, double facingYaw = MainSupport::BirdDisplayYaw, MainSupport::SapperUnitType unitType = MainSupport::SapperUnitType::Infantry);

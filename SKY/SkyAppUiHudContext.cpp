@@ -55,7 +55,11 @@ namespace SkyAppFlow
 				state.playerResources,
 				selectedIndex,
 				state.blacksmithMenuMessage);
-			if (menuAction == SapperMenuAction::UseExplosionSkill)
+          if (menuAction == SapperMenuAction::UseScoutingSkill)
+			{
+				TryUsePlayerSapperScoutingSkill(state, selectedIndex);
+			}
+			else if (menuAction == SapperMenuAction::UseExplosionSkill)
 			{
 				TryUsePlayerSapperExplosionSkill(state, selectedIndex);
 			}

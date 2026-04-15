@@ -18,6 +18,7 @@ namespace SkyAppSupport
 		enum class SapperMenuAction
 		{
 			None,
+          UseScoutingSkill,
 			UseExplosionSkill,
           Retreat,
 		};

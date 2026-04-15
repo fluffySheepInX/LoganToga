@@ -72,6 +72,13 @@ namespace SkyAppSupport
 		return sapper.moveOrderActive;
 	}
 
+	double GetEffectiveSapperVisionRange(const SpawnedSapper& sapper)
+	{
+		return ((Scene::Time() < sapper.scoutingSkillUntil)
+			? (sapper.visionRange * 1.5)
+			: sapper.visionRange);
+	}
+
 	void OrderSapperRetreat(SpawnedSapper& sapper, const Vec3& rallyPoint)
 	{
 		const double now = Scene::Time();

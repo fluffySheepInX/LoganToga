@@ -445,7 +445,7 @@ namespace SkyAppSupport
 
 		if (DrawTextButton(scoutingSkillButton, U"索敵スキル"))
 		{
-			sapperMenuMessage.show(U"兵が索敵スキルを準備");
+          return SapperMenuAction::UseScoutingSkill;
 		}
 
 		if (DrawTextButton(fortifySkillButton, U"陣地化スキル"))

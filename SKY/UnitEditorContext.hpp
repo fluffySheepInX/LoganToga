@@ -6,10 +6,12 @@ namespace MainSupport
 	struct UnitEditorSettings
 	{
 		Array<UnitParameters> parameters;
+		Array<FilePath> modelPaths;
 
 		UnitEditorSettings()
 		{
 			parameters.resize(GetUnitDefinitions().size() * 2);
+			modelPaths.resize(GetUnitDefinitions().size() * 2);
 
 			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
 			{
@@ -47,6 +49,16 @@ namespace MainSupport
 	[[nodiscard]] inline UnitParameters& GetUnitParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
 		return settings.parameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline const FilePath& GetUnitModelPath(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.modelPaths[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline FilePath& GetUnitModelPath(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.modelPaths[GetUnitParameterSlotIndex(team, unitType)];
 	}
 
 	[[nodiscard]] inline UnitAiRole GetUnitAiRole(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)

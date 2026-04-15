@@ -15,6 +15,7 @@ namespace SkyAppFlow
 		constexpr double SapperExplosionEffectLifetime = 0.42;
 		constexpr double SapperExplosionEffectThickness = 7.0;
 		constexpr Vec3 SapperExplosionEffectOffset{ 0.0, 1.1, 0.0 };
+		constexpr double SapperScoutingSkillDuration = 5.0;
 
 		void EnsureMillDefenseState(SkyAppState& state)
 		{
@@ -109,6 +110,25 @@ namespace SkyAppFlow
 
 			return targetIndices;
 		}
+	}
+
+   bool TryUsePlayerSapperScoutingSkill(SkyAppState& state, const size_t selectedSapperIndex)
+	{
+		if (selectedSapperIndex >= state.spawnedSappers.size())
+		{
+			return false;
+		}
+
+		SpawnedSapper& sapper = state.spawnedSappers[selectedSapperIndex];
+		if (sapper.hitPoints <= 0.0)
+		{
+			state.blacksmithMenuMessage.show(U"兵が行動不能");
+			return false;
+		}
+
+		sapper.scoutingSkillUntil = Max(sapper.scoutingSkillUntil, Scene::Time()) + SapperScoutingSkillDuration;
+		state.blacksmithMenuMessage.show(U"兵が索敵スキルを使用");
+		return true;
 	}
 
   bool TryUsePlayerSapperExplosionSkill(SkyAppState& state, const size_t selectedSapperIndex)
