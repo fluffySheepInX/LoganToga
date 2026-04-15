@@ -22,6 +22,9 @@ namespace SkyAppFlow
 			case UiLayoutPanel::TerrainVisualSettings:
 				return settings.terrainVisualSettingsPosition;
 
+			case UiLayoutPanel::FogSettings:
+				return settings.fogSettingsPosition;
+
 			case UiLayoutPanel::UnitEditor:
 				return settings.unitEditorPosition;
 
@@ -111,6 +114,13 @@ namespace SkyAppFlow
 					frame.panels.terrainSettings,
 					SkyAppUiLayout::TerrainVisualPanelDragHandle(frame.panels.terrainSettings),
 					state.terrainVisualSettingsExpanded)
+                || TryBeginPanelInteraction(
+					state,
+					cursorPosition,
+					UiLayoutPanel::FogSettings,
+					frame.panels.fogSettings,
+					SkyAppUiLayout::FogSettingsPanelDragHandle(frame.panels.fogSettings),
+					state.fogSettingsExpanded)
 				|| TryBeginPanelInteraction(
 					state,
 					cursorPosition,
@@ -173,6 +183,12 @@ namespace SkyAppFlow
 			else if (state.uiPanelDrag->panel == UiLayoutPanel::TerrainVisualSettings)
 			{
 				const Rect rect = SkyAppUiLayout::TerrainVisualSettings(sceneWidth, sceneHeight, requestedPosition);
+				panelPosition = Point{ rect.x, rect.y };
+				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+			}
+         else if (state.uiPanelDrag->panel == UiLayoutPanel::FogSettings)
+			{
+				const Rect rect = SkyAppUiLayout::FogSettings(sceneWidth, sceneHeight, requestedPosition);
 				panelPosition = Point{ rect.x, rect.y };
 				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
 			}

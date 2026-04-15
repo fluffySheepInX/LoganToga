@@ -17,7 +17,7 @@ namespace SkyAppFlow
 		OverlayDetail::DrawBattleOverlays(state, frame);
 		OverlayDetail::DrawResourceAreaOverlays(state);
 		OverlayDetail::DrawResourcePanelOverlay(state, frame);
-		OverlayDetail::DrawBaseStatusOverlays(state);
+       OverlayDetail::DrawBaseStatusOverlays(state, frame);
 		OverlayDetail::DrawModelHeightOverlay(state, frame);
 		OverlayDetail::DrawSelectionDragOverlay(state, frame);
 		OverlayDetail::DrawMatchResultOverlay(state);

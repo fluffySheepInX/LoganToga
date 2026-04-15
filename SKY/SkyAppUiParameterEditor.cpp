@@ -273,6 +273,7 @@ namespace SkyAppSupport
            parameters.stopDistance = Clamp(parameters.stopDistance, 0.0, 24.0);
 			parameters.attackDamage = Clamp(parameters.attackDamage, 0.0, 160.0);
 			parameters.attackInterval = Clamp(parameters.attackInterval, 0.05, 10.0);
+           parameters.visionRange = Clamp(parameters.visionRange, 0.5, 40.0);
 		   parameters.manaCost = Clamp(parameters.manaCost, 0.0, 1600.0);
            parameters.footprintRadius = Clamp(parameters.footprintRadius, 0.1, 4.0);
 			parameters.footprintHalfLength = Clamp(parameters.footprintHalfLength, 0.0, 6.0);
@@ -391,7 +392,10 @@ namespace SkyAppSupport
 				drawUnitCard(1, (sliderBase + 1), parameters.moveSpeed,
 					MillParameterEditorSpec{ U"Move Speed", U"", 0.5, 24.0, 0.1, 0.5, 1.0, 0.05, 2 },
 					U"移動速度です。集結、追撃、引き撃ち、資源エリアへの到達速度に影響します。");
-				drawUnitCard(2, (sliderBase + 6), parameters.manaCost,
+              drawUnitCard(2, (sliderBase + 9), parameters.visionRange,
+					MillParameterEditorSpec{ U"Vision Range", U"", 0.5, 40.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"索敵できる距離です。Fog of War 使用時に敵や拠点、資源地点を発見できる範囲へ影響します。");
+				drawUnitCard(3, (sliderBase + 6), parameters.manaCost,
 					MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 1600.0, 1.0, 5.0, 10.0, 1.0, 0 },
 					U"出撃時に必要な魔力です。強さだけでなく量産しやすさの調整にも使います。");
 				return;

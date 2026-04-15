@@ -26,6 +26,7 @@ namespace MainSupport
 		double stopDistance = 0.2;
 		double baseAttackDamage = 12.0;
 		double baseAttackInterval = 0.8;
+        double visionRange = 8.0;
 		UnitFootprintType footprintType = UnitFootprintType::Circle;
 		double footprintRadius = 1.2;
 		double footprintHalfLength = 0.0;

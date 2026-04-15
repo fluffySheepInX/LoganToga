@@ -10,6 +10,7 @@ namespace MainSupport
       Point resourcePanelSize{ 0, 0 };
 		Point modelHeightPosition{ 0, 0 };
        Point terrainVisualSettingsPosition{ 0, 0 };
+       Point fogSettingsPosition{ 0, 0 };
 		Point unitEditorPosition{ 0, 0 };
 		Point unitEditorListPosition{ 0, 0 };
 	};

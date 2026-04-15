@@ -320,6 +320,7 @@ namespace SkyAppFlow
 		state.nextEnemyProductionAt = 0.0;
 		state.enemyReinforcementCount = 0;
 		state.playerWon.reset();
+       ResetFogOfWar(state.fogOfWar);
       ResetCameraToPlayerBase(state);
 	}
 

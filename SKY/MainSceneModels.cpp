@@ -2,6 +2,19 @@
 
 namespace
 {
+   struct PlacedModelRenderContext
+	{
+		const PlacedModel& placedModel;
+		const MainSupport::ModelHeightSettings& modelHeightSettings;
+		const MainSupport::PlacedModelRenderResources& renderResources;
+	};
+
+	struct LinearPlacedModelSegment
+	{
+		Vec3 start;
+		Vec3 goal;
+	};
+
 	[[nodiscard]] const Mesh& RoadPlaneMesh()
 	{
 		static const Mesh mesh{ MeshData::OneSidedPlane(1.0, { 1, 1 }) };
@@ -22,6 +35,47 @@ namespace
 				return state;
 			}();
 		return blendState;
+	}
+
+	[[nodiscard]] Vec3 GetPlacedModelForward(const double yaw)
+	{
+		return Vec3{ Math::Sin(yaw), 0.0, Math::Cos(yaw) };
+	}
+
+	[[nodiscard]] LinearPlacedModelSegment GetLinearPlacedModelSegment(const Vec3& position, const double yaw, const double length)
+	{
+		const Vec3 halfDirection = (GetPlacedModelForward(yaw) * (length * 0.5));
+		return LinearPlacedModelSegment{
+			.start = (position - halfDirection),
+			.goal = (position + halfDirection),
+		};
+	}
+
+	[[nodiscard]] double GetPlacedWallLength(const PlacedModel& placedModel)
+	{
+		return Clamp(placedModel.wallLength, 2.0, 80.0);
+	}
+
+	[[nodiscard]] double GetPlacedRoadLength(const PlacedModel& placedModel)
+	{
+		return Clamp(placedModel.roadLength, 2.0, 80.0);
+	}
+
+	[[nodiscard]] double GetPlacedRoadWidth(const PlacedModel& placedModel)
+	{
+		return Clamp(placedModel.roadWidth, 2.0, 80.0);
+	}
+
+	void DrawAlphaToCoverageModel(const Model& model, const Vec3& position)
+	{
+		const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
+		model.draw(position);
+	}
+
+	void DrawAlphaToCoverageModel(const Model& model, const Mat4x4& transform)
+	{
+		const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
+		model.draw(transform);
 	}
 
 	void DrawMillModel(const Model& model, const Mat4x4& mat)
@@ -83,6 +137,69 @@ namespace
 		return charcoal.lerp(earth, warmth);
 	}
 
+	void DrawMillPlacedModel(const PlacedModelRenderContext& context)
+	{
+		DrawGroundContactGrime(context.placedModel.position, 4.4, 3.1, ColorF{ 0.22, 0.18, 0.14, 0.36 }, ColorF{ 0.34, 0.28, 0.20, 0.22 });
+		DrawMillModel(context.renderResources.millModel, Mat4x4::Translate(context.placedModel.position));
+	}
+
+	void DrawTreePlacedModel(const PlacedModelRenderContext& context)
+	{
+		DrawGroundContactGrime(context.placedModel.position, 1.42, 0.84, ColorF{ 0.18, 0.17, 0.13, 0.28 }, ColorF{ 0.26, 0.24, 0.18, 0.18 });
+		DrawAlphaToCoverageModel(context.renderResources.treeModel, context.placedModel.position);
+	}
+
+	void DrawPinePlacedModel(const PlacedModelRenderContext& context)
+	{
+		DrawGroundContactGrime(context.placedModel.position, 1.28, 0.76, ColorF{ 0.16, 0.16, 0.12, 0.26 }, ColorF{ 0.24, 0.22, 0.17, 0.16 });
+		DrawAlphaToCoverageModel(context.renderResources.pineModel, context.placedModel.position);
+	}
+
+	void DrawGrassPatchPlacedModel(const PlacedModelRenderContext& context)
+	{
+		DrawAlphaToCoverageModel(context.renderResources.grassPatchModel, Mat4x4::Translate(context.placedModel.position));
+	}
+
+	void DrawRockPlacedModel(const PlacedModel& placedModel)
+	{
+		DrawGroundContactGrime(placedModel.position, 2.6, 1.9, ColorF{ 0.15, 0.15, 0.14, 0.32 }, ColorF{ 0.28, 0.26, 0.24, 0.16 });
+		Cylinder{ placedModel.position.movedBy(0, 0.45, 0), 2.1, 0.9 }.draw(ColorF{ 0.36, 0.39, 0.42 }.removeSRGBCurve());
+		Sphere{ placedModel.position.movedBy(0, 1.45, 0), 1.75 }.draw(ColorF{ 0.48, 0.50, 0.54 }.removeSRGBCurve());
+		Sphere{ placedModel.position.movedBy(-0.8, 1.1, 0.6), 0.82 }.draw(ColorF{ 0.42, 0.45, 0.50 }.removeSRGBCurve());
+	}
+
+	void DrawWallPlacedModel(const PlacedModel& placedModel)
+	{
+		const double wallLength = GetPlacedWallLength(placedModel);
+		const LinearPlacedModelSegment segment = GetLinearPlacedModelSegment(placedModel.position, placedModel.yaw, wallLength);
+		Line3D{ segment.start.movedBy(0, 0.12, 0), segment.goal.movedBy(0, 0.12, 0) }.draw(ColorF{ 0.62, 0.66, 0.72, 0.95 }.removeSRGBCurve());
+		Cylinder{ segment.start.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
+		Cylinder{ segment.goal.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
+
+		const int32 segmentCount = Max(1, static_cast<int32>(Math::Ceil(wallLength / 1.2)));
+		for (int32 i = 0; i <= segmentCount; ++i)
+		{
+			const double t = (static_cast<double>(i) / segmentCount);
+			const Vec3 position = segment.start.lerp(segment.goal, t);
+			Cylinder{ position.movedBy(0, 0.42, 0), 0.34, 0.84 }.draw(ColorF{ 0.58, 0.60, 0.65 }.removeSRGBCurve());
+		}
+	}
+
+	void DrawRoadPlacedModel(const PlacedModelRenderContext& context)
+	{
+		const double roadLength = GetPlacedRoadLength(context.placedModel);
+		const double roadWidth = GetPlacedRoadWidth(context.placedModel);
+		DrawRoadShoulderGrime(context.placedModel, roadWidth, roadLength);
+		const ScopedRenderStates3D renderState{ BlendState::Opaque, RasterizerState::SolidCullNone };
+		const Transformer3D t{
+			Mat4x4::Identity()
+				.scaled(Float3{ static_cast<float>(roadWidth), 1.0f, static_cast<float>(roadLength) })
+				.rotated(Quaternion::RotateY(static_cast<float>(context.placedModel.yaw)))
+				.translated(context.placedModel.position.movedBy(0, 0.025, 0))
+		};
+		RoadPlaneMesh().draw(context.renderResources.roadTexture);
+	}
+
 	void DrawTexturedGroundStripSegment(const Texture& texture, const Vec3& position, const double width, const double length, const double yaw, const ColorF& tint, const double softness, const double yOffset = 0.018)
 	{
 		if ((width <= 0.01) || (length <= 0.01))
@@ -112,10 +229,10 @@ namespace
 		drawSegment(width, length, yOffset, tint);
 	}
 
-    void DrawTireTrackDecal(const PlacedModel& placedModel, const MainSupport::ModelHeightSettings& modelHeightSettings, const Texture& startTexture, const Texture& middleTexture, const Texture& endTexture)
+  void DrawTireTrackDecal(const PlacedModel& placedModel, const MainSupport::ModelHeightSettings& modelHeightSettings, const Texture& startTexture, const Texture& middleTexture, const Texture& endTexture)
 	{
-		const double decalLength = Clamp(placedModel.roadLength, 2.0, 80.0);
-		const double decalWidth = Clamp(placedModel.roadWidth, 2.0, 80.0);
+        const double decalLength = GetPlacedRoadLength(placedModel);
+		const double decalWidth = GetPlacedRoadWidth(placedModel);
 		const double capLength = Min(decalWidth, (decalLength * 0.5));
 		const double centerLength = Max(0.0, (decalLength - (capLength * 2.0)));
         const double middleTileLength = Max(0.5, capLength);
@@ -128,112 +245,67 @@ namespace
 		const ColorF startTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::Start);
 		const ColorF middleTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::Middle);
 		const ColorF endTint = MakeTireTrackTint(modelHeightSettings, MainSupport::TireTrackTextureSegment::End);
-		const Vec3 direction{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
-		const Vec3 startEdge = (placedModel.position - (direction * (decalLength * 0.5)));
-		const Vec3 endEdge = (placedModel.position + (direction * (decalLength * 0.5)));
+        const Vec3 direction = GetPlacedModelForward(placedModel.yaw);
+		const LinearPlacedModelSegment segment = GetLinearPlacedModelSegment(placedModel.position, placedModel.yaw, decalLength);
 
-      DrawTexturedGroundStripSegment(startTexture, (startEdge + (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, startTint, startSoftness, startYOffset);
+      DrawTexturedGroundStripSegment(startTexture, (segment.start + (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, startTint, startSoftness, startYOffset);
 
 		if (centerLength > 0.01)
 		{
-          Vec3 middleCursor = (startEdge + (direction * capLength));
+            Vec3 middleCursor = (segment.start + (direction * capLength));
 			double remainingLength = centerLength;
 
 			while (remainingLength > 0.01)
 			{
 				const double segmentLength = Min(middleTileLength, remainingLength);
-                DrawTexturedGroundStripSegment(middleTexture, (middleCursor + (direction * (segmentLength * 0.5))), decalWidth, segmentLength, placedModel.yaw, middleTint, middleSoftness, middleYOffset);
+             DrawTexturedGroundStripSegment(middleTexture, (middleCursor + (direction * (segmentLength * 0.5))), decalWidth, segmentLength, placedModel.yaw, middleTint, middleSoftness, middleYOffset);
 				middleCursor += (direction * segmentLength);
 				remainingLength -= segmentLength;
 			}
 		}
 
-       DrawTexturedGroundStripSegment(endTexture, (endEdge - (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, endTint, endSoftness, endYOffset);
+       DrawTexturedGroundStripSegment(endTexture, (segment.goal - (direction * (capLength * 0.5))), decalWidth, capLength, placedModel.yaw, endTint, endSoftness, endYOffset);
 	}
 }
 
 namespace MainSupport
 {
-  void DrawPlacedModel(const PlacedModel& placedModel, const ModelHeightSettings& modelHeightSettings, const Model& millModel, const Model& treeModel, const Model& pineModel, const Model& grassPatchModel, const Texture& roadTexture, const Texture& tireTrackStartTexture, const Texture& tireTrackMiddleTexture, const Texture& tireTrackEndTexture)
+  void DrawPlacedModel(const PlacedModel& placedModel, const ModelHeightSettings& modelHeightSettings, const PlacedModelRenderResources& renderResources)
 	{
+       const PlacedModelRenderContext context{ placedModel, modelHeightSettings, renderResources };
+
 		switch (placedModel.type)
 		{
 		case PlaceableModelType::Mill:
-          DrawGroundContactGrime(placedModel.position, 4.4, 3.1, ColorF{ 0.22, 0.18, 0.14, 0.36 }, ColorF{ 0.34, 0.28, 0.20, 0.22 });
-			DrawMillModel(millModel, Mat4x4::Translate(placedModel.position));
+           DrawMillPlacedModel(context);
 			return;
 
 		case PlaceableModelType::Tree:
-		{
-            DrawGroundContactGrime(placedModel.position, 1.42, 0.84, ColorF{ 0.18, 0.17, 0.13, 0.28 }, ColorF{ 0.26, 0.24, 0.18, 0.18 });
-			const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
-			treeModel.draw(placedModel.position);
+           DrawTreePlacedModel(context);
 			return;
-		}
 
 		case PlaceableModelType::Pine:
-		{
-            DrawGroundContactGrime(placedModel.position, 1.28, 0.76, ColorF{ 0.16, 0.16, 0.12, 0.26 }, ColorF{ 0.24, 0.22, 0.17, 0.16 });
-			const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
-			pineModel.draw(placedModel.position);
+           DrawPinePlacedModel(context);
 			return;
-		}
 
 		case PlaceableModelType::GrassPatch:
-		{
-			const ScopedRenderStates3D renderState{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
-			grassPatchModel.draw(Mat4x4::Translate(placedModel.position));
+           DrawGrassPatchPlacedModel(context);
 			return;
-		}
 
 		case PlaceableModelType::Rock:
-		{
-          DrawGroundContactGrime(placedModel.position, 2.6, 1.9, ColorF{ 0.15, 0.15, 0.14, 0.32 }, ColorF{ 0.28, 0.26, 0.24, 0.16 });
-			Cylinder{ placedModel.position.movedBy(0, 0.45, 0), 2.1, 0.9 }.draw(ColorF{ 0.36, 0.39, 0.42 }.removeSRGBCurve());
-			Sphere{ placedModel.position.movedBy(0, 1.45, 0), 1.75 }.draw(ColorF{ 0.48, 0.50, 0.54 }.removeSRGBCurve());
-			Sphere{ placedModel.position.movedBy(-0.8, 1.1, 0.6), 0.82 }.draw(ColorF{ 0.42, 0.45, 0.50 }.removeSRGBCurve());
+           DrawRockPlacedModel(placedModel);
 			return;
-		}
 
 		case PlaceableModelType::Wall:
-		{
-			const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
-			const Vec3 direction{ Math::Sin(placedModel.yaw), 0.0, Math::Cos(placedModel.yaw) };
-			const Vec3 halfDirection = (direction * (wallLength * 0.5));
-			const Vec3 start = (placedModel.position - halfDirection);
-			const Vec3 goal = (placedModel.position + halfDirection);
-			Line3D{ start.movedBy(0, 0.12, 0), goal.movedBy(0, 0.12, 0) }.draw(ColorF{ 0.62, 0.66, 0.72, 0.95 }.removeSRGBCurve());
-			Cylinder{ start.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
-			Cylinder{ goal.movedBy(0, 0.55, 0), 0.26, 2.2 }.draw(ColorF{ 0.52, 0.54, 0.58 }.removeSRGBCurve());
-
-			const int32 segmentCount = Max(1, static_cast<int32>(Math::Ceil(wallLength / 1.2)));
-			for (int32 i = 0; i <= segmentCount; ++i)
-			{
-				const double t = (static_cast<double>(i) / segmentCount);
-				const Vec3 position = start.lerp(goal, t);
-				Cylinder{ position.movedBy(0, 0.42, 0), 0.34, 0.84 }.draw(ColorF{ 0.58, 0.60, 0.65 }.removeSRGBCurve());
-			}
+           DrawWallPlacedModel(placedModel);
 			return;
-		}
 
 		case PlaceableModelType::Road:
-		{
-			const double roadLength = Clamp(placedModel.roadLength, 2.0, 80.0);
-			const double roadWidth = Clamp(placedModel.roadWidth, 2.0, 80.0);
-           DrawRoadShoulderGrime(placedModel, roadWidth, roadLength);
-			const ScopedRenderStates3D renderState{ BlendState::Opaque, RasterizerState::SolidCullNone };
-			const Transformer3D t{
-				Mat4x4::Identity()
-					.scaled(Float3{ static_cast<float>(roadWidth), 1.0f, static_cast<float>(roadLength) })
-					.rotated(Quaternion::RotateY(static_cast<float>(placedModel.yaw)))
-					.translated(placedModel.position.movedBy(0, 0.025, 0))
-			};
-			RoadPlaneMesh().draw(roadTexture);
+           DrawRoadPlacedModel(context);
 			return;
-		}
 
 		case PlaceableModelType::TireTrackDecal:
-            DrawTireTrackDecal(placedModel, modelHeightSettings, tireTrackStartTexture, tireTrackMiddleTexture, tireTrackEndTexture);
+            DrawTireTrackDecal(placedModel, modelHeightSettings, renderResources.tireTrackStartTexture, renderResources.tireTrackMiddleTexture, renderResources.tireTrackEndTexture);
 			return;
 
 		default:

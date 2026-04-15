@@ -185,18 +185,22 @@ namespace SkyAppFlow
 			}
 		}
 
-		void DrawBaseStatusOverlays(SkyAppState& state)
+     void DrawBaseStatusOverlays(SkyAppState& state, const SkyAppFrameState& frame)
 		{
 			DrawBaseStatusLabel(state.camera,
 				state.mapData.playerBasePosition,
 				state.playerBaseHitPoints,
 				ColorF{ 0.36, 0.92, 0.46, 0.95 },
                ColorF{ 0.08, 0.10, 0.12, 0.88 });
-			DrawBaseStatusLabel(state.camera,
-				state.mapData.enemyBasePosition,
-				state.enemyBaseHitPoints,
-				ColorF{ 0.96, 0.28, 0.24, 0.95 },
-               ColorF{ 0.12, 0.08, 0.08, 0.88 });
+
+			if (frame.isEditorMode || IsFogExploredAt(state.fogOfWar, state.mapData.enemyBasePosition))
+			{
+				DrawBaseStatusLabel(state.camera,
+					state.mapData.enemyBasePosition,
+					state.enemyBaseHitPoints,
+					ColorF{ 0.96, 0.28, 0.24, 0.95 },
+				ColorF{ 0.12, 0.08, 0.08, 0.88 });
+			}
 		}
 
 		void DrawModelHeightOverlay(SkyAppState& state, const SkyAppFrameState& frame)

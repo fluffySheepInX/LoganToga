@@ -11,6 +11,7 @@ namespace MainSupport
          .resourcePanelSize = SkyAppUiLayout::DefaultResourcePanelSize(),
 			.modelHeightPosition = SkyAppUiLayout::DefaultModelHeightPosition(sceneWidth, sceneHeight),
             .terrainVisualSettingsPosition = SkyAppUiLayout::DefaultTerrainVisualSettingsPosition(sceneWidth, sceneHeight),
+            .fogSettingsPosition = SkyAppUiLayout::DefaultFogSettingsPosition(sceneWidth, sceneHeight),
 			.unitEditorPosition = SkyAppUiLayout::DefaultUnitEditorPosition(sceneWidth),
 			.unitEditorListPosition = SkyAppUiLayout::DefaultUnitEditorListPosition(),
 		};
@@ -27,6 +28,7 @@ namespace MainSupport
        settings.resourcePanelSize = SettingsDetail::ReadTomlPoint(toml, U"resourcePanelSize", settings.resourcePanelSize);
 		settings.modelHeightPosition = SettingsDetail::ReadTomlPoint(toml, U"modelHeight", settings.modelHeightPosition);
       settings.terrainVisualSettingsPosition = SettingsDetail::ReadTomlPoint(toml, U"terrainVisualSettings", settings.terrainVisualSettingsPosition);
+      settings.fogSettingsPosition = SettingsDetail::ReadTomlPoint(toml, U"fogSettings", settings.fogSettingsPosition);
 		settings.unitEditorPosition = SettingsDetail::ReadTomlPoint(toml, U"unitEditor", settings.unitEditorPosition);
 		settings.unitEditorListPosition = SettingsDetail::ReadTomlPoint(toml, U"unitEditorList", settings.unitEditorListPosition);
 
@@ -35,6 +37,7 @@ namespace MainSupport
         const Rect resourcePanelRect = SkyAppUiLayout::ResourcePanel(sceneWidth, sceneHeight, settings.resourcePanelPosition, settings.resourcePanelSize, false, true);
 		const Rect modelHeightRect = SkyAppUiLayout::ModelHeight(sceneWidth, sceneHeight, settings.modelHeightPosition);
        const Rect terrainVisualSettingsRect = SkyAppUiLayout::TerrainVisualSettings(sceneWidth, sceneHeight, settings.terrainVisualSettingsPosition);
+       const Rect fogSettingsRect = SkyAppUiLayout::FogSettings(sceneWidth, sceneHeight, settings.fogSettingsPosition);
 		const Rect unitEditorRect = SkyAppUiLayout::UnitEditor(sceneWidth, sceneHeight, settings.unitEditorPosition);
 		const Rect unitEditorListRect = SkyAppUiLayout::UnitEditorList(sceneWidth, sceneHeight, settings.unitEditorListPosition);
 		settings.miniMapPosition = Point{ miniMapRect.x, miniMapRect.y };
@@ -42,6 +45,7 @@ namespace MainSupport
        settings.resourcePanelSize = Point{ resourcePanelRect.w, resourcePanelRect.h };
 		settings.modelHeightPosition = Point{ modelHeightRect.x, modelHeightRect.y };
       settings.terrainVisualSettingsPosition = Point{ terrainVisualSettingsRect.x, terrainVisualSettingsRect.y };
+      settings.fogSettingsPosition = Point{ fogSettingsRect.x, fogSettingsRect.y };
 		settings.unitEditorPosition = Point{ unitEditorRect.x, unitEditorRect.y };
 		settings.unitEditorListPosition = Point{ unitEditorListRect.x, unitEditorListRect.y };
 		return settings;
@@ -63,6 +67,7 @@ namespace MainSupport
       writer.writeln(U"resourcePanelSize = [{}, {}]"_fmt(settings.resourcePanelSize.x, settings.resourcePanelSize.y));
 		writer.writeln(U"modelHeight = [{}, {}]"_fmt(settings.modelHeightPosition.x, settings.modelHeightPosition.y));
      writer.writeln(U"terrainVisualSettings = [{}, {}]"_fmt(settings.terrainVisualSettingsPosition.x, settings.terrainVisualSettingsPosition.y));
+     writer.writeln(U"fogSettings = [{}, {}]"_fmt(settings.fogSettingsPosition.x, settings.fogSettingsPosition.y));
 		writer.writeln(U"unitEditor = [{}, {}]"_fmt(settings.unitEditorPosition.x, settings.unitEditorPosition.y));
 		writer.writeln(U"unitEditorList = [{}, {}]"_fmt(settings.unitEditorListPosition.x, settings.unitEditorListPosition.y));
 		return true;

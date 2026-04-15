@@ -265,8 +265,8 @@ namespace SkyAppFlow
 				DrawSelectedSapperIcon(state.camera, state.spawnedSappers[state.selectedSapperIndices.front()]);
 			}
 
-			DrawSapperHealthBars(state.camera, state.spawnedSappers, ColorF{ 0.36, 0.92, 0.46, 0.95 });
-			DrawSapperHealthBars(state.camera, state.enemySappers, ColorF{ 0.96, 0.28, 0.24, 0.95 });
+         DrawSapperHealthBars(state.camera, state.spawnedSappers, ColorF{ 0.36, 0.92, 0.46, 0.95 });
+			DrawSapperHealthBars(state.camera, state.enemySappers, ColorF{ 0.96, 0.28, 0.24, 0.95 }, &state.fogOfWar, true);
 		}
 
 		void DrawResourceAreaOverlays(SkyAppState& state)
@@ -280,6 +280,11 @@ namespace SkyAppFlow
 
 				const ResourceArea& area = state.mapData.resourceAreas[i];
 				const ResourceAreaState& areaState = state.resourceAreaStates[i];
+             if ((state.appMode != AppMode::EditMap) && (not IsFogExploredAt(state.fogOfWar, area.position)))
+				{
+					continue;
+				}
+
 				const Optional<Vec2> screenAnchor = ProjectToScreen(state.camera, area.position.movedBy(0, 1.1, 0));
 
 				if (not screenAnchor)

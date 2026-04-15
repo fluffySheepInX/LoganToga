@@ -37,6 +37,7 @@ namespace SkyAppSupport
 		sapper.stopDistance = Clamp(parameters.stopDistance, 0.0, 24.0);
 		sapper.baseAttackDamage = Max(0.0, parameters.attackDamage);
 		sapper.baseAttackInterval = Max(0.05, parameters.attackInterval);
+        sapper.visionRange = Clamp(parameters.visionRange, 0.5, 40.0);
 		sapper.footprintType = parameters.footprintType;
 		sapper.footprintRadius = Clamp(parameters.footprintRadius, 0.1, 4.0);
 		sapper.footprintHalfLength = ((parameters.footprintType == UnitFootprintType::Capsule) ? Clamp(parameters.footprintHalfLength, 0.0, 6.0) : 0.0);

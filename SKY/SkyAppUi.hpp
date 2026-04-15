@@ -34,6 +34,10 @@ namespace SkyAppSupport
        bool uiEditMode,
 		bool& isExpanded,
 		const SkyAppPanels& panels);
+ void DrawFogSettingsPanel(FogOfWarSettings& settings,
+		bool uiEditMode,
+		bool& isExpanded,
+		const SkyAppPanels& panels);
 	void DrawBlacksmithMenu(const SkyAppPanels& panels,
 		Array<MainSupport::SpawnedSapper>& spawnedSappers,
         const MapData& mapData,
@@ -59,8 +63,10 @@ namespace SkyAppSupport
   void DrawMiniMap(bool& isExpanded,
 		const SkyAppPanels& panels,
      bool uiEditMode,
+     bool showFogOfWar,
 		const MainSupport::AppCamera3D& camera,
 		const MapData& mapData,
+        const FogOfWarState& fogOfWar,
         const Array<MainSupport::SpawnedSapper>& spawnedSappers,
 		const Array<MainSupport::SpawnedSapper>& enemySappers,
         const Array<MainSupport::ResourceAreaState>& resourceAreaStates,

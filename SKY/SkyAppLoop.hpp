@@ -82,6 +82,7 @@ namespace SkyAppFlow
 		ResourcePanel,
        ModelHeight,
        TerrainVisualSettings,
+       FogSettings,
       UnitEditor,
 	};
 
@@ -105,6 +106,8 @@ namespace SkyAppFlow
 		MapData mapData = MakeDefaultMapData();
      TerrainSurfaceData terrainSurface;
 		uint64 terrainSurfaceRevision = 0;
+     SkyAppSupport::FogOfWarState fogOfWar;
+		SkyAppSupport::FogOfWarSettings fogOfWarSettings;
       MainSupport::AppCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
 		Sky sky;
 		double skyTime = 0.5;
@@ -113,6 +116,7 @@ namespace SkyAppFlow
       bool skySettingsExpanded = false;
 		bool cameraSettingsExpanded = false;
       bool terrainVisualSettingsExpanded = false;
+      bool fogSettingsExpanded = false;
       bool miniMapExpanded = true;
         MainSupport::TerrainVisualSettings terrainVisualSettings;
      MainSupport::UiLayoutSettings uiLayoutSettings;

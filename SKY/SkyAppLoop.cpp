@@ -49,7 +49,7 @@ namespace SkyAppFlow
 			frame.showSapperMenu = ((state.selectedSapperIndices.size() == 1) && (not state.playerWon));
 			frame.showMillStatusEditor = ((not frame.isEditorMode) && hasValidSelectedMill);
 			frame.showUnitEditor = (state.showUI && state.unitEditorMode && (not frame.isEditorMode) && (not state.playerWon));
-			frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
+            frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.fogSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
 			for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
 				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.modelHeightSettings, renderModel), 0);

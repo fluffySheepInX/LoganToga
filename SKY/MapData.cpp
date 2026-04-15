@@ -115,6 +115,25 @@ StringView ToString(const PlaceableModelType type)
 	}
 }
 
+bool SupportsMillDefenseParameters(const PlaceableModelType type)
+{
+	return (type == PlaceableModelType::Mill);
+}
+
+MillDefenseParameters GetMillDefenseParameters(const PlacedModel& placedModel)
+{
+	return MillDefenseParameters{
+		.attackRange = placedModel.attackRange,
+		.attackDamage = placedModel.attackDamage,
+		.attackInterval = placedModel.attackInterval,
+		.attackTargetCount = placedModel.attackTargetCount,
+		.suppressionDuration = placedModel.suppressionDuration,
+		.suppressionMoveSpeedMultiplier = placedModel.suppressionMoveSpeedMultiplier,
+		.suppressionAttackDamageMultiplier = placedModel.suppressionAttackDamageMultiplier,
+		.suppressionAttackIntervalMultiplier = placedModel.suppressionAttackIntervalMultiplier,
+	};
+}
+
 StringView ToString(const TerrainCellType type)
 {
 	switch (type)

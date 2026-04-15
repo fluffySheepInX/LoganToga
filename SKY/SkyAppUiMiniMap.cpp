@@ -13,6 +13,18 @@ namespace SkyAppSupport
 			return Vec2{ (mapRect.x + x * mapRect.w), (mapRect.bottomY() - z * mapRect.h) };
 		}
 
+			[[nodiscard]] bool IsMiniMapVisibleByFog(const bool showFogOfWar, const FogOfWarState& fogOfWar, const Vec3& worldPosition, const bool requireCurrentVision)
+			{
+				if (not showFogOfWar)
+				{
+					return true;
+				}
+
+				return requireCurrentVision
+					? IsFogVisibleAt(fogOfWar, worldPosition)
+					: IsFogExploredAt(fogOfWar, worldPosition);
+			}
+
 		[[nodiscard]] std::pair<Vec3, Vec3> GetWallEndpoints(const PlacedModel& placedModel)
 		{
 			const double wallLength = Clamp(placedModel.wallLength, 2.0, 80.0);
@@ -53,13 +65,43 @@ namespace SkyAppSupport
 
 			return ColorF{ 0.65, 0.72, 0.82, 0.85 };
 		}
+
+			void DrawMiniMapFogLayer(const RectF& mapRect, const double minX, const double minZ, const double worldSpan, const FogOfWarState& fogOfWar)
+			{
+				if (not fogOfWar.enabled)
+				{
+					return;
+				}
+
+				const double cellDrawSize = Max(2.0, (TerrainCellSize * mapRect.w / worldSpan));
+				for (int32 y = fogOfWar.coverageBounds.y; y < fogOfWar.coverageBounds.bottomY(); ++y)
+				{
+					for (int32 x = fogOfWar.coverageBounds.x; x < fogOfWar.coverageBounds.rightX(); ++x)
+					{
+						const Point cell{ x, y };
+						const FogVisibility visibility = GetFogVisibilityAt(fogOfWar, cell);
+						if (visibility == FogVisibility::Visible)
+						{
+							continue;
+						}
+
+						const Vec2 center = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, ToTerrainCellCenter(cell));
+						RectF{ Arg::center = center, cellDrawSize + 0.5, cellDrawSize + 0.5 }.draw(
+							(visibility == FogVisibility::Explored)
+								? ColorF{ 0.03, 0.05, 0.08, 0.42 }
+								: ColorF{ 0.01, 0.02, 0.04, 0.88 });
+					}
+				}
+			}
 	}
 
   void DrawMiniMap(bool& isExpanded,
 		const SkyAppPanels& panels,
       const bool uiEditMode,
+			const bool showFogOfWar,
         const AppCamera3D& camera,
 		const MapData& mapData,
+         const FogOfWarState& fogOfWar,
 		const Array<SpawnedSapper>& spawnedSappers,
 		const Array<SpawnedSapper>& enemySappers,
 		const Array<ResourceAreaState>& resourceAreaStates,
@@ -171,6 +213,11 @@ namespace SkyAppSupport
 		for (size_t i = 0; i < mapData.resourceAreas.size(); ++i)
 		{
 			const ResourceArea& resourceArea = mapData.resourceAreas[i];
+            if (not IsMiniMapVisibleByFog(showFogOfWar, fogOfWar, resourceArea.position, false))
+			{
+				continue;
+			}
+
 			const Optional<UnitTeam> ownerTeam = ((i < resourceAreaStates.size()) ? resourceAreaStates[i].ownerTeam : none);
 			const Vec2 resourcePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, resourceArea.position);
 			const double radius = Max(5.0, (resourceArea.radius / worldSpan) * mapRect.w);
@@ -183,8 +230,11 @@ namespace SkyAppSupport
 		const Vec2 blacksmithPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.playerBasePosition);
 		RectF{ Arg::center = blacksmithPoint, 8, 8 }.draw(ColorF{ 0.92, 0.74, 0.28, 0.95 });
 
-		const Vec2 enemyBasePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.enemyBasePosition);
-		RectF{ Arg::center = enemyBasePoint, 8, 8 }.draw(ColorF{ 0.92, 0.28, 0.24, 0.95 });
+      if (IsMiniMapVisibleByFog(showFogOfWar, fogOfWar, mapData.enemyBasePosition, false))
+		{
+			const Vec2 enemyBasePoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.enemyBasePosition);
+			RectF{ Arg::center = enemyBasePoint, 8, 8 }.draw(ColorF{ 0.92, 0.28, 0.24, 0.95 });
+		}
 
 		const Vec2 rallyPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, mapData.sapperRallyPoint);
 		Quad{
@@ -193,6 +243,11 @@ namespace SkyAppSupport
 			rallyPoint.movedBy(0, 6),
 			rallyPoint.movedBy(-6, 0)
 		}.draw(ColorF{ 0.45, 0.88, 0.98, 0.95 });
+
+      if (showFogOfWar)
+		{
+			DrawMiniMapFogLayer(mapRect, minX, minZ, worldSpan, fogOfWar);
+		}
 
 		for (size_t i = 0; i < spawnedSappers.size(); ++i)
 		{
@@ -214,6 +269,11 @@ namespace SkyAppSupport
 
 		for (const auto& enemySapper : enemySappers)
 		{
+          if (not IsMiniMapVisibleByFog(showFogOfWar, fogOfWar, GetSpawnedSapperBasePosition(enemySapper), true))
+			{
+				continue;
+			}
+
 			const Vec2 enemyPoint = ToMiniMapPoint(mapRect, minX, minZ, worldSpan, GetSpawnedSapperBasePosition(enemySapper));
 			RectF{ Arg::center = enemyPoint, 7, 7 }.draw(ColorF{ 0.95, 0.35, 0.30, 0.95 });
 		}

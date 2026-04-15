@@ -27,6 +27,11 @@ namespace SkyAppFlow
 		{
 			UpdateSpawnedSappers(state.spawnedSappers, state.mapData, state.modelHeightSettings);
 			UpdateSpawnedSappers(state.enemySappers, state.mapData, state.modelHeightSettings);
+			UpdateFogOfWar(state.fogOfWar,
+				state.fogOfWarSettings,
+				state.mapData,
+				state.spawnedSappers,
+				state.resourceAreaStates);
 
 			if (not state.playerWon)
 			{

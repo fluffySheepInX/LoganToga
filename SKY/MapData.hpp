@@ -43,6 +43,18 @@ struct PlacedModel
 	double suppressionAttackIntervalMultiplier = MainSupport::MillSuppressionAttackIntervalMultiplier;
 };
 
+struct MillDefenseParameters
+{
+	double attackRange = MainSupport::MillDefenseRange;
+	double attackDamage = MainSupport::MillDefenseDamage;
+	double attackInterval = MainSupport::MillDefenseInterval;
+	int32 attackTargetCount = MainSupport::MillDefenseTargetCount;
+	double suppressionDuration = MainSupport::MillSuppressionDuration;
+	double suppressionMoveSpeedMultiplier = MainSupport::MillSuppressionMoveSpeedMultiplier;
+	double suppressionAttackDamageMultiplier = MainSupport::MillSuppressionAttackDamageMultiplier;
+	double suppressionAttackIntervalMultiplier = MainSupport::MillSuppressionAttackIntervalMultiplier;
+};
+
 struct ResourceArea
 {
 	MainSupport::ResourceType type = MainSupport::ResourceType::Budget;
@@ -96,6 +108,8 @@ bool SaveMapData(const MapData& mapData, FilePathView path);
 [[nodiscard]] StringView ToString(PlaceableModelType type);
 [[nodiscard]] StringView ToString(TerrainCellType type);
 [[nodiscard]] StringView ToString(MainSupport::ResourceType type);
+[[nodiscard]] bool SupportsMillDefenseParameters(PlaceableModelType type);
+[[nodiscard]] MillDefenseParameters GetMillDefenseParameters(const PlacedModel& placedModel);
 [[nodiscard]] Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell);
 [[nodiscard]] Point ToTerrainCell(const Vec3& position);
 [[nodiscard]] Vec3 ToTerrainCellCenter(const Point& cell);

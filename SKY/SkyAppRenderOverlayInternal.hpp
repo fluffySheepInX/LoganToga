@@ -136,7 +136,7 @@ namespace SkyAppFlow
 		void DrawResourcePanelOverlay(SkyAppState& state, const SkyAppFrameState& frame);
         void DrawResourceLoadWarnings(const SkyAppResources& resources);
         void DrawUiEditGridOverlay(const SkyAppState& state);
-		void DrawBaseStatusOverlays(SkyAppState& state);
+        void DrawBaseStatusOverlays(SkyAppState& state, const SkyAppFrameState& frame);
 		void DrawModelHeightOverlay(SkyAppState& state, const SkyAppFrameState& frame);
 		void DrawSelectionDragOverlay(const SkyAppState& state, const SkyAppFrameState& frame);
 		void DrawMatchResultOverlay(const SkyAppState& state);

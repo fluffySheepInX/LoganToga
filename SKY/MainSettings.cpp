@@ -179,6 +179,7 @@ namespace MainSupport::SettingsDetail
 		LoadUnitParameterValue(toml, (String{ prefix } + U"StopDistance"), parameters.stopDistance);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackDamage"), parameters.attackDamage);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackInterval"), parameters.attackInterval);
+        LoadUnitParameterValue(toml, (String{ prefix } + U"VisionRange"), parameters.visionRange);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"ManaCost"), parameters.manaCost);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintRadius"), parameters.footprintRadius);
 		LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintHalfLength"), parameters.footprintHalfLength);
@@ -194,6 +195,7 @@ namespace MainSupport::SettingsDetail
 		writer.writeln(U"{}StopDistance = {:.3f}"_fmt(prefix, parameters.stopDistance));
 		writer.writeln(U"{}AttackDamage = {:.3f}"_fmt(prefix, parameters.attackDamage));
 		writer.writeln(U"{}AttackInterval = {:.3f}"_fmt(prefix, parameters.attackInterval));
+        writer.writeln(U"{}VisionRange = {:.3f}"_fmt(prefix, parameters.visionRange));
 		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(prefix, parameters.manaCost));
 		writer.writeln(U"{}FootprintType = \"{}\""_fmt(prefix, (parameters.footprintType == UnitFootprintType::Capsule) ? U"Capsule" : U"Circle"));
 		writer.writeln(U"{}FootprintRadius = {:.3f}"_fmt(prefix, parameters.footprintRadius));

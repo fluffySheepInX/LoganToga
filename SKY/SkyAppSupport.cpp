@@ -91,6 +91,7 @@ namespace SkyAppSupport
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
         , cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
 		   , terrainSettings{ SkyAppUiLayout::TerrainVisualSettings(Scene::Width(), Scene::Height(), uiLayoutSettings.terrainVisualSettingsPosition) }
+       , fogSettings{ SkyAppUiLayout::FogSettings(Scene::Width(), Scene::Height(), uiLayoutSettings.fogSettingsPosition) }
 		, mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
 		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height()) }
 		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
@@ -107,6 +108,7 @@ namespace SkyAppSupport
      , skySettingsToggle{ SkyAppUiLayout::SkySettingsToggle(Scene::Width(), Scene::Height()) }
 		, cameraSettingsToggle{ SkyAppUiLayout::CameraSettingsToggle(Scene::Width(), Scene::Height()) }
         , terrainVisualToggle{ SkyAppUiLayout::TerrainVisualToggle(Scene::Width(), Scene::Height()) }
+        , fogSettingsToggle{ SkyAppUiLayout::FogSettingsToggle(Scene::Width(), Scene::Height()) }
      , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
      , resourceAdjustToggle{ SkyAppUiLayout::ResourceAdjustToggle(Scene::Width(), Scene::Height()) }
      , enemyPlanToggle{ SkyAppUiLayout::EnemyPlanToggle(Scene::Width(), Scene::Height()) }
@@ -114,7 +116,7 @@ namespace SkyAppSupport
 	{
 	}
 
-    bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool showTerrainSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
+  bool SkyAppPanels::isHoveringUi(const bool showUI, const bool showSkySettings, const bool showCameraSettings, const bool showTerrainSettings, const bool showFogSettings, const bool isEditorMode, const bool showBlacksmithMenu, const bool showSapperMenu, const bool showMillStatusEditor, const bool modelHeightEditMode, const bool showUnitEditor) const
 	{
       const bool hoveringEnemyPlanToggle =
 		#if _DEBUG
@@ -130,7 +132,7 @@ namespace SkyAppSupport
 			SkyAppUiLayout::BottomEditorTextColorsButton(resourceAdjustToggle);
 		#endif
 
-      return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver()) || (showTerrainSettings && terrainSettings.mouseOver())))
+       return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver()) || (showTerrainSettings && terrainSettings.mouseOver()) || (showFogSettings && fogSettings.mouseOver())))
 			|| miniMap.mouseOver()
           || resourcePanel.mouseOver()
           || SkyAppUiLayout::ResourcePanelCameraHomeButton(resourcePanel).mouseOver()
@@ -149,6 +151,7 @@ namespace SkyAppSupport
             || (showUI && skySettingsToggle.mouseOver())
 			|| (showUI && cameraSettingsToggle.mouseOver())
          || (showUI && terrainVisualToggle.mouseOver())
+			|| (showUI && fogSettingsToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
         || (showUI && resourceAdjustToggle.mouseOver())
             || (showUI && editorTextColorsButtonRect.mouseOver())

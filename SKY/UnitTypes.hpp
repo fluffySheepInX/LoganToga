@@ -68,6 +68,7 @@ namespace MainSupport
 		double stopDistance = 0.2;
 		double attackDamage = 12.0;
 		double attackInterval = 0.8;
+       double visionRange = 8.0;
 		double manaCost = SapperCost;
 		UnitFootprintType footprintType = UnitFootprintType::Circle;
 		double footprintRadius = 1.2;

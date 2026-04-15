@@ -181,6 +181,16 @@ namespace SkyAppFlow
 			hoveredTooltipRect = frame.panels.terrainVisualToggle;
 		}
 
+		if (DrawTextButton(frame.panels.fogSettingsToggle, state.fogSettingsExpanded ? U"Fog" : U"fog"))
+		{
+			state.fogSettingsExpanded = not state.fogSettingsExpanded;
+		}
+		if (frame.panels.fogSettingsToggle.mouseOver())
+		{
+			hoveredTooltip = U"Fog editor panel";
+			hoveredTooltipRect = frame.panels.fogSettingsToggle;
+		}
+
 		if (DrawTextButton(frame.panels.uiEditModeToggle, state.uiEditMode ? U"UI+" : U"ui+"))
 		{
 			state.uiEditMode = not state.uiEditMode;

@@ -262,11 +262,16 @@ namespace SkyAppSupport
 		}.draw(ColorF{ 1.0, 0.93, 0.35, 0.95 });
 	}
 
- void DrawSapperHealthBars(const AppCamera3D& camera, const Array<SpawnedSapper>& spawnedSappers, const ColorF& fillColor)
+  void DrawSapperHealthBars(const AppCamera3D& camera, const Array<SpawnedSapper>& spawnedSappers, const ColorF& fillColor, const FogOfWarState* fogOfWar, const bool requireVisible)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
             if ((sapper.hitPoints <= 0.0) || IsSapperRetreatedHidden(sapper))
+			{
+				continue;
+			}
+
+			if (fogOfWar && (requireVisible ? (not IsFogVisibleAt(*fogOfWar, GetSpawnedSapperBasePosition(sapper))) : (not IsFogExploredAt(*fogOfWar, GetSpawnedSapperBasePosition(sapper)))))
 			{
 				continue;
 			}
@@ -303,11 +308,16 @@ namespace SkyAppSupport
 		}
 	}
 
-  void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const ModelHeightSettings& modelHeightSettings, const ColorF& color)
+ void DrawSpawnedSappers(const Array<SpawnedSapper>& spawnedSappers, const UnitRenderModelRegistryView& renderModels, const ModelHeightSettings& modelHeightSettings, const ColorF& color, const FogOfWarState* fogOfWar, const bool requireVisible)
 	{
 		for (const auto& sapper : spawnedSappers)
 		{
             if ((sapper.hitPoints <= 0.0) || IsSapperRetreatedHidden(sapper))
+			{
+				continue;
+			}
+
+			if (fogOfWar && (requireVisible ? (not IsFogVisibleAt(*fogOfWar, GetSpawnedSapperBasePosition(sapper))) : (not IsFogExploredAt(*fogOfWar, GetSpawnedSapperBasePosition(sapper)))))
 			{
 				continue;
 			}

@@ -276,15 +276,16 @@ namespace SkyAppFlow
 					continue;
 				}
 
-				const double attackInterval = Clamp(placedModel.attackInterval, 0.2, 5.0);
+              const MillDefenseParameters defenseParameters = GetMillDefenseParameters(placedModel);
+				const double attackInterval = Clamp(defenseParameters.attackInterval, 0.2, 5.0);
 				if ((currentTime - state.millLastAttackTimes[i]) < attackInterval)
 				{
 					continue;
 				}
 
               const Array<size_t> targetIndices = FindMillTargetIndices(placedModel.position,
-					placedModel.attackRange,
-					placedModel.attackTargetCount,
+                    defenseParameters.attackRange,
+					defenseParameters.attackTargetCount,
 					state.mapData.playerBasePosition,
 					state.enemySappers);
 				if (targetIndices.isEmpty())
@@ -303,12 +304,12 @@ namespace SkyAppFlow
 						ColorF{ 0.40, 0.92, 1.0, 1.0 },
 						MillLaserLifetime,
 						MillLaserThickness);
-					target.hitPoints = Max(0.0, (target.hitPoints - Clamp(placedModel.attackDamage, 1.0, 80.0)));
+                   target.hitPoints = Max(0.0, (target.hitPoints - Clamp(defenseParameters.attackDamage, 1.0, 80.0)));
 					ApplySapperSuppression(target,
-						Clamp(placedModel.suppressionDuration, 0.2, 10.0),
-						Clamp(placedModel.suppressionMoveSpeedMultiplier, 0.1, 1.0),
-						Clamp(placedModel.suppressionAttackDamageMultiplier, 0.1, 1.0),
-						Clamp(placedModel.suppressionAttackIntervalMultiplier, 1.0, 10.0));
+                      Clamp(defenseParameters.suppressionDuration, 0.2, 10.0),
+						Clamp(defenseParameters.suppressionMoveSpeedMultiplier, 0.1, 1.0),
+						Clamp(defenseParameters.suppressionAttackDamageMultiplier, 0.1, 1.0),
+						Clamp(defenseParameters.suppressionAttackIntervalMultiplier, 1.0, 10.0));
 				}
 			}
 		}

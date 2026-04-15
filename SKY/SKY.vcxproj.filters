@@ -144,6 +144,9 @@
     <ClCompile Include="BirdModelLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FogOfWar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -384,6 +387,9 @@
     <ClCompile Include="MapEditorScenePreview.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SkyAppUiLayoutProfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BirdModel.hpp">
@@ -393,6 +399,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BirdModelTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FogOfWar.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MapData.hpp">
@@ -524,6 +533,15 @@
     <ClInclude Include="MapEditorSceneInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SkyAppUiLayoutProfile.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiLayoutCommon.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiLayoutPanels.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc">
@@ -547,6 +565,7 @@
     <None Include="BirdModelLoader.Asset.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="App\settings\ui_layout_profile.toml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

@@ -17,6 +17,7 @@ namespace SkyAppFlow
 		constexpr double TerrainFadeOverlayHeight = 0.014;
 		constexpr double TerrainFadeStripWidth = (TerrainCellSize * 0.34);
 		constexpr double TerrainFadeInset = (TerrainCellSize * 0.08);
+           constexpr double FogExploredAlphaScale = 0.36;
 
 		[[nodiscard]] int64 ToTerrainCellKey(const Point& cell)
 		{
@@ -51,11 +52,112 @@ namespace SkyAppFlow
 			Box{ center.movedBy(0, TerrainFadeOverlayY + 0.002, offsetZ), (TerrainCellSize - TerrainFadeInset * 1.6), TerrainFadeOverlayHeight * 0.72, (TerrainFadeStripWidth * 0.58) }.draw(innerColor.removeSRGBCurve());
 		}
 
-         void DrawTerrainCellOverlay(const TerrainSurfaceCell& terrainCell,
-			const HashTable<int64, const TerrainSurfaceCell*>& terrainLookup)
+		[[nodiscard]] double GetFogOverlayAlpha(const FogOfWarSettings& settings)
+		{
+			const double darkness = Clamp(settings.overlayDarkness, 0.0, 1.0);
+
+			switch (settings.overlayDarknessCurve)
+			{
+			case FogOverlayDarknessCurve::Soft:
+				return Pow(darkness, 1.5);
+
+			case FogOverlayDarknessCurve::Strong:
+				return Pow(darkness, 2.2);
+
+			case FogOverlayDarknessCurve::Linear:
+			default:
+				return darkness;
+			}
+		}
+
+         [[nodiscard]] ColorF GetFogOverlayColor(const FogVisibility visibility, const FogOfWarSettings& settings)
+			{
+              const double alpha = GetFogOverlayAlpha(settings);
+				switch (visibility)
+				{
+				case FogVisibility::Explored:
+                      return ColorF{ 0.03, 0.05, 0.08, (alpha * FogExploredAlphaScale) };
+
+				case FogVisibility::Hidden:
+                        return ColorF{ 0.01, 0.02, 0.04, alpha };
+
+				case FogVisibility::Visible:
+				default:
+					return ColorF{ 0.0, 0.0, 0.0, 0.0 };
+				}
+			}
+
+		[[nodiscard]] ColorF ApplyFogToTerrainColor(const ColorF& terrainColor, const FogVisibility visibility, const FogOfWarSettings& settings)
+		{
+			if (visibility == FogVisibility::Visible)
+			{
+				return terrainColor;
+			}
+
+			const ColorF fogColor = GetFogOverlayColor(visibility, settings);
+			const double blend = Math::Saturate(fogColor.a);
+			return ColorF{
+				terrainColor.r + (fogColor.r - terrainColor.r) * blend,
+				terrainColor.g + (fogColor.g - terrainColor.g) * blend,
+				terrainColor.b + (fogColor.b - terrainColor.b) * blend,
+				terrainColor.a,
+			};
+		}
+
+		[[nodiscard]] bool IsWorldObjectVisibleAt(const FogOfWarState& fogOfWar, const Vec3& position)
+		{
+			return (not fogOfWar.enabled) || IsFogVisibleAt(fogOfWar, position);
+		}
+
+		[[nodiscard]] bool ShouldDrawPlacedModelInFog(const FogOfWarState& fogOfWar, const PlacedModel& placedModel)
+		{
+			if (not fogOfWar.enabled)
+			{
+				return true;
+			}
+
+			const FogVisibility visibility = GetFogVisibilityAt(fogOfWar, placedModel.position);
+			if (visibility == FogVisibility::Visible)
+			{
+				return true;
+			}
+
+			if (visibility == FogVisibility::Explored)
+			{
+               return true;
+			}
+
+			if (visibility == FogVisibility::Hidden)
+			{
+               return ((placedModel.type == PlaceableModelType::Wall)
+					|| (placedModel.type == PlaceableModelType::Rock));
+			}
+
+			return false;
+		}
+
+		[[nodiscard]] MainSupport::PlacedModelRenderResources BuildPlacedModelRenderResources(const SkyAppResources& resources)
+		{
+			return MainSupport::PlacedModelRenderResources{
+				.millModel = resources.millModel,
+				.treeModel = resources.treeModel,
+				.pineModel = resources.pineModel,
+				.grassPatchModel = resources.grassPatchModel,
+				.roadTexture = resources.roadTexture,
+				.tireTrackStartTexture = resources.tireTrackStartTexture,
+				.tireTrackMiddleTexture = resources.tireTrackMiddleTexture,
+				.tireTrackEndTexture = resources.tireTrackEndTexture,
+			};
+		}
+
+          void DrawTerrainCellOverlay(const TerrainSurfaceCell& terrainCell,
+			const HashTable<int64, const TerrainSurfaceCell*>& terrainLookup,
+			const FogOfWarState& fogOfWar,
+			const FogOfWarSettings& fogSettings)
 		{
           const Vec3 center = ToTerrainCellCenter(terrainCell.cell).movedBy(0, TerrainCellOverlayY, 0);
-            const ColorF cellColor = terrainCell.finalColor;
+                const FogVisibility visibility = GetFogVisibilityAt(fogOfWar, terrainCell.cell);
+				const ColorF cellColor = ApplyFogToTerrainColor(terrainCell.finalColor, visibility, fogSettings);
 			if (cellColor.a <= 0.01)
 			{
 				return;
@@ -74,12 +176,14 @@ namespace SkyAppFlow
 				}
 
               const TerrainSurfaceCell& neighborCell = *it->second;
-				if (not ShouldDrawTerrainFade(cellColor, neighborCell.finalColor))
+				const FogVisibility neighborVisibility = GetFogVisibilityAt(fogOfWar, neighborCell.cell);
+				const ColorF neighborColor = ApplyFogToTerrainColor(neighborCell.finalColor, neighborVisibility, fogSettings);
+				if (not ShouldDrawTerrainFade(cellColor, neighborColor))
 				{
 					continue;
 				}
 
-             DrawTerrainEdgeFade(center, direction, cellColor, neighborCell.finalColor);
+                DrawTerrainEdgeFade(center, direction, cellColor, neighborColor);
 			}
 		}
 
@@ -143,68 +247,149 @@ namespace SkyAppFlow
                 GetUnitRenderModelPreviewColor(renderModel).removeSRGBCurve(),
                 GetModelScale(state.modelHeightSettings, renderModel));
 		}
-	}
 
- void RenderWorld(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
-	{
-		resources.groundPlane.draw(resources.groundTexture);
-         HashTable<int64, const TerrainSurfaceCell*> terrainLookup;
-		terrainLookup.reserve(state.terrainSurface.cells.size());
+		using TerrainCellLookup = HashTable<int64, const TerrainSurfaceCell*>;
 
-      for (const auto& terrainCell : state.terrainSurface.cells)
+		template <class TerrainCells>
+		[[nodiscard]] TerrainCellLookup BuildTerrainLookup(const TerrainCells& terrainCells)
 		{
-			terrainLookup.emplace(ToTerrainCellKey(terrainCell.cell), &terrainCell);
+			TerrainCellLookup terrainLookup;
+			terrainLookup.reserve(terrainCells.size());
+
+			for (const auto& terrainCell : terrainCells)
+			{
+				terrainLookup.emplace(ToTerrainCellKey(terrainCell.cell), &terrainCell);
+			}
+
+			return terrainLookup;
 		}
 
-          for (const auto& terrainCell : state.terrainSurface.cells)
+		[[nodiscard]] bool ShouldDrawWorldObject(const SkyAppFrameState& frame, const FogOfWarState& fogOfWar, const Vec3& position)
 		{
-            DrawTerrainCellOverlay(terrainCell, terrainLookup);
-		}
-		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
-
-		for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
-		{
-			const ResourceArea& area = state.mapData.resourceAreas[i];
-			const ResourceAreaState resourceState = ((i < state.resourceAreaStates.size()) ? state.resourceAreaStates[i] : ResourceAreaState{});
-           DrawResourceAreaRing(area.position, area.radius, GetResourceAreaColor(area.type));
-			Cylinder{ area.position.movedBy(0, 0.06, 0), Max(0.35, area.radius * 0.16), 0.12 }.draw(GetTeamColor(resourceState.ownerTeam).removeSRGBCurve());
+			return frame.isEditorMode || IsWorldObjectVisibleAt(fogOfWar, position);
 		}
 
-		resources.blacksmithModel.draw(state.mapData.playerBasePosition);
-		resources.blacksmithModel.draw(state.mapData.enemyBasePosition);
-     for (const UnitRenderModel renderModel : GetUnitRenderModels())
+		void DrawTerrainSurface(const SkyAppState& state)
 		{
-         DrawPreviewUnitRenderModel(resources, state, frame, renderModel);
+			const TerrainCellLookup terrainLookup = BuildTerrainLookup(state.terrainSurface.cells);
+
+			for (const auto& terrainCell : state.terrainSurface.cells)
+			{
+				DrawTerrainCellOverlay(terrainCell, terrainLookup, state.fogOfWar, state.fogOfWarSettings);
+			}
 		}
 
-		if (frame.showUnitEditor)
+		void DrawResourceAreas(const SkyAppState& state, const SkyAppFrameState& frame)
 		{
+			for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
+			{
+				const ResourceArea& area = state.mapData.resourceAreas[i];
+				if (not ShouldDrawWorldObject(frame, state.fogOfWar, area.position))
+				{
+					continue;
+				}
+
+				const ResourceAreaState resourceState = ((i < state.resourceAreaStates.size()) ? state.resourceAreaStates[i] : ResourceAreaState{});
+				DrawResourceAreaRing(area.position, area.radius, GetResourceAreaColor(area.type));
+				Cylinder{ area.position.movedBy(0, 0.06, 0), Max(0.35, area.radius * 0.16), 0.12 }.draw(GetTeamColor(resourceState.ownerTeam).removeSRGBCurve());
+			}
+		}
+
+		void DrawBases(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
+		{
+			resources.blacksmithModel.draw(state.mapData.playerBasePosition);
+
+			if (ShouldDrawWorldObject(frame, state.fogOfWar, state.mapData.enemyBasePosition))
+			{
+				resources.blacksmithModel.draw(state.mapData.enemyBasePosition);
+			}
+		}
+
+		void DrawPreviewUnits(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
+		{
+			for (const UnitRenderModel renderModel : GetUnitRenderModels())
+			{
+				DrawPreviewUnitRenderModel(resources, state, frame, renderModel);
+			}
+		}
+
+		void DrawUnitEditorPreview(const SkyAppState& state, const SkyAppFrameState& frame)
+		{
+			if (not frame.showUnitEditor)
+			{
+				return;
+			}
+
 			const UnitEditorSelection& previewSelection = state.unitEditorSelection;
 			const UnitParameters& previewParameters = GetUnitParameters(state.unitEditorSettings, previewSelection.team, previewSelection.unitType);
 			const UnitRenderModel previewRenderModel = GetUnitRenderModel(previewSelection.team, previewSelection.unitType);
-           const Vec3 previewPosition = frame.GetPreviewRenderPosition(previewRenderModel);
+			const Vec3 previewPosition = frame.GetPreviewRenderPosition(previewRenderModel);
 			const ColorF previewColor = ((previewSelection.team == UnitTeam::Enemy)
 				? ColorF{ 1.0, 0.76, 0.68, 0.72 }
 				: ColorF{ 0.86, 0.94, 1.0, 0.72 });
 			DrawUnitFootprintPreview(previewPosition, BirdDisplayYaw, previewParameters, previewColor);
 		}
 
-		for (const auto& placedModel : state.mapData.placedModels)
+		void DrawPlacedModels(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-         DrawPlacedModel(placedModel, state.modelHeightSettings, resources.millModel, resources.treeModel, resources.pineModel, resources.grassPatchModel, resources.roadTexture, resources.tireTrackStartTexture, resources.tireTrackMiddleTexture, resources.tireTrackEndTexture);
+          const MainSupport::PlacedModelRenderResources renderResources = BuildPlacedModelRenderResources(resources);
+
+			for (const auto& placedModel : state.mapData.placedModels)
+			{
+				if ((not frame.isEditorMode) && (not ShouldDrawPlacedModelInFog(state.fogOfWar, placedModel)))
+				{
+					continue;
+				}
+
+             DrawPlacedModel(placedModel, state.modelHeightSettings, renderResources);
+			}
 		}
 
-		if (IsValidMillIndex(state, state.selectedMillIndex))
+      void DrawPlacedModelSelectionOverlay(const PlacedModel& placedModel)
 		{
-			const PlacedModel& selectedMill = state.mapData.placedModels[*state.selectedMillIndex];
-			const double attackRange = Clamp(selectedMill.attackRange, 1.0, 20.0);
-			Cylinder{ selectedMill.position.movedBy(0, 0.03, 0), attackRange, 0.06 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.28 }.removeSRGBCurve());
-			Cylinder{ selectedMill.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
+			if (not SupportsMillDefenseParameters(placedModel.type))
+			{
+				return;
+			}
+
+			const MillDefenseParameters defenseParameters = GetMillDefenseParameters(placedModel);
+			const double attackRange = Clamp(defenseParameters.attackRange, 1.0, 20.0);
+			Cylinder{ placedModel.position.movedBy(0, 0.03, 0), attackRange, 0.06 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.28 }.removeSRGBCurve());
+			Cylinder{ placedModel.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
 		}
 
-       const UnitRenderModelRegistryView renderModels = resources.GetUnitRenderModelRegistry();
-		DrawSpawnedSappers(state.spawnedSappers, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
-		DrawSpawnedSappers(state.enemySappers, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 });
+		void DrawSelectedPlacedModelOverlay(const SkyAppState& state)
+		{
+			if (not IsValidMillIndex(state, state.selectedMillIndex))
+			{
+				return;
+			}
+
+         DrawPlacedModelSelectionOverlay(state.mapData.placedModels[*state.selectedMillIndex]);
+		}
+
+		void DrawSpawnedUnits(const SkyAppResources& resources, const SkyAppState& state)
+		{
+			const UnitRenderModelRegistryView renderModels = resources.GetUnitRenderModelRegistry();
+			DrawSpawnedSappers(state.spawnedSappers, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+			DrawSpawnedSappers(state.enemySappers, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 }, &state.fogOfWar, true);
+		}
+
+	}
+
+ void RenderWorld(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
+	{
+		resources.groundPlane.draw(resources.groundTexture);
+     DrawTerrainSurface(state);
+		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
+		DrawResourceAreas(state, frame);
+		DrawBases(resources, state, frame);
+		DrawPreviewUnits(resources, state, frame);
+		DrawUnitEditorPreview(state, frame);
+		DrawPlacedModels(resources, state, frame);
+     DrawSelectedPlacedModelOverlay(state);
+		DrawSpawnedUnits(resources, state);
+
 		DrawMapEditorScene(state.mapEditor, state.mapData);
 		state.sky.draw();
 	}
