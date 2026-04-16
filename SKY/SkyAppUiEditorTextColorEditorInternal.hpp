@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include "SkyAppUiPanelFrameInternal.hpp"
 # include "SkyAppUiEditorTextColorsInternal.hpp"
 # include "MainUi.hpp"
 
@@ -63,7 +64,14 @@ namespace SkyAppSupport
 
 			Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.36 });
 			const RectF panel{ Arg::center = Scene::CenterF(), 660, 572 };
-			panel.rounded(20).draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
+           if (const auto& ninePatch = GetConfiguredPanelNinePatch(MainSupport::PanelSkinTarget::ToolModal))
+			{
+				ninePatch->draw(panel);
+			}
+			else
+			{
+				panel.rounded(20).draw(ColorF{ 0.08, 0.11, 0.16, 0.98 });
+			}
 			panel.rounded(20).drawFrame(2, 0, ColorF{ 0.74, 0.84, 0.96, 0.86 });
 			SimpleGUI::GetFont()(U"Editor Text Colors").draw(panel.pos.movedBy(20, 16), Palette::White);
 			SimpleGUI::GetFont()(U"editor 系 UI の文字色を共通管理します").draw(panel.pos.movedBy(22, 44), ColorF{ 0.82, 0.89, 0.98, 0.92 });

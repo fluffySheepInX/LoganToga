@@ -248,6 +248,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SkyAppUiLayoutMenu.hpp" />
     <ClInclude Include="SkyAppUiLayoutPanels.hpp" />
     <ClInclude Include="SkyAppUiLayoutProfile.hpp" />
+    <ClInclude Include="SkyAppUiPanelSkinSelectorInternal.hpp" />
     <ClInclude Include="TerrainSurface.hpp" />
     <ClInclude Include="SkyAppTitleSceneInternal.hpp" />
     <ClInclude Include="SkyAppUiEditorTextColorEditorInternal.hpp" />
@@ -261,6 +262,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="App\settings\panel_skin_settings.toml" />
     <None Include="App\settings\ui_layout_profile.toml" />
     <None Include="BirdModel.Animation.inl" />
     <None Include="BirdModel.Core.inl" />

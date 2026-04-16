@@ -74,8 +74,8 @@ namespace SkyAppSupport
 
        const Rect listPanel = panels.unitEditorList;
 		const Rect detailPanel = panels.unitEditor;
-      UiInternal::DrawNinePatchPanelFrame(listPanel, uiEditMode ? U"Target Units [Drag]" : U"Target Units", ColorF{ 0.98, 0.95 });
-		UiInternal::DrawNinePatchPanelFrame(detailPanel, uiEditMode ? U"Unit Parameters [Drag]" : U"Unit Parameters", ColorF{ 0.98, 0.95 });
+      UiInternal::DrawNinePatchPanelFrame(listPanel, uiEditMode ? U"Target Units [Drag]" : U"Target Units", ColorF{ 0.98, 0.95 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::UnitEditor);
+		UiInternal::DrawNinePatchPanelFrame(detailPanel, uiEditMode ? U"Unit Parameters [Drag]" : U"Unit Parameters", ColorF{ 0.98, 0.95 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::UnitEditor);
 
 		if (uiEditMode)
 		{

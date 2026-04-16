@@ -1,4 +1,5 @@
 ﻿# include "SkyAppRenderOverlayInternal.hpp"
+# include "SkyAppUiPanelFrameInternal.hpp"
 # include "MainSettings.hpp"
 
 using namespace MainSupport;
@@ -138,7 +139,12 @@ namespace SkyAppFlow
 				ResetCameraToPlayerBase(state);
 			}
 
-			resourcePanel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 }).drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
+         SkyAppSupport::UiInternal::DrawPanelFrame(resourcePanel,
+				U"",
+				ColorF{ 0.08, 0.10, 0.12, 0.88 },
+				ColorF{ 0.75, 0.82, 0.90, 0.9 },
+				Palette::White,
+				MainSupport::PanelSkinTarget::Hud);
 			SimpleGUI::GetFont()(state.uiEditMode ? U"資源 [Drag]" : (state.showResourceAdjustUi ? U"資源 / 初期値" : U"資源")).draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
 			SimpleGUI::GetFont()(U"現在 予算 {:.0f}"_fmt(state.playerResources.budget)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 28) }, ColorF{ 0.98, 0.90, 0.38 });
 			SimpleGUI::GetFont()(U"現在 火薬 {:.0f}"_fmt(state.playerResources.gunpowder)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 48) }, ColorF{ 0.98, 0.56, 0.42 });

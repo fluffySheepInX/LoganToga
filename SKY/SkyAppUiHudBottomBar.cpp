@@ -101,7 +101,12 @@ namespace SkyAppFlow
 			return;
 		}
 
-		UiInternal::DrawNinePatchPanelFrame(frame.panels.uiToggle, U"", ColorF{ 1.0, 0.92 });
+       UiInternal::DrawNinePatchPanelFrame(frame.panels.uiToggle,
+			U"",
+			ColorF{ 1.0, 0.92 },
+			UiInternal::DefaultPanelFrameColor,
+			UiInternal::DefaultPanelTitleColor,
+			MainSupport::PanelSkinTarget::Hud);
 
 		String hoveredTooltip;
 		Optional<Rect> hoveredTooltipRect;
@@ -262,10 +267,26 @@ namespace SkyAppFlow
 		{
             const Rect& anchorToggle = ShowDebugEnemyBattlePlanToggle ? frame.panels.enemyPlanToggle : frame.panels.resourceAdjustToggle;
 			const Rect editorTextColorsButtonRect = SkyAppUiLayout::BottomEditorTextColorsButton(anchorToggle);
+			const Rect panelSkinButtonRect = SkyAppUiLayout::BottomPanelSkinButton(editorTextColorsButtonRect);
 
 			if (UiInternal::DrawEditorIconButton(editorTextColorsButtonRect, U"色"))
 			{
 				UiInternal::OpenSharedEditorTextColorEditor();
+			}
+
+			if (UiInternal::DrawEditorIconButton(panelSkinButtonRect, U"枠"))
+			{
+				UiInternal::OpenSharedPanelSkinSelector();
+			}
+
+			if (editorTextColorsButtonRect.mouseOver())
+			{
+				DrawBottomToggleTooltip(editorTextColorsButtonRect, U"Text colors");
+			}
+
+			if (panelSkinButtonRect.mouseOver())
+			{
+				DrawBottomToggleTooltip(panelSkinButtonRect, U"Panel skin");
 			}
 		}
 	}

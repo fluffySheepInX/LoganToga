@@ -231,7 +231,7 @@ namespace SkyAppSupport
 		};
 
 		Scene::Rect().draw(ColorF{ 0.0, 0.0, 0.0, 0.35 });
-		UiInternal::DrawPanelFrame(panelRect, U"ESC Menu", ColorF{ 0.98, 0.96, 0.94, 0.98 });
+       UiInternal::DrawPanelFrame(panelRect, U"ESC Menu", ColorF{ 0.98, 0.96, 0.94, 0.98 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
 
 		for (size_t i = 0; i < std::size(Items); ++i)
 		{
@@ -270,7 +270,7 @@ namespace SkyAppSupport
 		const Rect detailRect = SkyAppUiLayout::BattleCommandDetail(panelRect);
       const double tierUpgradeCost = GetTierUpgradeCost(unlockedSlotCount);
 
-		UiInternal::DrawPanelFrame(panelRect, U"Battle Command", ColorF{ 0.97, 0.97, 0.98, 0.96 });
+     UiInternal::DrawPanelFrame(panelRect, U"Battle Command", ColorF{ 0.97, 0.97, 0.98, 0.96 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw((panelRect.x + 16), (panelRect.y + 18), ColorF{ 0.12 });
       SimpleGUI::GetFont()(U"魔力: {:.0f} / 解放 {}/{}"_fmt(playerResources.mana, unlockedSlotCount, BattleCommandSlotCount)).draw((panelRect.x + 162), (panelRect.y + 18), ColorF{ 0.12 });
 
@@ -355,7 +355,7 @@ namespace SkyAppSupport
      playerTier = Clamp(playerTier, MinimumSapperTier, MaximumSapperTier);
 		const double tierUpgradeCost = GetTierUpgradeCost(playerTier);
 		const Rect& panelRect = panels.blacksmithMenu;
-		UiInternal::DrawPanelFrame(panelRect, U"兵生産メニュー");
+      UiInternal::DrawPanelFrame(panelRect, U"兵生産メニュー", UiInternal::DefaultPanelBackgroundColor, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 34), ColorF{ 0.12 });
       SimpleGUI::GetFont()(U"魔力: {:.0f} / 生産T {}/{}"_fmt(playerResources.mana, playerTier, MaximumSapperTier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 54), ColorF{ 0.12 });
 
@@ -416,7 +416,7 @@ namespace SkyAppSupport
 		const bool explosionSkillReady = (Scene::Time() >= selectedSapper.explosionSkillCooldownUntil);
       const double tierUpgradeCost = GetTierUpgradeCost(selectedSapper.tier);
 		const Rect& panelRect = panels.sapperMenu;
-		UiInternal::DrawPanelFrame(panelRect, U"兵メニュー", ColorF{ 0.97, 0.95 });
+      UiInternal::DrawPanelFrame(panelRect, U"兵メニュー", ColorF{ 0.97, 0.95 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
 		SimpleGUI::GetFont()(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 38), ColorF{ 0.12 });
        SimpleGUI::GetFont()(U"魔力: {:.0f} / 選択T {}"_fmt(playerResources.mana, selectedSapper.tier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 60), ColorF{ 0.12 });
 		SimpleGUI::GetFont()(U"強化").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 86), ColorF{ 0.22 });

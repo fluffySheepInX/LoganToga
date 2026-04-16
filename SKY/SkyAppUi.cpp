@@ -20,5 +20,6 @@ namespace SkyAppFlow
 			DrawHudModeToggles(state, frame);
 			DrawHudFooter(state, frame);
            UiInternal::DrawSharedEditorTextColorEditor();
+           UiInternal::DrawSharedPanelSkinSelector();
 	}
 }

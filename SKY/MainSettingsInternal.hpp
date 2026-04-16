@@ -15,4 +15,11 @@ namespace MainSupport::SettingsDetail
 	void SaveUnitParameterGroup(TextWriter& writer, StringView prefix, const UnitParameters& parameters);
    void SaveExplosionSkillParameterGroup(TextWriter& writer, StringView prefix, const ExplosionSkillParameters& parameters);
 	EditorTextColorSettings& CachedEditorTextColorSettings();
+   FilePath& CachedPanelNinePatchPath();
+ FilePath& CachedSettingsPanelNinePatchPath();
+    FilePath& CachedCameraSettingsPanelNinePatchPath();
+	FilePath& CachedHudPanelNinePatchPath();
+   FilePath& CachedMapEditorPanelNinePatchPath();
+   FilePath& CachedUnitEditorPanelNinePatchPath();
+	FilePath& CachedToolModalPanelNinePatchPath();
 }

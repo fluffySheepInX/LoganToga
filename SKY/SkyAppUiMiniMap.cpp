@@ -110,7 +110,7 @@ namespace SkyAppSupport
 		const Rect panel = panels.miniMap;
 		const String title = (uiEditMode ? U"Mini Map [Drag]" : U"Mini Map");
 
-      if (UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White) && (not uiEditMode))
+     if (UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White, MainSupport::PanelSkinTarget::Hud) && (not uiEditMode))
 		{
 			isExpanded = not isExpanded;
 		}
@@ -120,9 +120,8 @@ namespace SkyAppSupport
 			return;
 		}
 
-		panel.draw(ColorF{ 0.08, 0.10, 0.12, 0.88 });
-		panel.drawFrame(2, 0, ColorF{ 0.75, 0.82, 0.90, 0.9 });
-     UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White);
+       UiInternal::DrawPanelFrame(panel, U"", ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White, MainSupport::PanelSkinTarget::Hud);
+		 UiInternal::DrawAccordionHeader(panel, title, isExpanded, ColorF{ 0.08, 0.10, 0.12, 0.88 }, ColorF{ 0.75, 0.82, 0.90, 0.9 }, Palette::White, MainSupport::PanelSkinTarget::Hud);
 		const RectF mapRect{ (panel.x + 10), (panel.y + SkyAppUiLayout::AccordionHeaderHeight + 10), (panel.w - 20), Max(0, (panel.h - SkyAppUiLayout::AccordionHeaderHeight - 20)) };
 		Array<Vec3> boundsPoints{
 			mapData.playerBasePosition,

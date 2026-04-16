@@ -548,6 +548,9 @@
     <ClInclude Include="SkyAppUiLayoutMenu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SkyAppUiPanelSkinSelectorInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc">
@@ -572,6 +575,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="App\settings\ui_layout_profile.toml" />
+    <None Include="App\settings\panel_skin_settings.toml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

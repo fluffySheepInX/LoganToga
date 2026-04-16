@@ -61,17 +61,32 @@ namespace SkyAppSupport::UiSettingsDetail
 
 	void DrawCameraSettingsPanelFrame(const Rect& panelRect)
 	{
-		DrawSettingsPanelFrame(panelRect, U"Camera Settings");
+      UiInternal::DrawNinePatchPanelFrame(panelRect,
+			U"Camera Settings",
+			ColorF{ 1.0, 0.92 },
+			UiInternal::DefaultPanelFrameColor,
+			UiInternal::DefaultPanelTitleColor,
+			MainSupport::PanelSkinTarget::CameraSettings);
 	}
 
 	void DrawSkySettingsPanelFrame(const Rect& panelRect, const StringView title)
 	{
-		DrawSettingsPanelFrame(panelRect, title);
+       UiInternal::DrawNinePatchPanelFrame(panelRect,
+			title,
+			ColorF{ 1.0, 0.92 },
+			UiInternal::DefaultPanelFrameColor,
+			UiInternal::DefaultPanelTitleColor,
+			MainSupport::PanelSkinTarget::Settings);
 	}
 
 	void DrawTerrainVisualSettingsPanelFrame(const Rect& panelRect)
 	{
-		DrawSettingsPanelFrame(panelRect, U"Terrain Surface");
+      UiInternal::DrawNinePatchPanelFrame(panelRect,
+			U"Terrain Surface",
+			ColorF{ 1.0, 0.92 },
+			UiInternal::DefaultPanelFrameColor,
+			UiInternal::DefaultPanelTitleColor,
+			MainSupport::PanelSkinTarget::Settings);
 	}
 
 	void DrawHoverTooltip(const RectF& anchorRect, const StringView title, const StringView description)

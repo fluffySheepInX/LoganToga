@@ -87,6 +87,12 @@ namespace SkyAppUiLayout
         return Rect{ (anchorToggle.rightX() + layout.bottomControl.editorIconButtonGap), (anchorToggle.y + (anchorToggle.h - layout.bottomControl.editorIconButtonSize) / 2), layout.bottomControl.editorIconButtonSize, layout.bottomControl.editorIconButtonSize };
     }
 
+    [[nodiscard]] inline Rect BottomPanelSkinButton(const Rect& editorTextColorsButton)
+    {
+        const auto& layout = Detail::LayoutProfile();
+        return Rect{ (editorTextColorsButton.rightX() + layout.bottomControl.editorIconButtonGap), editorTextColorsButton.y, layout.bottomControl.editorIconButtonSize, layout.bottomControl.editorIconButtonSize };
+    }
+
     [[nodiscard]] inline Rect TimeSlider(const int32 sceneWidth, const int32 sceneHeight)
     {
         return Rect{ 20, (sceneHeight - 60), Max(0, (sceneWidth - 40)), 36 };

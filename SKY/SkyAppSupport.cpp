@@ -138,6 +138,7 @@ namespace SkyAppSupport
 		#else
 			SkyAppUiLayout::BottomEditorTextColorsButton(resourceAdjustToggle);
 		#endif
+		const Rect panelSkinButtonRect = SkyAppUiLayout::BottomPanelSkinButton(editorTextColorsButtonRect);
 
        return (showUI && ((showSkySettings && skySettings.mouseOver()) || (showCameraSettings && cameraSettings.mouseOver()) || (showTerrainSettings && terrainSettings.mouseOver()) || (showFogSettings && fogSettings.mouseOver())))
 			|| miniMap.mouseOver()
@@ -162,6 +163,7 @@ namespace SkyAppSupport
             || (showUI && uiEditModeToggle.mouseOver())
         || (showUI && resourceAdjustToggle.mouseOver())
             || (showUI && editorTextColorsButtonRect.mouseOver())
+            || (showUI && panelSkinButtonRect.mouseOver())
          || hoveringEnemyPlanToggle;
 	}
 

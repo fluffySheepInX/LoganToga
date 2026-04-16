@@ -38,7 +38,7 @@ namespace SkyAppSupport
 		const Rect contentPanel{ (panel.x + 8), (headerRect.bottomY() + 6), (panel.w - 16), (footerRect.y - headerRect.bottomY() - 12) };
 		static MillEditorCategory currentCategory = MillEditorCategory::Attack;
 
-     UiInternal::DrawNinePatchPanelFrame(panel, U"Mill Status Editor", ColorF{ 0.97, 0.96, 0.94 });
+      UiInternal::DrawNinePatchPanelFrame(panel, U"Mill Status Editor", ColorF{ 0.97, 0.96, 0.94 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
 		headerRect.draw(ColorF{ 0.96, 0.95, 0.92, 0.84 });
 		footerRect.draw(ColorF{ 0.95, 0.94, 0.91, 0.82 });
 		Rect{ panel.x, (headerRect.bottomY() - 1), panel.w, 1 }.draw(ColorF{ 0.78, 0.76, 0.70 });

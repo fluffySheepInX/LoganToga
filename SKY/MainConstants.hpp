@@ -9,6 +9,7 @@ namespace MainSupport
 	inline constexpr FilePathView MapDataPath = U"settings/map_data.toml";
 	inline constexpr FilePathView ModelHeightSettingsPath = U"settings/model_height_settings.toml";
     inline constexpr FilePathView EditorTextColorSettingsPath = U"settings/editor_text_colors.toml";
+    inline constexpr FilePathView PanelSkinSettingsPath = U"settings/panel_skin_settings.toml";
 	inline constexpr FilePathView UnitSettingsPath = U"settings/unit_settings.toml";
 	inline constexpr FilePathView UiLayoutSettingsPath = U"settings/ui_layout_settings.toml";
     inline constexpr FilePathView ResourceAdjustSettingsPath = U"settings/resource_adjust_settings.toml";
