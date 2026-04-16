@@ -50,6 +50,7 @@ namespace MainSupport
 	inline constexpr double SapperExplosionDamage = 48.0;
 	inline constexpr double SapperExplosionBaseDamage = 36.0;
 	inline constexpr double SapperExplosionCooldownSeconds = 3.0;
+   inline constexpr double SapperScoutingSkillGunpowderCost = 15.0;
 	inline constexpr double EnemyReinforcementInterval = 6.0;
 	inline constexpr double EnemyAiDecisionInterval = 1.0;
 	inline constexpr double EnemyStrongUnitProductionCooldown = 3.0;

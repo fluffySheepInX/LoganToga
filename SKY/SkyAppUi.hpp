@@ -18,7 +18,7 @@ namespace SkyAppSupport
 		enum class SapperMenuAction
 		{
 			None,
-          UseScoutingSkill,
+         UseUniqueSkill,
 			UseExplosionSkill,
           Retreat,
 		};
@@ -55,7 +55,6 @@ namespace SkyAppSupport
 		const Vec3& playerBasePosition,
 		const Vec3& rallyPoint,
 		MainSupport::ResourceStock& playerResources,
-		int32& playerTier,
 		size_t& selectedSlotIndex,
 		int32& unlockedSlotCount,
 		const MainSupport::UnitEditorSettings& unitEditorSettings,

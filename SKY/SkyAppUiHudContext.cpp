@@ -38,7 +38,6 @@ namespace SkyAppFlow
 				state.mapData.playerBasePosition,
 				state.mapData.sapperRallyPoint,
 				state.playerResources,
-				state.playerTier,
                state.battleCommandSelectedSlotIndex,
 				state.battleCommandUnlockedSlotCount,
 				state.unitEditorSettings,
@@ -56,9 +55,9 @@ namespace SkyAppFlow
               state.unitEditorSettings,
 				selectedIndex,
 				state.blacksmithMenuMessage);
-          if (menuAction == SapperMenuAction::UseScoutingSkill)
+         if (menuAction == SapperMenuAction::UseUniqueSkill)
 			{
-				TryUsePlayerSapperScoutingSkill(state, selectedIndex);
+              TryUsePlayerSapperUniqueSkill(state, selectedIndex);
 			}
 			else if (menuAction == SapperMenuAction::UseExplosionSkill)
 			{

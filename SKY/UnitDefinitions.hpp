@@ -8,12 +8,15 @@ namespace MainSupport
 		static const Array<UnitDefinition> Definitions{
 			UnitDefinition{
 				.unitType = SapperUnitType::Infantry,
+               .uniqueSkillType = UniqueSkillType::BuildMill,
 				.settingsKeySuffix = U"Infantry",
 				.displayName = U"兵",
 				.playerEditorSectionLabel = U"Player Infantry",
 				.enemyEditorSectionLabel = U"Enemy Infantry",
 				.playerRenderModel = UnitRenderModel::Bird,
 				.enemyRenderModel = UnitRenderModel::Ashigaru,
+               .uniqueSkillLabel = U"建築: Mill",
+				.uniqueSkillDeniedMessage = U"建築スキルは歩兵専用",
 				.canUseExplosionSkill = true,
 				.enemyProductionPriority = 10,
 				.playerDefaults = UnitParameters{
@@ -42,6 +45,7 @@ namespace MainSupport
 			},
 			UnitDefinition{
 				.unitType = SapperUnitType::ArcaneInfantry,
+             .uniqueSkillType = UniqueSkillType::Heal,
 				.settingsKeySuffix = U"ArcaneInfantry",
 				.displayName = U"魔導兵(仮)",
 				.playerEditorSectionLabel = U"Player Arcane",
@@ -50,6 +54,8 @@ namespace MainSupport
 				.enemyRenderModel = UnitRenderModel::Ashigaru,
 				.tintMultiplier = Vec3{ 0.62, 0.82, 1.30 },
 				.tintOffset = Vec3{ 0.18, 0.10, 0.18 },
+              .uniqueSkillLabel = U"回復",
+				.uniqueSkillDeniedMessage = U"回復スキルは魔導兵専用",
 				.enemyProductionPriority = 20,
 				.playerDefaults = UnitParameters{
 					.movementType = MovementType::Infantry,
@@ -77,6 +83,7 @@ namespace MainSupport
 			},
 			UnitDefinition{
 				.unitType = SapperUnitType::SugoiCar,
+               .uniqueSkillType = UniqueSkillType::Scout,
 				.settingsKeySuffix = U"SugoiCar",
 				.displayName = U"すごい車(仮)",
 				.playerEditorSectionLabel = U"Player SugoiCar",
@@ -85,6 +92,8 @@ namespace MainSupport
 				.enemyRenderModel = UnitRenderModel::SugoiCar,
 				.tintMultiplier = Vec3{ 1.15, 1.00, 0.62 },
 				.tintOffset = Vec3{ 0.12, 0.08, 0.02 },
+              .uniqueSkillLabel = U"偵察",
+				.uniqueSkillDeniedMessage = U"偵察スキルは車専用",
 				.enemyProductionPriority = 30,
 				.playerDefaults = UnitParameters{
 					.movementType = MovementType::Tank,
@@ -148,6 +157,21 @@ namespace MainSupport
 	[[nodiscard]] inline StringView GetUnitDisplayName(const SapperUnitType unitType)
 	{
 		return GetUnitDefinition(unitType).displayName;
+	}
+
+	[[nodiscard]] inline UniqueSkillType GetUnitUniqueSkillType(const SapperUnitType unitType)
+	{
+		return GetUnitDefinition(unitType).uniqueSkillType;
+	}
+
+	[[nodiscard]] inline StringView GetUnitUniqueSkillLabel(const SapperUnitType unitType)
+	{
+		return GetUnitDefinition(unitType).uniqueSkillLabel;
+	}
+
+	[[nodiscard]] inline StringView GetUnitUniqueSkillDeniedMessage(const SapperUnitType unitType)
+	{
+		return GetUnitDefinition(unitType).uniqueSkillDeniedMessage;
 	}
 
 	[[nodiscard]] inline StringView GetUnitEditorSectionLabel(const UnitTeam team, const SapperUnitType unitType)

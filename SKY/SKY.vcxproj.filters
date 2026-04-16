@@ -195,9 +195,6 @@
     <ClCompile Include="SkyAppUiHudSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SkyAppUiMenus.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SkyAppSapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -283,9 +280,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppBattleResources.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyAppBattleCombat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppUiParameterEditor.cpp">
@@ -388,6 +382,33 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppUiLayoutProfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiEscMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiBattleCommandMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiBlacksmithMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppUiSapperMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppBattleCombat_Base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppBattleCombat_EnemySpawn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppBattleCombat_PlayerActions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppBattleCombat_MillDefense.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppBattleCombat_Effects.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -549,6 +570,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SkyAppUiPanelSkinSelectorInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppUiMenusInternal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppBattleCombatInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -23,6 +23,13 @@ namespace MainSupport
 		Tank,
 	};
 
+	enum class UniqueSkillType
+	{
+		BuildMill,
+		Heal,
+		Scout,
+	};
+
 	enum class UnitFootprintType
 	{
 		Circle,
@@ -117,6 +124,7 @@ namespace MainSupport
 	struct UnitDefinition
 	{
 		SapperUnitType unitType = SapperUnitType::Infantry;
+       UniqueSkillType uniqueSkillType = UniqueSkillType::BuildMill;
 		StringView settingsKeySuffix;
 		StringView displayName;
 		StringView playerEditorSectionLabel;
@@ -125,6 +133,8 @@ namespace MainSupport
 		UnitRenderModel enemyRenderModel = UnitRenderModel::Ashigaru;
 		Vec3 tintMultiplier{ 1.0, 1.0, 1.0 };
 		Vec3 tintOffset{ 0.0, 0.0, 0.0 };
+      StringView uniqueSkillLabel = U"固有スキル";
+		StringView uniqueSkillDeniedMessage = U"この固有スキルは使用できない";
 		bool canUseExplosionSkill = false;
 		StringView explosionSkillUnavailableLabel = U"爆破スキル [兵専用]";
 		StringView explosionSkillDeniedMessage = U"爆破スキルは兵専用";
