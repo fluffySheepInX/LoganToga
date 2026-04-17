@@ -7,11 +7,36 @@ namespace SkyAppFlow
 {
 	namespace
 	{
-		void UpdateUnitRenderModels(SkyAppResources& resources)
+        void ApplyConfiguredAnimationClip(UnitModel& renderModel, const int32 configuredClipIndex)
 		{
-			for (auto& renderModel : resources.unitRenderModels)
+			if (not renderModel.hasAnimations())
 			{
-				renderModel.update(Scene::DeltaTime());
+				return;
+			}
+
+			if (configuredClipIndex < 0)
+			{
+				renderModel.clearClipIndex();
+				return;
+			}
+
+			const size_t resolvedClipIndex = Min(static_cast<size_t>(Max(configuredClipIndex, 0)), (renderModel.animations().size() - 1));
+			if (renderModel.currentClipIndex() != resolvedClipIndex)
+			{
+				renderModel.setClipIndex(resolvedClipIndex);
+			}
+		}
+
+     void UpdateUnitRenderModels(SkyAppResources& resources, const ModelHeightSettings& modelHeightSettings)
+		{
+            for (const UnitRenderModel renderModelType : GetUnitRenderModels())
+			{
+                for (const UnitModelAnimationRole role : { UnitModelAnimationRole::Idle, UnitModelAnimationRole::Move, UnitModelAnimationRole::Attack })
+				{
+					UnitModel& renderModel = resources.GetUnitRenderModel(renderModelType, role);
+					ApplyConfiguredAnimationClip(renderModel, GetModelAnimationClipIndex(modelHeightSettings, renderModelType, role));
+					renderModel.update(Scene::DeltaTime());
+				}
 			}
 		}
 
@@ -79,7 +104,7 @@ namespace SkyAppFlow
 
 	void RunSkyAppFrame(SkyAppResources& resources, SkyAppState& state)
 	{
-		UpdateUnitRenderModels(resources);
+      UpdateUnitRenderModels(resources, state.modelHeightSettings);
 		UpdateFrameSimulation(state);
 		HandleFrameInput(state);
 

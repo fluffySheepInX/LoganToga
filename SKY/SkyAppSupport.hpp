@@ -11,7 +11,9 @@ namespace SkyAppSupport
 {
  struct UnitRenderModelRegistryView
 	{
-       std::array<const UnitModel*, MainSupport::UnitRenderModelCount> models{};
+        std::array<const UnitModel*, MainSupport::UnitRenderModelCount> idleModels{};
+		std::array<const UnitModel*, MainSupport::UnitRenderModelCount> moveModels{};
+		std::array<const UnitModel*, MainSupport::UnitRenderModelCount> attackModels{};
 	};
 
 	struct TimedMessage

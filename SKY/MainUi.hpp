@@ -11,6 +11,8 @@ namespace MainSupport
         UnitRenderModel& activeRenderModel,
      bool& textureMode,
 		TireTrackTextureSegment& activeTextureSegment,
+        UnitModelAnimationRole& previewAnimationRole,
+     UnitModel& activeModel,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,

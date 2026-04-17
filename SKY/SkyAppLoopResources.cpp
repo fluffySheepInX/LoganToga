@@ -168,10 +168,23 @@ namespace SkyAppFlow
 		, treeModel{ Assets::ResolveModelPath(Assets::TreeModelFileName) }
 		, pineModel{ Assets::ResolveModelPath(Assets::PineModelFileName) }
 		, grassPatchModel{ Assets::ResolveGrassPatchModelPath() }
-		, unitRenderModels{ {
+       , idleUnitRenderModels{ {
 			UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
 			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
 			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
+         UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
+		} }
+     , moveUnitRenderModels{ {
+			UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
+			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
+			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
+			UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
+		} }
+		, attackUnitRenderModels{ {
+			UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
+			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
+			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
+			UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
 		} }
 		, renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes }
 	{

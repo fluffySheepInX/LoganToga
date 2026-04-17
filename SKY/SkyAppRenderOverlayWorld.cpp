@@ -280,10 +280,6 @@ namespace SkyAppFlow
 
 				const ResourceArea& area = state.mapData.resourceAreas[i];
 				const ResourceAreaState& areaState = state.resourceAreaStates[i];
-             if ((state.appMode != AppMode::EditMap) && (not IsFogExploredAt(state.fogOfWar, area.position)))
-				{
-					continue;
-				}
 
 				const Optional<Vec2> screenAnchor = ProjectToScreen(state.camera, area.position.movedBy(0, 1.1, 0));
 

@@ -138,7 +138,7 @@ void UnitModel::refreshBoneTransforms()
 			continue;
 		}
 
-		m_currentBoneTransforms[boneIndex] = (bone.offsetMatrix * m_currentWorldTransforms[bone.nodeIndex]);
+        m_currentBoneTransforms[boneIndex] = (m_currentWorldTransforms[bone.nodeIndex] * bone.offsetMatrix);
 	}
 
 	refreshSkinnedMesh();

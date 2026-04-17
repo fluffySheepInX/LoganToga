@@ -39,6 +39,27 @@ namespace
 		return transformedNormal.normalized();
 	}
 
+	[[nodiscard]] Array<Mat4x4> BuildWorldTransforms(const Array<UnitModelNode>& nodes, const Array<Mat4x4>& localTransforms)
+	{
+		Array<Mat4x4> worldTransforms(nodes.size(), Mat4x4::Identity());
+
+		for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
+		{
+			const int32 parentIndex = nodes[nodeIndex].parentIndex;
+
+			if (parentIndex < 0)
+			{
+				worldTransforms[nodeIndex] = localTransforms[nodeIndex];
+			}
+			else
+			{
+				worldTransforms[nodeIndex] = (localTransforms[nodeIndex] * worldTransforms[parentIndex]);
+			}
+		}
+
+		return worldTransforms;
+	}
+
    [[nodiscard]] Float3 SampleVectorKey(const Array<UnitModelAnimationKey<Float3>>& keys, const double time, const Float3& fallback)
 	{
 		if (keys.isEmpty())
@@ -48,12 +69,14 @@ namespace
 
 		if (keys.size() == 1)
 		{
-			return keys.front().value;
+          return (time < keys.front().time)
+				? fallback
+				: keys.front().value;
 		}
 
-		if (time <= keys.front().time)
+      if (time < keys.front().time)
 		{
-			return keys.front().value;
+          return fallback;
 		}
 
 		for (size_t keyIndex = 1; keyIndex < keys.size(); ++keyIndex)
@@ -81,12 +104,14 @@ namespace
 
 		if (keys.size() == 1)
 		{
-			return keys.front().value;
+          return (time < keys.front().time)
+				? fallback
+				: keys.front().value;
 		}
 
-		if (time <= keys.front().time)
+      if (time < keys.front().time)
 		{
-			return keys.front().value;
+          return fallback;
 		}
 
 		for (size_t keyIndex = 1; keyIndex < keys.size(); ++keyIndex)

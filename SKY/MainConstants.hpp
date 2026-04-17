@@ -16,11 +16,13 @@ namespace MainSupport
 	inline constexpr FilePathView BirdModelPath = U"model/bird.glb";
 	inline constexpr FilePathView AshigaruModelPath = U"model/ashigaru_v2.1.glb";
 	inline constexpr FilePathView SugoiCarModelPath = U"model/sugoiCar.glb";
+    inline constexpr FilePathView HoheiModelPath = U"model/hohei1.glb";
 	inline constexpr Vec3 DefaultCameraEye{ 0, 8, -16 };
 	inline constexpr Vec3 DefaultCameraFocus{ 0, 0, 0 };
 	inline constexpr Vec3 BirdDisplayPosition{ -10.5, 0, -2.5 };
 	inline constexpr Vec3 AshigaruDisplayPosition{ -5.5, 0, -2.5 };
 	inline constexpr Vec3 SugoiCarDisplayPosition{ -0.5, 0, -2.5 };
+ inline constexpr Vec3 HoheiDisplayPosition{ 4.5, 0, -2.5 };
 	inline constexpr double BirdDisplayYaw = 0_deg;
 	inline constexpr double SapperFacingYawOffset = 180_deg;
 	inline constexpr Vec3 BlacksmithPosition{ 8, 0, 4 };

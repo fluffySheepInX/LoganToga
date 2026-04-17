@@ -19,6 +19,7 @@ namespace SkyAppSupport
 		};
 
 		[[nodiscard]] String FormatMillParameterValue(double value, int32 decimals, StringView suffix);
+       void DrawUnitParameterSectionHeader(const Rect& panel, int32 top, StringView title, StringView caption);
 		[[nodiscard]] StringView ToMovementTypeLabel(MainSupport::MovementType movementType);
      [[nodiscard]] StringView ToUnitAiRoleLabel(MainSupport::UnitAiRole aiRole);
        [[nodiscard]] StringView ToUnitFootprintTypeLabel(MainSupport::UnitFootprintType footprintType);

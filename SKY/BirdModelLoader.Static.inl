@@ -21,6 +21,19 @@
 			}
 		}
 
+		Array<float> vertexBoneWeights(animatedData.vertices.size(), 0.0f);
+
+		for (const auto& bone : animatedData.bones)
+		{
+			for (const auto& weight : bone.weights)
+			{
+				if (weight.vertexIndex < vertexBoneWeights.size())
+				{
+					vertexBoneWeights[weight.vertexIndex] += weight.weight;
+				}
+			}
+		}
+
 		Float3 minPoint = animatedData.vertices.front().pos;
 		Float3 maxPoint = animatedData.vertices.front().pos;
 
@@ -28,11 +41,14 @@
 		{
 			Float3 worldPosition = animatedData.vertices[vertexIndex].pos;
 
-			if ((vertexIndex < animatedData.vertexNodeIndices.size())
+           if ((vertexBoneWeights.size() <= vertexIndex) || (vertexBoneWeights[vertexIndex] <= 0.0f))
+			{
+				if ((vertexIndex < animatedData.vertexNodeIndices.size())
 				&& (0 <= animatedData.vertexNodeIndices[vertexIndex])
 				&& (animatedData.nodes.size() > static_cast<size_t>(animatedData.vertexNodeIndices[vertexIndex])))
-			{
-				worldPosition = nodeWorldTransforms[animatedData.vertexNodeIndices[vertexIndex]].transformPoint(worldPosition);
+               {
+					worldPosition = nodeWorldTransforms[animatedData.vertexNodeIndices[vertexIndex]].transformPoint(worldPosition);
+				}
 			}
 
 			minPoint.x = Min(minPoint.x, worldPosition.x);

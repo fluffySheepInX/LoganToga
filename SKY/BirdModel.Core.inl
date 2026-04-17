@@ -233,6 +233,16 @@ void UnitModel::setClipIndex(const size_t index)
 	}
 }
 
+void UnitModel::clearClipIndex()
+{
+	const size_t clearedIndex = m_animations.size();
+	if (m_currentClipIndex != clearedIndex)
+	{
+		m_currentClipIndex = clearedIndex;
+		m_animationTime = 0.0;
+	}
+}
+
 const Array<UnitModelNode>& UnitModel::nodes() const noexcept
 {
 	return m_nodes;
@@ -261,4 +271,161 @@ const Array<Mat4x4>& UnitModel::currentWorldTransforms() const noexcept
 const Array<Mat4x4>& UnitModel::currentBoneTransforms() const noexcept
 {
 	return m_currentBoneTransforms;
+}
+
+String UnitModel::diagnosticReport() const
+{
+	String report;
+	const auto appendLine = [&report](const String& line)
+		{
+			report += line;
+			report += U'\n';
+		};
+
+	appendLine(U"[UnitModel Diagnostics]");
+	appendLine(U"loaded: {}"_fmt(m_loaded ? U"true" : U"false"));
+	appendLine(U"nodes: {} bones: {} animations: {} subMeshes: {}"_fmt(m_nodes.size(), m_bones.size(), m_animations.size(), m_subMeshes.size()));
+	appendLine(U"vertices: {} indices: {} staticVertices: {}"_fmt(m_bindPoseVertices.size(), m_indices.size(), m_mesh.num_vertices(), m_bindPoseVertices.size()));
+
+	size_t nodeBoundVertexCount = 0;
+	size_t skinnedVertexCount = 0;
+	size_t totalInfluenceCount = 0;
+	size_t maxInfluenceCount = 0;
+	size_t nonUnitWeightVertexCount = 0;
+	double totalDeclaredBoneWeight = 0.0;
+
+	for (const auto& skinningData : m_vertexSkinning)
+	{
+		if (0 <= skinningData.nodeIndex)
+		{
+			++nodeBoundVertexCount;
+		}
+
+		if (skinningData.boneInfluences.isEmpty())
+		{
+			continue;
+		}
+
+		++skinnedVertexCount;
+		totalInfluenceCount += skinningData.boneInfluences.size();
+		maxInfluenceCount = Max(maxInfluenceCount, skinningData.boneInfluences.size());
+		totalDeclaredBoneWeight += skinningData.totalBoneWeight;
+
+		if (0.05 < Abs((skinningData.totalBoneWeight - 1.0f)))
+		{
+			++nonUnitWeightVertexCount;
+		}
+	}
+
+	appendLine(U"nodeBoundVertices: {} skinnedVertices: {} avgInfluences: {:.2f} maxInfluences: {} nonUnitWeightVertices: {}"_fmt(
+		nodeBoundVertexCount,
+		skinnedVertexCount,
+		(skinnedVertexCount == 0) ? 0.0 : (static_cast<double>(totalInfluenceCount) / skinnedVertexCount),
+		maxInfluenceCount,
+		nonUnitWeightVertexCount));
+	appendLine(U"avgDeclaredBoneWeight: {:.4f}"_fmt((skinnedVertexCount == 0) ? 0.0 : (totalDeclaredBoneWeight / skinnedVertexCount)));
+
+	if (m_bindPoseVertices.isEmpty() || m_vertexSkinning.isEmpty() || m_bones.isEmpty())
+	{
+		appendLine(U"bindPoseError(currentOrder): n/a");
+		appendLine(U"bindPoseError(swappedOrder): n/a");
+		return report;
+	}
+
+	Array<Mat4x4> bindLocalTransforms(m_nodes.size(), Mat4x4::Identity());
+	for (size_t nodeIndex = 0; nodeIndex < m_nodes.size(); ++nodeIndex)
+	{
+		bindLocalTransforms[nodeIndex] = m_nodes[nodeIndex].localTransform;
+	}
+
+	const Array<Mat4x4> bindWorldTransforms = BuildWorldTransforms(m_nodes, bindLocalTransforms);
+	const auto appendBindPoseMetrics = [this, &appendLine, &bindWorldTransforms](const StringView label, const bool worldTimesOffset)
+		{
+			double totalLocalError = 0.0;
+			double maxLocalError = 0.0;
+			double totalNodeWorldError = 0.0;
+			double maxNodeWorldError = 0.0;
+			size_t evaluatedVertexCount = 0;
+
+			for (size_t vertexIndex = 0; vertexIndex < Min(m_bindPoseVertices.size(), m_vertexSkinning.size()); ++vertexIndex)
+			{
+				const VertexSkinningData& skinningData = m_vertexSkinning[vertexIndex];
+
+				if (skinningData.boneInfluences.isEmpty())
+				{
+					continue;
+				}
+
+				const Vertex3D& source = m_bindPoseVertices[vertexIndex];
+				Float3 skinnedPosition{};
+				float accumulatedWeight = 0.0f;
+
+				for (const auto& influence : skinningData.boneInfluences)
+				{
+					if ((influence.boneIndex < 0) || (m_bones.size() <= static_cast<size_t>(influence.boneIndex)))
+					{
+						continue;
+					}
+
+					const UnitModelBone& bone = m_bones[influence.boneIndex];
+					if ((bone.nodeIndex < 0) || (bindWorldTransforms.size() <= static_cast<size_t>(bone.nodeIndex)))
+					{
+						continue;
+					}
+
+					const Mat4x4 boneTransform = worldTimesOffset
+						? (bindWorldTransforms[bone.nodeIndex] * bone.offsetMatrix)
+						: (bone.offsetMatrix * bindWorldTransforms[bone.nodeIndex]);
+					skinnedPosition += (boneTransform.transformPoint(source.pos) * influence.weight);
+					accumulatedWeight += influence.weight;
+				}
+
+				if (accumulatedWeight <= 0.0f)
+				{
+					continue;
+				}
+
+				skinnedPosition *= (1.0f / accumulatedWeight);
+				const double localError = (skinnedPosition - source.pos).length();
+				Float3 nodeWorldPosition = source.pos;
+				if ((0 <= skinningData.nodeIndex) && (bindWorldTransforms.size() > static_cast<size_t>(skinningData.nodeIndex)))
+				{
+					nodeWorldPosition = bindWorldTransforms[skinningData.nodeIndex].transformPoint(source.pos);
+				}
+				const double nodeWorldError = (skinnedPosition - nodeWorldPosition).length();
+
+				totalLocalError += localError;
+				totalNodeWorldError += nodeWorldError;
+				maxLocalError = Max(maxLocalError, localError);
+				maxNodeWorldError = Max(maxNodeWorldError, nodeWorldError);
+				++evaluatedVertexCount;
+			}
+
+			appendLine(U"{}: vertices={} avgLocal={:.4f} maxLocal={:.4f} avgNodeWorld={:.4f} maxNodeWorld={:.4f}"_fmt(
+				label,
+				evaluatedVertexCount,
+				(evaluatedVertexCount == 0) ? 0.0 : (totalLocalError / evaluatedVertexCount),
+				maxLocalError,
+				(evaluatedVertexCount == 0) ? 0.0 : (totalNodeWorldError / evaluatedVertexCount),
+				maxNodeWorldError));
+		};
+
+	appendBindPoseMetrics(U"bindPoseError(currentOrder)", true);
+	appendBindPoseMetrics(U"bindPoseError(swappedOrder)", false);
+
+	if (m_animations.isEmpty())
+	{
+		appendLine(U"animation: none");
+	}
+	else if (m_currentClipIndex < m_animations.size())
+	{
+		const UnitModelAnimationClip& clip = m_animations[m_currentClipIndex];
+		appendLine(U"animation: clip={} duration={:.4f} ticksPerSecond={:.4f} currentTime={:.4f}"_fmt(
+			clip.name,
+			clip.duration,
+			clip.ticksPerSecond,
+			m_animationTime));
+	}
+
+	return report;
 }

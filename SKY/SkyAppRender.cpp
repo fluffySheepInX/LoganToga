@@ -236,7 +236,10 @@ namespace SkyAppFlow
 
 		void DrawPreviewUnitRenderModel(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame, const UnitRenderModel renderModel)
 		{
-          const UnitModel& previewModel = resources.GetUnitRenderModel(renderModel);
+            const UnitModelAnimationRole previewRole = ((state.modelHeightEditMode && (state.modelHeightTarget == renderModel))
+				? state.modelHeightPreviewAnimationRole
+				: UnitModelAnimationRole::Idle);
+			  const UnitModel& previewModel = resources.GetUnitRenderModel(renderModel, previewRole);
 			if (not previewModel.isLoaded())
 			{
 				return;

@@ -150,6 +150,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MainSettingsUiLayout.cpp" />
     <ClCompile Include="MainSettingsUnitEditor.cpp" />
     <ClCompile Include="MainUi.cpp" />
+    <ClCompile Include="MainUiModelHeight.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MapDataToml.cpp" />
     <ClCompile Include="MapDataTomlCommon.cpp" />
@@ -188,6 +189,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppRenderOverlay.cpp" />
     <ClCompile Include="SkyAppRenderOverlayHud.cpp" />
     <ClCompile Include="SkyAppRenderOverlayWorld.cpp" />
+    <ClCompile Include="SkyAppRenderSappersOverlay.cpp" />
     <ClCompile Include="SkyAppRenderSappers.cpp" />
     <ClCompile Include="SkyAppSapper.cpp" />
     <ClCompile Include="SkyAppSapperCombat.cpp" />
@@ -209,10 +211,12 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppUiMillEditor.cpp" />
     <ClCompile Include="SkyAppUiMiniMap.cpp" />
     <ClCompile Include="SkyAppUiParameterEditor.cpp" />
+    <ClCompile Include="SkyAppUiParameterEditorSections.cpp" />
     <ClCompile Include="SkyAppUiSettingsCommon.cpp" />
     <ClCompile Include="SkyAppUiSkySettingsPanel.cpp" />
     <ClCompile Include="SkyAppUiCameraSettingsPanel.cpp" />
     <ClCompile Include="SkyAppUiTerrainVisualSettingsPanel.cpp" />
+    <ClCompile Include="SkyAppUiUnitEditorDetail.cpp" />
     <ClCompile Include="SkyAppUiUnitEditor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -294,6 +298,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SkyAppUiLayout.hpp" />
     <ClInclude Include="SkyAppUiSettingsInternal.hpp" />
     <ClInclude Include="SkyAppUiParameterEditorInternal.hpp" />
+    <ClInclude Include="SkyAppUiUnitEditorInternal.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SkyAppInternal.hpp" />
     <ClInclude Include="SkyAppCampaignEditorSceneInternal.hpp" />
@@ -305,3 +310,9 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
+
+
+
+
+
+

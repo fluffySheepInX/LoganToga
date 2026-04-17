@@ -18,12 +18,14 @@ public:
 	[[nodiscard]] double animationTime() const noexcept;
 	[[nodiscard]] size_t currentClipIndex() const noexcept;
 	void setClipIndex(size_t index);
+    void clearClipIndex();
    [[nodiscard]] const Array<UnitModelNode>& nodes() const noexcept;
 	[[nodiscard]] const Array<UnitModelBone>& bones() const noexcept;
 	[[nodiscard]] const Array<UnitModelAnimationClip>& animations() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentLocalTransforms() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentWorldTransforms() const noexcept;
 	[[nodiscard]] const Array<Mat4x4>& currentBoneTransforms() const noexcept;
+	[[nodiscard]] String diagnosticReport() const;
 
 private:
     struct VertexBoneInfluence

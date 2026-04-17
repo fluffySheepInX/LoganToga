@@ -29,8 +29,8 @@ namespace SkyAppUiLayout
 
 	struct ModelHeightLayoutMetrics
 	{
-		int32 panelWidth = 460;
-		int32 panelHeight = 420;
+     int32 panelWidth = 700;
+		int32 panelHeight = 500;
 	};
 
 	struct BottomControlLayoutMetrics

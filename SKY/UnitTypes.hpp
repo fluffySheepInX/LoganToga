@@ -121,6 +121,7 @@ namespace MainSupport
 		Bird,
 		Ashigaru,
 		SugoiCar,
+      Hohei,
 		Count,
 	};
 
@@ -137,6 +138,7 @@ namespace MainSupport
 			UnitRenderModel::Bird,
 			UnitRenderModel::Ashigaru,
 			UnitRenderModel::SugoiCar,
+          UnitRenderModel::Hohei,
 		};
 
 		return RenderModels;

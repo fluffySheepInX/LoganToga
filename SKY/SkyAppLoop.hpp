@@ -47,17 +47,41 @@ namespace SkyAppFlow
 		Model pineModel;
         Model grassPatchModel;
         Array<String> loadWarnings;
-      std::array<UnitModel, MainSupport::UnitRenderModelCount> unitRenderModels;
+        std::array<UnitModel, MainSupport::UnitRenderModelCount> idleUnitRenderModels;
+		std::array<UnitModel, MainSupport::UnitRenderModelCount> moveUnitRenderModels;
+		std::array<UnitModel, MainSupport::UnitRenderModelCount> attackUnitRenderModels;
 		MSRenderTexture renderTexture;
 
-       [[nodiscard]] UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel)
+      [[nodiscard]] UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle)
 		{
-			return unitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+         switch (role)
+			{
+			case MainSupport::UnitModelAnimationRole::Move:
+				return moveUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+
+			case MainSupport::UnitModelAnimationRole::Attack:
+				return attackUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+
+			case MainSupport::UnitModelAnimationRole::Idle:
+			default:
+				return idleUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+			}
 		}
 
-     [[nodiscard]] const UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel) const
+        [[nodiscard]] const UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle) const
 		{
-			return unitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+         switch (role)
+			{
+			case MainSupport::UnitModelAnimationRole::Move:
+				return moveUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+
+			case MainSupport::UnitModelAnimationRole::Attack:
+				return attackUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+
+			case MainSupport::UnitModelAnimationRole::Idle:
+			default:
+				return idleUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
+			}
 		}
 
 		[[nodiscard]] SkyAppSupport::UnitRenderModelRegistryView GetUnitRenderModelRegistry() const
@@ -67,7 +91,9 @@ namespace SkyAppFlow
 			for (const MainSupport::UnitRenderModel renderModel : MainSupport::GetUnitRenderModels())
 			{
 				const size_t index = MainSupport::GetUnitRenderModelIndex(renderModel);
-				registry.models[index] = &unitRenderModels[index];
+              registry.idleModels[index] = &idleUnitRenderModels[index];
+				registry.moveModels[index] = &moveUnitRenderModels[index];
+				registry.attackModels[index] = &attackUnitRenderModels[index];
 			}
 
 			return registry;
@@ -139,6 +165,7 @@ namespace SkyAppFlow
 		bool modelHeightEditMode = false;
       bool modelHeightTextureMode = false;
       MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
+        MainSupport::UnitModelAnimationRole modelHeightPreviewAnimationRole = MainSupport::UnitModelAnimationRole::Idle;
       MainSupport::TireTrackTextureSegment tireTrackTextureTarget = MainSupport::TireTrackTextureSegment::Start;
       bool unitEditorMode = false;
        bool showResourceAdjustUi = false;

@@ -5,6 +5,13 @@
 
 namespace MainSupport
 {
+   enum class UnitModelAnimationRole
+	{
+		Idle,
+		Move,
+		Attack,
+	};
+
 	struct CameraSettings
 	{
 		Vec3 eye = DefaultCameraEye;
@@ -15,6 +22,9 @@ namespace MainSupport
 	{
        std::array<double, UnitRenderModelCount> offsetY{};
 		std::array<double, UnitRenderModelCount> scale{};
+     std::array<int32, UnitRenderModelCount> idleAnimationClip{};
+		std::array<int32, UnitRenderModelCount> moveAnimationClip{};
+		std::array<int32, UnitRenderModelCount> attackAnimationClip{};
 		std::array<double, 3> tireTrackYOffset{};
 		std::array<double, 3> tireTrackOpacity{};
 		std::array<double, 3> tireTrackSoftness{};
@@ -23,6 +33,9 @@ namespace MainSupport
 		ModelHeightSettings()
 		{
 			scale.fill(1.0);
+          idleAnimationClip.fill(-1);
+			moveAnimationClip.fill(-1);
+			attackAnimationClip.fill(-1);
            tireTrackYOffset = { 0.018, 0.019, 0.020 };
            tireTrackOpacity.fill(1.0);
 			tireTrackSoftness.fill(0.0);
@@ -74,6 +87,11 @@ namespace MainSupport
 				.label = U"sugoiCar",
 				.displayPosition = SugoiCarDisplayPosition,
 				.previewColor = ColorF{ 0.96, 0.94, 0.92 },
+			},
+          UnitRenderModelDefinition{
+				.label = U"hohei",
+				.displayPosition = HoheiDisplayPosition,
+				.previewColor = ColorF{ 0.95, 0.93, 0.91 },
 			},
 		};
 
@@ -159,6 +177,38 @@ namespace MainSupport
 	[[nodiscard]] inline double GetModelScale(const ModelHeightSettings& settings, const UnitRenderModel renderModel)
 	{
 		return settings.scale[GetUnitRenderModelIndex(renderModel)];
+	}
+
+    [[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
+	{
+        switch (role)
+		{
+		case UnitModelAnimationRole::Move:
+			return settings.moveAnimationClip[GetUnitRenderModelIndex(renderModel)];
+
+		case UnitModelAnimationRole::Attack:
+			return settings.attackAnimationClip[GetUnitRenderModelIndex(renderModel)];
+
+		case UnitModelAnimationRole::Idle:
+		default:
+			return settings.idleAnimationClip[GetUnitRenderModelIndex(renderModel)];
+		}
+	}
+
+   [[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
+	{
+        switch (role)
+		{
+		case UnitModelAnimationRole::Move:
+			return settings.moveAnimationClip[GetUnitRenderModelIndex(renderModel)];
+
+		case UnitModelAnimationRole::Attack:
+			return settings.attackAnimationClip[GetUnitRenderModelIndex(renderModel)];
+
+		case UnitModelAnimationRole::Idle:
+		default:
+			return settings.idleAnimationClip[GetUnitRenderModelIndex(renderModel)];
+		}
 	}
 
 	[[nodiscard]] inline double& GetTireTrackYOffset(ModelHeightSettings& settings, const TireTrackTextureSegment segment)

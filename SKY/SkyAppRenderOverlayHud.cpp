@@ -211,7 +211,7 @@ namespace SkyAppFlow
 			}
 		}
 
-		void DrawModelHeightOverlay(SkyAppState& state, const SkyAppFrameState& frame)
+      void DrawModelHeightOverlay(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 		{
 			if (state.modelHeightEditMode)
 			{
@@ -219,7 +219,16 @@ namespace SkyAppFlow
 				{
 					frame.panels.modelHeight.drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.96, 0.72 });
 				}
-				DrawModelHeightEditor(state.modelHeightSettings, state.modelHeightTarget, state.modelHeightTextureMode, state.tireTrackTextureTarget, state.modelHeightMessage.text, state.modelHeightMessage.until, frame.panels.modelHeight, frame.previewRenderPositions);
+               DrawModelHeightEditor(state.modelHeightSettings,
+					state.modelHeightTarget,
+					state.modelHeightTextureMode,
+					state.tireTrackTextureTarget,
+                  state.modelHeightPreviewAnimationRole,
+					resources.GetUnitRenderModel(state.modelHeightTarget, state.modelHeightPreviewAnimationRole),
+					state.modelHeightMessage.text,
+					state.modelHeightMessage.until,
+					frame.panels.modelHeight,
+					frame.previewRenderPositions);
 			}
 		}
 
