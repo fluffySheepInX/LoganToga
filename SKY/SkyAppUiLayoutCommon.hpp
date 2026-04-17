@@ -45,6 +45,12 @@ namespace SkyAppUiLayout
 		return Point{ Detail::RightColumnX(sceneWidth), (layout.shared.panelMargin + layout.resourcePanel.expandedHeight + layout.shared.panelGap) };
 	}
 
+	[[nodiscard]] inline Point DefaultMiniMapSize()
+	{
+		const auto& layout = Detail::LayoutProfile();
+		return Point{ layout.rightColumn.width, layout.miniMap.expandedHeight };
+	}
+
 	[[nodiscard]] inline Point DefaultResourcePanelPosition(const int32 sceneWidth)
 	{
 		const auto& layout = Detail::LayoutProfile();

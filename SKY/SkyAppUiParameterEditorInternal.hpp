@@ -33,6 +33,9 @@ namespace SkyAppSupport
        [[nodiscard]] int32 ToUnitEditorSliderBase(MainSupport::UnitTeam team, MainSupport::SapperUnitType unitType);
 		void ClampUnitParameters(MainSupport::UnitParameters& parameters);
       void ClampExplosionSkillParameters(MainSupport::ExplosionSkillParameters& parameters);
+      void ClampBuildMillSkillParameters(MainSupport::BuildMillSkillParameters& parameters);
+		void ClampHealSkillParameters(MainSupport::HealSkillParameters& parameters);
+		void ClampScoutSkillParameters(MainSupport::ScoutSkillParameters& parameters);
 		void DrawMovementTypeSelector(const Rect& panel, double top, MainSupport::MovementType& movementType);
       void DrawUnitAiRoleSelector(const Rect& panel, double top, MainSupport::UnitAiRole& aiRole);
        void DrawFootprintTypeSelector(const Rect& panel, double top, MainSupport::UnitParameters& parameters);
@@ -42,5 +45,14 @@ namespace SkyAppSupport
 			const MainSupport::UnitParameters& parameters);
      void DrawUnitParameterRows(const Rect& panel, int32 sliderBase, MainSupport::UnitParameters& parameters, MainSupport::UnitEditorPage page, int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect);
        void DrawExplosionSkillParameterRows(const Rect& panel, int32 sliderBase, MainSupport::ExplosionSkillParameters& parameters, int32 top, String& hoveredDescription, Optional<Rect>& hoveredRect);
+       void DrawUniqueSkillParameterRows(const Rect& panel,
+			int32 sliderBase,
+			MainSupport::UniqueSkillType uniqueSkillType,
+			MainSupport::BuildMillSkillParameters& buildParameters,
+			MainSupport::HealSkillParameters& healParameters,
+			MainSupport::ScoutSkillParameters& scoutParameters,
+			int32 top,
+			String& hoveredDescription,
+			Optional<Rect>& hoveredRect);
 	}
 }

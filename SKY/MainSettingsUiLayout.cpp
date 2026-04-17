@@ -7,6 +7,7 @@ namespace MainSupport
 	{
 		UiLayoutSettings settings{
 			.miniMapPosition = SkyAppUiLayout::DefaultMiniMapPosition(sceneWidth),
+          .miniMapSize = SkyAppUiLayout::DefaultMiniMapSize(),
 			.resourcePanelPosition = SkyAppUiLayout::DefaultResourcePanelPosition(sceneWidth),
          .resourcePanelSize = SkyAppUiLayout::DefaultResourcePanelSize(),
 			.modelHeightPosition = SkyAppUiLayout::DefaultModelHeightPosition(sceneWidth, sceneHeight),
@@ -14,6 +15,7 @@ namespace MainSupport
             .fogSettingsPosition = SkyAppUiLayout::DefaultFogSettingsPosition(sceneWidth, sceneHeight),
 			.unitEditorPosition = SkyAppUiLayout::DefaultUnitEditorPosition(sceneWidth),
 			.unitEditorListPosition = SkyAppUiLayout::DefaultUnitEditorListPosition(),
+          .battleCommandIconSize = SkyAppUiLayout::ClampBattleCommandIconSize(128),
 		};
 
 		const TOMLReader toml{ UiLayoutSettingsPath };
@@ -24,6 +26,7 @@ namespace MainSupport
 		}
 
 		settings.miniMapPosition = SettingsDetail::ReadTomlPoint(toml, U"miniMap", settings.miniMapPosition);
+     settings.miniMapSize = SettingsDetail::ReadTomlPoint(toml, U"miniMapSize", settings.miniMapSize);
 		settings.resourcePanelPosition = SettingsDetail::ReadTomlPoint(toml, U"resourcePanel", settings.resourcePanelPosition);
        settings.resourcePanelSize = SettingsDetail::ReadTomlPoint(toml, U"resourcePanelSize", settings.resourcePanelSize);
 		settings.modelHeightPosition = SettingsDetail::ReadTomlPoint(toml, U"modelHeight", settings.modelHeightPosition);
@@ -31,8 +34,10 @@ namespace MainSupport
       settings.fogSettingsPosition = SettingsDetail::ReadTomlPoint(toml, U"fogSettings", settings.fogSettingsPosition);
 		settings.unitEditorPosition = SettingsDetail::ReadTomlPoint(toml, U"unitEditor", settings.unitEditorPosition);
 		settings.unitEditorListPosition = SettingsDetail::ReadTomlPoint(toml, U"unitEditorList", settings.unitEditorListPosition);
+		settings.battleCommandIconSize = SkyAppUiLayout::ClampBattleCommandIconSize(toml[U"battleCommandIconSize"].getOr<int32>(settings.battleCommandIconSize));
 
-		const Rect miniMapRect = SkyAppUiLayout::MiniMap(sceneWidth, sceneHeight, settings.miniMapPosition, true);
+      settings.miniMapSize = SkyAppUiLayout::ClampMiniMapSize(settings.miniMapSize, settings.miniMapPosition, sceneWidth, sceneHeight, true);
+		const Rect miniMapRect = SkyAppUiLayout::MiniMap(sceneWidth, sceneHeight, settings.miniMapPosition, settings.miniMapSize, true);
          settings.resourcePanelSize = SkyAppUiLayout::ClampResourcePanelSize(settings.resourcePanelSize, settings.resourcePanelPosition, sceneWidth, sceneHeight, false);
         const Rect resourcePanelRect = SkyAppUiLayout::ResourcePanel(sceneWidth, sceneHeight, settings.resourcePanelPosition, settings.resourcePanelSize, false, true);
 		const Rect modelHeightRect = SkyAppUiLayout::ModelHeight(sceneWidth, sceneHeight, settings.modelHeightPosition);
@@ -48,6 +53,7 @@ namespace MainSupport
       settings.fogSettingsPosition = Point{ fogSettingsRect.x, fogSettingsRect.y };
 		settings.unitEditorPosition = Point{ unitEditorRect.x, unitEditorRect.y };
 		settings.unitEditorListPosition = Point{ unitEditorListRect.x, unitEditorListRect.y };
+        settings.miniMapSize = Point{ miniMapRect.w, miniMapRect.h };
 		return settings;
 	}
 
@@ -63,6 +69,7 @@ namespace MainSupport
 		}
 
 		writer.writeln(U"miniMap = [{}, {}]"_fmt(settings.miniMapPosition.x, settings.miniMapPosition.y));
+        writer.writeln(U"miniMapSize = [{}, {}]"_fmt(settings.miniMapSize.x, settings.miniMapSize.y));
 		writer.writeln(U"resourcePanel = [{}, {}]"_fmt(settings.resourcePanelPosition.x, settings.resourcePanelPosition.y));
       writer.writeln(U"resourcePanelSize = [{}, {}]"_fmt(settings.resourcePanelSize.x, settings.resourcePanelSize.y));
 		writer.writeln(U"modelHeight = [{}, {}]"_fmt(settings.modelHeightPosition.x, settings.modelHeightPosition.y));
@@ -70,6 +77,7 @@ namespace MainSupport
      writer.writeln(U"fogSettings = [{}, {}]"_fmt(settings.fogSettingsPosition.x, settings.fogSettingsPosition.y));
 		writer.writeln(U"unitEditor = [{}, {}]"_fmt(settings.unitEditorPosition.x, settings.unitEditorPosition.y));
 		writer.writeln(U"unitEditorList = [{}, {}]"_fmt(settings.unitEditorListPosition.x, settings.unitEditorListPosition.y));
+        writer.writeln(U"battleCommandIconSize = {}"_fmt(SkyAppUiLayout::ClampBattleCommandIconSize(settings.battleCommandIconSize)));
 		return true;
 	}
 }

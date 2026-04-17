@@ -114,7 +114,10 @@ namespace SkyAppUiLayout
 
 		void LoadMiniMapLayoutMetrics(const TOMLReader& toml, MiniMapLayoutMetrics& metrics)
 		{
-           static constexpr std::array<IntMetricFieldEntry<MiniMapLayoutMetrics>, 1> entries{{
+         static constexpr std::array<IntMetricFieldEntry<MiniMapLayoutMetrics>, 4> entries{{
+				{ U"minWidth", &MiniMapLayoutMetrics::minWidth },
+				{ U"minHeight", &MiniMapLayoutMetrics::minHeight },
+				{ U"resizeHandleSize", &MiniMapLayoutMetrics::resizeHandleSize },
 				{ U"expandedHeight", &MiniMapLayoutMetrics::expandedHeight },
 			}};
 			LoadMetricSection(toml, U"miniMap", metrics, entries);
@@ -215,12 +218,37 @@ namespace SkyAppUiLayout
 			ClampMetricValues(metrics, entries);
 		}
 
-		void SanitizeMiniMapLayoutMetrics(MiniMapLayoutMetrics& metrics, const SharedLayoutMetrics& shared)
+     void SanitizeMiniMapLayoutMetrics(MiniMapLayoutMetrics& metrics, const SharedLayoutMetrics& shared, const MiniMapLayoutMetrics& defaults)
 		{
-         static constexpr std::array<IntMetricClampEntry<MiniMapLayoutMetrics>, 1> entries{{
+          static constexpr std::array<IntMetricClampEntry<MiniMapLayoutMetrics>, 4> entries{{
+				{ &MiniMapLayoutMetrics::minWidth, 120, 1280 },
+				{ &MiniMapLayoutMetrics::minHeight, 120, 1280 },
+				{ &MiniMapLayoutMetrics::resizeHandleSize, 8, 64 },
 				{ &MiniMapLayoutMetrics::expandedHeight, 0, 1080 },
 			}};
+
+			if (metrics.minWidth <= 0)
+			{
+				metrics.minWidth = defaults.minWidth;
+			}
+
+			if (metrics.minHeight <= 0)
+			{
+				metrics.minHeight = defaults.minHeight;
+			}
+
+			if (metrics.resizeHandleSize <= 0)
+			{
+				metrics.resizeHandleSize = defaults.resizeHandleSize;
+			}
+
+			if (metrics.expandedHeight <= 0)
+			{
+				metrics.expandedHeight = defaults.expandedHeight;
+			}
+
 			ClampMetricValues(metrics, entries);
+         metrics.minHeight = Max(metrics.minHeight, shared.accordionHeaderHeight);
 			metrics.expandedHeight = Max(metrics.expandedHeight, shared.accordionHeaderHeight);
 		}
 
@@ -284,7 +312,7 @@ namespace SkyAppUiLayout
 			SanitizeResourcePanelLayoutMetrics(profile.resourcePanel, profile.shared);
 			SanitizeModelHeightLayoutMetrics(profile.modelHeight);
 			SanitizeBottomControlLayoutMetrics(profile.bottomControl);
-			SanitizeMiniMapLayoutMetrics(profile.miniMap, profile.shared);
+          SanitizeMiniMapLayoutMetrics(profile.miniMap, profile.shared, defaults.miniMap);
 			SanitizeSkySettingsLayoutMetrics(profile.skySettings, profile.shared);
 			SanitizeCameraSettingsLayoutMetrics(profile.cameraSettings, profile.shared);
 			SanitizeTerrainVisualSettingsLayoutMetrics(profile.terrainVisualSettings, profile.shared);

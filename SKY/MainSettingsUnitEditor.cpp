@@ -31,6 +31,15 @@ namespace MainSupport
 				SettingsDetail::LoadExplosionSkillParameterGroup(toml,
 					groupKey,
 					GetExplosionSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::LoadBuildMillSkillParameterGroup(toml,
+					groupKey,
+					GetBuildMillSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::LoadHealSkillParameterGroup(toml,
+					groupKey,
+					GetHealSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::LoadScoutSkillParameterGroup(toml,
+					groupKey,
+					GetScoutSkillParameters(settings, team, unitDefinition.unitType));
 
 				if (const auto modelPath = toml[(groupKey + U"ModelPath")].getOpt<String>())
 				{
@@ -70,6 +79,15 @@ namespace MainSupport
 				SettingsDetail::SaveExplosionSkillParameterGroup(writer,
 					groupKey,
 					GetExplosionSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::SaveBuildMillSkillParameterGroup(writer,
+					groupKey,
+					GetBuildMillSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::SaveHealSkillParameterGroup(writer,
+					groupKey,
+					GetHealSkillParameters(settings, team, unitDefinition.unitType));
+				SettingsDetail::SaveScoutSkillParameterGroup(writer,
+					groupKey,
+					GetScoutSkillParameters(settings, team, unitDefinition.unitType));
 
 				const FilePath& modelPath = GetUnitModelPath(settings, team, unitDefinition.unitType);
 				if (not modelPath.isEmpty())

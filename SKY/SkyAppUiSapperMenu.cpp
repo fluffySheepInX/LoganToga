@@ -18,17 +18,22 @@ namespace SkyAppSupport
             return U"ティアアップ (+{}% / {:.0f} 予算)"_fmt(static_cast<int32>(SapperTierStatBonusRate * 100.0), GetTierUpgradeCost(sapper.tier));
         }
 
-        [[nodiscard]] String GetUniqueSkillLabel(const SpawnedSapper& selectedSapper)
+       [[nodiscard]] String GetUniqueSkillLabel(const UnitEditorSettings& unitEditorSettings, const SpawnedSapper& selectedSapper)
         {
             const StringView skillLabel = GetUnitUniqueSkillLabel(selectedSapper.unitType);
 
             switch (GetUnitUniqueSkillType(selectedSapper.unitType))
             {
             case UniqueSkillType::BuildMill:
-                return U"{} [準備中]"_fmt(skillLabel);
+                {
+                    const BuildMillSkillParameters& skillParameters = GetBuildMillSkillParameters(unitEditorSettings, selectedSapper.team, selectedSapper.unitType);
+                return U"{} ({:.0f} 魔力 / {:.0f} 火薬)"_fmt(skillLabel,
+                   Clamp(skillParameters.manaCost, 0.0, 200.0),
+                    Clamp(skillParameters.gunpowderCost, 0.0, 200.0));
+                }
 
             case UniqueSkillType::Heal:
-                return U"{} [準備中]"_fmt(skillLabel);
+                return U"{} ({:.0f} 魔力)"_fmt(skillLabel, Clamp(GetHealSkillParameters(unitEditorSettings, selectedSapper.team, selectedSapper.unitType).manaCost, 0.0, 200.0));
 
             case UniqueSkillType::Scout:
                 if (Scene::Time() < selectedSapper.scoutingSkillUntil)
@@ -36,7 +41,7 @@ namespace SkyAppSupport
                     return U"{} [展開中]"_fmt(skillLabel);
                 }
 
-                return U"{} ({:.0f} 火薬)"_fmt(skillLabel, Clamp(SapperScoutingSkillGunpowderCost, 0.0, 200.0));
+              return U"{} ({:.0f} 火薬)"_fmt(skillLabel, Clamp(GetScoutSkillParameters(unitEditorSettings, selectedSapper.team, selectedSapper.unitType).gunpowderCost, 0.0, 200.0));
             }
 
             return String{ skillLabel };
@@ -84,7 +89,7 @@ namespace SkyAppSupport
         const Rect& panelRect = panels.sapperMenu;
         UiInternal::DrawPanelFrame(panelRect, U"兵メニュー", ColorF{ 0.97, 0.95 }, UiInternal::DefaultPanelFrameColor, UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::Hud);
         font(U"予算: {:.0f}"_fmt(playerResources.budget)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 38), ColorF{ 0.12 });
-        font(U"魔力: {:.0f} / 選択T {}"_fmt(playerResources.mana, selectedSapper.tier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 60), ColorF{ 0.12 });
+        font(U"魔力: {:.0f} / 火薬: {:.0f} / 選択T {}"_fmt(playerResources.mana, playerResources.gunpowder, selectedSapper.tier)).draw(SkyAppUiLayout::MenuTextPosition(panelRect, 60), ColorF{ 0.12 });
         font(U"強化").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 86), ColorF{ 0.22 });
         font(U"スキル").draw(SkyAppUiLayout::MenuTextPosition(panelRect, 144), ColorF{ 0.22 });
 
@@ -112,7 +117,7 @@ namespace SkyAppSupport
             }
         }
 
-        if (DrawTextButton(uniqueSkillButton, GetUniqueSkillLabel(selectedSapper)))
+     if (DrawTextButton(uniqueSkillButton, GetUniqueSkillLabel(unitEditorSettings, selectedSapper)))
         {
             return SapperMenuAction::UseUniqueSkill;
         }

@@ -138,11 +138,11 @@ namespace SkyAppSupport
 		const SapperUnitType unitType = activeSelection.unitType;
 		UnitParameters& parameters = GetUnitParameters(unitEditorSettings, team, unitType);
         ExplosionSkillParameters& explosionSkillParameters = GetExplosionSkillParameters(unitEditorSettings, team, unitType);
-		const bool explosionSkillSupported = CanUnitUseExplosionSkill(unitType);
-		if ((activePage == UnitEditorPage::Skill) && (not explosionSkillSupported))
-		{
-			activePage = UnitEditorPage::Basic;
-		}
+        BuildMillSkillParameters& buildMillSkillParameters = GetBuildMillSkillParameters(unitEditorSettings, team, unitType);
+		HealSkillParameters& healSkillParameters = GetHealSkillParameters(unitEditorSettings, team, unitType);
+		ScoutSkillParameters& scoutSkillParameters = GetScoutSkillParameters(unitEditorSettings, team, unitType);
+		const UniqueSkillType uniqueSkillType = GetUnitUniqueSkillType(unitType);
+        const bool explosionSkillSupported = CanUnitUseExplosionSkill(unitType);
 		ClampUnitParameters(parameters);
         ClampExplosionSkillParameters(explosionSkillParameters);
      Rect{ detailPanel.x, (detailPanel.bottomY() - 46), detailPanel.w, 1 }.draw(ColorF{ 0.80, 0.78, 0.72 });
@@ -162,7 +162,7 @@ namespace SkyAppSupport
 		for (size_t i = 0; i < pages.size(); ++i)
 		{
 			const UnitEditorPage page = pages[i];
-            const bool enabled = ((page != UnitEditorPage::Skill) || explosionSkillSupported);
+          const bool enabled = true;
 			const Rect pageButton{ (detailPanel.x + 16 + static_cast<int32>(i) * (pageButtonWidth + pageButtonGap)), (detailPanel.y + 78), pageButtonWidth, 28 };
 			const bool selected = (activePage == page);
 			const bool hovered = pageButton.mouseOver();
@@ -189,9 +189,9 @@ namespace SkyAppSupport
 					break;
 
 				case UnitEditorPage::Skill:
-					hoveredDescription = explosionSkillSupported
-						? U"爆破スキルの範囲、威力、コスト、クールダウン、エフェクトを編集します。Player / Enemy は別々に調整されます。"
-						: U"このユニットは爆破スキル非対応です。";
+                    hoveredDescription = explosionSkillSupported
+						? U"スキルページです。共通の爆破スキルと、このユニット固有スキルの数値を編集します。Player / Enemy は別々に調整されます。"
+						: U"スキルページです。このユニットの固有スキル数値を編集します。爆破非対応ユニットでも固有スキルは調整できます。";
 					break;
 
 				case UnitEditorPage::Basic:
@@ -351,6 +351,15 @@ namespace SkyAppSupport
 		if (activePage == UnitEditorPage::Skill)
 		{
 			DrawExplosionSkillParameterRows(detailPanel, ToUnitEditorSliderBase(team, unitType), explosionSkillParameters, parameterRowsTop, hoveredDescription, hoveredRect);
+           DrawUniqueSkillParameterRows(detailPanel,
+				ToUnitEditorSliderBase(team, unitType),
+				uniqueSkillType,
+				buildMillSkillParameters,
+				healSkillParameters,
+				scoutSkillParameters,
+				(parameterRowsTop + 388),
+				hoveredDescription,
+				hoveredRect);
 		}
 		else
 		{
@@ -358,6 +367,9 @@ namespace SkyAppSupport
 		}
 		ClampUnitParameters(parameters);
 		ClampExplosionSkillParameters(explosionSkillParameters);
+		ClampBuildMillSkillParameters(buildMillSkillParameters);
+		ClampHealSkillParameters(healSkillParameters);
+		ClampScoutSkillParameters(scoutSkillParameters);
 
 		const Rect resetButton{ (detailPanel.x + 16), (detailPanel.y + detailPanel.h - 36), 92, 28 };
 		const Rect applyButton{ (detailPanel.x + 116), (detailPanel.y + detailPanel.h - 36), 92, 28 };
@@ -366,14 +378,14 @@ namespace SkyAppSupport
 		if (resetButton.mouseOver())
 		{
            hoveredDescription = (activePage == UnitEditorPage::Skill)
-				? U"この選択中の陣営 / ユニット種別の爆破スキル設定を既定値へ戻します。"
+                ? U"この選択中の陣営 / ユニット種別のスキル設定を既定値へ戻します。爆破と固有スキルの両方が対象です。"
 				: U"この選択ユニット種別の値を既定値へ戻します。保存前でも editor 上の値は即時変更されます。";
            hoveredRect = resetButton;
 		}
 		else if (applyButton.mouseOver())
 		{
            hoveredDescription = (activePage == UnitEditorPage::Skill)
-				? U"爆破スキル設定は即時反映です。次回のスキル使用時から、コスト・威力・エフェクトへ反映されます。"
+                ? U"スキル設定は即時反映です。次回の使用時から、爆破と固有スキルのコスト・威力・効果時間・範囲へ反映されます。"
 				: U"今いる同種ユニットへ設定を反映します。交戦距離や停止距離も次フレーム以降に更新されます。";
            hoveredRect = applyButton;
 		}
@@ -393,7 +405,10 @@ namespace SkyAppSupport
          if (activePage == UnitEditorPage::Skill)
 			{
 				explosionSkillParameters = MakeDefaultExplosionSkillParameters(team, unitType);
-				unitEditorMessage.show(U"爆破スキル設定を既定値に戻しました", 3.0);
+              buildMillSkillParameters = MakeDefaultBuildMillSkillParameters(team, unitType);
+				healSkillParameters = MakeDefaultHealSkillParameters(team, unitType);
+				scoutSkillParameters = MakeDefaultScoutSkillParameters(team, unitType);
+				unitEditorMessage.show(U"スキル設定を既定値に戻しました", 3.0);
 			}
 			else
 			{
@@ -407,7 +422,7 @@ namespace SkyAppSupport
 		{
            if (activePage == UnitEditorPage::Skill)
 			{
-				unitEditorMessage.show(U"爆破スキル設定は即時反映です", 3.0);
+             unitEditorMessage.show(U"スキル設定は即時反映です", 3.0);
 			}
 			else
 			{

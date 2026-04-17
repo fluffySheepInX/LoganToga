@@ -8,7 +8,13 @@ namespace SkyAppFlow
 {
     namespace
     {
-        constexpr double SapperScoutingSkillDuration = 5.0;
+        constexpr double MillBuildSpacingRadius = 4.0;
+        constexpr double MillBuildBaseClearance = (BaseCombatRadius + 2.2);
+        constexpr double MillBuildResourcePadding = 1.0;
+        constexpr double ArcaneHealEffectLifetime = 0.45;
+        constexpr double ArcaneHealEffectThickness = 6.0;
+        constexpr Vec3 ArcaneHealEffectOffset{ 0.0, 1.2, 0.0 };
+        constexpr ColorF ArcaneHealEffectColor{ 0.42, 1.0, 0.66, 0.96 };
 
         [[nodiscard]] SpawnedSapper* TryGetActionablePlayerSapper(SkyAppState& state, const size_t selectedSapperIndex)
         {
@@ -25,6 +31,89 @@ namespace SkyAppFlow
             }
 
             return &sapper;
+        }
+
+        [[nodiscard]] Vec3 GetInfantryMillBuildPosition(const SpawnedSapper& sapper, const double forwardOffset)
+        {
+            const Vec3 origin = GetSpawnedSapperBasePosition(sapper);
+            const double yaw = GetSpawnedSapperYaw(sapper);
+            const Vec2 forward{ Math::Sin(yaw), Math::Cos(yaw) };
+            return Vec3{ origin.x + forward.x * forwardOffset, 0.0, origin.z + forward.y * forwardOffset };
+        }
+
+        [[nodiscard]] bool CanBuildMillAt(const SkyAppState& state, const Vec3& buildPosition)
+        {
+            const double spacingRadiusSq = Square(MillBuildSpacingRadius);
+
+            for (const PlacedModel& placedModel : state.mapData.placedModels)
+            {
+                if (buildPosition.distanceFromSq(placedModel.position) < spacingRadiusSq)
+                {
+                    return false;
+                }
+            }
+
+            if (buildPosition.distanceFromSq(state.mapData.playerBasePosition) < Square(MillBuildBaseClearance)
+                || buildPosition.distanceFromSq(state.mapData.enemyBasePosition) < Square(MillBuildBaseClearance))
+            {
+                return false;
+            }
+
+            for (const ResourceArea& area : state.mapData.resourceAreas)
+            {
+                const double blockedRadius = Max(0.5, area.radius + MillBuildResourcePadding);
+                if (buildPosition.distanceFromSq(area.position) < Square(blockedRadius))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        [[nodiscard]] bool TryUsePlayerInfantryBuildMillSkill(SkyAppState& state, const size_t selectedSapperIndex)
+        {
+            SpawnedSapper* sapper = TryGetActionablePlayerSapper(state, selectedSapperIndex);
+            if (sapper == nullptr)
+            {
+                return false;
+            }
+
+            if (sapper->unitType != SapperUnitType::Infantry)
+            {
+                state.blacksmithMenuMessage.show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
+                return false;
+            }
+
+            const BuildMillSkillParameters& skillParameters = GetBuildMillSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const double manaCost = Clamp(skillParameters.manaCost, 0.0, 200.0);
+            const double gunpowderCost = Clamp(skillParameters.gunpowderCost, 0.0, 200.0);
+            const double forwardOffset = Clamp(skillParameters.forwardOffset, 1.0, 10.0);
+            if (state.playerResources.mana < manaCost)
+            {
+                state.blacksmithMenuMessage.show(U"魔力不足");
+                return false;
+            }
+
+            if (state.playerResources.gunpowder < gunpowderCost)
+            {
+                state.blacksmithMenuMessage.show(U"火薬不足");
+                return false;
+            }
+
+            const Vec3 buildPosition = GetInfantryMillBuildPosition(*sapper, forwardOffset);
+            if (not CanBuildMillAt(state, buildPosition))
+            {
+                state.blacksmithMenuMessage.show(U"そこには Mill を建てられない");
+                return false;
+            }
+
+            state.playerResources.mana -= manaCost;
+            state.playerResources.gunpowder -= gunpowderCost;
+            state.mapData.placedModels << PlacedModel{ .type = PlaceableModelType::Mill, .position = buildPosition, .ownerTeam = UnitTeam::Player, .yaw = GetSpawnedSapperYaw(*sapper) };
+            state.selectedMillIndex = (state.mapData.placedModels.size() - 1);
+            state.blacksmithMenuMessage.show(U"{}が Mill を建築"_fmt(GetUnitDisplayName(sapper->unitType)));
+            return true;
         }
 
         [[nodiscard]] bool TryUsePlayerVehicleScoutingSkill(SkyAppState& state, const size_t selectedSapperIndex)
@@ -47,7 +136,10 @@ namespace SkyAppFlow
                 return false;
             }
 
-            const double gunpowderCost = Clamp(SapperScoutingSkillGunpowderCost, 0.0, 200.0);
+            const ScoutSkillParameters& skillParameters = GetScoutSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const double gunpowderCost = Clamp(skillParameters.gunpowderCost, 0.0, 200.0);
+            const double durationSeconds = Clamp(skillParameters.durationSeconds, 0.1, 30.0);
+            const double visionMultiplier = Clamp(skillParameters.visionMultiplier, 1.0, 4.0);
             if (state.playerResources.gunpowder < gunpowderCost)
             {
                 state.blacksmithMenuMessage.show(U"火薬不足");
@@ -55,8 +147,78 @@ namespace SkyAppFlow
             }
 
             state.playerResources.gunpowder -= gunpowderCost;
-            sapper->scoutingSkillUntil = (Scene::Time() + SapperScoutingSkillDuration);
+            sapper->scoutingSkillUntil = (Scene::Time() + durationSeconds);
+            sapper->scoutingSkillVisionMultiplier = visionMultiplier;
             state.blacksmithMenuMessage.show(U"{}が偵察スキルを使用"_fmt(GetUnitDisplayName(sapper->unitType)));
+            return true;
+        }
+
+        [[nodiscard]] bool TryUsePlayerArcaneHealSkill(SkyAppState& state, const size_t selectedSapperIndex)
+        {
+            SpawnedSapper* sapper = TryGetActionablePlayerSapper(state, selectedSapperIndex);
+            if (sapper == nullptr)
+            {
+                return false;
+            }
+
+            if (sapper->unitType != SapperUnitType::ArcaneInfantry)
+            {
+                state.blacksmithMenuMessage.show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
+                return false;
+            }
+
+            const HealSkillParameters& skillParameters = GetHealSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const double manaCost = Clamp(skillParameters.manaCost, 0.0, 200.0);
+            if (state.playerResources.mana < manaCost)
+            {
+                state.blacksmithMenuMessage.show(U"魔力不足");
+                return false;
+            }
+
+            const Vec3 healCenter = GetSpawnedSapperBasePosition(*sapper);
+            const double healRadius = Clamp(skillParameters.radius, 0.5, 12.0);
+            const double healRadiusSq = Square(healRadius);
+            const double healAmount = Clamp(skillParameters.amount, 1.0, 200.0);
+            int32 healedCount = 0;
+
+            for (auto& ally : state.spawnedSappers)
+            {
+                if (not IsSpawnedSapperCombatActive(ally))
+                {
+                    continue;
+                }
+
+                if (healRadiusSq < GetSpawnedSapperBasePosition(ally).distanceFromSq(healCenter))
+                {
+                    continue;
+                }
+
+                if (ally.hitPoints >= ally.maxHitPoints)
+                {
+                    continue;
+                }
+
+                ally.hitPoints = Min(ally.maxHitPoints, (ally.hitPoints + healAmount));
+                ++healedCount;
+            }
+
+            if (healedCount <= 0)
+            {
+                state.blacksmithMenuMessage.show(U"回復対象がいない");
+                return false;
+            }
+
+            state.playerResources.mana -= manaCost;
+            sapper->lastAttackAt = Scene::Time();
+            EmitAttackEffect(state,
+                AttackEffectType::Explosion,
+                (healCenter + ArcaneHealEffectOffset),
+                (healCenter + ArcaneHealEffectOffset),
+                ArcaneHealEffectColor,
+                ArcaneHealEffectLifetime,
+                ArcaneHealEffectThickness,
+                healRadius);
+            state.blacksmithMenuMessage.show(U"{}が {} 体を回復"_fmt(GetUnitDisplayName(sapper->unitType), healedCount));
             return true;
         }
     }
@@ -72,12 +234,10 @@ namespace SkyAppFlow
         switch (GetUnitUniqueSkillType(sapper->unitType))
         {
         case UniqueSkillType::BuildMill:
-            state.blacksmithMenuMessage.show(U"建築スキルは未実装");
-            return false;
+            return TryUsePlayerInfantryBuildMillSkill(state, selectedSapperIndex);
 
         case UniqueSkillType::Heal:
-            state.blacksmithMenuMessage.show(U"回復スキルは未実装");
-            return false;
+            return TryUsePlayerArcaneHealSkill(state, selectedSapperIndex);
 
         case UniqueSkillType::Scout:
             return TryUsePlayerVehicleScoutingSkill(state, selectedSapperIndex);

@@ -3,42 +3,57 @@
 
 namespace SkyAppUiLayout
 {
-    [[nodiscard]] inline Rect BlacksmithMenu(const int32 sceneWidth, const int32 sceneHeight)
+    [[nodiscard]] inline int32 ClampBattleCommandIconSize(const int32 iconSize)
     {
-        return Rect{ (sceneWidth - 424), Max(20, (sceneHeight - 332)), 404, 312 };
+        return (iconSize <= 112) ? 96 : 128;
+    }
+
+    [[nodiscard]] inline int32 BattleCommandIconSize(const Rect& panelRect)
+    {
+        return ClampBattleCommandIconSize(((panelRect.w - 72) / 3));
+    }
+
+    [[nodiscard]] inline Rect BlacksmithMenu(const int32 sceneWidth, const int32 sceneHeight, const int32 iconSize = 128)
+    {
+        const int32 resolvedIconSize = ClampBattleCommandIconSize(iconSize);
+        const int32 panelWidth = (72 + resolvedIconSize * 3);
+        const int32 panelHeight = (172 + resolvedIconSize * 2);
+        return Rect{ (sceneWidth - (panelWidth + 20)), Max(20, (sceneHeight - (panelHeight + 20))), panelWidth, panelHeight };
     }
 
     [[nodiscard]] inline Rect BattleCommandSlotButton(const Rect& panelRect, const int32 index)
     {
-        constexpr int32 SlotWidth = 82;
-        constexpr int32 SlotHeight = 44;
-        constexpr int32 SlotGap = 8;
-        return Rect{ (panelRect.x + 16 + index * (SlotWidth + SlotGap)), (panelRect.y + 48), SlotWidth, SlotHeight };
+        constexpr int32 SlotWidth = 80;
+        constexpr int32 SlotHeight = 64;
+        constexpr int32 SlotGap = 6;
+        return Rect{ (panelRect.x + 16 + index * (SlotWidth + SlotGap)), (panelRect.y + 38), SlotWidth, SlotHeight };
     }
 
-    [[nodiscard]] inline Rect BattleCommandPortrait(const Rect& panelRect)
+    [[nodiscard]] inline Rect BattleCommandInnerFrame(const Rect& panelRect)
     {
-        return Rect{ (panelRect.x + 16), (panelRect.y + 108), 148, 112 };
+        return Rect{ (panelRect.x + 12), (panelRect.y + 114), (panelRect.w - 24), (panelRect.h - 130) };
     }
 
-    [[nodiscard]] inline Rect BattleCommandDetail(const Rect& panelRect)
+    [[nodiscard]] inline Rect BattleCommandUnitButton(const Rect& panelRect, const int32 index)
     {
-        return Rect{ (panelRect.x + 178), (panelRect.y + 108), 210, 112 };
-    }
-
-    [[nodiscard]] inline Rect BattleCommandPrimaryActionButton(const Rect& panelRect)
-    {
-        return Rect{ (panelRect.x + 194), (panelRect.y + 182), 178, 28 };
+        const int32 cardSize = BattleCommandIconSize(panelRect);
+        constexpr int32 CardGap = 6;
+        const Rect innerRect = BattleCommandInnerFrame(panelRect);
+        return Rect{ (innerRect.x + 16 + index * (cardSize + CardGap)), (innerRect.y + 18), cardSize, cardSize };
     }
 
     [[nodiscard]] inline Rect BattleCommandTierUpButton(const Rect& panelRect)
     {
-        return Rect{ (panelRect.x + 16), (panelRect.y + 252), 148, 40 };
+        const Rect innerRect = BattleCommandInnerFrame(panelRect);
+        const int32 cardSize = BattleCommandIconSize(panelRect);
+        return Rect{ (innerRect.rightX() - (cardSize + 12)), (innerRect.bottomY() - (cardSize + 12)), cardSize, cardSize };
     }
 
     [[nodiscard]] inline Rect BattleCommandMessageRect(const Rect& panelRect)
     {
-        return Rect{ (panelRect.x + 178), (panelRect.y + 228), 210, 56 };
+        const Rect innerRect = BattleCommandInnerFrame(panelRect);
+        const int32 cardSize = BattleCommandIconSize(panelRect);
+        return Rect{ (innerRect.x + 12), (innerRect.bottomY() - 24), Max(0, (innerRect.w - (cardSize + 36))), 20 };
     }
 
     [[nodiscard]] inline Rect SapperMenu(const int32 sceneWidth, const int32 sceneHeight)

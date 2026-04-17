@@ -49,6 +49,7 @@ namespace SkyAppSupport
       Rect fogSettingsToggle;
         Rect uiEditModeToggle;
         Rect resourceAdjustToggle;
+       Rect battleCommandScaleToggle;
         Rect enemyPlanToggle;
 		Rect timeSlider;
 

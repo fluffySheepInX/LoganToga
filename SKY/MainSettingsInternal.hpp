@@ -14,6 +14,12 @@ namespace MainSupport::SettingsDetail
    void LoadExplosionSkillParameterGroup(const TOMLReader& toml, StringView prefix, ExplosionSkillParameters& parameters);
 	void SaveUnitParameterGroup(TextWriter& writer, StringView prefix, const UnitParameters& parameters);
    void SaveExplosionSkillParameterGroup(TextWriter& writer, StringView prefix, const ExplosionSkillParameters& parameters);
+   void LoadBuildMillSkillParameterGroup(const TOMLReader& toml, StringView prefix, BuildMillSkillParameters& parameters);
+	void SaveBuildMillSkillParameterGroup(TextWriter& writer, StringView prefix, const BuildMillSkillParameters& parameters);
+	void LoadHealSkillParameterGroup(const TOMLReader& toml, StringView prefix, HealSkillParameters& parameters);
+	void SaveHealSkillParameterGroup(TextWriter& writer, StringView prefix, const HealSkillParameters& parameters);
+	void LoadScoutSkillParameterGroup(const TOMLReader& toml, StringView prefix, ScoutSkillParameters& parameters);
+	void SaveScoutSkillParameterGroup(TextWriter& writer, StringView prefix, const ScoutSkillParameters& parameters);
 	EditorTextColorSettings& CachedEditorTextColorSettings();
    FilePath& CachedPanelNinePatchPath();
  FilePath& CachedSettingsPanelNinePatchPath();

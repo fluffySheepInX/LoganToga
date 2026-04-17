@@ -46,6 +46,9 @@ namespace SkyAppUiLayout
 
 	struct MiniMapLayoutMetrics
 	{
+     int32 minWidth = 180;
+		int32 minHeight = 180;
+		int32 resizeHandleSize = 18;
 		int32 expandedHeight = 220;
 	};
 

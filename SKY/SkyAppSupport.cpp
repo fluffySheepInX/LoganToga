@@ -75,7 +75,7 @@ namespace SkyAppSupport
 	double GetEffectiveSapperVisionRange(const SpawnedSapper& sapper)
 	{
 		return ((Scene::Time() < sapper.scoutingSkillUntil)
-			? (sapper.visionRange * 1.5)
+            ? (sapper.visionRange * Max(1.0, sapper.scoutingSkillVisionMultiplier))
 			: sapper.visionRange);
 	}
 
@@ -94,13 +94,13 @@ namespace SkyAppSupport
 	}
 
   SkyAppPanels::SkyAppPanels(const UiLayoutSettings& uiLayoutSettings, const bool skySettingsExpanded, const bool cameraSettingsExpanded, const bool terrainSettingsExpanded, const bool miniMapExpanded, const bool resourceAdjustExpanded, const bool resourcePanelShowStoredHeight)
-		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, miniMapExpanded) }
+		: miniMap{ SkyAppUiLayout::MiniMap(Scene::Width(), Scene::Height(), uiLayoutSettings.miniMapPosition, uiLayoutSettings.miniMapSize, miniMapExpanded) }
        , skySettings{ SkyAppUiLayout::SkySettings(Scene::Width(), Scene::Height(), skySettingsExpanded) }
         , cameraSettings{ SkyAppUiLayout::CameraSettings(Scene::Width(), Scene::Height(), skySettingsExpanded, cameraSettingsExpanded) }
 		   , terrainSettings{ SkyAppUiLayout::TerrainVisualSettings(Scene::Width(), Scene::Height(), uiLayoutSettings.terrainVisualSettingsPosition) }
        , fogSettings{ SkyAppUiLayout::FogSettings(Scene::Width(), Scene::Height(), uiLayoutSettings.fogSettingsPosition) }
-		, mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
-		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height()) }
+       , mapEditor{ SkyAppUiLayout::MapEditor(Scene::Width(), Scene::Height()) }
+		, blacksmithMenu{ SkyAppUiLayout::BlacksmithMenu(Scene::Width(), Scene::Height(), uiLayoutSettings.battleCommandIconSize) }
 		, sapperMenu{ SkyAppUiLayout::SapperMenu(Scene::Width(), Scene::Height()) }
 		, millStatusEditor{ SkyAppUiLayout::MillStatusEditor(Scene::Width(), Scene::Height()) }
           , modelHeight{ SkyAppUiLayout::ModelHeight(Scene::Width(), Scene::Height(), uiLayoutSettings.modelHeightPosition) }
@@ -118,6 +118,7 @@ namespace SkyAppSupport
         , fogSettingsToggle{ SkyAppUiLayout::FogSettingsToggle(Scene::Width(), Scene::Height()) }
      , uiEditModeToggle{ SkyAppUiLayout::UiEditModeToggle(Scene::Width(), Scene::Height()) }
      , resourceAdjustToggle{ SkyAppUiLayout::ResourceAdjustToggle(Scene::Width(), Scene::Height()) }
+      , battleCommandScaleToggle{ SkyAppUiLayout::BattleCommandScaleToggle(Scene::Width(), Scene::Height()) }
      , enemyPlanToggle{ SkyAppUiLayout::EnemyPlanToggle(Scene::Width(), Scene::Height()) }
 		, timeSlider{ SkyAppUiLayout::TimeSlider(Scene::Width(), Scene::Height()) }
 	{
@@ -136,7 +137,7 @@ namespace SkyAppSupport
 		#if _DEBUG
 			SkyAppUiLayout::BottomEditorTextColorsButton(enemyPlanToggle);
 		#else
-			SkyAppUiLayout::BottomEditorTextColorsButton(resourceAdjustToggle);
+         SkyAppUiLayout::BottomEditorTextColorsButton(battleCommandScaleToggle);
 		#endif
 		const Rect panelSkinButtonRect = SkyAppUiLayout::BottomPanelSkinButton(editorTextColorsButtonRect);
 
@@ -162,6 +163,7 @@ namespace SkyAppSupport
 			|| (showUI && fogSettingsToggle.mouseOver())
             || (showUI && uiEditModeToggle.mouseOver())
         || (showUI && resourceAdjustToggle.mouseOver())
+           || (showUI && battleCommandScaleToggle.mouseOver())
             || (showUI && editorTextColorsButtonRect.mouseOver())
             || (showUI && panelSkinButtonRect.mouseOver())
          || hoveringEnemyPlanToggle;

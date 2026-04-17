@@ -23,7 +23,12 @@ namespace SkyAppFlow
         {
             if (state.millLastAttackTimes.size() != state.mapData.placedModels.size())
             {
-                state.millLastAttackTimes = Array<double>(state.mapData.placedModels.size(), -1000.0);
+                const size_t previousSize = state.millLastAttackTimes.size();
+                state.millLastAttackTimes.resize(state.mapData.placedModels.size(), -1000.0);
+                for (size_t i = previousSize; i < state.millLastAttackTimes.size(); ++i)
+                {
+                    state.millLastAttackTimes[i] = -1000.0;
+                }
             }
         }
 

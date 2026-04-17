@@ -267,4 +267,37 @@ namespace MainSupport
 	{
 		return GetDefaultExplosionSkillParameters(team, unitType);
 	}
+
+	[[nodiscard]] inline const BuildMillSkillParameters& GetDefaultBuildMillSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyBuildMillDefaults : definition.playerBuildMillDefaults);
+	}
+
+	[[nodiscard]] inline BuildMillSkillParameters MakeDefaultBuildMillSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return GetDefaultBuildMillSkillParameters(team, unitType);
+	}
+
+	[[nodiscard]] inline const HealSkillParameters& GetDefaultHealSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyHealDefaults : definition.playerHealDefaults);
+	}
+
+	[[nodiscard]] inline HealSkillParameters MakeDefaultHealSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return GetDefaultHealSkillParameters(team, unitType);
+	}
+
+	[[nodiscard]] inline const ScoutSkillParameters& GetDefaultScoutSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		const UnitDefinition& definition = GetUnitDefinition(unitType);
+		return ((team == UnitTeam::Enemy) ? definition.enemyScoutDefaults : definition.playerScoutDefaults);
+	}
+
+	[[nodiscard]] inline ScoutSkillParameters MakeDefaultScoutSkillParameters(const UnitTeam team, const SapperUnitType unitType)
+	{
+		return GetDefaultScoutSkillParameters(team, unitType);
+	}
 }

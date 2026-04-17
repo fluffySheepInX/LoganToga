@@ -3,17 +3,33 @@
 
 namespace SkyAppUiLayout
 {
-	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = true)
+	[[nodiscard]] inline Point ClampMiniMapSize(const Point& size, const Point& position, const int32 sceneWidth, const int32 sceneHeight, const bool expanded)
 	{
 		const auto& layout = Detail::LayoutProfile();
-		const int32 panelHeight = AccordionPanelHeight(expanded, layout.miniMap.expandedHeight);
-		const Point clampedPosition = Detail::ClampPanelPosition(position, layout.rightColumn.width, panelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, layout.rightColumn.width, panelHeight };
+		const int32 minHeight = (expanded ? layout.miniMap.minHeight : layout.shared.accordionHeaderHeight);
+		return Point{
+			Clamp(size.x, layout.miniMap.minWidth, Max(layout.miniMap.minWidth, (sceneWidth - position.x))),
+			Clamp(size.y, minHeight, Max(minHeight, (sceneHeight - position.y)))
+		};
+	}
+
+	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const Point& size, const bool expanded = true)
+	{
+		const Point clampedSize = ClampMiniMapSize(size, position, sceneWidth, sceneHeight, expanded);
+		const int32 panelHeight = (expanded ? clampedSize.y : Detail::LayoutProfile().shared.accordionHeaderHeight);
+		const Point clampedPosition = Detail::ClampPanelPosition(position, clampedSize.x, panelHeight, sceneWidth, sceneHeight);
+		const Point reclampedSize = ClampMiniMapSize(clampedSize, clampedPosition, sceneWidth, sceneHeight, expanded);
+		return Rect{ clampedPosition.x, clampedPosition.y, reclampedSize.x, (expanded ? reclampedSize.y : Detail::LayoutProfile().shared.accordionHeaderHeight) };
+	}
+
+	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const bool expanded = true)
+	{
+		return MiniMap(sceneWidth, sceneHeight, position, DefaultMiniMapSize(), expanded);
 	}
 
 	[[nodiscard]] inline Rect MiniMap(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = true)
 	{
-		return MiniMap(sceneWidth, sceneHeight, DefaultMiniMapPosition(sceneWidth), expanded);
+		return MiniMap(sceneWidth, sceneHeight, DefaultMiniMapPosition(sceneWidth), DefaultMiniMapSize(), expanded);
 	}
 
 	[[nodiscard]] inline Rect SkySettings(const int32 sceneWidth, const int32 sceneHeight, const bool expanded = true)
@@ -140,6 +156,15 @@ namespace SkyAppUiLayout
 	{
 		const auto& layout = Detail::LayoutProfile();
 		return Rect{ (resourcePanel.rightX() - layout.resourcePanel.resizeHandleSize), (resourcePanel.bottomY() - layout.resourcePanel.resizeHandleSize), layout.resourcePanel.resizeHandleSize, layout.resourcePanel.resizeHandleSize };
+	}
+
+	[[nodiscard]] inline Rect MiniMapResizeHandle(const Rect& miniMap)
+	{
+		const auto& layout = Detail::LayoutProfile();
+		return Rect{ (miniMap.rightX() - layout.miniMap.resizeHandleSize),
+			(miniMap.bottomY() - layout.miniMap.resizeHandleSize),
+			layout.miniMap.resizeHandleSize,
+			layout.miniMap.resizeHandleSize };
 	}
 
 	[[nodiscard]] inline Rect ResourcePanelCameraHomeButton(const Rect& resourcePanel)

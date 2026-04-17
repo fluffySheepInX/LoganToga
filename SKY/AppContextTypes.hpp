@@ -6,6 +6,7 @@ namespace MainSupport
 	struct UiLayoutSettings
 	{
 		Point miniMapPosition{ 0, 0 };
+        Point miniMapSize{ 0, 0 };
 		Point resourcePanelPosition{ 0, 0 };
       Point resourcePanelSize{ 0, 0 };
 		Point modelHeightPosition{ 0, 0 };
@@ -13,6 +14,7 @@ namespace MainSupport
        Point fogSettingsPosition{ 0, 0 };
 		Point unitEditorPosition{ 0, 0 };
 		Point unitEditorListPosition{ 0, 0 };
+      int32 battleCommandIconSize = 128;
 	};
 
 	enum class AppMode

@@ -229,6 +229,54 @@ namespace MainSupport::SettingsDetail
 		writer.writeln(U"{}EffectOffsetY = {:.3f}"_fmt(explosionPrefix, parameters.effectOffsetY));
 		WriteTomlColorF(writer, (explosionPrefix + U"EffectColor"), parameters.effectColor);
 	}
+
+	void LoadBuildMillSkillParameterGroup(const TOMLReader& toml, StringView prefix, BuildMillSkillParameters& parameters)
+	{
+		const String buildPrefix = (String{ prefix } + U"BuildMill");
+		LoadUnitParameterValue(toml, (buildPrefix + U"ManaCost"), parameters.manaCost);
+		LoadUnitParameterValue(toml, (buildPrefix + U"GunpowderCost"), parameters.gunpowderCost);
+		LoadUnitParameterValue(toml, (buildPrefix + U"ForwardOffset"), parameters.forwardOffset);
+	}
+
+	void SaveBuildMillSkillParameterGroup(TextWriter& writer, StringView prefix, const BuildMillSkillParameters& parameters)
+	{
+		const String buildPrefix = (String{ prefix } + U"BuildMill");
+		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(buildPrefix, parameters.manaCost));
+		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(buildPrefix, parameters.gunpowderCost));
+		writer.writeln(U"{}ForwardOffset = {:.3f}"_fmt(buildPrefix, parameters.forwardOffset));
+	}
+
+	void LoadHealSkillParameterGroup(const TOMLReader& toml, StringView prefix, HealSkillParameters& parameters)
+	{
+		const String healPrefix = (String{ prefix } + U"Heal");
+		LoadUnitParameterValue(toml, (healPrefix + U"ManaCost"), parameters.manaCost);
+		LoadUnitParameterValue(toml, (healPrefix + U"Radius"), parameters.radius);
+		LoadUnitParameterValue(toml, (healPrefix + U"Amount"), parameters.amount);
+	}
+
+	void SaveHealSkillParameterGroup(TextWriter& writer, StringView prefix, const HealSkillParameters& parameters)
+	{
+		const String healPrefix = (String{ prefix } + U"Heal");
+		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(healPrefix, parameters.manaCost));
+		writer.writeln(U"{}Radius = {:.3f}"_fmt(healPrefix, parameters.radius));
+		writer.writeln(U"{}Amount = {:.3f}"_fmt(healPrefix, parameters.amount));
+	}
+
+	void LoadScoutSkillParameterGroup(const TOMLReader& toml, StringView prefix, ScoutSkillParameters& parameters)
+	{
+		const String scoutPrefix = (String{ prefix } + U"Scout");
+		LoadUnitParameterValue(toml, (scoutPrefix + U"GunpowderCost"), parameters.gunpowderCost);
+		LoadUnitParameterValue(toml, (scoutPrefix + U"DurationSeconds"), parameters.durationSeconds);
+		LoadUnitParameterValue(toml, (scoutPrefix + U"VisionMultiplier"), parameters.visionMultiplier);
+	}
+
+	void SaveScoutSkillParameterGroup(TextWriter& writer, StringView prefix, const ScoutSkillParameters& parameters)
+	{
+		const String scoutPrefix = (String{ prefix } + U"Scout");
+		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(scoutPrefix, parameters.gunpowderCost));
+		writer.writeln(U"{}DurationSeconds = {:.3f}"_fmt(scoutPrefix, parameters.durationSeconds));
+		writer.writeln(U"{}VisionMultiplier = {:.3f}"_fmt(scoutPrefix, parameters.visionMultiplier));
+	}
 }
 
 namespace MainSupport

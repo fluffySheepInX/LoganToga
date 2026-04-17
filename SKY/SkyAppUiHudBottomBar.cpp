@@ -3,6 +3,7 @@
 # include "SkyAppUi.hpp"
 # include "SkyAppUiInternal.hpp"
 # include "MapEditor.hpp"
+# include "MainSettings.hpp"
 # include "MainUi.hpp"
 
 using namespace MainSupport;
@@ -71,6 +72,11 @@ namespace SkyAppFlow
 			default:
               return Tr(TextId::HudEnemyPlanTooltipAuto);
 			}
+		}
+
+		[[nodiscard]] String GetBattleCommandScaleToggleLabel(const SkyAppState& state)
+		{
+			return U"Cmd {}"_fmt(SkyAppUiLayout::ClampBattleCommandIconSize(state.uiLayoutSettings.battleCommandIconSize));
 		}
 
 		void DrawBottomToggleTooltip(const Rect& anchorRect, const StringView label)
@@ -222,6 +228,20 @@ namespace SkyAppFlow
 			hoveredTooltipRect = frame.panels.resourceAdjustToggle;
 		}
 
+		if (DrawTextButton(frame.panels.battleCommandScaleToggle, GetBattleCommandScaleToggleLabel(state)))
+		{
+			const int32 currentSize = SkyAppUiLayout::ClampBattleCommandIconSize(state.uiLayoutSettings.battleCommandIconSize);
+			state.uiLayoutSettings.battleCommandIconSize = ((currentSize <= 96) ? 128 : 96);
+			state.uiLayoutMessage.show(SaveUiLayoutSettings(state.uiLayoutSettings)
+				? U"Battle command scale {}px"_fmt(state.uiLayoutSettings.battleCommandIconSize)
+				: U"UI layout save failed");
+		}
+		if (frame.panels.battleCommandScaleToggle.mouseOver())
+		{
+			hoveredTooltip = U"Battle command icon size 96 / 128";
+			hoveredTooltipRect = frame.panels.battleCommandScaleToggle;
+		}
+
 		if (ShowDebugEnemyBattlePlanToggle)
 		{
 			if (DrawTextButton(frame.panels.enemyPlanToggle, GetEnemyBattlePlanToggleLabel(state)))
@@ -265,7 +285,7 @@ namespace SkyAppFlow
 
 		if (state.showUI)
 		{
-            const Rect& anchorToggle = ShowDebugEnemyBattlePlanToggle ? frame.panels.enemyPlanToggle : frame.panels.resourceAdjustToggle;
+           const Rect& anchorToggle = ShowDebugEnemyBattlePlanToggle ? frame.panels.enemyPlanToggle : frame.panels.battleCommandScaleToggle;
 			const Rect editorTextColorsButtonRect = SkyAppUiLayout::BottomEditorTextColorsButton(anchorToggle);
 			const Rect panelSkinButtonRect = SkyAppUiLayout::BottomPanelSkinButton(editorTextColorsButtonRect);
 

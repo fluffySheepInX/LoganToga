@@ -51,6 +51,14 @@ namespace MainSupport
 	inline constexpr double SapperExplosionBaseDamage = 36.0;
 	inline constexpr double SapperExplosionCooldownSeconds = 3.0;
    inline constexpr double SapperScoutingSkillGunpowderCost = 15.0;
+    inline constexpr double SapperScoutingSkillDuration = 5.0;
+	inline constexpr double SapperScoutingSkillVisionMultiplier = 1.5;
+   inline constexpr double InfantryBuildMillManaCost = 40.0;
+	inline constexpr double InfantryBuildMillGunpowderCost = 10.0;
+   inline constexpr double InfantryBuildMillForwardOffset = 3.8;
+   inline constexpr double ArcaneHealManaCost = 30.0;
+	inline constexpr double ArcaneHealRadius = 4.8;
+	inline constexpr double ArcaneHealAmount = 30.0;
 	inline constexpr double EnemyReinforcementInterval = 6.0;
 	inline constexpr double EnemyAiDecisionInterval = 1.0;
 	inline constexpr double EnemyStrongUnitProductionCooldown = 3.0;

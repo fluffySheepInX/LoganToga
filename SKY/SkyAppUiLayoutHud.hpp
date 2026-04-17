@@ -75,9 +75,15 @@ namespace SkyAppUiLayout
         return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 88, 36 };
     }
 
-    [[nodiscard]] inline Rect EnemyPlanToggle(const int32 sceneWidth, const int32 sceneHeight)
+    [[nodiscard]] inline Rect BattleCommandScaleToggle(const int32 sceneWidth, const int32 sceneHeight)
     {
         const Rect anchorRect = ResourceAdjustToggle(sceneWidth, sceneHeight);
+        return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 86, 36 };
+    }
+
+    [[nodiscard]] inline Rect EnemyPlanToggle(const int32 sceneWidth, const int32 sceneHeight)
+    {
+        const Rect anchorRect = BattleCommandScaleToggle(sceneWidth, sceneHeight);
         return Rect{ (anchorRect.rightX() + Detail::LayoutProfile().bottomControl.buttonGap), anchorRect.y, 110, 36 };
     }
 

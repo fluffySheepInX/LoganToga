@@ -300,6 +300,27 @@ namespace SkyAppSupport
 			};
 		}
 
+		void ClampBuildMillSkillParameters(BuildMillSkillParameters& parameters)
+		{
+			parameters.manaCost = Clamp(parameters.manaCost, 0.0, 200.0);
+			parameters.gunpowderCost = Clamp(parameters.gunpowderCost, 0.0, 200.0);
+			parameters.forwardOffset = Clamp(parameters.forwardOffset, 1.0, 10.0);
+		}
+
+		void ClampHealSkillParameters(HealSkillParameters& parameters)
+		{
+			parameters.manaCost = Clamp(parameters.manaCost, 0.0, 200.0);
+			parameters.radius = Clamp(parameters.radius, 0.5, 12.0);
+			parameters.amount = Clamp(parameters.amount, 1.0, 200.0);
+		}
+
+		void ClampScoutSkillParameters(ScoutSkillParameters& parameters)
+		{
+			parameters.gunpowderCost = Clamp(parameters.gunpowderCost, 0.0, 200.0);
+			parameters.durationSeconds = Clamp(parameters.durationSeconds, 0.1, 30.0);
+			parameters.visionMultiplier = Clamp(parameters.visionMultiplier, 1.0, 4.0);
+		}
+
 		void DrawMovementTypeSelector(const Rect& panel, const double top, MovementType& movementType)
 		{
            SimpleGUI::GetFont()(U"Type").draw((panel.x + 16), top, UiInternal::EditorTextOnLightPrimaryColor());
@@ -476,6 +497,80 @@ namespace SkyAppSupport
 				MillParameterEditorSpec{ U"Effect Height", U"", 0.0, 4.0, 0.05, 0.1, 0.25, 0.05, 2 },
 				U"爆破エフェクトの表示高さです。モデル中心より上に出したい時に使います。");
 
+		}
+
+		void DrawUniqueSkillParameterRows(const Rect& panel,
+			const int32 sliderBase,
+			const UniqueSkillType uniqueSkillType,
+			BuildMillSkillParameters& buildParameters,
+			HealSkillParameters& healParameters,
+			ScoutSkillParameters& scoutParameters,
+			const int32 top,
+			String& hoveredDescription,
+			Optional<Rect>& hoveredRect)
+		{
+			const int32 horizontalGap = 8;
+			const int32 cardX = (panel.x + 10);
+			const int32 cardWidth = ((panel.w - 20 - horizontalGap) / 2);
+			const int32 cardHeight = 78;
+			const int32 cardTop = (top + 48);
+			const int32 cardStep = 84;
+			const auto drawSkillCard = [&](const int32 index, const int32 sliderId, double& value, const MillParameterEditorSpec& spec, const StringView description)
+				{
+					const int32 column = (index % 2);
+					const int32 row = (index / 2);
+					const Rect cardRect{ (cardX + (cardWidth + horizontalGap) * column), (cardTop + cardStep * row), cardWidth, cardHeight };
+					if (DrawMillParameterEditorCard(cardRect, sliderId, value, spec))
+					{
+						hoveredDescription = String{ description };
+						hoveredRect = cardRect;
+					}
+				};
+
+			switch (uniqueSkillType)
+			{
+			case UniqueSkillType::BuildMill:
+				ClampBuildMillSkillParameters(buildParameters);
+				DrawUnitParameterSectionHeader(panel, top, U"Unique Skill: Build Mill", U"Cost and placement tuning for infantry");
+				drawSkillCard(0, (sliderBase + 40), buildParameters.manaCost,
+					MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"Mill 建築時に消費する魔力です。建築の回転率と他行動との競合を調整できます。");
+				drawSkillCard(1, (sliderBase + 41), buildParameters.gunpowderCost,
+					MillParameterEditorSpec{ U"Gunpowder", U"", 0.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"Mill 建築時に消費する火薬です。偵察や爆破とのリソース競合を調整できます。");
+				drawSkillCard(2, (sliderBase + 42), buildParameters.forwardOffset,
+					MillParameterEditorSpec{ U"Build Offset", U"", 1.0, 10.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"歩兵の前方どれくらいの位置に Mill を建てるかです。近すぎると建てにくく、遠すぎると前に出やすくなります。");
+				return;
+
+			case UniqueSkillType::Heal:
+				ClampHealSkillParameters(healParameters);
+				DrawUnitParameterSectionHeader(panel, top, U"Unique Skill: Heal", U"Area heal tuning for arcane infantry");
+				drawSkillCard(0, (sliderBase + 43), healParameters.manaCost,
+					MillParameterEditorSpec{ U"Mana Cost", U"", 0.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"回復発動時に消費する魔力です。継戦能力と量産性のバランスに効きます。");
+				drawSkillCard(1, (sliderBase + 44), healParameters.radius,
+					MillParameterEditorSpec{ U"Radius", U"", 0.5, 12.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"回復が届く範囲です。前線をまとめて維持できるかどうかに影響します。");
+				drawSkillCard(2, (sliderBase + 45), healParameters.amount,
+					MillParameterEditorSpec{ U"Heal Amount", U"", 1.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"1回の回復で戻す耐久量です。高すぎると耐久戦が長引きやすくなります。");
+				return;
+
+			case UniqueSkillType::Scout:
+				ClampScoutSkillParameters(scoutParameters);
+				DrawUnitParameterSectionHeader(panel, top, U"Unique Skill: Scout", U"Recon tuning for vehicle units");
+				drawSkillCard(0, (sliderBase + 46), scoutParameters.gunpowderCost,
+					MillParameterEditorSpec{ U"Gunpowder", U"", 0.0, 200.0, 1.0, 5.0, 10.0, 1.0, 0 },
+					U"偵察発動時に消費する火薬です。爆破との使い分けに影響します。");
+				drawSkillCard(1, (sliderBase + 47), scoutParameters.durationSeconds,
+					MillParameterEditorSpec{ U"Duration", U"s", 0.1, 30.0, 0.1, 0.5, 1.0, 0.05, 2 },
+					U"視界拡張が続く秒数です。長いほど偵察の操作頻度が下がります。");
+				drawSkillCard(2, (sliderBase + 48), scoutParameters.visionMultiplier,
+					MillParameterEditorSpec{ U"Vision x", U"", 1.0, 4.0, 0.05, 0.1, 0.25, 0.05, 2 },
+					U"偵察中に元の視界を何倍にするかです。高いほど広範囲を一度に暴けます。");
+				return;
+			}
 		}
 	}
 }

@@ -95,6 +95,27 @@ namespace MainSupport
 		ColorF effectColor{ 1.0, 0.62, 0.24, 0.98 };
 	};
 
+	struct BuildMillSkillParameters
+	{
+		double manaCost = InfantryBuildMillManaCost;
+		double gunpowderCost = InfantryBuildMillGunpowderCost;
+		double forwardOffset = InfantryBuildMillForwardOffset;
+	};
+
+	struct HealSkillParameters
+	{
+		double manaCost = ArcaneHealManaCost;
+		double radius = ArcaneHealRadius;
+		double amount = ArcaneHealAmount;
+	};
+
+	struct ScoutSkillParameters
+	{
+		double gunpowderCost = SapperScoutingSkillGunpowderCost;
+		double durationSeconds = SapperScoutingSkillDuration;
+		double visionMultiplier = SapperScoutingSkillVisionMultiplier;
+	};
+
 	enum class UnitRenderModel
 	{
 		Bird,
@@ -143,5 +164,11 @@ namespace MainSupport
 		UnitParameters enemyDefaults;
       ExplosionSkillParameters playerExplosionDefaults;
 		ExplosionSkillParameters enemyExplosionDefaults;
+      BuildMillSkillParameters playerBuildMillDefaults;
+		BuildMillSkillParameters enemyBuildMillDefaults;
+		HealSkillParameters playerHealDefaults;
+		HealSkillParameters enemyHealDefaults;
+		ScoutSkillParameters playerScoutDefaults;
+		ScoutSkillParameters enemyScoutDefaults;
 	};
 }

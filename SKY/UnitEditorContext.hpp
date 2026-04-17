@@ -7,12 +7,18 @@ namespace MainSupport
 	{
 		Array<UnitParameters> parameters;
      Array<ExplosionSkillParameters> explosionSkillParameters;
+     Array<BuildMillSkillParameters> buildMillSkillParameters;
+		Array<HealSkillParameters> healSkillParameters;
+		Array<ScoutSkillParameters> scoutSkillParameters;
 		Array<FilePath> modelPaths;
 
 		UnitEditorSettings()
 		{
 			parameters.resize(GetUnitDefinitions().size() * 2);
          explosionSkillParameters.resize(GetUnitDefinitions().size() * 2);
+         buildMillSkillParameters.resize(GetUnitDefinitions().size() * 2);
+			healSkillParameters.resize(GetUnitDefinitions().size() * 2);
+			scoutSkillParameters.resize(GetUnitDefinitions().size() * 2);
 			modelPaths.resize(GetUnitDefinitions().size() * 2);
 
 			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
@@ -21,6 +27,9 @@ namespace MainSupport
 				{
 					parameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultUnitParameters(team, definition.unitType);
                    explosionSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultExplosionSkillParameters(team, definition.unitType);
+                   buildMillSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultBuildMillSkillParameters(team, definition.unitType);
+					healSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultHealSkillParameters(team, definition.unitType);
+					scoutSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultScoutSkillParameters(team, definition.unitType);
 				}
 			}
 		}
@@ -73,6 +82,36 @@ namespace MainSupport
 	[[nodiscard]] inline FilePath& GetUnitModelPath(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
 	{
 		return settings.modelPaths[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline const BuildMillSkillParameters& GetBuildMillSkillParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.buildMillSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline BuildMillSkillParameters& GetBuildMillSkillParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.buildMillSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline const HealSkillParameters& GetHealSkillParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.healSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline HealSkillParameters& GetHealSkillParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.healSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline const ScoutSkillParameters& GetScoutSkillParameters(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.scoutSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
+	}
+
+	[[nodiscard]] inline ScoutSkillParameters& GetScoutSkillParameters(UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
+	{
+		return settings.scoutSkillParameters[GetUnitParameterSlotIndex(team, unitType)];
 	}
 
 	[[nodiscard]] inline UnitAiRole GetUnitAiRole(const UnitEditorSettings& settings, const UnitTeam team, const SapperUnitType unitType)
