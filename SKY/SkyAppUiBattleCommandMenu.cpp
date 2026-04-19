@@ -14,6 +14,7 @@ namespace SkyAppSupport
         constexpr StringView BattleCommandTabTexturePath2 = U"C:/Users/aband/source/repos/fluffySheepInX/LoganToga/SKY/App/texture/T2.png";
         constexpr StringView BattleCommandTabTexturePath3 = U"C:/Users/aband/source/repos/fluffySheepInX/LoganToga/SKY/App/texture/T3.png";
         constexpr StringView BattleCommandTabTexturePath4 = U"C:/Users/aband/source/repos/fluffySheepInX/LoganToga/SKY/App/texture/T4.png";
+        constexpr StringView BattleCommandArcaneInfantryIconTexturePath = U"C:/Users/aband/source/repos/fluffySheepInX/LoganToga/SKY/App/texture/t12.png";
 
         struct BattleCommandSlotDefinition
         {
@@ -48,6 +49,21 @@ namespace SkyAppSupport
             case 3:
             default:
                 return{};
+            }
+        }
+
+        [[nodiscard]] const Texture* GetBattleCommandUnitIconTexture(const SapperUnitType unitType)
+        {
+            switch (unitType)
+            {
+            case SapperUnitType::ArcaneInfantry:
+            {
+                static const Texture texture{ FilePath{ BattleCommandArcaneInfantryIconTexturePath } };
+                return &texture;
+            }
+
+            default:
+                return nullptr;
             }
         }
 
@@ -152,6 +168,13 @@ namespace SkyAppSupport
             rect.rounded(8).draw(fillColor).drawFrame(2, 0, frameColor);
             const Rect imageRect{ (rect.x + 8), (rect.y + 8), (rect.w - 16), (rect.h - 28) };
             imageRect.rounded(6).draw(slotDefinition.accentColor.lerp(ColorF{ 0.08, 0.10, 0.14, 1.0 }, 0.62));
+            if (slotDefinition.unitType)
+            {
+                if (const Texture* texture = GetBattleCommandUnitIconTexture(*slotDefinition.unitType))
+                {
+                    texture->resized(imageRect.w, imageRect.h).draw(imageRect.pos, ColorF{ 1.0, 1.0, 1.0, unlocked ? 1.0 : 0.42 });
+                }
+            }
 
             if (not unlocked)
             {
@@ -159,6 +182,42 @@ namespace SkyAppSupport
             }
 
             return hovered && MouseL.down();
+        }
+
+        void DrawBattleCommandMessage(const Rect& panelRect, const TimedMessage& battleCommandMessage)
+        {
+            if (not battleCommandMessage.isVisible())
+            {
+                return;
+            }
+
+            const Rect baseMessageRect = SkyAppUiLayout::BattleCommandMessageRect(panelRect);
+            const Array<String> lines = battleCommandMessage.text.split(U'\n');
+            const bool multiline = (1 < lines.size());
+            const Rect messageRect = multiline
+                ? Rect{ (baseMessageRect.x - 2), (baseMessageRect.y - Max(60, static_cast<int32>(lines.size()) * 16 - 24)), (baseMessageRect.w + 4), Max(84, 10 + static_cast<int32>(lines.size()) * 16) }
+                : baseMessageRect;
+            messageRect.rounded(6).draw(ColorF{ 0.96, 0.97, 0.99, 0.84 }).drawFrame(1.0, 0.0, ColorF{ 0.58, 0.64, 0.72, 0.84 });
+            static double copiedUntil = -1.0;
+            const Rect copyButtonRect{ (messageRect.rightX() - 58), (messageRect.y + 4), 52, 18 };
+            if (DrawTextButton(copyButtonRect, ((Scene::Time() < copiedUntil) ? U"Done" : U"Copy")))
+            {
+                Clipboard::SetText(battleCommandMessage.text);
+                copiedUntil = (Scene::Time() + 1.5);
+            }
+
+            if (multiline)
+            {
+                static const Font diagnosticsFont{ 11 };
+                for (size_t i = 0; i < lines.size(); ++i)
+                {
+                    diagnosticsFont(lines[i]).draw((messageRect.x + 8), (messageRect.y + 3 + static_cast<int32>(i) * 16), ColorF{ 0.12 });
+                }
+            }
+            else
+            {
+                SimpleGUI::GetFont()(battleCommandMessage.text).draw((messageRect.x + 8), (messageRect.y + 1), ColorF{ 0.12 });
+            }
         }
     }
 
@@ -230,5 +289,7 @@ namespace SkyAppSupport
                 break;
             }
         }
+
+        DrawBattleCommandMessage(panelRect, battleCommandMessage);
     }
 }

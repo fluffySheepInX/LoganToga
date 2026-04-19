@@ -14,6 +14,7 @@ namespace SkyAppSupport
         std::array<const UnitModel*, MainSupport::UnitRenderModelCount> idleModels{};
 		std::array<const UnitModel*, MainSupport::UnitRenderModelCount> moveModels{};
 		std::array<const UnitModel*, MainSupport::UnitRenderModelCount> attackModels{};
+      std::array<FilePath, MainSupport::UnitRenderModelCount> modelPaths{};
 	};
 
 	struct TimedMessage

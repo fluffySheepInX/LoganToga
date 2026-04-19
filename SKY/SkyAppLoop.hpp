@@ -38,23 +38,28 @@ namespace SkyAppFlow
 		Mesh groundPlane;
 		Texture groundTexture;
       Texture roadTexture;
-      Texture tireTrackStartTexture;
+		Texture tireTrackStartTexture;
 		Texture tireTrackMiddleTexture;
 		Texture tireTrackEndTexture;
 		Model blacksmithModel;
 		Model millModel;
 		Model treeModel;
 		Model pineModel;
-        Model grassPatchModel;
-        Array<String> loadWarnings;
-        std::array<UnitModel, MainSupport::UnitRenderModelCount> idleUnitRenderModels;
+      Model grassPatchModel;
+		Array<String> loadWarnings;
+      Array<FilePath> modelHeightEditorPreviewPaths;
+		Array<String> modelHeightEditorPreviewLabels;
+      std::array<UnitModel, MainSupport::UnitRenderModelCount> idleUnitRenderModels;
 		std::array<UnitModel, MainSupport::UnitRenderModelCount> moveUnitRenderModels;
 		std::array<UnitModel, MainSupport::UnitRenderModelCount> attackUnitRenderModels;
+       Array<UnitModel> modelHeightEditorIdleUnitRenderModels;
+		Array<UnitModel> modelHeightEditorMoveUnitRenderModels;
+		Array<UnitModel> modelHeightEditorAttackUnitRenderModels;
 		MSRenderTexture renderTexture;
 
-      [[nodiscard]] UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle)
+       [[nodiscard]] UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle)
 		{
-         switch (role)
+          switch (role)
 			{
 			case MainSupport::UnitModelAnimationRole::Move:
 				return moveUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
@@ -68,9 +73,13 @@ namespace SkyAppFlow
 			}
 		}
 
-        [[nodiscard]] const UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle) const
+       [[nodiscard]] UnitModel& GetModelHeightEditorPreviewModel(size_t index, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle);
+		[[nodiscard]] const UnitModel& GetModelHeightEditorPreviewModel(size_t index, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle) const;
+		[[nodiscard]] StringView GetModelHeightEditorPreviewLabel(size_t index) const;
+
+     [[nodiscard]] const UnitModel& GetUnitRenderModel(const MainSupport::UnitRenderModel renderModel, const MainSupport::UnitModelAnimationRole role = MainSupport::UnitModelAnimationRole::Idle) const
 		{
-         switch (role)
+          switch (role)
 			{
 			case MainSupport::UnitModelAnimationRole::Move:
 				return moveUnitRenderModels[MainSupport::GetUnitRenderModelIndex(renderModel)];
@@ -91,9 +100,10 @@ namespace SkyAppFlow
 			for (const MainSupport::UnitRenderModel renderModel : MainSupport::GetUnitRenderModels())
 			{
 				const size_t index = MainSupport::GetUnitRenderModelIndex(renderModel);
-              registry.idleModels[index] = &idleUnitRenderModels[index];
+                registry.idleModels[index] = &idleUnitRenderModels[index];
 				registry.moveModels[index] = &moveUnitRenderModels[index];
 				registry.attackModels[index] = &attackUnitRenderModels[index];
+               registry.modelPaths[index] = FilePath{ MainSupport::GetUnitRenderModelDefaultModelPath(renderModel) };
 			}
 
 			return registry;
@@ -165,6 +175,7 @@ namespace SkyAppFlow
 		bool modelHeightEditMode = false;
       bool modelHeightTextureMode = false;
       MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
+        size_t modelHeightPreviewModelIndex = 0;
         MainSupport::UnitModelAnimationRole modelHeightPreviewAnimationRole = MainSupport::UnitModelAnimationRole::Idle;
       MainSupport::TireTrackTextureSegment tireTrackTextureTarget = MainSupport::TireTrackTextureSegment::Start;
       bool unitEditorMode = false;
@@ -207,10 +218,16 @@ namespace SkyAppFlow
       bool showEscMenu = false;
 		bool isHoveringUI = false;
      std::array<Vec3, MainSupport::UnitRenderModelCount> previewRenderPositions{};
+		Array<Vec3> modelHeightPreviewRenderPositions;
 
 		[[nodiscard]] const Vec3& GetPreviewRenderPosition(const MainSupport::UnitRenderModel renderModel) const
 		{
 			return previewRenderPositions[MainSupport::GetUnitRenderModelIndex(renderModel)];
+		}
+
+		[[nodiscard]] const Vec3& GetModelHeightPreviewRenderPosition(const size_t index) const
+		{
+			return modelHeightPreviewRenderPositions[index];
 		}
 	};
 

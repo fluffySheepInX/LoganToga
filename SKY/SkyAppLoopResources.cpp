@@ -1,10 +1,48 @@
 ﻿# include "SkyAppLoopInternal.hpp"
+# include "MainSettings.hpp"
 
 using namespace MainSupport;
 using namespace SkyAppSupport;
 
 namespace SkyAppFlow
 {
+   UnitModel& SkyAppResources::GetModelHeightEditorPreviewModel(const size_t index, const UnitModelAnimationRole role)
+	{
+		switch (role)
+		{
+		case UnitModelAnimationRole::Move:
+			return modelHeightEditorMoveUnitRenderModels[index];
+
+		case UnitModelAnimationRole::Attack:
+			return modelHeightEditorAttackUnitRenderModels[index];
+
+		case UnitModelAnimationRole::Idle:
+		default:
+			return modelHeightEditorIdleUnitRenderModels[index];
+		}
+	}
+
+  const UnitModel& SkyAppResources::GetModelHeightEditorPreviewModel(const size_t index, const UnitModelAnimationRole role) const
+	{
+		switch (role)
+		{
+		case UnitModelAnimationRole::Move:
+			return modelHeightEditorMoveUnitRenderModels[index];
+
+		case UnitModelAnimationRole::Attack:
+			return modelHeightEditorAttackUnitRenderModels[index];
+
+		case UnitModelAnimationRole::Idle:
+		default:
+			return modelHeightEditorIdleUnitRenderModels[index];
+		}
+	}
+
+   StringView SkyAppResources::GetModelHeightEditorPreviewLabel(const size_t index) const
+	{
+        return modelHeightEditorPreviewLabels[index];
+	}
+
 	namespace
 	{
 		namespace Assets
@@ -153,6 +191,154 @@ namespace SkyAppFlow
 
 				return FindFirstExistingPath(candidates, FilePath{ SkyModelDirectory } + SugoiCarModelBaseName + U".glb");
 			}
+
+			[[nodiscard]] bool HasGlbExtension(const FilePath& path)
+			{
+				return FileSystem::FileName(path).lowercased().ends_with(U".glb");
+			}
+
+			void AppendUniqueFullPath(Array<FilePath>& paths, const FilePath& candidate)
+			{
+				const FilePath fullPath = FileSystem::FullPath(candidate);
+				if (std::find(paths.begin(), paths.end(), fullPath) == paths.end())
+				{
+					paths << fullPath;
+				}
+			}
+
+			void AppendConfiguredUnitEditorModelPaths(Array<FilePath>& paths)
+			{
+				const UnitEditorSettings unitEditorSettings = LoadUnitEditorSettings();
+				for (const auto& modelPath : unitEditorSettings.modelPaths)
+				{
+					if (modelPath.isEmpty() || (not FileSystem::Exists(modelPath)))
+					{
+						continue;
+					}
+
+					AppendUniqueFullPath(paths, modelPath);
+				}
+			}
+
+			[[nodiscard]] std::array<FilePath, UnitRenderModelCount> DefaultModelHeightEditorPreviewPaths()
+			{
+				return {
+					FilePath{ BirdModelPath },
+					FilePath{ AshigaruModelPath },
+					ResolveSugoiCarModelPath(),
+					FilePath{ HoheiModelPath },
+				};
+			}
+
+			[[nodiscard]] Array<FilePath> DiscoverGlbModelPaths()
+			{
+				Array<FilePath> discoveredPaths;
+				const FilePath modelDirectory = FilePath{ SkyModelDirectory };
+
+				if (FileSystem::IsDirectory(modelDirectory))
+				{
+					for (const auto& path : FileSystem::DirectoryContents(modelDirectory))
+					{
+						if (FileSystem::IsFile(path) && HasGlbExtension(path))
+						{
+							AppendUniqueFullPath(discoveredPaths, path);
+						}
+					}
+				}
+
+				AppendConfiguredUnitEditorModelPaths(discoveredPaths);
+
+				std::sort(discoveredPaths.begin(), discoveredPaths.end(), [](const FilePath& a, const FilePath& b)
+					{
+						return FileSystem::FileName(a) < FileSystem::FileName(b);
+					});
+
+				return discoveredPaths;
+			}
+
+			[[nodiscard]] bool IsDefaultModelHeightEditorPreviewPath(const FilePath& path, const std::array<FilePath, UnitRenderModelCount>& defaultPaths)
+			{
+				const FilePath fullPath = FileSystem::FullPath(path);
+				for (const auto& defaultPath : defaultPaths)
+				{
+					if ((not defaultPath.isEmpty()) && (FileSystem::FullPath(defaultPath) == fullPath))
+					{
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+         [[nodiscard]] Array<FilePath> ResolveModelHeightEditorPreviewPaths()
+			{
+               const auto defaultPaths = DefaultModelHeightEditorPreviewPaths();
+				const Array<FilePath> discoveredPaths = DiscoverGlbModelPaths();
+				Array<FilePath> prioritizedPaths;
+				prioritizedPaths.reserve((discoveredPaths.size() + defaultPaths.size()));
+
+				for (const auto& path : discoveredPaths)
+				{
+					if (not IsDefaultModelHeightEditorPreviewPath(path, defaultPaths))
+					{
+						AppendUniqueFullPath(prioritizedPaths, path);
+					}
+				}
+
+				for (const auto& path : discoveredPaths)
+				{
+					if (IsDefaultModelHeightEditorPreviewPath(path, defaultPaths))
+					{
+						AppendUniqueFullPath(prioritizedPaths, path);
+					}
+				}
+
+				for (const auto& defaultPath : defaultPaths)
+				{
+					AppendUniqueFullPath(prioritizedPaths, defaultPath);
+				}
+
+              if (prioritizedPaths.isEmpty())
+				{
+					for (const auto& defaultPath : defaultPaths)
+					{
+						AppendUniqueFullPath(prioritizedPaths, defaultPath);
+					}
+				}
+
+				return prioritizedPaths;
+			}
+
+          [[nodiscard]] Array<String> BuildModelHeightEditorPreviewLabels(const Array<FilePath>& previewPaths)
+			{
+                Array<String> labels;
+				labels.reserve(previewPaths.size());
+				for (const auto& previewPath : previewPaths)
+				{
+                  String label = FileSystem::FileName(previewPath);
+					if (label.isEmpty())
+					{
+                     label = U"unknown.glb";
+					}
+                   labels << std::move(label);
+				}
+
+				return labels;
+			}
+
+          [[nodiscard]] Array<UnitModel> BuildModelHeightEditorPreviewModels(const Array<FilePath>& previewPaths)
+			{
+				Array<UnitModel> models;
+               models.reserve(previewPaths.size());
+
+				for (const auto& previewPath : previewPaths)
+				{
+                  const auto renderModel = TryGetDefaultModelRenderModel(previewPath).value_or(UnitRenderModel::Bird);
+					models.emplace_back(previewPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(renderModel));
+				}
+
+				return models;
+			}
 		}
 	}
 
@@ -168,13 +354,15 @@ namespace SkyAppFlow
 		, treeModel{ Assets::ResolveModelPath(Assets::TreeModelFileName) }
 		, pineModel{ Assets::ResolveModelPath(Assets::PineModelFileName) }
 		, grassPatchModel{ Assets::ResolveGrassPatchModelPath() }
-       , idleUnitRenderModels{ {
+        , modelHeightEditorPreviewPaths{ Assets::ResolveModelHeightEditorPreviewPaths() }
+		, modelHeightEditorPreviewLabels{ Assets::BuildModelHeightEditorPreviewLabels(modelHeightEditorPreviewPaths) }
+      , idleUnitRenderModels{ {
 			UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
 			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
 			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
-         UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
+			UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
 		} }
-     , moveUnitRenderModels{ {
+		, moveUnitRenderModels{ {
 			UnitModel{ BirdModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Bird) },
 			UnitModel{ AshigaruModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Ashigaru) },
 			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
@@ -186,6 +374,9 @@ namespace SkyAppFlow
 			UnitModel{ Assets::ResolveSugoiCarModelPath(), BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::SugoiCar) },
 			UnitModel{ HoheiModelPath, BirdDisplayHeight, GetUnitRenderModelProceduralAnimationType(UnitRenderModel::Hohei) },
 		} }
+     , modelHeightEditorIdleUnitRenderModels{ Assets::BuildModelHeightEditorPreviewModels(modelHeightEditorPreviewPaths) }
+		, modelHeightEditorMoveUnitRenderModels{ Assets::BuildModelHeightEditorPreviewModels(modelHeightEditorPreviewPaths) }
+		, modelHeightEditorAttackUnitRenderModels{ Assets::BuildModelHeightEditorPreviewModels(modelHeightEditorPreviewPaths) }
 		, renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes }
 	{
 		if (not Assets::TireTrackLoadWarning().isEmpty())

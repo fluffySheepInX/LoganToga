@@ -8,13 +8,15 @@ namespace MainSupport
 	bool DrawCheckBox(const Rect& rect, bool& checked, StringView label, bool enabled = true);
 	void DrawAnimationClipSelector(UnitModel& model, StringView title, int32 x, int32 y, int32 width);
 	void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
-        UnitRenderModel& activeRenderModel,
+     size_t& activePreviewModelIndex,
      bool& textureMode,
 		TireTrackTextureSegment& activeTextureSegment,
         UnitModelAnimationRole& previewAnimationRole,
-     UnitModel& activeModel,
+        UnitModel& activeModel,
+        const Array<FilePath>& previewModelPaths,
+        const Array<String>& previewModelLabels,
 		String& modelHeightMessage,
 		double& modelHeightMessageUntil,
 		const Rect& panelRect,
-         const std::array<Vec3, UnitRenderModelCount>& previewRenderPositions);
+     const Array<Vec3>& previewRenderPositions);
 }

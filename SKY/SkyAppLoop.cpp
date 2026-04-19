@@ -35,7 +35,7 @@ namespace SkyAppFlow
 			state.terrainSurfaceRevision = revision;
 		}
 
-		SkyAppFrameState BuildFrameState(const SkyAppState& state)
+      SkyAppFrameState BuildFrameState(const SkyAppState& state)
 		{
 			SkyAppFrameState frame;
 			const bool resourcePanelExpandedForLayout = state.showResourceAdjustUi;
@@ -49,10 +49,34 @@ namespace SkyAppFlow
 			frame.showSapperMenu = ((state.selectedSapperIndices.size() == 1) && (not state.playerWon));
 			frame.showMillStatusEditor = ((not frame.isEditorMode) && hasValidSelectedMill);
 			frame.showUnitEditor = (state.showUI && state.unitEditorMode && (not frame.isEditorMode) && (not state.playerWon));
-            frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.fogSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
+			frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.fogSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
 			for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
 				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.modelHeightSettings, renderModel), 0);
+			}
+
+			return frame;
+		}
+
+		SkyAppFrameState BuildFrameState(const SkyAppState& state, const SkyAppResources& resources)
+		{
+         SkyAppFrameState frame = BuildFrameState(state);
+
+			frame.modelHeightPreviewRenderPositions.clear();
+			frame.modelHeightPreviewRenderPositions.reserve(resources.modelHeightEditorPreviewPaths.size());
+         constexpr int32 PreviewColumnCount = 4;
+			constexpr double PreviewColumnSpacing = 5.0;
+			constexpr double PreviewRowSpacing = 6.0;
+			const int32 previewCount = static_cast<int32>(resources.modelHeightEditorPreviewPaths.size());
+			const int32 rowCount = Max(1, ((previewCount + PreviewColumnCount - 1) / PreviewColumnCount));
+			for (size_t index = 0; index < resources.modelHeightEditorPreviewPaths.size(); ++index)
+			{
+				const FilePath& previewPath = resources.modelHeightEditorPreviewPaths[index];
+                const int32 column = static_cast<int32>(index % PreviewColumnCount);
+				const int32 row = static_cast<int32>(index / PreviewColumnCount);
+				const double x = ((static_cast<double>(column) - ((PreviewColumnCount - 1) * 0.5)) * PreviewColumnSpacing);
+				const double z = (-2.5 + (static_cast<double>(row) - ((rowCount - 1) * 0.5)) * PreviewRowSpacing);
+				frame.modelHeightPreviewRenderPositions << Vec3{ x, GetModelHeightOffset(state.modelHeightSettings, previewPath), z };
 			}
 			return frame;
 		}

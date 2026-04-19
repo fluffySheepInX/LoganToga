@@ -234,21 +234,26 @@ namespace SkyAppFlow
 			return ColorF{ 0.72, 0.78, 0.84, 0.90 };
 		}
 
-		void DrawPreviewUnitRenderModel(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame, const UnitRenderModel renderModel)
+       void DrawPreviewUnitRenderModel(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame, const size_t previewModelIndex)
 		{
-            const UnitModelAnimationRole previewRole = ((state.modelHeightEditMode && (state.modelHeightTarget == renderModel))
+         const UnitModelAnimationRole previewRole = ((state.modelHeightEditMode && (state.modelHeightPreviewModelIndex == previewModelIndex))
 				? state.modelHeightPreviewAnimationRole
 				: UnitModelAnimationRole::Idle);
-			  const UnitModel& previewModel = resources.GetUnitRenderModel(renderModel, previewRole);
+            const UnitModel& previewModel = state.modelHeightEditMode
+				? resources.GetModelHeightEditorPreviewModel(previewModelIndex, previewRole)
+				: resources.GetUnitRenderModel(static_cast<UnitRenderModel>(previewModelIndex), previewRole);
 			if (not previewModel.isLoaded())
 			{
 				return;
 			}
 
-         previewModel.draw(frame.GetPreviewRenderPosition(renderModel),
+         const FilePath& previewPath = state.modelHeightEditMode
+				? resources.modelHeightEditorPreviewPaths[previewModelIndex]
+				: FilePath{ GetUnitRenderModelDefaultModelPath(static_cast<UnitRenderModel>(previewModelIndex)) };
+			previewModel.draw(state.modelHeightEditMode ? frame.GetModelHeightPreviewRenderPosition(previewModelIndex) : frame.GetPreviewRenderPosition(static_cast<UnitRenderModel>(previewModelIndex)),
 				BirdDisplayYaw,
-                GetUnitRenderModelPreviewColor(renderModel).removeSRGBCurve(),
-                GetModelScale(state.modelHeightSettings, renderModel));
+              GetUnitRenderModelPreviewColor(static_cast<UnitRenderModel>(Min(previewModelIndex, static_cast<size_t>(UnitRenderModelCount - 1)))).removeSRGBCurve(),
+				GetModelScale(state.modelHeightSettings, previewPath));
 		}
 
 		using TerrainCellLookup = HashTable<int64, const TerrainSurfaceCell*>;
@@ -310,9 +315,12 @@ namespace SkyAppFlow
 
 		void DrawPreviewUnits(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			for (const UnitRenderModel renderModel : GetUnitRenderModels())
+         const size_t previewCount = state.modelHeightEditMode
+				? resources.modelHeightEditorPreviewPaths.size()
+				: static_cast<size_t>(UnitRenderModelCount);
+			for (size_t previewModelIndex = 0; previewModelIndex < previewCount; ++previewModelIndex)
 			{
-				DrawPreviewUnitRenderModel(resources, state, frame, renderModel);
+               DrawPreviewUnitRenderModel(resources, state, frame, previewModelIndex);
 			}
 		}
 

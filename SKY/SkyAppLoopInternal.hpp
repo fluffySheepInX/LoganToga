@@ -7,7 +7,8 @@ namespace SkyAppFlow
 	{
       void NormalizeFrameStateInputs(SkyAppState& state);
 		void RefreshTerrainSurface(SkyAppState& state);
-     [[nodiscard]] SkyAppFrameState BuildFrameState(const SkyAppState& state);
+       [[nodiscard]] SkyAppFrameState BuildFrameState(const SkyAppState& state);
+      [[nodiscard]] SkyAppFrameState BuildFrameState(const SkyAppState& state, const SkyAppResources& resources);
 
 		namespace UiEditInput
 		{

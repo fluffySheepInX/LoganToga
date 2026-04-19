@@ -151,6 +151,9 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MainSettingsUnitEditor.cpp" />
     <ClCompile Include="MainUi.cpp" />
     <ClCompile Include="MainUiModelHeight.cpp" />
+    <ClCompile Include="MainUiModelHeightCommon.cpp" />
+    <ClCompile Include="MainUiModelHeightModel.cpp" />
+    <ClCompile Include="MainUiModelHeightTexture.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MapDataToml.cpp" />
     <ClCompile Include="MapDataTomlCommon.cpp" />
@@ -246,6 +249,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="MainSettings.hpp" />
     <ClInclude Include="MainSettingsInternal.hpp" />
     <ClInclude Include="MainUi.hpp" />
+    <ClInclude Include="MainUiModelHeightInternal.hpp" />
     <ClInclude Include="MapData.hpp" />
     <ClInclude Include="MapDataTomlInternal.hpp" />
     <ClInclude Include="MapEditor.hpp" />
@@ -310,9 +314,3 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
-
-
-
-
-
-

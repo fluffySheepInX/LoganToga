@@ -38,6 +38,17 @@ namespace SkyAppFlow
 					renderModel.update(Scene::DeltaTime());
 				}
 			}
+
+			for (size_t previewModelIndex = 0; previewModelIndex < resources.modelHeightEditorPreviewPaths.size(); ++previewModelIndex)
+			{
+				const FilePath& previewPath = resources.modelHeightEditorPreviewPaths[previewModelIndex];
+				for (const UnitModelAnimationRole role : { UnitModelAnimationRole::Idle, UnitModelAnimationRole::Move, UnitModelAnimationRole::Attack })
+				{
+					UnitModel& previewRenderModel = resources.GetModelHeightEditorPreviewModel(previewModelIndex, role);
+					ApplyConfiguredAnimationClip(previewRenderModel, GetModelAnimationClipIndex(modelHeightSettings, previewPath, role));
+					previewRenderModel.update(Scene::DeltaTime());
+				}
+			}
 		}
 
 		void RemoveInvalidSelectedSapperIndices(SkyAppState& state)
@@ -79,10 +90,10 @@ namespace SkyAppFlow
 			}
 		}
 
-		[[nodiscard]] SkyAppFrameState PrepareFrameState(SkyAppState& state)
+        [[nodiscard]] SkyAppFrameState PrepareFrameState(SkyAppResources& resources, SkyAppState& state)
 		{
 			Detail::NormalizeFrameStateInputs(state);
-			SkyAppFrameState frame = Detail::BuildFrameState(state);
+            SkyAppFrameState frame = Detail::BuildFrameState(state, resources);
 			Detail::UiEditInput::Handle(state, frame);
 			return frame;
 		}
@@ -108,7 +119,7 @@ namespace SkyAppFlow
 		UpdateFrameSimulation(state);
 		HandleFrameInput(state);
 
-		SkyAppFrameState frame = PrepareFrameState(state);
+      SkyAppFrameState frame = PrepareFrameState(resources, state);
 		RenderFrameWorld(resources, state, frame);
 		RenderFrameUi(resources, state, frame);
 	}

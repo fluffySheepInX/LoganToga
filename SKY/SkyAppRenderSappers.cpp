@@ -91,7 +91,7 @@ namespace SkyAppSupport
 			}
 		}
 
-		[[nodiscard]] const UnitModel* TrySelectCustomUnitRenderModel(const UnitEditorSettings& unitEditorSettings, const ModelHeightSettings& modelHeightSettings, const SpawnedSapper& sapper, const UnitModelAnimationRole role)
+     [[nodiscard]] const UnitModel* TrySelectCustomUnitRenderModel(const UnitEditorSettings& unitEditorSettings, const ModelHeightSettings& modelHeightSettings, const SpawnedSapper& sapper, const UnitModelAnimationRole role)
 		{
 			const FilePath& modelPath = GetUnitModelPath(unitEditorSettings, sapper.team, sapper.unitType);
 			if (modelPath.isEmpty() || (not FileSystem::Exists(modelPath)))
@@ -100,7 +100,7 @@ namespace SkyAppSupport
 			}
 
            static HashTable<FilePath, std::shared_ptr<CustomUnitRenderModelSet>> cache;
-			const UnitRenderModel baseRenderModel = GetSpawnedSapperRenderModel(sapper);
+            const UnitRenderModel fallbackRenderModel = TryGetDefaultModelRenderModel(modelPath).value_or(GetSpawnedSapperRenderModel(sapper));
 
 			if (const auto it = cache.find(modelPath); it != cache.end())
 			{
@@ -108,9 +108,9 @@ namespace SkyAppSupport
 				{
 					if (it->second->lastUpdatedAt != Scene::Time())
 					{
-						ApplyConfiguredAnimationClip(it->second->idleModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Idle));
-						ApplyConfiguredAnimationClip(it->second->moveModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Move));
-						ApplyConfiguredAnimationClip(it->second->attackModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Attack));
+                      ApplyConfiguredAnimationClip(it->second->idleModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Idle));
+						ApplyConfiguredAnimationClip(it->second->moveModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Move));
+						ApplyConfiguredAnimationClip(it->second->attackModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Attack));
 						it->second->idleModel.update(Scene::DeltaTime());
 						it->second->moveModel.update(Scene::DeltaTime());
 						it->second->attackModel.update(Scene::DeltaTime());
@@ -123,10 +123,10 @@ namespace SkyAppSupport
 				return nullptr;
 			}
 
-            auto loadedModels = std::make_shared<CustomUnitRenderModelSet>(modelPath, baseRenderModel);
-			ApplyConfiguredAnimationClip(loadedModels->idleModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Idle));
-			ApplyConfiguredAnimationClip(loadedModels->moveModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Move));
-			ApplyConfiguredAnimationClip(loadedModels->attackModel, GetModelAnimationClipIndex(modelHeightSettings, baseRenderModel, UnitModelAnimationRole::Attack));
+          auto loadedModels = std::make_shared<CustomUnitRenderModelSet>(modelPath, fallbackRenderModel);
+			ApplyConfiguredAnimationClip(loadedModels->idleModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Idle));
+			ApplyConfiguredAnimationClip(loadedModels->moveModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Move));
+			ApplyConfiguredAnimationClip(loadedModels->attackModel, GetModelAnimationClipIndex(modelHeightSettings, modelPath, UnitModelAnimationRole::Attack));
 			loadedModels->idleModel.update(Scene::DeltaTime());
 			loadedModels->moveModel.update(Scene::DeltaTime());
 			loadedModels->attackModel.update(Scene::DeltaTime());
@@ -157,9 +157,10 @@ namespace SkyAppSupport
 			const Vec3 renderPosition = GetSpawnedSapperRenderPosition(sapper);
             const UnitRenderModel renderModel = GetSpawnedSapperRenderModel(sapper);
           const UnitModelAnimationRole animationRole = ResolveSapperAnimationRole(sapper);
+          const FilePath& configuredModelPath = GetUnitModelPath(unitEditorSettings, sapper.team, sapper.unitType);
 			const UnitModel* customModel = TrySelectCustomUnitRenderModel(unitEditorSettings, modelHeightSettings, sapper, animationRole);
 			const UnitModel& drawModel = (customModel ? *customModel : SelectUnitRenderModel(renderModels, renderModel, animationRole));
-			const double drawScale = GetModelScale(modelHeightSettings, renderModel);
+            const double drawScale = customModel ? GetModelScale(modelHeightSettings, configuredModelPath) : GetModelScale(modelHeightSettings, renderModel);
 
          if (drawModel.isLoaded())
 			{

@@ -73,6 +73,44 @@ namespace SkyAppSupport::UiMenusInternal
         return GetUnitDisplayName(unitType);
     }
 
+    [[nodiscard]] inline String BuildSpawnedUnitDiagnosticsMessage(const UnitEditorSettings& unitEditorSettings,
+        const ModelHeightSettings& modelHeightSettings,
+        const UnitTeam team,
+        const SapperUnitType unitType)
+    {
+        const UnitRenderModel renderModel = GetUnitRenderModel(team, unitType);
+        const FilePath& configuredModelPath = GetUnitModelPath(unitEditorSettings, team, unitType);
+        const bool useCustomModel = ((not configuredModelPath.isEmpty()) && FileSystem::Exists(configuredModelPath));
+        const String keyPrefix = useCustomModel
+            ? U"Model:{}"_fmt(MakeModelHeightFileKey(configuredModelPath))
+            : String{ GetUnitRenderModelLabel(renderModel) };
+        const FilePath actualModelPath = useCustomModel
+            ? FileSystem::FullPath(configuredModelPath)
+            : FilePath{ GetUnitRenderModelDefaultModelPath(renderModel) };
+        const double scale = useCustomModel
+            ? GetModelScale(modelHeightSettings, configuredModelPath)
+            : GetModelScale(modelHeightSettings, renderModel);
+        const int32 idleClip = useCustomModel
+            ? GetModelAnimationClipIndex(modelHeightSettings, configuredModelPath, UnitModelAnimationRole::Idle)
+            : GetModelAnimationClipIndex(modelHeightSettings, renderModel, UnitModelAnimationRole::Idle);
+        const int32 moveClip = useCustomModel
+            ? GetModelAnimationClipIndex(modelHeightSettings, configuredModelPath, UnitModelAnimationRole::Move)
+            : GetModelAnimationClipIndex(modelHeightSettings, renderModel, UnitModelAnimationRole::Move);
+        const int32 attackClip = useCustomModel
+            ? GetModelAnimationClipIndex(modelHeightSettings, configuredModelPath, UnitModelAnimationRole::Attack)
+            : GetModelAnimationClipIndex(modelHeightSettings, renderModel, UnitModelAnimationRole::Attack);
+        return U"spawned {}\nsettingsPath: {}\ncustomModel: {}\nkeyPrefix: {}\nmodelPath: {}\nscale: {:.3f}\nclip I/M/A: {}/{}/{}"_fmt(
+            ToUnitDisplayName(unitType),
+            FileSystem::FullPath(ModelHeightSettingsPath),
+            (useCustomModel ? U"yes" : U"no"),
+            keyPrefix,
+            actualModelPath,
+            scale,
+            idleClip,
+            moveClip,
+            attackClip);
+    }
+
     inline bool TrySpawnPlayerUnit(Array<SpawnedSapper>& spawnedSappers,
         const MapData& mapData,
         const Vec3& playerBasePosition,
@@ -93,7 +131,7 @@ namespace SkyAppSupport::UiMenusInternal
             SetSapperTier(spawnedSappers.back(), MinimumSapperTier);
             SetSpawnedSapperTarget(spawnedSappers.back(), rallyPoint, mapData, modelHeightSettings);
             playerResources.mana -= manaCost;
-            message.show(U"{}を出撃"_fmt(ToUnitDisplayName(unitType)));
+            message.show(BuildSpawnedUnitDiagnosticsMessage(unitEditorSettings, modelHeightSettings, UnitTeam::Player, unitType), 8.0);
             return true;
         }
 

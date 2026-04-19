@@ -20,6 +20,15 @@ namespace MainSupport
 
 	struct ModelHeightSettings
 	{
+        struct FileSettings
+		{
+			double offsetY = 0.0;
+			double scale = 1.0;
+			int32 idleAnimationClip = -1;
+			int32 moveAnimationClip = -1;
+			int32 attackAnimationClip = -1;
+		};
+
        std::array<double, UnitRenderModelCount> offsetY{};
 		std::array<double, UnitRenderModelCount> scale{};
      std::array<int32, UnitRenderModelCount> idleAnimationClip{};
@@ -29,6 +38,7 @@ namespace MainSupport
 		std::array<double, 3> tireTrackOpacity{};
 		std::array<double, 3> tireTrackSoftness{};
 		std::array<double, 3> tireTrackWarmth{};
+		HashTable<String, FileSettings> fileSettings;
 
 		ModelHeightSettings()
 		{
@@ -118,6 +128,72 @@ namespace MainSupport
 		return GetUnitRenderModelDefinition(renderModel).proceduralAnimationType;
 	}
 
+	[[nodiscard]] inline FilePathView GetUnitRenderModelDefaultModelPath(const UnitRenderModel renderModel)
+	{
+		switch (renderModel)
+		{
+		case UnitRenderModel::Ashigaru:
+			return AshigaruModelPath;
+
+		case UnitRenderModel::SugoiCar:
+			return SugoiCarModelPath;
+
+		case UnitRenderModel::Hohei:
+			return HoheiModelPath;
+
+		case UnitRenderModel::Bird:
+		default:
+			return BirdModelPath;
+		}
+	}
+
+	[[nodiscard]] inline String MakeModelHeightFileKey(FilePathView modelPath)
+	{
+		return FileSystem::FileName(FilePath{ modelPath }).lowercased();
+	}
+
+	[[nodiscard]] inline Optional<UnitRenderModel> TryGetDefaultModelRenderModel(FilePathView modelPath)
+	{
+		const String key = MakeModelHeightFileKey(modelPath);
+		if (key == FileSystem::FileName(FilePath{ BirdModelPath }).lowercased())
+		{
+			return UnitRenderModel::Bird;
+		}
+
+		if (key == FileSystem::FileName(FilePath{ AshigaruModelPath }).lowercased())
+		{
+			return UnitRenderModel::Ashigaru;
+		}
+
+		if (key == FileSystem::FileName(FilePath{ SugoiCarModelPath }).lowercased())
+		{
+			return UnitRenderModel::SugoiCar;
+		}
+
+		if (key == FileSystem::FileName(FilePath{ HoheiModelPath }).lowercased())
+		{
+			return UnitRenderModel::Hohei;
+		}
+
+		return none;
+	}
+
+	[[nodiscard]] inline ModelHeightSettings::FileSettings& GetOrCreateModelHeightFileSettings(ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		return settings.fileSettings[MakeModelHeightFileKey(modelPath)];
+	}
+
+	[[nodiscard]] inline const ModelHeightSettings::FileSettings* FindModelHeightFileSettings(const ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		const String key = MakeModelHeightFileKey(modelPath);
+		if (const auto it = settings.fileSettings.find(key); it != settings.fileSettings.end())
+		{
+			return std::addressof(it->second);
+		}
+
+		return nullptr;
+	}
+
 	[[nodiscard]] inline constexpr size_t GetTireTrackTextureSegmentIndex(const TireTrackTextureSegment segment)
 	{
 		switch (segment)
@@ -179,6 +255,56 @@ namespace MainSupport
 		return settings.scale[GetUnitRenderModelIndex(renderModel)];
 	}
 
+	[[nodiscard]] inline double& GetModelHeightOffset(ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+			return GetModelHeightOffset(settings, *renderModel);
+		}
+
+		return GetOrCreateModelHeightFileSettings(settings, modelPath).offsetY;
+	}
+
+	[[nodiscard]] inline double GetModelHeightOffset(const ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+			return GetModelHeightOffset(settings, *renderModel);
+		}
+
+		if (const auto* fileSettings = FindModelHeightFileSettings(settings, modelPath))
+		{
+			return fileSettings->offsetY;
+		}
+
+		return 0.0;
+	}
+
+	[[nodiscard]] inline double& GetModelScale(ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+			return GetModelScale(settings, *renderModel);
+		}
+
+		return GetOrCreateModelHeightFileSettings(settings, modelPath).scale;
+	}
+
+	[[nodiscard]] inline double GetModelScale(const ModelHeightSettings& settings, FilePathView modelPath)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+			return GetModelScale(settings, *renderModel);
+		}
+
+		if (const auto* fileSettings = FindModelHeightFileSettings(settings, modelPath))
+		{
+			return fileSettings->scale;
+		}
+
+		return 1.0;
+	}
+
     [[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
 	{
         switch (role)
@@ -193,6 +319,65 @@ namespace MainSupport
 		default:
 			return settings.idleAnimationClip[GetUnitRenderModelIndex(renderModel)];
 		}
+	}
+
+	[[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, FilePathView modelPath, const UnitModelAnimationRole role)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+			return GetModelAnimationClipIndex(settings, *renderModel, role);
+		}
+
+		auto& fileSettings = GetOrCreateModelHeightFileSettings(settings, modelPath);
+		switch (role)
+		{
+		case UnitModelAnimationRole::Move:
+			return fileSettings.moveAnimationClip;
+
+		case UnitModelAnimationRole::Attack:
+			return fileSettings.attackAnimationClip;
+
+		case UnitModelAnimationRole::Idle:
+		default:
+			return fileSettings.idleAnimationClip;
+		}
+	}
+
+	[[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, FilePathView modelPath, const UnitModelAnimationRole role)
+	{
+		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
+		{
+            switch (role)
+			{
+			case UnitModelAnimationRole::Move:
+				return settings.moveAnimationClip[GetUnitRenderModelIndex(*renderModel)];
+
+			case UnitModelAnimationRole::Attack:
+				return settings.attackAnimationClip[GetUnitRenderModelIndex(*renderModel)];
+
+			case UnitModelAnimationRole::Idle:
+			default:
+				return settings.idleAnimationClip[GetUnitRenderModelIndex(*renderModel)];
+			}
+		}
+
+		if (const auto* fileSettings = FindModelHeightFileSettings(settings, modelPath))
+		{
+			switch (role)
+			{
+			case UnitModelAnimationRole::Move:
+				return fileSettings->moveAnimationClip;
+
+			case UnitModelAnimationRole::Attack:
+				return fileSettings->attackAnimationClip;
+
+			case UnitModelAnimationRole::Idle:
+			default:
+				return fileSettings->idleAnimationClip;
+			}
+		}
+
+		return -1;
 	}
 
    [[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
