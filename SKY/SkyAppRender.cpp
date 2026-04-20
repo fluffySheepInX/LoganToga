@@ -236,10 +236,10 @@ namespace SkyAppFlow
 
        void DrawPreviewUnitRenderModel(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame, const size_t previewModelIndex)
 		{
-         const UnitModelAnimationRole previewRole = ((state.modelHeightEditMode && (state.modelHeightPreviewModelIndex == previewModelIndex))
-				? state.modelHeightPreviewAnimationRole
+         const UnitModelAnimationRole previewRole = ((state.editor.modelHeightEditMode && (state.editor.modelHeightPreviewModelIndex == previewModelIndex))
+				? state.editor.modelHeightPreviewAnimationRole
 				: UnitModelAnimationRole::Idle);
-            const UnitModel& previewModel = state.modelHeightEditMode
+            const UnitModel& previewModel = state.editor.modelHeightEditMode
 				? resources.GetModelHeightEditorPreviewModel(previewModelIndex, previewRole)
 				: resources.GetUnitRenderModel(static_cast<UnitRenderModel>(previewModelIndex), previewRole);
 			if (not previewModel.isLoaded())
@@ -247,13 +247,13 @@ namespace SkyAppFlow
 				return;
 			}
 
-         const FilePath& previewPath = state.modelHeightEditMode
+         const FilePath& previewPath = state.editor.modelHeightEditMode
 				? resources.modelHeightEditorPreviewPaths[previewModelIndex]
 				: FilePath{ GetUnitRenderModelDefaultModelPath(static_cast<UnitRenderModel>(previewModelIndex)) };
-			previewModel.draw(state.modelHeightEditMode ? frame.GetModelHeightPreviewRenderPosition(previewModelIndex) : frame.GetPreviewRenderPosition(static_cast<UnitRenderModel>(previewModelIndex)),
+			previewModel.draw(state.editor.modelHeightEditMode ? frame.GetModelHeightPreviewRenderPosition(previewModelIndex) : frame.GetPreviewRenderPosition(static_cast<UnitRenderModel>(previewModelIndex)),
 				BirdDisplayYaw,
               GetUnitRenderModelPreviewColor(static_cast<UnitRenderModel>(Min(previewModelIndex, static_cast<size_t>(UnitRenderModelCount - 1)))).removeSRGBCurve(),
-				GetModelScale(state.modelHeightSettings, previewPath));
+				GetModelScale(state.editor.modelHeightSettings, previewPath));
 		}
 
 		using TerrainCellLookup = HashTable<int64, const TerrainSurfaceCell*>;
@@ -279,25 +279,25 @@ namespace SkyAppFlow
 
 		void DrawTerrainSurface(const SkyAppState& state)
 		{
-			const TerrainCellLookup terrainLookup = BuildTerrainLookup(state.terrainSurface.cells);
+			const TerrainCellLookup terrainLookup = BuildTerrainLookup(state.world.terrainSurface.cells);
 
-			for (const auto& terrainCell : state.terrainSurface.cells)
+			for (const auto& terrainCell : state.world.terrainSurface.cells)
 			{
-				DrawTerrainCellOverlay(terrainCell, terrainLookup, state.fogOfWar, state.fogOfWarSettings);
+				DrawTerrainCellOverlay(terrainCell, terrainLookup, state.env.fogOfWar, state.env.fogOfWarSettings);
 			}
 		}
 
 		void DrawResourceAreas(const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
+			for (size_t i = 0; i < state.world.mapData.resourceAreas.size(); ++i)
 			{
-				const ResourceArea& area = state.mapData.resourceAreas[i];
-				if (not ShouldDrawWorldObject(frame, state.fogOfWar, area.position))
+				const ResourceArea& area = state.world.mapData.resourceAreas[i];
+				if (not ShouldDrawWorldObject(frame, state.env.fogOfWar, area.position))
 				{
 					continue;
 				}
 
-				const ResourceAreaState resourceState = ((i < state.resourceAreaStates.size()) ? state.resourceAreaStates[i] : ResourceAreaState{});
+				const ResourceAreaState resourceState = ((i < state.battle.resourceAreaStates.size()) ? state.battle.resourceAreaStates[i] : ResourceAreaState{});
 				DrawResourceAreaRing(area.position, area.radius, GetResourceAreaColor(area.type));
 				Cylinder{ area.position.movedBy(0, 0.06, 0), Max(0.35, area.radius * 0.16), 0.12 }.draw(GetTeamColor(resourceState.ownerTeam).removeSRGBCurve());
 			}
@@ -305,17 +305,17 @@ namespace SkyAppFlow
 
 		void DrawBases(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			resources.blacksmithModel.draw(state.mapData.playerBasePosition);
+			resources.blacksmithModel.draw(state.world.mapData.playerBasePosition);
 
-			if (ShouldDrawWorldObject(frame, state.fogOfWar, state.mapData.enemyBasePosition))
+			if (ShouldDrawWorldObject(frame, state.env.fogOfWar, state.world.mapData.enemyBasePosition))
 			{
-				resources.blacksmithModel.draw(state.mapData.enemyBasePosition);
+				resources.blacksmithModel.draw(state.world.mapData.enemyBasePosition);
 			}
 		}
 
 		void DrawPreviewUnits(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-         const size_t previewCount = state.modelHeightEditMode
+         const size_t previewCount = state.editor.modelHeightEditMode
 				? resources.modelHeightEditorPreviewPaths.size()
 				: static_cast<size_t>(UnitRenderModelCount);
 			for (size_t previewModelIndex = 0; previewModelIndex < previewCount; ++previewModelIndex)
@@ -331,8 +331,8 @@ namespace SkyAppFlow
 				return;
 			}
 
-			const UnitEditorSelection& previewSelection = state.unitEditorSelection;
-			const UnitParameters& previewParameters = GetUnitParameters(state.unitEditorSettings, previewSelection.team, previewSelection.unitType);
+			const UnitEditorSelection& previewSelection = state.editor.unitEditorSelection;
+			const UnitParameters& previewParameters = GetUnitParameters(state.editor.unitEditorSettings, previewSelection.team, previewSelection.unitType);
 			const UnitRenderModel previewRenderModel = GetUnitRenderModel(previewSelection.team, previewSelection.unitType);
 			const Vec3 previewPosition = frame.GetPreviewRenderPosition(previewRenderModel);
 			const ColorF previewColor = ((previewSelection.team == UnitTeam::Enemy)
@@ -345,25 +345,24 @@ namespace SkyAppFlow
 		{
           const MainSupport::PlacedModelRenderResources renderResources = BuildPlacedModelRenderResources(resources);
 
-			for (const auto& placedModel : state.mapData.placedModels)
+			for (const auto& placedModel : state.world.mapData.placedModels)
 			{
-				if ((not frame.isEditorMode) && (not ShouldDrawPlacedModelInFog(state.fogOfWar, placedModel)))
+				if ((not frame.isEditorMode) && (not ShouldDrawPlacedModelInFog(state.env.fogOfWar, placedModel)))
 				{
 					continue;
 				}
 
-             DrawPlacedModel(placedModel, state.modelHeightSettings, renderResources);
+             DrawPlacedModel(placedModel, state.editor.modelHeightSettings, renderResources);
 			}
 		}
 
-      void DrawPlacedModelSelectionOverlay(const PlacedModel& placedModel)
+	  void DrawPlacedModelSelectionOverlay(const PlacedModel& placedModel, const MillDefenseParameters& defenseParameters)
 		{
 			if (not SupportsMillDefenseParameters(placedModel.type))
 			{
 				return;
 			}
 
-			const MillDefenseParameters defenseParameters = GetMillDefenseParameters(placedModel);
 			const double attackRange = Clamp(defenseParameters.attackRange, 1.0, 20.0);
 			Cylinder{ placedModel.position.movedBy(0, 0.03, 0), attackRange, 0.06 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.28 }.removeSRGBCurve());
 			Cylinder{ placedModel.position.movedBy(0, 0.16, 0), 0.65, 0.18 }.draw(ColorF{ 1.0, 0.92, 0.30, 0.70 }.removeSRGBCurve());
@@ -371,37 +370,61 @@ namespace SkyAppFlow
 
 		void DrawSelectedPlacedModelOverlay(const SkyAppState& state)
 		{
-			if (not IsValidMillIndex(state, state.selectedMillIndex))
+			if (not IsValidMillIndex(state, state.battle.selectedMillIndex))
 			{
 				return;
 			}
 
-         DrawPlacedModelSelectionOverlay(state.mapData.placedModels[*state.selectedMillIndex]);
+		 DrawPlacedModelSelectionOverlay(state.world.mapData.placedModels[*state.battle.selectedMillIndex], GetMillDefenseParameters(state.world.mapData));
 		}
 
 		void DrawSpawnedUnits(const SkyAppResources& resources, const SkyAppState& state)
 		{
 			const UnitRenderModelRegistryView renderModels = resources.GetUnitRenderModelRegistry();
-           DrawSpawnedSappers(state.spawnedSappers, state.unitEditorSettings, renderModels, state.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
-			DrawSpawnedSappers(state.enemySappers, state.unitEditorSettings, renderModels, state.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 }, &state.fogOfWar, true);
+		   DrawSpawnedSappers(state.battle.spawnedSappers, state.editor.unitEditorSettings, renderModels, state.editor.modelHeightSettings, ColorF{ 0.92, 0.95, 1.0 });
+			DrawSpawnedSappers(state.battle.enemySappers, state.editor.unitEditorSettings, renderModels, state.editor.modelHeightSettings, ColorF{ 1.0, 0.78, 0.74 }, &state.env.fogOfWar, true);
 		}
+
+		// --- World render pass table -----------------------------------
+		// Each pass has the same (resources, state, frame) signature so
+		// the dispatch list is just an array of function pointers.
+		// Adding a new world-render pass = add one entry here.
+		using WorldPassFn = void(*)(const SkyAppResources&, const SkyAppState&, const SkyAppFrameState&);
+
+		void Pass_GroundPlane          (const SkyAppResources& r, const SkyAppState&,   const SkyAppFrameState&)   { r.groundPlane.draw(r.groundTexture); }
+		void Pass_TerrainSurface       (const SkyAppResources&,   const SkyAppState& s, const SkyAppFrameState&)   { DrawTerrainSurface(s); }
+		void Pass_OriginSphere         (const SkyAppResources&,   const SkyAppState&,   const SkyAppFrameState&)   { Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve()); }
+		void Pass_ResourceAreas        (const SkyAppResources&,   const SkyAppState& s, const SkyAppFrameState& f) { DrawResourceAreas(s, f); }
+		void Pass_Bases                (const SkyAppResources& r, const SkyAppState& s, const SkyAppFrameState& f) { DrawBases(r, s, f); }
+		void Pass_PreviewUnits         (const SkyAppResources& r, const SkyAppState& s, const SkyAppFrameState& f) { DrawPreviewUnits(r, s, f); }
+		void Pass_UnitEditorPreview    (const SkyAppResources&,   const SkyAppState& s, const SkyAppFrameState& f) { DrawUnitEditorPreview(s, f); }
+		void Pass_PlacedModels         (const SkyAppResources& r, const SkyAppState& s, const SkyAppFrameState& f) { DrawPlacedModels(r, s, f); }
+		void Pass_SelectedPlacedOverlay(const SkyAppResources&,   const SkyAppState& s, const SkyAppFrameState&)   { DrawSelectedPlacedModelOverlay(s); }
+		void Pass_SpawnedUnits         (const SkyAppResources& r, const SkyAppState& s, const SkyAppFrameState&)   { DrawSpawnedUnits(r, s); }
+		void Pass_MapEditorScene       (const SkyAppResources&,   const SkyAppState& s, const SkyAppFrameState&)   { DrawMapEditorScene(s.editor.mapEditor, s.world.mapData); }
+
+		constexpr WorldPassFn WorldPasses[] = {
+			Pass_GroundPlane,
+			Pass_TerrainSurface,
+			Pass_OriginSphere,
+			Pass_ResourceAreas,
+			Pass_Bases,
+			Pass_PreviewUnits,
+			Pass_UnitEditorPreview,
+			Pass_PlacedModels,
+			Pass_SelectedPlacedOverlay,
+			Pass_SpawnedUnits,
+			Pass_MapEditorScene,
+		};
 
 	}
 
  void RenderWorld(const SkyAppResources& resources, const SkyAppState& state, const SkyAppFrameState& frame)
 	{
-		resources.groundPlane.draw(resources.groundTexture);
-     DrawTerrainSurface(state);
-		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
-		DrawResourceAreas(state, frame);
-		DrawBases(resources, state, frame);
-		DrawPreviewUnits(resources, state, frame);
-		DrawUnitEditorPreview(state, frame);
-		DrawPlacedModels(resources, state, frame);
-     DrawSelectedPlacedModelOverlay(state);
-		DrawSpawnedUnits(resources, state);
-
-		DrawMapEditorScene(state.mapEditor, state.mapData);
-		state.sky.draw();
+		for (const WorldPassFn pass : WorldPasses)
+		{
+			pass(resources, state, frame);
+		}
+		state.env.sky.draw();
 	}
 }

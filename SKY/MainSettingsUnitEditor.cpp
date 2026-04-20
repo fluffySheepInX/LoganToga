@@ -1,4 +1,6 @@
 ﻿# include "MainSettingsInternal.hpp"
+# include "SettingsRegistry.hpp"
+# include "SkillDescriptors.hpp"
 
 namespace MainSupport
 {
@@ -24,22 +26,19 @@ namespace MainSupport
 		{
 			for (const auto& unitDefinition : GetUnitDefinitions())
 			{
-                const String groupKey = GetUnitSettingsGroupKey(team, unitDefinition.unitType);
+				const String groupKey = GetUnitSettingsGroupKey(team, unitDefinition.unitType);
+				const size_t slot = GetUnitParameterSlotIndex(team, unitDefinition.unitType);
+
 				SettingsDetail::LoadUnitParameterGroup(toml,
-                 groupKey,
+					groupKey,
 					GetUnitParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::LoadExplosionSkillParameterGroup(toml,
-					groupKey,
-					GetExplosionSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::LoadBuildMillSkillParameterGroup(toml,
-					groupKey,
-					GetBuildMillSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::LoadHealSkillParameterGroup(toml,
-					groupKey,
-					GetHealSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::LoadScoutSkillParameterGroup(toml,
-					groupKey,
-					GetScoutSkillParameters(settings, team, unitDefinition.unitType));
+
+				ForEachSkill([&](const auto& descriptor)
+				{
+					descriptor.load(toml,
+						(groupKey + String{ descriptor.keySuffix }),
+						(settings.*(descriptor.arrayMember))[slot]);
+				});
 
 				if (const auto modelPath = toml[(groupKey + U"ModelPath")].getOpt<String>())
 				{
@@ -53,51 +52,40 @@ namespace MainSupport
 
 	bool SaveUnitEditorSettings(const UnitEditorSettings& settings)
 	{
-		FileSystem::CreateDirectories(U"App/settings");
-
-		TextWriter writer{ UnitSettingsPath };
-
-		if (not writer)
+		return SaveSettingsFile(UnitSettingsPath, [&](TextWriter& writer)
 		{
-			return false;
-		}
-
-		bool needsBlankLine = false;
-		for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
-		{
-			for (const auto& unitDefinition : GetUnitDefinitions())
+			bool needsBlankLine = false;
+			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
 			{
-             const String groupKey = GetUnitSettingsGroupKey(team, unitDefinition.unitType);
-				if (needsBlankLine)
+				for (const auto& unitDefinition : GetUnitDefinitions())
 				{
-					writer.writeln(U"");
-				}
+					const String groupKey = GetUnitSettingsGroupKey(team, unitDefinition.unitType);
+					const size_t slot = GetUnitParameterSlotIndex(team, unitDefinition.unitType);
 
-				SettingsDetail::SaveUnitParameterGroup(writer,
-                 groupKey,
-					GetUnitParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::SaveExplosionSkillParameterGroup(writer,
-					groupKey,
-					GetExplosionSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::SaveBuildMillSkillParameterGroup(writer,
-					groupKey,
-					GetBuildMillSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::SaveHealSkillParameterGroup(writer,
-					groupKey,
-					GetHealSkillParameters(settings, team, unitDefinition.unitType));
-				SettingsDetail::SaveScoutSkillParameterGroup(writer,
-					groupKey,
-					GetScoutSkillParameters(settings, team, unitDefinition.unitType));
+					if (needsBlankLine)
+					{
+						writer.writeln(U"");
+					}
 
-				const FilePath& modelPath = GetUnitModelPath(settings, team, unitDefinition.unitType);
-				if (not modelPath.isEmpty())
-				{
-					writer.writeln(U"{}ModelPath = \"{}\""_fmt(groupKey, EscapeTomlString(modelPath)));
+					SettingsDetail::SaveUnitParameterGroup(writer,
+						groupKey,
+						GetUnitParameters(settings, team, unitDefinition.unitType));
+
+					ForEachSkill([&](const auto& descriptor)
+					{
+						descriptor.save(writer,
+							(groupKey + String{ descriptor.keySuffix }),
+							(settings.*(descriptor.arrayMember))[slot]);
+					});
+
+					const FilePath& modelPath = GetUnitModelPath(settings, team, unitDefinition.unitType);
+					if (not modelPath.isEmpty())
+					{
+						writer.writeln(U"{}ModelPath = \"{}\""_fmt(groupKey, EscapeTomlString(modelPath)));
+					}
+					needsBlankLine = true;
 				}
-				needsBlankLine = true;
 			}
-		}
-
-		return true;
+		});
 	}
 }

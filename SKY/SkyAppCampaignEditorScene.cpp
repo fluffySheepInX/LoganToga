@@ -20,7 +20,7 @@ namespace SkyAppInternal
 				, m_buttonFont{ 22, Typeface::Medium }
 			{
 				auto& data = getData();
-				if (data.missionNameStates.isEmpty())
+				if (data.missionDrafts.isEmpty())
 				{
 					PrepareNewCampaignDraft(data);
 				}
@@ -47,7 +47,7 @@ namespace SkyAppInternal
 				panel.rounded(24).draw(ColorF{ 0.08, 0.13, 0.21, 0.96 });
 				panel.rounded(24).drawFrame(2, 0, ColorF{ 0.56, 0.72, 0.92, 0.72 });
 				const size_t selectedMissionIndex = *data.selectedEditorMissionIndex;
-				const int32 maxOffset = Max(0, static_cast<int32>(data.missionNameStates.size()) - EditorVisibleMissionCount);
+				const int32 maxOffset = Max(0, static_cast<int32>(data.missionDrafts.size()) - EditorVisibleMissionCount);
 
                 m_titleFont(U"Campaign Editor").draw(panel.pos.movedBy(28, 24), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 				m_labelFont(U"Step 2: 複数 Mission 編集").draw(panel.pos.movedBy(30, 72), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
@@ -73,7 +73,7 @@ namespace SkyAppInternal
 				for (int32 row = 0; row < EditorVisibleMissionCount; ++row)
 				{
 					const size_t missionIndex = static_cast<size_t>(data.editorMissionListOffset + row);
-					if (data.missionNameStates.size() <= missionIndex)
+					if (data.missionDrafts.size() <= missionIndex)
 					{
 						break;
 					}
@@ -82,7 +82,7 @@ namespace SkyAppInternal
 					const bool selected = (missionIndex == selectedMissionIndex);
 					rowRect.rounded(10).draw(selected ? ColorF{ 0.20, 0.30, 0.44, 0.96 } : ColorF{ 0.11, 0.16, 0.24, 0.90 });
 					rowRect.rounded(10).drawFrame(1, 0, selected ? ColorF{ 0.92, 0.96, 1.0, 0.92 } : ColorF{ 0.34, 0.44, 0.56, 0.78 });
-                    m_labelFont(U"{}. {}"_fmt(missionIndex + 1, data.missionNameStates[missionIndex].text.isEmpty() ? U"Mission {}"_fmt(missionIndex + 1) : data.missionNameStates[missionIndex].text)).draw(rowRect.pos.movedBy(12, 7), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
+					m_labelFont(U"{}. {}"_fmt(missionIndex + 1, data.missionDrafts[missionIndex].name.text.isEmpty() ? U"Mission {}"_fmt(missionIndex + 1) : data.missionDrafts[missionIndex].name.text)).draw(rowRect.pos.movedBy(12, 7), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 
 					if (rowRect.leftClicked())
 					{
@@ -92,9 +92,9 @@ namespace SkyAppInternal
 
                 DrawEditorActionButton(GetMissionAddButton(panel), m_labelFont, U"Add", EditorActionButtonStyle::Secondary);
 				DrawEditorActionButton(GetMissionDuplicateButton(panel), m_labelFont, U"Copy", EditorActionButtonStyle::Secondary);
-				DrawEditorActionButton(GetMissionRemoveButton(panel), m_labelFont, U"Remove", EditorActionButtonStyle::Secondary, (1 < data.missionNameStates.size()));
+				DrawEditorActionButton(GetMissionRemoveButton(panel), m_labelFont, U"Remove", EditorActionButtonStyle::Secondary, (1 < data.missionDrafts.size()));
 				DrawEditorActionButton(GetMissionUpButton(panel), m_labelFont, U"Move Up", EditorActionButtonStyle::Secondary, (0 < selectedMissionIndex));
-				DrawEditorActionButton(GetMissionDownButton(panel), m_labelFont, U"Move Down", EditorActionButtonStyle::Secondary, ((selectedMissionIndex + 1) < data.missionNameStates.size()));
+				DrawEditorActionButton(GetMissionDownButton(panel), m_labelFont, U"Move Down", EditorActionButtonStyle::Secondary, ((selectedMissionIndex + 1) < data.missionDrafts.size()));
 				DrawEditorActionButton(GetMissionScrollUpButton(panel), m_labelFont, U"▲", EditorActionButtonStyle::Secondary, (0 < data.editorMissionListOffset));
 				DrawEditorActionButton(GetMissionScrollDownButton(panel), m_labelFont, U"▼", EditorActionButtonStyle::Secondary, (data.editorMissionListOffset < maxOffset));
 
@@ -108,7 +108,7 @@ namespace SkyAppInternal
 					DuplicateSelectedEditorMission(data);
 				}
 
-				if (IsRectButtonClicked(GetMissionRemoveButton(panel), (1 < data.missionNameStates.size())))
+				if (IsRectButtonClicked(GetMissionRemoveButton(panel), (1 < data.missionDrafts.size())))
 				{
 					RemoveSelectedEditorMission(data);
 				}
@@ -118,7 +118,7 @@ namespace SkyAppInternal
 					MoveSelectedEditorMission(data, -1);
 				}
 
-				if (IsRectButtonClicked(GetMissionDownButton(panel), ((selectedMissionIndex + 1) < data.missionNameStates.size())))
+				if (IsRectButtonClicked(GetMissionDownButton(panel), ((selectedMissionIndex + 1) < data.missionDrafts.size())))
 				{
 					MoveSelectedEditorMission(data, 1);
 				}
@@ -136,20 +136,20 @@ namespace SkyAppInternal
 				ClampEditorMissionSelection(data);
 				const size_t currentMissionIndex = *data.selectedEditorMissionIndex;
 
-               m_labelFont(U"Selected Mission: {} / {}"_fmt(currentMissionIndex + 1, data.missionNameStates.size())).draw(detailSection.pos.movedBy(18, 52), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
+			   m_labelFont(U"Selected Mission: {} / {}"_fmt(currentMissionIndex + 1, data.missionDrafts.size())).draw(detailSection.pos.movedBy(18, 52), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 				m_labelFont(U"Mission Name").draw(detailSection.pos.movedBy(18, 92), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
-				SimpleGUI::TextBox(data.missionNameStates[currentMissionIndex], detailSection.pos.movedBy(18, 120), 418, 48);
+				SimpleGUI::TextBox(data.missionDrafts[currentMissionIndex].name, detailSection.pos.movedBy(18, 120), 418, 48);
 
                 m_labelFont(U"Map Path").draw(detailSection.pos.movedBy(18, 180), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
-                SimpleGUI::TextBox(data.missionMapPathStates[currentMissionIndex], detailSection.pos.movedBy(18, 208), 326, 80);
+				SimpleGUI::TextBox(data.missionDrafts[currentMissionIndex].mapPath, detailSection.pos.movedBy(18, 208), 326, 80);
 				DrawEditorActionButton(GetBrowseMapPathButton(panel), m_labelFont, U"Browse", EditorActionButtonStyle::Secondary);
 
                 m_labelFont(U"Dialogue").draw(detailSection.pos.movedBy(18, 268), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
 				const RectF dialoguePreviewRect{ detailSection.x + 18, detailSection.y + 296, 418, 122 };
 				dialoguePreviewRect.rounded(12).draw(ColorF{ 0.07, 0.11, 0.18, 0.92 });
 				dialoguePreviewRect.rounded(12).drawFrame(1, 0, ColorF{ 0.42, 0.52, 0.64, 0.82 });
-             m_labelFont(U"Pre: {}"_fmt(MakeDialogueSummary(data.missionPreDialogueStates[currentMissionIndex].text))).draw(dialoguePreviewRect.pos.movedBy(14, 14), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
-				m_labelFont(U"Post: {}"_fmt(MakeDialogueSummary(data.missionPostDialogueStates[currentMissionIndex].text))).draw(dialoguePreviewRect.pos.movedBy(14, 48), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
+			 m_labelFont(U"Pre: {}"_fmt(MakeDialogueSummary(data.missionDrafts[currentMissionIndex].preDialogue.text))).draw(dialoguePreviewRect.pos.movedBy(14, 14), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
+				m_labelFont(U"Post: {}"_fmt(MakeDialogueSummary(data.missionDrafts[currentMissionIndex].postDialogue.text))).draw(dialoguePreviewRect.pos.movedBy(14, 48), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 				DrawEditorActionButton(GetEditDialogueButton(panel), m_labelFont, U"Edit Dialogue", EditorActionButtonStyle::Secondary);
 
 				DrawEditorActionButton(GetSaveButton(panel), m_buttonFont, U"Save", EditorActionButtonStyle::Primary);
@@ -179,7 +179,7 @@ namespace SkyAppInternal
 				{
 					if (const Optional<FilePath> path = Dialog::OpenFile({ FileFilter::AllFiles() }))
 					{
-						data.missionMapPathStates[currentMissionIndex].text = *path;
+						data.missionDrafts[currentMissionIndex].mapPath.text = *path;
 					}
 				}
 

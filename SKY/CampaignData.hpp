@@ -178,6 +178,39 @@ namespace SkyCampaign
 			line += U"]";
 			writer.writeln(line);
 		}
+
+		[[nodiscard]] inline CampaignDefinition ParseCampaignDefinition(const TOMLReader& toml, const StringView fallbackId)
+		{
+			CampaignDefinition definition;
+			definition.id = toml[U"id"].getOpt<String>().value_or(String{ fallbackId });
+			definition.displayName = toml[U"displayName"].getOpt<String>().value_or(definition.id);
+			definition.description = toml[U"description"].getOpt<String>().value_or(U"");
+			definition.visibleInTitle = toml[U"visibleInTitle"].getOpt<bool>().value_or(true);
+			definition.missions.clear();
+
+			try
+			{
+				for (const auto& missionTable : toml[U"missions"].tableArrayView())
+				{
+					definition.missions << CampaignMissionDefinition{
+						.displayName = missionTable[U"displayName"].getOpt<String>().value_or(U"Mission {}"_fmt(definition.missions.size() + 1)),
+						.mapFile = missionTable[U"mapFile"].getOpt<String>().value_or(FilePath{ MainSupport::MapDataPath }),
+						.preDialogueLines = ReadStringArray(missionTable[U"preDialogue"]),
+						.postDialogueLines = ReadStringArray(missionTable[U"postDialogue"]),
+					};
+				}
+			}
+			catch (const std::exception&)
+			{
+			}
+
+			if (definition.missions.isEmpty())
+			{
+				definition.missions << CampaignMissionDefinition{};
+			}
+
+			return definition;
+		}
 	}
 
 	[[nodiscard]] inline Array<CampaignDefinition> LoadCampaignDefinitions()
@@ -198,33 +231,7 @@ namespace SkyCampaign
 				continue;
 			}
 
-			CampaignDefinition definition;
-			definition.id = toml[U"id"].getOpt<String>().value_or(FileSystem::BaseName(FileSystem::FileName(filePath)));
-			definition.displayName = toml[U"displayName"].getOpt<String>().value_or(definition.id);
-			definition.description = toml[U"description"].getOpt<String>().value_or(U"");
-			definition.visibleInTitle = toml[U"visibleInTitle"].getOpt<bool>().value_or(true);
-			definition.missions.clear();
-
-			try
-			{
-				for (const auto& missionTable : toml[U"missions"].tableArrayView())
-				{
-					definition.missions << CampaignMissionDefinition{
-						.displayName = missionTable[U"displayName"].getOpt<String>().value_or(U"Mission {}"_fmt(definition.missions.size() + 1)),
-						.mapFile = missionTable[U"mapFile"].getOpt<String>().value_or(FilePath{ MainSupport::MapDataPath }),
-                      .preDialogueLines = Detail::ReadStringArray(missionTable[U"preDialogue"]),
-						.postDialogueLines = Detail::ReadStringArray(missionTable[U"postDialogue"]),
-					};
-				}
-			}
-			catch (const std::exception&)
-			{
-			}
-
-			if (definition.missions.isEmpty())
-			{
-				definition.missions << CampaignMissionDefinition{};
-			}
+			CampaignDefinition definition = Detail::ParseCampaignDefinition(toml, FileSystem::BaseName(FileSystem::FileName(filePath)));
 
 			if (definition.visibleInTitle)
 			{
@@ -247,34 +254,7 @@ namespace SkyCampaign
 			return none;
 		}
 
-		CampaignDefinition definition;
-		definition.id = toml[U"id"].getOpt<String>().value_or(String{ campaignId });
-		definition.displayName = toml[U"displayName"].getOpt<String>().value_or(definition.id);
-		definition.description = toml[U"description"].getOpt<String>().value_or(U"");
-		definition.visibleInTitle = toml[U"visibleInTitle"].getOpt<bool>().value_or(true);
-		definition.missions.clear();
-
-		try
-		{
-			for (const auto& missionTable : toml[U"missions"].tableArrayView())
-			{
-				definition.missions << CampaignMissionDefinition{
-					.displayName = missionTable[U"displayName"].getOpt<String>().value_or(U"Mission {}"_fmt(definition.missions.size() + 1)),
-					.mapFile = missionTable[U"mapFile"].getOpt<String>().value_or(FilePath{ MainSupport::MapDataPath }),
-                  .preDialogueLines = Detail::ReadStringArray(missionTable[U"preDialogue"]),
-					.postDialogueLines = Detail::ReadStringArray(missionTable[U"postDialogue"]),
-				};
-			}
-		}
-		catch (const std::exception&)
-		{
-		}
-
-		if (definition.missions.isEmpty())
-		{
-			definition.missions << CampaignMissionDefinition{};
-		}
-
+		CampaignDefinition definition = Detail::ParseCampaignDefinition(toml, campaignId);
 		return definition;
 	}
 

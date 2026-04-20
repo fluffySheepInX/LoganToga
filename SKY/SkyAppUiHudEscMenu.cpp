@@ -1,4 +1,4 @@
-Ôªø# include "SkyAppLoopInternal.hpp"
+# include "SkyAppLoopInternal.hpp"
 # include "SkyAppUi.hpp"
 # include "SkyAppUiInternal.hpp"
 # include "MapEditor.hpp"
@@ -17,13 +17,13 @@ namespace SkyAppFlow
 		{
 			Window::Resize(size);
 			resources.renderTexture = MSRenderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
-			state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.camera.getEyePosition(), state.camera.getFocusPosition() };
+			state.env.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.env.camera.getEyePosition(), state.env.camera.getFocusPosition() };
 		}
 	}
 
 	bool HandleEscMenu(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 	{
-		if (not state.showEscMenu)
+		if (not state.hud.showEscMenu)
 		{
 			return false;
 		}
@@ -32,28 +32,28 @@ namespace SkyAppFlow
 		{
 		case EscMenuAction::Restart:
 			ResetMatch(state);
-			state.restartMessage.show(U"Ë©¶Âêà„Çí„É™„Çπ„Çø„Éº„Éà");
-			state.showEscMenu = false;
+			state.messages[SkyAppSupport::MessageChannel::Restart].show(U"ééçáÇÉäÉXÉ^Å[Ég");
+			state.hud.showEscMenu = false;
 			break;
 
 		case EscMenuAction::Title:
-			state.requestTitleScene = true;
-			state.showEscMenu = false;
+			state.hud.requestTitleScene = true;
+			state.hud.showEscMenu = false;
 			break;
 
 		case EscMenuAction::Resize1280x720:
 			ResizeBattleWindow(resources, state, Size{ 1280, 720 });
-			state.showEscMenu = false;
+			state.hud.showEscMenu = false;
 			break;
 
 		case EscMenuAction::Resize1600x900:
 			ResizeBattleWindow(resources, state, Size{ 1600, 900 });
-			state.showEscMenu = false;
+			state.hud.showEscMenu = false;
 			break;
 
 		case EscMenuAction::Resize1920x1080:
 			ResizeBattleWindow(resources, state, Size{ 1920, 1080 });
-			state.showEscMenu = false;
+			state.hud.showEscMenu = false;
 			break;
 
 		case EscMenuAction::None:

@@ -153,9 +153,6 @@
     <ClCompile Include="MapData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MapDataToml.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MapEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -211,12 +208,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppUiMillEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MapEditorScene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MapEditorPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MapEditorPanelCommands.cpp">
@@ -330,9 +321,6 @@
     <ClCompile Include="MainSettingsModelHeight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MainSettingsEditorTextColors.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MainSettingsUiLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -396,19 +384,10 @@
     <ClCompile Include="SkyAppUiSapperMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SkyAppBattleCombat_Base.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyAppBattleCombat_EnemySpawn.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SkyAppBattleCombat_PlayerActions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkyAppBattleCombat_MillDefense.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyAppBattleCombat_Effects.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MainUiModelHeight.cpp">
@@ -430,6 +409,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MainUiModelHeightTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppPanelRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppText.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyAppHudToggleRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSettingsEditorTextColors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -539,6 +530,15 @@
     <ClInclude Include="UnitEditorContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TomlSchema.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UnitParameterSchemas.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsSchemas.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="UnitTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -564,9 +564,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SkyAppUiSettingsInternal.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SkyAppText.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MapEditorUpdateInternal.hpp">
@@ -605,6 +602,18 @@
     <ClInclude Include="MainUiModelHeightInternal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SkyAppPanelRegistry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyAppText.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsRegistry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SkillDescriptors.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc">
@@ -630,6 +639,8 @@
     </None>
     <None Include="App\settings\ui_layout_profile.toml" />
     <None Include="App\settings\panel_skin_settings.toml" />
+    <None Include="App\locale\strings.ja.toml" />
+    <None Include="App\locale\strings.en.toml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

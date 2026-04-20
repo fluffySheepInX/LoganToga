@@ -3,286 +3,116 @@
 
 namespace MapDataTomlDetail
 {
-	double SanitizeMillAttackRange(const double value)
-	{
-		return Clamp(value, 1.0, 20.0);
-	}
+    void WriteTomlVec3(TextWriter& writer, const String& key, const Vec3& value)
+    {
+        writer.writeln(U"{} = [{:.3f}, {:.3f}, {:.3f}]"_fmt(key, value.x, value.y, value.z));
+    }
 
-	double SanitizeMillAttackDamage(const double value)
-	{
-		return Clamp(value, 1.0, 80.0);
-	}
+    void AppendLoadMessage(String& message, const StringView detail)
+    {
+        if (message.isEmpty())
+        {
+            message = detail;
+            return;
+        }
 
-	double SanitizeMillAttackInterval(const double value)
-	{
-		return Clamp(value, 0.2, 5.0);
-	}
+        message += U" / ";
+        message += detail;
+    }
 
-	int32 SanitizeMillAttackTargetCount(const int64 value)
-	{
-		return Clamp<int32>(static_cast<int32>(value), 1, 6);
-	}
+    bool HasTomlTableArraySection(FilePathView path, const String& key)
+    {
+        std::ifstream reader{ Unicode::ToUTF8(FileSystem::FullPath(path)) };
 
-	double SanitizeMillSuppressionDuration(const double value)
-	{
-		return Clamp(value, 0.2, 10.0);
-	}
+        if (not reader)
+        {
+            return false;
+        }
 
-	double SanitizeMillSuppressionMoveSpeedMultiplier(const double value)
-	{
-		return Clamp(value, 0.1, 1.0);
-	}
+        const std::string sectionHeader = ("[[" + Unicode::ToUTF8(key) + "]]");
+        std::string line;
 
-	double SanitizeMillSuppressionAttackDamageMultiplier(const double value)
-	{
-		return Clamp(value, 0.1, 1.0);
-	}
+        while (std::getline(reader, line))
+        {
+            if ((3 <= line.size())
+                && (static_cast<unsigned char>(line[0]) == 0xEF)
+                && (static_cast<unsigned char>(line[1]) == 0xBB)
+                && (static_cast<unsigned char>(line[2]) == 0xBF))
+            {
+                line.erase(0, 3);
+            }
 
-	double SanitizeMillSuppressionAttackIntervalMultiplier(const double value)
-	{
-		return Clamp(value, 1.0, 10.0);
-	}
+            const size_t start = line.find_first_not_of(" \t");
+            if (start == std::string::npos)
+            {
+                continue;
+            }
 
-	double SanitizeNavPointRadius(const double value)
-	{
-		return Clamp(value, 0.5, 8.0);
-	}
+            const size_t end = line.find_last_not_of(" \t");
+            if (line.substr(start, (end - start + 1)) == sectionHeader)
+            {
+                return true;
+            }
+        }
 
-	double SanitizeNavLinkCostMultiplier(const double value)
-	{
-		return Clamp(value, 0.1, 10.0);
-	}
+        return false;
+    }
 
-	double SanitizeWallLength(const double value)
-	{
-		return Clamp(value, 2.0, 80.0);
-	}
+    namespace
+    {
+        template <class T, size_t N>
+        [[nodiscard]] Optional<T> LookupName(const std::array<std::pair<StringView, T>, N>& table, const StringView name)
+        {
+            for (const auto& [n, v] : table)
+            {
+                if (n == name) return v;
+            }
+            return none;
+        }
+    }
 
-	double SanitizeRoadSpan(const double value)
-	{
-		return Clamp(value, 2.0, 80.0);
-	}
+    Optional<PlaceableModelType> ParsePlaceableModelType(const String& value)
+    {
+        static constexpr std::array<std::pair<StringView, PlaceableModelType>, 8> Table{ {
+            { U"Mill",           PlaceableModelType::Mill },
+            { U"Tree",           PlaceableModelType::Tree },
+            { U"Pine",           PlaceableModelType::Pine },
+            { U"GrassPatch",     PlaceableModelType::GrassPatch },
+            { U"Rock",           PlaceableModelType::Rock },
+            { U"Wall",           PlaceableModelType::Wall },
+            { U"Road",           PlaceableModelType::Road },
+            { U"TireTrackDecal", PlaceableModelType::TireTrackDecal },
+        } };
+        return LookupName(Table, value);
+    }
 
-	Vec3 ReadTomlVec3(const TOMLReader& toml, const String& key, const Vec3& fallback)
-	{
-		try
-		{
-			Array<double> values;
-			values.reserve(3);
+    Optional<MainSupport::UnitTeam> ParseUnitTeam(const String& value)
+    {
+        static constexpr std::array<std::pair<StringView, MainSupport::UnitTeam>, 2> Table{ {
+            { U"Player", MainSupport::UnitTeam::Player },
+            { U"Enemy",  MainSupport::UnitTeam::Enemy },
+        } };
+        return LookupName(Table, value);
+    }
 
-			for (const auto& value : toml[key].arrayView())
-			{
-				values << value.get<double>();
+    Optional<TerrainCellType> ParseTerrainCellType(const String& value)
+    {
+        static constexpr std::array<std::pair<StringView, TerrainCellType>, 4> Table{ {
+            { U"Grass", TerrainCellType::Grass },
+            { U"Dirt",  TerrainCellType::Dirt },
+            { U"Sand",  TerrainCellType::Sand },
+            { U"Rock",  TerrainCellType::Rock },
+        } };
+        return LookupName(Table, value);
+    }
 
-				if (values.size() >= 3)
-				{
-					break;
-				}
-			}
-
-			if (values.size() < 3)
-			{
-				return fallback;
-			}
-
-			return Vec3{ values[0], values[1], values[2] };
-		}
-		catch (const std::exception&)
-		{
-			return fallback;
-		}
-	}
-
-	Vec3 ReadTomlVec3(const TOMLValue& tomlValue, const String& key, const Vec3& fallback)
-	{
-		try
-		{
-			Array<double> values;
-			values.reserve(3);
-
-			for (const auto& value : tomlValue[key].arrayView())
-			{
-				values << value.get<double>();
-
-				if (values.size() >= 3)
-				{
-					break;
-				}
-			}
-
-			if (values.size() < 3)
-			{
-				return fallback;
-			}
-
-			return Vec3{ values[0], values[1], values[2] };
-		}
-		catch (const std::exception&)
-		{
-			return fallback;
-		}
-	}
-
-	void WriteTomlVec3(TextWriter& writer, const String& key, const Vec3& value)
-	{
-		writer.writeln(U"{} = [{:.3f}, {:.3f}, {:.3f}]"_fmt(key, value.x, value.y, value.z));
-	}
-
-	void AppendLoadMessage(String& message, const StringView detail)
-	{
-		if (message.isEmpty())
-		{
-			message = detail;
-			return;
-		}
-
-		message += U" / ";
-		message += detail;
-	}
-
-	bool HasTomlTableArraySection(FilePathView path, const String& key)
-	{
-		std::ifstream reader{ Unicode::ToUTF8(FileSystem::FullPath(path)) };
-
-		if (not reader)
-		{
-			return false;
-		}
-
-		const std::string sectionHeader = ("[[" + Unicode::ToUTF8(key) + "]]" );
-		std::string line;
-
-		while (std::getline(reader, line))
-		{
-			if (not line.empty() && static_cast<unsigned char>(line.front()) == 0xEF)
-			{
-				if ((3 <= line.size())
-					&& (static_cast<unsigned char>(line[0]) == 0xEF)
-					&& (static_cast<unsigned char>(line[1]) == 0xBB)
-					&& (static_cast<unsigned char>(line[2]) == 0xBF))
-				{
-					line.erase(0, 3);
-				}
-			}
-
-			const size_t start = line.find_first_not_of(" \t");
-			if (start == std::string::npos)
-			{
-				continue;
-			}
-
-			const size_t end = line.find_last_not_of(" \t");
-			if (line.substr(start, (end - start + 1)) == sectionHeader)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	Optional<PlaceableModelType> ParsePlaceableModelType(const String& value)
-	{
-		if (value == U"Mill")
-		{
-			return PlaceableModelType::Mill;
-		}
-
-		if (value == U"Tree")
-		{
-			return PlaceableModelType::Tree;
-		}
-
-		if (value == U"Pine")
-		{
-			return PlaceableModelType::Pine;
-		}
-
-		if (value == U"GrassPatch")
-		{
-			return PlaceableModelType::GrassPatch;
-		}
-
-		if (value == U"Rock")
-		{
-			return PlaceableModelType::Rock;
-		}
-
-		if (value == U"Wall")
-		{
-			return PlaceableModelType::Wall;
-		}
-
-	if (value == U"Road")
-	{
-		return PlaceableModelType::Road;
-	}
-
-	if (value == U"TireTrackDecal")
-	{
-		return PlaceableModelType::TireTrackDecal;
-	}
-
-		return none;
-	}
-
-	Optional<MainSupport::UnitTeam> ParseUnitTeam(const String& value)
-	{
-		if (value == U"Player")
-		{
-			return MainSupport::UnitTeam::Player;
-		}
-
-		if (value == U"Enemy")
-		{
-			return MainSupport::UnitTeam::Enemy;
-		}
-
-		return none;
-	}
-
-	Optional<TerrainCellType> ParseTerrainCellType(const String& value)
-	{
-		if (value == U"Grass")
-		{
-			return TerrainCellType::Grass;
-		}
-
-		if (value == U"Dirt")
-		{
-			return TerrainCellType::Dirt;
-		}
-
-		if (value == U"Sand")
-		{
-			return TerrainCellType::Sand;
-		}
-
-		if (value == U"Rock")
-		{
-			return TerrainCellType::Rock;
-		}
-
-		return none;
-	}
-
-	Optional<MainSupport::ResourceType> ParseResourceType(const String& value)
-	{
-		if (value == U"Budget")
-		{
-			return MainSupport::ResourceType::Budget;
-		}
-
-		if (value == U"Gunpowder")
-		{
-			return MainSupport::ResourceType::Gunpowder;
-		}
-
-		if (value == U"Mana")
-		{
-			return MainSupport::ResourceType::Mana;
-		}
-
-		return none;
-	}
+    Optional<MainSupport::ResourceType> ParseResourceType(const String& value)
+    {
+        static constexpr std::array<std::pair<StringView, MainSupport::ResourceType>, 3> Table{ {
+            { U"Budget",    MainSupport::ResourceType::Budget },
+            { U"Gunpowder", MainSupport::ResourceType::Gunpowder },
+            { U"Mana",      MainSupport::ResourceType::Mana },
+        } };
+        return LookupName(Table, value);
+    }
 }

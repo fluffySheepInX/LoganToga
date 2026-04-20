@@ -21,13 +21,13 @@ namespace SkyAppFlow
 
         void EnsureMillDefenseState(SkyAppState& state)
         {
-            if (state.millLastAttackTimes.size() != state.mapData.placedModels.size())
+            if (state.battle.millLastAttackTimes.size() != state.world.mapData.placedModels.size())
             {
-                const size_t previousSize = state.millLastAttackTimes.size();
-                state.millLastAttackTimes.resize(state.mapData.placedModels.size(), -1000.0);
-                for (size_t i = previousSize; i < state.millLastAttackTimes.size(); ++i)
+                const size_t previousSize = state.battle.millLastAttackTimes.size();
+                state.battle.millLastAttackTimes.resize(state.world.mapData.placedModels.size(), -1000.0);
+                for (size_t i = previousSize; i < state.battle.millLastAttackTimes.size(); ++i)
                 {
-                    state.millLastAttackTimes[i] = -1000.0;
+                    state.battle.millLastAttackTimes[i] = -1000.0;
                 }
             }
         }
@@ -101,33 +101,33 @@ namespace SkyAppFlow
     {
         void UpdateMillDefense(SkyAppState& state)
         {
-            if ((state.playerBaseHitPoints <= 0.0) && (state.enemyBaseHitPoints <= 0.0))
+            if ((state.battle.playerBaseHitPoints <= 0.0) && (state.battle.enemyBaseHitPoints <= 0.0))
             {
                 return;
             }
 
             EnsureMillDefenseState(state);
             const double currentTime = Scene::Time();
+            const MillDefenseParameters defenseParameters = GetMillDefenseParameters(state.world.mapData);
 
-            for (size_t i = 0; i < state.mapData.placedModels.size(); ++i)
+            for (size_t i = 0; i < state.world.mapData.placedModels.size(); ++i)
             {
-                const PlacedModel& placedModel = state.mapData.placedModels[i];
+                const PlacedModel& placedModel = state.world.mapData.placedModels[i];
                 if (placedModel.type != PlaceableModelType::Mill)
                 {
                     continue;
                 }
 
-                const MillDefenseParameters defenseParameters = GetMillDefenseParameters(placedModel);
                 const double attackInterval = Clamp(defenseParameters.attackInterval, 0.2, 5.0);
-                if ((currentTime - state.millLastAttackTimes[i]) < attackInterval)
+                if ((currentTime - state.battle.millLastAttackTimes[i]) < attackInterval)
                 {
                     continue;
                 }
 
                 const bool isEnemyMill = (placedModel.ownerTeam == UnitTeam::Enemy);
-                Array<SpawnedSapper>& targetSappers = (isEnemyMill ? state.spawnedSappers : state.enemySappers);
-                const Vec3& defendedBasePosition = (isEnemyMill ? state.mapData.enemyBasePosition : state.mapData.playerBasePosition);
-                const double defendedBaseHitPoints = (isEnemyMill ? state.enemyBaseHitPoints : state.playerBaseHitPoints);
+                Array<SpawnedSapper>& targetSappers = (isEnemyMill ? state.battle.spawnedSappers : state.battle.enemySappers);
+                const Vec3& defendedBasePosition = (isEnemyMill ? state.world.mapData.enemyBasePosition : state.world.mapData.playerBasePosition);
+                const double defendedBaseHitPoints = (isEnemyMill ? state.battle.enemyBaseHitPoints : state.battle.playerBaseHitPoints);
                 if (defendedBaseHitPoints <= 0.0)
                 {
                     continue;
@@ -143,7 +143,7 @@ namespace SkyAppFlow
                     continue;
                 }
 
-                state.millLastAttackTimes[i] = currentTime;
+                state.battle.millLastAttackTimes[i] = currentTime;
                 for (const size_t targetIndex : targetIndices)
                 {
                     ApplyMillAttackToTarget(state, placedModel.position, defenseParameters, targetSappers[targetIndex]);

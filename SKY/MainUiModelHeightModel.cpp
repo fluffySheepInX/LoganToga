@@ -1,10 +1,9 @@
-﻿# include "MainUiModelHeightInternal.hpp"
+# include "MainUiModelHeightInternal.hpp"
 # include "MainSettings.hpp"
 # include "SkyAppText.hpp"
 
 namespace MainSupport::ModelHeightEditorDetail
 {
-    using SkyAppText::TextId;
     using SkyAppText::Tr;
     using SkyAppText::TrFormat;
 
@@ -165,7 +164,7 @@ namespace MainSupport::ModelHeightEditorDetail
         }
 
         const int32 actionButtonWidth = Max(88, ((detailWidth - 8) / 2));
-        if (DrawTextButton(Rect{ detailX, summaryY, actionButtonWidth, 30 }, Tr(TextId::ModelHeightResetTarget)))
+        if (DrawTextButton(Rect{ detailX, summaryY, actionButtonWidth, 30 }, Tr(U"ModelHeightResetTarget")))
         {
             bindings.activeOffset = 0.0;
             bindings.activeScale = 1.0;
@@ -181,7 +180,7 @@ namespace MainSupport::ModelHeightEditorDetail
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 
-        if (DrawTextButton(Rect{ (detailX + actionButtonWidth + 8), (summaryY + 38), actionButtonWidth, 30 }, Tr(TextId::CommonSave)))
+        if (DrawTextButton(Rect{ (detailX + actionButtonWidth + 8), (summaryY + 38), actionButtonWidth, 30 }, Tr(U"CommonSave")))
         {
            if (SaveModelHeightSettings(context.modelHeightSettings))
             {
@@ -190,7 +189,7 @@ namespace MainSupport::ModelHeightEditorDetail
             }
             else
             {
-                context.modelHeightMessage = Tr(TextId::ModelHeightSaveFailed);
+                context.modelHeightMessage = Tr(U"ModelHeightSaveFailed");
                 context.modelHeightMessageUntil = (Scene::Time() + 2.0);
             }
         }
@@ -198,14 +197,14 @@ namespace MainSupport::ModelHeightEditorDetail
         if (DrawTextButton(Rect{ detailX, (summaryY + 76), detailWidth, 30 }, U"Reload File"))
         {
             context.modelHeightSettings = LoadModelHeightSettings();
-            context.modelHeightMessage = Tr(TextId::ModelHeightReloaded);
+            context.modelHeightMessage = Tr(U"ModelHeightReloaded");
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 
-        if (DrawTextButton(Rect{ (detailX + actionButtonWidth + 8), summaryY, actionButtonWidth, 30 }, Tr(TextId::CommonResetAll)))
+        if (DrawTextButton(Rect{ (detailX + actionButtonWidth + 8), summaryY, actionButtonWidth, 30 }, Tr(U"CommonResetAll")))
         {
             context.modelHeightSettings = {};
-            context.modelHeightMessage = Tr(TextId::ModelHeightOffsetsScalesReset);
+            context.modelHeightMessage = Tr(U"ModelHeightOffsetsScalesReset");
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 

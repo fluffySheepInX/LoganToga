@@ -130,83 +130,136 @@ namespace SkyAppFlow
 		Point startPosition{ 0, 0 };
        Point startCursor{ 0, 0 };
 		Point startSize{ 0, 0 };
-     MainSupport::UiLayoutSettings layoutAtDragStart;
-		bool moved = false;
-	};
+		MainSupport::UiLayoutSettings layoutAtDragStart;
+		 bool moved = false;
+	 };
 
-	struct SkyAppState
-	{
-		MainSupport::CameraSettings cameraSettings;
-		MainSupport::ModelHeightSettings modelHeightSettings;
-     FilePath currentMapPath = FilePath{ MainSupport::MapDataPath };
-		MapData mapData = MakeDefaultMapData();
-     TerrainSurfaceData terrainSurface;
-		uint64 terrainSurfaceRevision = 0;
-     SkyAppSupport::FogOfWarState fogOfWar;
-		SkyAppSupport::FogOfWarSettings fogOfWarSettings;
-      MainSupport::AppCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
-		Sky sky;
-		double skyTime = 0.5;
-     bool showUI = false;
-     bool uiEditMode = false;
-      bool skySettingsExpanded = false;
-		bool cameraSettingsExpanded = false;
-      bool terrainVisualSettingsExpanded = false;
-      bool fogSettingsExpanded = false;
-      bool miniMapExpanded = true;
-        MainSupport::TerrainVisualSettings terrainVisualSettings;
-     MainSupport::UiLayoutSettings uiLayoutSettings;
-	  Optional<UiPanelDragState> uiPanelDrag;
-      bool showEscMenu = false;
-		MainSupport::AppMode appMode = MainSupport::AppMode::Play;
-		MapEditorState mapEditor;
-		bool showBlacksmithMenu = false;
-		Array<MainSupport::SpawnedSapper> spawnedSappers;
-		Array<MainSupport::SpawnedSapper> enemySappers;
-		Array<size_t> selectedSapperIndices;
-      Optional<size_t> selectedMillIndex;
-		SkyAppSupport::TimedMessage blacksmithMenuMessage;
-		SkyAppSupport::TimedMessage cameraSaveMessage;
-		SkyAppSupport::TimedMessage modelHeightMessage;
-		SkyAppSupport::TimedMessage restartMessage;
-		SkyAppSupport::TimedMessage mapDataMessage;
-       SkyAppSupport::TimedMessage uiLayoutMessage;
-       SkyAppSupport::TimedMessage unitEditorMessage;
-		bool modelHeightEditMode = false;
-      bool modelHeightTextureMode = false;
-      MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
-        size_t modelHeightPreviewModelIndex = 0;
-        MainSupport::UnitModelAnimationRole modelHeightPreviewAnimationRole = MainSupport::UnitModelAnimationRole::Idle;
-      MainSupport::TireTrackTextureSegment tireTrackTextureTarget = MainSupport::TireTrackTextureSegment::Start;
-      bool unitEditorMode = false;
-       bool showResourceAdjustUi = false;
-      bool requestTitleScene = false;
-		Optional<Vec2> selectionDragStart;
-		double playerBaseHitPoints = MainSupport::BaseMaxHitPoints;
-		double enemyBaseHitPoints = MainSupport::BaseMaxHitPoints;
-        MainSupport::ResourceStock playerResources;
-		MainSupport::ResourceStock enemyResources;
-       MainSupport::ResourceStock initialPlayerResources{ .budget = MainSupport::StartingResources };
-		Array<MainSupport::ResourceAreaState> resourceAreaStates;
-       MainSupport::UnitEditorSettings unitEditorSettings;
-      MainSupport::UnitEditorSelection unitEditorSelection;
-       MainSupport::UnitEditorPage unitEditorPage = MainSupport::UnitEditorPage::Basic;
-        int32 playerTier = 1;
-        size_t battleCommandSelectedSlotIndex = 0;
-		int32 battleCommandUnlockedSlotCount = 1;
-      Array<double> millLastAttackTimes;
-      Array<AttackEffectInstance> attackEffects;
-      Optional<MoveOrderIndicator> moveOrderIndicator;
-      int32 startupCameraFreezeFrames = 2;
-		double nextEnemyReinforcementAt = 0.0;
-		size_t enemyReinforcementCount = 0;
-       MainSupport::EnemyBattlePlan enemyBattlePlan = MainSupport::EnemyBattlePlan::SecureResources;
-      MainSupport::EnemyBattlePlanOverride enemyBattlePlanOverride = MainSupport::EnemyBattlePlanOverride::Auto;
-		Optional<size_t> enemyTargetResourceAreaIndex;
-		double nextEnemyAiDecisionAt = 0.0;
-		double nextEnemyProductionAt = 0.0;
-		Optional<bool> playerWon;
-	};
+	 // --- World scene sub-state ----------------------------------------
+	 // Groups all fields describing the loaded map / terrain / visual
+	 // settings for the world being rendered. Centralizing these makes
+	 // it clear which parts of state survive a map reload (and which
+	 // should be re-derived).
+	 struct WorldSceneState
+	 {
+		 FilePath currentMapPath = FilePath{ MainSupport::MapDataPath };
+		 MapData mapData = MakeDefaultMapData();
+		 TerrainSurfaceData terrainSurface;
+		 uint64 terrainSurfaceRevision = 0;
+		 MainSupport::TerrainVisualSettings terrainVisualSettings;
+	 };
+
+	 // --- Enemy AI sub-state -------------------------------------------
+	 // Groups all fields that drive the enemy AI loop (battle plan,
+	 // production / reinforcement timers, current resource-area target).
+	 // Kept as a self-contained struct so the AI logic can be reasoned
+	 // about without scanning the entire SkyAppState definition.
+	 struct EnemyAiState
+	 {
+		 MainSupport::EnemyBattlePlan battlePlan = MainSupport::EnemyBattlePlan::SecureResources;
+		 MainSupport::EnemyBattlePlanOverride battlePlanOverride = MainSupport::EnemyBattlePlanOverride::Auto;
+		 Optional<size_t> targetResourceAreaIndex;
+		 double nextDecisionAt = 0.0;
+		 double nextProductionAt = 0.0;
+		 double nextReinforcementAt = 0.0;
+		 size_t reinforcementCount = 0;
+	 };
+
+	 // --- Environment / camera / sky sub-state -------------------------
+	 // Groups camera, sky, fog-of-war and related session-level fields
+	 // (current AppMode, startup-freeze counter, transient messages tied
+	 // to camera / restart actions).
+	 struct EnvironmentState
+	 {
+		 MainSupport::CameraSettings cameraSettings;
+		 MainSupport::AppCamera3D camera{ Graphics3D::GetRenderTargetSize(), 40_deg, MainSupport::DefaultCameraEye, MainSupport::DefaultCameraFocus };
+		 Sky sky;
+		 double skyTime = 0.5;
+		 SkyAppSupport::FogOfWarState fogOfWar;
+		 SkyAppSupport::FogOfWarSettings fogOfWarSettings;
+		 int32 startupCameraFreezeFrames = 2;
+		 MainSupport::AppMode appMode = MainSupport::AppMode::Play;
+	 };
+
+	  // --- Editor / debug tools sub-state -------------------------------
+	  // Groups all fields belonging to in-game editor / preview tools:
+	  // model-height tweak mode, tire-track preview, unit-parameter
+	  // editor, and the map editor sub-state. None of these affect a
+	  // running battle when the editor toggles are off.
+	  struct EditorToolsState
+	  {
+		  MainSupport::ModelHeightSettings modelHeightSettings;
+		  bool modelHeightEditMode = false;
+		  bool modelHeightTextureMode = false;
+		  MainSupport::UnitRenderModel modelHeightTarget = MainSupport::UnitRenderModel::Bird;
+		  size_t modelHeightPreviewModelIndex = 0;
+		  MainSupport::UnitModelAnimationRole modelHeightPreviewAnimationRole = MainSupport::UnitModelAnimationRole::Idle;
+		  MainSupport::TireTrackTextureSegment tireTrackTextureTarget = MainSupport::TireTrackTextureSegment::Start;
+		  bool unitEditorMode = false;
+		  MainSupport::UnitEditorSettings unitEditorSettings;
+		  MainSupport::UnitEditorSelection unitEditorSelection;
+		  MainSupport::UnitEditorPage unitEditorPage = MainSupport::UnitEditorPage::Basic;
+		  MapEditorState mapEditor;
+	  };
+
+		// --- Battle session sub-state -------------------------------------
+		// Groups everything that constitutes an in-progress match: spawned
+		// units, base HP, per-team resources, mill cooldowns, transient
+		// attack effects, selection state, and the win/loss outcome.
+		// ResetMatch() effectively resets all of this.
+		struct BattleState
+		{
+			Array<MainSupport::SpawnedSapper> spawnedSappers;
+			Array<MainSupport::SpawnedSapper> enemySappers;
+			Array<size_t> selectedSapperIndices;
+			Optional<size_t> selectedMillIndex;
+			Optional<Vec2> selectionDragStart;
+			double playerBaseHitPoints = MainSupport::BaseMaxHitPoints;
+			double enemyBaseHitPoints = MainSupport::BaseMaxHitPoints;
+			MainSupport::ResourceStock playerResources;
+			MainSupport::ResourceStock enemyResources;
+			MainSupport::ResourceStock initialPlayerResources{ .budget = MainSupport::StartingResources };
+			Array<MainSupport::ResourceAreaState> resourceAreaStates;
+			int32 playerTier = 1;
+			size_t battleCommandSelectedSlotIndex = 0;
+			int32 battleCommandUnlockedSlotCount = 1;
+			Array<double> millLastAttackTimes;
+			Array<AttackEffectInstance> attackEffects;
+			Optional<MoveOrderIndicator> moveOrderIndicator;
+			Optional<bool> playerWon;
+		};
+
+			// --- HUD / UI sub-state -------------------------------------------
+			// Groups all in-game HUD-level toggle flags, panel-expanded flags,
+			// UI layout-edit state, and short-lived UI messages. None of these
+			// affect simulation directly; they purely drive what's drawn and
+			// which panels are interactive.
+			struct HudUiState
+			{
+				bool showUI = false;
+				bool uiEditMode = false;
+				bool skySettingsExpanded = false;
+				bool cameraSettingsExpanded = false;
+				bool terrainVisualSettingsExpanded = false;
+				bool fogSettingsExpanded = false;
+				bool miniMapExpanded = true;
+				MainSupport::UiLayoutSettings uiLayoutSettings;
+				Optional<UiPanelDragState> uiPanelDrag;
+				bool showEscMenu = false;
+				bool showBlacksmithMenu = false;
+				bool showResourceAdjustUi = false;
+				bool requestTitleScene = false;
+			};
+
+				struct SkyAppState
+			   {
+				   WorldSceneState world;
+				   EnvironmentState env;
+				   EditorToolsState editor;
+				   BattleState battle;
+				   HudUiState hud;
+				EnemyAiState enemyAi;
+				SkyAppSupport::MessageBus messages;
+			};
 
 	struct SkyAppFrameState
 	{

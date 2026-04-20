@@ -155,19 +155,16 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MainUiModelHeightModel.cpp" />
     <ClCompile Include="MainUiModelHeightTexture.cpp" />
     <ClCompile Include="MapData.cpp" />
-    <ClCompile Include="MapDataToml.cpp" />
     <ClCompile Include="MapDataTomlCommon.cpp" />
     <ClCompile Include="MapDataTomlLoad.cpp" />
     <ClCompile Include="MapDataTomlSave.cpp" />
     <ClCompile Include="MapEditor.cpp" />
     <ClCompile Include="MapEditorCommon.cpp" />
     <ClCompile Include="MapEditorHitTest.cpp" />
-    <ClCompile Include="MapEditorPanel.cpp" />
     <ClCompile Include="MapEditorPanelCommands.cpp" />
     <ClCompile Include="MapEditorPanelSelectionDetail.cpp" />
     <ClCompile Include="MapEditorPanelTools.cpp" />
     <ClCompile Include="MapEditorPlacement.cpp" />
-    <ClCompile Include="MapEditorScene.cpp" />
     <ClCompile Include="MapEditorScenePreview.cpp" />
     <ClCompile Include="MapEditorScenePrimitives.cpp" />
     <ClCompile Include="MapEditorSceneSelection.cpp" />
@@ -176,18 +173,18 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="MapEditorUpdateState.cpp" />
     <ClCompile Include="SkyApp.cpp" />
     <ClCompile Include="SkyAppBattle.cpp" />
-    <ClCompile Include="SkyAppBattleCombat_Base.cpp" />
-    <ClCompile Include="SkyAppBattleCombat_Effects.cpp" />
-    <ClCompile Include="SkyAppBattleCombat_EnemySpawn.cpp" />
+    <ClCompile Include="SkyAppBattleCombat_Core.cpp" />
     <ClCompile Include="SkyAppBattleCombat_MillDefense.cpp" />
     <ClCompile Include="SkyAppBattleCombat_PlayerActions.cpp" />
     <ClCompile Include="SkyAppBattleResources.cpp" />
+    <ClCompile Include="SkyAppHudToggleRegistry.cpp" />
     <ClCompile Include="SkyAppLoop.cpp" />
     <ClCompile Include="SkyAppLoopCamera.cpp" />
     <ClCompile Include="SkyAppLoopFrame.cpp" />
     <ClCompile Include="SkyAppLoopResources.cpp" />
     <ClCompile Include="SkyAppLoopSelection.cpp" />
     <ClCompile Include="SkyAppLoopUiEdit.cpp" />
+    <ClCompile Include="SkyAppPanelRegistry.cpp" />
     <ClCompile Include="SkyAppRender.cpp" />
     <ClCompile Include="SkyAppRenderOverlay.cpp" />
     <ClCompile Include="SkyAppRenderOverlayHud.cpp" />
@@ -200,6 +197,7 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClCompile Include="SkyAppSapperObstacles.cpp" />
     <ClCompile Include="SkyAppSapperPathfinding.cpp" />
     <ClCompile Include="SkyAppSupport.cpp" />
+    <ClCompile Include="SkyAppText.cpp" />
     <ClCompile Include="SkyAppUiBattleCommandMenu.cpp" />
     <ClCompile Include="SkyAppUiBlacksmithMenu.cpp" />
     <ClCompile Include="SkyAppUiEscMenu.cpp" />
@@ -257,7 +255,10 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="MapEditorSceneInternal.hpp" />
     <ClInclude Include="MapEditorUpdateInternal.hpp" />
     <ClInclude Include="RenderContext.hpp" />
+    <ClInclude Include="SettingsRegistry.hpp" />
+    <ClInclude Include="SkillDescriptors.hpp" />
     <ClInclude Include="SkyAppBattleCombatInternal.hpp" />
+    <ClInclude Include="SkyAppPanelRegistry.hpp" />
     <ClInclude Include="SkyAppText.hpp" />
     <ClInclude Include="SkyAppUiLayoutCommon.hpp" />
     <ClInclude Include="SkyAppUiLayoutHud.hpp" />
@@ -275,10 +276,15 @@ xcopy /I /D /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\pugixml.dll" "$(Pr
     <ClInclude Include="SpawnedSapper.hpp" />
     <ClInclude Include="UnitDefinitions.hpp" />
     <ClInclude Include="UnitEditorContext.hpp" />
+    <ClInclude Include="TomlSchema.hpp" />
+    <ClInclude Include="UnitParameterSchemas.hpp" />
+    <ClInclude Include="SettingsSchemas.hpp" />
     <ClInclude Include="UnitTypes.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="App\locale\strings.en.toml" />
+    <None Include="App\locale\strings.ja.toml" />
     <None Include="App\settings\panel_skin_settings.toml" />
     <None Include="App\settings\ui_layout_profile.toml" />
     <None Include="BirdModel.Animation.inl" />

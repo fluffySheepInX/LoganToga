@@ -52,29 +52,29 @@ namespace SkyAppFlow
 	{
 		void ResetResourceState(SkyAppState& state)
 		{
-               state.playerResources = state.initialPlayerResources;
-			state.enemyResources = {};
-			state.resourceAreaStates = Array<ResourceAreaState>(state.mapData.resourceAreas.size());
+               state.battle.playerResources = state.battle.initialPlayerResources;
+			state.battle.enemyResources = {};
+			state.battle.resourceAreaStates = Array<ResourceAreaState>(state.world.mapData.resourceAreas.size());
 		}
 
 		void UpdateResourceAreas(SkyAppState& state)
 		{
 			const double deltaTime = Scene::DeltaTime();
 
-			if (state.resourceAreaStates.size() != state.mapData.resourceAreas.size())
+			if (state.battle.resourceAreaStates.size() != state.world.mapData.resourceAreas.size())
 			{
-				state.resourceAreaStates = Array<ResourceAreaState>(state.mapData.resourceAreas.size());
+				state.battle.resourceAreaStates = Array<ResourceAreaState>(state.world.mapData.resourceAreas.size());
 			}
 
-			for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
+			for (size_t i = 0; i < state.world.mapData.resourceAreas.size(); ++i)
 			{
-				const ResourceArea& area = state.mapData.resourceAreas[i];
-				ResourceAreaState& areaState = state.resourceAreaStates[i];
+				const ResourceArea& area = state.world.mapData.resourceAreas[i];
+				ResourceAreaState& areaState = state.battle.resourceAreaStates[i];
 				int32 playerInside = 0;
 				int32 enemyInside = 0;
 				const double radiusSq = Square(area.radius);
 
-				for (const auto& sapper : state.spawnedSappers)
+				for (const auto& sapper : state.battle.spawnedSappers)
 				{
 					if ((sapper.hitPoints > 0.0) && (GetSpawnedSapperBasePosition(sapper).distanceFromSq(area.position) <= radiusSq))
 					{
@@ -82,7 +82,7 @@ namespace SkyAppFlow
 					}
 				}
 
-				for (const auto& sapper : state.enemySappers)
+				for (const auto& sapper : state.battle.enemySappers)
 				{
 					if ((sapper.hitPoints > 0.0) && (GetSpawnedSapperBasePosition(sapper).distanceFromSq(area.position) <= radiusSq))
 					{
@@ -144,11 +144,11 @@ namespace SkyAppFlow
 						areaState.incomeProgress -= ResourceAreaIncomeIntervalSeconds;
 						if (*areaState.ownerTeam == UnitTeam::Player)
 						{
-							AddResource(state.playerResources, area.type, GetResourceIncomeAmount(area.type));
+							AddResource(state.battle.playerResources, area.type, GetResourceIncomeAmount(area.type));
 						}
 						else
 						{
-							AddResource(state.enemyResources, area.type, GetResourceIncomeAmount(area.type));
+							AddResource(state.battle.enemyResources, area.type, GetResourceIncomeAmount(area.type));
 						}
 					}
 				}

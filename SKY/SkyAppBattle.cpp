@@ -11,19 +11,19 @@ namespace SkyAppFlow
        [[nodiscard]] EnemyBattlePlan DetermineAutoEnemyBattlePlan(const SkyAppState& state, const Optional<SapperUnitType>& producibleUnitType)
 		{
 			if (producibleUnitType
-				&& (GetUnitAiRole(state.unitEditorSettings, UnitTeam::Enemy, *producibleUnitType) == UnitAiRole::AssaultBase))
+				&& (GetUnitAiRole(state.editor.unitEditorSettings, UnitTeam::Enemy, *producibleUnitType) == UnitAiRole::AssaultBase))
 			{
 				return EnemyBattlePlan::AssaultBase;
 			}
 
-			return state.enemyTargetResourceAreaIndex
+			return state.enemyAi.targetResourceAreaIndex
 				? EnemyBattlePlan::SecureResources
 				: EnemyBattlePlan::AssaultBase;
 		}
 
        [[nodiscard]] double GetEnemyUnitCost(const SkyAppState& state, const SapperUnitType unitType)
 		{
-           return GetUnitParameters(state.unitEditorSettings, UnitTeam::Enemy, unitType).manaCost;
+           return GetUnitParameters(state.editor.unitEditorSettings, UnitTeam::Enemy, unitType).manaCost;
 		}
 
       [[nodiscard]] Optional<SapperUnitType> GetEnemyProducibleUnitType(const SkyAppState& state)
@@ -33,7 +33,7 @@ namespace SkyAppFlow
 
 				for (const auto& unitDefinition : GetUnitDefinitions())
 				{
-					if (GetEnemyUnitCost(state, unitDefinition.unitType) > state.enemyResources.mana)
+					if (GetEnemyUnitCost(state, unitDefinition.unitType) > state.battle.enemyResources.mana)
 					{
 						continue;
 					}
@@ -50,13 +50,13 @@ namespace SkyAppFlow
 
 		[[nodiscard]] double GetEnemyResourceAreaPriority(const SkyAppState& state, const size_t areaIndex)
 		{
-			if (areaIndex >= state.mapData.resourceAreas.size())
+			if (areaIndex >= state.world.mapData.resourceAreas.size())
 			{
 				return -Math::Inf;
 			}
 
-			const ResourceArea& area = state.mapData.resourceAreas[areaIndex];
-			const ResourceAreaState& areaState = state.resourceAreaStates[areaIndex];
+			const ResourceArea& area = state.world.mapData.resourceAreas[areaIndex];
+			const ResourceAreaState& areaState = state.battle.resourceAreaStates[areaIndex];
 			double score = 0.0;
 
 			if (areaState.ownerTeam && (*areaState.ownerTeam == UnitTeam::Enemy))
@@ -94,7 +94,7 @@ namespace SkyAppFlow
 				score += 25.0;
 			}
 
-			score -= (0.6 * state.mapData.enemyBasePosition.distanceFrom(area.position));
+			score -= (0.6 * state.world.mapData.enemyBasePosition.distanceFrom(area.position));
 			return score;
 		}
 
@@ -103,7 +103,7 @@ namespace SkyAppFlow
 			double bestScore = -Math::Inf;
 			Optional<size_t> bestIndex;
 
-			for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
+			for (size_t i = 0; i < state.world.mapData.resourceAreas.size(); ++i)
 			{
 				const double score = GetEnemyResourceAreaPriority(state, i);
 				if (bestScore < score)
@@ -118,15 +118,15 @@ namespace SkyAppFlow
 
 		[[nodiscard]] Vec3 GetEnemyAssaultTargetPosition(const SkyAppState& state, const size_t formationIndex)
 		{
-			return GetSapperPopTargetPosition(state.mapData.playerBasePosition, formationIndex);
+			return GetSapperPopTargetPosition(state.world.mapData.playerBasePosition, formationIndex);
 		}
 
 		[[nodiscard]] Vec3 GetEnemyResourceCaptureTargetPosition(const SkyAppState& state, const size_t formationIndex)
 		{
-			if (state.enemyTargetResourceAreaIndex
-				&& (*state.enemyTargetResourceAreaIndex < state.mapData.resourceAreas.size()))
+			if (state.enemyAi.targetResourceAreaIndex
+				&& (*state.enemyAi.targetResourceAreaIndex < state.world.mapData.resourceAreas.size()))
 			{
-				return GetSapperPopTargetPosition(state.mapData.resourceAreas[*state.enemyTargetResourceAreaIndex].position, formationIndex);
+				return GetSapperPopTargetPosition(state.world.mapData.resourceAreas[*state.enemyAi.targetResourceAreaIndex].position, formationIndex);
 			}
 
 			return GetEnemyAssaultTargetPosition(state, formationIndex);
@@ -134,28 +134,28 @@ namespace SkyAppFlow
 
 		[[nodiscard]] Optional<Vec3> FindEnemySupportAnchorPosition(const SkyAppState& state, const size_t supportIndex)
 		{
-			if (supportIndex >= state.enemySappers.size())
+			if (supportIndex >= state.battle.enemySappers.size())
 			{
 				return none;
 			}
 
-			const Vec3 supportPosition = GetSpawnedSapperBasePosition(state.enemySappers[supportIndex]);
+			const Vec3 supportPosition = GetSpawnedSapperBasePosition(state.battle.enemySappers[supportIndex]);
 			double nearestDistanceSq = Math::Inf;
 			Optional<Vec3> anchorPosition;
 
-			for (size_t i = 0; i < state.enemySappers.size(); ++i)
+			for (size_t i = 0; i < state.battle.enemySappers.size(); ++i)
 			{
-				if ((i == supportIndex) || (not IsSpawnedSapperCombatActive(state.enemySappers[i])))
+				if ((i == supportIndex) || (not IsSpawnedSapperCombatActive(state.battle.enemySappers[i])))
 				{
 					continue;
 				}
 
-               if (state.enemySappers[i].aiRole == UnitAiRole::Support)
+               if (state.battle.enemySappers[i].aiRole == UnitAiRole::Support)
 				{
 					continue;
 				}
 
-				const Vec3 candidatePosition = GetSpawnedSapperBasePosition(state.enemySappers[i]);
+				const Vec3 candidatePosition = GetSpawnedSapperBasePosition(state.battle.enemySappers[i]);
 				const double distanceSq = supportPosition.distanceFromSq(candidatePosition);
 				if (distanceSq < nearestDistanceSq)
 				{
@@ -174,21 +174,21 @@ namespace SkyAppFlow
 				return GetSapperPopTargetPosition(*supportAnchor, formationIndex);
 			}
 
-			const Vec3 strategicObjective = ((state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
+			const Vec3 strategicObjective = ((state.enemyAi.battlePlan == EnemyBattlePlan::SecureResources)
 				? GetEnemyResourceCaptureTargetPosition(state, formationIndex)
 				: GetEnemyAssaultTargetPosition(state, formationIndex));
-			const Vec3 stagingPosition = state.mapData.enemyBasePosition.lerp(strategicObjective, 0.55);
+			const Vec3 stagingPosition = state.world.mapData.enemyBasePosition.lerp(strategicObjective, 0.55);
 			return GetSapperPopTargetPosition(stagingPosition, formationIndex);
 		}
 
 		[[nodiscard]] Vec3 GetEnemyAdvanceTargetPosition(const SkyAppState& state, const size_t formationIndex)
 		{
-			if (formationIndex >= state.enemySappers.size())
+			if (formationIndex >= state.battle.enemySappers.size())
 			{
 				return GetEnemyAssaultTargetPosition(state, formationIndex);
 			}
 
-         switch (state.enemySappers[formationIndex].aiRole)
+         switch (state.battle.enemySappers[formationIndex].aiRole)
 			{
 			case UnitAiRole::Support:
 				return GetEnemySupportTargetPosition(state, formationIndex);
@@ -204,23 +204,23 @@ namespace SkyAppFlow
 
 		void UpdateEnemyBattlePlan(SkyAppState& state)
 		{
-			if (Scene::Time() < state.nextEnemyAiDecisionAt)
+			if (Scene::Time() < state.enemyAi.nextDecisionAt)
 			{
 				return;
 			}
 
-			state.nextEnemyAiDecisionAt = (Scene::Time() + EnemyAiDecisionInterval);
-			state.enemyTargetResourceAreaIndex = FindPriorityEnemyResourceArea(state);
+			state.enemyAi.nextDecisionAt = (Scene::Time() + EnemyAiDecisionInterval);
+			state.enemyAi.targetResourceAreaIndex = FindPriorityEnemyResourceArea(state);
 
-         const Optional<SapperUnitType> producibleUnitType = GetEnemyProducibleUnitType(state);
-          switch (state.enemyBattlePlanOverride)
+		 const Optional<SapperUnitType> producibleUnitType = GetEnemyProducibleUnitType(state);
+		  switch (state.enemyAi.battlePlanOverride)
 			{
-           case EnemyBattlePlanOverride::ForceSecureResources:
-				state.enemyBattlePlan = EnemyBattlePlan::SecureResources;
+		   case EnemyBattlePlanOverride::ForceSecureResources:
+				state.enemyAi.battlePlan = EnemyBattlePlan::SecureResources;
 				return;
 
 			case EnemyBattlePlanOverride::ForceAssaultBase:
-				state.enemyBattlePlan = EnemyBattlePlan::AssaultBase;
+				state.enemyAi.battlePlan = EnemyBattlePlan::AssaultBase;
 				return;
 
 			case EnemyBattlePlanOverride::Auto:
@@ -228,55 +228,55 @@ namespace SkyAppFlow
 				break;
 			}
 
-         state.enemyBattlePlan = DetermineAutoEnemyBattlePlan(state, producibleUnitType);
+		 state.enemyAi.battlePlan = DetermineAutoEnemyBattlePlan(state, producibleUnitType);
 		}
 
       void TryProduceEnemyUnit(SkyAppState& state)
 		{
            const Optional<SapperUnitType> unitType = GetEnemyProducibleUnitType(state);
 
-				if ((state.enemyBaseHitPoints <= 0.0) || (Scene::Time() < state.nextEnemyProductionAt) || (not unitType))
+				if ((state.battle.enemyBaseHitPoints <= 0.0) || (Scene::Time() < state.enemyAi.nextProductionAt) || (not unitType))
 			{
 				return;
 			}
 
-             state.enemyResources.mana -= GetEnemyUnitCost(state, *unitType);
-			state.nextEnemyProductionAt = (Scene::Time() + EnemyStrongUnitProductionCooldown);
+			 state.battle.enemyResources.mana -= GetEnemyUnitCost(state, *unitType);
+			state.enemyAi.nextProductionAt = (Scene::Time() + EnemyStrongUnitProductionCooldown);
          BattleDetail::SpawnEnemyUnit(state, *unitType, false);
 		}
 
 		void UpdateEnemyAdvanceTargets(SkyAppState& state)
 		{
-			for (size_t i = 0; i < state.enemySappers.size(); ++i)
+			for (size_t i = 0; i < state.battle.enemySappers.size(); ++i)
 			{
-                if (not IsSpawnedSapperCombatActive(state.enemySappers[i]))
+                if (not IsSpawnedSapperCombatActive(state.battle.enemySappers[i]))
 				{
 					continue;
 				}
 
               const Vec3 desiredTarget = GetEnemyAdvanceTargetPosition(state, i);
 
-				if (EnemyAdvanceStopDistance < GetSpawnedSapperBasePosition(state.enemySappers[i]).distanceFrom(state.mapData.playerBasePosition)
-					&& 0.25 < state.enemySappers[i].destinationPosition.distanceFrom(desiredTarget))
+				if (EnemyAdvanceStopDistance < GetSpawnedSapperBasePosition(state.battle.enemySappers[i]).distanceFrom(state.world.mapData.playerBasePosition)
+					&& 0.25 < state.battle.enemySappers[i].destinationPosition.distanceFrom(desiredTarget))
 				{
-                    SetSpawnedSapperTarget(state.enemySappers[i], desiredTarget, state.mapData, state.modelHeightSettings);
+                    SetSpawnedSapperTarget(state.battle.enemySappers[i], desiredTarget, state.world.mapData, state.editor.modelHeightSettings);
 				}
 			}
 		}
 
 		void UpdateMatchResult(SkyAppState& state)
 		{
-			if (state.enemyBaseHitPoints <= 0.0)
+			if (state.battle.enemyBaseHitPoints <= 0.0)
 			{
-				state.playerWon = true;
-				state.showBlacksmithMenu = false;
-				state.selectedSapperIndices.clear();
+				state.battle.playerWon = true;
+				state.hud.showBlacksmithMenu = false;
+				state.battle.selectedSapperIndices.clear();
 			}
-			else if (state.playerBaseHitPoints <= 0.0)
+			else if (state.battle.playerBaseHitPoints <= 0.0)
 			{
-				state.playerWon = false;
-				state.showBlacksmithMenu = false;
-				state.selectedSapperIndices.clear();
+				state.battle.playerWon = false;
+				state.hud.showBlacksmithMenu = false;
+				state.battle.selectedSapperIndices.clear();
 			}
 		}
 	}
@@ -284,7 +284,7 @@ namespace SkyAppFlow
 	void UpdateAttackEffects(SkyAppState& state)
 	{
 		const double currentTime = Scene::Time();
-		state.attackEffects.remove_if([currentTime](const AttackEffectInstance& effect)
+		state.battle.attackEffects.remove_if([currentTime](const AttackEffectInstance& effect)
 			{
 				return ((effect.lifetime <= 0.0) || ((effect.startedAt + effect.lifetime) <= currentTime));
 			});
@@ -293,70 +293,71 @@ namespace SkyAppFlow
 	bool IsValidMillIndex(const SkyAppState& state, const Optional<size_t>& millIndex)
 	{
 		return millIndex
-			&& (*millIndex < state.mapData.placedModels.size())
-			&& (state.mapData.placedModels[*millIndex].type == PlaceableModelType::Mill);
+			&& (*millIndex < state.world.mapData.placedModels.size())
+			&& (state.world.mapData.placedModels[*millIndex].type == PlaceableModelType::Mill);
 	}
 
 	void ResetMatch(SkyAppState& state)
 	{
-		state.spawnedSappers.clear();
-		state.enemySappers.clear();
-		state.selectedSapperIndices.clear();
-		state.selectedMillIndex.reset();
-		state.selectionDragStart.reset();
-		state.showBlacksmithMenu = false;
-		state.playerBaseHitPoints = BaseMaxHitPoints;
-		state.enemyBaseHitPoints = BaseMaxHitPoints;
-		state.millLastAttackTimes = Array<double>(state.mapData.placedModels.size(), -1000.0);
-      state.attackEffects.clear();
+		state.battle.spawnedSappers.clear();
+		state.battle.enemySappers.clear();
+		state.battle.selectedSapperIndices.clear();
+		state.battle.selectedMillIndex.reset();
+		state.battle.selectionDragStart.reset();
+		state.hud.showBlacksmithMenu = false;
+		state.battle.playerBaseHitPoints = BaseMaxHitPoints;
+		state.battle.enemyBaseHitPoints = BaseMaxHitPoints;
+		state.battle.millLastAttackTimes = Array<double>(state.world.mapData.placedModels.size(), -1000.0);
+      state.battle.attackEffects.clear();
 		BattleDetail::ResetResourceState(state);
-		state.playerTier = 1;
-     state.battleCommandSelectedSlotIndex = 0;
-		state.battleCommandUnlockedSlotCount = 1;
-     state.moveOrderIndicator.reset();
-      state.enemyBattlePlan = EnemyBattlePlan::SecureResources;
-		state.enemyTargetResourceAreaIndex.reset();
-		state.nextEnemyAiDecisionAt = 0.0;
-		state.nextEnemyProductionAt = 0.0;
-		state.enemyReinforcementCount = 0;
-		state.playerWon.reset();
-       ResetFogOfWar(state.fogOfWar);
+		state.battle.playerTier = 1;
+     state.battle.battleCommandSelectedSlotIndex = 0;
+		state.battle.battleCommandUnlockedSlotCount = 1;
+     state.battle.moveOrderIndicator.reset();
+	  state.enemyAi.battlePlan = EnemyBattlePlan::SecureResources;
+		state.enemyAi.targetResourceAreaIndex.reset();
+		state.enemyAi.nextDecisionAt = 0.0;
+		state.enemyAi.nextProductionAt = 0.0;
+		state.enemyAi.nextReinforcementAt = 0.0;
+		state.enemyAi.reinforcementCount = 0;
+		state.battle.playerWon.reset();
+       ResetFogOfWar(state.env.fogOfWar);
       ResetCameraToPlayerBase(state);
 	}
 
 	String ReloadMapAndResetMatch(SkyAppState& state)
 	{
 		const MapDataLoadResult loadResult = LoadMapDataWithStatus(MapDataPath);
-		state.mapData = loadResult.mapData;
-		state.mapEditor.hoveredGroundPosition.reset();
+		state.world.mapData = loadResult.mapData;
+		state.editor.mapEditor.hoveredGroundPosition.reset();
 		ResetMatch(state);
 		return loadResult.message;
 	}
 
 	void UpdateBattleState(SkyAppState& state)
 	{
-     state.playerResources.mana += (ManaIncomePerSecond * Scene::DeltaTime());
-		 state.enemyResources.mana += (ManaIncomePerSecond * Scene::DeltaTime());
+     state.battle.playerResources.mana += (ManaIncomePerSecond * Scene::DeltaTime());
+		 state.battle.enemyResources.mana += (ManaIncomePerSecond * Scene::DeltaTime());
 
      UpdateEnemyBattlePlan(state);
        TryProduceEnemyUnit(state);
       UpdateEnemyAdvanceTargets(state);
 
-     ResolveSapperSpacingAgainstUnits(state.spawnedSappers, state.enemySappers, state.modelHeightSettings);
-		ResolveSapperSpacingAgainstUnits(state.enemySappers, state.spawnedSappers, state.modelHeightSettings);
-		ResolveSapperSpacingAgainstBase(state.spawnedSappers, state.mapData.enemyBasePosition, state.modelHeightSettings);
-		ResolveSapperSpacingAgainstBase(state.enemySappers, state.mapData.playerBasePosition, state.modelHeightSettings);
-        ResolveSapperSpacingAgainstObstacles(state.spawnedSappers, state.mapData, state.modelHeightSettings);
-		ResolveSapperSpacingAgainstObstacles(state.enemySappers, state.mapData, state.modelHeightSettings);
+     ResolveSapperSpacingAgainstUnits(state.battle.spawnedSappers, state.battle.enemySappers, state.editor.modelHeightSettings);
+		ResolveSapperSpacingAgainstUnits(state.battle.enemySappers, state.battle.spawnedSappers, state.editor.modelHeightSettings);
+		ResolveSapperSpacingAgainstBase(state.battle.spawnedSappers, state.world.mapData.enemyBasePosition, state.editor.modelHeightSettings);
+		ResolveSapperSpacingAgainstBase(state.battle.enemySappers, state.world.mapData.playerBasePosition, state.editor.modelHeightSettings);
+        ResolveSapperSpacingAgainstObstacles(state.battle.spawnedSappers, state.world.mapData, state.editor.modelHeightSettings);
+		ResolveSapperSpacingAgainstObstacles(state.battle.enemySappers, state.world.mapData, state.editor.modelHeightSettings);
      BattleDetail::UpdateResourceAreas(state);
 		BattleDetail::UpdateMillDefense(state);
 
-     UpdateAutoCombat(state.spawnedSappers, state.enemySappers, state.modelHeightSettings);
-		UpdateAutoCombat(state.enemySappers, state.spawnedSappers, state.modelHeightSettings);
-      BattleDetail::UpdateBaseCombat(state.spawnedSappers, state.mapData.enemyBasePosition, state.enemyBaseHitPoints);
-		BattleDetail::UpdateBaseCombat(state.enemySappers, state.mapData.playerBasePosition, state.playerBaseHitPoints);
-		RemoveDefeatedSappers(state.spawnedSappers);
-		RemoveDefeatedSappers(state.enemySappers);
+     UpdateAutoCombat(state.battle.spawnedSappers, state.battle.enemySappers, state.editor.modelHeightSettings);
+		UpdateAutoCombat(state.battle.enemySappers, state.battle.spawnedSappers, state.editor.modelHeightSettings);
+      BattleDetail::UpdateBaseCombat(state.battle.spawnedSappers, state.world.mapData.enemyBasePosition, state.battle.enemyBaseHitPoints);
+		BattleDetail::UpdateBaseCombat(state.battle.enemySappers, state.world.mapData.playerBasePosition, state.battle.playerBaseHitPoints);
+		RemoveDefeatedSappers(state.battle.spawnedSappers);
+		RemoveDefeatedSappers(state.battle.enemySappers);
 
         UpdateMatchResult(state);
 	}

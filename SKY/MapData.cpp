@@ -48,19 +48,26 @@ namespace
 	}
 }
 
+namespace
+{
+	template <class T, size_t N>
+	[[nodiscard]] StringView LookupName(const std::array<std::pair<T, StringView>, N>& table, const T value, const StringView fallback)
+	{
+		for (const auto& [v, n] : table)
+		{
+			if (v == value) return n;
+		}
+		return fallback;
+	}
+}
+
 StringView ToString(const MainSupport::UnitTeam team)
 {
-	switch (team)
-	{
-	case MainSupport::UnitTeam::Player:
-		return U"Player";
-
-	case MainSupport::UnitTeam::Enemy:
-		return U"Enemy";
-
-	default:
-		return U"Player";
-	}
+	static constexpr std::array<std::pair<MainSupport::UnitTeam, StringView>, 2> Table{ {
+		{ MainSupport::UnitTeam::Player, U"Player" },
+		{ MainSupport::UnitTeam::Enemy,  U"Enemy" },
+	} };
+	return LookupName(Table, team, U"Player");
 }
 
 MapData MakeDefaultMapData()
@@ -99,35 +106,17 @@ MapData MakeDefaultMapData()
 
 StringView ToString(const PlaceableModelType type)
 {
-	switch (type)
-	{
-	case PlaceableModelType::Mill:
-		return U"Mill";
-
-	case PlaceableModelType::Tree:
-		return U"Tree";
-
-	case PlaceableModelType::Pine:
-		return U"Pine";
-
-	case PlaceableModelType::GrassPatch:
-		return U"GrassPatch";
-
-	case PlaceableModelType::Rock:
-		return U"Rock";
-
-	case PlaceableModelType::Wall:
-		return U"Wall";
-
-	case PlaceableModelType::Road:
-		return U"Road";
-
-	case PlaceableModelType::TireTrackDecal:
-		return U"TireTrackDecal";
-
-	default:
-		return U"Tree";
-	}
+	static constexpr std::array<std::pair<PlaceableModelType, StringView>, 8> Table{ {
+		{ PlaceableModelType::Mill,           U"Mill" },
+		{ PlaceableModelType::Tree,           U"Tree" },
+		{ PlaceableModelType::Pine,           U"Pine" },
+		{ PlaceableModelType::GrassPatch,     U"GrassPatch" },
+		{ PlaceableModelType::Rock,           U"Rock" },
+		{ PlaceableModelType::Wall,           U"Wall" },
+		{ PlaceableModelType::Road,           U"Road" },
+		{ PlaceableModelType::TireTrackDecal, U"TireTrackDecal" },
+	} };
+	return LookupName(Table, type, U"Tree");
 }
 
 bool SupportsMillDefenseParameters(const PlaceableModelType type)
@@ -135,57 +124,30 @@ bool SupportsMillDefenseParameters(const PlaceableModelType type)
 	return (type == PlaceableModelType::Mill);
 }
 
-MillDefenseParameters GetMillDefenseParameters(const PlacedModel& placedModel)
+MillDefenseParameters GetMillDefenseParameters(const MapData& mapData)
 {
-	return MillDefenseParameters{
-		.attackRange = placedModel.attackRange,
-		.attackDamage = placedModel.attackDamage,
-		.attackInterval = placedModel.attackInterval,
-		.attackTargetCount = placedModel.attackTargetCount,
-		.suppressionDuration = placedModel.suppressionDuration,
-		.suppressionMoveSpeedMultiplier = placedModel.suppressionMoveSpeedMultiplier,
-		.suppressionAttackDamageMultiplier = placedModel.suppressionAttackDamageMultiplier,
-		.suppressionAttackIntervalMultiplier = placedModel.suppressionAttackIntervalMultiplier,
-	};
+	return mapData.millParameters;
 }
 
 StringView ToString(const TerrainCellType type)
 {
-	switch (type)
-	{
-	case TerrainCellType::Grass:
-		return U"Grass";
-
-	case TerrainCellType::Dirt:
-		return U"Dirt";
-
-	case TerrainCellType::Sand:
-		return U"Sand";
-
-	case TerrainCellType::Rock:
-		return U"Rock";
-
-	default:
-		return U"Grass";
-	}
+	static constexpr std::array<std::pair<TerrainCellType, StringView>, 4> Table{ {
+		{ TerrainCellType::Grass, U"Grass" },
+		{ TerrainCellType::Dirt,  U"Dirt" },
+		{ TerrainCellType::Sand,  U"Sand" },
+		{ TerrainCellType::Rock,  U"Rock" },
+	} };
+	return LookupName(Table, type, U"Grass");
 }
 
 StringView ToString(const MainSupport::ResourceType type)
 {
-	switch (type)
-	{
-	case MainSupport::ResourceType::Budget:
-		return U"Budget";
-
-	case MainSupport::ResourceType::Gunpowder:
-		return U"Gunpowder";
-
-	case MainSupport::ResourceType::Mana:
-		return U"Mana";
-
-	default:
-		return U"Budget";
-	}
+	static constexpr std::array<std::pair<MainSupport::ResourceType, StringView>, 3> Table{ {
+		{ MainSupport::ResourceType::Budget,    U"Budget" },
+		{ MainSupport::ResourceType::Gunpowder, U"Gunpowder" },
+		{ MainSupport::ResourceType::Mana,      U"Mana" },
+	} };
+	return LookupName(Table, type, U"Budget");
 }
 
 Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell)
@@ -220,23 +182,17 @@ Vec3 ToTerrainCellCenter(const Point& cell)
 
 ColorF GetTerrainCellBaseColor(const TerrainCellType type)
 {
-	switch (type)
+	static const std::array<std::pair<TerrainCellType, ColorF>, 4> Table{ {
+		{ TerrainCellType::Grass, ColorF{ 0.42, 0.72, 0.34 } },
+		{ TerrainCellType::Dirt,  ColorF{ 0.56, 0.38, 0.22 } },
+		{ TerrainCellType::Sand,  ColorF{ 0.84, 0.76, 0.46 } },
+		{ TerrainCellType::Rock,  ColorF{ 0.52, 0.54, 0.58 } },
+	} };
+	for (const auto& [t, c] : Table)
 	{
-	case TerrainCellType::Grass:
-		return ColorF{ 0.42, 0.72, 0.34 };
-
-	case TerrainCellType::Dirt:
-		return ColorF{ 0.56, 0.38, 0.22 };
-
-	case TerrainCellType::Sand:
-		return ColorF{ 0.84, 0.76, 0.46 };
-
-	case TerrainCellType::Rock:
-		return ColorF{ 0.52, 0.54, 0.58 };
-
-	default:
-		return ColorF{ 0.42, 0.72, 0.34 };
+		if (t == type) return c;
 	}
+	return ColorF{ 0.42, 0.72, 0.34 };
 }
 
 ColorF GetTerrainCellDrawColor(const TerrainCell& terrainCell)

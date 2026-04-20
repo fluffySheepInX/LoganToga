@@ -221,67 +221,67 @@ namespace SkyAppFlow
 		{
          for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
-                if (const auto groundPoint = resources.GetUnitRenderModel(renderModel).groundContactPoint(frame.GetPreviewRenderPosition(renderModel), BirdDisplayYaw, GetModelScale(state.modelHeightSettings, renderModel)))
+                if (const auto groundPoint = resources.GetUnitRenderModel(renderModel).groundContactPoint(frame.GetPreviewRenderPosition(renderModel), BirdDisplayYaw, GetModelScale(state.editor.modelHeightSettings, renderModel)))
 				{
-					DrawGroundContactOverlay(state.camera, *groundPoint);
+					DrawGroundContactOverlay(state.env.camera, *groundPoint);
 				}
 			}
 		}
 
 		void DrawBattleOverlays(SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			if ((not frame.isEditorMode) && state.showBlacksmithMenu)
+			if ((not frame.isEditorMode) && state.hud.showBlacksmithMenu)
 			{
-				DrawSelectionIndicator(state.camera, state.mapData.playerBasePosition);
+				DrawSelectionIndicator(state.env.camera, state.world.mapData.playerBasePosition);
 			}
 
-			for (const auto& attackEffect : state.attackEffects)
+			for (const auto& attackEffect : state.battle.attackEffects)
 			{
-				DrawAttackEffect(state.camera, attackEffect);
+				DrawAttackEffect(state.env.camera, attackEffect);
 			}
 
-			if (state.moveOrderIndicator)
+			if (state.battle.moveOrderIndicator)
 			{
-				DrawMoveOrderIndicator(state.camera, *state.moveOrderIndicator);
+				DrawMoveOrderIndicator(state.env.camera, *state.battle.moveOrderIndicator);
 			}
 
-			if (IsValidMillIndex(state, state.selectedMillIndex))
+			if (IsValidMillIndex(state, state.battle.selectedMillIndex))
 			{
-				DrawSelectionIndicator(state.camera, state.mapData.placedModels[*state.selectedMillIndex].position);
+				DrawSelectionIndicator(state.env.camera, state.world.mapData.placedModels[*state.battle.selectedMillIndex].position);
 			}
 
-			for (const size_t selectedIndex : state.selectedSapperIndices)
+			for (const size_t selectedIndex : state.battle.selectedSapperIndices)
 			{
-				if (selectedIndex < state.spawnedSappers.size())
+				if (selectedIndex < state.battle.spawnedSappers.size())
 				{
-                   DrawSelectedSapperFootprint(state.spawnedSappers[selectedIndex]);
-					DrawSelectedSapperAttackRange(state.camera, state.spawnedSappers[selectedIndex]);
-					DrawSelectedSapperRing(state.camera, state.spawnedSappers[selectedIndex]);
+                   DrawSelectedSapperFootprint(state.battle.spawnedSappers[selectedIndex]);
+					DrawSelectedSapperAttackRange(state.env.camera, state.battle.spawnedSappers[selectedIndex]);
+					DrawSelectedSapperRing(state.env.camera, state.battle.spawnedSappers[selectedIndex]);
 				}
 			}
 
-			if ((state.selectedSapperIndices.size() == 1) && (state.selectedSapperIndices.front() < state.spawnedSappers.size()))
+			if ((state.battle.selectedSapperIndices.size() == 1) && (state.battle.selectedSapperIndices.front() < state.battle.spawnedSappers.size()))
 			{
-				DrawSelectedSapperIcon(state.camera, state.spawnedSappers[state.selectedSapperIndices.front()]);
+				DrawSelectedSapperIcon(state.env.camera, state.battle.spawnedSappers[state.battle.selectedSapperIndices.front()]);
 			}
 
-         DrawSapperHealthBars(state.camera, state.spawnedSappers, ColorF{ 0.36, 0.92, 0.46, 0.95 });
-			DrawSapperHealthBars(state.camera, state.enemySappers, ColorF{ 0.96, 0.28, 0.24, 0.95 }, &state.fogOfWar, true);
+         DrawSapperHealthBars(state.env.camera, state.battle.spawnedSappers, ColorF{ 0.36, 0.92, 0.46, 0.95 });
+			DrawSapperHealthBars(state.env.camera, state.battle.enemySappers, ColorF{ 0.96, 0.28, 0.24, 0.95 }, &state.env.fogOfWar, true);
 		}
 
 		void DrawResourceAreaOverlays(SkyAppState& state)
 		{
-			for (size_t i = 0; i < state.mapData.resourceAreas.size(); ++i)
+			for (size_t i = 0; i < state.world.mapData.resourceAreas.size(); ++i)
 			{
-				if (i >= state.resourceAreaStates.size())
+				if (i >= state.battle.resourceAreaStates.size())
 				{
 					continue;
 				}
 
-				const ResourceArea& area = state.mapData.resourceAreas[i];
-				const ResourceAreaState& areaState = state.resourceAreaStates[i];
+				const ResourceArea& area = state.world.mapData.resourceAreas[i];
+				const ResourceAreaState& areaState = state.battle.resourceAreaStates[i];
 
-				const Optional<Vec2> screenAnchor = ProjectToScreen(state.camera, area.position.movedBy(0, 1.1, 0));
+				const Optional<Vec2> screenAnchor = ProjectToScreen(state.env.camera, area.position.movedBy(0, 1.1, 0));
 
 				if (not screenAnchor)
 				{
@@ -308,9 +308,9 @@ namespace SkyAppFlow
 
 		void DrawSelectionDragOverlay(const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			if ((not frame.isEditorMode) && state.selectionDragStart && MouseL.pressed() && (not frame.isHoveringUI))
+			if ((not frame.isEditorMode) && state.battle.selectionDragStart && MouseL.pressed() && (not frame.isHoveringUI))
 			{
-				const RectF selectionRect = GetSelectionRect(state.selectionDragStart);
+				const RectF selectionRect = GetSelectionRect(state.battle.selectionDragStart);
 				selectionRect.draw(ColorF{ 0.35, 0.72, 1.0, 0.12 });
 				selectionRect.drawFrame(2.0, ColorF{ 0.55, 0.82, 1.0, 0.95 });
 			}

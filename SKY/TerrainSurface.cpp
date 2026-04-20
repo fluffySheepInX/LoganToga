@@ -25,42 +25,30 @@ namespace
 		return std::bit_cast<uint64>(value);
 	}
 
+	inline constexpr std::array<TerrainCellType, 4> TerrainTypeOrder{
+		TerrainCellType::Grass,
+		TerrainCellType::Dirt,
+		TerrainCellType::Sand,
+		TerrainCellType::Rock,
+	};
+
 	[[nodiscard]] size_t ToTerrainTypeIndex(const TerrainCellType type)
 	{
-		switch (type)
+		for (size_t i = 0; i < TerrainTypeOrder.size(); ++i)
 		{
-		case TerrainCellType::Grass:
-			return 0;
-
-		case TerrainCellType::Dirt:
-			return 1;
-
-		case TerrainCellType::Sand:
-			return 2;
-
-		case TerrainCellType::Rock:
-		default:
-			return 3;
+			if (TerrainTypeOrder[i] == type)
+			{
+				return i;
+			}
 		}
+		return (TerrainTypeOrder.size() - 1);
 	}
 
 	[[nodiscard]] TerrainCellType ToTerrainType(const size_t index)
 	{
-		switch (index)
-		{
-		case 0:
-			return TerrainCellType::Grass;
-
-		case 1:
-			return TerrainCellType::Dirt;
-
-		case 2:
-			return TerrainCellType::Sand;
-
-		case 3:
-		default:
-			return TerrainCellType::Rock;
-		}
+		return (index < TerrainTypeOrder.size())
+			? TerrainTypeOrder[index]
+			: TerrainCellType::Rock;
 	}
 
 	struct TerrainSurfaceAccumulator
@@ -363,8 +351,8 @@ uint64 ComputeTerrainSurfaceRevision(const MapData& mapData, const MainSupport::
 	HashCombine(revision, static_cast<uint64>(mapData.terrainCells.size()));
 	HashCombine(revision, static_cast<uint64>(mapData.placedModels.size()));
 	HashCombine(revision, settings.noiseEnabled ? 1ull : 0ull);
-  HashCombine(revision, HashDouble(settings.materialBlendStrength));
-   HashCombine(revision, HashDouble(settings.placementImprintStrength));
+	HashCombine(revision, HashDouble(settings.materialBlendStrength));
+	HashCombine(revision, HashDouble(settings.placementImprintStrength));
 	HashCombine(revision, HashDouble(settings.wearStrength));
 	HashCombine(revision, HashDouble(settings.ambientOcclusionStrength));
 	HashCombine(revision, HashDouble(settings.macroNoiseStrength));

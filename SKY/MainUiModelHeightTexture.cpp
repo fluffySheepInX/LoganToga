@@ -1,11 +1,10 @@
-﻿# include "MainUiModelHeightInternal.hpp"
+# include "MainUiModelHeightInternal.hpp"
 # include "MainSettings.hpp"
 # include "SkyAppText.hpp"
 # include "SkyAppUiInternal.hpp"
 
 namespace MainSupport::ModelHeightEditorDetail
 {
-    using SkyAppText::TextId;
     using SkyAppText::Tr;
     using SkyAppText::TrFormat;
 
@@ -91,22 +90,22 @@ namespace MainSupport::ModelHeightEditorDetail
         {
             const ModelHeightSettings loadedSettings = LoadModelHeightSettings();
             CopyTextureSegmentSettings(context.modelHeightSettings, loadedSettings, context.activeTextureSegment);
-            context.modelHeightMessage = Tr(TextId::ModelHeightReloaded);
+            context.modelHeightMessage = Tr(U"ModelHeightReloaded");
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 
         if (DrawTextButton(Rect{ detailX, (actionRowsTop + 40), detailButtonWidth, 32 }, U"Reset All"))
         {
             context.modelHeightSettings = {};
-            context.modelHeightMessage = Tr(TextId::ModelHeightOffsetsScalesReset);
+            context.modelHeightMessage = Tr(U"ModelHeightOffsetsScalesReset");
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 
         if (DrawTextButton(Rect{ (detailX + detailButtonWidth + 8), (actionRowsTop + 40), detailButtonWidth, 32 }, U"Save All"))
         {
             context.modelHeightMessage = SaveModelHeightSettings(context.modelHeightSettings)
-                ? TrFormat(TextId::ModelHeightSavedWithPath, ModelHeightSettingsPath)
-                : Tr(TextId::ModelHeightSaveFailed);
+                ? TrFormat(U"ModelHeightSavedWithPath", ModelHeightSettingsPath)
+                : Tr(U"ModelHeightSaveFailed");
             context.modelHeightMessageUntil = (Scene::Time() + 2.0);
         }
 

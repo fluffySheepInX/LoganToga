@@ -10,7 +10,15 @@ namespace MainSupport
 		Idle,
 		Move,
 		Attack,
+		Count,
 	};
+
+	inline constexpr size_t UnitModelAnimationRoleCount = static_cast<size_t>(UnitModelAnimationRole::Count);
+
+	[[nodiscard]] inline constexpr size_t GetUnitModelAnimationRoleIndex(const UnitModelAnimationRole role)
+	{
+		return static_cast<size_t>(role);
+	}
 
 	struct CameraSettings
 	{
@@ -20,20 +28,16 @@ namespace MainSupport
 
 	struct ModelHeightSettings
 	{
-        struct FileSettings
+		struct FileSettings
 		{
 			double offsetY = 0.0;
 			double scale = 1.0;
-			int32 idleAnimationClip = -1;
-			int32 moveAnimationClip = -1;
-			int32 attackAnimationClip = -1;
+			std::array<int32, UnitModelAnimationRoleCount> animationClip{ -1, -1, -1 };
 		};
 
-       std::array<double, UnitRenderModelCount> offsetY{};
+	   std::array<double, UnitRenderModelCount> offsetY{};
 		std::array<double, UnitRenderModelCount> scale{};
-     std::array<int32, UnitRenderModelCount> idleAnimationClip{};
-		std::array<int32, UnitRenderModelCount> moveAnimationClip{};
-		std::array<int32, UnitRenderModelCount> attackAnimationClip{};
+		std::array<std::array<int32, UnitRenderModelCount>, UnitModelAnimationRoleCount> animationClip{};
 		std::array<double, 3> tireTrackYOffset{};
 		std::array<double, 3> tireTrackOpacity{};
 		std::array<double, 3> tireTrackSoftness{};
@@ -43,11 +47,9 @@ namespace MainSupport
 		ModelHeightSettings()
 		{
 			scale.fill(1.0);
-          idleAnimationClip.fill(-1);
-			moveAnimationClip.fill(-1);
-			attackAnimationClip.fill(-1);
-           tireTrackYOffset = { 0.018, 0.019, 0.020 };
-           tireTrackOpacity.fill(1.0);
+			for (auto& clips : animationClip) { clips.fill(-1); }
+		   tireTrackYOffset = { 0.018, 0.019, 0.020 };
+		   tireTrackOpacity.fill(1.0);
 			tireTrackSoftness.fill(0.0);
 			tireTrackWarmth.fill(0.35);
 		}
@@ -305,20 +307,14 @@ namespace MainSupport
 		return 1.0;
 	}
 
-    [[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
+	[[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
 	{
-        switch (role)
-		{
-		case UnitModelAnimationRole::Move:
-			return settings.moveAnimationClip[GetUnitRenderModelIndex(renderModel)];
+		return settings.animationClip[GetUnitModelAnimationRoleIndex(role)][GetUnitRenderModelIndex(renderModel)];
+	}
 
-		case UnitModelAnimationRole::Attack:
-			return settings.attackAnimationClip[GetUnitRenderModelIndex(renderModel)];
-
-		case UnitModelAnimationRole::Idle:
-		default:
-			return settings.idleAnimationClip[GetUnitRenderModelIndex(renderModel)];
-		}
+	[[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
+	{
+		return settings.animationClip[GetUnitModelAnimationRoleIndex(role)][GetUnitRenderModelIndex(renderModel)];
 	}
 
 	[[nodiscard]] inline int32& GetModelAnimationClipIndex(ModelHeightSettings& settings, FilePathView modelPath, const UnitModelAnimationRole role)
@@ -328,72 +324,22 @@ namespace MainSupport
 			return GetModelAnimationClipIndex(settings, *renderModel, role);
 		}
 
-		auto& fileSettings = GetOrCreateModelHeightFileSettings(settings, modelPath);
-		switch (role)
-		{
-		case UnitModelAnimationRole::Move:
-			return fileSettings.moveAnimationClip;
-
-		case UnitModelAnimationRole::Attack:
-			return fileSettings.attackAnimationClip;
-
-		case UnitModelAnimationRole::Idle:
-		default:
-			return fileSettings.idleAnimationClip;
-		}
+		return GetOrCreateModelHeightFileSettings(settings, modelPath).animationClip[GetUnitModelAnimationRoleIndex(role)];
 	}
 
 	[[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, FilePathView modelPath, const UnitModelAnimationRole role)
 	{
 		if (const auto renderModel = TryGetDefaultModelRenderModel(modelPath))
 		{
-            switch (role)
-			{
-			case UnitModelAnimationRole::Move:
-				return settings.moveAnimationClip[GetUnitRenderModelIndex(*renderModel)];
-
-			case UnitModelAnimationRole::Attack:
-				return settings.attackAnimationClip[GetUnitRenderModelIndex(*renderModel)];
-
-			case UnitModelAnimationRole::Idle:
-			default:
-				return settings.idleAnimationClip[GetUnitRenderModelIndex(*renderModel)];
-			}
+			return GetModelAnimationClipIndex(settings, *renderModel, role);
 		}
 
 		if (const auto* fileSettings = FindModelHeightFileSettings(settings, modelPath))
 		{
-			switch (role)
-			{
-			case UnitModelAnimationRole::Move:
-				return fileSettings->moveAnimationClip;
-
-			case UnitModelAnimationRole::Attack:
-				return fileSettings->attackAnimationClip;
-
-			case UnitModelAnimationRole::Idle:
-			default:
-				return fileSettings->idleAnimationClip;
-			}
+			return fileSettings->animationClip[GetUnitModelAnimationRoleIndex(role)];
 		}
 
 		return -1;
-	}
-
-   [[nodiscard]] inline int32 GetModelAnimationClipIndex(const ModelHeightSettings& settings, const UnitRenderModel renderModel, const UnitModelAnimationRole role)
-	{
-        switch (role)
-		{
-		case UnitModelAnimationRole::Move:
-			return settings.moveAnimationClip[GetUnitRenderModelIndex(renderModel)];
-
-		case UnitModelAnimationRole::Attack:
-			return settings.attackAnimationClip[GetUnitRenderModelIndex(renderModel)];
-
-		case UnitModelAnimationRole::Idle:
-		default:
-			return settings.idleAnimationClip[GetUnitRenderModelIndex(renderModel)];
-		}
 	}
 
 	[[nodiscard]] inline double& GetTireTrackYOffset(ModelHeightSettings& settings, const TireTrackTextureSegment segment)

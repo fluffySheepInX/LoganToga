@@ -1,4 +1,4 @@
-Ôªø# include "SkyAppInternal.hpp"
+# include "SkyAppInternal.hpp"
 # include "SkyAppLoop.hpp"
 # include "SkyAppLoopInternal.hpp"
 
@@ -25,14 +25,14 @@ namespace SkyAppInternal
 					SkyAppFlow::RunSkyAppFrame(*m_resources, m_state);
 				auto& data = getData();
 
-				if ((not m_campaignResultHandled) && data.activeCampaignId && m_state.playerWon)
+				if ((not m_campaignResultHandled) && data.activeCampaignId && m_state.battle.playerWon)
 				{
 					if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
 					{
 						SkyCampaign::CampaignProgress progress = SkyCampaign::LoadCampaignProgress(*data.activeCampaignId);
 						progress.campaignId = *data.activeCampaignId;
 
-						if (*m_state.playerWon)
+						if (*m_state.battle.playerWon)
 						{
 							const size_t nextMissionIndex = Min((data.activeCampaignMissionIndex.value_or(0) + 1), campaign->missions.size());
 							progress.unlockedMissionCount = Max(progress.unlockedMissionCount, nextMissionIndex + ((nextMissionIndex < campaign->missions.size()) ? 1 : 0));
@@ -60,15 +60,15 @@ namespace SkyAppInternal
 					m_campaignResultHandled = true;
 				}
 
-				if (m_state.playerWon && (not *m_state.playerWon) && KeyR.down())
+				if (m_state.battle.playerWon && (not *m_state.battle.playerWon) && KeyR.down())
 				{
 					SkyAppFlow::ResetMatch(m_state);
 					m_campaignResultHandled = false;
-					m_state.restartMessage.show(U"Ë©¶Âêà„Çí„É™„Çπ„Çø„Éº„Éà");
+					m_state.messages[SkyAppSupport::MessageChannel::Restart].show(U"ééçáÇÉäÉXÉ^Å[Ég");
 					return;
 				}
 
-				if (data.activeCampaignId && m_state.playerWon && (KeyEnter.down() || MouseL.down()))
+				if (data.activeCampaignId && m_state.battle.playerWon && (KeyEnter.down() || MouseL.down()))
 				{
 					if (const auto* campaign = FindCampaignById(data, *data.activeCampaignId))
 					{
@@ -107,7 +107,7 @@ namespace SkyAppInternal
 					return;
 				}
 
-				if ((not data.activeCampaignId) && m_state.playerWon && (KeyEnter.down() || MouseL.down()))
+				if ((not data.activeCampaignId) && m_state.battle.playerWon && (KeyEnter.down() || MouseL.down()))
 				{
 					const String returnScene = data.battleReturnScene;
 					data.launchBattleInMapEditor = false;
@@ -116,9 +116,9 @@ namespace SkyAppInternal
 					return;
 				}
 
-				if (m_state.requestTitleScene)
+				if (m_state.hud.requestTitleScene)
 				{
-					m_state.requestTitleScene = false;
+					m_state.hud.requestTitleScene = false;
 					if (not data.activeCampaignId)
 					{
 						data.activeCampaignMissionIndex.reset();
@@ -143,7 +143,7 @@ namespace SkyAppInternal
 						return;
 					}
 
-				if (not m_state.playerWon)
+				if (not m_state.battle.playerWon)
 				{
 					return;
 				}
@@ -151,7 +151,7 @@ namespace SkyAppInternal
 				const auto& data = getData();
 				Array<String> hintLines;
 
-				if (*m_state.playerWon)
+				if (*m_state.battle.playerWon)
 				{
 					if (data.activeCampaignId)
 					{
@@ -225,7 +225,7 @@ namespace SkyAppInternal
 						SkyAppFlow::InitializeSkyAppState(m_state);
 						if (data.launchBattleInMapEditor)
 						{
-							m_state.appMode = MainSupport::AppMode::EditMap;
+							m_state.env.appMode = MainSupport::AppMode::EditMap;
 						}
 						m_loadPhase = LoadPhase::LoadBattleMap;
 						return;
@@ -233,16 +233,16 @@ namespace SkyAppInternal
 					case LoadPhase::LoadBattleMap:
 					{
 						const FilePath battleMapPath = data.pendingBattleMapPath;
-						m_state.currentMapPath = battleMapPath.isEmpty() ? FilePath{ MainSupport::MapDataPath } : battleMapPath;
+						m_state.world.currentMapPath = battleMapPath.isEmpty() ? FilePath{ MainSupport::MapDataPath } : battleMapPath;
 						if ((not battleMapPath.isEmpty()) && (battleMapPath != MainSupport::MapDataPath))
 						{
 							const MapDataLoadResult campaignMapLoad = LoadMapDataWithStatus(battleMapPath);
-							m_state.mapData = campaignMapLoad.mapData;
+							m_state.world.mapData = campaignMapLoad.mapData;
 							SkyAppFlow::ResetMatch(m_state);
 
 							if (not campaignMapLoad.message.isEmpty())
 							{
-								m_state.mapDataMessage.show(campaignMapLoad.message, 4.0);
+								m_state.messages[SkyAppSupport::MessageChannel::MapData].show(campaignMapLoad.message, 4.0);
 							}
 						}
 

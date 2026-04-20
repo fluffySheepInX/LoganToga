@@ -29,19 +29,11 @@ struct PlacedModel
 {
 	PlaceableModelType type = PlaceableModelType::Tree;
 	Vec3 position{ 0, 0, 0 };
-    MainSupport::UnitTeam ownerTeam = MainSupport::UnitTeam::Player;
+	MainSupport::UnitTeam ownerTeam = MainSupport::UnitTeam::Player;
    double yaw = 0.0;
 	double wallLength = 10.0;
    double roadLength = 8.0;
 	double roadWidth = 4.0;
-  double attackRange = MainSupport::MillDefenseRange;
-	double attackDamage = MainSupport::MillDefenseDamage;
-	double attackInterval = MainSupport::MillDefenseInterval;
-    int32 attackTargetCount = MainSupport::MillDefenseTargetCount;
-  double suppressionDuration = MainSupport::MillSuppressionDuration;
-	double suppressionMoveSpeedMultiplier = MainSupport::MillSuppressionMoveSpeedMultiplier;
-	double suppressionAttackDamageMultiplier = MainSupport::MillSuppressionAttackDamageMultiplier;
-	double suppressionAttackIntervalMultiplier = MainSupport::MillSuppressionAttackIntervalMultiplier;
 };
 
 struct MillDefenseParameters
@@ -89,11 +81,12 @@ struct MapData
  Vec3 playerBasePosition{ 8.0, 0.0, 4.0 };
 	Vec3 enemyBasePosition{ -2.0, 0.0, 13.0 };
 	Vec3 sapperRallyPoint{ 10.5, 0, 10.5 };
-    Array<ResourceArea> resourceAreas;
-    Array<NavPoint> navPoints;
+	Array<ResourceArea> resourceAreas;
+	Array<NavPoint> navPoints;
 	Array<NavLink> navLinks;
-    Array<TerrainCell> terrainCells;
+	Array<TerrainCell> terrainCells;
 	Array<PlacedModel> placedModels;
+	MillDefenseParameters millParameters;
 };
 
 [[nodiscard]] MapData MakeDefaultMapData();
@@ -111,7 +104,7 @@ bool SaveMapData(const MapData& mapData, FilePathView path);
 [[nodiscard]] StringView ToString(MainSupport::ResourceType type);
 [[nodiscard]] StringView ToString(MainSupport::UnitTeam team);
 [[nodiscard]] bool SupportsMillDefenseParameters(PlaceableModelType type);
-[[nodiscard]] MillDefenseParameters GetMillDefenseParameters(const PlacedModel& placedModel);
+[[nodiscard]] MillDefenseParameters GetMillDefenseParameters(const MapData& mapData);
 [[nodiscard]] Optional<size_t> FindTerrainCellIndex(const Array<TerrainCell>& terrainCells, const Point& cell);
 [[nodiscard]] Point ToTerrainCell(const Vec3& position);
 [[nodiscard]] Vec3 ToTerrainCellCenter(const Point& cell);

@@ -53,29 +53,29 @@ namespace SkyAppFlow
 
 		void RemoveInvalidSelectedSapperIndices(SkyAppState& state)
 		{
-			state.selectedSapperIndices.remove_if([&state](const size_t index)
+			state.battle.selectedSapperIndices.remove_if([&state](const size_t index)
 				{
-					return (state.spawnedSappers.size() <= index);
+					return (state.battle.spawnedSappers.size() <= index);
 				});
 		}
 
 		void UpdateFrameSimulation(SkyAppState& state)
 		{
-			UpdateSpawnedSappers(state.spawnedSappers, state.mapData, state.modelHeightSettings);
-			UpdateSpawnedSappers(state.enemySappers, state.mapData, state.modelHeightSettings);
-			UpdateFogOfWar(state.fogOfWar,
-				state.fogOfWarSettings,
-				state.mapData,
-				state.spawnedSappers,
-				state.resourceAreaStates);
+			UpdateSpawnedSappers(state.battle.spawnedSappers, state.world.mapData, state.editor.modelHeightSettings);
+			UpdateSpawnedSappers(state.battle.enemySappers, state.world.mapData, state.editor.modelHeightSettings);
+			UpdateFogOfWar(state.env.fogOfWar,
+				state.env.fogOfWarSettings,
+				state.world.mapData,
+				state.battle.spawnedSappers,
+				state.battle.resourceAreaStates);
 
-			if (not state.playerWon)
+			if (not state.battle.playerWon)
 			{
 				UpdateBattleState(state);
 			}
 
 			UpdateAttackEffects(state);
-			UpdateSkyFromTime(state.sky, state.skyTime);
+			UpdateSkyFromTime(state.env.sky, state.env.skyTime);
 			Detail::RefreshTerrainSurface(state);
 			RemoveInvalidSelectedSapperIndices(state);
 		}
@@ -84,9 +84,9 @@ namespace SkyAppFlow
 		{
 			if (KeyEscape.down())
 			{
-				state.showEscMenu = not state.showEscMenu;
-				state.selectionDragStart.reset();
-				state.uiPanelDrag.reset();
+				state.hud.showEscMenu = not state.hud.showEscMenu;
+				state.battle.selectionDragStart.reset();
+				state.hud.uiPanelDrag.reset();
 			}
 		}
 
@@ -115,7 +115,7 @@ namespace SkyAppFlow
 
 	void RunSkyAppFrame(SkyAppResources& resources, SkyAppState& state)
 	{
-      UpdateUnitRenderModels(resources, state.modelHeightSettings);
+      UpdateUnitRenderModels(resources, state.editor.modelHeightSettings);
 		UpdateFrameSimulation(state);
 		HandleFrameInput(state);
 

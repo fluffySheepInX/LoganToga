@@ -1,5 +1,8 @@
 ﻿# include "MapEditorInternal.hpp"
 # include "MapEditorUpdateInternal.hpp"
+# include "MapEditorPanelInternal.hpp"
+# include "MapEditorSceneInternal.hpp"
+# include "SkyAppUiInternal.hpp"
 
 using namespace MapEditorUpdateDetail;
 
@@ -57,4 +60,51 @@ void UpdateMapEditor(MapEditorState& state, MapData& mapData, const MainSupport:
 	}
 
    HandleGroundPlacement(state, mapData, camera);
+}
+
+void DrawMapEditorPanel(MapEditorState& state, MapData& mapData, const FilePathView path, const Rect& panelRect)
+{
+	using namespace MapEditorDetail;
+	static const Font font{ 16 };
+	SkyAppSupport::UiInternal::DrawNinePatchPanelFrame(panelRect, U"Map Editor", ColorF{ 0.98, 0.95 }, SkyAppSupport::UiInternal::DefaultPanelFrameColor, SkyAppSupport::UiInternal::DefaultPanelTitleColor, MainSupport::PanelSkinTarget::MapEditor);
+	DrawMapEditorToolSection(state, panelRect, font);
+	DrawMapEditorCommandSection(state, mapData, path, panelRect);
+	DrawMapEditorInfoSection(state, mapData, panelRect, font);
+	DrawMapEditorSelectionDetailSection(state, mapData, panelRect, font);
+	DrawMapEditorStatusMessage(state, panelRect, font);
+}
+
+void DrawMapEditorScene(const MapEditorState& state, const MapData& mapData)
+{
+	using namespace MapEditorSceneDetail;
+	if (not state.enabled)
+	{
+		return;
+	}
+
+	for (const auto& terrainCell : mapData.terrainCells)
+	{
+		DrawTerrainCell(terrainCell);
+	}
+
+	DrawNavLinks(state, mapData);
+	DrawNavPoints(state, mapData);
+	DrawBaseMarkers(mapData);
+	DrawResourceAreas(mapData);
+	DrawSelectedPlacedModelHighlight(state, mapData);
+	DrawSelectedResourceAreaHighlight(state, mapData);
+
+	if (not state.hoveredGroundPosition)
+	{
+		return;
+	}
+
+	const Vec3 hoverPosition = *state.hoveredGroundPosition;
+	if (state.selectionMode)
+	{
+		DrawSelectionModePreview(state, mapData, hoverPosition);
+		return;
+	}
+
+	DrawToolHoverPreview(state, mapData, hoverPosition);
 }

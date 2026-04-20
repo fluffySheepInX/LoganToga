@@ -4,6 +4,14 @@
 
 namespace SkyAppInternal
 {
+	struct MissionEditDraft
+	{
+		TextEditState name;
+		TextEditState mapPath;
+		TextEditState preDialogue;
+		TextEditState postDialogue;
+	};
+
 	struct SkyAppData
 	{
 		Array<SkyCampaign::CampaignDefinition> campaigns;
@@ -20,10 +28,7 @@ namespace SkyAppInternal
 		String pendingResetCampaignName;
 		TextEditState campaignNameState;
 		TextEditState campaignDescriptionState;
-		Array<TextEditState> missionNameStates;
-		Array<TextEditState> missionMapPathStates;
-        Array<TextEditState> missionPreDialogueStates;
-		Array<TextEditState> missionPostDialogueStates;
+		Array<MissionEditDraft> missionDrafts;
 		Optional<size_t> selectedEditorMissionIndex;
 		int32 editorMissionListOffset = 0;
 		String editorMessage;

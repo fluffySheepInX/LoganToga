@@ -87,8 +87,7 @@ namespace SkyAppSupport
 		Array<MainSupport::SpawnedSapper>& enemySappers,
 		TimedMessage& unitEditorMessage);
    void DrawMillStatusEditor(const SkyAppPanels& panels,
-      MapData& mapData,
-		size_t selectedMillIndex,
+	  MapData& mapData,
 		FilePathView path,
 		TimedMessage& mapDataMessage);
 }

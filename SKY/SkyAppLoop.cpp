@@ -13,46 +13,46 @@ namespace SkyAppFlow
 		{
           constexpr int32 BattleCommandSlotCount = 4;
 
-			state.mapEditor.enabled = (state.appMode == AppMode::EditMap);
-			state.battleCommandUnlockedSlotCount = Clamp(state.battleCommandUnlockedSlotCount, 1, BattleCommandSlotCount);
-			state.battleCommandSelectedSlotIndex = Min(state.battleCommandSelectedSlotIndex, static_cast<size_t>(state.battleCommandUnlockedSlotCount - 1));
+			state.editor.mapEditor.enabled = (state.env.appMode == AppMode::EditMap);
+			state.battle.battleCommandUnlockedSlotCount = Clamp(state.battle.battleCommandUnlockedSlotCount, 1, BattleCommandSlotCount);
+			state.battle.battleCommandSelectedSlotIndex = Min(state.battle.battleCommandSelectedSlotIndex, static_cast<size_t>(state.battle.battleCommandUnlockedSlotCount - 1));
 
-			if (not IsValidMillIndex(state, state.selectedMillIndex))
+			if (not IsValidMillIndex(state, state.battle.selectedMillIndex))
 			{
-				state.selectedMillIndex.reset();
+				state.battle.selectedMillIndex.reset();
 			}
 		}
 
 		void RefreshTerrainSurface(SkyAppState& state)
 		{
-			const uint64 revision = ComputeTerrainSurfaceRevision(state.mapData, state.terrainVisualSettings);
-			if ((state.terrainSurfaceRevision == revision) && (not state.terrainSurface.cells.isEmpty()))
+			const uint64 revision = ComputeTerrainSurfaceRevision(state.world.mapData, state.world.terrainVisualSettings);
+			if ((state.world.terrainSurfaceRevision == revision) && (not state.world.terrainSurface.cells.isEmpty()))
 			{
 				return;
 			}
 
-			state.terrainSurface = BuildTerrainSurface(state.mapData, state.terrainVisualSettings);
-			state.terrainSurfaceRevision = revision;
+			state.world.terrainSurface = BuildTerrainSurface(state.world.mapData, state.world.terrainVisualSettings);
+			state.world.terrainSurfaceRevision = revision;
 		}
 
       SkyAppFrameState BuildFrameState(const SkyAppState& state)
 		{
 			SkyAppFrameState frame;
-			const bool resourcePanelExpandedForLayout = state.showResourceAdjustUi;
-			const bool isEditingResourcePanel = state.uiPanelDrag
-				&& (state.uiPanelDrag->panel == UiLayoutPanel::ResourcePanel);
-			const bool resourcePanelShowStoredHeight = (state.uiEditMode && isEditingResourcePanel);
-			frame.panels = SkyAppPanels{ state.uiLayoutSettings, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.miniMapExpanded, resourcePanelExpandedForLayout, resourcePanelShowStoredHeight };
-			frame.isEditorMode = (state.appMode == AppMode::EditMap);
-			frame.showEscMenu = state.showEscMenu;
-			const bool hasValidSelectedMill = IsValidMillIndex(state, state.selectedMillIndex);
-			frame.showSapperMenu = ((state.selectedSapperIndices.size() == 1) && (not state.playerWon));
+			const bool resourcePanelExpandedForLayout = state.hud.showResourceAdjustUi;
+			const bool isEditingResourcePanel = state.hud.uiPanelDrag
+				&& (state.hud.uiPanelDrag->panel == UiLayoutPanel::ResourcePanel);
+			const bool resourcePanelShowStoredHeight = (state.hud.uiEditMode && isEditingResourcePanel);
+			frame.panels = SkyAppPanels{ state.hud.uiLayoutSettings, state.hud.skySettingsExpanded, state.hud.cameraSettingsExpanded, state.hud.terrainVisualSettingsExpanded, state.hud.miniMapExpanded, resourcePanelExpandedForLayout, resourcePanelShowStoredHeight };
+			frame.isEditorMode = (state.env.appMode == AppMode::EditMap);
+			frame.showEscMenu = state.hud.showEscMenu;
+			const bool hasValidSelectedMill = IsValidMillIndex(state, state.battle.selectedMillIndex);
+			frame.showSapperMenu = ((state.battle.selectedSapperIndices.size() == 1) && (not state.battle.playerWon));
 			frame.showMillStatusEditor = ((not frame.isEditorMode) && hasValidSelectedMill);
-			frame.showUnitEditor = (state.showUI && state.unitEditorMode && (not frame.isEditorMode) && (not state.playerWon));
-			frame.isHoveringUI = frame.panels.isHoveringUi(state.showUI, state.skySettingsExpanded, state.cameraSettingsExpanded, state.terrainVisualSettingsExpanded, state.fogSettingsExpanded, frame.isEditorMode, state.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.modelHeightEditMode, frame.showUnitEditor);
+			frame.showUnitEditor = (state.hud.showUI && state.editor.unitEditorMode && (not frame.isEditorMode) && (not state.battle.playerWon));
+			frame.isHoveringUI = frame.panels.isHoveringUi(state.hud.showUI, state.hud.skySettingsExpanded, state.hud.cameraSettingsExpanded, state.hud.terrainVisualSettingsExpanded, state.hud.fogSettingsExpanded, frame.isEditorMode, state.hud.showBlacksmithMenu, frame.showSapperMenu, frame.showMillStatusEditor, state.editor.modelHeightEditMode, frame.showUnitEditor);
 			for (const UnitRenderModel renderModel : GetUnitRenderModels())
 			{
-				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.modelHeightSettings, renderModel), 0);
+				frame.previewRenderPositions[GetUnitRenderModelIndex(renderModel)] = GetUnitRenderModelDisplayPosition(renderModel).movedBy(0, GetModelHeightOffset(state.editor.modelHeightSettings, renderModel), 0);
 			}
 
 			return frame;
@@ -76,7 +76,7 @@ namespace SkyAppFlow
 				const int32 row = static_cast<int32>(index / PreviewColumnCount);
 				const double x = ((static_cast<double>(column) - ((PreviewColumnCount - 1) * 0.5)) * PreviewColumnSpacing);
 				const double z = (-2.5 + (static_cast<double>(row) - ((rowCount - 1) * 0.5)) * PreviewRowSpacing);
-				frame.modelHeightPreviewRenderPositions << Vec3{ x, GetModelHeightOffset(state.modelHeightSettings, previewPath), z };
+				frame.modelHeightPreviewRenderPositions << Vec3{ x, GetModelHeightOffset(state.editor.modelHeightSettings, previewPath), z };
 			}
 			return frame;
 		}
@@ -84,24 +84,24 @@ namespace SkyAppFlow
 
 	void InitializeSkyAppState(SkyAppState& state)
 	{
-		state.cameraSettings = LoadCameraSettings();
-		EnsureValidCameraSettings(state.cameraSettings);
-		ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"InitializeSkyAppState");
-		state.modelHeightSettings = LoadModelHeightSettings();
-		state.uiLayoutSettings = LoadUiLayoutSettings(Scene::Width(), Scene::Height());
-		state.initialPlayerResources = LoadInitialPlayerResources();
-		state.unitEditorSettings = LoadUnitEditorSettings();
-		state.currentMapPath = MainSupport::MapDataPath;
+		state.env.cameraSettings = LoadCameraSettings();
+		EnsureValidCameraSettings(state.env.cameraSettings);
+		ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"InitializeSkyAppState");
+		state.editor.modelHeightSettings = LoadModelHeightSettings();
+		state.hud.uiLayoutSettings = LoadUiLayoutSettings(Scene::Width(), Scene::Height());
+		state.battle.initialPlayerResources = LoadInitialPlayerResources();
+		state.editor.unitEditorSettings = LoadUnitEditorSettings();
+		state.world.currentMapPath = MainSupport::MapDataPath;
 		const MapDataLoadResult initialMapDataLoad = LoadMapDataWithStatus(MapDataPath);
-		state.mapData = initialMapDataLoad.mapData;
-		state.terrainSurfaceRevision = 0;
+		state.world.mapData = initialMapDataLoad.mapData;
+		state.world.terrainSurfaceRevision = 0;
 		Detail::RefreshTerrainSurface(state);
-		state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.cameraSettings.eye, state.cameraSettings.focus };
+		state.env.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.env.cameraSettings.eye, state.env.cameraSettings.focus };
 		ResetMatch(state);
 
 		if (not initialMapDataLoad.message.isEmpty())
 		{
-			state.mapDataMessage.show(initialMapDataLoad.message, 4.0);
+			state.messages[SkyAppSupport::MessageChannel::MapData].show(initialMapDataLoad.message);
 		}
 	}
 }

@@ -23,12 +23,9 @@ namespace SkyAppInternal
 	{
 		data.campaignNameState = TextEditState{};
 		data.campaignDescriptionState = TextEditState{};
-		data.missionNameStates = { TextEditState{} };
-		data.missionNameStates.front().text = U"Mission 1";
-		data.missionMapPathStates = { TextEditState{} };
-		data.missionMapPathStates.front().text = MainSupport::MapDataPath;
-        data.missionPreDialogueStates = { TextEditState{} };
-		data.missionPostDialogueStates = { TextEditState{} };
+		data.missionDrafts = { MissionEditDraft{} };
+		data.missionDrafts.front().name.text = U"Mission 1";
+		data.missionDrafts.front().mapPath.text = MainSupport::MapDataPath;
 		data.selectedEditorMissionIndex = 0;
 		data.editorMissionListOffset = 0;
 		data.editorMessage.clear();
@@ -46,31 +43,19 @@ namespace SkyAppInternal
 		data.campaignNameState.text = definition.displayName;
 		data.campaignDescriptionState = TextEditState{};
 		data.campaignDescriptionState.text = definition.description;
-		data.missionNameStates.clear();
-		data.missionMapPathStates.clear();
-		data.missionPreDialogueStates.clear();
-		data.missionPostDialogueStates.clear();
+		data.missionDrafts.clear();
 
 		for (const auto& mission : definition.missions)
 		{
-			TextEditState missionNameState;
-			missionNameState.text = mission.displayName;
-			data.missionNameStates << missionNameState;
-
-			TextEditState missionMapPathState;
-			missionMapPathState.text = mission.mapFile;
-			data.missionMapPathStates << missionMapPathState;
-
-			TextEditState missionPreDialogueState;
-			missionPreDialogueState.text = mission.preDialogueLines.join(U" | ");
-			data.missionPreDialogueStates << missionPreDialogueState;
-
-			TextEditState missionPostDialogueState;
-			missionPostDialogueState.text = mission.postDialogueLines.join(U" | ");
-			data.missionPostDialogueStates << missionPostDialogueState;
+			MissionEditDraft draft;
+			draft.name.text = mission.displayName;
+			draft.mapPath.text = mission.mapFile;
+			draft.preDialogue.text = mission.preDialogueLines.join(U" | ");
+			draft.postDialogue.text = mission.postDialogueLines.join(U" | ");
+			data.missionDrafts << draft;
 		}
 
-		if (data.missionNameStates.isEmpty())
+		if (data.missionDrafts.isEmpty())
 		{
 			PrepareNewCampaignDraft(data);
 		}
@@ -86,41 +71,19 @@ namespace SkyAppInternal
 
 	void ClampEditorMissionSelection(SkyAppData& data)
 	{
-		while (data.missionMapPathStates.size() < data.missionNameStates.size())
-		{
-			TextEditState state;
-			state.text = MainSupport::MapDataPath;
-			data.missionMapPathStates << state;
-		}
-
-		while (data.missionPreDialogueStates.size() < data.missionNameStates.size())
-		{
-			data.missionPreDialogueStates << TextEditState{};
-		}
-
-		while (data.missionPostDialogueStates.size() < data.missionNameStates.size())
-		{
-			data.missionPostDialogueStates << TextEditState{};
-		}
-
-		while (data.missionNameStates.size() < data.missionMapPathStates.size())
-		{
-			data.missionNameStates << TextEditState{};
-		}
-
-		if (data.missionNameStates.isEmpty())
+		if (data.missionDrafts.isEmpty())
 		{
 			PrepareNewCampaignDraft(data);
 			return;
 		}
 
-		if ((not data.selectedEditorMissionIndex) || (data.missionNameStates.size() <= *data.selectedEditorMissionIndex))
+		if ((not data.selectedEditorMissionIndex) || (data.missionDrafts.size() <= *data.selectedEditorMissionIndex))
 		{
-			data.selectedEditorMissionIndex = (data.missionNameStates.size() - 1);
+			data.selectedEditorMissionIndex = (data.missionDrafts.size() - 1);
 		}
 
 		const int32 selectedIndex = static_cast<int32>(*data.selectedEditorMissionIndex);
-		const int32 maxOffset = Max(0, static_cast<int32>(data.missionNameStates.size()) - EditorVisibleMissionCount);
+		const int32 maxOffset = Max(0, static_cast<int32>(data.missionDrafts.size()) - EditorVisibleMissionCount);
 		data.editorMissionListOffset = Clamp(data.editorMissionListOffset, 0, maxOffset);
 
 		if (selectedIndex < data.editorMissionListOffset)
@@ -135,15 +98,11 @@ namespace SkyAppInternal
 
 	void AddEditorMission(SkyAppData& data)
 	{
-		TextEditState missionNameState;
-		missionNameState.text = U"Mission {}"_fmt(data.missionNameStates.size() + 1);
-		TextEditState missionMapPathState;
-		missionMapPathState.text = MainSupport::MapDataPath;
-		data.missionNameStates << missionNameState;
-		data.missionMapPathStates << missionMapPathState;
-      data.missionPreDialogueStates << TextEditState{};
-		data.missionPostDialogueStates << TextEditState{};
-		data.selectedEditorMissionIndex = (data.missionNameStates.size() - 1);
+		MissionEditDraft draft;
+		draft.name.text = U"Mission {}"_fmt(data.missionDrafts.size() + 1);
+		draft.mapPath.text = MainSupport::MapDataPath;
+		data.missionDrafts << draft;
+		data.selectedEditorMissionIndex = (data.missionDrafts.size() - 1);
 		ClampEditorMissionSelection(data);
 	}
 
@@ -153,16 +112,13 @@ namespace SkyAppInternal
 		const size_t index = *data.selectedEditorMissionIndex;
 		const size_t insertIndex = (index + 1);
 
-		TextEditState missionNameState = data.missionNameStates[index];
-		if (missionNameState.text.trimmed().isEmpty())
+		MissionEditDraft draft = data.missionDrafts[index];
+		if (draft.name.text.trimmed().isEmpty())
 		{
-			missionNameState.text = U"Mission {}"_fmt(insertIndex + 1);
+			draft.name.text = U"Mission {}"_fmt(insertIndex + 1);
 		}
 
-		data.missionNameStates.insert(data.missionNameStates.begin() + insertIndex, missionNameState);
-		data.missionMapPathStates.insert(data.missionMapPathStates.begin() + insertIndex, data.missionMapPathStates[index]);
-		data.missionPreDialogueStates.insert(data.missionPreDialogueStates.begin() + insertIndex, data.missionPreDialogueStates[index]);
-		data.missionPostDialogueStates.insert(data.missionPostDialogueStates.begin() + insertIndex, data.missionPostDialogueStates[index]);
+		data.missionDrafts.insert(data.missionDrafts.begin() + insertIndex, draft);
 		data.selectedEditorMissionIndex = insertIndex;
 		ClampEditorMissionSelection(data);
 	}
@@ -171,25 +127,23 @@ namespace SkyAppInternal
 	{
 		ClampEditorMissionSelection(data);
 
-		if (data.missionNameStates.size() <= 1)
+		if (data.missionDrafts.size() <= 1)
 		{
-			data.missionNameStates.front().text = U"Mission 1";
-			data.missionMapPathStates.front().text = MainSupport::MapDataPath;
-            data.missionPreDialogueStates.front().clear();
-			data.missionPostDialogueStates.front().clear();
+			auto& draft = data.missionDrafts.front();
+			draft.name.text = U"Mission 1";
+			draft.mapPath.text = MainSupport::MapDataPath;
+			draft.preDialogue.clear();
+			draft.postDialogue.clear();
 			data.selectedEditorMissionIndex = 0;
 			return;
 		}
 
 		const size_t index = *data.selectedEditorMissionIndex;
-		data.missionNameStates.erase(data.missionNameStates.begin() + index);
-		data.missionMapPathStates.erase(data.missionMapPathStates.begin() + index);
-		data.missionPreDialogueStates.erase(data.missionPreDialogueStates.begin() + index);
-		data.missionPostDialogueStates.erase(data.missionPostDialogueStates.begin() + index);
+		data.missionDrafts.erase(data.missionDrafts.begin() + index);
 
-		if (data.missionNameStates.size() <= index)
+		if (data.missionDrafts.size() <= index)
 		{
-			data.selectedEditorMissionIndex = (data.missionNameStates.size() - 1);
+			data.selectedEditorMissionIndex = (data.missionDrafts.size() - 1);
 		}
 
 		ClampEditorMissionSelection(data);
@@ -199,17 +153,14 @@ namespace SkyAppInternal
 	{
 		ClampEditorMissionSelection(data);
 		const int32 index = static_cast<int32>(*data.selectedEditorMissionIndex);
-		const int32 targetIndex = Clamp((index + direction), 0, static_cast<int32>(data.missionNameStates.size()) - 1);
+		const int32 targetIndex = Clamp((index + direction), 0, static_cast<int32>(data.missionDrafts.size()) - 1);
 
 		if (index == targetIndex)
 		{
 			return;
 		}
 
-		std::swap(data.missionNameStates[index], data.missionNameStates[targetIndex]);
-		std::swap(data.missionMapPathStates[index], data.missionMapPathStates[targetIndex]);
-     std::swap(data.missionPreDialogueStates[index], data.missionPreDialogueStates[targetIndex]);
-		std::swap(data.missionPostDialogueStates[index], data.missionPostDialogueStates[targetIndex]);
+		std::swap(data.missionDrafts[index], data.missionDrafts[targetIndex]);
 		data.selectedEditorMissionIndex = static_cast<size_t>(targetIndex);
 		ClampEditorMissionSelection(data);
 	}
@@ -245,15 +196,16 @@ namespace SkyAppInternal
 		definition.description = data.campaignDescriptionState.text.trimmed();
 		definition.missions.clear();
 
-		for (size_t i = 0; i < data.missionNameStates.size(); ++i)
+		for (size_t i = 0; i < data.missionDrafts.size(); ++i)
 		{
-			const String missionName = data.missionNameStates[i].text.trimmed();
-			const String mapFile = data.missionMapPathStates[i].text.trimmed();
+			const auto& draft = data.missionDrafts[i];
+			const String missionName = draft.name.text.trimmed();
+			const String mapFile = draft.mapPath.text.trimmed();
 			definition.missions << SkyCampaign::CampaignMissionDefinition{
 				.displayName = missionName.isEmpty() ? U"Mission {}"_fmt(i + 1) : missionName,
 				.mapFile = mapFile.isEmpty() ? FilePath{ MainSupport::MapDataPath } : FilePath{ mapFile },
-              .preDialogueLines = SplitDialogueText(data.missionPreDialogueStates[i].text),
-				.postDialogueLines = SplitDialogueText(data.missionPostDialogueStates[i].text),
+				.preDialogueLines = SplitDialogueText(draft.preDialogue.text),
+				.postDialogueLines = SplitDialogueText(draft.postDialogue.text),
 			};
 		}
 
@@ -346,14 +298,14 @@ namespace SkyAppInternal
 	{
 		ClampEditorMissionSelection(data);
 		const size_t missionIndex = *data.selectedEditorMissionIndex;
-		String path = data.missionMapPathStates[missionIndex].text.trimmed();
+		String path = data.missionDrafts[missionIndex].mapPath.text.trimmed();
 
 		if (path.isEmpty() || (path == MainSupport::MapDataPath))
 		{
 			FileSystem::CreateDirectories(CampaignMapDirectoryPath);
 			const String campaignKey = data.editingCampaignId.value_or(SkyCampaign::Detail::SanitizeCampaignId(data.campaignNameState.text));
 			path = FileSystem::PathAppend(CampaignMapDirectoryPath, U"{}_mission_{}.toml"_fmt(campaignKey.isEmpty() ? U"campaign" : campaignKey, missionIndex + 1));
-			data.missionMapPathStates[missionIndex].text = path;
+			data.missionDrafts[missionIndex].mapPath.text = path;
 		}
 
 		if (not FileSystem::Exists(path))

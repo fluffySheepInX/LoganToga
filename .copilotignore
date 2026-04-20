@@ -1,0 +1,61 @@
+# GitHub Copilot / AI tools: paths to skip when indexing and generating context.
+# Heavy binary assets, generated fonts, and example/template data add noise to
+# code search results without contributing to source understanding.
+
+# --- Game assets (binary) ---
+SKY/App/model/
+SKY/App/example/
+SKY/App/texture/
+SKY/App/engine/font/
+SKY/App/engine/shader/
+SKY/App/engine/soundfont/
+
+LoganToga2Remake2/App/model/
+LoganToga2Remake2/App/example/
+LoganToga2Remake2/App/texture/
+LoganToga2Remake2/App/engine/
+
+# --- Common binary file types anywhere ---
+*.glb
+*.gltf
+*.obj
+*.mtl
+*.fbx
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tga
+*.dds
+*.ico
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.mp4
+*.webm
+*.ttf
+*.otf
+*.woff
+*.woff2
+*.zstdcmp
+*.zip
+*.7z
+*.rar
+
+# --- Build / IDE outputs ---
+**/bin/
+**/obj/
+**/.vs/
+**/x64/Debug/
+**/x64/Release/
+**/Debug/
+**/Release/
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.exe

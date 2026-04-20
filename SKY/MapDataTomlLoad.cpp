@@ -60,6 +60,7 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 
 	Array<ResourceArea> loadedResourceAreas;
 	size_t skippedResourceAreaCount = 0;
+	Optional<MillDefenseParameters> legacyMillParameters;
 
 	if (HasTomlTableArraySection(path, U"resourceAreas"))
 	{
@@ -137,7 +138,7 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 					mapData.placedModels << PlacedModel{
 						.type = *type,
 						.position = Vec3{ positionValues[0], positionValues[1], positionValues[2] },
-                     .ownerTeam = [&]()
+					 .ownerTeam = [&]()
 						{
 							if (const auto ownerTeamValue = objectTable[U"ownerTeam"].getOpt<String>())
 							{
@@ -149,19 +150,28 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 
 							return MainSupport::UnitTeam::Player;
 						}(),
-                       .yaw = objectTable[U"yaw"].getOpt<double>().value_or(0.0),
+					   .yaw = objectTable[U"yaw"].getOpt<double>().value_or(0.0),
 						.wallLength = SanitizeWallLength(objectTable[U"wallLength"].getOpt<double>().value_or(10.0)),
-                       .roadLength = SanitizeRoadSpan(objectTable[U"roadLength"].getOpt<double>().value_or(8.0)),
+					   .roadLength = SanitizeRoadSpan(objectTable[U"roadLength"].getOpt<double>().value_or(8.0)),
 						.roadWidth = SanitizeRoadSpan(objectTable[U"roadWidth"].getOpt<double>().value_or(4.0)),
-						.attackRange = SanitizeMillAttackRange(objectTable[U"attackRange"].getOpt<double>().value_or(MainSupport::MillDefenseRange)),
-						.attackDamage = SanitizeMillAttackDamage(objectTable[U"attackDamage"].getOpt<double>().value_or(MainSupport::MillDefenseDamage)),
-						.attackInterval = SanitizeMillAttackInterval(objectTable[U"attackInterval"].getOpt<double>().value_or(MainSupport::MillDefenseInterval)),
-                        .attackTargetCount = SanitizeMillAttackTargetCount(objectTable[U"attackTargetCount"].getOpt<int64>().value_or(MainSupport::MillDefenseTargetCount)),
-						.suppressionDuration = SanitizeMillSuppressionDuration(objectTable[U"suppressionDuration"].getOpt<double>().value_or(MainSupport::MillSuppressionDuration)),
-						.suppressionMoveSpeedMultiplier = SanitizeMillSuppressionMoveSpeedMultiplier(objectTable[U"suppressionMoveSpeedMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionMoveSpeedMultiplier)),
-						.suppressionAttackDamageMultiplier = SanitizeMillSuppressionAttackDamageMultiplier(objectTable[U"suppressionAttackDamageMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionAttackDamageMultiplier)),
-						.suppressionAttackIntervalMultiplier = SanitizeMillSuppressionAttackIntervalMultiplier(objectTable[U"suppressionAttackIntervalMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionAttackIntervalMultiplier)),
 					};
+
+					if ((*type == PlaceableModelType::Mill) && (not legacyMillParameters))
+					{
+						if (const auto attackRange = objectTable[U"attackRange"].getOpt<double>())
+						{
+							MillDefenseParameters legacy;
+							legacy.attackRange = SanitizeMillAttackRange(*attackRange);
+							legacy.attackDamage = SanitizeMillAttackDamage(objectTable[U"attackDamage"].getOpt<double>().value_or(MainSupport::MillDefenseDamage));
+							legacy.attackInterval = SanitizeMillAttackInterval(objectTable[U"attackInterval"].getOpt<double>().value_or(MainSupport::MillDefenseInterval));
+							legacy.attackTargetCount = SanitizeMillAttackTargetCount(objectTable[U"attackTargetCount"].getOpt<int64>().value_or(MainSupport::MillDefenseTargetCount));
+							legacy.suppressionDuration = SanitizeMillSuppressionDuration(objectTable[U"suppressionDuration"].getOpt<double>().value_or(MainSupport::MillSuppressionDuration));
+							legacy.suppressionMoveSpeedMultiplier = SanitizeMillSuppressionMoveSpeedMultiplier(objectTable[U"suppressionMoveSpeedMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionMoveSpeedMultiplier));
+							legacy.suppressionAttackDamageMultiplier = SanitizeMillSuppressionAttackDamageMultiplier(objectTable[U"suppressionAttackDamageMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionAttackDamageMultiplier));
+							legacy.suppressionAttackIntervalMultiplier = SanitizeMillSuppressionAttackIntervalMultiplier(objectTable[U"suppressionAttackIntervalMultiplier"].getOpt<double>().value_or(MainSupport::MillSuppressionAttackIntervalMultiplier));
+							legacyMillParameters = legacy;
+						}
+					}
 				}
 				catch (const std::exception&)
 				{
@@ -319,6 +329,53 @@ MapDataLoadResult LoadMapDataWithStatus(FilePathView path)
 	if (0 < skippedResourceAreaCount)
 	{
 		AppendLoadMessage(result.message, U"resourceAreas の一部を読み飛ばし");
+	}
+
+	{
+		MillDefenseParameters& mp = mapData.millParameters;
+		bool hasMillParametersTable = false;
+		try
+		{
+			if (const auto attackRange = toml[U"millParameters"][U"attackRange"].getOpt<double>())
+			{
+				hasMillParametersTable = true;
+				mp.attackRange = SanitizeMillAttackRange(*attackRange);
+			}
+			if (const auto v = toml[U"millParameters"][U"attackDamage"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.attackDamage = SanitizeMillAttackDamage(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"attackInterval"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.attackInterval = SanitizeMillAttackInterval(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"attackTargetCount"].getOpt<int64>())
+			{
+				hasMillParametersTable = true; mp.attackTargetCount = SanitizeMillAttackTargetCount(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"suppressionDuration"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.suppressionDuration = SanitizeMillSuppressionDuration(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"suppressionMoveSpeedMultiplier"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.suppressionMoveSpeedMultiplier = SanitizeMillSuppressionMoveSpeedMultiplier(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"suppressionAttackDamageMultiplier"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.suppressionAttackDamageMultiplier = SanitizeMillSuppressionAttackDamageMultiplier(*v);
+			}
+			if (const auto v = toml[U"millParameters"][U"suppressionAttackIntervalMultiplier"].getOpt<double>())
+			{
+				hasMillParametersTable = true; mp.suppressionAttackIntervalMultiplier = SanitizeMillSuppressionAttackIntervalMultiplier(*v);
+			}
+		}
+		catch (const std::exception&) {}
+
+		if ((not hasMillParametersTable) && legacyMillParameters)
+		{
+			mp = *legacyMillParameters;
+		}
 	}
 
 	result.mapData = mapData;

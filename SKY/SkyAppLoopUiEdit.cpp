@@ -68,13 +68,13 @@ namespace SkyAppFlow
 				return false;
 			}
 
-			state.uiPanelDrag = MakeUiPanelDragState(panel, panelRect, cursorPosition, state.uiLayoutSettings, resizing);
+			state.hud.uiPanelDrag = MakeUiPanelDragState(panel, panelRect, cursorPosition, state.hud.uiLayoutSettings, resizing);
 			return true;
 		}
 
 		void TryBeginDrag(SkyAppState& state, const SkyAppFrameState& frame, const Point& cursorPosition)
 		{
-			if (state.uiPanelDrag || (not MouseL.down()))
+			if (state.hud.uiPanelDrag || (not MouseL.down()))
 			{
 				return;
 			}
@@ -115,21 +115,21 @@ namespace SkyAppFlow
 					UiLayoutPanel::ModelHeight,
 					frame.panels.modelHeight,
 					frame.panels.modelHeight,
-					state.modelHeightEditMode)
+					state.editor.modelHeightEditMode)
 				|| TryBeginPanelInteraction(
 					state,
 					cursorPosition,
 					UiLayoutPanel::TerrainVisualSettings,
 					frame.panels.terrainSettings,
 					SkyAppUiLayout::TerrainVisualPanelDragHandle(frame.panels.terrainSettings),
-					state.terrainVisualSettingsExpanded)
+					state.hud.terrainVisualSettingsExpanded)
                 || TryBeginPanelInteraction(
 					state,
 					cursorPosition,
 					UiLayoutPanel::FogSettings,
 					frame.panels.fogSettings,
 					SkyAppUiLayout::FogSettingsPanelDragHandle(frame.panels.fogSettings),
-					state.fogSettingsExpanded)
+					state.hud.fogSettingsExpanded)
 				|| TryBeginPanelInteraction(
 					state,
 					cursorPosition,
@@ -148,7 +148,7 @@ namespace SkyAppFlow
 
 		void UpdateHoverCursor(const SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			if (not state.uiEditMode)
+			if (not state.hud.uiEditMode)
 			{
 				return;
 			}
@@ -166,85 +166,85 @@ namespace SkyAppFlow
 			const int32 sceneWidth,
 			const int32 sceneHeight)
 		{
-			if ((not state.uiPanelDrag) || (not MouseL.pressed()))
+			if ((not state.hud.uiPanelDrag) || (not MouseL.pressed()))
 			{
 				return false;
 			}
 
-			Point& panelPosition = GetUiPanelPosition(state.uiLayoutSettings, state.uiPanelDrag->panel);
+			Point& panelPosition = GetUiPanelPosition(state.hud.uiLayoutSettings, state.hud.uiPanelDrag->panel);
 			const Point previousPosition = panelPosition;
-			const Point requestedPosition = SkyAppUiLayout::SnapToUiEditGrid(cursorPosition - state.uiPanelDrag->grabOffset);
-           const Point previousMiniMapSize = state.uiLayoutSettings.miniMapSize;
-			const Point previousResourcePanelSize = state.uiLayoutSettings.resourcePanelSize;
-			const bool resourcePanelExpandedForLayout = state.showResourceAdjustUi;
-			const bool resourcePanelShowStoredHeight = state.uiEditMode;
+			const Point requestedPosition = SkyAppUiLayout::SnapToUiEditGrid(cursorPosition - state.hud.uiPanelDrag->grabOffset);
+           const Point previousMiniMapSize = state.hud.uiLayoutSettings.miniMapSize;
+			const Point previousResourcePanelSize = state.hud.uiLayoutSettings.resourcePanelSize;
+			const bool resourcePanelExpandedForLayout = state.hud.showResourceAdjustUi;
+			const bool resourcePanelShowStoredHeight = state.hud.uiEditMode;
 			bool movedThisFrame = false;
 
-			if ((state.uiPanelDrag->panel == UiLayoutPanel::ResourcePanel) && state.uiPanelDrag->resizing)
+			if ((state.hud.uiPanelDrag->panel == UiLayoutPanel::ResourcePanel) && state.hud.uiPanelDrag->resizing)
 			{
-				const Point requestedSize = SkyAppUiLayout::SnapToUiEditGrid(state.uiPanelDrag->startSize + (cursorPosition - state.uiPanelDrag->startCursor));
+				const Point requestedSize = SkyAppUiLayout::SnapToUiEditGrid(state.hud.uiPanelDrag->startSize + (cursorPosition - state.hud.uiPanelDrag->startCursor));
 				const Point clampedSize = SkyAppUiLayout::ClampResourcePanelSize(
 					requestedSize,
-					state.uiLayoutSettings.resourcePanelPosition,
+					state.hud.uiLayoutSettings.resourcePanelPosition,
 					sceneWidth,
 					sceneHeight,
 					resourcePanelExpandedForLayout);
-				state.uiLayoutSettings.resourcePanelSize = clampedSize;
-				movedThisFrame = (clampedSize != state.uiPanelDrag->startSize);
+				state.hud.uiLayoutSettings.resourcePanelSize = clampedSize;
+				movedThisFrame = (clampedSize != state.hud.uiPanelDrag->startSize);
 			}
-			else if (state.uiPanelDrag->panel == UiLayoutPanel::MiniMap)
+			else if (state.hud.uiPanelDrag->panel == UiLayoutPanel::MiniMap)
 			{
-               if (state.uiPanelDrag->resizing)
+               if (state.hud.uiPanelDrag->resizing)
 				{
-					const Point requestedSize = SkyAppUiLayout::SnapToUiEditGrid(state.uiPanelDrag->startSize + (cursorPosition - state.uiPanelDrag->startCursor));
+					const Point requestedSize = SkyAppUiLayout::SnapToUiEditGrid(state.hud.uiPanelDrag->startSize + (cursorPosition - state.hud.uiPanelDrag->startCursor));
 					const Point clampedSize = SkyAppUiLayout::ClampMiniMapSize(
 						requestedSize,
-						state.uiLayoutSettings.miniMapPosition,
+						state.hud.uiLayoutSettings.miniMapPosition,
 						sceneWidth,
 						sceneHeight,
-						state.miniMapExpanded);
-					state.uiLayoutSettings.miniMapSize = clampedSize;
-					movedThisFrame = (clampedSize != state.uiPanelDrag->startSize);
+						state.hud.miniMapExpanded);
+					state.hud.uiLayoutSettings.miniMapSize = clampedSize;
+					movedThisFrame = (clampedSize != state.hud.uiPanelDrag->startSize);
 				}
 				else
 				{
-					const Rect rect = SkyAppUiLayout::MiniMap(sceneWidth, sceneHeight, requestedPosition, state.uiLayoutSettings.miniMapSize, state.miniMapExpanded);
+					const Rect rect = SkyAppUiLayout::MiniMap(sceneWidth, sceneHeight, requestedPosition, state.hud.uiLayoutSettings.miniMapSize, state.hud.miniMapExpanded);
 					panelPosition = Point{ rect.x, rect.y };
-					movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+					movedThisFrame = (panelPosition != state.hud.uiPanelDrag->startPosition);
 				}
 			}
-			else if (state.uiPanelDrag->panel == UiLayoutPanel::ModelHeight)
+			else if (state.hud.uiPanelDrag->panel == UiLayoutPanel::ModelHeight)
 			{
 				const Rect rect = SkyAppUiLayout::ModelHeight(sceneWidth, sceneHeight, requestedPosition);
 				panelPosition = Point{ rect.x, rect.y };
-				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				movedThisFrame = (panelPosition != state.hud.uiPanelDrag->startPosition);
 			}
-			else if (state.uiPanelDrag->panel == UiLayoutPanel::TerrainVisualSettings)
+			else if (state.hud.uiPanelDrag->panel == UiLayoutPanel::TerrainVisualSettings)
 			{
 				const Rect rect = SkyAppUiLayout::TerrainVisualSettings(sceneWidth, sceneHeight, requestedPosition);
 				panelPosition = Point{ rect.x, rect.y };
-				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				movedThisFrame = (panelPosition != state.hud.uiPanelDrag->startPosition);
 			}
-         else if (state.uiPanelDrag->panel == UiLayoutPanel::FogSettings)
+         else if (state.hud.uiPanelDrag->panel == UiLayoutPanel::FogSettings)
 			{
 				const Rect rect = SkyAppUiLayout::FogSettings(sceneWidth, sceneHeight, requestedPosition);
 				panelPosition = Point{ rect.x, rect.y };
-				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				movedThisFrame = (panelPosition != state.hud.uiPanelDrag->startPosition);
 			}
-			else if (state.uiPanelDrag->panel == UiLayoutPanel::UnitEditor)
+			else if (state.hud.uiPanelDrag->panel == UiLayoutPanel::UnitEditor)
 			{
-				const Point delta = (requestedPosition - state.uiPanelDrag->startPosition);
-				const Rect startDetailRect = SkyAppUiLayout::UnitEditor(sceneWidth, sceneHeight, state.uiPanelDrag->layoutAtDragStart.unitEditorPosition);
-				const Rect startListRect = SkyAppUiLayout::UnitEditorList(sceneWidth, sceneHeight, state.uiPanelDrag->layoutAtDragStart.unitEditorListPosition);
+				const Point delta = (requestedPosition - state.hud.uiPanelDrag->startPosition);
+				const Rect startDetailRect = SkyAppUiLayout::UnitEditor(sceneWidth, sceneHeight, state.hud.uiPanelDrag->layoutAtDragStart.unitEditorPosition);
+				const Rect startListRect = SkyAppUiLayout::UnitEditorList(sceneWidth, sceneHeight, state.hud.uiPanelDrag->layoutAtDragStart.unitEditorListPosition);
 				const int32 clampedDeltaX = Clamp(delta.x,
 					Max(-startDetailRect.x, -startListRect.x),
 					Min(sceneWidth - startDetailRect.rightX(), sceneWidth - startListRect.rightX()));
 				const int32 clampedDeltaY = Clamp(delta.y,
 					Max(-startDetailRect.y, -startListRect.y),
 					Min(sceneHeight - startDetailRect.bottomY(), sceneHeight - startListRect.bottomY()));
-				state.uiLayoutSettings.unitEditorPosition = (state.uiPanelDrag->layoutAtDragStart.unitEditorPosition + Point{ clampedDeltaX, clampedDeltaY });
-				state.uiLayoutSettings.unitEditorListPosition = (state.uiPanelDrag->layoutAtDragStart.unitEditorListPosition + Point{ clampedDeltaX, clampedDeltaY });
-				panelPosition = state.uiLayoutSettings.unitEditorPosition;
+				state.hud.uiLayoutSettings.unitEditorPosition = (state.hud.uiPanelDrag->layoutAtDragStart.unitEditorPosition + Point{ clampedDeltaX, clampedDeltaY });
+				state.hud.uiLayoutSettings.unitEditorListPosition = (state.hud.uiPanelDrag->layoutAtDragStart.unitEditorListPosition + Point{ clampedDeltaX, clampedDeltaY });
+				panelPosition = state.hud.uiLayoutSettings.unitEditorPosition;
 				movedThisFrame = ((clampedDeltaX != 0) || (clampedDeltaY != 0));
 			}
 			else
@@ -253,34 +253,34 @@ namespace SkyAppFlow
 					sceneWidth,
 					sceneHeight,
 					requestedPosition,
-					state.uiLayoutSettings.resourcePanelSize,
+					state.hud.uiLayoutSettings.resourcePanelSize,
 					resourcePanelExpandedForLayout,
 					resourcePanelShowStoredHeight);
 				panelPosition = Point{ rect.x, rect.y };
-				movedThisFrame = (panelPosition != state.uiPanelDrag->startPosition);
+				movedThisFrame = (panelPosition != state.hud.uiPanelDrag->startPosition);
 			}
 
-			state.uiPanelDrag->moved = state.uiPanelDrag->moved || movedThisFrame;
+			state.hud.uiPanelDrag->moved = state.hud.uiPanelDrag->moved || movedThisFrame;
 			return (panelPosition != previousPosition)
-               || (state.uiLayoutSettings.miniMapSize != previousMiniMapSize)
-				|| (state.uiLayoutSettings.resourcePanelSize != previousResourcePanelSize)
-				|| ((state.uiPanelDrag->panel == UiLayoutPanel::UnitEditor)
-					&& (state.uiLayoutSettings.unitEditorListPosition != state.uiPanelDrag->layoutAtDragStart.unitEditorListPosition));
+               || (state.hud.uiLayoutSettings.miniMapSize != previousMiniMapSize)
+				|| (state.hud.uiLayoutSettings.resourcePanelSize != previousResourcePanelSize)
+				|| ((state.hud.uiPanelDrag->panel == UiLayoutPanel::UnitEditor)
+					&& (state.hud.uiLayoutSettings.unitEditorListPosition != state.hud.uiPanelDrag->layoutAtDragStart.unitEditorListPosition));
 		}
 
 		void EndDrag(SkyAppState& state)
 		{
-			if ((not state.uiPanelDrag) || (not MouseL.up()))
+			if ((not state.hud.uiPanelDrag) || (not MouseL.up()))
 			{
 				return;
 			}
 
-			const bool moved = state.uiPanelDrag->moved;
-			state.uiPanelDrag.reset();
+			const bool moved = state.hud.uiPanelDrag->moved;
+			state.hud.uiPanelDrag.reset();
 
 			if (moved)
 			{
-				state.uiLayoutMessage.show(SaveUiLayoutSettings(state.uiLayoutSettings)
+				state.messages[SkyAppSupport::MessageChannel::UiLayout].show(SaveUiLayoutSettings(state.hud.uiLayoutSettings)
 					? U"Saved: {}"_fmt(UiLayoutSettingsPath)
 					: U"UI layout save failed");
 			}
@@ -288,9 +288,9 @@ namespace SkyAppFlow
 
 		[[nodiscard]] bool Handle(SkyAppState& state, SkyAppFrameState& frame)
 		{
-			if ((not state.uiEditMode) || frame.showEscMenu)
+			if ((not state.hud.uiEditMode) || frame.showEscMenu)
 			{
-				state.uiPanelDrag.reset();
+				state.hud.uiPanelDrag.reset();
 				return false;
 			}
 

@@ -16,10 +16,10 @@ namespace SkyAppInternal
               , m_textFont{ 18 }
 				, m_buttonFont{ 22, Typeface::Medium }
 				, m_missionIndex{ getData().selectedEditorMissionIndex.value_or(0) }
-				, m_originalPre{ getData().missionPreDialogueStates[m_missionIndex] }
-				, m_originalPost{ getData().missionPostDialogueStates[m_missionIndex] }
-               , m_preText{ getData().missionPreDialogueStates[m_missionIndex].text }
-				, m_postText{ getData().missionPostDialogueStates[m_missionIndex].text }
+				, m_originalPre{ getData().missionDrafts[m_missionIndex].preDialogue }
+				, m_originalPost{ getData().missionDrafts[m_missionIndex].postDialogue }
+			   , m_preText{ getData().missionDrafts[m_missionIndex].preDialogue.text }
+				, m_postText{ getData().missionDrafts[m_missionIndex].postDialogue.text }
 				, m_preCursorIndex{ m_preText.size() }
 				, m_postCursorIndex{ m_postText.size() }
 			{
@@ -45,7 +45,7 @@ namespace SkyAppInternal
 				const int32 postMaxScrollLine = Max(0, static_cast<int32>(postWrappedLines.size()) - postVisibleLineCount);
 
                 m_titleFont(U"Mission Dialogue").draw(panel.pos.movedBy(28, 24), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
-				m_labelFont(U"{}"_fmt(data.missionNameStates[m_missionIndex].text.isEmpty() ? U"Mission" : data.missionNameStates[m_missionIndex].text)).draw(panel.pos.movedBy(30, 68), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
+				m_labelFont(U"{}"_fmt(data.missionDrafts[m_missionIndex].name.text.isEmpty() ? U"Mission" : data.missionDrafts[m_missionIndex].name.text)).draw(panel.pos.movedBy(30, 68), SkyAppSupport::UiInternal::EditorTextOnDarkSecondaryColor());
 				m_labelFont(U"Custom multiline editor / Enter: newline / Wheel: scroll").draw(panel.pos.movedBy(30, 96), SkyAppSupport::UiInternal::EditorTextOnDarkAccentColor());
 
                 m_labelFont(U"Pre Dialogue").draw(panel.pos.movedBy(30, 148), SkyAppSupport::UiInternal::EditorTextOnDarkPrimaryColor());
@@ -84,16 +84,16 @@ namespace SkyAppInternal
 
 				if (IsRectButtonClicked(GetApplyButton()))
 				{
-                  data.missionPreDialogueStates[m_missionIndex].text = m_preText;
-					data.missionPostDialogueStates[m_missionIndex].text = m_postText;
+				  data.missionDrafts[m_missionIndex].preDialogue.text = m_preText;
+					data.missionDrafts[m_missionIndex].postDialogue.text = m_postText;
 					changeScene(U"CampaignEditor", 0);
 					return;
 				}
 
 				if (IsRectButtonClicked(GetCancelButton()) || KeyEscape.down())
 				{
-					data.missionPreDialogueStates[m_missionIndex] = m_originalPre;
-					data.missionPostDialogueStates[m_missionIndex] = m_originalPost;
+					data.missionDrafts[m_missionIndex].preDialogue = m_originalPre;
+					data.missionDrafts[m_missionIndex].postDialogue = m_originalPost;
 					changeScene(U"CampaignEditor", 0);
 					return;
 				}

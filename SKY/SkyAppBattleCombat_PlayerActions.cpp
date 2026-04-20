@@ -1,4 +1,4 @@
-ï»¿# include "SkyAppBattleCombatInternal.hpp"
+# include "SkyAppBattleCombatInternal.hpp"
 # include "MainScene.hpp"
 
 using namespace MainSupport;
@@ -18,15 +18,15 @@ namespace SkyAppFlow
 
         [[nodiscard]] SpawnedSapper* TryGetActionablePlayerSapper(SkyAppState& state, const size_t selectedSapperIndex)
         {
-            if (selectedSapperIndex >= state.spawnedSappers.size())
+            if (selectedSapperIndex >= state.battle.spawnedSappers.size())
             {
                 return nullptr;
             }
 
-            SpawnedSapper& sapper = state.spawnedSappers[selectedSapperIndex];
+            SpawnedSapper& sapper = state.battle.spawnedSappers[selectedSapperIndex];
             if (sapper.hitPoints <= 0.0)
             {
-                state.blacksmithMenuMessage.show(U"å…µãŒè¡Œå‹•ä¸èƒ½");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"•º‚ªs“®•s”\");
                 return nullptr;
             }
 
@@ -45,7 +45,7 @@ namespace SkyAppFlow
         {
             const double spacingRadiusSq = Square(MillBuildSpacingRadius);
 
-            for (const PlacedModel& placedModel : state.mapData.placedModels)
+            for (const PlacedModel& placedModel : state.world.mapData.placedModels)
             {
                 if (buildPosition.distanceFromSq(placedModel.position) < spacingRadiusSq)
                 {
@@ -53,13 +53,13 @@ namespace SkyAppFlow
                 }
             }
 
-            if (buildPosition.distanceFromSq(state.mapData.playerBasePosition) < Square(MillBuildBaseClearance)
-                || buildPosition.distanceFromSq(state.mapData.enemyBasePosition) < Square(MillBuildBaseClearance))
+            if (buildPosition.distanceFromSq(state.world.mapData.playerBasePosition) < Square(MillBuildBaseClearance)
+                || buildPosition.distanceFromSq(state.world.mapData.enemyBasePosition) < Square(MillBuildBaseClearance))
             {
                 return false;
             }
 
-            for (const ResourceArea& area : state.mapData.resourceAreas)
+            for (const ResourceArea& area : state.world.mapData.resourceAreas)
             {
                 const double blockedRadius = Max(0.5, area.radius + MillBuildResourcePadding);
                 if (buildPosition.distanceFromSq(area.position) < Square(blockedRadius))
@@ -81,38 +81,38 @@ namespace SkyAppFlow
 
             if (sapper->unitType != SapperUnitType::Infantry)
             {
-                state.blacksmithMenuMessage.show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
                 return false;
             }
 
-            const BuildMillSkillParameters& skillParameters = GetBuildMillSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const BuildMillSkillParameters& skillParameters = GetBuildMillSkillParameters(state.editor.unitEditorSettings, sapper->team, sapper->unitType);
             const double manaCost = Clamp(skillParameters.manaCost, 0.0, 200.0);
             const double gunpowderCost = Clamp(skillParameters.gunpowderCost, 0.0, 200.0);
             const double forwardOffset = Clamp(skillParameters.forwardOffset, 1.0, 10.0);
-            if (state.playerResources.mana < manaCost)
+            if (state.battle.playerResources.mana < manaCost)
             {
-                state.blacksmithMenuMessage.show(U"é­”åŠ›ä¸è¶³");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"–‚—Í•s‘«");
                 return false;
             }
 
-            if (state.playerResources.gunpowder < gunpowderCost)
+            if (state.battle.playerResources.gunpowder < gunpowderCost)
             {
-                state.blacksmithMenuMessage.show(U"ç«è–¬ä¸è¶³");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‰Î–ò•s‘«");
                 return false;
             }
 
             const Vec3 buildPosition = GetInfantryMillBuildPosition(*sapper, forwardOffset);
             if (not CanBuildMillAt(state, buildPosition))
             {
-                state.blacksmithMenuMessage.show(U"ãã“ã«ã¯ Mill ã‚’å»ºã¦ã‚‰ã‚Œãªã„");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‚»‚±‚É‚Í Mill ‚ğŒš‚Ä‚ç‚ê‚È‚¢");
                 return false;
             }
 
-            state.playerResources.mana -= manaCost;
-            state.playerResources.gunpowder -= gunpowderCost;
-            state.mapData.placedModels << PlacedModel{ .type = PlaceableModelType::Mill, .position = buildPosition, .ownerTeam = UnitTeam::Player, .yaw = GetSpawnedSapperYaw(*sapper) };
-            state.selectedMillIndex = (state.mapData.placedModels.size() - 1);
-            state.blacksmithMenuMessage.show(U"{}ãŒ Mill ã‚’å»ºç¯‰"_fmt(GetUnitDisplayName(sapper->unitType)));
+            state.battle.playerResources.mana -= manaCost;
+            state.battle.playerResources.gunpowder -= gunpowderCost;
+            state.world.mapData.placedModels << PlacedModel{ .type = PlaceableModelType::Mill, .position = buildPosition, .ownerTeam = UnitTeam::Player, .yaw = GetSpawnedSapperYaw(*sapper) };
+            state.battle.selectedMillIndex = (state.world.mapData.placedModels.size() - 1);
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"{}‚ª Mill ‚ğŒš’z"_fmt(GetUnitDisplayName(sapper->unitType)));
             return true;
         }
 
@@ -126,30 +126,30 @@ namespace SkyAppFlow
 
             if (sapper->unitType != SapperUnitType::SugoiCar)
             {
-                state.blacksmithMenuMessage.show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
                 return false;
             }
 
             if (Scene::Time() < sapper->scoutingSkillUntil)
             {
-                state.blacksmithMenuMessage.show(U"åµå¯Ÿã‚¹ã‚­ãƒ«ã¯å±•é–‹ä¸­");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"’ã@ƒXƒLƒ‹‚Í“WŠJ’†");
                 return false;
             }
 
-            const ScoutSkillParameters& skillParameters = GetScoutSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const ScoutSkillParameters& skillParameters = GetScoutSkillParameters(state.editor.unitEditorSettings, sapper->team, sapper->unitType);
             const double gunpowderCost = Clamp(skillParameters.gunpowderCost, 0.0, 200.0);
             const double durationSeconds = Clamp(skillParameters.durationSeconds, 0.1, 30.0);
             const double visionMultiplier = Clamp(skillParameters.visionMultiplier, 1.0, 4.0);
-            if (state.playerResources.gunpowder < gunpowderCost)
+            if (state.battle.playerResources.gunpowder < gunpowderCost)
             {
-                state.blacksmithMenuMessage.show(U"ç«è–¬ä¸è¶³");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‰Î–ò•s‘«");
                 return false;
             }
 
-            state.playerResources.gunpowder -= gunpowderCost;
+            state.battle.playerResources.gunpowder -= gunpowderCost;
             sapper->scoutingSkillUntil = (Scene::Time() + durationSeconds);
             sapper->scoutingSkillVisionMultiplier = visionMultiplier;
-            state.blacksmithMenuMessage.show(U"{}ãŒåµå¯Ÿã‚¹ã‚­ãƒ«ã‚’ä½¿ç”¨"_fmt(GetUnitDisplayName(sapper->unitType)));
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"{}‚ª’ã@ƒXƒLƒ‹‚ğg—p"_fmt(GetUnitDisplayName(sapper->unitType)));
             return true;
         }
 
@@ -163,15 +163,15 @@ namespace SkyAppFlow
 
             if (sapper->unitType != SapperUnitType::ArcaneInfantry)
             {
-                state.blacksmithMenuMessage.show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(GetUnitUniqueSkillDeniedMessage(sapper->unitType));
                 return false;
             }
 
-            const HealSkillParameters& skillParameters = GetHealSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+            const HealSkillParameters& skillParameters = GetHealSkillParameters(state.editor.unitEditorSettings, sapper->team, sapper->unitType);
             const double manaCost = Clamp(skillParameters.manaCost, 0.0, 200.0);
-            if (state.playerResources.mana < manaCost)
+            if (state.battle.playerResources.mana < manaCost)
             {
-                state.blacksmithMenuMessage.show(U"é­”åŠ›ä¸è¶³");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"–‚—Í•s‘«");
                 return false;
             }
 
@@ -181,7 +181,7 @@ namespace SkyAppFlow
             const double healAmount = Clamp(skillParameters.amount, 1.0, 200.0);
             int32 healedCount = 0;
 
-            for (auto& ally : state.spawnedSappers)
+            for (auto& ally : state.battle.spawnedSappers)
             {
                 if (not IsSpawnedSapperCombatActive(ally))
                 {
@@ -204,11 +204,11 @@ namespace SkyAppFlow
 
             if (healedCount <= 0)
             {
-                state.blacksmithMenuMessage.show(U"å›å¾©å¯¾è±¡ãŒã„ãªã„");
+                state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‰ñ•œ‘ÎÛ‚ª‚¢‚È‚¢");
                 return false;
             }
 
-            state.playerResources.mana -= manaCost;
+            state.battle.playerResources.mana -= manaCost;
             sapper->lastAttackAt = Scene::Time();
             EmitAttackEffect(state,
                 AttackEffectType::Explosion,
@@ -218,7 +218,7 @@ namespace SkyAppFlow
                 ArcaneHealEffectLifetime,
                 ArcaneHealEffectThickness,
                 healRadius);
-            state.blacksmithMenuMessage.show(U"{}ãŒ {} ä½“ã‚’å›å¾©"_fmt(GetUnitDisplayName(sapper->unitType), healedCount));
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"{}‚ª {} ‘Ì‚ğ‰ñ•œ"_fmt(GetUnitDisplayName(sapper->unitType), healedCount));
             return true;
         }
     }
@@ -256,27 +256,27 @@ namespace SkyAppFlow
 
         if (not CanUnitUseExplosionSkill(sapper->unitType))
         {
-            state.blacksmithMenuMessage.show(GetExplosionSkillDeniedMessage(sapper->unitType));
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(GetExplosionSkillDeniedMessage(sapper->unitType));
             return false;
         }
 
-        const ExplosionSkillParameters& explosionSkill = GetExplosionSkillParameters(state.unitEditorSettings, sapper->team, sapper->unitType);
+        const ExplosionSkillParameters& explosionSkill = GetExplosionSkillParameters(state.editor.unitEditorSettings, sapper->team, sapper->unitType);
         const ExplosionSkillRuntimeParameters runtimeParameters = GetExplosionSkillRuntimeParameters(explosionSkill);
 
-        if (state.playerResources.gunpowder < runtimeParameters.gunpowderCost)
+        if (state.battle.playerResources.gunpowder < runtimeParameters.gunpowderCost)
         {
-            state.blacksmithMenuMessage.show(U"ç«è–¬ä¸è¶³");
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‰Î–ò•s‘«");
             return false;
         }
 
         if (Scene::Time() < sapper->explosionSkillCooldownUntil)
         {
-            state.blacksmithMenuMessage.show(U"çˆ†ç ´ã‚¹ã‚­ãƒ«ã¯æº–å‚™ä¸­");
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"”š”jƒXƒLƒ‹‚Í€”õ’†");
             return false;
         }
 
         const Vec3 explosionCenter = GetSpawnedSapperBasePosition(*sapper);
-        state.playerResources.gunpowder -= runtimeParameters.gunpowderCost;
+        state.battle.playerResources.gunpowder -= runtimeParameters.gunpowderCost;
         const double currentTime = Scene::Time();
         sapper->explosionSkillCooldownUntil = (currentTime + runtimeParameters.cooldownSeconds);
         sapper->lastAttackAt = currentTime;
@@ -290,10 +290,10 @@ namespace SkyAppFlow
             runtimeParameters.effectThickness,
             runtimeParameters.radius);
 
-        ApplyExplosionDamage(state.enemySappers, explosionCenter, runtimeParameters.radius, runtimeParameters.unitDamage);
+        ApplyExplosionDamage(state.battle.enemySappers, explosionCenter, runtimeParameters.radius, runtimeParameters.unitDamage);
         ApplyExplosionDamageToEnemyBase(state, *sapper, runtimeParameters.radius, runtimeParameters.baseDamage);
 
-        state.blacksmithMenuMessage.show(U"å…µãŒçˆ†ç ´ã‚¹ã‚­ãƒ«ã‚’ä½¿ç”¨");
+        state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"•º‚ª”š”jƒXƒLƒ‹‚ğg—p");
         return true;
     }
 
@@ -307,13 +307,13 @@ namespace SkyAppFlow
 
         if (IsSapperRetreatOrdered(*sapper))
         {
-            state.blacksmithMenuMessage.show(U"ã™ã§ã«æ’¤é€€ä¸­");
+            state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"‚·‚Å‚É“P‘Ş’†");
             return false;
         }
 
-        OrderSapperRetreat(*sapper, state.mapData.sapperRallyPoint);
-        state.blacksmithMenuMessage.show(U"æ’¤é€€å‘½ä»¤: 3ç§’å¾Œã«é›¢è„±");
-        state.selectedSapperIndices.clear();
+        OrderSapperRetreat(*sapper, state.world.mapData.sapperRallyPoint);
+        state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu].show(U"“P‘Ş–½—ß: 3•bŒã‚É—£’E");
+        state.battle.selectedSapperIndices.clear();
         return true;
     }
 }

@@ -23,6 +23,34 @@ namespace SkyAppUiLayout
 				Clamp(position.y, 0, Max(0, (sceneHeight - panelHeight)))
 			};
 		}
+
+		// Generic fixed-size draggable panel: clamps position to scene
+		// bounds and returns Rect with the requested width/height.
+		// Used by ModelHeight / TerrainVisualSettings / FogSettings /
+		// UnitEditorList etc.
+		[[nodiscard]] inline Rect MakePanelRect(const int32 sceneWidth, const int32 sceneHeight, const Point& position, const int32 panelWidth, const int32 panelHeight)
+		{
+			const Point clamped = ClampPanelPosition(position, panelWidth, panelHeight, sceneWidth, sceneHeight);
+			return Rect{ clamped.x, clamped.y, panelWidth, panelHeight };
+		}
+
+		// Generic helpers for "position relative to a panel's top-left".
+		[[nodiscard]] inline Vec2 PanelOffsetVec(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
+		{
+			return Vec2{ static_cast<double>(panelRect.x + xOffset), static_cast<double>(panelRect.y + yOffset) };
+		}
+
+		[[nodiscard]] inline Rect PanelOffsetRect(const Rect& panelRect, const int32 xOffset, const int32 yOffset, const int32 width, const int32 height)
+		{
+			return Rect{ (panelRect.x + xOffset), (panelRect.y + yOffset), width, height };
+		}
+
+		// Standard top-right drag-handle area (shared by terrain visual /
+		// fog settings panels).
+		[[nodiscard]] inline Rect PanelTopRightDragHandle(const Rect& panelRect, const int32 rightInset = 88, const int32 topInset = 8, const int32 width = 72, const int32 height = 24)
+		{
+			return Rect{ (panelRect.rightX() - rightInset), (panelRect.y + topInset), width, height };
+		}
 	}
 
 	inline const int32 UiEditGridCellSize = GetDefaultUiLayoutProfile().shared.uiEditGridCellSize;

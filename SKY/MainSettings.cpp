@@ -1,4 +1,7 @@
 ﻿# include "MainSettingsInternal.hpp"
+# include "SettingsRegistry.hpp"
+# include "SettingsSchemas.hpp"
+# include "UnitParameterSchemas.hpp"
 
 namespace MainSupport::SettingsDetail
 {
@@ -124,6 +127,24 @@ namespace MainSupport::SettingsDetail
 			value = *loaded;
 		}
 	}
+    namespace
+    {
+        // Generic adapter: walks a per-struct schema (declared in
+        // UnitParameterSchemas.hpp) with either a Load or Save visitor,
+        // producing the same TOML output as the previous hand-written
+        // Load*Group / Save*Group helpers.
+        template <class Schema, class Params>
+        void LoadGroup(const TOMLReader& toml, StringView prefix, Params& params, Schema schema)
+        {
+            schema(MainSupport::TomlSchema::LoadVisitor{ toml, prefix }, params);
+        }
+
+        template <class Schema, class Params>
+        void SaveGroup(TextWriter& writer, StringView prefix, const Params& params, Schema schema)
+        {
+            schema(MainSupport::TomlSchema::SaveVisitor{ writer, prefix }, params);
+        }
+    }
 
 	UnitAiRole ParseUnitAiRole(StringView value)
 	{
@@ -158,202 +179,139 @@ namespace MainSupport::SettingsDetail
 
 	void LoadUnitParameterGroup(const TOMLReader& toml, StringView prefix, UnitParameters& parameters)
 	{
-		if (const auto movementType = toml[(String{ prefix } + U"MovementType")].getOpt<String>())
-		{
-			parameters.movementType = ((*movementType == U"Tank") ? MovementType::Tank : MovementType::Infantry);
-		}
-
-		if (const auto aiRole = toml[(String{ prefix } + U"AiRole")].getOpt<String>())
-		{
-			parameters.aiRole = ParseUnitAiRole(*aiRole);
-		}
-
-		if (const auto footprintType = toml[(String{ prefix } + U"FootprintType")].getOpt<String>())
-		{
-			parameters.footprintType = ((*footprintType == U"Capsule") ? UnitFootprintType::Capsule : UnitFootprintType::Circle);
-		}
-
-		LoadUnitParameterValue(toml, (String{ prefix } + U"MaxHitPoints"), parameters.maxHitPoints);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"MoveSpeed"), parameters.moveSpeed);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackRange"), parameters.attackRange);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"StopDistance"), parameters.stopDistance);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackDamage"), parameters.attackDamage);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"AttackInterval"), parameters.attackInterval);
-        LoadUnitParameterValue(toml, (String{ prefix } + U"VisionRange"), parameters.visionRange);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"ManaCost"), parameters.manaCost);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintRadius"), parameters.footprintRadius);
-		LoadUnitParameterValue(toml, (String{ prefix } + U"FootprintHalfLength"), parameters.footprintHalfLength);
+		LoadGroup(toml, prefix, parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitUnitParameters(v, p);
+		});
 	}
 
 	void SaveUnitParameterGroup(TextWriter& writer, StringView prefix, const UnitParameters& parameters)
 	{
-		writer.writeln(U"{}MovementType = \"{}\""_fmt(prefix, (parameters.movementType == MovementType::Tank) ? U"Tank" : U"Infantry"));
-		writer.writeln(U"{}AiRole = \"{}\""_fmt(prefix, ToTomlUnitAiRole(parameters.aiRole)));
-		writer.writeln(U"{}MaxHitPoints = {:.3f}"_fmt(prefix, parameters.maxHitPoints));
-		writer.writeln(U"{}MoveSpeed = {:.3f}"_fmt(prefix, parameters.moveSpeed));
-		writer.writeln(U"{}AttackRange = {:.3f}"_fmt(prefix, parameters.attackRange));
-		writer.writeln(U"{}StopDistance = {:.3f}"_fmt(prefix, parameters.stopDistance));
-		writer.writeln(U"{}AttackDamage = {:.3f}"_fmt(prefix, parameters.attackDamage));
-		writer.writeln(U"{}AttackInterval = {:.3f}"_fmt(prefix, parameters.attackInterval));
-        writer.writeln(U"{}VisionRange = {:.3f}"_fmt(prefix, parameters.visionRange));
-		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(prefix, parameters.manaCost));
-		writer.writeln(U"{}FootprintType = \"{}\""_fmt(prefix, (parameters.footprintType == UnitFootprintType::Capsule) ? U"Capsule" : U"Circle"));
-		writer.writeln(U"{}FootprintRadius = {:.3f}"_fmt(prefix, parameters.footprintRadius));
-		writer.writeln(U"{}FootprintHalfLength = {:.3f}"_fmt(prefix, parameters.footprintHalfLength));
+		SaveGroup(writer, prefix, parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitUnitParameters(v, p);
+		});
 	}
 
 	void LoadExplosionSkillParameterGroup(const TOMLReader& toml, StringView prefix, ExplosionSkillParameters& parameters)
 	{
-		const String explosionPrefix = (String{ prefix } + U"Explosion");
-		LoadUnitParameterValue(toml, (explosionPrefix + U"Radius"), parameters.radius);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"UnitDamage"), parameters.unitDamage);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"BaseDamage"), parameters.baseDamage);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"CooldownSeconds"), parameters.cooldownSeconds);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"GunpowderCost"), parameters.gunpowderCost);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectLifetime"), parameters.effectLifetime);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectThickness"), parameters.effectThickness);
-		LoadUnitParameterValue(toml, (explosionPrefix + U"EffectOffsetY"), parameters.effectOffsetY);
-		parameters.effectColor = ReadTomlColorF(toml, (explosionPrefix + U"EffectColor"), parameters.effectColor);
+		LoadGroup(toml, (String{ prefix } + U"Explosion"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitExplosionSkillParameters(v, p);
+		});
 	}
 
 	void SaveExplosionSkillParameterGroup(TextWriter& writer, StringView prefix, const ExplosionSkillParameters& parameters)
 	{
-		const String explosionPrefix = (String{ prefix } + U"Explosion");
-		writer.writeln(U"{}Radius = {:.3f}"_fmt(explosionPrefix, parameters.radius));
-		writer.writeln(U"{}UnitDamage = {:.3f}"_fmt(explosionPrefix, parameters.unitDamage));
-		writer.writeln(U"{}BaseDamage = {:.3f}"_fmt(explosionPrefix, parameters.baseDamage));
-		writer.writeln(U"{}CooldownSeconds = {:.3f}"_fmt(explosionPrefix, parameters.cooldownSeconds));
-		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(explosionPrefix, parameters.gunpowderCost));
-		writer.writeln(U"{}EffectLifetime = {:.3f}"_fmt(explosionPrefix, parameters.effectLifetime));
-		writer.writeln(U"{}EffectThickness = {:.3f}"_fmt(explosionPrefix, parameters.effectThickness));
-		writer.writeln(U"{}EffectOffsetY = {:.3f}"_fmt(explosionPrefix, parameters.effectOffsetY));
-		WriteTomlColorF(writer, (explosionPrefix + U"EffectColor"), parameters.effectColor);
+		SaveGroup(writer, (String{ prefix } + U"Explosion"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitExplosionSkillParameters(v, p);
+		});
 	}
 
 	void LoadBuildMillSkillParameterGroup(const TOMLReader& toml, StringView prefix, BuildMillSkillParameters& parameters)
 	{
-		const String buildPrefix = (String{ prefix } + U"BuildMill");
-		LoadUnitParameterValue(toml, (buildPrefix + U"ManaCost"), parameters.manaCost);
-		LoadUnitParameterValue(toml, (buildPrefix + U"GunpowderCost"), parameters.gunpowderCost);
-		LoadUnitParameterValue(toml, (buildPrefix + U"ForwardOffset"), parameters.forwardOffset);
+		LoadGroup(toml, (String{ prefix } + U"BuildMill"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitBuildMillSkillParameters(v, p);
+		});
 	}
 
 	void SaveBuildMillSkillParameterGroup(TextWriter& writer, StringView prefix, const BuildMillSkillParameters& parameters)
 	{
-		const String buildPrefix = (String{ prefix } + U"BuildMill");
-		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(buildPrefix, parameters.manaCost));
-		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(buildPrefix, parameters.gunpowderCost));
-		writer.writeln(U"{}ForwardOffset = {:.3f}"_fmt(buildPrefix, parameters.forwardOffset));
+		SaveGroup(writer, (String{ prefix } + U"BuildMill"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitBuildMillSkillParameters(v, p);
+		});
 	}
 
 	void LoadHealSkillParameterGroup(const TOMLReader& toml, StringView prefix, HealSkillParameters& parameters)
 	{
-		const String healPrefix = (String{ prefix } + U"Heal");
-		LoadUnitParameterValue(toml, (healPrefix + U"ManaCost"), parameters.manaCost);
-		LoadUnitParameterValue(toml, (healPrefix + U"Radius"), parameters.radius);
-		LoadUnitParameterValue(toml, (healPrefix + U"Amount"), parameters.amount);
+		LoadGroup(toml, (String{ prefix } + U"Heal"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitHealSkillParameters(v, p);
+		});
 	}
 
 	void SaveHealSkillParameterGroup(TextWriter& writer, StringView prefix, const HealSkillParameters& parameters)
 	{
-		const String healPrefix = (String{ prefix } + U"Heal");
-		writer.writeln(U"{}ManaCost = {:.3f}"_fmt(healPrefix, parameters.manaCost));
-		writer.writeln(U"{}Radius = {:.3f}"_fmt(healPrefix, parameters.radius));
-		writer.writeln(U"{}Amount = {:.3f}"_fmt(healPrefix, parameters.amount));
+		SaveGroup(writer, (String{ prefix } + U"Heal"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitHealSkillParameters(v, p);
+		});
 	}
 
 	void LoadScoutSkillParameterGroup(const TOMLReader& toml, StringView prefix, ScoutSkillParameters& parameters)
 	{
-		const String scoutPrefix = (String{ prefix } + U"Scout");
-		LoadUnitParameterValue(toml, (scoutPrefix + U"GunpowderCost"), parameters.gunpowderCost);
-		LoadUnitParameterValue(toml, (scoutPrefix + U"DurationSeconds"), parameters.durationSeconds);
-		LoadUnitParameterValue(toml, (scoutPrefix + U"VisionMultiplier"), parameters.visionMultiplier);
+		LoadGroup(toml, (String{ prefix } + U"Scout"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitScoutSkillParameters(v, p);
+		});
 	}
 
 	void SaveScoutSkillParameterGroup(TextWriter& writer, StringView prefix, const ScoutSkillParameters& parameters)
 	{
-		const String scoutPrefix = (String{ prefix } + U"Scout");
-		writer.writeln(U"{}GunpowderCost = {:.3f}"_fmt(scoutPrefix, parameters.gunpowderCost));
-		writer.writeln(U"{}DurationSeconds = {:.3f}"_fmt(scoutPrefix, parameters.durationSeconds));
-		writer.writeln(U"{}VisionMultiplier = {:.3f}"_fmt(scoutPrefix, parameters.visionMultiplier));
+		SaveGroup(writer, (String{ prefix } + U"Scout"), parameters, [](auto&& v, auto&& p) {
+			MainSupport::UnitParameterSchemas::VisitScoutSkillParameters(v, p);
+		});
 	}
 }
 
 namespace MainSupport
 {
+	namespace
+	{
+		constexpr SettingDescriptor<CameraSettings> CameraSettingsDescriptor{
+			.name = U"CameraSettings",
+			.path = CameraSettingsPath,
+			.loadFn = [](const TOMLReader& toml, CameraSettings& value)
+			{
+				SettingsSchemas::VisitCameraSettings(TomlSchema::LoadVisitor{ toml, U"" }, value);
+			},
+			.saveFn = [](TextWriter& writer, const CameraSettings& value)
+			{
+				SettingsSchemas::VisitCameraSettings(TomlSchema::SaveVisitor{ writer, U"" }, value);
+			},
+			.makeDefault = []() -> CameraSettings
+			{
+				return CameraSettings{ .eye = DefaultCameraEye, .focus = DefaultCameraFocus };
+			},
+		};
+
+		constexpr SettingDescriptor<ResourceStock> InitialPlayerResourcesDescriptor{
+			.name = U"InitialPlayerResources",
+			.path = ResourceAdjustSettingsPath,
+			.loadFn = [](const TOMLReader& toml, ResourceStock& value)
+			{
+				SettingsSchemas::VisitInitialPlayerResources(TomlSchema::LoadVisitor{ toml, U"" }, value);
+				value.budget    = Max(0.0, value.budget);
+				value.gunpowder = Max(0.0, value.gunpowder);
+				value.mana      = Max(0.0, value.mana);
+			},
+			.saveFn = [](TextWriter& writer, const ResourceStock& value)
+			{
+				const ResourceStock clamped{
+					.budget    = Max(0.0, value.budget),
+					.gunpowder = Max(0.0, value.gunpowder),
+					.mana      = Max(0.0, value.mana),
+				};
+				SettingsSchemas::VisitInitialPlayerResources(TomlSchema::SaveVisitor{ writer, U"" }, clamped);
+			},
+			.makeDefault = []() -> ResourceStock
+			{
+				return ResourceStock{ .budget = StartingResources };
+			},
+		};
+	}
+
 	CameraSettings LoadCameraSettings()
 	{
-		const TOMLReader toml{ CameraSettingsPath };
-
-		if (not toml)
-		{
-			return{};
-		}
-
-		return{
-			.eye = SettingsDetail::ReadTomlVec3(toml, U"eye", DefaultCameraEye),
-			.focus = SettingsDetail::ReadTomlVec3(toml, U"focus", DefaultCameraFocus),
-		};
+		return LoadSetting(CameraSettingsDescriptor);
 	}
 
 	bool SaveCameraSettings(const CameraSettings& settings)
 	{
-		FileSystem::CreateDirectories(U"App/settings");
-
-		TextWriter writer{ CameraSettingsPath };
-
-		if (not writer)
-		{
-			return false;
-		}
-
-		writer.writeln(U"eye = [{:.3f}, {:.3f}, {:.3f}]"_fmt(settings.eye.x, settings.eye.y, settings.eye.z));
-		writer.writeln(U"focus = [{:.3f}, {:.3f}, {:.3f}]"_fmt(settings.focus.x, settings.focus.y, settings.focus.z));
-		return true;
+		return SaveSetting(CameraSettingsDescriptor, settings);
 	}
 
 	ResourceStock LoadInitialPlayerResources()
 	{
-		ResourceStock resources{ .budget = StartingResources };
-		const TOMLReader toml{ ResourceAdjustSettingsPath };
-
-		if (not toml)
-		{
-			return resources;
-		}
-
-		if (const auto loadedBudget = toml[U"budget"].getOpt<double>())
-		{
-			resources.budget = Max(0.0, *loadedBudget);
-		}
-
-		if (const auto loadedGunpowder = toml[U"gunpowder"].getOpt<double>())
-		{
-			resources.gunpowder = Max(0.0, *loadedGunpowder);
-		}
-
-		if (const auto loadedMana = toml[U"mana"].getOpt<double>())
-		{
-			resources.mana = Max(0.0, *loadedMana);
-		}
-
-		return resources;
+		return LoadSetting(InitialPlayerResourcesDescriptor);
 	}
 
 	bool SaveInitialPlayerResources(const ResourceStock& resources)
 	{
-		FileSystem::CreateDirectories(U"App/settings");
-
-		TextWriter writer{ ResourceAdjustSettingsPath };
-
-		if (not writer)
-		{
-			return false;
-		}
-
-		writer.writeln(U"budget = {:.3f}"_fmt(Max(0.0, resources.budget)));
-		writer.writeln(U"gunpowder = {:.3f}"_fmt(Max(0.0, resources.gunpowder)));
-		writer.writeln(U"mana = {:.3f}"_fmt(Max(0.0, resources.mana)));
-		return true;
+		return SaveSetting(InitialPlayerResourcesDescriptor, resources);
 	}
 }

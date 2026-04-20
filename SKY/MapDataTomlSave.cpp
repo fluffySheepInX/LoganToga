@@ -101,17 +101,23 @@ bool SaveMapData(const MapData& mapData, FilePathView path)
 
 		if (object.type == PlaceableModelType::Mill)
 		{
-           writer.writeln(U"ownerTeam = \"{}\""_fmt(ToString(object.ownerTeam)));
-			writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(object.attackRange)));
-			writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(object.attackDamage)));
-			writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(object.attackInterval)));
-           writer.writeln(U"attackTargetCount = {}"_fmt(SanitizeMillAttackTargetCount(object.attackTargetCount)));
-			writer.writeln(U"suppressionDuration = {:.3f}"_fmt(SanitizeMillSuppressionDuration(object.suppressionDuration)));
-			writer.writeln(U"suppressionMoveSpeedMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionMoveSpeedMultiplier(object.suppressionMoveSpeedMultiplier)));
-			writer.writeln(U"suppressionAttackDamageMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackDamageMultiplier(object.suppressionAttackDamageMultiplier)));
-			writer.writeln(U"suppressionAttackIntervalMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackIntervalMultiplier(object.suppressionAttackIntervalMultiplier)));
+		   writer.writeln(U"ownerTeam = \"{}\""_fmt(ToString(object.ownerTeam)));
 		}
 
+		writer.writeln(U"");
+	}
+
+	{
+		const auto& p = mapData.millParameters;
+		writer.writeln(U"[millParameters]");
+		writer.writeln(U"attackRange = {:.3f}"_fmt(SanitizeMillAttackRange(p.attackRange)));
+		writer.writeln(U"attackDamage = {:.3f}"_fmt(SanitizeMillAttackDamage(p.attackDamage)));
+		writer.writeln(U"attackInterval = {:.3f}"_fmt(SanitizeMillAttackInterval(p.attackInterval)));
+		writer.writeln(U"attackTargetCount = {}"_fmt(SanitizeMillAttackTargetCount(p.attackTargetCount)));
+		writer.writeln(U"suppressionDuration = {:.3f}"_fmt(SanitizeMillSuppressionDuration(p.suppressionDuration)));
+		writer.writeln(U"suppressionMoveSpeedMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionMoveSpeedMultiplier(p.suppressionMoveSpeedMultiplier)));
+		writer.writeln(U"suppressionAttackDamageMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackDamageMultiplier(p.suppressionAttackDamageMultiplier)));
+		writer.writeln(U"suppressionAttackIntervalMultiplier = {:.3f}"_fmt(SanitizeMillSuppressionAttackIntervalMultiplier(p.suppressionAttackIntervalMultiplier)));
 		writer.writeln(U"");
 	}
 

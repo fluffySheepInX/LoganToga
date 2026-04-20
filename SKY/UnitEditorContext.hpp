@@ -6,30 +6,32 @@ namespace MainSupport
 	struct UnitEditorSettings
 	{
 		Array<UnitParameters> parameters;
-     Array<ExplosionSkillParameters> explosionSkillParameters;
-     Array<BuildMillSkillParameters> buildMillSkillParameters;
+	 Array<ExplosionSkillParameters> explosionSkillParameters;
+	 Array<BuildMillSkillParameters> buildMillSkillParameters;
 		Array<HealSkillParameters> healSkillParameters;
 		Array<ScoutSkillParameters> scoutSkillParameters;
 		Array<FilePath> modelPaths;
 
 		UnitEditorSettings()
 		{
-			parameters.resize(GetUnitDefinitions().size() * 2);
-         explosionSkillParameters.resize(GetUnitDefinitions().size() * 2);
-         buildMillSkillParameters.resize(GetUnitDefinitions().size() * 2);
-			healSkillParameters.resize(GetUnitDefinitions().size() * 2);
-			scoutSkillParameters.resize(GetUnitDefinitions().size() * 2);
-			modelPaths.resize(GetUnitDefinitions().size() * 2);
+			const size_t total = (GetUnitDefinitions().size() * 2);
+			parameters.resize(total);
+			explosionSkillParameters.resize(total);
+			buildMillSkillParameters.resize(total);
+			healSkillParameters.resize(total);
+			scoutSkillParameters.resize(total);
+			modelPaths.resize(total);
 
 			for (const UnitTeam team : { UnitTeam::Player, UnitTeam::Enemy })
 			{
 				for (const auto& definition : GetUnitDefinitions())
 				{
-					parameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultUnitParameters(team, definition.unitType);
-                   explosionSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultExplosionSkillParameters(team, definition.unitType);
-                   buildMillSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultBuildMillSkillParameters(team, definition.unitType);
-					healSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultHealSkillParameters(team, definition.unitType);
-					scoutSkillParameters[GetUnitParameterSlotIndex(team, definition.unitType)] = MakeDefaultScoutSkillParameters(team, definition.unitType);
+					const size_t slot = GetUnitParameterSlotIndex(team, definition.unitType);
+					parameters[slot] = MakeDefaultUnitParameters(team, definition.unitType);
+					explosionSkillParameters[slot] = MakeDefaultExplosionSkillParameters(team, definition.unitType);
+					buildMillSkillParameters[slot] = MakeDefaultBuildMillSkillParameters(team, definition.unitType);
+					healSkillParameters[slot] = MakeDefaultHealSkillParameters(team, definition.unitType);
+					scoutSkillParameters[slot] = MakeDefaultScoutSkillParameters(team, definition.unitType);
 				}
 			}
 		}

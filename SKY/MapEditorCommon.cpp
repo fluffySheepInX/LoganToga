@@ -167,148 +167,73 @@ namespace MapEditorDetail
 		return index && (*index < mapData.navPoints.size());
 	}
 
+	namespace
+	{
+		struct MapEditorToolDef
+		{
+			MapEditorTool tool;
+			StringView label;
+			Optional<PlaceableModelType> placeable;
+			Optional<TerrainCellType> terrain;
+			Optional<MainSupport::ResourceType> resource;
+		};
+
+		inline constexpr std::array<MapEditorToolDef, 21> ToolDefs{ {
+			{ MapEditorTool::SetPlayerBasePosition, U"自軍拠点",         none, none, none },
+			{ MapEditorTool::SetEnemyBasePosition,  U"敵拠点",           none, none, none },
+			{ MapEditorTool::SetSapperRallyPoint,   U"集結位置",         none, none, none },
+			{ MapEditorTool::SetBudgetArea,         U"予算エリア",       none, none, MainSupport::ResourceType::Budget },
+			{ MapEditorTool::SetGunpowderArea,      U"火薬エリア",       none, none, MainSupport::ResourceType::Gunpowder },
+			{ MapEditorTool::SetManaArea,           U"魔力エリア",       none, none, MainSupport::ResourceType::Mana },
+			{ MapEditorTool::PaintGrass,            U"草地 塗り",        none, TerrainCellType::Grass, none },
+			{ MapEditorTool::PaintDirt,             U"土地 塗り",        none, TerrainCellType::Dirt,  none },
+			{ MapEditorTool::PaintSand,             U"砂地 塗り",        none, TerrainCellType::Sand,  none },
+			{ MapEditorTool::PaintRock,             U"岩地 塗り",        none, TerrainCellType::Rock,  none },
+			{ MapEditorTool::EraseTerrain,          U"地表 削除",        none, none, none },
+			{ MapEditorTool::PlaceMill,             U"Mill 配置",        PlaceableModelType::Mill,           none, none },
+			{ MapEditorTool::PlaceTree,             U"Tree 配置",        PlaceableModelType::Tree,           none, none },
+			{ MapEditorTool::PlacePine,             U"Pine 配置",        PlaceableModelType::Pine,           none, none },
+			{ MapEditorTool::PlaceGrassPatch,       U"GrassTile 配置",   PlaceableModelType::GrassPatch,     none, none },
+			{ MapEditorTool::PlaceRock,             U"Rock 配置",        PlaceableModelType::Rock,           none, none },
+			{ MapEditorTool::PlaceWall,             U"Wall 配置",        PlaceableModelType::Wall,           none, none },
+			{ MapEditorTool::PlaceRoad,             U"Road 配置",        PlaceableModelType::Road,           none, none },
+			{ MapEditorTool::PlaceTireTrackDecal,   U"タイヤ跡 デカール", PlaceableModelType::TireTrackDecal, none, none },
+			{ MapEditorTool::PlaceNavPoint,         U"NavPoint 配置",    none, none, none },
+			{ MapEditorTool::LinkNavPoints,         U"NavLink 接続",     none, none, none },
+		} };
+
+		[[nodiscard]] const MapEditorToolDef* FindToolDef(const MapEditorTool tool)
+		{
+			for (const auto& def : ToolDefs)
+			{
+				if (def.tool == tool) return &def;
+			}
+			return nullptr;
+		}
+	}
+
 	StringView ToLabel(const MapEditorTool tool)
 	{
-		switch (tool)
-		{
-		case MapEditorTool::SetPlayerBasePosition:
-			return U"自軍拠点";
-
-		case MapEditorTool::SetEnemyBasePosition:
-			return U"敵拠点";
-
-		case MapEditorTool::SetSapperRallyPoint:
-			return U"集結位置";
-
-		case MapEditorTool::SetBudgetArea:
-			return U"予算エリア";
-
-		case MapEditorTool::SetGunpowderArea:
-			return U"火薬エリア";
-
-		case MapEditorTool::SetManaArea:
-			return U"魔力エリア";
-
-		case MapEditorTool::PaintGrass:
-			return U"草地 塗り";
-
-		case MapEditorTool::PaintDirt:
-			return U"土地 塗り";
-
-		case MapEditorTool::PaintSand:
-			return U"砂地 塗り";
-
-		case MapEditorTool::PaintRock:
-			return U"岩地 塗り";
-
-		case MapEditorTool::EraseTerrain:
-			return U"地表 削除";
-
-		case MapEditorTool::PlaceMill:
-			return U"Mill 配置";
-
-		case MapEditorTool::PlaceTree:
-			return U"Tree 配置";
-
-		case MapEditorTool::PlacePine:
-			return U"Pine 配置";
-
-		case MapEditorTool::PlaceGrassPatch:
-			return U"GrassTile 配置";
-
-		case MapEditorTool::PlaceRock:
-			return U"Rock 配置";
-
-		case MapEditorTool::PlaceWall:
-			return U"Wall 配置";
-
-		case MapEditorTool::PlaceRoad:
-			return U"Road 配置";
-
-		case MapEditorTool::PlaceTireTrackDecal:
-			return U"タイヤ跡 デカール";
-
-		case MapEditorTool::PlaceNavPoint:
-			return U"NavPoint 配置";
-
-		case MapEditorTool::LinkNavPoints:
-			return U"NavLink 接続";
-
-		default:
-			return U"Tool";
-		}
+		if (const auto* def = FindToolDef(tool)) return def->label;
+		return U"Tool";
 	}
 
 	Optional<PlaceableModelType> ToPlaceableModelType(const MapEditorTool tool)
 	{
-		switch (tool)
-		{
-		case MapEditorTool::PlaceMill:
-			return PlaceableModelType::Mill;
-
-		case MapEditorTool::PlaceTree:
-			return PlaceableModelType::Tree;
-
-		case MapEditorTool::PlacePine:
-			return PlaceableModelType::Pine;
-
-		case MapEditorTool::PlaceGrassPatch:
-			return PlaceableModelType::GrassPatch;
-
-		case MapEditorTool::PlaceRock:
-			return PlaceableModelType::Rock;
-
-		case MapEditorTool::PlaceWall:
-			return PlaceableModelType::Wall;
-
-		case MapEditorTool::PlaceRoad:
-			return PlaceableModelType::Road;
-
-		case MapEditorTool::PlaceTireTrackDecal:
-			return PlaceableModelType::TireTrackDecal;
-
-		default:
-			return none;
-		}
+		if (const auto* def = FindToolDef(tool)) return def->placeable;
+		return none;
 	}
 
 	Optional<TerrainCellType> ToTerrainCellType(const MapEditorTool tool)
 	{
-		switch (tool)
-		{
-		case MapEditorTool::PaintGrass:
-			return TerrainCellType::Grass;
-
-		case MapEditorTool::PaintDirt:
-			return TerrainCellType::Dirt;
-
-		case MapEditorTool::PaintSand:
-			return TerrainCellType::Sand;
-
-		case MapEditorTool::PaintRock:
-			return TerrainCellType::Rock;
-
-		default:
-			return none;
-		}
+		if (const auto* def = FindToolDef(tool)) return def->terrain;
+		return none;
 	}
 
 	Optional<MainSupport::ResourceType> ToResourceType(const MapEditorTool tool)
 	{
-		switch (tool)
-		{
-		case MapEditorTool::SetBudgetArea:
-			return MainSupport::ResourceType::Budget;
-
-		case MapEditorTool::SetGunpowderArea:
-			return MainSupport::ResourceType::Gunpowder;
-
-		case MapEditorTool::SetManaArea:
-			return MainSupport::ResourceType::Mana;
-
-		default:
-			return none;
-		}
+		if (const auto* def = FindToolDef(tool)) return def->resource;
+		return none;
 	}
 
 	ColorF GetResourceAreaColor(const MainSupport::ResourceType type)

@@ -104,68 +104,68 @@ namespace SkyAppFlow
 		{
 			if (frame.showEscMenu)
 			{
-				state.selectionDragStart.reset();
+				state.battle.selectionDragStart.reset();
 				return;
 			}
 
-			const Sphere playerBaseInteractionSphere{ state.mapData.playerBasePosition + Vec3{ 0, 4.0, 0 }, 4.5 };
-			const Optional<Ray> cursorRay = TryScreenToRay(state.camera, Cursor::PosF());
+			const Sphere playerBaseInteractionSphere{ state.world.mapData.playerBasePosition + Vec3{ 0, 4.0, 0 }, 4.5 };
+			const Optional<Ray> cursorRay = TryScreenToRay(state.env.camera, Cursor::PosF());
 			const bool blacksmithHovered = (cursorRay && playerBaseInteractionSphere.intersects(*cursorRay).has_value());
-         const Optional<size_t> hoveredSapperIndex = (frame.isEditorMode ? none : HitTestSpawnedSapper(state.spawnedSappers, state.camera, state.modelHeightSettings));
-			const Optional<size_t> hoveredMillIndex = (frame.isEditorMode ? none : HitTestMill(state.mapData.placedModels, cursorRay));
+         const Optional<size_t> hoveredSapperIndex = (frame.isEditorMode ? none : HitTestSpawnedSapper(state.battle.spawnedSappers, state.env.camera, state.editor.modelHeightSettings));
+			const Optional<size_t> hoveredMillIndex = (frame.isEditorMode ? none : HitTestMill(state.world.mapData.placedModels, cursorRay));
 
-			if ((not frame.isEditorMode) && (not state.playerWon) && (not frame.isHoveringUI) && MouseL.down())
+			if ((not frame.isEditorMode) && (not state.battle.playerWon) && (not frame.isHoveringUI) && MouseL.down())
 			{
-				state.selectionDragStart = Cursor::PosF();
+				state.battle.selectionDragStart = Cursor::PosF();
 			}
 
-			if ((not frame.isEditorMode) && (not state.playerWon) && state.selectionDragStart && MouseL.up())
+			if ((not frame.isEditorMode) && (not state.battle.playerWon) && state.battle.selectionDragStart && MouseL.up())
 			{
-				const RectF selectionRect = GetSelectionRect(state.selectionDragStart);
+				const RectF selectionRect = GetSelectionRect(state.battle.selectionDragStart);
 
 				if ((SelectionDragThreshold <= selectionRect.w) || (SelectionDragThreshold <= selectionRect.h))
 				{
-                 state.selectedSapperIndices = CollectSappersInSelectionRect(state.camera, state.spawnedSappers, selectionRect, state.modelHeightSettings);
-					state.selectedMillIndex.reset();
-					state.showBlacksmithMenu = false;
+                 state.battle.selectedSapperIndices = CollectSappersInSelectionRect(state.env.camera, state.battle.spawnedSappers, selectionRect, state.editor.modelHeightSettings);
+					state.battle.selectedMillIndex.reset();
+					state.hud.showBlacksmithMenu = false;
 				}
 				else if (hoveredSapperIndex)
 				{
-					state.selectedSapperIndices = { *hoveredSapperIndex };
-					state.selectedMillIndex.reset();
-					state.showBlacksmithMenu = false;
+					state.battle.selectedSapperIndices = { *hoveredSapperIndex };
+					state.battle.selectedMillIndex.reset();
+					state.hud.showBlacksmithMenu = false;
 				}
 				else if (hoveredMillIndex)
 				{
-					state.selectedMillIndex = *hoveredMillIndex;
-					state.selectedSapperIndices.clear();
-					state.showBlacksmithMenu = false;
+					state.battle.selectedMillIndex = *hoveredMillIndex;
+					state.battle.selectedSapperIndices.clear();
+					state.hud.showBlacksmithMenu = false;
 				}
 				else if (blacksmithHovered)
 				{
-					state.showBlacksmithMenu = not state.showBlacksmithMenu;
-					state.selectedMillIndex.reset();
-					state.selectedSapperIndices.clear();
+					state.hud.showBlacksmithMenu = not state.hud.showBlacksmithMenu;
+					state.battle.selectedMillIndex.reset();
+					state.battle.selectedSapperIndices.clear();
 				}
 				else
 				{
-					state.showBlacksmithMenu = false;
-					state.selectedMillIndex.reset();
-					state.selectedSapperIndices.clear();
+					state.hud.showBlacksmithMenu = false;
+					state.battle.selectedMillIndex.reset();
+					state.battle.selectedSapperIndices.clear();
 				}
 
-				state.selectionDragStart.reset();
+				state.battle.selectionDragStart.reset();
 			}
 
-			if ((not frame.isEditorMode) && (not state.playerWon) && (not state.selectedSapperIndices.isEmpty()) && (not frame.isHoveringUI) && MouseR.down())
+			if ((not frame.isEditorMode) && (not state.battle.playerWon) && (not state.battle.selectedSapperIndices.isEmpty()) && (not frame.isHoveringUI) && MouseR.down())
 			{
-				if (const auto targetPosition = GetGroundIntersection(state.camera))
+				if (const auto targetPosition = GetGroundIntersection(state.env.camera))
 				{
 					Array<size_t> validSelectedSapperIndices;
 
-					for (const size_t selectedIndex : state.selectedSapperIndices)
+					for (const size_t selectedIndex : state.battle.selectedSapperIndices)
 					{
-                        if ((selectedIndex < state.spawnedSappers.size()) && IsSpawnedSapperSelectable(state.spawnedSappers[selectedIndex]))
+                        if ((selectedIndex < state.battle.spawnedSappers.size()) && IsSpawnedSapperSelectable(state.battle.spawnedSappers[selectedIndex]))
 						{
 							validSelectedSapperIndices << selectedIndex;
 						}
@@ -173,19 +173,19 @@ namespace SkyAppFlow
 
 					for (size_t i = 0; i < validSelectedSapperIndices.size(); ++i)
 					{
-                     SetSpawnedSapperMoveOrder(state.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.mapData, state.modelHeightSettings);
+                     SetSpawnedSapperMoveOrder(state.battle.spawnedSappers[validSelectedSapperIndices[i]], GetSapperPopTargetPosition(*targetPosition, i), state.world.mapData, state.editor.modelHeightSettings);
 					}
 
 					if (not validSelectedSapperIndices.isEmpty())
 					{
-						state.moveOrderIndicator = MoveOrderIndicator{
+						state.battle.moveOrderIndicator = MoveOrderIndicator{
 							.position = *targetPosition,
 							.startedAt = Scene::Time(),
 						};
 					}
 
-					state.selectedSapperIndices = validSelectedSapperIndices;
-					state.showBlacksmithMenu = false;
+					state.battle.selectedSapperIndices = validSelectedSapperIndices;
+					state.hud.showBlacksmithMenu = false;
 				}
 			}
 		}

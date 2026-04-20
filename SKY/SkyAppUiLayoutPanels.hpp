@@ -53,8 +53,7 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Rect TerrainVisualSettings(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
 		const auto& layout = Detail::LayoutProfile();
-		const Point clampedPosition = Detail::ClampPanelPosition(position, layout.terrainVisualSettings.panelWidth, layout.terrainVisualSettings.expandedHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, layout.terrainVisualSettings.panelWidth, layout.terrainVisualSettings.expandedHeight };
+		return Detail::MakePanelRect(sceneWidth, sceneHeight, position, layout.terrainVisualSettings.panelWidth, layout.terrainVisualSettings.expandedHeight);
 	}
 
 	[[nodiscard]] inline Rect TerrainVisualSettings(const int32 sceneWidth, const int32 sceneHeight, const bool cameraSettingsExpanded = true, const bool expanded = true)
@@ -69,8 +68,7 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Rect FogSettings(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
 		const auto& layout = Detail::LayoutProfile();
-		const Point clampedPosition = Detail::ClampPanelPosition(position, layout.fogSettings.panelWidth, layout.fogSettings.panelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, layout.fogSettings.panelWidth, layout.fogSettings.panelHeight };
+		return Detail::MakePanelRect(sceneWidth, sceneHeight, position, layout.fogSettings.panelWidth, layout.fogSettings.panelHeight);
 	}
 
 	[[nodiscard]] inline Rect FogSettings(const int32 sceneWidth, const int32 sceneHeight)
@@ -87,8 +85,7 @@ namespace SkyAppUiLayout
 	[[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
 		const auto& layout = Detail::LayoutProfile();
-		const Point clampedPosition = Detail::ClampPanelPosition(position, layout.modelHeight.panelWidth, layout.modelHeight.panelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, layout.modelHeight.panelWidth, layout.modelHeight.panelHeight };
+		return Detail::MakePanelRect(sceneWidth, sceneHeight, position, layout.modelHeight.panelWidth, layout.modelHeight.panelHeight);
 	}
 
 	[[nodiscard]] inline Rect ModelHeight(const int32 sceneWidth, const int32 sceneHeight, const bool skySettingsExpanded = true, const bool cameraSettingsExpanded = true)
@@ -102,8 +99,7 @@ namespace SkyAppUiLayout
 	{
 		const auto& layout = Detail::LayoutProfile();
 		const int32 panelHeight = Clamp((sceneHeight - layout.shared.panelMargin * 2), 420, 748);
-		const Point clampedPosition = Detail::ClampPanelPosition(position, 340, panelHeight, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, 340, panelHeight };
+		return Detail::MakePanelRect(sceneWidth, sceneHeight, position, 340, panelHeight);
 	}
 
 	[[nodiscard]] inline Rect UnitEditor(const int32 sceneWidth, const int32 sceneHeight)
@@ -113,8 +109,7 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight, const Point& position)
 	{
-		const Point clampedPosition = Detail::ClampPanelPosition(position, 240, 440, sceneWidth, sceneHeight);
-		return Rect{ clampedPosition.x, clampedPosition.y, 240, 440 };
+		return Detail::MakePanelRect(sceneWidth, sceneHeight, position, 240, 440);
 	}
 
 	[[nodiscard]] inline Rect UnitEditorList(const int32 sceneWidth, const int32 sceneHeight)
@@ -210,12 +205,12 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Vec2 TerrainVisualPanelTextPosition(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
 	{
-		return Vec2{ static_cast<double>(panelRect.x + xOffset), static_cast<double>(panelRect.y + yOffset) };
+		return Detail::PanelOffsetVec(panelRect, xOffset, yOffset);
 	}
 
 	[[nodiscard]] inline Vec2 TerrainVisualPanelSliderPosition(const Rect& panelRect, const int32 yOffset)
 	{
-		return Vec2{ static_cast<double>(panelRect.x + 12), static_cast<double>(panelRect.y + yOffset) };
+		return Detail::PanelOffsetVec(panelRect, 12, yOffset);
 	}
 
 	[[nodiscard]] inline int32 TerrainVisualPanelSliderLabelWidth()
@@ -230,52 +225,52 @@ namespace SkyAppUiLayout
 
 	[[nodiscard]] inline Rect TerrainVisualPanelButtonRect(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
 	{
-		return Rect{ (panelRect.x + xOffset), (panelRect.y + yOffset), 92, 28 };
+		return Detail::PanelOffsetRect(panelRect, xOffset, yOffset, 92, 28);
 	}
 
 	[[nodiscard]] inline Rect TerrainVisualPanelDragHandle(const Rect& panelRect)
 	{
-		return Rect{ (panelRect.rightX() - 88), (panelRect.y + 8), 72, 24 };
+		return Detail::PanelTopRightDragHandle(panelRect);
 	}
 
 	[[nodiscard]] inline Rect FogSettingsPanelDragHandle(const Rect& panelRect)
 	{
-		return Rect{ (panelRect.rightX() - 88), (panelRect.y + 8), 72, 24 };
+		return Detail::PanelTopRightDragHandle(panelRect);
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelTitlePosition(const Rect& resourcePanel)
 	{
-		return Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 6) };
+		return Detail::PanelOffsetVec(resourcePanel, 12, 6);
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelBudgetPosition(const Rect& resourcePanel)
 	{
-		return Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 28) };
+		return Detail::PanelOffsetVec(resourcePanel, 12, 28);
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelGunpowderPosition(const Rect& resourcePanel)
 	{
-		return Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 48) };
+		return Detail::PanelOffsetVec(resourcePanel, 12, 48);
 	}
 
 	[[nodiscard]] inline Vec2 ResourcePanelManaPosition(const Rect& resourcePanel)
 	{
-		return Vec2{ static_cast<double>(resourcePanel.x + 112), static_cast<double>(resourcePanel.y + 48) };
+		return Detail::PanelOffsetVec(resourcePanel, 112, 48);
 	}
 
 	[[nodiscard]] inline Vec2 CameraPanelTextPosition(const Rect& panelRect, const int32 xOffset, const int32 yOffset)
 	{
-		return Vec2{ static_cast<double>(panelRect.x + xOffset), static_cast<double>(panelRect.y + yOffset) };
+		return Detail::PanelOffsetVec(panelRect, xOffset, yOffset);
 	}
 
 	[[nodiscard]] inline Vec2 CameraPanelSliderPosition(const Rect& panelRect, const int32 yOffset)
 	{
-		return Vec2{ static_cast<double>(panelRect.x + 20), static_cast<double>(panelRect.y + yOffset) };
+		return Detail::PanelOffsetVec(panelRect, 20, yOffset);
 	}
 
 	[[nodiscard]] inline Rect CameraPanelButtonRect(const Rect& panelRect, const int32 xOffset, const int32 yOffset, const int32 width = 150, const int32 height = 30)
 	{
-		return Rect{ (panelRect.x + xOffset), (panelRect.y + yOffset), width, height };
+		return Detail::PanelOffsetRect(panelRect, xOffset, yOffset, width, height);
 	}
 
 	[[nodiscard]] inline int32 CameraPanelSliderLabelWidth()

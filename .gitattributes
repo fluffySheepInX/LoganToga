@@ -61,3 +61,43 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Mark binary assets and generated/vendored content so GitHub language stats
+# and code search ignore them. Helps keep AI/code-search context focused on
+# actual source files.
+###############################################################################
+*.glb       binary linguist-generated=true
+*.gltf      binary linguist-generated=true
+*.obj       binary linguist-generated=true
+*.mtl       binary linguist-generated=true
+*.fbx       binary linguist-generated=true
+*.png       binary linguist-generated=true
+*.jpg       binary linguist-generated=true
+*.jpeg      binary linguist-generated=true
+*.gif       binary linguist-generated=true
+*.bmp       binary linguist-generated=true
+*.tga       binary linguist-generated=true
+*.dds       binary linguist-generated=true
+*.ico       binary linguist-generated=true
+*.mp3       binary linguist-generated=true
+*.wav       binary linguist-generated=true
+*.ogg       binary linguist-generated=true
+*.flac      binary linguist-generated=true
+*.mp4       binary linguist-generated=true
+*.webm      binary linguist-generated=true
+*.ttf       binary linguist-generated=true
+*.otf       binary linguist-generated=true
+*.woff      binary linguist-generated=true
+*.woff2     binary linguist-generated=true
+*.zstdcmp   binary linguist-generated=true
+
+# Asset directories: treat as vendored so they don't pollute search/stats.
+SKY/App/model/**           linguist-vendored=true
+SKY/App/example/**         linguist-vendored=true
+SKY/App/texture/**         linguist-vendored=true
+SKY/App/engine/**          linguist-vendored=true
+LoganToga2Remake2/App/model/**     linguist-vendored=true
+LoganToga2Remake2/App/example/**   linguist-vendored=true
+LoganToga2Remake2/App/texture/**   linguist-vendored=true
+LoganToga2Remake2/App/engine/**    linguist-vendored=true

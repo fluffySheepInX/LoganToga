@@ -1,4 +1,5 @@
-Ôªø# include "SkyAppLoopInternal.hpp"
+# include "SkyAppLoopInternal.hpp"
+# include "SkyAppPanelRegistry.hpp"
 # include "SkyAppText.hpp"
 # include "SkyAppUi.hpp"
 # include "SkyAppUiInternal.hpp"
@@ -12,7 +13,6 @@ namespace SkyAppFlow
 {
 	using namespace MainSupport;
 	using namespace SkyAppSupport;
-	using SkyAppText::TextId;
 	using SkyAppText::Tr;
 
 	namespace
@@ -40,43 +40,43 @@ namespace SkyAppFlow
 			}
 		}
 
-        [[nodiscard]] String GetEnemyBattlePlanToggleLabel(const SkyAppState& state)
+		[[nodiscard]] String GetEnemyBattlePlanToggleLabel(const SkyAppState& state)
 		{
-			switch (state.enemyBattlePlanOverride)
+			switch (state.enemyAi.battlePlanOverride)
 			{
 			case EnemyBattlePlanOverride::ForceSecureResources:
-                return Tr(TextId::HudEnemyPlanFixedResource);
+                return Tr(U"HudEnemyPlanFixedResource");
 
 			case EnemyBattlePlanOverride::ForceAssaultBase:
-                return Tr(TextId::HudEnemyPlanFixedBase);
+                return Tr(U"HudEnemyPlanFixedBase");
 
 			case EnemyBattlePlanOverride::Auto:
 			default:
-				return (state.enemyBattlePlan == EnemyBattlePlan::SecureResources)
-                  ? Tr(TextId::HudEnemyPlanAutoResource)
-					: Tr(TextId::HudEnemyPlanAutoBase);
+				return (state.enemyAi.battlePlan == EnemyBattlePlan::SecureResources)
+                  ? Tr(U"HudEnemyPlanAutoResource")
+					: Tr(U"HudEnemyPlanAutoBase");
 			}
 		}
 
-      [[nodiscard]] String GetEnemyBattlePlanToggleTooltip(const SkyAppState& state)
+	  [[nodiscard]] String GetEnemyBattlePlanToggleTooltip(const SkyAppState& state)
 		{
-			switch (state.enemyBattlePlanOverride)
+			switch (state.enemyAi.battlePlanOverride)
 			{
 			case EnemyBattlePlanOverride::ForceSecureResources:
-               return Tr(TextId::HudEnemyPlanTooltipFixedResource);
+               return Tr(U"HudEnemyPlanTooltipFixedResource");
 
 			case EnemyBattlePlanOverride::ForceAssaultBase:
-               return Tr(TextId::HudEnemyPlanTooltipFixedBase);
+               return Tr(U"HudEnemyPlanTooltipFixedBase");
 
 			case EnemyBattlePlanOverride::Auto:
 			default:
-              return Tr(TextId::HudEnemyPlanTooltipAuto);
+              return Tr(U"HudEnemyPlanTooltipAuto");
 			}
 		}
 
 		[[nodiscard]] String GetBattleCommandScaleToggleLabel(const SkyAppState& state)
 		{
-			return U"Cmd {}"_fmt(SkyAppUiLayout::ClampBattleCommandIconSize(state.uiLayoutSettings.battleCommandIconSize));
+			return U"Cmd {}"_fmt(SkyAppUiLayout::ClampBattleCommandIconSize(state.hud.uiLayoutSettings.battleCommandIconSize));
 		}
 
 		void DrawBottomToggleTooltip(const Rect& anchorRect, const StringView label)
@@ -93,16 +93,38 @@ namespace SkyAppFlow
 		{
 			return SkyAppUiLayout::BottomControlRevealHotZone(Scene::Width(), Scene::Height()).mouseOver();
 		}
+
+		// Returns the bottom-bar toggle Rect that should anchor the
+		// shared editor buttons (text colors / panel skin). Uses the
+		// rightmost visible toggle from the HUD toggle registry, with
+		// the battle-command-scale toggle as a final fallback.
+		[[nodiscard]] Rect GetBottomActionAnchor(const SkyAppState& state, const SkyAppFrameState& frame)
+		{
+			const Rect* anchor = nullptr;
+			for (const auto& desc : GetHudToggleRegistry())
+			{
+				if (desc.isVisible && (not desc.isVisible(state, frame)))
+				{
+					continue;
+				}
+				const Rect& r = frame.panels.*(desc.rect);
+				if ((not anchor) || (r.x > anchor->x))
+				{
+					anchor = &r;
+				}
+			}
+			return anchor ? *anchor : frame.panels.battleCommandScaleToggle;
+		}
 	}
 
 	void DrawHudModeToggles(SkyAppState& state, const SkyAppFrameState& frame)
 	{
 		if (IsBottomControlRevealHotZoneHovered())
 		{
-			state.showUI = true;
+			state.hud.showUI = true;
 		}
 
-		if (not state.showUI)
+		if (not state.hud.showUI)
 		{
 			return;
 		}
@@ -117,123 +139,100 @@ namespace SkyAppFlow
 		String hoveredTooltip;
 		Optional<Rect> hoveredTooltipRect;
 
-		if (DrawTextButton(frame.panels.mapModeToggle, frame.isEditorMode ? U"‚òÖ" : U"‚òÜ"))
+		if (DrawTextButton(frame.panels.mapModeToggle, frame.isEditorMode ? U"Åö" : U"Åô"))
 		{
-			state.appMode = frame.isEditorMode ? AppMode::Play : AppMode::EditMap;
-			state.showBlacksmithMenu = false;
-			state.selectedSapperIndices.clear();
-			state.selectedMillIndex.reset();
-			state.selectionDragStart.reset();
-			state.mapEditor.hoveredGroundPosition.reset();
-			state.unitEditorMode = false;
-			state.modelHeightEditMode = false;
+			state.env.appMode = frame.isEditorMode ? AppMode::Play : AppMode::EditMap;
+			state.hud.showBlacksmithMenu = false;
+			state.battle.selectedSapperIndices.clear();
+			state.battle.selectedMillIndex.reset();
+			state.battle.selectionDragStart.reset();
+			state.editor.mapEditor.hoveredGroundPosition.reset();
+			state.editor.unitEditorMode = false;
+			state.editor.modelHeightEditMode = false;
 		}
 		if (frame.panels.mapModeToggle.mouseOver())
 		{
-            hoveredTooltip = frame.isEditorMode ? Tr(TextId::HudTooltipReturnToPlay) : Tr(TextId::HudTooltipMapEditMode);
+            hoveredTooltip = frame.isEditorMode ? Tr(U"HudTooltipReturnToPlay") : Tr(U"HudTooltipMapEditMode");
 			hoveredTooltipRect = frame.panels.mapModeToggle;
 		}
 
-		if (DrawTextButton(frame.panels.modelHeightModeToggle, state.modelHeightEditMode ? U"‚ñ≤" : U"‚ñ≥"))
+		if (DrawTextButton(frame.panels.modelHeightModeToggle, state.editor.modelHeightEditMode ? U"Å£" : U"Å¢"))
 		{
-			state.modelHeightEditMode = not state.modelHeightEditMode;
-			if (state.modelHeightEditMode)
+			state.editor.modelHeightEditMode = not state.editor.modelHeightEditMode;
+			if (state.editor.modelHeightEditMode)
 			{
-				state.unitEditorMode = false;
+				state.editor.unitEditorMode = false;
 			}
 		}
 		if (frame.panels.modelHeightModeToggle.mouseOver())
 		{
-         hoveredTooltip = Tr(TextId::HudTooltipModelHeightScale);
+         hoveredTooltip = Tr(U"HudTooltipModelHeightScale");
 			hoveredTooltipRect = frame.panels.modelHeightModeToggle;
 		}
 
-		if (DrawTextButton(frame.panels.unitEditorModeToggle, state.unitEditorMode ? U"Unit" : U"unit"))
+		if (DrawTextButton(frame.panels.unitEditorModeToggle, state.editor.unitEditorMode ? U"Unit" : U"unit"))
 		{
-			state.unitEditorMode = not state.unitEditorMode;
-			if (state.unitEditorMode)
+			state.editor.unitEditorMode = not state.editor.unitEditorMode;
+			if (state.editor.unitEditorMode)
 			{
-				state.modelHeightEditMode = false;
+				state.editor.modelHeightEditMode = false;
 			}
 		}
 		if (frame.panels.unitEditorModeToggle.mouseOver())
 		{
-          hoveredTooltip = Tr(TextId::HudTooltipUnitParameterEditor);
+          hoveredTooltip = Tr(U"HudTooltipUnitParameterEditor");
 			hoveredTooltipRect = frame.panels.unitEditorModeToggle;
 		}
 
-		if (DrawTextButton(frame.panels.skySettingsToggle, state.skySettingsExpanded ? U"‚óÜ" : U"‚óá"))
+		// Settings panel toggle buttons are driven by the registry so that
+		// adding a panel only requires editing SkyAppPanelRegistry.cpp.
+		for (const auto& panel : GetSettingsPanelRegistry())
 		{
-			state.skySettingsExpanded = not state.skySettingsExpanded;
-		}
-		if (frame.panels.skySettingsToggle.mouseOver())
-		{
-         hoveredTooltip = Tr(TextId::HudTooltipSkySettingsPanel);
-			hoveredTooltipRect = frame.panels.skySettingsToggle;
-		}
-
-		if (DrawTextButton(frame.panels.cameraSettingsToggle, state.cameraSettingsExpanded ? U"‚óâ" : U"‚óé"))
-		{
-			state.cameraSettingsExpanded = not state.cameraSettingsExpanded;
-		}
-		if (frame.panels.cameraSettingsToggle.mouseOver())
-		{
-           hoveredTooltip = Tr(TextId::HudTooltipCameraSettingsPanel);
-			hoveredTooltipRect = frame.panels.cameraSettingsToggle;
-		}
-
-		if (DrawTextButton(frame.panels.terrainVisualToggle, state.terrainVisualSettingsExpanded ? U"Âú∞" : U"Âúü"))
-		{
-			state.terrainVisualSettingsExpanded = not state.terrainVisualSettingsExpanded;
-		}
-		if (frame.panels.terrainVisualToggle.mouseOver())
-		{
-            hoveredTooltip = Tr(TextId::HudTooltipTerrainNoiseSettings);
-			hoveredTooltipRect = frame.panels.terrainVisualToggle;
-		}
-
-		if (DrawTextButton(frame.panels.fogSettingsToggle, state.fogSettingsExpanded ? U"Fog" : U"fog"))
-		{
-			state.fogSettingsExpanded = not state.fogSettingsExpanded;
-		}
-		if (frame.panels.fogSettingsToggle.mouseOver())
-		{
-			hoveredTooltip = U"Fog editor panel";
-			hoveredTooltipRect = frame.panels.fogSettingsToggle;
-		}
-
-		if (DrawTextButton(frame.panels.uiEditModeToggle, state.uiEditMode ? U"UI+" : U"ui+"))
-		{
-			state.uiEditMode = not state.uiEditMode;
-			state.uiPanelDrag.reset();
-
-			if (state.uiEditMode)
+			const Rect& toggleRect = frame.panels.*(panel.toggleRect);
+			bool& expanded = state.hud.*(panel.expandedFlag);
+			if (DrawTextButton(toggleRect, (expanded ? panel.labelExpanded : panel.labelCollapsed)))
 			{
-                state.uiLayoutMessage.show(Tr(TextId::HudUiEditModeActivated));
+				expanded = not expanded;
+			}
+			if (toggleRect.mouseOver())
+			{
+				hoveredTooltip = panel.tooltip();
+				hoveredTooltipRect = toggleRect;
+			}
+		}
+
+		if (DrawTextButton(frame.panels.uiEditModeToggle, state.hud.uiEditMode ? U"UI+" : U"ui+"))
+		{
+			state.hud.uiEditMode = not state.hud.uiEditMode;
+			state.hud.uiPanelDrag.reset();
+
+			if (state.hud.uiEditMode)
+			{
+                state.messages[SkyAppSupport::MessageChannel::UiLayout].show(Tr(U"HudUiEditModeActivated"));
 			}
 		}
 		if (frame.panels.uiEditModeToggle.mouseOver())
 		{
-         hoveredTooltip = Tr(TextId::HudTooltipUiLayoutEdit);
+         hoveredTooltip = Tr(U"HudTooltipUiLayoutEdit");
 			hoveredTooltipRect = frame.panels.uiEditModeToggle;
 		}
 
-		if (DrawTextButton(frame.panels.resourceAdjustToggle, state.showResourceAdjustUi ? U"Ë≥áÊ∫ê+" : U"Ë≥áÊ∫ê"))
+		if (DrawTextButton(frame.panels.resourceAdjustToggle, state.hud.showResourceAdjustUi ? U"éëåπ+" : U"éëåπ"))
 		{
-			state.showResourceAdjustUi = not state.showResourceAdjustUi;
+			state.hud.showResourceAdjustUi = not state.hud.showResourceAdjustUi;
 		}
 		if (frame.panels.resourceAdjustToggle.mouseOver())
 		{
-           hoveredTooltip = Tr(TextId::HudTooltipManualResourceAdjust);
+           hoveredTooltip = Tr(U"HudTooltipManualResourceAdjust");
 			hoveredTooltipRect = frame.panels.resourceAdjustToggle;
 		}
 
 		if (DrawTextButton(frame.panels.battleCommandScaleToggle, GetBattleCommandScaleToggleLabel(state)))
 		{
-			const int32 currentSize = SkyAppUiLayout::ClampBattleCommandIconSize(state.uiLayoutSettings.battleCommandIconSize);
-			state.uiLayoutSettings.battleCommandIconSize = ((currentSize <= 96) ? 128 : 96);
-			state.uiLayoutMessage.show(SaveUiLayoutSettings(state.uiLayoutSettings)
-				? U"Battle command scale {}px"_fmt(state.uiLayoutSettings.battleCommandIconSize)
+			const int32 currentSize = SkyAppUiLayout::ClampBattleCommandIconSize(state.hud.uiLayoutSettings.battleCommandIconSize);
+			state.hud.uiLayoutSettings.battleCommandIconSize = ((currentSize <= 96) ? 128 : 96);
+			state.messages[SkyAppSupport::MessageChannel::UiLayout].show(SaveUiLayoutSettings(state.hud.uiLayoutSettings)
+				? U"Battle command scale {}px"_fmt(state.hud.uiLayoutSettings.battleCommandIconSize)
 				: U"UI layout save failed");
 		}
 		if (frame.panels.battleCommandScaleToggle.mouseOver())
@@ -246,7 +245,7 @@ namespace SkyAppFlow
 		{
 			if (DrawTextButton(frame.panels.enemyPlanToggle, GetEnemyBattlePlanToggleLabel(state)))
 			{
-				state.enemyBattlePlanOverride = GetNextEnemyBattlePlanOverride(state.enemyBattlePlanOverride);
+				state.enemyAi.battlePlanOverride = GetNextEnemyBattlePlanOverride(state.enemyAi.battlePlanOverride);
 			}
 
 			if (frame.panels.enemyPlanToggle.mouseOver())
@@ -264,37 +263,37 @@ namespace SkyAppFlow
 
 	void DrawHudFooter(SkyAppState& state, const SkyAppFrameState& frame)
 	{
-		if (not state.showUI)
+		if (not state.hud.showUI)
 		{
 			return;
 		}
 
-		if (state.mapDataMessage.isVisible())
+		if (state.messages[SkyAppSupport::MessageChannel::MapData].isVisible())
 		{
 			const Vec2 messagePosition = SkyAppUiLayout::BottomMessagePosition(frame.panels.uiToggle, 0);
-			SimpleGUI::GetFont()(state.mapDataMessage.text).draw(messagePosition, ColorF{ 0.12 });
+			SimpleGUI::GetFont()(state.messages[SkyAppSupport::MessageChannel::MapData].text).draw(messagePosition, ColorF{ 0.12 });
 		}
 
-		if (state.restartMessage.isVisible())
+		if (state.messages[SkyAppSupport::MessageChannel::Restart].isVisible())
 		{
 			const Vec2 messagePosition = SkyAppUiLayout::BottomMessagePosition(frame.panels.uiToggle, 1);
-			SimpleGUI::GetFont()(state.restartMessage.text).draw(messagePosition, ColorF{ 0.12 });
+			SimpleGUI::GetFont()(state.messages[SkyAppSupport::MessageChannel::Restart].text).draw(messagePosition, ColorF{ 0.12 });
 		}
 
-     DrawCheckBox(SkyAppUiLayout::UiToggleCheckBox(frame.panels.uiToggle), state.showUI, Tr(TextId::CommonUi));
+     DrawCheckBox(SkyAppUiLayout::UiToggleCheckBox(frame.panels.uiToggle), state.hud.showUI, Tr(U"CommonUi"));
 
-		if (state.showUI)
+		if (state.hud.showUI)
 		{
-           const Rect& anchorToggle = ShowDebugEnemyBattlePlanToggle ? frame.panels.enemyPlanToggle : frame.panels.battleCommandScaleToggle;
+			const Rect anchorToggle = GetBottomActionAnchor(state, frame);
 			const Rect editorTextColorsButtonRect = SkyAppUiLayout::BottomEditorTextColorsButton(anchorToggle);
 			const Rect panelSkinButtonRect = SkyAppUiLayout::BottomPanelSkinButton(editorTextColorsButtonRect);
 
-			if (UiInternal::DrawEditorIconButton(editorTextColorsButtonRect, U"Ëâ≤"))
+			if (UiInternal::DrawEditorIconButton(editorTextColorsButtonRect, U"êF"))
 			{
 				UiInternal::OpenSharedEditorTextColorEditor();
 			}
 
-			if (UiInternal::DrawEditorIconButton(panelSkinButtonRect, U"Êû†"))
+			if (UiInternal::DrawEditorIconButton(panelSkinButtonRect, U"òg"))
 			{
 				UiInternal::OpenSharedPanelSkinSelector();
 			}

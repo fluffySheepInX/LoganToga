@@ -1,4 +1,4 @@
-Ôªø# include "SkyAppRenderOverlayInternal.hpp"
+# include "SkyAppRenderOverlayInternal.hpp"
 # include "SkyAppUiPanelFrameInternal.hpp"
 # include "MainSettings.hpp"
 
@@ -11,14 +11,14 @@ namespace SkyAppFlow
 	{
 		[[nodiscard]] bool DrawInitialResourceEditorRow(SkyAppState& state, const Rect& resourcePanel, const ResourceType type, const int32 yOffset)
 		{
-			double& initialValue = OverlayDetail::GetResourceValue(state.initialPlayerResources, type);
-			double& currentValue = OverlayDetail::GetResourceValue(state.playerResources, type);
+			double& initialValue = OverlayDetail::GetResourceValue(state.battle.initialPlayerResources, type);
+			double& currentValue = OverlayDetail::GetResourceValue(state.battle.playerResources, type);
 			const double step = OverlayDetail::GetResourceAdjustStep(type);
 			const Rect minusButton{ (resourcePanel.rightX() - 84), (resourcePanel.y + yOffset), 32, 22 };
 			const Rect plusButton{ (resourcePanel.rightX() - 44), (resourcePanel.y + yOffset), 32, 22 };
 			bool changed = false;
 
-			SimpleGUI::GetFont()(U"ÂàùÊúü {} {:.0f}"_fmt(OverlayDetail::ToDisplayLabel(type), initialValue)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + yOffset + 1) }, OverlayDetail::GetResourceTextColor(type));
+			SimpleGUI::GetFont()(U"èâä˙ {} {:.0f}"_fmt(OverlayDetail::ToDisplayLabel(type), initialValue)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + yOffset + 1) }, OverlayDetail::GetResourceTextColor(type));
 
 			if (DrawTextButton(minusButton, U"-"))
 			{
@@ -110,7 +110,7 @@ namespace SkyAppFlow
 
 		void DrawUiEditGridOverlay(const SkyAppState& state)
 		{
-			if (not state.uiEditMode)
+			if (not state.hud.uiEditMode)
 			{
 				return;
 			}
@@ -145,45 +145,45 @@ namespace SkyAppFlow
 				   ColorF{ 0.75, 0.82, 0.90, 0.9 },
 				   Palette::White,
 				   MainSupport::PanelSkinTarget::Hud);
-			SimpleGUI::GetFont()(state.uiEditMode ? U"Ë≥áÊ∫ê [Drag]" : (state.showResourceAdjustUi ? U"Ë≥áÊ∫ê / ÂàùÊúüÂÄ§" : U"Ë≥áÊ∫ê")).draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
-			SimpleGUI::GetFont()(U"ÁèæÂú® ‰∫àÁÆó {:.0f}"_fmt(state.playerResources.budget)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 28) }, ColorF{ 0.98, 0.90, 0.38 });
-			SimpleGUI::GetFont()(U"ÁèæÂú® ÁÅ´Ëñ¨ {:.0f}"_fmt(state.playerResources.gunpowder)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 48) }, ColorF{ 0.98, 0.56, 0.42 });
-			SimpleGUI::GetFont()(U"ÁèæÂú® È≠îÂäõ {:.0f}"_fmt(state.playerResources.mana)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 68) }, ColorF{ 0.58, 0.72, 1.0 });
+			SimpleGUI::GetFont()(state.hud.uiEditMode ? U"éëåπ [Drag]" : (state.hud.showResourceAdjustUi ? U"éëåπ / èâä˙íl" : U"éëåπ")).draw(SkyAppUiLayout::ResourcePanelTitlePosition(resourcePanel), Palette::White);
+			SimpleGUI::GetFont()(U"åªç› ó\éZ {:.0f}"_fmt(state.battle.playerResources.budget)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 28) }, ColorF{ 0.98, 0.90, 0.38 });
+			SimpleGUI::GetFont()(U"åªç› âŒñÚ {:.0f}"_fmt(state.battle.playerResources.gunpowder)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 48) }, ColorF{ 0.98, 0.56, 0.42 });
+			SimpleGUI::GetFont()(U"åªç› ñÇóÕ {:.0f}"_fmt(state.battle.playerResources.mana)).draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 68) }, ColorF{ 0.58, 0.72, 1.0 });
 
-			if (state.showResourceAdjustUi)
+			if (state.hud.showResourceAdjustUi)
 			{
 				Line{ (resourcePanel.x + 12), (resourcePanel.y + 92), (resourcePanel.rightX() - 12), (resourcePanel.y + 92) }.draw(1.0, ColorF{ 0.72, 0.78, 0.86, 0.45 });
-				SimpleGUI::GetFont()(U"„ÉÜ„Çπ„ÉàÁî® ÂàùÊúüË≥áÊ∫ê").draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 100) }, ColorF{ 0.90, 0.94, 0.98, 0.95 });
+				SimpleGUI::GetFont()(U"ÉeÉXÉgóp èâä˙éëåπ").draw(Vec2{ static_cast<double>(resourcePanel.x + 12), static_cast<double>(resourcePanel.y + 100) }, ColorF{ 0.90, 0.94, 0.98, 0.95 });
 				resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Budget, 122) || resourceAdjustChanged;
 				resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Gunpowder, 148) || resourceAdjustChanged;
 				resourceAdjustChanged = DrawInitialResourceEditorRow(state, resourcePanel, ResourceType::Mana, 174) || resourceAdjustChanged;
 				Line{ (resourcePanel.x + 12), (resourcePanel.y + 202), (resourcePanel.rightX() - 12), (resourcePanel.y + 202) }.draw(1.0, ColorF{ 0.72, 0.78, 0.86, 0.35 });
 
 				const Rect resetButton{ (resourcePanel.x + 12), (resourcePanel.y + 212), (resourcePanel.w - 24), 28 };
-				if (DrawTextButton(resetButton, U"ÂàùÊúüË≥áÊ∫ê„Çí„É™„Çª„ÉÉ„Éà"))
+				if (DrawTextButton(resetButton, U"èâä˙éëåπÇÉäÉZÉbÉg"))
 				{
 					const ResourceStock defaultResources{ .budget = StartingResources };
-					resourceAdjustChanged = ((state.initialPlayerResources.budget != defaultResources.budget)
-						|| (state.initialPlayerResources.gunpowder != defaultResources.gunpowder)
-						|| (state.initialPlayerResources.mana != defaultResources.mana))
+					resourceAdjustChanged = ((state.battle.initialPlayerResources.budget != defaultResources.budget)
+						|| (state.battle.initialPlayerResources.gunpowder != defaultResources.gunpowder)
+						|| (state.battle.initialPlayerResources.mana != defaultResources.mana))
 						|| resourceAdjustChanged;
-					state.initialPlayerResources = defaultResources;
-					state.playerResources = defaultResources;
+					state.battle.initialPlayerResources = defaultResources;
+					state.battle.playerResources = defaultResources;
 				}
 
 				if (resourceAdjustChanged)
 				{
-					SaveInitialPlayerResources(state.initialPlayerResources);
+					SaveInitialPlayerResources(state.battle.initialPlayerResources);
 				}
 			}
 
-			if (state.uiLayoutMessage.isVisible())
+			if (state.messages[SkyAppSupport::MessageChannel::UiLayout].isVisible())
 			{
 				const Vec2 messagePosition{ static_cast<double>(resourcePanel.x), static_cast<double>(Min((resourcePanel.bottomY() + 8), (Scene::Height() - 28))) };
-				SimpleGUI::GetFont()(state.uiLayoutMessage.text).draw(messagePosition, ColorF{ 0.98, 0.92, 0.72 });
+				SimpleGUI::GetFont()(state.messages[SkyAppSupport::MessageChannel::UiLayout].text).draw(messagePosition, ColorF{ 0.98, 0.92, 0.72 });
 			}
 
-			if (state.uiEditMode)
+			if (state.hud.uiEditMode)
 			{
 				const Rect resourcePanelResizeHandleOuterFrame = resourcePanelResizeHandle.stretched(3);
 				resourcePanelResizeHandleOuterFrame.draw(ColorF{ 0.01, 0.02, 0.04, 0.82 }).drawFrame(2.0, 0.0, ColorF{ 0.90, 0.94, 1.0, 0.92 });
@@ -195,17 +195,17 @@ namespace SkyAppFlow
 
 		void DrawBaseStatusOverlays(SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			DrawBaseStatusLabel(state.camera,
-				state.mapData.playerBasePosition,
-				state.playerBaseHitPoints,
+			DrawBaseStatusLabel(state.env.camera,
+				state.world.mapData.playerBasePosition,
+				state.battle.playerBaseHitPoints,
 				ColorF{ 0.36, 0.92, 0.46, 0.95 },
 			   ColorF{ 0.08, 0.10, 0.12, 0.88 });
 
-			if (frame.isEditorMode || IsFogExploredAt(state.fogOfWar, state.mapData.enemyBasePosition))
+			if (frame.isEditorMode || IsFogExploredAt(state.env.fogOfWar, state.world.mapData.enemyBasePosition))
 			{
-				DrawBaseStatusLabel(state.camera,
-					state.mapData.enemyBasePosition,
-					state.enemyBaseHitPoints,
+				DrawBaseStatusLabel(state.env.camera,
+					state.world.mapData.enemyBasePosition,
+					state.battle.enemyBaseHitPoints,
 					ColorF{ 0.96, 0.28, 0.24, 0.95 },
 				ColorF{ 0.12, 0.08, 0.08, 0.88 });
 			}
@@ -213,22 +213,22 @@ namespace SkyAppFlow
 
       void DrawModelHeightOverlay(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			if (state.modelHeightEditMode)
+			if (state.editor.modelHeightEditMode)
 			{
-				if (state.uiEditMode)
+				if (state.hud.uiEditMode)
 				{
 					frame.panels.modelHeight.drawFrame(2, 0, ColorF{ 0.78, 0.84, 0.96, 0.72 });
 				}
-               DrawModelHeightEditor(state.modelHeightSettings,
-                    state.modelHeightPreviewModelIndex,
-					state.modelHeightTextureMode,
-					state.tireTrackTextureTarget,
-                  state.modelHeightPreviewAnimationRole,
-                  resources.GetModelHeightEditorPreviewModel(state.modelHeightPreviewModelIndex, state.modelHeightPreviewAnimationRole),
+               DrawModelHeightEditor(state.editor.modelHeightSettings,
+                    state.editor.modelHeightPreviewModelIndex,
+					state.editor.modelHeightTextureMode,
+					state.editor.tireTrackTextureTarget,
+                  state.editor.modelHeightPreviewAnimationRole,
+                  resources.GetModelHeightEditorPreviewModel(state.editor.modelHeightPreviewModelIndex, state.editor.modelHeightPreviewAnimationRole),
 					resources.modelHeightEditorPreviewPaths,
 					resources.modelHeightEditorPreviewLabels,
-					state.modelHeightMessage.text,
-					state.modelHeightMessage.until,
+					state.messages[SkyAppSupport::MessageChannel::ModelHeight].text,
+					state.messages[SkyAppSupport::MessageChannel::ModelHeight].until,
 					frame.panels.modelHeight,
                   frame.modelHeightPreviewRenderPositions);
 			}
@@ -236,12 +236,12 @@ namespace SkyAppFlow
 
 		void DrawMatchResultOverlay(const SkyAppState& state)
 		{
-			if (state.playerWon)
+			if (state.battle.playerWon)
 			{
 				const Rect overlay{ Arg::center = Scene::Center(), 340, 140 };
-				overlay.draw(ColorF{ 0.06, 0.06, 0.08, 0.88 }).drawFrame(3, 0, *state.playerWon ? ColorF{ 0.45, 0.92, 0.56 } : ColorF{ 0.96, 0.38, 0.30 });
-				SimpleGUI::GetFont()(*state.playerWon ? U"Victory" : U"Defeat").drawAt(overlay.center().movedBy(0, -18), Palette::White);
-				SimpleGUI::GetFont()(*state.playerWon ? U"Enemy base destroyed" : U"Player base destroyed").drawAt(overlay.center().movedBy(0, 18), ColorF{ 0.92 });
+				overlay.draw(ColorF{ 0.06, 0.06, 0.08, 0.88 }).drawFrame(3, 0, *state.battle.playerWon ? ColorF{ 0.45, 0.92, 0.56 } : ColorF{ 0.96, 0.38, 0.30 });
+				SimpleGUI::GetFont()(*state.battle.playerWon ? U"Victory" : U"Defeat").drawAt(overlay.center().movedBy(0, -18), Palette::White);
+				SimpleGUI::GetFont()(*state.battle.playerWon ? U"Enemy base destroyed" : U"Player base destroyed").drawAt(overlay.center().movedBy(0, 18), ColorF{ 0.92 });
 				SimpleGUI::GetFont()(U"Press Enter or Click").drawAt(overlay.center().movedBy(0, 48), ColorF{ 0.92, 0.92, 0.82, 0.95 });
 			}
 		}

@@ -1,11 +1,10 @@
-﻿# include "MainUiModelHeightInternal.hpp"
+# include "MainUiModelHeightInternal.hpp"
 # include "SkyAppText.hpp"
 # include "SkyAppUiInternal.hpp"
 # include "SkyAppUiPanelFrameInternal.hpp"
 
 namespace MainSupport
 {
-    using SkyAppText::TextId;
     using SkyAppText::Tr;
 
     void DrawModelHeightEditor(ModelHeightSettings& modelHeightSettings,
@@ -47,7 +46,7 @@ namespace MainSupport
         activeTextureSoftness = Clamp(activeTextureSoftness, TireTrackSoftnessMin, TireTrackSoftnessMax);
         activeTextureWarmth = Clamp(activeTextureWarmth, TireTrackWarmthMin, TireTrackWarmthMax);
 
-        SkyAppSupport::UiInternal::DrawNinePatchPanelFrame(panelRect, Tr(TextId::ModelHeightPanelTitle), ColorF{ 1.0, 0.92 });
+        SkyAppSupport::UiInternal::DrawNinePatchPanelFrame(panelRect, Tr(U"ModelHeightPanelTitle"), ColorF{ 1.0, 0.92 });
         const Rect modelToggleRect{ (listPanel.x + 12), (listPanel.y + 36), 62, 26 };
         const Rect textureToggleRect{ (listPanel.x + 82), (listPanel.y + 36), 62, 26 };
         modelToggleRect.rounded(6).draw(textureMode ? ColorF{ 0.96, 0.97, 0.99, 0.82 } : ColorF{ 0.33, 0.53, 0.82 })
@@ -67,7 +66,7 @@ namespace MainSupport
             textureMode = true;
         }
 
-        SimpleGUI::GetFont()(textureMode ? U"Textures" : Tr(TextId::ModelHeightTargets)).draw((listPanel.x + 16), (listPanel.y + 70), ColorF{ 0.18 });
+        SimpleGUI::GetFont()(textureMode ? U"Textures" : Tr(U"ModelHeightTargets")).draw((listPanel.x + 16), (listPanel.y + 70), ColorF{ 0.18 });
 
         DrawModelHeightEditorContext context{
             .modelHeightSettings = modelHeightSettings,

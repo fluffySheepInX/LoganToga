@@ -1,4 +1,5 @@
 ﻿# include "SkyAppLoopInternal.hpp"
+# include "SkyAppPanelRegistry.hpp"
 # include "SkyAppUi.hpp"
 # include "SkyAppUiInternal.hpp"
 # include "SkyAppUiSettingsInternal.hpp"
@@ -94,21 +95,15 @@ namespace SkyAppFlow
 
 	void DrawSettingsHud(SkyAppResources& resources, SkyAppState& state, const SkyAppFrameState& frame)
 	{
-		if (not state.showUI)
+		if (not state.hud.showUI)
 		{
 			return;
 		}
 
-		DrawSkySettingsPanel(state.sky, state.skyTime, state.skySettingsExpanded, frame.panels);
-
-		DrawCameraSettingsPanel(state.camera,
-			state.cameraSettings,
-			state.cameraSettingsExpanded,
-			resources.GetUnitRenderModel(UnitRenderModel::Bird),
-			resources.GetUnitRenderModel(UnitRenderModel::Ashigaru),
-			state.cameraSaveMessage,
-			frame.panels);
-		DrawTerrainVisualSettingsPanel(state.terrainVisualSettings, state.uiEditMode, state.terrainVisualSettingsExpanded, frame.panels);
-       DrawFogSettingsPanel(state.fogOfWarSettings, state.uiEditMode, state.fogSettingsExpanded, frame.panels);
+		// Iterate the registry instead of hand-listing each panel.
+		for (const auto& panel : GetSettingsPanelRegistry())
+		{
+			panel.draw(resources, state, frame);
+		}
 	}
 }

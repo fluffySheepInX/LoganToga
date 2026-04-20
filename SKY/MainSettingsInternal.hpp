@@ -21,11 +21,4 @@ namespace MainSupport::SettingsDetail
 	void LoadScoutSkillParameterGroup(const TOMLReader& toml, StringView prefix, ScoutSkillParameters& parameters);
 	void SaveScoutSkillParameterGroup(TextWriter& writer, StringView prefix, const ScoutSkillParameters& parameters);
 	EditorTextColorSettings& CachedEditorTextColorSettings();
-   FilePath& CachedPanelNinePatchPath();
- FilePath& CachedSettingsPanelNinePatchPath();
-    FilePath& CachedCameraSettingsPanelNinePatchPath();
-	FilePath& CachedHudPanelNinePatchPath();
-   FilePath& CachedMapEditorPanelNinePatchPath();
-   FilePath& CachedUnitEditorPanelNinePatchPath();
-	FilePath& CachedToolModalPanelNinePatchPath();
 }

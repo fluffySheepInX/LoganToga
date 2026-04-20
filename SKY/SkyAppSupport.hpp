@@ -22,8 +22,40 @@ namespace SkyAppSupport
 		String text;
 		double until = 0.0;
 
-      void show(StringView message, double durationSeconds = 2.0);
+	  void show(StringView message, double durationSeconds = 2.0);
 		[[nodiscard]] bool isVisible() const;
+	};
+
+	// --- MessageBus -----------------------------------------------
+	// Centralizes all transient HUD/editor messages that previously
+	// lived as scattered `TimedMessage` members on SkyAppState's
+	// sub-states. Each channel maps to one `TimedMessage` slot.
+	// Adding a new transient message = add a `MessageChannel` entry.
+	enum class MessageChannel : size_t
+	{
+		MapData,         // world: map (re)load / save
+		CameraSave,      // env: camera settings save
+		Restart,         // env: match restart
+		ModelHeight,     // editor: model-height editor
+		UnitEditor,      // editor: unit-parameter editor
+		BlacksmithMenu,  // hud: blacksmith / battle-command menu
+		UiLayout,        // hud: UI layout edit
+		Count_,          // sentinel
+	};
+	inline constexpr size_t MessageChannelCount = static_cast<size_t>(MessageChannel::Count_);
+
+	struct MessageBus
+	{
+		[[nodiscard]] TimedMessage& operator[](MessageChannel ch)
+		{
+			return m_slots[static_cast<size_t>(ch)];
+		}
+		[[nodiscard]] const TimedMessage& operator[](MessageChannel ch) const
+		{
+			return m_slots[static_cast<size_t>(ch)];
+		}
+	private:
+		std::array<TimedMessage, MessageChannelCount> m_slots{};
 	};
 
 	struct SkyAppPanels

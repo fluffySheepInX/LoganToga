@@ -174,6 +174,7 @@ namespace SkyAppSupport
 				Max(settings.ownedResourceVisionRange, mapData.resourceAreas[i].radius + 1.0));
 		}
 
+		const double millAttackRange = mapData.millParameters.attackRange;
 		for (const auto& placedModel : mapData.placedModels)
 		{
 			if (placedModel.type != PlaceableModelType::Mill)
@@ -183,7 +184,7 @@ namespace SkyAppSupport
 
 			StampVisibility(fogOfWar,
 				placedModel.position,
-				Max(settings.millVisionRange, placedModel.attackRange + 1.0));
+				Max(settings.millVisionRange, millAttackRange + 1.0));
 		}
 
       for (auto it = fogOfWar.cells.begin(); it != fogOfWar.cells.end();)

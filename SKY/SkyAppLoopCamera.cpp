@@ -140,11 +140,11 @@ namespace SkyAppFlow
 
 		void ApplyCameraFallback(SkyAppState& state)
 		{
-			state.cameraSettings.eye = DefaultCameraEye;
-			state.cameraSettings.focus = DefaultCameraFocus;
-			EnsureValidCameraSettings(state.cameraSettings);
-			ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"ApplyCameraFallback");
-			state.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.cameraSettings.eye, state.cameraSettings.focus };
+			state.env.cameraSettings.eye = DefaultCameraEye;
+			state.env.cameraSettings.focus = DefaultCameraFocus;
+			EnsureValidCameraSettings(state.env.cameraSettings);
+			ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"ApplyCameraFallback");
+			state.env.camera = AppCamera3D{ Graphics3D::GetRenderTargetSize(), 40_deg, state.env.cameraSettings.eye, state.env.cameraSettings.focus };
 		}
 	}
 
@@ -152,15 +152,15 @@ namespace SkyAppFlow
 	{
 		void UpdateCameraAndEditor(SkyAppState& state, const SkyAppFrameState& frame)
 		{
-			EnsureValidCameraSettings(state.cameraSettings);
-			if (not IsSafeCameraPair(state.cameraSettings.eye, state.cameraSettings.focus))
+			EnsureValidCameraSettings(state.env.cameraSettings);
+			if (not IsSafeCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus))
 			{
-				ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: pre-setView state.cameraSettings");
+				ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: pre-setView state.env.cameraSettings");
 			}
-			ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: state.camera.setView (initial)");
-			state.camera.setView(state.cameraSettings.eye, state.cameraSettings.focus);
-			const bool freezeStartupCameraUpdate = (0 < state.startupCameraFreezeFrames);
-            const bool hoveringMapEditorPanel = (frame.isEditorMode && state.mapEditor.enabled && frame.panels.mapEditor.mouseOver());
+			ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: state.env.camera.setView (initial)");
+			state.env.camera.setView(state.env.cameraSettings.eye, state.env.cameraSettings.focus);
+			const bool freezeStartupCameraUpdate = (0 < state.env.startupCameraFreezeFrames);
+            const bool hoveringMapEditorPanel = (frame.isEditorMode && state.editor.mapEditor.enabled && frame.panels.mapEditor.mouseOver());
 			const bool allowCameraDragInput = ((not frame.showEscMenu) && (not frame.isHoveringUI));
 			const bool allowCameraWheelInput = ((not frame.showEscMenu)
                 && (not hoveringMapEditorPanel)
@@ -169,68 +169,68 @@ namespace SkyAppFlow
 						&& (not MouseL.pressed())
 						&& (not MouseR.pressed()))));
 
-				UpdateCameraMiddleDragMovement(state.camera, state.cameraSettings, ((not freezeStartupCameraUpdate) && allowCameraDragInput));
+				UpdateCameraMiddleDragMovement(state.env.camera, state.env.cameraSettings, ((not freezeStartupCameraUpdate) && allowCameraDragInput));
 
 			if ((not freezeStartupCameraUpdate) && allowCameraDragInput)
 			{
-				UpdateCameraKeyboardMovement(state.camera, state.cameraSettings);
+				UpdateCameraKeyboardMovement(state.env.camera, state.env.cameraSettings);
 			}
-			state.cameraSettings.eye = state.camera.getEyePosition();
-			state.cameraSettings.focus = state.camera.getFocusPosition();
-			if (not IsSafeCameraPair(state.cameraSettings.eye, state.cameraSettings.focus))
+			state.env.cameraSettings.eye = state.env.camera.getEyePosition();
+			state.env.cameraSettings.focus = state.env.camera.getFocusPosition();
+			if (not IsSafeCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus))
 			{
-				ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: camera state after input");
+				ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: camera state after input");
 			}
 			else
 			{
-				EnsureValidCameraSettings(state.cameraSettings);
-				if (not IsSafeCameraPair(state.cameraSettings.eye, state.cameraSettings.focus))
+				EnsureValidCameraSettings(state.env.cameraSettings);
+				if (not IsSafeCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus))
 				{
-					ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: post-sanitize state.cameraSettings");
+					ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: post-sanitize state.env.cameraSettings");
 				}
 				else
 				{
-					ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: state.camera.setView (post-sanitize)");
-					state.camera.setView(state.cameraSettings.eye, state.cameraSettings.focus);
+					ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: state.env.camera.setView (post-sanitize)");
+					state.env.camera.setView(state.env.cameraSettings.eye, state.env.cameraSettings.focus);
 				}
 			}
 
 			if (allowCameraWheelInput)
 			{
-				UpdateCameraWheelZoom(state.camera, state.cameraSettings, state.mapData.playerBasePosition);
-				if (not IsSafeCameraPair(state.cameraSettings.eye, state.cameraSettings.focus))
+				UpdateCameraWheelZoom(state.env.camera, state.env.cameraSettings, state.world.mapData.playerBasePosition);
+				if (not IsSafeCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus))
 				{
-					ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"UpdateCameraAndEditor: after wheel zoom");
+					ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"UpdateCameraAndEditor: after wheel zoom");
 				}
 			}
 
-			if (0 < state.startupCameraFreezeFrames)
+			if (0 < state.env.startupCameraFreezeFrames)
 			{
-				--state.startupCameraFreezeFrames;
+				--state.env.startupCameraFreezeFrames;
 			}
 
-			Graphics3D::SetCameraTransform(state.camera);
-			UpdateMapEditor(state.mapEditor, state.mapData, state.camera, (frame.isEditorMode && (not frame.isHoveringUI) && (not frame.showEscMenu)));
+			Graphics3D::SetCameraTransform(state.env.camera);
+			UpdateMapEditor(state.editor.mapEditor, state.world.mapData, state.env.camera, (frame.isEditorMode && (not frame.isHoveringUI) && (not frame.showEscMenu)));
 		}
 	}
 
 	void ResetCameraToPlayerBase(SkyAppState& state)
 	{
-		if (not IsReasonableWorldPosition(state.mapData.playerBasePosition))
+		if (not IsReasonableWorldPosition(state.world.mapData.playerBasePosition))
 		{
 			ApplyCameraFallback(state);
 			return;
 		}
 
 		const Vec3 cameraOffset = (DefaultCameraEye - DefaultCameraFocus);
-		state.cameraSettings.focus = state.mapData.playerBasePosition;
-		state.cameraSettings.eye = (state.cameraSettings.focus + cameraOffset);
-		EnsureValidCameraSettings(state.cameraSettings);
-		if (not IsSafeCameraPair(state.cameraSettings.eye, state.cameraSettings.focus))
+		state.env.cameraSettings.focus = state.world.mapData.playerBasePosition;
+		state.env.cameraSettings.eye = (state.env.cameraSettings.focus + cameraOffset);
+		EnsureValidCameraSettings(state.env.cameraSettings);
+		if (not IsSafeCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus))
 		{
-			ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"ResetCameraToPlayerBase");
+			ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"ResetCameraToPlayerBase");
 		}
-		ThrowIfInvalidCameraPair(state.cameraSettings.eye, state.cameraSettings.focus, U"ResetCameraToPlayerBase: state.camera.setView");
-		state.camera.setView(state.cameraSettings.eye, state.cameraSettings.focus);
+		ThrowIfInvalidCameraPair(state.env.cameraSettings.eye, state.env.cameraSettings.focus, U"ResetCameraToPlayerBase: state.env.camera.setView");
+		state.env.camera.setView(state.env.cameraSettings.eye, state.env.cameraSettings.focus);
 	}
 }

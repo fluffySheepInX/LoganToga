@@ -13,48 +13,48 @@ namespace SkyAppFlow
 
 	void DrawContextHud(SkyAppState& state, const SkyAppFrameState& frame)
 	{
-		DrawMiniMap(state.miniMapExpanded,
+		DrawMiniMap(state.hud.miniMapExpanded,
 			frame.panels,
-			state.uiEditMode,
+			state.hud.uiEditMode,
            not frame.isEditorMode,
-			state.camera,
-			state.mapData,
-           state.fogOfWar,
-			state.spawnedSappers,
-			state.enemySappers,
-			state.resourceAreaStates,
-			state.selectedSapperIndices);
+			state.env.camera,
+			state.world.mapData,
+           state.env.fogOfWar,
+			state.battle.spawnedSappers,
+			state.battle.enemySappers,
+			state.battle.resourceAreaStates,
+			state.battle.selectedSapperIndices);
 
 		if (frame.isEditorMode)
 		{
-			DrawMapEditorPanel(state.mapEditor, state.mapData, state.currentMapPath, frame.panels.mapEditor);
+			DrawMapEditorPanel(state.editor.mapEditor, state.world.mapData, state.world.currentMapPath, frame.panels.mapEditor);
 		}
 
-		if ((not frame.isEditorMode) && (not state.playerWon) && state.showBlacksmithMenu)
+		if ((not frame.isEditorMode) && (not state.battle.playerWon) && state.hud.showBlacksmithMenu)
 		{
             DrawBattleCommandMenu(frame.panels,
-				state.spawnedSappers,
-				state.mapData,
-				state.mapData.playerBasePosition,
-				state.mapData.sapperRallyPoint,
-				state.playerResources,
-               state.battleCommandSelectedSlotIndex,
-				state.battleCommandUnlockedSlotCount,
-				state.unitEditorSettings,
-				state.modelHeightSettings,
-				state.blacksmithMenuMessage);
+				state.battle.spawnedSappers,
+				state.world.mapData,
+				state.world.mapData.playerBasePosition,
+				state.world.mapData.sapperRallyPoint,
+				state.battle.playerResources,
+               state.battle.battleCommandSelectedSlotIndex,
+				state.battle.battleCommandUnlockedSlotCount,
+				state.editor.unitEditorSettings,
+				state.editor.modelHeightSettings,
+				state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu]);
 		}
 
-		if ((not frame.isEditorMode) && (not state.playerWon) && (state.selectedSapperIndices.size() == 1))
+		if ((not frame.isEditorMode) && (not state.battle.playerWon) && (state.battle.selectedSapperIndices.size() == 1))
 		{
-			const size_t selectedIndex = state.selectedSapperIndices.front();
+			const size_t selectedIndex = state.battle.selectedSapperIndices.front();
 
 			const SapperMenuAction menuAction = DrawSapperMenu(frame.panels,
-				state.spawnedSappers,
-				state.playerResources,
-              state.unitEditorSettings,
+				state.battle.spawnedSappers,
+				state.battle.playerResources,
+              state.editor.unitEditorSettings,
 				selectedIndex,
-				state.blacksmithMenuMessage);
+				state.messages[SkyAppSupport::MessageChannel::BlacksmithMenu]);
          if (menuAction == SapperMenuAction::UseUniqueSkill)
 			{
               TryUsePlayerSapperUniqueSkill(state, selectedIndex);
@@ -72,18 +72,18 @@ namespace SkyAppFlow
 		if (frame.showUnitEditor)
 		{
 			DrawUnitEditor(frame.panels,
-				state.uiEditMode,
-				state.unitEditorSettings,
-				state.unitEditorSelection,
-				state.unitEditorPage,
-				state.spawnedSappers,
-				state.enemySappers,
-				state.unitEditorMessage);
+				state.hud.uiEditMode,
+				state.editor.unitEditorSettings,
+				state.editor.unitEditorSelection,
+				state.editor.unitEditorPage,
+				state.battle.spawnedSappers,
+				state.battle.enemySappers,
+				state.messages[SkyAppSupport::MessageChannel::UnitEditor]);
 		}
 
-		if (frame.showMillStatusEditor && state.selectedMillIndex)
+		if (frame.showMillStatusEditor && state.battle.selectedMillIndex)
 		{
-			DrawMillStatusEditor(frame.panels, state.mapData, *state.selectedMillIndex, MapDataPath, state.mapDataMessage);
+			DrawMillStatusEditor(frame.panels, state.world.mapData, MapDataPath, state.messages[SkyAppSupport::MessageChannel::MapData]);
 		}
 	}
 }
