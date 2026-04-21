@@ -141,7 +141,11 @@ namespace MapEditorDetail
 
 		if (state.selectedTool == MapEditorTool::PlaceTireTrackDecal)
 		{
-			return U"左ドラッグ: タイヤ跡デカールの向きと長さを決定";
+			if (state.tireTrackPlacementMode == MapEditorTireTrackPlacementMode::Straight)
+			{
+				return U"左ドラッグ: タイヤ跡デカールの向きと長さを決定 (直線)";
+			}
+			return U"左ドラッグ: タイヤ跡デカールの軌跡を描く (曲線)";
 		}
 
 		if (IsTerrainPaintTool(state.selectedTool))
@@ -163,7 +167,8 @@ namespace MapEditorDetail
 		state.roadRotateDrag.reset();
 		state.pendingWallPlacementStartPosition.reset();
 		state.pendingRoadPlacementStartPosition.reset();
-     state.pendingTireTrackPlacementStartPosition.reset();
+	 state.pendingTireTrackPlacementStartPosition.reset();
+	 state.pendingTireTrackSamples.reset();
 		state.lastTerrainPaintCell.reset();
        state.pendingTerrainPaintRangeStartCell.reset();
 	}
@@ -204,7 +209,7 @@ namespace MapEditorDetail
 		const Rect selectionModeButton{ (panelRect.x + 180), (panelRect.y + 10), 140, 28 };
 		const Rect navPointVisibilityButton{ (panelRect.x + 16), (panelRect.y + 36), 144, 28 };
 		const Rect navLinkVisibilityButton{ (panelRect.x + 176), (panelRect.y + 36), 144, 28 };
-     const Rect terrainPaintSingleCellButton{ (panelRect.x + 176), (panelRect.y + 88), 68, 28 };
+	 const Rect terrainPaintSingleCellButton{ (panelRect.x + 176), (panelRect.y + 88), 68, 28 };
 		const Rect terrainPaintAreaButton{ (panelRect.x + 252), (panelRect.y + 88), 68, 28 };
      const Rect millOwnerRect{ (panelRect.x + 16), (panelRect.y + 118), 304, 52 };
 		const Rect toolSectionRect{ (panelRect.x + 12), (panelRect.y + 186), (panelRect.w - 24), 126 };

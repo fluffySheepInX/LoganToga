@@ -41,6 +41,12 @@ enum class MapEditorTerrainPaintMode
 	Area,
 };
 
+enum class MapEditorTireTrackPlacementMode
+{
+	Curve,
+	Straight,
+};
+
 struct RoadResizeDragState
 {
 	size_t placedModelIndex = 0;
@@ -69,13 +75,15 @@ struct MapEditorState
 	Optional<size_t> pendingNavLinkStartIndex;
    Optional<Vec3> pendingWallPlacementStartPosition;
     Optional<Vec3> pendingRoadPlacementStartPosition;
-    Optional<Vec3> pendingTireTrackPlacementStartPosition;
+	Optional<Vec3> pendingTireTrackPlacementStartPosition;
+	Optional<Array<Vec3>> pendingTireTrackSamples;
    Optional<RoadResizeDragState> roadResizeDrag;
    Optional<RoadRotateDragState> roadRotateDrag;
 	Optional<Vec3> hoveredGroundPosition;
    Optional<Point> lastTerrainPaintCell;
     Optional<Point> pendingTerrainPaintRangeStartCell;
 	MapEditorTerrainPaintMode terrainPaintMode = MapEditorTerrainPaintMode::SingleCell;
+	MapEditorTireTrackPlacementMode tireTrackPlacementMode = MapEditorTireTrackPlacementMode::Curve;
 	Color selectedTerrainColor{ 255, 255, 255 };
 	String statusMessage;
 	double statusMessageUntil = 0.0;

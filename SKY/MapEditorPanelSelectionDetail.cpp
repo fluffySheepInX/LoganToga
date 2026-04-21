@@ -8,10 +8,33 @@ namespace MapEditorDetail
 	void DrawMapEditorSelectionDetailSection(MapEditorState& state, MapData& mapData, const Rect& panelRect, const Font& font)
 	{
 		const Rect detailSectionRect{ (panelRect.x + 12), (panelRect.y + 456), (panelRect.w - 24), 156 };
-		const int32 detailY = (detailSectionRect.y + 36);
+       const bool showTireTrackModeButtons = (state.selectedTool == MapEditorTool::PlaceTireTrackDecal);
+		const int32 detailY = (detailSectionRect.y + (showTireTrackModeButtons ? 66 : 36));
 		const int32 detailButtonX = (detailSectionRect.rightX() - 100);
 		DrawMapEditorPanelSection(detailSectionRect);
 		font(U"Selection / Detail").draw((detailSectionRect.x + 10), (detailSectionRect.y + 8), SkyAppSupport::UiInternal::EditorTextOnLightPrimaryColor());
+
+		if (showTireTrackModeButtons)
+		{
+			const Rect tireTrackCurveButton{ (detailSectionRect.x + 10), (detailSectionRect.y + 30), 92, 28 };
+			const Rect tireTrackStraightButton{ (detailSectionRect.x + 110), (detailSectionRect.y + 30), 92, 28 };
+			font(U"タイヤ跡モード").draw((detailSectionRect.x + 212), (detailSectionRect.y + 34), SkyAppSupport::UiInternal::EditorTextOnPanelPrimaryColor());
+
+			if (DrawEditorButton(tireTrackCurveButton, U"曲線", (state.tireTrackPlacementMode == MapEditorTireTrackPlacementMode::Curve)))
+			{
+				state.tireTrackPlacementMode = MapEditorTireTrackPlacementMode::Curve;
+				ResetToolInteractionState(state);
+				SetStatusMessage(state, U"タイヤ跡を 曲線 モードに変更");
+			}
+
+			if (DrawEditorButton(tireTrackStraightButton, U"直線", (state.tireTrackPlacementMode == MapEditorTireTrackPlacementMode::Straight)))
+			{
+				state.tireTrackPlacementMode = MapEditorTireTrackPlacementMode::Straight;
+				ResetToolInteractionState(state);
+				SetStatusMessage(state, U"タイヤ跡を 直線 モードに変更");
+			}
+		}
+
 		if ((not state.selectionMode) && IsTerrainPaintTool(state.selectedTool))
 		{
 			font(U"Terrain Paint: {}"_fmt(ToLabel(state.selectedTool))).draw((detailSectionRect.x + 10), detailY, SkyAppSupport::UiInternal::EditorTextOnPanelPrimaryColor());

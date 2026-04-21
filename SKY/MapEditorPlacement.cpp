@@ -29,6 +29,62 @@ namespace MapEditorUpdateDetail
 		return true;
 	}
 
+	namespace
+	{
+		constexpr double TireTrackInputSampleSpacing = 1.0;
+		constexpr double TireTrackSegmentStep = 4.0;
+		constexpr double TireTrackDecalWidth = 2.0;
+
+		Vec3 CatmullRomVec3(const Vec3& p0, const Vec3& p1, const Vec3& p2, const Vec3& p3, const double t)
+		{
+			const double t2 = (t * t);
+			const double t3 = (t2 * t);
+			return 0.5 * (
+				(2.0 * p1)
+				+ ((-p0 + p2) * t)
+				+ (((2.0 * p0) - (5.0 * p1) + (4.0 * p2) - p3) * t2)
+				+ ((-p0 + (3.0 * p1) - (3.0 * p2) + p3) * t3));
+		}
+
+		Array<Vec3> BuildSmoothTireTrackPath(const Array<Vec3>& samples)
+		{
+			if (samples.size() < 2)
+			{
+				return samples;
+			}
+
+			Array<Vec3> out;
+			out << samples.front();
+
+			if (samples.size() == 2)
+			{
+				const double dist = samples[0].distanceFrom(samples[1]);
+				const int32 steps = Max<int32>(1, static_cast<int32>(Math::Ceil(dist / TireTrackSegmentStep)));
+				for (int32 i = 1; i <= steps; ++i)
+				{
+					out << samples[0].lerp(samples[1], (static_cast<double>(i) / steps));
+				}
+				return out;
+			}
+
+			for (size_t i = 0; (i + 1) < samples.size(); ++i)
+			{
+				const Vec3 p0 = (i == 0) ? samples[i] : samples[i - 1];
+				const Vec3 p1 = samples[i];
+				const Vec3 p2 = samples[i + 1];
+				const Vec3 p3 = ((i + 2) < samples.size()) ? samples[i + 2] : samples[i + 1];
+				const double dist = p1.distanceFrom(p2);
+				const int32 steps = Max<int32>(1, static_cast<int32>(Math::Ceil(dist / TireTrackSegmentStep)));
+				for (int32 s = 1; s <= steps; ++s)
+				{
+					const double t = (static_cast<double>(s) / steps);
+					out << CatmullRomVec3(p0, p1, p2, p3, t);
+				}
+			}
+			return out;
+		}
+	}
+
 	bool HandleTireTrackPlacement(MapEditorState& state, MapData& mapData)
 	{
 		if (state.selectedTool != MapEditorTool::PlaceTireTrackDecal)
@@ -36,20 +92,75 @@ namespace MapEditorUpdateDetail
 			return false;
 		}
 
-		if (MouseL.down() && state.hoveredGroundPosition)
+		if (state.tireTrackPlacementMode == MapEditorTireTrackPlacementMode::Straight)
 		{
-			state.pendingTireTrackPlacementStartPosition = *state.hoveredGroundPosition;
+			if (MouseL.down() && state.hoveredGroundPosition)
+			{
+				state.pendingTireTrackPlacementStartPosition = *state.hoveredGroundPosition;
+				return true;
+			}
+
+			if (state.pendingTireTrackPlacementStartPosition && MouseL.up())
+			{
+				const Vec3 decalStart = *state.pendingTireTrackPlacementStartPosition;
+				const Vec3 decalEnd = state.hoveredGroundPosition.value_or(decalStart);
+				mapData.placedModels << MapEditorDetail::BuildTireTrackDecalFromStartAndEnd(decalStart, decalEnd, 6.0, TireTrackDecalWidth, 0.0);
+				state.pendingTireTrackPlacementStartPosition.reset();
+				SelectPlacedModel(state, mapData.placedModels.size() - 1);
+				MapEditorDetail::SetStatusMessage(state, U"タイヤ跡デカールを配置 (直線)");
+				return true;
+			}
+
 			return true;
 		}
 
-		if (state.pendingTireTrackPlacementStartPosition && MouseL.up())
+		if (MouseL.down() && state.hoveredGroundPosition)
 		{
-			const Vec3 decalStart = *state.pendingTireTrackPlacementStartPosition;
-			const Vec3 decalEnd = state.hoveredGroundPosition.value_or(decalStart);
-			mapData.placedModels << MapEditorDetail::BuildTireTrackDecalFromStartAndEnd(decalStart, decalEnd, 6.0, 2.0, 0.0);
-			state.pendingTireTrackPlacementStartPosition.reset();
-			SelectPlacedModel(state, mapData.placedModels.size() - 1);
-			MapEditorDetail::SetStatusMessage(state, U"タイヤ跡デカールを配置");
+			state.pendingTireTrackSamples = Array<Vec3>{ *state.hoveredGroundPosition };
+			return true;
+		}
+
+		if (state.pendingTireTrackSamples && MouseL.pressed() && state.hoveredGroundPosition)
+		{
+			const Vec3 hover = *state.hoveredGroundPosition;
+			if (state.pendingTireTrackSamples->back().distanceFrom(hover) >= TireTrackInputSampleSpacing)
+			{
+				*state.pendingTireTrackSamples << hover;
+			}
+		}
+
+		if (state.pendingTireTrackSamples && MouseL.up())
+		{
+			Array<Vec3> samples = *state.pendingTireTrackSamples;
+			state.pendingTireTrackSamples.reset();
+
+			if (state.hoveredGroundPosition)
+			{
+				const Vec3 hover = *state.hoveredGroundPosition;
+				if (samples.empty() || (samples.back().distanceFrom(hover) > 1e-3))
+				{
+					samples << hover;
+				}
+			}
+
+			if (samples.size() < 2)
+			{
+				return true;
+			}
+
+			const Array<Vec3> path = BuildSmoothTireTrackPath(samples);
+			const size_t firstNewIndex = mapData.placedModels.size();
+			for (size_t i = 0; (i + 1) < path.size(); ++i)
+			{
+				mapData.placedModels << MapEditorDetail::BuildTireTrackDecalFromStartAndEnd(
+					path[i], path[i + 1], TireTrackSegmentStep, TireTrackDecalWidth, 0.0);
+			}
+
+			if (firstNewIndex < mapData.placedModels.size())
+			{
+				SelectPlacedModel(state, mapData.placedModels.size() - 1);
+				MapEditorDetail::SetStatusMessage(state, U"タイヤ跡デカールを配置 ({} 区間)"_fmt(mapData.placedModels.size() - firstNewIndex));
+			}
 			return true;
 		}
 

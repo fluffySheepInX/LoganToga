@@ -71,13 +71,41 @@ namespace MapEditorSceneDetail
 
 		if (state.selectedTool == MapEditorTool::PlaceTireTrackDecal)
 		{
-			const PlacedModel previewDecal = BuildTireTrackDecalFromStartAndEnd(
-				state.pendingTireTrackPlacementStartPosition.value_or(hoverPosition),
-				hoverPosition,
-				6.0,
-				2.0,
-				0.0);
-			DrawTireTrackOutline(previewDecal, ColorF{ 0.42, 0.86, 1.0, 0.72 });
+			if (state.tireTrackPlacementMode == MapEditorTireTrackPlacementMode::Straight)
+			{
+				const PlacedModel previewDecal = BuildTireTrackDecalFromStartAndEnd(
+					state.pendingTireTrackPlacementStartPosition.value_or(hoverPosition),
+					hoverPosition,
+					6.0,
+					2.0,
+					0.0);
+				DrawTireTrackOutline(previewDecal, ColorF{ 0.42, 0.86, 1.0, 0.72 });
+				return;
+			}
+
+			if (state.pendingTireTrackSamples && (state.pendingTireTrackSamples->size() >= 1))
+			{
+				const ColorF lineColor = ColorF{ 0.42, 0.86, 1.0, 0.85 }.removeSRGBCurve();
+				const Array<Vec3>& samples = *state.pendingTireTrackSamples;
+				for (size_t i = 0; (i + 1) < samples.size(); ++i)
+				{
+					Line3D{ samples[i].movedBy(0, 0.10, 0), samples[i + 1].movedBy(0, 0.10, 0) }.draw(lineColor);
+				}
+				if (not samples.empty())
+				{
+					Line3D{ samples.back().movedBy(0, 0.10, 0), hoverPosition.movedBy(0, 0.10, 0) }.draw(lineColor);
+				}
+			}
+			else
+			{
+				const PlacedModel previewDecal = BuildTireTrackDecalFromStartAndEnd(
+					hoverPosition,
+					hoverPosition,
+					6.0,
+					2.0,
+					0.0);
+				DrawTireTrackOutline(previewDecal, ColorF{ 0.42, 0.86, 1.0, 0.72 });
+			}
 			return;
 		}
 
