@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Effects\*.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -220,35 +221,6 @@
     <None Include="App\engine\shader\d3d11\sprite.vs" />
     <None Include="App\engine\shader\d3d11\square_dot.ps" />
     <None Include="App\engine\shader\d3d11\texture.ps" />
-    <None Include="App\engine\shader\glsl\apply_srgb_curve.frag" />
-    <None Include="App\engine\shader\glsl\bitmapfont.frag" />
-    <None Include="App\engine\shader\glsl\copy.frag" />
-    <None Include="App\engine\shader\glsl\forward3d.frag" />
-    <None Include="App\engine\shader\glsl\forward3d.vert" />
-    <None Include="App\engine\shader\glsl\fullscreen_triangle.frag" />
-    <None Include="App\engine\shader\glsl\fullscreen_triangle.vert" />
-    <None Include="App\engine\shader\glsl\gaussian_blur_13.frag" />
-    <None Include="App\engine\shader\glsl\gaussian_blur_5.frag" />
-    <None Include="App\engine\shader\glsl\gaussian_blur_9.frag" />
-    <None Include="App\engine\shader\glsl\line3d.frag" />
-    <None Include="App\engine\shader\glsl\line3d.vert" />
-    <None Include="App\engine\shader\glsl\msdffont.frag" />
-    <None Include="App\engine\shader\glsl\msdffont_outline.frag" />
-    <None Include="App\engine\shader\glsl\msdffont_outlineshadow.frag" />
-    <None Include="App\engine\shader\glsl\msdffont_shadow.frag" />
-    <None Include="App\engine\shader\glsl\msdfprint.frag" />
-    <None Include="App\engine\shader\glsl\quad_warp.frag" />
-    <None Include="App\engine\shader\glsl\quad_warp.vert" />
-    <None Include="App\engine\shader\glsl\round_dot.frag" />
-    <None Include="App\engine\shader\glsl\sdffont.frag" />
-    <None Include="App\engine\shader\glsl\sdffont_outline.frag" />
-    <None Include="App\engine\shader\glsl\sdffont_outlineshadow.frag" />
-    <None Include="App\engine\shader\glsl\sdffont_shadow.frag" />
-    <None Include="App\engine\shader\glsl\shape.frag" />
-    <None Include="App\engine\shader\glsl\sky.frag" />
-    <None Include="App\engine\shader\glsl\sprite.vert" />
-    <None Include="App\engine\shader\glsl\square_dot.frag" />
-    <None Include="App\engine\shader\glsl\texture.frag" />
     <None Include="App\engine\soundfont\GMGSx.sf2.zstdcmp" />
     <None Include="App\example\csv\config.csv" />
     <None Include="App\example\font\DotGothic16\README-JP.md" />
@@ -276,37 +248,13 @@
     <None Include="App\example\script\paint.as" />
     <None Include="App\example\script\piano.as" />
     <None Include="App\example\script\test.as" />
-    <None Include="App\example\shader\glsl\default2d.vert" />
-    <None Include="App\example\shader\glsl\default2d_shape.frag" />
-    <None Include="App\example\shader\glsl\default2d_texture.frag" />
-    <None Include="App\example\shader\glsl\default3d_forward.frag" />
-    <None Include="App\example\shader\glsl\default3d_forward.vert" />
-    <None Include="App\example\shader\glsl\default3d_forward_shadow_depth.frag" />
-    <None Include="App\example\shader\glsl\default3d_forward_shadow_shading.frag" />
-    <None Include="App\example\shader\glsl\extract_bright_linear.frag" />
-    <None Include="App\example\shader\glsl\forward_fog.frag" />
-    <None Include="App\example\shader\glsl\forward_triplanar.frag" />
-    <None Include="App\example\shader\glsl\game_of_life.frag" />
-    <None Include="App\example\shader\glsl\grayscale.frag" />
-    <None Include="App\example\shader\glsl\homography.frag" />
-    <None Include="App\example\shader\glsl\homography.vert" />
-    <None Include="App\example\shader\glsl\multi_texture_blend.frag" />
-    <None Include="App\example\shader\glsl\multi_texture_mask.frag" />
-    <None Include="App\example\shader\glsl\pixelart.frag" />
-    <None Include="App\example\shader\glsl\poisson_disk.frag" />
-    <None Include="App\example\shader\glsl\posterize.frag" />
-    <None Include="App\example\shader\glsl\rgb_shift.frag" />
-    <None Include="App\example\shader\glsl\rgb_to_bgr.frag" />
-    <None Include="App\example\shader\glsl\soft_shape.vert" />
-    <None Include="App\example\shader\glsl\swirl.frag" />
-    <None Include="App\example\shader\glsl\terrain_forward.frag" />
-    <None Include="App\example\shader\glsl\terrain_forward.vert" />
-    <None Include="App\example\shader\glsl\terrain_normal.frag" />
     <None Include="App\example\svg\cat.svg" />
     <None Include="App\example\svg\turtle.svg" />
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="App\example\shader\glsl\*.frag" />
+    <None Include="App\example\shader\glsl\*.vert" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\shot.mp3" />
@@ -326,6 +274,7 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Effects\*.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -355,68 +304,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App\example\shader\hlsl\default2d.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\default3d_forward.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\default3d_forward_shadow.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\extract_bright_linear.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\forward_fog.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\forward_triplanar.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\game_of_life.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\grayscale.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\homography.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\multi_texture_blend.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\multi_texture_mask.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\poisson_disk.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\pixelart.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\posterize.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\rgb_shift.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\rgb_to_bgr.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\soft_shape.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\swirl.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\terrain_forward.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="App\example\shader\hlsl\terrain_normal.hlsl">
+    <None Include="App\example\shader\hlsl\*.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

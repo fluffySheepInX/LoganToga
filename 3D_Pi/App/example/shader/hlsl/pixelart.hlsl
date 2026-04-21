@@ -32,16 +32,39 @@ cbuffer PSConstants2D : register(b0)
     float4 g_internal;
 }
 
+// ユーザー領域 (b1)
+//   x = levels (色量子化段数)
+cbuffer PSEffectParams : register(b1)
+{
+    float4 g_param0;
+}
+
 float4 PS(s3d::PSInput input) : SV_TARGET
 {
-    // カラーパレットの段階数 (チャンネル毎)
-    const float levels = 5.0;
+    // 1 ドットを何ピクセルにするか (シェーダ内固定: ループ展開のため)
+    const int pixelScale = 4;
+    // カラーパレットの段階数 (チャンネル毎、CPU 側から可変)
+    float levels = max(g_param0.x, 2.0);
 
-    float4 texColor = g_texture0.Sample(g_sampler0, input.uv);
+    uint w, h;
+    g_texture0.GetDimensions(w, h);
+    float2 texSize = float2(w, h);
 
-    // カラー量子化 (ポスタリゼーション)
-    texColor.rgb = floor(texColor.rgb * levels) / (levels - 1.0);
-    texColor.rgb = saturate(texColor.rgb);
+    float2 blockOrigin = floor(input.uv * texSize / pixelScale) * pixelScale;
 
-    return (texColor * input.color) + g_colorAdd;
+    float4 sum = float4(0, 0, 0, 0);
+    [unroll] for (int y = 0; y < pixelScale; ++y)
+    {
+        [unroll] for (int x = 0; x < pixelScale; ++x)
+        {
+            float2 sampleUV = (blockOrigin + float2(x + 0.5, y + 0.5)) / texSize;
+            sum += g_texture0.Sample(g_sampler0, sampleUV);
+        }
+    }
+    float4 c = sum / (pixelScale * pixelScale);
+
+    c.rgb = floor(c.rgb * levels) / (levels - 1.0);
+    c.rgb = saturate(c.rgb);
+
+    return (c * input.color) + g_colorAdd;
 }

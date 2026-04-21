@@ -1,4 +1,5 @@
 ﻿# include <Siv3D.hpp>
+# include "Effects/Effects.hpp"
 
 void Main()
 {
@@ -20,21 +21,14 @@ void Main()
 	Model::RegisterDiffuseTextures(pineModel, TextureDesc::MippedSRGB);
 	Model::RegisterDiffuseTextures(siv3dkunModel, TextureDesc::MippedSRGB);
 
-	// ピクセルアート用の解像度倍率 (大きいほどドットが粗くなる)
-	constexpr int32 pixelScale = 4;
-	const Size lowResSize = Scene::Size() / pixelScale;
-
-	// 3D シーンを低解像度で描画して、ピクセル感を出す
-	const MSRenderTexture renderTexture{ lowResSize, TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
+	// 3D シーンはフル解像度で描画
+	const MSRenderTexture renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
 	DebugCamera3D camera{ renderTexture.size(), 40_deg, Vec3{ 0, 3, -16 } };
 
-	// ピクセルアート風ポストエフェクト用シェーダ (カラー量子化)
-	const PixelShader psPixelArt = HLSL{ U"example/shader/hlsl/pixelart.hlsl", U"PS" }
-		| GLSL{ U"example/shader/glsl/pixelart.frag", {{ U"PSConstants2D", 0 }} };
-	if (not psPixelArt)
-	{
-		throw Error{ U"Failed to load pixelart shader" };
-	}
+	// ポストエフェクト群を構築
+	const Array<pe::Effect> effects = pe::CreateDefaultEffects();
+	const Array<String> effectNames = effects.map([](const pe::Effect& e) { return e.name; });
+	size_t effectIndex = 0;
 
 	while (System::Update())
 	{
@@ -71,16 +65,23 @@ void Main()
 			}
 		}
 
-		// [RenderTexture を 2D シーンに描画]
+		// [RenderTexture を 2D シーンに描画 + 選択中のポストエフェクト適用]
 		{
 			Graphics3D::Flush();
 			renderTexture.resolve();
+			effects[effectIndex].apply(renderTexture);
+		}
 
-			// 低解像度テクスチャを点サンプルで pixelScale 倍に拡大しつつ
-			// カラー量子化シェーダを適用 → ピクセルアート風の見た目
-			const ScopedCustomShader2D shader{ psPixelArt };
-			const ScopedRenderStates2D sampler{ SamplerState::ClampNearest };
-			renderTexture.scaled(static_cast<double>(pixelScale)).draw();
+		// [UI: シェーダ選択]
+		SimpleGUI::RadioButtons(effectIndex, effectNames, Vec2{ 20, 20 }, 220);
+
+		// [UI: 選択中シェーダのパラメータ]
+		if (effects[effectIndex].drawUI)
+		{
+			const Vec2 paramTopLeft{ 20, 40.0 + effectNames.size() * 40.0 + 12.0 };
+			effects[effectIndex].drawUI(paramTopLeft);
 		}
 	}
 }
+
+

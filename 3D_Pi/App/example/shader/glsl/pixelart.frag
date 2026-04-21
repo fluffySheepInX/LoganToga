@@ -32,14 +32,35 @@ layout(std140) uniform PSConstants2D
     vec4 g_internal;
 };
 
+// ユーザー領域 (b1)
+//   x = levels (色量子化段数)
+layout(std140) uniform PSEffectParams
+{
+    vec4 g_param0;
+};
+
 void main()
 {
-    const float levels = 5.0;
+    const int pixelScale = 4;
+    float levels = max(g_param0.x, 2.0);
 
-    vec4 texColor = texture(Texture0, UV);
+    vec2 texSize = vec2(textureSize(Texture0, 0));
 
-    texColor.rgb = floor(texColor.rgb * levels) / (levels - 1.0);
-    texColor.rgb = clamp(texColor.rgb, 0.0, 1.0);
+    vec2 blockOrigin = floor(UV * texSize / float(pixelScale)) * float(pixelScale);
 
-    FragColor = (texColor * Color) + g_colorAdd;
+    vec4 sum = vec4(0.0);
+    for (int y = 0; y < pixelScale; ++y)
+    {
+        for (int x = 0; x < pixelScale; ++x)
+        {
+            vec2 sampleUV = (blockOrigin + vec2(float(x) + 0.5, float(y) + 0.5)) / texSize;
+            sum += texture(Texture0, sampleUV);
+        }
+    }
+    vec4 c = sum / float(pixelScale * pixelScale);
+
+    c.rgb = floor(c.rgb * levels) / (levels - 1.0);
+    c.rgb = clamp(c.rgb, 0.0, 1.0);
+
+    FragColor = (c * Color) + g_colorAdd;
 }
