@@ -115,6 +115,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Effects\*.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -248,12 +249,36 @@
     <None Include="App\example\script\paint.as" />
     <None Include="App\example\script\piano.as" />
     <None Include="App\example\script\test.as" />
+    <None Include="App\example\shader\glsl\crt.frag" />
     <None Include="App\example\svg\cat.svg" />
     <None Include="App\example\svg\turtle.svg" />
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
-    <None Include="App\example\shader\glsl\*.frag" />
+    <None Include="App\example\shader\glsl\default2d_shape.frag" />
+    <None Include="App\example\shader\glsl\default2d_texture.frag" />
+    <None Include="App\example\shader\glsl\default3d_forward.frag" />
+    <None Include="App\example\shader\glsl\default3d_forward_shadow_depth.frag" />
+    <None Include="App\example\shader\glsl\default3d_forward_shadow_shading.frag" />
+    <None Include="App\example\shader\glsl\extract_bright_linear.frag" />
+    <None Include="App\example\shader\glsl\forward_fog.frag" />
+    <None Include="App\example\shader\glsl\forward_triplanar.frag" />
+    <None Include="App\example\shader\glsl\game_of_life.frag" />
+    <None Include="App\example\shader\glsl\grayscale.frag" />
+    <None Include="App\example\shader\glsl\homography.frag" />
+    <None Include="App\example\shader\glsl\kuwahara.frag" />
+    <None Include="App\example\shader\glsl\multi_texture_blend.frag" />
+    <None Include="App\example\shader\glsl\multi_texture_mask.frag" />
+    <None Include="App\example\shader\glsl\outline.frag" />
+    <None Include="App\example\shader\glsl\pixelart.frag" />
+    <None Include="App\example\shader\glsl\poisson_disk.frag" />
+    <None Include="App\example\shader\glsl\posterize.frag" />
+    <None Include="App\example\shader\glsl\rgb_shift.frag" />
+    <None Include="App\example\shader\glsl\rgb_to_bgr.frag" />
+    <None Include="App\example\shader\glsl\swirl.frag" />
+    <None Include="App\example\shader\glsl\terrain_forward.frag" />
+    <None Include="App\example\shader\glsl\terrain_normal.frag" />
+    <None Include="App\example\shader\glsl\toon.frag" />
     <None Include="App\example\shader\glsl\*.vert" />
   </ItemGroup>
   <ItemGroup>
@@ -275,7 +300,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Effects\*.hpp" />
+    <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="UI\Layout.hpp" />
+    <ClInclude Include="UI\RectUI.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">
@@ -304,11 +332,80 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App\example\shader\hlsl\*.hlsl">
+    <None Include="App\example\shader\hlsl\default2d.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\default3d_forward.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\default3d_forward_shadow.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\extract_bright_linear.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\forward_fog.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\forward_triplanar.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\game_of_life.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\grayscale.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\homography.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\kuwahara.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\multi_texture_blend.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\multi_texture_mask.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\outline.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\pixelart.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\poisson_disk.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\posterize.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\rgb_shift.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\rgb_to_bgr.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\soft_shape.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\swirl.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\terrain_forward.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\terrain_normal.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\toon.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
-<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <FxCompile Remove="App\example\shader\hlsl\*.hlsl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

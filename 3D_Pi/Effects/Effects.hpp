@@ -20,6 +20,8 @@ namespace pe
     [[nodiscard]] Effect MakeToonEffect();
     [[nodiscard]] Effect MakePixelArtEffect();
     [[nodiscard]] Effect MakeOutlineEffect();
+    [[nodiscard]] Effect MakeKuwaharaEffect();
+    [[nodiscard]] Effect MakeCRTEffect();
 
     // 既定の効果セットを構築 (新シェーダ追加時はここに 1 行追加する)
     [[nodiscard]]
