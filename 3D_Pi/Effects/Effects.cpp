@@ -9,6 +9,11 @@
 
 namespace pe
 {
+    namespace
+    {
+        Optional<Texture> g_sceneDepthTexture;
+    }
+
     PixelShader LoadPS(StringView name, bool useEffectParams)
     {
         Array<ConstantBufferBinding> bindings = { { U"PSConstants2D", 0 } };
@@ -58,6 +63,16 @@ namespace pe
         return ps;
     }
 
+    void SetSceneDepthTexture(const Optional<Texture>& texture)
+    {
+        g_sceneDepthTexture = texture;
+    }
+
+    const Optional<Texture>& GetSceneDepthTexture()
+    {
+        return g_sceneDepthTexture;
+    }
+
     //-----------------------------------------------
     // Cinematic プリセット
     //-----------------------------------------------
@@ -75,6 +90,30 @@ namespace pe
         return {
             findIndex(U"Bloom"),
             findIndex(U"Tonemap (ACES)"),
+            findIndex(U"Vignette"),
+            findIndex(U"Film Grain"),
+            findIndex(U"FXAA"),
+        };
+    }
+
+    //-----------------------------------------------
+    // Dusty プリセット (2000s 海外ゲーム風)
+    //-----------------------------------------------
+    Array<size_t> GetDustyPresetChain(const Array<Effect>& effects)
+    {
+        const auto findIndex = [&](StringView name) -> size_t
+        {
+            for (size_t i = 0; i < effects.size(); ++i)
+            {
+                if (effects[i].name == name) { return i; }
+            }
+            return 0;
+        };
+
+        return {
+            findIndex(U"Bloom"),
+            findIndex(U"Tonemap (ACES)"),
+            findIndex(U"Warm Grade"),
             findIndex(U"Vignette"),
             findIndex(U"Film Grain"),
             findIndex(U"FXAA"),
@@ -100,10 +139,12 @@ namespace pe
         effects.push_back(MakeSwirlEffect());
         effects.push_back(MakeExtractBrightEffect());
         effects.push_back(MakeBloomEffect());
+        effects.push_back(MakeDepthOfFieldEffect());
         effects.push_back(MakeTonemapACESEffect());
         effects.push_back(MakeVignetteEffect());
         effects.push_back(MakeFilmGrainEffect());
         effects.push_back(MakeFXAAEffect());
+        effects.push_back(MakeWarmGradeEffect());
         return effects;
     }
 }

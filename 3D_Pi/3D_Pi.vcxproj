@@ -251,6 +251,15 @@
     <None Include="App\example\script\test.as" />
     <None Include="App\example\shader\glsl\bloom_extract.frag" />
     <None Include="App\example\shader\glsl\crt.frag" />
+    <None Include="App\example\shader\glsl\dof_combine.frag" />
+    <None Include="App\example\shader\glsl\dof_depth.frag" />
+    <None Include="App\example\shader\glsl\warm_grade.frag" />
+    <None Include="App\example\shader\hlsl\dof_combine.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\dof_depth.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="App\example\shader\glsl\film_grain.frag" />
     <None Include="App\example\shader\glsl\fxaa.frag" />
     <None Include="App\example\shader\glsl\tonemap_aces.frag" />

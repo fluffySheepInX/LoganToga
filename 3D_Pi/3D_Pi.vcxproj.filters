@@ -144,6 +144,63 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="libs\GaussianFS\Gaussian.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -407,81 +464,6 @@
     <None Include="App\engine\shader\d3d11\sprite.vs">
       <Filter>Resource Files\engine\shader\d3d11</Filter>
     </None>
-    <None Include="App\engine\shader\glsl\msdffont.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\msdffont_outline.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\msdffont_outlineshadow.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\msdffont_shadow.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\msdfprint.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\round_dot.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sdffont.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sdffont_outline.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sdffont_outlineshadow.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sdffont_shadow.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\shape.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sky.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\sprite.vert">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\square_dot.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\texture.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\apply_srgb_curve.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\bitmapfont.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\copy.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\forward3d.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\forward3d.vert">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\fullscreen_triangle.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\fullscreen_triangle.vert">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\gaussian_blur_9.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\line3d.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\line3d.vert">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
     <None Include="App\engine\soundfont\GMGSx.sf2.zstdcmp">
       <Filter>Resource Files\engine\soundfont</Filter>
     </None>
@@ -606,9 +588,6 @@
     <None Include="App\example\shader\glsl\homography.frag">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
-    <None Include="App\example\shader\glsl\homography.vert">
-      <Filter>Resource Files\example\shader\glsl</Filter>
-    </None>
     <None Include="App\example\shader\glsl\multi_texture_blend.frag">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
@@ -627,22 +606,13 @@
     <None Include="App\example\shader\glsl\rgb_to_bgr.frag">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
-    <None Include="App\example\shader\glsl\soft_shape.vert">
-      <Filter>Resource Files\example\shader\glsl</Filter>
-    </None>
     <None Include="App\example\shader\glsl\swirl.frag">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
     <None Include="App\example\shader\glsl\terrain_forward.frag">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
-    <None Include="App\example\shader\glsl\terrain_forward.vert">
-      <Filter>Resource Files\example\shader\glsl</Filter>
-    </None>
     <None Include="App\example\shader\glsl\terrain_normal.frag">
-      <Filter>Resource Files\example\shader\glsl</Filter>
-    </None>
-    <None Include="App\example\shader\glsl\default2d.vert">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
     <None Include="App\example\shader\glsl\default2d_shape.frag">
@@ -652,9 +622,6 @@
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
     <None Include="App\example\shader\glsl\default3d_forward.frag">
-      <Filter>Resource Files\example\shader\glsl</Filter>
-    </None>
-    <None Include="App\example\shader\glsl\default3d_forward.vert">
       <Filter>Resource Files\example\shader\glsl</Filter>
     </None>
     <None Include="App\example\shader\glsl\extract_bright_linear.frag">
@@ -753,19 +720,32 @@
     <None Include="App\engine\shader\d3d11\gaussian_blur_13.ps">
       <Filter>Resource Files\engine\shader\d3d11</Filter>
     </None>
-    <None Include="App\engine\shader\glsl\quad_warp.vert">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\gaussian_blur_5.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\gaussian_blur_13.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
-    <None Include="App\engine\shader\glsl\quad_warp.frag">
-      <Filter>Resource Files\engine\shader\glsl</Filter>
-    </None>
     <None Include="App\example\shader\glsl\pixelart.frag" />
+    <None Include="App\example\shader\glsl\bloom_extract.frag" />
+    <None Include="App\example\shader\glsl\crt.frag" />
+    <None Include="App\example\shader\glsl\dof_combine.frag" />
+    <None Include="App\example\shader\glsl\dof_depth.frag" />
+    <None Include="App\example\shader\hlsl\dof_combine.hlsl" />
+    <None Include="App\example\shader\hlsl\dof_depth.hlsl" />
+    <None Include="App\example\shader\glsl\film_grain.frag" />
+    <None Include="App\example\shader\glsl\fxaa.frag" />
+    <None Include="App\example\shader\glsl\tonemap_aces.frag" />
+    <None Include="App\example\shader\glsl\vignette.frag" />
+    <None Include="App\example\shader\glsl\kuwahara.frag" />
+    <None Include="App\example\shader\glsl\outline.frag" />
+    <None Include="App\example\shader\glsl\toon.frag" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\hlsl\kuwahara.hlsl" />
+    <None Include="App\example\shader\hlsl\outline.hlsl" />
+    <None Include="App\example\shader\hlsl\pixelart.hlsl" />
+    <None Include="App\example\shader\hlsl\toon.hlsl" />
+    <None Include="App\example\shader\hlsl\bloom_extract.hlsl" />
+    <None Include="App\example\shader\glsl\warm_grade.frag" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -810,8 +790,26 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\AddonGaussian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Layout.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\RectUI.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="App\example\shader\hlsl\pixelart.hlsl" />
+    <FxCompile Include="App\example\shader\hlsl\warm_grade.hlsl" />
   </ItemGroup>
 </Project>

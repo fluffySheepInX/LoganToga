@@ -26,6 +26,7 @@ void Main()
 	const Font& uiFont = ui::DefaultFont();
 
 	const ColorF backgroundColor = ColorF{ 0.4, 0.6, 0.8 }.removeSRGBCurve();
+	constexpr TextureFormat HDRTextureFormat = TextureFormat::R16G16B16A16_Float;
 
 	const Mesh groundPlane{ MeshData::OneSidedPlane(2000, { 400, 400 }) };
 	const Texture groundTexture{ U"example/texture/ground.jpg", TextureDesc::MippedSRGB };
@@ -36,20 +37,53 @@ void Main()
 	const Model treeModel{ U"example/obj/tree.obj" };
 	const Model pineModel{ U"example/obj/pine.obj" };
 	const Model siv3dkunModel{ U"example/obj/siv3d-kun.obj" };
+	const Array<ConstantBufferBinding> dofDepthVSBindings = {
+		{ U"VSPerView", 1 },
+		{ U"VSPerObject", 2 },
+		{ U"VSPerMaterial", 3 },
+	};
+	const Array<ConstantBufferBinding> dofDepthPSBindings = {
+		{ U"PSPerView", 1 },
+		{ U"PSPerMaterial", 3 },
+	};
+	const VertexShader dofDepthVS =
+		HLSL{ U"example/shader/hlsl/dof_depth.hlsl", U"VS" }
+	  | GLSL{ U"example/shader/glsl/dof_depth.vert", dofDepthVSBindings };
+	const PixelShader dofDepthPS =
+		HLSL{ U"example/shader/hlsl/dof_depth.hlsl", U"PS" }
+	  | GLSL{ U"example/shader/glsl/dof_depth.frag", dofDepthPSBindings };
 
 	// モデルに付随するテクスチャをアセット管理に登録
 	Model::RegisterDiffuseTextures(treeModel, TextureDesc::MippedSRGB);
 	Model::RegisterDiffuseTextures(pineModel, TextureDesc::MippedSRGB);
 	Model::RegisterDiffuseTextures(siv3dkunModel, TextureDesc::MippedSRGB);
 
-	// 3D シーンはフル解像度で描画
-	const MSRenderTexture renderTexture{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes };
+  // 3D シーンはフル解像度の HDR (half-float) で描画
+	//   - Bloom / Tonemap 前の高輝度を保持する
+	//   - sRGB RT ではなく linear float RT を使う
+	const MSRenderTexture renderTexture{ Scene::Size(), HDRTextureFormat, HasDepth::Yes };
 	// チェイン用 ping-pong 中間 RT
-	//   - 線形 (非 sRGB) にして sRGB の往復符号化を排除
+   //   - HDR のまま段間を受け渡すため half-float を使用
 	//   - シーンと同サイズ・深度なし
-	const RenderTexture chainA{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm };
-	const RenderTexture chainB{ Scene::Size(), TextureFormat::R8G8B8A8_Unorm };
+	const RenderTexture chainA{ Scene::Size(), HDRTextureFormat };
+	const RenderTexture chainB{ Scene::Size(), HDRTextureFormat };
+    const RenderTexture sceneDepthTexture{ Scene::Size(), TextureFormat::R32_Float, HasDepth::Yes };
 	DebugCamera3D camera{ renderTexture.size(), 40_deg, Vec3{ 0, 3, -16 } };
+	const auto drawScene = [&]()
+	{
+		groundPlane.draw(groundTexture);
+		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
+		blacksmithModel.draw(Vec3{ 8, 0, 4 });
+		millModel.draw(Vec3{ -8, 0, 4 });
+
+		{
+			const ScopedRenderStates3D renderStates{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
+			treeModel.draw(Vec3{ 16, 0, 4 });
+			pineModel.draw(Vec3{ 16, 0, 0 });
+		}
+
+		siv3dkunModel.draw(Vec3{ 2, 0, -2 }, Quaternion::RotateY(180_deg));
+	};
 
 	// ポストエフェクト群を構築
 	const Array<pe::Effect> effects = pe::CreateDefaultEffects();
@@ -68,37 +102,21 @@ void Main()
 		// [3D シーンの描画]
 		{
 			const ScopedRenderTarget3D target{ renderTexture.clear(backgroundColor) };
+			drawScene();
+		}
 
-			// [モデルの描画]
-			{
-				// 地面の描画
-				groundPlane.draw(groundTexture);
-
-				// 球の描画
-				Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
-
-				// 鍛冶屋の描画
-				blacksmithModel.draw(Vec3{ 8, 0, 4 });
-
-				// 風車の描画
-				millModel.draw(Vec3{ -8, 0, 4 });
-
-				// 木の描画
-				{
-					const ScopedRenderStates3D renderStates{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
-					treeModel.draw(Vec3{ 16, 0, 4 });
-					pineModel.draw(Vec3{ 16, 0, 0 });
-				}
-
-				// Siv3D くんの描画
-				siv3dkunModel.draw(Vec3{ 2, 0, -2 }, Quaternion::RotateY(180_deg));
-			}
+     // [DoF 用深度パス]
+		{
+			const ScopedRenderTarget3D target{ sceneDepthTexture.clear(ColorF{ 100000.0, 0.0, 0.0, 1.0 }) };
+			const ScopedCustomShader3D shader{ dofDepthVS, dofDepthPS };
+			drawScene();
 		}
 
 		// [RenderTexture を 2D シーンに描画 + 効果チェイン適用]
 		{
 			Graphics3D::Flush();
 			renderTexture.resolve();
+			pe::SetSceneDepthTexture(sceneDepthTexture);
 
 			// ping-pong: 入力は最初 renderTexture、以降は chainA/chainB を交互に
 			const Texture* input = &renderTexture;
@@ -135,13 +153,99 @@ void Main()
 
 		// [UI: 効果チェイン編集]
 		{
-			const double chainSectionHeight = chain.size() * (ui::RadioListHeight(effectNames.size(), ui::layout::RowHeight) + ui::layout::SectionGap)
-				+ 44;
-			const size_t effectUiCount = chain.count_if([&](const size_t effectIndex)
+         const Array<size_t> cinematicPresetChain = pe::GetCinematicPresetChain(effects);
+			const Array<size_t> dustyPresetChain = pe::GetDustyPresetChain(effects);
+
+			const auto getParamRows = [&](const pe::Effect& e)
+			{
+                if (not e.drawUI)
 				{
-					return static_cast<bool>(effects[effectIndex].drawUI);
-				});
-			const double paramsHeight = effectUiCount * (28 + ui::layout::ParamBlockHeight + ui::layout::SectionGap);
+                    return 0;
+				}
+
+				if ((e.name == U"Bloom") || (e.name == U"CRT") || (e.name == U"Warm Grade"))
+				{
+					return 4;
+				}
+				if (e.name == U"DoF")
+				{
+					return 5;
+				}
+				if ((e.name == U"アウトライン") || (e.name == U"Vignette"))
+				{
+					return 3;
+				}
+				if ((e.name == U"トゥーン") || (e.name == U"Tonemap (ACES)") || (e.name == U"Film Grain"))
+				{
+					return 2;
+				}
+
+               return 1;
+			};
+
+			const auto getPresetName = [&]() -> String
+			{
+				if (chain == dustyPresetChain)
+				{
+					return U"Dusty (古い洋ゲー風)";
+				}
+				if (chain == cinematicPresetChain)
+				{
+					return U"Cinematic";
+				}
+				if ((chain.size() == 1) && (chain[0] == 0))
+				{
+					return U"なし";
+				}
+
+				return U"Custom";
+			};
+
+			const auto getPresetDescription = [&]() -> String
+			{
+				if (chain == dustyPresetChain)
+				{
+					return U"黄土色寄り、乾いた空気感、古い洋ゲー風の画作り";
+				}
+				if (chain == cinematicPresetChain)
+				{
+					return U"Bloom と ACES を軸にした映画風のチェイン";
+				}
+				if ((chain.size() == 1) && (chain[0] == 0))
+				{
+					return U"ポストエフェクトなし";
+				}
+
+				return U"手動編集されたチェイン";
+			};
+
+			const auto getParamBlockHeight = [&](const pe::Effect& e)
+			{
+				const int32 rows = getParamRows(e);
+				if (rows <= 0)
+				{
+					return 0.0;
+				}
+
+				return (34.0 + (rows - 1) * 40.0);
+			};
+
+			const double chainControlHeight = ui::layout::AddButtonHeight + ui::layout::SectionGap;
+          const double presetSectionBodyHeight = 206.0;
+			const double presetSectionHeight = presetSectionBodyHeight + ui::layout::SectionGap;
+
+			const double chainSectionHeight = chain.size() * (ui::RadioListHeight(effectNames.size(), ui::layout::RowHeight) + ui::layout::SectionGap)
+               + chainControlHeight + presetSectionHeight;
+			double paramsHeight = 0.0;
+			for (const size_t effectIndex : chain)
+			{
+				const pe::Effect& e = effects[effectIndex];
+              const double paramBlockHeight = getParamBlockHeight(e);
+				if (0.0 < paramBlockHeight)
+				{
+                  paramsHeight += (28.0 + paramBlockHeight + ui::layout::SectionGap);
+				}
+			}
 			const double contentHeight = chainSectionHeight + paramsHeight;
 			const double desiredPanelHeight = 46 + contentHeight;
 			const double maxPanelHeight = (Scene::Height() - ui::layout::PanelMargin * 2);
@@ -211,20 +315,44 @@ void Main()
 				{
 					chain.push_back(0);
 				}
-				const RectF presetRect{ uiPos.x + ui::layout::AddButtonWidth + 8, uiPos.y, ui::layout::AddButtonWidth + 30, ui::layout::AddButtonHeight };
-				if (ui::Button(uiFont, U"Cinematic プリセット", presetRect))
+              uiPos.y += ui::layout::AddButtonHeight + ui::layout::SectionGap;
+
+             const RectF presetSectionRect{ uiPos, contentRect.w, presetSectionBodyHeight };
+				ui::Section(presetSectionRect);
+				uiFont(U"プリセット").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
+				uiFont(U"現在: {}"_fmt(getPresetName())).draw(uiPos.movedBy(8, 28), Palette::Dimgray);
+				uiFont(getPresetDescription()).draw(uiPos.movedBy(8, 54), Palette::Gray);
+
+				const RectF cinematicRect{ uiPos.x + 8, uiPos.y + 88, contentRect.w - 16, ui::layout::AddButtonHeight };
+				if (ui::Button(uiFont, U"Cinematic", cinematicRect))
 				{
-					chain = pe::GetCinematicPresetChain(effects);
+					chain = cinematicPresetChain;
 					panelScrollY = 0.0;
 				}
-				uiPos.y += 48;
+
+				const RectF dustyRect{ uiPos.x + 8, uiPos.y + 126, contentRect.w - 16, ui::layout::AddButtonHeight };
+				if (ui::Button(uiFont, U"Dusty (古い洋ゲー風)", dustyRect))
+				{
+					chain = dustyPresetChain;
+					panelScrollY = 0.0;
+				}
+
+				const RectF noneRect{ uiPos.x + 8, uiPos.y + 164, contentRect.w - 16, ui::layout::AddButtonHeight };
+				if (ui::Button(uiFont, U"なしに戻す", noneRect))
+				{
+					chain = { 0 };
+					panelScrollY = 0.0;
+				}
+
+				uiPos.y += presetSectionRect.h + ui::layout::SectionGap;
 
 				for (size_t i = 0; i < chain.size(); ++i)
 				{
 					const pe::Effect& e = effects[chain[i]];
 					if (e.drawUI)
 					{
-						const RectF paramSectionRect{ uiPos, contentRect.w, 28 + ui::layout::ParamBlockHeight };
+                     const double paramBlockHeight = getParamBlockHeight(e);
+						const RectF paramSectionRect{ uiPos, contentRect.w, 28 + paramBlockHeight };
 						ui::Section(paramSectionRect);
 						uiFont(U"[{}] {}"_fmt(i, e.name)).draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
 						e.drawUI(uiPos.movedBy(8, 28));

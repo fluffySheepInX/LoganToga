@@ -22,8 +22,8 @@ namespace pe
                 const Size half = Size{ Max(1, srcSize.x / 2), Max(1, srcSize.y / 2) };
                 if (lastSize != half)
                 {
-                    rtA = RenderTexture{ half, TextureFormat::R8G8B8A8_Unorm };
-                    rtB = RenderTexture{ half, TextureFormat::R8G8B8A8_Unorm };
+                    rtA = RenderTexture{ half, TextureFormat::R16G16B16A16_Float };
+                    rtB = RenderTexture{ half, TextureFormat::R16G16B16A16_Float };
                     lastSize = half;
                 }
             }
