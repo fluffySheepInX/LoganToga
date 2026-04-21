@@ -211,6 +211,12 @@ void Main()
 				{
 					chain.push_back(0);
 				}
+				const RectF presetRect{ uiPos.x + ui::layout::AddButtonWidth + 8, uiPos.y, ui::layout::AddButtonWidth + 30, ui::layout::AddButtonHeight };
+				if (ui::Button(uiFont, U"Cinematic プリセット", presetRect))
+				{
+					chain = pe::GetCinematicPresetChain(effects);
+					panelScrollY = 0.0;
+				}
 				uiPos.y += 48;
 
 				for (size_t i = 0; i < chain.size(); ++i)

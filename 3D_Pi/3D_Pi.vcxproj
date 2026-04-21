@@ -249,7 +249,12 @@
     <None Include="App\example\script\paint.as" />
     <None Include="App\example\script\piano.as" />
     <None Include="App\example\script\test.as" />
+    <None Include="App\example\shader\glsl\bloom_extract.frag" />
     <None Include="App\example\shader\glsl\crt.frag" />
+    <None Include="App\example\shader\glsl\film_grain.frag" />
+    <None Include="App\example\shader\glsl\fxaa.frag" />
+    <None Include="App\example\shader\glsl\tonemap_aces.frag" />
+    <None Include="App\example\shader\glsl\vignette.frag" />
     <None Include="App\example\svg\cat.svg" />
     <None Include="App\example\svg\turtle.svg" />
     <None Include="App\example\toml\config.toml" />
@@ -399,6 +404,9 @@
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\toon.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\bloom_extract.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
