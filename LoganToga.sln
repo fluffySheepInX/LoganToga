@@ -21,9 +21,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ff", "ff\ff.vcxproj", "{CC0
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qqq", "qqq\qqq.vcxproj", "{FE1B0F09-C0C9-4A12-BA23-F1BEF4560E46}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcdecdced", "dcdecdced\dcdecdced.vcxproj", "{70CDC3E6-CD45-49CB-804C-C9D61B108F15}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SKY", "SKY\SKY.vcxproj", "{0A50716C-3409-4BC9-AC05-80F1B3267550}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3D_Pi", "3D_Pi\3D_Pi.vcxproj", "{1095C03F-ECC6-4663-B06B-EDD43D9FF012}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,18 +86,18 @@ Global
 		{FE1B0F09-C0C9-4A12-BA23-F1BEF4560E46}.Debug|x64.Build.0 = Debug|x64
 		{FE1B0F09-C0C9-4A12-BA23-F1BEF4560E46}.Release|x64.ActiveCfg = Release|x64
 		{FE1B0F09-C0C9-4A12-BA23-F1BEF4560E46}.Release|x64.Build.0 = Release|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.BattleDebug|x64.ActiveCfg = Release|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.BattleDebug|x64.Build.0 = Release|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.Debug|x64.ActiveCfg = Debug|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.Debug|x64.Build.0 = Debug|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.Release|x64.ActiveCfg = Release|x64
-		{70CDC3E6-CD45-49CB-804C-C9D61B108F15}.Release|x64.Build.0 = Release|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.BattleDebug|x64.ActiveCfg = Release|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.BattleDebug|x64.Build.0 = Release|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.Debug|x64.ActiveCfg = Debug|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.Debug|x64.Build.0 = Debug|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.Release|x64.ActiveCfg = Release|x64
 		{0A50716C-3409-4BC9-AC05-80F1B3267550}.Release|x64.Build.0 = Release|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.BattleDebug|x64.ActiveCfg = Release|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.BattleDebug|x64.Build.0 = Release|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Debug|x64.ActiveCfg = Debug|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Debug|x64.Build.0 = Debug|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Release|x64.ActiveCfg = Release|x64
+		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
