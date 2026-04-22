@@ -315,6 +315,7 @@
   <ItemGroup>
     <ClInclude Include="Effects\*.hpp" />
     <ClInclude Include="libs\AddonGaussian.h" />
+    <ClInclude Include="Lighting\Lighting.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="UI\Layout.hpp" />
     <ClInclude Include="UI\RectUI.hpp" />

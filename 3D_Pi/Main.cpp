@@ -1,6 +1,7 @@
 ﻿# include <Siv3D.hpp>
 # include "libs/AddonGaussian.h"
 # include "Effects/Effects.hpp"
+# include "Lighting/Lighting.hpp"
 # include "UI/Layout.hpp"
 # include "UI/RectUI.hpp"
 
@@ -25,7 +26,6 @@ void Main()
 
 	const Font& uiFont = ui::DefaultFont();
 
-	const ColorF backgroundColor = ColorF{ 0.4, 0.6, 0.8 }.removeSRGBCurve();
 	constexpr TextureFormat HDRTextureFormat = TextureFormat::R16G16B16A16_Float;
 
 	const Mesh groundPlane{ MeshData::OneSidedPlane(2000, { 400, 400 }) };
@@ -94,14 +94,63 @@ void Main()
 	constexpr size_t MaxChainLength = 6;
 	double panelScrollY = 0.0;
 
+	// ライティングプリセット (Phase 1)
+	size_t lightingPresetIndex = 1; // 既定: 昼
+	size_t prevLightingPresetIndex = lightingPresetIndex;
+	const Array<lighting::Preset>& lightingPresets = lighting::GetPresets();
+	const Array<String> lightingPresetNames = lightingPresets.map([](const lighting::Preset& p) { return p.name; });
+
+	// ライティング微調整 (Phase 1 後段: スライダ + 方位)
+	double sunIntensityScale = 1.0;
+	double ambientIntensityScale = 1.0;
+	Optional<size_t> sunDirectionOverride;
+
+	// 効果インデックスを名前で取得 (見つからなければ 0 = なし)
+	const auto findEffectIndex = [&](StringView name) -> size_t
+	{
+		for (size_t i = 0; i < effects.size(); ++i)
+		{
+			if (effects[i].name == name) { return i; }
+		}
+		return 0;
+	};
+	const size_t acesEffectIndex = findEffectIndex(U"Tonemap (ACES)");
+
 	while (System::Update())
 	{
 		camera.update(4.0);
 		Graphics3D::SetCameraTransform(camera);
 
+		// [ライティングプリセット適用]
+		lighting::Overrides lightingOverrides;
+		lightingOverrides.sunIntensityScale = sunIntensityScale;
+		lightingOverrides.ambientIntensityScale = ambientIntensityScale;
+		lightingOverrides.sunDirectionIndex = sunDirectionOverride;
+		const ColorF currentBackground = lighting::Apply(lightingPresets[lightingPresetIndex], lightingOverrides);
+
+		// [プリセット切替検出: マジックアワー → ACES tonemap 自動挿入]
+		if (lightingPresetIndex != prevLightingPresetIndex)
+		{
+			if ((lightingPresets[lightingPresetIndex].name == U"マジックアワー")
+				&& (acesEffectIndex != 0)
+				&& (not chain.contains(acesEffectIndex)))
+			{
+				if ((chain.size() == 1) && (chain[0] == 0))
+				{
+					chain[0] = acesEffectIndex;
+				}
+				else if (chain.size() < MaxChainLength)
+				{
+					chain.push_back(acesEffectIndex);
+				}
+				panelScrollY = 0.0;
+			}
+			prevLightingPresetIndex = lightingPresetIndex;
+		}
+
 		// [3D シーンの描画]
 		{
-			const ScopedRenderTarget3D target{ renderTexture.clear(backgroundColor) };
+			const ScopedRenderTarget3D target{ renderTexture.clear(currentBackground) };
 			drawScene();
 		}
 
@@ -231,11 +280,20 @@ void Main()
 			};
 
 			const double chainControlHeight = ui::layout::AddButtonHeight + ui::layout::SectionGap;
-          const double presetSectionBodyHeight = 206.0;
+		  const double presetSectionBodyHeight = 206.0;
 			const double presetSectionHeight = presetSectionBodyHeight + ui::layout::SectionGap;
+			const double lightingSectionBodyHeight = 76.0 + lightingPresets.size() * ui::layout::RowHeight + 8.0
+				+ 38.0  // Sun 強度スライダ
+				+ 42.0  // Ambient 強度スライダ
+				+ 26.0  // "Sun 方向" ラベル
+				+ 98.0  // 3x3 方位グリッド (30 * 3 + 4 * 2)
+				+ 8.0
+				+ 30.0  // "プリセット方向に戻す" ボタン
+				+ 8.0;
+			const double lightingSectionHeight = lightingSectionBodyHeight + ui::layout::SectionGap;
 
 			const double chainSectionHeight = chain.size() * (ui::RadioListHeight(effectNames.size(), ui::layout::RowHeight) + ui::layout::SectionGap)
-               + chainControlHeight + presetSectionHeight;
+			   + chainControlHeight + presetSectionHeight + lightingSectionHeight;
 			double paramsHeight = 0.0;
 			for (const size_t effectIndex : chain)
 			{
@@ -282,6 +340,87 @@ void Main()
 				Graphics2D::SetScissorRect(contentRect.asRect());
 
 				Vec2 uiPos = contentRect.pos.movedBy(0, -panelScrollY);
+
+				// [ライティングセクション (Phase 1)]
+				{
+					const RectF lightingSectionRect{ uiPos, contentRect.w, lightingSectionBodyHeight };
+					ui::Section(lightingSectionRect);
+					const lighting::Preset& lp = lightingPresets[lightingPresetIndex];
+					uiFont(U"ライティング (時間帯)").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
+					uiFont(U"現在: {}"_fmt(lp.name)).draw(uiPos.movedBy(8, 26), Palette::Dimgray);
+					uiFont(lp.description).draw(uiPos.movedBy(8, 50), Palette::Gray);
+
+					const RectF radioRect{
+						lightingSectionRect.x + 8,
+						lightingSectionRect.y + 76,
+						lightingSectionRect.w - 16,
+						lightingPresets.size() * ui::layout::RowHeight
+					};
+					ui::RadioList(uiFont, lightingPresetIndex, lightingPresetNames, radioRect, ui::layout::RowHeight);
+
+					double cy = 76.0 + lightingPresets.size() * ui::layout::RowHeight + 8.0;
+
+					// Sun 強度スライダ
+					const double sliderLabelW = 110.0;
+					const double sliderTotalW = lightingSectionRect.w - 16;
+					ui::SliderH(U"Sun 強度", sunIntensityScale, 0.0, 5.0,
+						uiPos.movedBy(8, cy), sliderLabelW, sliderTotalW - sliderLabelW);
+					cy += 38.0;
+
+					// Ambient 強度スライダ
+					ui::SliderH(U"Ambient 強度", ambientIntensityScale, 0.0, 3.0,
+						uiPos.movedBy(8, cy), sliderLabelW, sliderTotalW - sliderLabelW);
+					cy += 42.0;
+
+					// Sun 方向ラベル
+					uiFont(U"Sun 方向 (水平方位)").draw(uiPos.movedBy(8, cy), ui::GetTheme().text);
+					cy += 26.0;
+
+					// 3x3 方位グリッド (中央セルは空)
+					//   row 0: NW(7), N(0), NE(1)
+					//   row 1: W(6),  -,    E(2)
+					//   row 2: SW(5), S(4), SE(3)
+					constexpr int gridLayout[3][3] = {
+						{ 7, 0, 1 },
+						{ 6, -1, 2 },
+						{ 5, 4, 3 },
+					};
+					constexpr double cellW = 60.0, cellH = 30.0, gap = 4.0;
+					const Vec2 gridOrigin = uiPos.movedBy(8, cy);
+					for (int r = 0; r < 3; ++r)
+					{
+						for (int c = 0; c < 3; ++c)
+						{
+							const int idx = gridLayout[r][c];
+							if (idx < 0) { continue; }
+							const RectF btn{
+								gridOrigin.x + c * (cellW + gap),
+								gridOrigin.y + r * (cellH + gap),
+								cellW, cellH
+							};
+							const bool selected = sunDirectionOverride && (*sunDirectionOverride == static_cast<size_t>(idx));
+							if (ui::Button(uiFont, lighting::DirectionLabels[idx], btn))
+							{
+								sunDirectionOverride = static_cast<size_t>(idx);
+							}
+							if (selected)
+							{
+								btn.rounded(6).drawFrame(2.5, ui::GetTheme().accent);
+							}
+						}
+					}
+					cy += 3 * cellH + 2 * gap + 8.0;
+
+					// プリセット方向に戻す
+					const RectF resetBtn{ uiPos.x + 8, uiPos.y + cy, lightingSectionRect.w - 16, 30.0 };
+					if (ui::Button(uiFont, U"プリセット方向に戻す", resetBtn))
+					{
+						sunDirectionOverride.reset();
+					}
+
+					uiPos.y += lightingSectionRect.h + ui::layout::SectionGap;
+				}
+
 				for (size_t i = 0; i < chain.size(); ++i)
 				{
 					const double sectionHeight = ui::RadioListHeight(effectNames.size(), ui::layout::RowHeight);
