@@ -1,5 +1,0 @@
-[sources]
-core = "battle_tutorial_core.toml"
-units = "battle_units.toml"
-map = "battle_tutorial_map.toml"
-progression = "battle_progression.toml"
