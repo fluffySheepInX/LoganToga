@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SKY", "SKY\SKY.vcxproj", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3D_Pi", "3D_Pi\3D_Pi.vcxproj", "{1095C03F-ECC6-4663-B06B-EDD43D9FF012}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stra", "stra\stra.vcxproj", "{40FF3C43-C243-4C95-9829-AB9321104308}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		BattleDebug|x64 = BattleDebug|x64
@@ -90,6 +92,12 @@ Global
 		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Debug|x64.Build.0 = Debug|x64
 		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Release|x64.ActiveCfg = Release|x64
 		{1095C03F-ECC6-4663-B06B-EDD43D9FF012}.Release|x64.Build.0 = Release|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.BattleDebug|x64.ActiveCfg = Release|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.BattleDebug|x64.Build.0 = Release|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.Debug|x64.ActiveCfg = Debug|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.Debug|x64.Build.0 = Debug|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.Release|x64.ActiveCfg = Release|x64
+		{40FF3C43-C243-4C95-9829-AB9321104308}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
