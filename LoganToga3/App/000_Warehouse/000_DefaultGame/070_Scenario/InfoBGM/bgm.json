@@ -1,0 +1,29 @@
+{
+  "BGM": [
+    {
+      "BGMTag": "op_oyubgm_123_aerial_city_master.mp3",
+      "BGMName": "aerial_city_master",
+      "OP": "true"
+    },
+    {
+      "BGMTag": "prepare_oyubgm_136_first_mover_edge_master.mp3",
+      "BGMName": "first_mover_edge_master",
+      "PREPARE": "true"
+    },
+    {
+      "BGMTag": "battle_oyubgm_089_operation_start.mp3",
+      "BGMName": "operation_start",
+      "BATTLE": "true"
+    },
+    {
+      "BGMTag": "battle_oyubgm_121_sky_high_master.mp3",
+      "BGMName": "sky_high_master",
+      "BATTLE": "true"
+    },
+    {
+      "BGMTag": "battle_oyubgm_157_Cheers_Up_Master.mp3",
+      "BGMName": "Cheers_Up_Master",
+      "BATTLE": "true"
+    }
+  ]
+}

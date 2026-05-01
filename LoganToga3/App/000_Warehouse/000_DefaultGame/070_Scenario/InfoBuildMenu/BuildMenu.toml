@@ -1,0 +1,189 @@
+[[commands]]
+owner_tag = "home"
+id = "000"
+name = "傭兵-若人"
+description = "汎用部隊傭兵-若人"
+icon = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "NewbieMercenary" }]
+
+[[commands]]
+owner_tag = "home"
+id = "001"
+name = "工兵"
+description = "工兵"
+icon = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "NewbieKouhei" }]
+
+[[commands]]
+owner_tag = "home"
+id = "002"
+name = "軽装歩兵"
+description = "軽装歩兵"
+icon = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "NewbieRightSo" }]
+
+[[commands]]
+owner_tag = "NewbieMercenary"
+id = "000"
+name = "ラミィ小規模歩兵詰所"
+description = "ラミィ小規模歩兵詰所"
+icon = "keisou-hohei.png"
+create_count = 1
+cost = { wood = 15 }
+build_time = 6.0
+category = "unitProduct"
+requires = ["none"]
+is_move = true
+result = [{ type = "unit", spawn = "LineInfantryM14Tumejo" }]
+
+[[commands]]
+owner_tag = "Kouhei"
+id = "000"
+name = "軽装歩兵詰所"
+description = "浸透してヨシ、決死隊してヨシ、弾除けにヨシ！"
+icon = "keisou-hohei.png"
+create_count = 1
+cost = { wood = 15 }
+build_time = 6.0
+category = "unitProduct"
+requires = ["none"]
+is_move = true
+result = [{ type = "unit", spawn = "keisouTumejo" }]
+
+[[commands]]
+owner_tag = "Kouhei"
+id = "001"
+name = "軽装歩兵産出"
+description = "びううｙぐゆｙぎゅゆｇ"
+icon = "keisou-chipGene006.png"
+create_count = 5
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "LineInfantryM14" }]
+
+[[commands]]
+owner_tag = "Kouhei"
+id = "002"
+name = "鉄条網設置"
+description = "鉄条網"
+icon = "ironWall.png"
+create_count = 1
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = true
+result = [{ type = "unit", spawn = "ironWall" }]
+
+[[commands]]
+owner_tag = "Kouhei"
+id = "003"
+name = "ケッテンクラート産出"
+description = "ケッテンクラート"
+icon = "kettenkrad-export.png"
+create_count = 1
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "Kettenkrad" }]
+
+[[commands]]
+owner_tag = "Kouhei"
+id = "004"
+name = "ブレンガン・キャリアー産出"
+description = "ブレンガン・キャリアー"
+icon = "adsfsdfaasdfsda.png"
+create_count = 1
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "BrenGunCarrier" }]
+
+[[commands]]
+owner_tag = "warehousu"
+id = "build_wall"
+name = "壁を建てる"
+description = "敵の進行を防ぐ壁を建設する。"
+icon = "icon_wall.png"
+cost = { wood = 10, stone = 5 }
+build_time = 5.0
+category = "defense"
+requires = ["tech_wall"]
+is_move = true
+result = [{ type = "obj", spawn = "WallTypeA" }]
+
+[[commands]]
+owner_tag = "warehousu"
+id = "build_gate"
+name = "ゲート"
+description = "開閉可能な門。"
+icon = "icon_gate.png"
+cost = { wood = 15 }
+build_time = 6.0
+category = "defense"
+requires = ["tech_gate"]
+is_move = true
+result = [{ type = "obj", spawn = "GateA" }]
+
+[[commands]]
+owner_tag = "keisouHohei"
+id = "keisouHohei000"
+name = "ライフル銃兵産出"
+description = "ライフル銃兵産出"
+icon = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+result = [{ type = "unit", spawn = "LineInfantryM14" }]
+
+[[commands]]
+owner_tag = "BrenGunCarrier"
+id = "store000"
+name = "格納"
+description = "格納"
+icon = "adsfsdfaasdfsda.png"
+build_time = 0.5
+category = "Carrier"
+requires = ["none"]
+is_move = false
+result = [{ type = "Carrier" }]
+
+[[commands]]
+owner_tag = "BrenGunCarrier"
+id = "releaseAll000"
+name = "展開"
+description = "展開"
+icon = "adsfsdfaasdfsda.png"
+build_time = 0.5
+category = "releaseAll"
+requires = ["none"]
+is_move = false
+result = [{ type = "Carrier" }]

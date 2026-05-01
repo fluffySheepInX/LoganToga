@@ -7,6 +7,7 @@ namespace
 	constexpr double CommandDragThreshold = 12.0;
 	constexpr double SelectionDragThreshold = 12.0;
 	constexpr double AttackClickSnapRadius = 20.0;
+	constexpr double ClickSelectionThresholdSq = 16.0;
 
 	void clearSelection(BattleState& state)
 	{
@@ -190,6 +191,25 @@ void BattleInputController::handleSelectionInput(BattleSession& session, const V
 	}
 
 	if (!allowClickSelection)
+	{
+     state.isClickSelectionPending = false;
+		return;
+	}
+
+	if (MouseL.down())
+	{
+		state.isClickSelectionPending = true;
+		state.clickSelectionStartScreen = Cursor::PosF();
+	}
+
+	if (!(state.isClickSelectionPending && MouseL.up()))
+	{
+		return;
+	}
+
+	const Vec2 clickReleaseDelta = (Cursor::PosF() - state.clickSelectionStartScreen);
+	state.isClickSelectionPending = false;
+	if (clickReleaseDelta.lengthSq() >= ClickSelectionThresholdSq)
 	{
 		return;
 	}

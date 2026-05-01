@@ -10,4 +10,7 @@
 - For LoganToga2Remake2, persistent settings files should follow the existing Local/AppData save-location switch and be stored alongside the continue-run save data.
 
 ## Project SKY Guidelines
-- When the user says Project SKY, work on the SKY project/files rather than LoganToga2Remake2 unless they specify otherwise.
+- When the user says Project SKY, work on the SKY project/files rather than LoganToga2Remake2 unless they specify otherwise。
+
+## LoganToga3 Guidelines
+- For LoganToga3 editor UI, use Rect-based buttons and do not use SimpleGUI; future editor interfaces should be added to the editor toolbar/bar。

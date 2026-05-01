@@ -109,6 +109,8 @@ struct BattleState
 	bool isSelecting = false;
 	Vec2 selectionStart = Vec2::Zero();
 	RectF selectionRect{ 0, 0, 0, 0 };
+ bool isClickSelectionPending = false;
+	Vec2 clickSelectionStartScreen = Vec2::Zero();
 	bool isCommandDragging = false;
 	Vec2 commandDragStart = Vec2::Zero();
 	Vec2 commandDragCurrent = Vec2::Zero();

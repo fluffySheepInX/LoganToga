@@ -50,8 +50,8 @@ void BattleScene::update()
 		const Vec2 cursorWorldPos = screenToWorld(cursorScreenPos);
 		if (!isCursorOnCommandPanel)
 		{
-			const bool allowClickSelection = updateCameraPan();
-			m_inputController.handleSelectionInput(m_session, cursorWorldPos, allowClickSelection);
+         updateCameraPan();
+			m_inputController.handleSelectionInput(m_session, cursorWorldPos, true);
 			m_inputController.handleCommandInput(m_session, cursorWorldPos);
 		}
 		else if (handledCommandPanelClick)

@@ -1,0 +1,46 @@
+{
+    "Map001": [
+        {
+            "id": "000",
+            "name": "Gold1",
+            "icon": "resource-gold.png",
+            "kind": "gold",
+            "amount": "5"
+        },
+        {
+            "id": "001",
+            "name": "Gold2",
+            "icon": "resource-gold.png",
+            "kind": "gold",
+            "amount": "10"
+        },
+        {
+            "id": "002",
+            "name": "trust1",
+            "icon": "resource-trust.png",
+            "kind": "trust",
+            "amount": "5"
+        },
+        {
+            "id": "003",
+            "name": "trust2",
+            "icon": "resource-trust.png",
+            "kind": "trust",
+            "amount": "10"
+        },
+        {
+            "id": "004",
+            "name": "food1",
+            "icon": "resource-food.png",
+            "kind": "food",
+            "amount": "5"
+        },
+        {
+            "id": "005",
+            "name": "food2",
+            "icon": "resource-food.png",
+            "kind": "food",
+            "amount": "10"
+        }
+    ]
+}

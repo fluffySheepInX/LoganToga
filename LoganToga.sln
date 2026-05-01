@@ -25,6 +25,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3D_Pi", "3D_Pi\3D_Pi.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stra", "stra\stra.vcxproj", "{40FF3C43-C243-4C95-9829-AB9321104308}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoganToga3", "LoganToga3\LoganToga3.vcxproj", "{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		BattleDebug|x64 = BattleDebug|x64
@@ -98,6 +100,12 @@ Global
 		{40FF3C43-C243-4C95-9829-AB9321104308}.Debug|x64.Build.0 = Debug|x64
 		{40FF3C43-C243-4C95-9829-AB9321104308}.Release|x64.ActiveCfg = Release|x64
 		{40FF3C43-C243-4C95-9829-AB9321104308}.Release|x64.Build.0 = Release|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.BattleDebug|x64.ActiveCfg = Release|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.BattleDebug|x64.Build.0 = Release|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.Debug|x64.ActiveCfg = Debug|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.Debug|x64.Build.0 = Debug|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.Release|x64.ActiveCfg = Release|x64
+		{FBDE87C0-4356-4C85-98DA-37C4B99C37C9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

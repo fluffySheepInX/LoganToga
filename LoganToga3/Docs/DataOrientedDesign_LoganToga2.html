@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoganToga2 Data-Oriented Redesign</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f7fb;
+            --panel: #ffffff;
+            --ink: #1d2433;
+            --muted: #5f6b7a;
+            --accent: #2563eb;
+            --accent-soft: #e8f0ff;
+            --good: #15803d;
+            --warn: #b45309;
+            --danger: #b91c1c;
+            --border: #d9e1ec;
+            --code-bg: #101827;
+            --code-ink: #dbeafe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #172554 0%, #2563eb 58%, #60a5fa 100%);
+            color: white;
+            padding: 48px 28px;
+        }
+
+        header .wrap,
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            line-height: 1.1;
+        }
+
+        h2 {
+            margin-top: 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            color: #172554;
+        }
+
+        h3 {
+            color: #1e3a8a;
+            margin-top: 28px;
+        }
+
+        p {
+            margin: 0 0 14px;
+        }
+
+        main {
+            padding: 28px;
+        }
+
+        section,
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            margin-bottom: 24px;
+            padding: 24px;
+        }
+
+        .subtitle {
+            color: #dbeafe;
+            font-size: 1.15rem;
+            max-width: 900px;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.16);
+            color: white;
+            font-size: 0.92rem;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        }
+
+        .note {
+            border-left: 5px solid var(--accent);
+            background: var(--accent-soft);
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin: 14px 0;
+        }
+
+        .status {
+            display: inline-block;
+            border-radius: 8px;
+            padding: 2px 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .status.keep {
+            color: var(--good);
+            background: #dcfce7;
+        }
+
+        .status.change {
+            color: var(--warn);
+            background: #ffedd5;
+        }
+
+        .status.risk {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0 4px;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        th,
+        td {
+            text-align: left;
+            vertical-align: top;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code {
+            font-family: Consolas, "Cascadia Mono", monospace;
+            background: #eef2ff;
+            color: #312e81;
+            border-radius: 5px;
+            padding: 1px 5px;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: var(--code-ink);
+            padding: 18px;
+            border-radius: 14px;
+            overflow-x: auto;
+            line-height: 1.45;
+            border: 1px solid #26344f;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        ol.timeline {
+            counter-reset: step;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ol.timeline li {
+            counter-increment: step;
+            position: relative;
+            margin: 0 0 16px;
+            padding: 16px 16px 16px 58px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fbfdff;
+        }
+
+        ol.timeline li::before {
+            content: counter(step);
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            width: 28px;
+            height: 28px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+        }
+
+        .diagram {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .diagram div {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .footer {
+            color: var(--muted);
+            text-align: center;
+            padding: 18px 0 36px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="wrap">
+            <h1>LoganToga2 Data-Oriented Redesign</h1>
+            <p class="subtitle">
+                A proposed data-oriented architecture for the Siv3D/C++ LoganToga2 project that preserves existing gameplay requirements while improving cache locality, testability, save compatibility, and future content iteration.
+            </p>
+            <div class="meta">
+                <span class="pill">Project: LoganToga2</span>
+                <span class="pill">Engine: Siv3D v0.6.15</span>
+                <span class="pill">Language: C++</span>
+                <span class="pill">Approach: Data-Oriented Design</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>1. Executive Summary</h2>
+            <p>
+                The current design stores most unit state and behavior in large object-style classes such as <code>Unit</code>, <code>Skill</code>, <code>ClassBattle</code>, <code>ClassMapBattle</code>, and <code>CommonConfig</code>. This is easy to extend locally, but costly for large battles because update systems repeatedly traverse arrays of heavy objects containing unrelated fields, strings, UI state, build state, combat state, movement state, and optional components.
+            </p>
+            <p>
+                The redesigned model separates stable definitions from runtime instances, stores hot runtime state in structure-of-arrays containers, and moves behavior into systems that operate on compact component stores. The goal is not to remove all classes, but to make the frequently updated battle data dense, explicit, and predictable.
+            </p>
+            <div class="note">
+                <strong>Preservation rule:</strong> unit stats, skills, formations, buildings, resources, battle commands, map metadata, carrier behavior, save data, command-line entry points, and the current game flow are preserved. The redesign changes storage and execution boundaries, not player-facing behavior.
+            </div>
+        </section>
+
+        <section>
+            <h2>2. Requirements to Preserve</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Area</th>
+                        <th>Current Requirement</th>
+                        <th>Redesign Treatment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Unit definitions</td>
+                        <td>Load unit metadata, stats, building flags, skills, carrier settings, race, help text, movement, vision, formation, and price.</td>
+                        <td><span class="status keep">Keep</span> Store as immutable <code>UnitDefStore</code> indexed by <code>UnitDefId</code>.</td>
+                    </tr>
+                    <tr>
+                        <td>Skill definitions</td>
+                        <td>Load projectile/heal behavior, movement type, easing, slow effects, ray rendering, icons, damage kind, range, speed, homing, swing parameters.</td>
+                        <td><span class="status keep">Keep</span> Store as immutable <code>SkillDefStore</code> indexed by <code>SkillDefId</code>.</td>
+                    </tr>
+                    <tr>
+                        <td>Battle runtime</td>
+                        <td>Update unit movement, targeting, skill execution, hit processing, buildings, resources, selection, and task progress.</td>
+                        <td><span class="status change">Change</span> Move mutable fields into runtime stores processed by systems.</td>
+                    </tr>
+                    <tr>
+                        <td>Build menu</td>
+                        <td>Load build actions with costs, requirements, build time, result type, spawn target, and move behavior.</td>
+                        <td><span class="status keep">Keep</span> Store as <code>BuildActionDefStore</code>; runtime build queues reference action IDs.</td>
+                    </tr>
+                    <tr>
+                        <td>Resources</td>
+                        <td>Track gold, trust, food, resource points, icons, names, and amounts.</td>
+                        <td><span class="status keep">Keep</span> Definitions are immutable; runtime amounts are stored per faction/player.</td>
+                    </tr>
+                    <tr>
+                        <td>Map data</td>
+                        <td>Represent battle tiles, buildings, unit placements, resource points, front/defense/neutral positions.</td>
+                        <td><span class="status change">Change</span> Store tiles in flat arrays with tile-index addressing instead of nested objects.</td>
+                    </tr>
+                    <tr>
+                        <td>UI/menu rules</td>
+                        <td>Visible menu controls should use plain Rect-based custom UI when visibility is an issue.</td>
+                        <td><span class="status keep">Keep</span> UI reads view models built from DOD stores; UI state stays separate from simulation state.</td>
+                    </tr>
+                    <tr>
+                        <td>Data files</td>
+                        <td>Existing JSON files load units, skills, build menus, and resources.</td>
+                        <td><span class="status change">Change</span> Keep JSON compatibility first; prefer TOML for new LoganToga2 configuration/data files.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>3. Current Design Pressure Points</h2>
+            <div class="grid two">
+                <div class="card">
+                    <h3>Large Mixed Objects</h3>
+                    <p><code>Unit</code> contains definition data, runtime battle state, UI state, build state, movement state, strings, copied skill objects, and component pointers. Hot loops touch only a few fields but pull large cache lines.</p>
+                </div>
+                <div class="card">
+                    <h3>Definition Copies</h3>
+                    <p>Units copy full <code>Skill</code> objects into <code>arrSkill</code>. Runtime instances should usually reference shared immutable skill definitions by ID.</p>
+                </div>
+                <div class="card">
+                    <h3>Pointer-heavy Components</h3>
+                    <p><code>Array&lt;std::unique_ptr&lt;UnitComponent&gt;&gt;</code> enables polymorphism, but it fragments memory and complicates deterministic runtime snapshots.</p>
+                </div>
+                <div class="card">
+                    <h3>Nested Map Data</h3>
+                    <p><code>Array&lt;Array&lt;MapDetail&gt;&gt;</code> is expressive, but battle systems usually need fast tile indexing, occupancy lookups, and compact flags.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>4. Target Architecture</h2>
+            <div class="diagram" aria-label="Architecture diagram">
+                <div>Data Files<br><small>JSON compatible / TOML preferred</small></div>
+                <div>Definition Loaders<br><small>parse + validate</small></div>
+                <div>Definition Stores<br><small>immutable IDs</small></div>
+                <div>Battle World<br><small>runtime SoA stores</small></div>
+                <div>Systems<br><small>movement, combat, build, resource</small></div>
+                <div>Views/UI<br><small>read-only view models</small></div>
+            </div>
+            <h3>Core Principles</h3>
+            <ul>
+                <li><strong>Separate definitions from instances:</strong> content loaded from disk is immutable and referenced by compact IDs.</li>
+                <li><strong>Use structure-of-arrays for hot runtime data:</strong> positions, HP, orders, factions, and movement states live in separate dense arrays.</li>
+                <li><strong>Use handles instead of raw pointers:</strong> <code>UnitId</code>, <code>SkillDefId</code>, <code>BuildActionDefId</code>, and <code>TileIndex</code> are stable references.</li>
+                <li><strong>Systems own behavior:</strong> movement, targeting, cooldowns, projectile simulation, building, and resource collection operate on stores.</li>
+                <li><strong>UI is a projection:</strong> selection panels and menus consume read-only snapshots/view models, not mutable simulation objects.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. Proposed Data Model</h2>
+            <h3>5.1 Strong IDs</h3>
+            <pre><code>using UnitId = uint32;
+using UnitDefId = uint32;
+using SkillDefId = uint32;
+using BuildActionDefId = uint32;
+using ResourceDefId = uint32;
+using TileIndex = uint32;
+
+constexpr UnitId InvalidUnitId = UINT32_MAX;</code></pre>
+
+            <h3>5.2 Immutable Definition Stores</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Data</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>UnitDefStore</code></td>
+                        <td>Name tags, display names, image names, race, base stats, price, formation, building metadata, vision, maintain range, carrier capacity, skill IDs.</td>
+                        <td>Replaces repeated definition fields inside runtime <code>Unit</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>SkillDefStore</code></td>
+                        <td>Skill type, move type, easing, range, speed, damage kind, projectile size, icons, image keys, slow effects, ray settings, swing arc/reach.</td>
+                        <td>Skills are looked up by <code>SkillDefId</code>; texture assets register during load.</td>
+                    </tr>
+                    <tr>
+                        <td><code>BuildActionDefStore</code></td>
+                        <td>Build action ID, display text, icon, costs, requirements, build time, category, spawn result, movement requirement.</td>
+                        <td>Runtime build queues store action IDs and progress only.</td>
+                    </tr>
+                    <tr>
+                        <td><code>ResourceDefStore</code></td>
+                        <td>Resource name, icon, kind, initial amount.</td>
+                        <td>Player/faction amounts live in runtime resource arrays.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>5.3 Runtime Unit Stores</h3>
+            <pre><code>struct UnitRuntimeStore {
+    Array&lt;UnitDefId&gt; defId;
+    Array&lt;BattleWhichIsThePlayer&gt; faction;
+    Array&lt;bool&gt; alive;
+    Array&lt;bool&gt; battleEnabled;
+
+    Array&lt;Vec2&gt; positionLeft;
+    Array&lt;Vec2&gt; orderPositionLeft;
+    Array&lt;Vec2&gt; velocity;
+    Array&lt;moveState&gt; movementState;
+
+    Array&lt;int32&gt; hp;
+    Array&lt;int32&gt; hpMax;
+    Array&lt;int32&gt; mp;
+    Array&lt;int32&gt; attack;
+    Array&lt;int32&gt; defense;
+    Array&lt;int32&gt; magic;
+    Array&lt;int32&gt; magDef;
+    Array&lt;double&gt; speed;
+    Array&lt;double&gt; move;
+
+    Array&lt;UnitTask&gt; task;
+    Array&lt;double&gt; taskProgressSec;
+    Array&lt;BattleFormation&gt; formation;
+};</code></pre>
+            <p>
+                The runtime store keeps the fields updated every frame in dense arrays. Cold data such as localized names, help text, image names, and race strings remains in definition stores.
+            </p>
+
+            <h3>5.4 Optional Feature Stores</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Current Shape</th>
+                        <th>DOD Shape</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Carrier</td>
+                        <td><code>CarrierComponent</code> inside a unit component list.</td>
+                        <td><code>CarrierStore</code> with <code>carrierUnitIds</code>, capacities, and stored unit ID lists.</td>
+                    </tr>
+                    <tr>
+                        <td>Build queue</td>
+                        <td><code>Array&lt;BuildAction&gt;</code> on each unit.</td>
+                        <td><code>BuildQueueStore</code> keyed by builder unit ID, storing action ID, target tile, count, and progress.</td>
+                    </tr>
+                    <tr>
+                        <td>Selection/UI</td>
+                        <td>Flags such as <code>IsSelect</code>, <code>pressedUnit</code>, temporary button rectangles.</td>
+                        <td><code>SelectionStore</code> and UI-only view models. Simulation systems do not depend on UI flags.</td>
+                    </tr>
+                    <tr>
+                        <td>Cooldown/uses</td>
+                        <td>Global maps and helper functions in battle code.</td>
+                        <td><code>CooldownStore</code> and <code>SkillUseStore</code> indexed by <code>(UnitId, SkillDefId)</code>.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>6. Battle World Layout</h2>
+            <pre><code>struct BattleWorld {
+    UnitRuntimeStore units;
+    CarrierStore carriers;
+    BuildQueueStore buildQueues;
+    ProjectileStore projectiles;
+    CooldownStore cooldowns;
+    SkillUseStore skillUses;
+    ResourceRuntimeStore resources;
+    BattleMapStore map;
+    SelectionStore selection;
+};</code></pre>
+            <h3>Flat Battle Map</h3>
+            <pre><code>struct BattleMapStore {
+    int32 width = 0;
+    int32 height = 0;
+    Array&lt;String&gt; tileTip;
+    Array&lt;uint32&gt; flags;
+    Array&lt;ResourceDefId&gt; resourceDefId;
+    Array&lt;int32&gt; resourceAmount;
+    Array&lt;BattleWhichIsThePlayer&gt; owner;
+    Array&lt;UnitId&gt; occupyingBuilding;
+
+    TileIndex index(int32 row, int32 col) const {
+        return static_cast&lt;TileIndex&gt;(row * width + col);
+    }
+};</code></pre>
+            <p>
+                This replaces nested map access with a single index. It also makes fog, resource collection, pathing, building placement, and occupancy checks cheaper and easier to test.
+            </p>
+        </section>
+
+        <section>
+            <h2>7. System Pipeline</h2>
+            <ol class="timeline">
+                <li>
+                    <strong>Input System</strong><br>
+                    Reads keyboard/mouse/game commands and writes intent data: selected units, target positions, build requests, and skill requests.
+                </li>
+                <li>
+                    <strong>Order System</strong><br>
+                    Validates commands against definitions, resources, faction ownership, cooldowns, map constraints, and current tasks.
+                </li>
+                <li>
+                    <strong>Movement System</strong><br>
+                    Updates pathing state, velocity, position, arrival flags, formation offsets, and maintain range behavior using dense position arrays.
+                </li>
+                <li>
+                    <strong>Targeting System</strong><br>
+                    Scans candidate unit IDs by faction/spatial buckets and chooses targets according to skill definitions and battle rules.
+                </li>
+                <li>
+                    <strong>Skill Activation System</strong><br>
+                    Checks MP, cooldowns, uses, slow effects, and creates projectile or heal commands using <code>SkillDefId</code>.</li>
+                <li>
+                    <strong>Projectile System</strong><br>
+                    Updates projectile trajectories, ray/swing behavior, homing, collision checks, and hit interval state.</li>
+                <li>
+                    <strong>Damage/Heal System</strong><br>
+                    Applies skill effects to HP/MP arrays using explicit damage models for attack, magic, heal, and special cases.</li>
+                <li>
+                    <strong>Build and Resource Systems</strong><br>
+                    Advance build queues, spawn units/buildings, collect resources, and update faction resource stores.</li>
+                <li>
+                    <strong>Render View Builder</strong><br>
+                    Builds draw lists from runtime stores and immutable definitions. Rendering remains Siv3D-specific, while simulation remains data-centric.</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>8. Loader Redesign</h2>
+            <p>
+                The current <code>Init(CommonConfig&amp;)</code> function should become a set of focused loaders. Each loader parses one content domain, validates references, and fills immutable definition stores.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Current Responsibility</th>
+                        <th>New Loader</th>
+                        <th>Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Load <code>Unit.json</code> and copy skill objects into units.</td>
+                        <td><code>UnitDefLoader</code></td>
+                        <td><code>UnitDefStore</code> with skill name references resolved to <code>SkillDefId</code>.</td>
+                    </tr>
+                    <tr>
+                        <td>Load <code>skill.json</code> and register textures.</td>
+                        <td><code>SkillDefLoader</code></td>
+                        <td><code>SkillDefStore</code> plus texture asset registrations.</td>
+                    </tr>
+                    <tr>
+                        <td>Load build menu <code>aaa.json</code>.</td>
+                        <td><code>BuildActionDefLoader</code></td>
+                        <td><code>BuildActionDefStore</code> and category/group indexes.</td>
+                    </tr>
+                    <tr>
+                        <td>Load resource <code>aaa.json</code>.</td>
+                        <td><code>ResourceDefLoader</code></td>
+                        <td><code>ResourceDefStore</code> and initial resource templates.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="note">
+                For LoganToga2, prefer TOML for new configuration/data files. The migration can support both existing JSON and new TOML by converting both into the same definition-store format.
+            </div>
+        </section>
+
+        <section>
+            <h2>9. Compatibility Strategy</h2>
+            <div class="grid three">
+                <div class="card">
+                    <h3>Adapter Layer</h3>
+                    <p>Keep legacy <code>Unit</code> construction temporarily through adapters that build old objects from DOD stores. This allows incremental migration of screens and tests.</p>
+                </div>
+                <div class="card">
+                    <h3>Save Migration</h3>
+                    <p>Preserve existing <code>GameData</code> fields. Add a versioned save section for battle world snapshots only when runtime battle persistence is introduced.</p>
+                </div>
+                <div class="card">
+                    <h3>Command Line</h3>
+                    <p>Keep <code>-Battle</code>, <code>-Battle001</code>, and <code>-test</code>. Each entry point creates the same <code>GameData</code>, definition stores, and battle world as needed.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>10. Migration Plan</h2>
+            <ol class="timeline">
+                <li>
+                    <strong>Create ID and Definition Types</strong><br>
+                    Add <code>UnitDefId</code>, <code>SkillDefId</code>, definition structs, and stores. Do not change battle behavior yet.
+                </li>
+                <li>
+                    <strong>Split Loaders from <code>Main.cpp</code></strong><br>
+                    Move unit, skill, build action, and resource parsing into separate loader files. Validate missing keys and unresolved skill references.
+                </li>
+                <li>
+                    <strong>Replace Copied Skills with IDs</strong><br>
+                    Store skill IDs on unit definitions. Add helper lookup methods for UI and battle code.
+                </li>
+                <li>
+                    <strong>Introduce <code>BattleWorld</code></strong><br>
+                    Spawn runtime units from definitions into dense arrays. Keep legacy battle code bridged through adapter accessors during transition.
+                </li>
+                <li>
+                    <strong>Migrate Hot Systems First</strong><br>
+                    Move movement, HP/MP update, cooldowns, skill uses, projectiles, and targeting into systems operating on stores.
+                </li>
+                <li>
+                    <strong>Flatten Battle Map</strong><br>
+                    Convert <code>ClassMapBattle</code> to <code>BattleMapStore</code> with a compatibility reader for existing map authoring data.</li>
+                <li>
+                    <strong>Separate UI State</strong><br>
+                    Move selection, pressed unit, temporary command rectangles, and menu state out of simulation data. Continue using plain Rect-based controls where needed.</li>
+                <li>
+                    <strong>Remove Legacy Object Dependencies</strong><br>
+                    Once systems and screens read from stores, reduce <code>Unit</code> to a compatibility shell or delete it if no longer needed.</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>11. Testing and Validation</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test Type</th>
+                        <th>Purpose</th>
+                        <th>Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Loader tests</td>
+                        <td>Ensure old JSON and new TOML produce identical definition stores.</td>
+                        <td>Unit count, skill references, build costs, resource kinds, default values.</td>
+                    </tr>
+                    <tr>
+                        <td>Golden data tests</td>
+                        <td>Prevent behavior drift during migration.</td>
+                        <td>Known unit stats, known skill damage, known build result.</td>
+                    </tr>
+                    <tr>
+                        <td>System tests</td>
+                        <td>Validate pure systems without rendering.</td>
+                        <td>Movement arrival, cooldown commit, carrier store/release, resource collection.</td>
+                    </tr>
+                    <tr>
+                        <td>Scenario smoke tests</td>
+                        <td>Confirm existing command-line modes still run.</td>
+                        <td><code>-Battle</code>, <code>-Battle001</code>, <code>-test</code>.</td>
+                    </tr>
+                    <tr>
+                        <td>Performance checks</td>
+                        <td>Confirm DOD migration improves hot loops.</td>
+                        <td>Units updated per frame, projectile collision time, memory allocation count.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>12. Risks and Mitigations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Risk</th>
+                        <th>Impact</th>
+                        <th>Mitigation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Large rewrite destabilizes gameplay.</td>
+                        <td><span class="status risk">High</span></td>
+                        <td>Migrate through adapters and verify with golden tests before removing legacy paths.</td>
+                    </tr>
+                    <tr>
+                        <td>ID indirection makes debugging harder.</td>
+                        <td><span class="status change">Medium</span></td>
+                        <td>Add debug name lookup helpers and inspector views for IDs.</td>
+                    </tr>
+                    <tr>
+                        <td>Definition/runtime split requires many call-site updates.</td>
+                        <td><span class="status change">Medium</span></td>
+                        <td>Start with stores and helper accessors, then migrate systems one at a time.</td>
+                    </tr>
+                    <tr>
+                        <td>JSON to TOML migration can break existing content.</td>
+                        <td><span class="status change">Medium</span></td>
+                        <td>Support both formats until generated stores match exactly.</td>
+                    </tr>
+                    <tr>
+                        <td>Flat map loses authoring readability.</td>
+                        <td><span class="status change">Medium</span></td>
+                        <td>Keep readable source files and compile/load them into flat runtime arrays.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>13. Recommended Folder Layout</h2>
+            <pre><code>LoganToga2/
+  Data/
+    IdTypes.h
+    UnitDef.h
+    SkillDef.h
+    BuildActionDef.h
+    ResourceDef.h
+    DefinitionStores.h
+  Loaders/
+    UnitDefLoader.h/.cpp
+    SkillDefLoader.h/.cpp
+    BuildActionDefLoader.h/.cpp
+    ResourceDefLoader.h/.cpp
+  BattleWorld/
+    BattleWorld.h
+    UnitRuntimeStore.h
+    CarrierStore.h
+    ProjectileStore.h
+    BattleMapStore.h
+  Systems/
+    MovementSystem.h/.cpp
+    TargetingSystem.h/.cpp
+    SkillActivationSystem.h/.cpp
+    ProjectileSystem.h/.cpp
+    DamageSystem.h/.cpp
+    BuildSystem.h/.cpp
+    ResourceSystem.h/.cpp
+  UI/
+    BattleViewModel.h/.cpp
+    BuildMenuViewModel.h/.cpp</code></pre>
+        </section>
+
+        <section>
+            <h2>14. Definition of Done</h2>
+            <ul>
+                <li>All current unit, skill, build menu, resource, map, carrier, and battle requirements load into definition/runtime stores.</li>
+                <li>Existing command-line modes continue to work.</li>
+                <li>Battle behavior remains equivalent for validated scenarios.</li>
+                <li>Hot battle loops operate on dense arrays rather than large mixed objects.</li>
+                <li>UI state is separate from simulation state.</li>
+                <li>New configuration/data additions prefer TOML while preserving old JSON compatibility during migration.</li>
+                <li>Unit/system tests cover loaders, movement, cooldowns, projectile hits, damage/healing, build queues, resources, and carrier behavior.</li>
+            </ul>
+        </section>
+
+        <p class="footer">Generated design document for LoganToga2. File: <code>LoganToga2/docs/DataOrientedDesign_LoganToga2.html</code></p>
+    </main>
+</body>
+</html>
