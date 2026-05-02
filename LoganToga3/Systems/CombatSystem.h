@@ -11,7 +11,7 @@ namespace LT3
         {
             if (!IsValidUnit(world, unit)) continue;
 
-            world.units.cooldownLeftSec[unit] = Max(0.0, world.units.cooldownLeftSec[unit] - dt);
+            world.cooldowns.attackLeftSec[unit] = Max(0.0, world.cooldowns.attackLeftSec[unit] - dt);
             const UnitDef& unitDef = defs.units[world.units.defId[unit]];
             if (unitDef.skill == InvalidSkillDefId) continue;
 
@@ -20,10 +20,10 @@ namespace LT3
             if (!IsValidUnit(world, target)) continue;
 
             world.units.task[unit] = UnitTask::Attacking;
-            if (world.units.cooldownLeftSec[unit] > 0.0) continue;
+            if (world.cooldowns.attackLeftSec[unit] > 0.0) continue;
 
             SpawnProjectile(world, unit, target, unitDef.skill);
-            world.units.cooldownLeftSec[unit] = skill.cooldownSec;
+            world.cooldowns.attackLeftSec[unit] = skill.cooldownSec;
         }
     }
 }

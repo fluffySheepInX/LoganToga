@@ -1,6 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
-# include "BattleQueries.h"
+# include "SelectionSystem.h"
 
 namespace LT3
 {
@@ -12,10 +12,7 @@ namespace LT3
         if (world.units.hp[target] <= 0)
         {
             world.units.alive[target] = false;
-            if (world.selection.selected == target)
-            {
-                world.selection.selected = InvalidUnitId;
-            }
+         ClearSelectionIfUnitSelected(world, target);
         }
     }
 }

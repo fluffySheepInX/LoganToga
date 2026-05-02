@@ -46,4 +46,12 @@ namespace LT3
         Trust,
         Food,
     };
+
+    enum class BuildActionResultType : uint8
+    {
+        None,
+        Unit,
+        Object,
+        Carrier,
+    };
 }

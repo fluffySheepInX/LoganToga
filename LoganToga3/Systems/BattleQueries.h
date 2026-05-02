@@ -36,12 +36,22 @@ namespace LT3
     {
         if (!IsValidUnit(world, unit)) return false;
         if (actionId >= defs.buildActions.size()) return false;
-        if (world.units.task[unit] == UnitTask::Building) return false;
         if (defs.units[world.units.defId[unit]].role != UnitRole::Base) return false;
 
         const BuildActionDef& action = defs.buildActions[actionId];
         return CanUseBuildAction(world, defs, unit, action)
             && CanAffordBuildAction(world, action);
+    }
+
+    inline const Array<BuildActionDefId>& GetQueuedBuildActions(const BattleWorld& world, UnitId unit)
+    {
+        static const Array<BuildActionDefId> empty;
+        if (!IsValidUnit(world, unit) || unit >= world.buildQueues.actionIds.size())
+        {
+            return empty;
+        }
+
+        return world.buildQueues.actionIds[unit];
     }
 
     inline Array<BuildActionUiState> CollectVisibleBuildActions(const BattleWorld& world, const DefinitionStores& defs, UnitId unit)

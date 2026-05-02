@@ -10,11 +10,18 @@
 
 namespace LT3
 {
-    inline void UpdateBattleWorld(BattleWorld& world, const DefinitionStores& defs, double dt)
+  inline bool IsBattleFinished(const BattleWorld& world)
     {
-        if (world.victory || world.defeat) return;
+        return world.victory || world.defeat;
+    }
 
+    inline void AdvanceBattleClock(BattleWorld& world, double dt)
+    {
         world.elapsedSec += dt;
+    }
+
+    inline void UpdateBattleSimulation(BattleWorld& world, const DefinitionStores& defs, double dt)
+    {
         UpdateEnemyDirector(world, defs, dt);
         UpdateMovement(world, defs, dt);
         UpdateGathering(world, defs, dt);
@@ -22,5 +29,13 @@ namespace LT3
         UpdateProjectiles(world, defs, dt);
         UpdateBuildQueues(world, defs, dt);
         UpdateWinLose(world, defs);
+    }
+
+    inline void UpdateBattleWorld(BattleWorld& world, const DefinitionStores& defs, double dt)
+    {
+      if (IsBattleFinished(world)) return;
+
+     AdvanceBattleClock(world, dt);
+        UpdateBattleSimulation(world, defs, dt);
     }
 }

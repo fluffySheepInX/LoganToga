@@ -2,65 +2,208 @@
 # include <Siv3D.hpp>
 # include "BattleOrders.h"
 # include "CameraInputSystem.h"
+# include "SelectionSystem.h"
+# include "../UI/MapEditor.h"
 
 namespace LT3
 {
-    inline void StartVisibleBuildCommand(BattleWorld& world, const DefinitionStores& defs, int32 commandIndex)
-    {
-        int32 visibleIndex = 0;
-        for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
-        {
-            if (!CanUseBuildAction(world, defs, world.selection.selected, defs.buildActions[i]))
-            {
-                continue;
-            }
+	enum class BattleInputCommandType
+	{
+		SelectUnit,
+		MoveUnit,
+		StartBuildAction,
+	};
 
-            if (visibleIndex == commandIndex)
-            {
-                TryStartBuild(world, defs, static_cast<BuildActionDefId>(i));
-                return;
-            }
-            ++visibleIndex;
-        }
-    }
+	struct BattleInputCommand
+	{
+		BattleInputCommandType type = BattleInputCommandType::SelectUnit;
+		UnitId unit = InvalidUnitId;
+      Array<UnitId> units;
+		Vec2 position{ 0, 0 };
+		BuildActionDefId buildAction = InvalidBuildActionDefId;
+	};
 
-    inline void HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const Vec2& worldMouse)
-    {
-        int32 visibleBuildCommandIndex = 0;
-        for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
-        {
-            if (!CanUseBuildAction(world, defs, world.selection.selected, defs.buildActions[i]))
-            {
-                continue;
-            }
+	struct BattleInputIntent
+	{
+		Array<BattleInputCommand> commands;
+	};
 
-            if (BuildCommandIconRect(visibleBuildCommandIndex).leftClicked())
-            {
-                TryStartBuild(world, defs, static_cast<BuildActionDefId>(i));
-                return;
-            }
-            ++visibleBuildCommandIndex;
-        }
+	inline Optional<BuildActionDefId> ResolveVisibleBuildActionId(const BattleWorld& world, const DefinitionStores& defs, UnitId builder, int32 commandIndex)
+	{
+		if (commandIndex < 0)
+		{
+			return none;
+		}
 
-        if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs))
-        {
-            if (const Optional<UnitId> unit = PickUnitAt(world, defs, worldMouse, Faction::Player))
-            {
-                world.selection.selected = *unit;
-            }
-            else
-            {
-                world.selection.selected = InvalidUnitId;
-            }
-        }
+		int32 visibleIndex = 0;
+		for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
+		{
+			if (!CanUseBuildAction(world, defs, builder, defs.buildActions[i]))
+			{
+				continue;
+			}
 
-        if (MouseR.down() && !IsCursorOnBuildCommandUi(world, defs) && IsValidUnit(world, world.selection.selected))
-        {
-            IssueMove(world, world.selection.selected, worldMouse);
-        }
+			if (visibleIndex == commandIndex)
+			{
+				return static_cast<BuildActionDefId>(i);
+			}
+			++visibleIndex;
+		}
 
-        if (Key1.down()) StartVisibleBuildCommand(world, defs, 0);
-        if (Key2.down()) StartVisibleBuildCommand(world, defs, 1);
-        if (Key3.down()) StartVisibleBuildCommand(world, defs, 2);
-    }
+		return none;
+	}
+
+	inline void QueueVisibleBuildCommand(BattleInputIntent& intent, const BattleWorld& world, const DefinitionStores& defs, UnitId builder, int32 commandIndex)
+	{
+		const Optional<BuildActionDefId> actionId = ResolveVisibleBuildActionId(world, defs, builder, commandIndex);
+		if (!actionId)
+		{
+			return;
+		}
+
+		intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, builder, {}, Vec2{ 0, 0 }, *actionId };
+	}
+
+	inline Array<UnitId> PickUnitsInScreenRect(const BattleWorld& world, const DefinitionStores& defs, const RectF& screenRect, Faction faction)
+	{
+		Array<UnitId> units;
+		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		{
+			if (!IsValidUnit(world, unit) || world.units.faction[unit] != faction)
+			{
+				continue;
+			}
+
+			const UnitDef& def = defs.units[world.units.defId[unit]];
+			const Vec2 pos = ToQuarterViewportScreen(world.units.position[unit]);
+			if (screenRect.intersects(Circle{ pos, Max(6.0, def.radius * GetQuarterViewCameraScale()) }))
+			{
+				units << unit;
+			}
+		}
+
+		return units;
+	}
+
+	inline BattleInputIntent ReadBattleInput(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse)
+	{
+		BattleInputIntent intent;
+		const UnitId selectedBuilder = GetSelectedUnit(world);
+
+		int32 visibleBuildCommandIndex = 0;
+		for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
+		{
+			if (!CanUseBuildAction(world, defs, selectedBuilder, defs.buildActions[i]))
+			{
+				continue;
+			}
+
+			if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex).leftClicked())
+			{
+				intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, selectedBuilder, {}, Vec2{ 0, 0 }, static_cast<BuildActionDefId>(i) };
+				return intent;
+			}
+			++visibleBuildCommandIndex;
+		}
+
+		UnitId previewSelected = selectedBuilder;
+		if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
+		{
+			if (const Optional<UnitId> unit = PickUnitAt(world, defs, worldMouse, Faction::Player))
+			{
+				previewSelected = *unit;
+			}
+			else
+			{
+				previewSelected = InvalidUnitId;
+			}
+
+			intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, previewSelected, {}, Vec2{ 0, 0 }, InvalidBuildActionDefId };
+		}
+
+		if (MouseR.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor) && IsValidUnit(world, previewSelected))
+		{
+			intent.commands << BattleInputCommand{ BattleInputCommandType::MoveUnit, previewSelected, GetSelectedUnits(world), worldMouse, InvalidBuildActionDefId };
+		}
+
+		if (Key1.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 0);
+		if (Key2.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 1);
+		if (Key3.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 2);
+
+		return intent;
+	}
+
+	inline void ApplyBattleInputIntent(BattleWorld& world, const DefinitionStores& defs, const BattleInputIntent& intent)
+	{
+		for (const BattleInputCommand& command : intent.commands)
+		{
+			switch (command.type)
+			{
+			case BattleInputCommandType::SelectUnit:
+				if (command.units.isEmpty())
+				{
+					SelectUnit(world, command.unit);
+				}
+				else
+				{
+					SelectUnits(world, command.units);
+				}
+				break;
+			case BattleInputCommandType::MoveUnit:
+				if (command.units.isEmpty())
+				{
+					IssueMove(world, command.unit, command.position);
+				}
+				else
+				{
+					for (const UnitId unit : command.units)
+					{
+						IssueMove(world, unit, command.position);
+					}
+				}
+				break;
+			case BattleInputCommandType::StartBuildAction:
+				TryStartBuild(world, defs, command.unit, command.buildAction);
+				break;
+			}
+		}
+	}
+
+	inline void UpdateAreaSelectionDrag(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, BattleInputIntent& intent)
+	{
+		if (IsCursorOnBuildCommandUi(world, defs, mapEditor))
+		{
+			world.selection.areaDragging = false;
+			return;
+		}
+
+		const Vec2 screenMouse = Cursor::PosF();
+		if (MouseL.down())
+		{
+			world.selection.areaDragging = true;
+			world.selection.areaDragStartScreen = screenMouse;
+			world.selection.areaDragCurrentScreen = screenMouse;
+		}
+		else if (world.selection.areaDragging && MouseL.pressed())
+		{
+			world.selection.areaDragCurrentScreen = screenMouse;
+		}
+		else if (world.selection.areaDragging && MouseL.up())
+		{
+			world.selection.areaDragCurrentScreen = screenMouse;
+			const RectF rect = MakeDragSelectionRect(world.selection.areaDragStartScreen, world.selection.areaDragCurrentScreen);
+			if (rect.size.lengthSq() >= 36.0)
+			{
+				intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, InvalidBuildActionDefId };
+			}
+			world.selection.areaDragging = false;
+		}
+	}
+
+	inline void HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse)
+	{
+		BattleInputIntent intent = ReadBattleInput(world, defs, mapEditor, worldMouse);
+		UpdateAreaSelectionDrag(world, defs, mapEditor, intent);
+		ApplyBattleInputIntent(world, defs, intent);
+	}
 }

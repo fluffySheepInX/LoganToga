@@ -12,6 +12,9 @@ namespace LT3
     inline constexpr double QuarterViewZoomMax = 2.5;
     inline Camera2D QuarterViewCamera2D{ Vec2{ 0.0, 0.0 }, 1.0, CameraControl::None_ };
 
+    inline Vec2 ToQuarterIso(const Vec2& worldPos);
+    inline Vec2 ToQuarterWorld(const Vec2& screenPos);
+
     inline const Camera2DParameters& QuarterViewCameraParametersEnabled()
     {
         static const Camera2DParameters params = []
@@ -38,12 +41,27 @@ namespace LT3
         return params;
     }
 
-    inline void UpdateQuarterViewCamera2D(const bool enableControl)
+    inline void UpdateQuarterViewCamera2D(const bool enableControl, const bool allowWheelZoom = false)
     {
         QuarterViewCamera2D.setParameters(enableControl
             ? QuarterViewCameraParametersEnabled()
             : QuarterViewCameraParametersDisabled());
-        QuarterViewCamera2D.update();
+        if (enableControl)
+        {
+            QuarterViewCamera2D.update();
+        }
+        else if (allowWheelZoom)
+        {
+            const double wheel = Mouse::Wheel();
+            if (wheel != 0.0)
+            {
+                const Vec2 screenPos = Cursor::PosF();
+                const Vec2 anchorWorld = ToQuarterWorld(screenPos);
+                const double nextScale = Clamp((QuarterViewCamera2D.getScale() * Math::Pow(1.1, wheel)), QuarterViewZoomMin, QuarterViewZoomMax);
+                const Vec2 nextCenter = (ToQuarterIso(anchorWorld) - ((screenPos - QuarterViewOrigin) / nextScale));
+                QuarterViewCamera2D.jumpTo(nextCenter, nextScale);
+            }
+        }
     }
 
     inline Vec2 ToQuarterIso(const Vec2& worldPos)
@@ -64,6 +82,13 @@ namespace LT3
     inline Vec2 ToQuarterScreen(const Vec2& worldPos)
     {
         return QuarterViewOrigin + ToQuarterIso(worldPos);
+    }
+
+    inline Vec2 ToQuarterViewportScreen(const Vec2& worldPos)
+    {
+        const double scale = QuarterViewCamera2D.getScale();
+        const Vec2 screenPos = ToQuarterScreen(worldPos);
+        return QuarterViewOrigin + ((screenPos - QuarterViewOrigin) * scale) - (QuarterViewCamera2D.getCenter() * scale);
     }
 
     inline Vec2 ToQuarterWorld(const Vec2& screenPos)

@@ -17,9 +17,6 @@ namespace LT3
         Array<Vec2> targetPosition;
         Array<UnitId> attackTarget;
         Array<int32> hp;
-        Array<double> cooldownLeftSec;
-        Array<double> buildProgressSec;
-        Array<BuildActionDefId> buildAction;
 
         UnitId add(UnitDefId unitDef, Faction unitFaction, const Vec2& pos, const DefinitionStores& defs)
         {
@@ -32,15 +29,34 @@ namespace LT3
             targetPosition << pos;
             attackTarget << InvalidUnitId;
             hp << defs.units[unitDef].hp;
-            cooldownLeftSec << Random(0.0, 0.25);
-            buildProgressSec << 0.0;
-            buildAction << InvalidBuildActionDefId;
             return id;
         }
 
         [[nodiscard]] size_t size() const
         {
             return defId.size();
+        }
+    };
+
+    struct CooldownStore
+    {
+        Array<double> attackLeftSec;
+
+        void addUnit()
+        {
+            attackLeftSec << Random(0.0, 0.25);
+        }
+    };
+
+    struct BuildQueueStore
+    {
+        Array<double> progressSec;
+        Array<Array<BuildActionDefId>> actionIds;
+
+        void addUnit()
+        {
+            progressSec << 0.0;
+            actionIds << Array<BuildActionDefId>{};
         }
     };
 
@@ -79,38 +95,107 @@ namespace LT3
 
         void removeAt(size_t index)
         {
-            position.remove_at(index);
-            velocity.remove_at(index);
-            target.remove_at(index);
-            faction.remove_at(index);
-            skill.remove_at(index);
-            lifeSec.remove_at(index);
+            const size_t last = position.size() - 1;
+            if (index != last)
+            {
+                position[index]  = position[last];
+                velocity[index]  = velocity[last];
+                target[index]    = target[last];
+                faction[index]   = faction[last];
+                skill[index]     = skill[last];
+                lifeSec[index]   = lifeSec[last];
+            }
+            position.pop_back();
+            velocity.pop_back();
+            target.pop_back();
+            faction.pop_back();
+            skill.pop_back();
+            lifeSec.pop_back();
         }
     };
 
     struct ResourceRuntimeStore
     {
-        int32 playerGold = 110;
-        int32 enemyGold = 120;
+        int32 playerGold = 0;
+        int32 enemyGold  = 0;
     };
+
+    inline ResourceRuntimeStore MakeResourceRuntimeStore(const DefinitionStores& defs)
+    {
+        ResourceRuntimeStore store;
+        if (const auto it = defs.resourceByTag.find(U"gold"); it != defs.resourceByTag.end())
+        {
+            const ResourceDef& def = defs.resources[it->second];
+            store.playerGold = def.initialAmount;
+            store.enemyGold  = def.initialAmount;
+        }
+        return store;
+    }
 
     struct SelectionStore
     {
         UnitId selected = InvalidUnitId;
+        Array<UnitId> selectedUnits;
+        bool areaDragging = false;
+        Vec2 areaDragStartScreen{ 0, 0 };
+        Vec2 areaDragCurrentScreen{ 0, 0 };
+    };
+
+    struct BattleMapStore
+    {
+        int32 width  = 0;
+        int32 height = 0;
+        Array<uint32>  flags;          // bit 0 = passable
+        Array<UnitId>  occupying;      // InvalidUnitId = empty
+
+        void init(int32 w, int32 h)
+        {
+            width  = w;
+            height = h;
+            const size_t n = static_cast<size_t>(w * h);
+            flags.assign(n, 1u);       // all passable by default
+            occupying.assign(n, InvalidUnitId);
+        }
+
+        TileIndex index(int32 row, int32 col) const
+        {
+            return static_cast<TileIndex>(row * width + col);
+        }
+
+        bool inBounds(int32 row, int32 col) const
+        {
+            return row >= 0 && col >= 0 && row < height && col < width;
+        }
+
+        bool isPassable(int32 row, int32 col) const
+        {
+            return inBounds(row, col) && (flags[index(row, col)] & 1u) != 0;
+        }
     };
 
     struct BattleWorld
     {
-        int32 mapWidth = DefaultBattleMapWidth;
+        int32 mapWidth  = DefaultBattleMapWidth;
         int32 mapHeight = DefaultBattleMapHeight;
-        UnitRuntimeStore units;
+        UnitRuntimeStore  units;
+        CooldownStore cooldowns;
+        BuildQueueStore buildQueues;
         ResourceNodeStore resourceNodes;
-        ProjectileStore projectiles;
+        ProjectileStore   projectiles;
         ResourceRuntimeStore resources;
-        SelectionStore selection;
+        SelectionStore    selection;
+        BattleMapStore    map;
         double enemySpawnTimerSec = 0.0;
-        double elapsedSec = 0.0;
+        double elapsedSec         = 0.0;
         bool victory = false;
-        bool defeat = false;
+        bool defeat  = false;
     };
+
+    inline UnitId AddUnitToBattleWorld(BattleWorld& world, UnitDefId unitDef, Faction faction, const Vec2& pos, const DefinitionStores& defs)
+    {
+        const UnitId id = world.units.add(unitDef, faction, pos, defs);
+        world.cooldowns.addUnit();
+        world.buildQueues.addUnit();
+        return id;
+    }
 }

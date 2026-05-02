@@ -6,8 +6,12 @@ namespace LT3
 {
     inline void SpawnDefaultBattle(BattleWorld& world, const DefinitionStores& defs)
     {
-        world.mapWidth = DefaultBattleMapWidth;
+        world.mapWidth  = DefaultBattleMapWidth;
         world.mapHeight = DefaultBattleMapHeight;
+
+        world.map.init(world.mapWidth, world.mapHeight);
+
+        world.resources = MakeResourceRuntimeStore(defs);
 
         const UnitDefId worker = defs.unitByTag.at(U"worker");
         const UnitDefId soldier = defs.unitByTag.at(U"soldier");
@@ -20,16 +24,16 @@ namespace LT3
             return;
         }
 
-        world.units.add(base, Faction::Player, Vec2{ 210, 450 }, defs);
-        world.units.add(worker, Faction::Player, Vec2{ 285, 405 }, defs);
-        world.units.add(worker, Faction::Player, Vec2{ 285, 495 }, defs);
-        world.units.add(soldier, Faction::Player, Vec2{ 365, 450 }, defs);
-        world.units.add(archer, Faction::Player, Vec2{ 335, 515 }, defs);
+        AddUnitToBattleWorld(world, base, Faction::Player, Vec2{ 210, 450 }, defs);
+        AddUnitToBattleWorld(world, worker, Faction::Player, Vec2{ 285, 405 }, defs);
+        AddUnitToBattleWorld(world, worker, Faction::Player, Vec2{ 285, 495 }, defs);
+        AddUnitToBattleWorld(world, soldier, Faction::Player, Vec2{ 365, 450 }, defs);
+        AddUnitToBattleWorld(world, archer, Faction::Player, Vec2{ 335, 515 }, defs);
 
-        world.units.add(base, Faction::Enemy, Vec2{ 1390, 450 }, defs);
-        world.units.add(soldier, Faction::Enemy, Vec2{ 1280, 410 }, defs);
-        world.units.add(soldier, Faction::Enemy, Vec2{ 1280, 490 }, defs);
-        world.units.add(archer, Faction::Enemy, Vec2{ 1240, 450 }, defs);
+        AddUnitToBattleWorld(world, base, Faction::Enemy, Vec2{ 1390, 450 }, defs);
+        AddUnitToBattleWorld(world, soldier, Faction::Enemy, Vec2{ 1280, 410 }, defs);
+        AddUnitToBattleWorld(world, soldier, Faction::Enemy, Vec2{ 1280, 490 }, defs);
+        AddUnitToBattleWorld(world, archer, Faction::Enemy, Vec2{ 1240, 450 }, defs);
 
         world.resourceNodes.add(gold, Vec2{ 610, 310 }, 700);
         world.resourceNodes.add(gold, Vec2{ 610, 590 }, 700);

@@ -1,22 +1,24 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "SelectionSystem.h"
 # include "../UI/BattleRenderer.h"
 # include "../UI/MapEditor.h"
 # include "../UI/QuarterView.h"
 
 namespace LT3
 {
-    inline bool IsCursorOnBuildCommandUi(const BattleWorld& world, const DefinitionStores& defs)
+    inline bool IsCursorOnBuildCommandUi(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor)
     {
+        const UnitId selectedUnit = GetSelectedUnit(world);
         int32 visibleBuildCommandIndex = 0;
         for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
         {
-            if (!CanUseBuildAction(world, defs, world.selection.selected, defs.buildActions[i]))
+            if (!CanUseBuildAction(world, defs, selectedUnit, defs.buildActions[i]))
             {
                 continue;
             }
 
-            if (BuildCommandIconRect(visibleBuildCommandIndex).mouseOver())
+            if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex).mouseOver())
             {
                 return true;
             }
@@ -44,7 +46,7 @@ namespace LT3
         {
             return false;
         }
-        if (IsCursorOnBuildCommandUi(world, defs))
+        if (IsCursorOnBuildCommandUi(world, defs, mapEditor))
         {
             return false;
         }
@@ -55,6 +57,7 @@ namespace LT3
     inline void UpdateQuarterViewCamera(const MapEditorState& mapEditor, const BattleWorld& world, const DefinitionStores& defs)
     {
         const bool mapHovered = IsCursorOnMapArea(mapEditor, world, defs);
-        UpdateQuarterViewCamera2D(mapHovered);
+        const bool enableControl = mapHovered && (!mapEditor.enabled || KeySpace.pressed());
+        UpdateQuarterViewCamera2D(enableControl, mapHovered);
     }
 }

@@ -1,0 +1,12 @@
+﻿[layout]
+
+grid = 16
+
+info_x = 16
+
+info_bottom = 848
+
+command_x = 1296
+
+command_y = 612
+

@@ -29,16 +29,20 @@ namespace LT3
         world.units.task[unit] = UnitTask::Moving;
     }
 
-    inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, BuildActionDefId actionId)
+    inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId)
     {
-        const UnitId builder = world.selection.selected;
         if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
 
         const BuildActionDef& action = defs.buildActions[actionId];
         world.resources.playerGold -= action.costGold;
-        world.units.task[builder] = UnitTask::Building;
-        world.units.buildAction[builder] = actionId;
-        world.units.buildProgressSec[builder] = 0.0;
+        Array<BuildActionDefId>& queue = world.buildQueues.actionIds[builder];
+        const bool wasEmpty = queue.isEmpty();
+        queue << actionId;
+        if (wasEmpty)
+        {
+            world.units.task[builder] = UnitTask::Building;
+            world.buildQueues.progressSec[builder] = 0.0;
+        }
         return true;
     }
 }

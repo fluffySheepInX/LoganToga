@@ -6,15 +6,17 @@ namespace LT3
 {
     inline void UpdateEnemyDirector(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
+     const UnitId unitCount = static_cast<UnitId>(world.units.size());
+
         world.enemySpawnTimerSec += dt;
         if (world.enemySpawnTimerSec >= 8.0)
         {
             world.enemySpawnTimerSec = 0.0;
             const UnitDefId spawn = RandomBool(0.55) ? defs.unitByTag.at(U"soldier") : defs.unitByTag.at(U"archer");
-            world.units.add(spawn, Faction::Enemy, Vec2{ 1325, Random(350.0, 550.0) }, defs);
+            AddUnitToBattleWorld(world, spawn, Faction::Enemy, Vec2{ 1325, Random(350.0, 550.0) }, defs);
         }
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        for (UnitId unit = 0; unit < unitCount; ++unit)
         {
             if (!IsValidUnit(world, unit)) continue;
             if (world.units.faction[unit] != Faction::Enemy) continue;

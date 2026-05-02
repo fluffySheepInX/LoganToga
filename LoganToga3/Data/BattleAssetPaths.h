@@ -38,4 +38,11 @@ namespace LT3
             U"000_Warehouse/000_DefaultGame/015_BattleMapCellImage/" + imageName,
             U"App/000_Warehouse/000_DefaultGame/015_BattleMapCellImage/" + imageName);
     }
+
+    inline FilePath ResolveSystemImagePath(const String& imageName)
+    {
+        return ResolveAssetPath(
+            U"000_Warehouse/000_DefaultGame/000_SystemImage/" + imageName,
+            U"App/000_Warehouse/000_DefaultGame/000_SystemImage/" + imageName);
+    }
 }

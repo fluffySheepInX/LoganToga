@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../Systems/BattleSystems.h"
+# include "../Systems/SelectionSystem.h"
 # include "../Data/BattleAssetPaths.h"
 # include "../Data/UnitCatalog.h"
 # include "BattleDebugOverlay.h"
@@ -74,9 +75,9 @@ namespace LT3
         uiFont(U"Selection Debug").draw(44, 272, Palette::White);
 
         String selectionText = U"Selected unit: id=n/a tag=n/a";
-        if (IsValidUnit(world, world.selection.selected))
+        const UnitId selected = GetSelectedUnit(world);
+        if (selected != InvalidUnitId)
         {
-            const UnitId selected = world.selection.selected;
             selectionText = U"Selected unit: id={} tag={}"_fmt(selected, defs.units[world.units.defId[selected]].tag);
         }
 
@@ -143,28 +144,93 @@ namespace LT3
         }
     }
 
-    inline void DrawSelectedUnitPanel(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont)
+    inline void DrawUiLayoutDragHandle(const RectF& panelRect, bool active)
     {
-        if (!IsValidUnit(world, world.selection.selected))
+        if (!active)
         {
             return;
         }
 
-        const UnitId selected = world.selection.selected;
-        const UnitDef& def = defs.units[world.units.defId[selected]];
-        RectF info{ 24, 640, 1520, 190 };
-        info.draw(ColorF{ 0.02, 0.03, 0.045, 0.78 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
-        uiFont(U"Selected: {} ({})"_fmt(def.name, FormatFaction(world.units.faction[selected]))).draw(42, 662, Palette::White);
-        uiFont(U"Tag: {}"_fmt(def.tag)).draw(42, 686, Palette::Skyblue);
-        uiFont(U"HP: {}/{}  ATK: {}  SPD: {:.0f}  Task: {}"_fmt(world.units.hp[selected], def.hp, def.attack, def.speed, static_cast<int32>(world.units.task[selected]))).draw(42, 710, Palette::Lightgray);
-        DrawBattleDebugOverlay(world, defs, uiFont, info);
+        const RectF handle = UiLayoutDragHandleRect(panelRect);
+        handle.draw(ColorF{ 1.0, 0.84, 0.0, 0.18 }).drawFrame(2.0, ColorF{ 1.0, 0.84, 0.0, 0.90 });
+    }
 
-        if (world.units.task[selected] == UnitTask::Building && world.units.buildAction[selected] < defs.buildActions.size())
+    inline void DrawSelectedUnitPanel(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Font& uiFont, bool showDebugInfo)
+    {
+        const UnitId selected = GetSelectedUnit(world);
+        if (selected == InvalidUnitId)
         {
-            const BuildActionDef& action = defs.buildActions[world.units.buildAction[selected]];
-            const double rate = Clamp(world.units.buildProgressSec[selected] / action.buildTimeSec, 0.0, 1.0);
-            RectF{ 290, 777, 180, 12 }.draw(ColorF{ 0, 0, 0, 0.45 });
-            RectF{ 290, 777, 180 * rate, 12 }.draw(Palette::Gold);
+            return;
+        }
+
+        const UnitDef& def = defs.units[world.units.defId[selected]];
+        const bool showDetail = KeyControl.pressed();
+
+        const RectF info = showDetail
+            ? BattleInfoPanelDetailRect(mapEditor)
+            : BattleInfoPanelCompactRect(mapEditor);
+        info.draw(ColorF{ 0.02, 0.03, 0.045, 0.78 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
+        DrawUiLayoutDragHandle(info, mapEditor.uiLayoutEditEnabled);
+
+        const double nameY = info.y + 18.0;
+        uiFont(def.name).draw(info.x + 18.0, nameY, Palette::White);
+
+        const int32 maxHp = Max(1, def.hp);
+        const double hpRate = Clamp(static_cast<double>(world.units.hp[selected]) / maxHp, 0.0, 1.0);
+        const double hpY = nameY + 34.0;
+        uiFont(U"HP:").draw(info.x + 18.0, hpY, Palette::Lightgray);
+
+        const RectF hpBack{ info.x + 66.0, hpY + 4.0, 180.0, 14.0 };
+        hpBack.draw(ColorF{ 0.08, 0.08, 0.08, 0.82 });
+        ColorF hpColor{ 1.0, 0.25, 0.20 };
+        if (hpRate > 0.35)
+        {
+            hpColor = ColorF{ 0.20, 0.80, 0.20 };
+        }
+        RectF{ hpBack.pos, hpBack.w * hpRate, hpBack.h }.draw(hpColor);
+        hpBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.18 });
+
+        uiFont(U"{}/{}  {}%"_fmt(world.units.hp[selected], def.hp, static_cast<int32>(hpRate * 100.0))).draw(info.x + 258.0, hpY, Palette::White);
+        if (hpRate <= 0.30)
+        {
+            uiFont(U"⚠").draw(info.x + 412.0, hpY, ColorF{ 1.0, 0.70, 0.20 });
+        }
+
+        if (!showDetail)
+        {
+            uiFont(U"Ctrl: details").draw(info.x + 18.0, info.y + info.h - 24.0, ColorF{ 0.70, 0.80, 0.95 });
+            return;
+        }
+
+        uiFont(U"Tag: {}  Faction: {}"_fmt(def.tag, FormatFaction(world.units.faction[selected]))).draw(info.x + 18.0, info.y + 82.0, Palette::Skyblue);
+        uiFont(U"ATK: {}  SPD: {:.0f}  Task: {}"_fmt(def.attack, def.speed, static_cast<int32>(world.units.task[selected]))).draw(info.x + 18.0, info.y + 106.0, Palette::Lightgray);
+
+        const Array<BuildActionDefId>& buildQueue = GetQueuedBuildActions(world, selected);
+        if (!buildQueue.isEmpty() && buildQueue.front() < defs.buildActions.size())
+        {
+            const BuildActionDef& action = defs.buildActions[buildQueue.front()];
+            const double rate = Clamp(world.buildQueues.progressSec[selected] / Max(0.001, action.buildTimeSec), 0.0, 1.0);
+            uiFont(U"Build: {}  Queue: {}"_fmt(action.name, buildQueue.size())).draw(info.x + 18.0, info.y + 132.0, Palette::Gold);
+            RectF{ info.x + 240.0, info.y + 138.0, 180.0, 12.0 }.draw(ColorF{ 0, 0, 0, 0.45 });
+            RectF{ info.x + 240.0, info.y + 138.0, 180.0 * rate, 12.0 }.draw(Palette::Gold);
+
+            const size_t previewCount = Min<size_t>(3, buildQueue.size());
+            for (size_t i = 0; i < previewCount; ++i)
+            {
+                const BuildActionDefId queuedActionId = buildQueue[i];
+                if (queuedActionId >= defs.buildActions.size())
+                {
+                    continue;
+                }
+
+                const String prefix = (i == 0) ? U">" : U"-";
+                uiFont(U"{} {}"_fmt(prefix, defs.buildActions[queuedActionId].name)).draw(16, info.x + 18.0, info.y + 156.0 + static_cast<int32>(i) * 18, Palette::Lightgray);
+            }
+        }
+
+        if (showDebugInfo)
+        {
+            DrawBattleDebugOverlay(world, defs, uiFont, info);
         }
     }
 
@@ -187,6 +253,43 @@ namespace LT3
         uiFont(U"Press ESC or close from the Gaussian menu.").drawAt(800, 500, Palette::White);
     }
 
+    inline void DrawNineSliceTexture(const Texture& texture, const RectF& rect, const double cornerSize)
+    {
+        if (rect.w <= 0.0 || rect.h <= 0.0)
+        {
+            return;
+        }
+
+        const double left = Min(cornerSize, rect.w * 0.5);
+        const double right = left;
+        const double top = Min(cornerSize, rect.h * 0.5);
+        const double bottom = top;
+        const double centerW = Max(0.0, rect.w - left - right);
+        const double centerH = Max(0.0, rect.h - top - bottom);
+        constexpr int32 sourceCorner = 16;
+        constexpr int32 sourceCenter = 64;
+
+        texture(Rect{ 0, 0, sourceCorner, sourceCorner }).resized(left, top).draw(rect.pos);
+        texture(Rect{ 80, 0, sourceCorner, sourceCorner }).resized(right, top).draw(rect.pos.movedBy(rect.w - right, 0));
+        texture(Rect{ 0, 80, sourceCorner, sourceCorner }).resized(left, bottom).draw(rect.pos.movedBy(0, rect.h - bottom));
+        texture(Rect{ 80, 80, sourceCorner, sourceCorner }).resized(right, bottom).draw(rect.pos.movedBy(rect.w - right, rect.h - bottom));
+
+        if (centerW > 0.0)
+        {
+            texture(Rect{ sourceCorner, 0, sourceCenter, sourceCorner }).resized(centerW, top).draw(rect.pos.movedBy(left, 0));
+            texture(Rect{ sourceCorner, 80, sourceCenter, sourceCorner }).resized(centerW, bottom).draw(rect.pos.movedBy(left, rect.h - bottom));
+        }
+        if (centerH > 0.0)
+        {
+            texture(Rect{ 0, sourceCorner, sourceCorner, sourceCenter }).resized(left, centerH).draw(rect.pos.movedBy(0, top));
+            texture(Rect{ 80, sourceCorner, sourceCorner, sourceCenter }).resized(right, centerH).draw(rect.pos.movedBy(rect.w - right, top));
+        }
+        if (centerW > 0.0 && centerH > 0.0)
+        {
+            texture(Rect{ sourceCorner, sourceCorner, sourceCenter, sourceCenter }).resized(centerW, centerH).draw(rect.pos.movedBy(left, top));
+        }
+    }
+
     struct UnitVisualInfo
     {
         String image;
@@ -199,6 +302,29 @@ namespace LT3
         mutable HashTable<String, Texture> unitTextureCache;
         mutable HashTable<String, Texture> iconTextureCache;
     };
+
+    inline void DrawAreaSelectionFrame(const BattleWorld& world, const BattleRenderAssets& assets)
+    {
+        if (!IsDragSelectionActive(world))
+        {
+            return;
+        }
+
+        const RectF rect = MakeDragSelectionRect(world.selection.areaDragStartScreen, world.selection.areaDragCurrentScreen);
+        const FilePath framePath = ResolveSystemImagePath(U"areaWaku.png");
+        if (!FileSystem::Exists(framePath))
+        {
+            rect.drawFrame(2, ColorF{ 0.2, 0.8, 1.0, 0.9 });
+            return;
+        }
+
+        if (!assets.iconTextureCache.contains(framePath))
+        {
+            assets.iconTextureCache.emplace(framePath, Texture{ framePath });
+        }
+
+        DrawNineSliceTexture(assets.iconTextureCache.at(framePath), rect, 16.0);
+    }
 
     inline BattleRenderAssets BuildBattleRenderAssets(const UnitCatalog& catalog)
     {
@@ -317,7 +443,7 @@ namespace LT3
 
             const UnitDef& def = defs.units[world.units.defId[unit]];
             const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
-            const bool selected = world.selection.selected == unit;
+            const bool selected = IsUnitSelected(world, unit);
             const ColorF outline = GetUnitOutlineColor(world, unit);
 
             DrawUnitMovePath(world, unit, outline);
@@ -338,9 +464,9 @@ namespace LT3
         return RectF{ origin + Vec2{ col * step.x, row * step.y }, 78, 78 };
     }
 
-    inline void DrawQuarterCommandBar(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont)
+    inline void DrawQuarterCommandBar(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const BattleRenderAssets& assets, const Font& uiFont)
     {
-        const Array<BuildActionUiState> visibleActions = CollectVisibleBuildActions(world, defs, world.selection.selected);
+        const Array<BuildActionUiState> visibleActions = CollectVisibleBuildActionsForSelectedUnit(world, defs);
 
         if (visibleActions.isEmpty())
         {
@@ -348,14 +474,15 @@ namespace LT3
         }
 
         const int32 rows = (static_cast<int32>(visibleActions.size()) + 2) / 3;
-        const RectF panel{ 1088, 668, 286, Max(112.0, rows * 88.0 + 24.0) };
+        const RectF panel = BattleCommandPanelRect(mapEditor, rows);
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.20 });
+        DrawUiLayoutDragHandle(panel, mapEditor.uiLayoutEditEnabled);
 
         for (int32 visibleIndex = 0; visibleIndex < static_cast<int32>(visibleActions.size()); ++visibleIndex)
         {
             const BuildActionUiState& actionState = visibleActions[visibleIndex];
             const BuildActionDef& action = defs.buildActions[actionState.actionId];
-            const RectF rect = BuildCommandIconRect(visibleIndex);
+            const RectF rect = BattleCommandIconRect(mapEditor, visibleIndex);
             const bool affordable = actionState.affordable;
 
             ColorF backColor{ 0.08, 0.08, 0.10, 0.92 };
@@ -410,40 +537,7 @@ namespace LT3
         }
     }
 
-    inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const ClickDebugState& debugState, const Font& uiFont, const Font& titleFont)
-    {
-        Rect{ 0, 0, 1600, 900 }.draw(ColorF{ 0.06, 0.10, 0.09 });
-
-        Rect{ 0, 0, 1600, 70 }.draw(ColorF{ 0.03, 0.04, 0.06, 0.86 });
-        titleFont(U"LoganToga3 - Quarter View Battle").draw(24, 16, Palette::White);
-        uiFont(U"Gold: {}  Units: {}  Time: {:.1f}s"_fmt(world.resources.playerGold, world.units.size(), world.elapsedSec)).draw(760, 23, Palette::Gold);
-
-        {
-            const auto cameraTransform = CreateQuarterViewTransformer();
-
-            DrawQuarterMap(world, defs, uiFont);
-            DrawResourceNodes(world, defs, uiFont);
-            DrawProjectiles(world, defs);
-            DrawUnits(world, defs, uiFont);
-        }
-
-        RectF sidePanel{ 1240, 90, 330, 245 };
-        sidePanel.draw(ColorF{ 0.02, 0.03, 0.045, 0.78 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
-        uiFont(U"Controls").draw(1260, 108, Palette::White);
-        uiFont(U"Left click: select player unit").draw(1260, 142, Palette::Lightgray);
-        uiFont(U"Right click: move selected unit").draw(1260, 170, Palette::Lightgray);
-        uiFont(U"Move workers onto gold to gather").draw(1260, 198, Palette::Lightgray);
-        uiFont(U"Number keys: execute icon order").draw(1260, 240, Palette::Lightgray);
-        uiFont(U"Destroy the enemy base.").draw(1260, 292, Palette::Orange);
-
-        DrawQuarterCommandBar(world, defs, assets, uiFont);
-        DrawClickDebugOverlay(debugState, uiFont);
-        DrawSelectionDebugOverlay(world, defs, uiFont);
-        DrawSelectedUnitPanel(world, defs, uiFont);
-        DrawResultOverlay(world, uiFont, titleFont);
-    }
-
-    inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const MapEditorState& mapEditor, const ClickDebugState& debugState, const Font& uiFont, const Font& titleFont)
+    inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const MapEditorState& mapEditor, const ClickDebugState& debugState, bool showDebugInfo, const Font& uiFont, const Font& titleFont)
     {
         Rect{ 0, 0, 1600, 900 }.draw(ColorF{ 0.06, 0.10, 0.09 });
 
@@ -458,10 +552,14 @@ namespace LT3
             DrawMapEditorObjectLayer(mapEditor);
         }
 
-        DrawQuarterCommandBar(world, defs, assets, uiFont);
-        DrawClickDebugOverlay(debugState, uiFont);
-        DrawSelectionDebugOverlay(world, defs, uiFont);
-        DrawSelectedUnitPanel(world, defs, uiFont);
+        DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);
+        DrawAreaSelectionFrame(world, assets);
+        if (showDebugInfo)
+        {
+            DrawClickDebugOverlay(debugState, uiFont);
+            DrawSelectionDebugOverlay(world, defs, uiFont);
+        }
+        DrawSelectedUnitPanel(world, defs, mapEditor, uiFont, showDebugInfo);
         DrawResultOverlay(world, uiFont, titleFont);
     }
 }

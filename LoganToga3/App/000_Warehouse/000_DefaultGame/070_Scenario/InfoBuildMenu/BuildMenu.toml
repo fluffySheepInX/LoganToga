@@ -10,7 +10,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "NewbieMercenary" }]
+[[commands.result]]
+type = "unit"
+spawn = "NewbieMercenary"
 
 [[commands]]
 owner_tag = "home"
@@ -24,7 +26,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "NewbieKouhei" }]
+[[commands.result]]
+type = "unit"
+spawn = "NewbieKouhei"
 
 [[commands]]
 owner_tag = "home"
@@ -38,7 +42,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "NewbieRightSo" }]
+[[commands.result]]
+type = "unit"
+spawn = "NewbieRightSo"
 
 [[commands]]
 owner_tag = "NewbieMercenary"
@@ -52,7 +58,9 @@ build_time = 6.0
 category = "unitProduct"
 requires = ["none"]
 is_move = true
-result = [{ type = "unit", spawn = "LineInfantryM14Tumejo" }]
+[[commands.result]]
+type = "unit"
+spawn = "LineInfantryM14Tumejo"
 
 [[commands]]
 owner_tag = "Kouhei"
@@ -66,7 +74,9 @@ build_time = 6.0
 category = "unitProduct"
 requires = ["none"]
 is_move = true
-result = [{ type = "unit", spawn = "keisouTumejo" }]
+[[commands.result]]
+type = "unit"
+spawn = "keisouTumejo"
 
 [[commands]]
 owner_tag = "Kouhei"
@@ -80,7 +90,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "LineInfantryM14" }]
+[[commands.result]]
+type = "unit"
+spawn = "LineInfantryM14"
 
 [[commands]]
 owner_tag = "Kouhei"
@@ -94,7 +106,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = true
-result = [{ type = "unit", spawn = "ironWall" }]
+[[commands.result]]
+type = "unit"
+spawn = "ironWall"
 
 [[commands]]
 owner_tag = "Kouhei"
@@ -108,7 +122,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "Kettenkrad" }]
+[[commands.result]]
+type = "unit"
+spawn = "Kettenkrad"
 
 [[commands]]
 owner_tag = "Kouhei"
@@ -122,7 +138,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "BrenGunCarrier" }]
+[[commands.result]]
+type = "unit"
+spawn = "BrenGunCarrier"
 
 [[commands]]
 owner_tag = "warehousu"
@@ -135,7 +153,9 @@ build_time = 5.0
 category = "defense"
 requires = ["tech_wall"]
 is_move = true
-result = [{ type = "obj", spawn = "WallTypeA" }]
+[[commands.result]]
+type = "obj"
+spawn = "WallTypeA"
 
 [[commands]]
 owner_tag = "warehousu"
@@ -148,7 +168,9 @@ build_time = 6.0
 category = "defense"
 requires = ["tech_gate"]
 is_move = true
-result = [{ type = "obj", spawn = "GateA" }]
+[[commands.result]]
+type = "obj"
+spawn = "GateA"
 
 [[commands]]
 owner_tag = "keisouHohei"
@@ -162,7 +184,9 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = false
-result = [{ type = "unit", spawn = "LineInfantryM14" }]
+[[commands.result]]
+type = "unit"
+spawn = "LineInfantryM14"
 
 [[commands]]
 owner_tag = "BrenGunCarrier"
@@ -174,7 +198,8 @@ build_time = 0.5
 category = "Carrier"
 requires = ["none"]
 is_move = false
-result = [{ type = "Carrier" }]
+[[commands.result]]
+type = "Carrier"
 
 [[commands]]
 owner_tag = "BrenGunCarrier"
@@ -186,4 +211,5 @@ build_time = 0.5
 category = "releaseAll"
 requires = ["none"]
 is_move = false
-result = [{ type = "Carrier" }]
+[[commands.result]]
+type = "Carrier"

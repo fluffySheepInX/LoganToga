@@ -35,10 +35,17 @@ namespace LT3
         String tag;
         String ownerTag;
         String name;
+        String description;
         String icon;
+        String category;
+        Array<String> requirements;
+        String spawnTag;
+        BuildActionResultType resultType = BuildActionResultType::None;
         UnitDefId spawnUnit = InvalidUnitDefId;
         int32 costGold = 0;
+        int32 createCount = 1;
         double buildTimeSec = 0.0;
+        bool isMove = false;
     };
 
     struct ResourceDef
@@ -47,6 +54,7 @@ namespace LT3
         String name;
         ResourceKind kind = ResourceKind::Gold;
         ColorF color = Palette::Gold;
+        int32 initialAmount = 100;
     };
 
     struct DefinitionStores
@@ -92,9 +100,4 @@ namespace LT3
             return id;
         }
     };
-
-    FilePath ResolveBuildMenuTomlPath();
-    UnitDefId EnsureBuildMenuSpawnUnit(DefinitionStores& defs, const String& tag);
-    void LoadBuildMenuDefinitions(DefinitionStores& defs);
-    DefinitionStores CreateDefaultDefinitions();
 }

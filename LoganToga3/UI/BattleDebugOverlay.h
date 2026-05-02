@@ -6,7 +6,7 @@ namespace LT3
 {
     inline String BuildMenuDebugText(const BattleWorld& world, const DefinitionStores& defs)
     {
-        const FilePath buildMenuPath = ResolveBuildMenuTomlPath();
+        const FilePath buildMenuPath = ResolveBuildActionTomlPath();
         const bool buildMenuFileExists = FileSystem::Exists(buildMenuPath);
         const bool buildMenuTomlReadable = buildMenuFileExists && static_cast<bool>(TOMLReader{ buildMenuPath });
 
@@ -32,7 +32,7 @@ namespace LT3
     inline Array<String> BuildMenuDebugLines(const BattleWorld& world, const DefinitionStores& defs)
     {
         Array<String> lines;
-        const FilePath buildMenuPath = ResolveBuildMenuTomlPath();
+        const FilePath buildMenuPath = ResolveBuildActionTomlPath();
         lines << U"Path: {}"_fmt(buildMenuPath);
 
         const bool buildMenuFileExists = FileSystem::Exists(buildMenuPath);
@@ -72,27 +72,34 @@ namespace LT3
             const String id = commandValue[U"id"].getOr<String>(U"");
 
             String spawnTag;
+            BuildActionResultType parsedResultType = BuildActionResultType::None;
             const TOMLValue resultArray = commandValue[U"result"];
-            const bool resultIsArray = resultArray.isArray();
-            if (resultIsArray)
+            const bool hasReadableResult = TryReadBuildActionResult(resultArray, parsedResultType, spawnTag);
+
+            String resultType = U"<none>";
+            switch (parsedResultType)
             {
-                for (const auto resultValue : resultArray.arrayView())
-                {
-                    if (resultValue[U"type"].getOr<String>(U"") == U"unit")
-                    {
-                        spawnTag = resultValue[U"spawn"].getOr<String>(U"");
-                        break;
-                    }
-                }
+            case BuildActionResultType::Unit:
+                resultType = U"unit";
+                break;
+            case BuildActionResultType::Object:
+                resultType = U"obj";
+                break;
+            case BuildActionResultType::Carrier:
+                resultType = U"carrier";
+                break;
+            default:
+                break;
             }
 
             if (i < 4)
             {
-                lines << U"[{}] owner={} id={} resultArray={} spawn={} known={}"_fmt(
+                lines << U"[{}] owner={} id={} resultReadable={} type={} spawn={} known={}"_fmt(
                     i,
                     ownerTag.isEmpty() ? U"<empty>" : ownerTag,
                     id.isEmpty() ? U"<empty>" : id,
-                    resultIsArray ? U"yes" : U"no",
+                    hasReadableResult ? U"yes" : U"no",
+                    resultType,
                     spawnTag.isEmpty() ? U"<empty>" : spawnTag,
                     (!spawnTag.isEmpty() && defs.unitByTag.contains(spawnTag)) ? U"yes" : U"no");
             }

@@ -329,11 +329,20 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppState.h" />
+    <ClInclude Include="App\AppDefinitionState.h" />
+    <ClInclude Include="App\AppLifecycle.h" />
+    <ClInclude Include="App\AppRuntimeState.h" />
+    <ClInclude Include="App\AppUiState.h" />
     <ClInclude Include="BattleWorld\BattleWorld.h" />
     <ClInclude Include="Data\BattleAssetPaths.h" />
     <ClInclude Include="Data\DefinitionLoaders.h" />
     <ClInclude Include="Data\DefinitionStores.h" />
     <ClInclude Include="Data\IdTypes.h" />
+    <ClInclude Include="Data\Loaders\BuildActionDefLoader.h" />
+    <ClInclude Include="Data\Loaders\ResourceDefLoader.h" />
+    <ClInclude Include="Data\Loaders\SkillDefLoader.h" />
+    <ClInclude Include="Data\Loaders\UnitDefLoader.h" />
     <ClInclude Include="Data\UnitCatalog.h" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="stdafx.h" />
@@ -352,11 +361,17 @@
     <ClInclude Include="Systems\MovementSystem.h" />
     <ClInclude Include="Systems\ProjectileSystem.h" />
     <ClInclude Include="Systems\ResourceSystem.h" />
+    <ClInclude Include="Systems\SelectionSystem.h" />
     <ClInclude Include="Systems\TargetingSystem.h" />
     <ClInclude Include="Systems\WinLoseSystem.h" />
     <ClInclude Include="UI\BattleDebugOverlay.h" />
     <ClInclude Include="UI\BattleRenderer.h" />
     <ClInclude Include="UI\MapEditor.h" />
+    <ClInclude Include="UI\MapEditorDraw.h" />
+    <ClInclude Include="UI\MapEditorInput.h" />
+    <ClInclude Include="UI\MapEditorMapData.h" />
+    <ClInclude Include="UI\MapEditorTypes.h" />
+    <ClInclude Include="UI\MapEditorUiLayout.h" />
     <ClInclude Include="UI\QuarterView.h" />
   </ItemGroup>
   <ItemGroup>
