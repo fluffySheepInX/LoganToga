@@ -12,7 +12,7 @@ namespace LT3
             if (!IsValidUnit(world, unit) || world.units.faction[unit] != faction) continue;
 
             const UnitDef& def = defs.units[world.units.defId[unit]];
-            if (Circle{ world.units.position[unit], def.radius + 6.0 }.intersects(pos))
+            if (Circle{ world.units.position[unit], UnitSelectionRadius(def) + 6.0 }.intersects(pos))
             {
                 return unit;
             }

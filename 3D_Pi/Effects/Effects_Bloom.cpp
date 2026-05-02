@@ -78,6 +78,13 @@ namespace pe
                 s->blurPass, 1.0, 6.0, pos + Vec2{ 0, 120 }, 130, 200);
             s->blurPass = std::round(s->blurPass);
         };
+        e.reset = [s]()
+        {
+            s->threshold = 0.8;
+            s->knee = 0.5;
+            s->intensity = 1.0;
+            s->blurPass = 2.0;
+        };
         return e;
     }
 }

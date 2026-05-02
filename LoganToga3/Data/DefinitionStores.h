@@ -28,6 +28,7 @@ namespace LT3
         int32 gatherPower = 0;
         SkillDefId skill = InvalidSkillDefId;
         ColorF color = Palette::White;
+        double visualScale = 1.0;
     };
 
     struct BuildActionDef

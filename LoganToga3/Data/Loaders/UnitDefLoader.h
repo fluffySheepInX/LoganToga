@@ -68,7 +68,8 @@ namespace LT3
                     entry.cost,
                     0,
                     baseSkill,
-                    Palette::Slategray
+                    Palette::Slategray,
+                    entry.visualScale
                 };
             }
         }
@@ -117,7 +118,8 @@ namespace LT3
                 entry.cost,
                 gatherPower,
                 skill,
-                (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen
+                (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
+                entry.visualScale
             });
         }
     }

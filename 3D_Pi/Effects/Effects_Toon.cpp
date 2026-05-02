@@ -32,6 +32,11 @@ namespace pe
             ui::SliderH(U"shadow: {:.2f}"_fmt(s->floorV),
                 s->floorV, 0.0, 0.6, pos + Vec2{ 0, 40 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->bands = 4.0;
+            s->floorV = 0.35;
+        };
         return e;
     }
 }

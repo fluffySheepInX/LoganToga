@@ -5,9 +5,9 @@
 
 namespace LT3
 {
-    inline bool HandleEditorInput(MapEditorState& mapEditor, BattleWorld& world, const Vec2& screenMouse)
+    inline bool HandleEditorInput(MapEditorState& mapEditor, BattleWorld& world, UnitCatalog& unitCatalog, const Vec2& screenMouse)
     {
-        const bool consumed = ProcessMapEditorInput(mapEditor, screenMouse);
+        const bool consumed = ProcessMapEditorInput(mapEditor, unitCatalog, screenMouse);
         world.mapWidth = mapEditor.mapWidth;
         world.mapHeight = mapEditor.mapHeight;
         return consumed;

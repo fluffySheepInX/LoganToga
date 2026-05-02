@@ -50,7 +50,7 @@ namespace LT3
         InitializeAppUiState(app.ui);
     }
 
-    inline void ProcessInput(AppRuntimeState& runtime, const AppDefinitionState& definitions, AppUiState& ui)
+    inline void ProcessInput(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
     {
         if (GaussianFSAddon::IsModalActive())
         {
@@ -61,8 +61,14 @@ namespace LT3
 
         const Vec2 screenMouse = Cursor::PosF();
         const Vec2 worldMouse = ToWorldPos(screenMouse);
-        if (HandleEditorInput(ui.mapEditor, runtime.world, screenMouse))
+        if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.unitCatalog, screenMouse))
         {
+            if (ui.mapEditor.unitCatalogDirty)
+            {
+                definitions.defs = CreateDefaultDefinitions(definitions.unitCatalog);
+                definitions.renderAssets = BuildBattleRenderAssets(definitions.unitCatalog);
+                ui.mapEditor.unitCatalogDirty = false;
+            }
             return;
         }
         if (ui.mapEditor.enabled)
@@ -73,7 +79,7 @@ namespace LT3
         HandleBattleInput(runtime.world, definitions.defs, ui.mapEditor, worldMouse);
     }
 
-    inline void UpdateAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions, AppUiState& ui)
+    inline void UpdateAppRuntimeState(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
     {
         ProcessInput(runtime, definitions, ui);
         if (!ui.mapEditor.enabled)

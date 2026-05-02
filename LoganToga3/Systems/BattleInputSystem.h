@@ -76,7 +76,7 @@ namespace LT3
 
 			const UnitDef& def = defs.units[world.units.defId[unit]];
 			const Vec2 pos = ToQuarterViewportScreen(world.units.position[unit]);
-			if (screenRect.intersects(Circle{ pos, Max(6.0, def.radius * GetQuarterViewCameraScale()) }))
+            if (screenRect.intersects(Circle{ pos, Max(6.0, UnitSelectionRadius(def) * GetQuarterViewCameraScale()) }))
 			{
 				units << unit;
 			}

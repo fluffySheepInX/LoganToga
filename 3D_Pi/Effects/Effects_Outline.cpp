@@ -37,6 +37,12 @@ namespace pe
             ui::SliderH(U"ink: {:.2f}"_fmt(s->inkStrength),
                 s->inkStrength, 0.0, 1.0, pos + Vec2{ 0, 80 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->threshold = 0.15;
+            s->thickness = 1.0;
+            s->inkStrength = 1.0;
+        };
         return e;
     }
 }

@@ -15,6 +15,7 @@ namespace pe
             src.draw();
         };
         e.drawUI = nullptr;
+        e.reset = nullptr;
         return e;
     }
 }

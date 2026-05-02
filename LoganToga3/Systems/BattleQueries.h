@@ -15,6 +15,11 @@ namespace LT3
         return unit != InvalidUnitId && unit < world.units.size() && world.units.alive[unit];
     }
 
+    inline double UnitSelectionRadius(const UnitDef& def)
+    {
+        return Max(def.radius, def.radius * def.visualScale);
+    }
+
     inline bool IsEnemy(Faction a, Faction b)
     {
         return (a == Faction::Player && b == Faction::Enemy) || (a == Faction::Enemy && b == Faction::Player);

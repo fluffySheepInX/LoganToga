@@ -1502,7 +1502,7 @@ y = 8
 
 terrain = "grass1.png"
 
-object = "obj_brickwall (1) - コピー.png"
+object = ""
 
 
 [[tiles]]
@@ -1667,7 +1667,7 @@ y = 9
 
 terrain = "grass1.png"
 
-object = "obj_brickwall (1) - コピー.png"
+object = ""
 
 
 [[tiles]]
@@ -1832,6 +1832,6 @@ y = 10
 
 terrain = "grass1.png"
 
-object = "obj_brickwall (1) - コピー.png"
+object = ""
 
 

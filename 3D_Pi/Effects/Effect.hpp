@@ -27,5 +27,8 @@ namespace pe // post-effect
 
         // 選択中だけ呼ばれるパラメータ UI 描画 (任意 / null 可)
         std::function<void(const Vec2& topLeft)> drawUI;
+
+        // パラメータを初期値に戻す (任意 / null 可)
+        std::function<void()> reset;
     };
 }

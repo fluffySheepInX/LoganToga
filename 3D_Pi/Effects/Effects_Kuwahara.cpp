@@ -28,6 +28,10 @@ namespace pe
                 s->radius, 1.0, 6.0, pos, 130, 200);
             s->radius = std::round(s->radius);
         };
+        e.reset = [s]()
+        {
+            s->radius = 3.0;
+        };
         return e;
     }
 }

@@ -47,6 +47,13 @@ namespace pe
             ui::SliderH(U"lift: {:.2f}"_fmt(s->lift),
                 s->lift, 0.0, 0.3, pos + Vec2{ 0, 120 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->warmth = 0.75;
+            s->saturation = 0.85;
+            s->contrast = 1.10;
+            s->lift = 0.06;
+        };
         return e;
     }
 }

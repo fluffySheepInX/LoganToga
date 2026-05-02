@@ -76,7 +76,7 @@ namespace LT3
         const RectF viewport = EditorUnitListViewportRect();
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Unit List").draw(44, 86, Palette::White);
-        uiFont(U"TOML data driven sample").draw(160, 86, Palette::Lightgray);
+        uiFont(U"Click row: parameter editor").draw(160, 86, Palette::Lightgray);
         uiFont(U"{} entries"_fmt(catalog.entries.size())).draw(560, 86, Palette::Gold);
         uiFont(catalog.statusText).draw(11, 44, 106, Palette::Lightgray);
 
@@ -88,20 +88,25 @@ namespace LT3
 
         viewport.draw(ColorF{ 0, 0, 0, 0.10 });
         const double viewportBottom = viewport.y + viewport.h;
-        double y = viewport.y - editor.unitListScroll;
-        for (const auto& entry : catalog.entries)
+        for (int32 i = 0; i < static_cast<int32>(catalog.entries.size()); ++i)
         {
-            const RectF row{ viewport.x, y, viewport.w, 78.0 };
-            y += 86.0;
+            const auto& entry = catalog.entries[i];
+            const RectF row = EditorUnitListRowRect(viewport, i, editor.unitListScroll);
             if (!((viewport.y <= row.y) && ((row.y + row.h) <= viewportBottom)))
             {
                 continue;
             }
 
             const bool isBuilding = entry.kind == U"building";
-            row.draw(isBuilding ? ColorF{ 0.14, 0.10, 0.08, 0.92 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
+            const bool selected = editor.showUnitParameterEditor && editor.selectedUnitCatalogIndex == i;
+            ColorF frameColor = selected ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.14 };
+            if (row.mouseOver())
+            {
+                frameColor = ColorF{ 0.0, 0.75, 1.0 };
+            }
+            row.draw(selected ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : (isBuilding ? ColorF{ 0.14, 0.10, 0.08, 0.92 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })).drawFrame(1, frameColor);
             RectF{ row.x + 10, row.y + 11, 48, 48 }.draw(isBuilding ? ColorF{ 0.72, 0.45, 0.18 } : ColorF{ 0.18, 0.42, 0.72 });
-            uiFont(entry.name).draw(15, row.x + 70, row.y + 8, Palette::White);
+            uiFont(U"{}  scale:{:.2f}"_fmt(entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
             uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.tag, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
             uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  COST:{}  skills:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.cost, entry.skills.join(U","))).draw(11, row.x + 70, row.y + 51, Palette::Gold);
         }
@@ -114,6 +119,38 @@ namespace LT3
             RectF{ viewport.x + viewport.w + 6.0, viewport.y, 6.0, viewport.h }.draw(ColorF{ 1, 1, 1, 0.08 });
             RectF{ viewport.x + viewport.w + 6.0, handleY, 6.0, handleHeight }.draw(ColorF{ 1.0, 0.84, 0.0, 0.70 });
         }
+    }
+
+    inline void DrawUnitParameterEditor(const MapEditorState& editor, const UnitCatalog& catalog, const Font& uiFont)
+    {
+        if (!editor.showUnitParameterEditor || editor.selectedUnitCatalogIndex < 0 || static_cast<int32>(catalog.entries.size()) <= editor.selectedUnitCatalogIndex)
+        {
+            return;
+        }
+
+        const UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+        const RectF panel = EditorUnitParameterPanelRect();
+        const RectF decRect = EditorUnitScaleDecrementRect();
+        const RectF incRect = EditorUnitScaleIncrementRect();
+        const RectF resetRect = EditorUnitScaleResetRect();
+        const RectF closeRect = EditorUnitParameterCloseRect();
+
+        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
+        uiFont(U"Unit Parameter Editor").draw(720, 88, Palette::White);
+        closeRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, closeRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        uiFont(U"×").drawAt(18, closeRect.center(), Palette::White);
+
+        uiFont(entry.name).draw(14, panel.x + 24, panel.y + 52, Palette::White);
+        uiFont(U"tag:{}  image:{}"_fmt(entry.tag, entry.image)).draw(12, panel.x + 24, panel.y + 78, Palette::Lightgray);
+        uiFont(U"Visual Scale").draw(13, panel.x + 24, panel.y + 108, Palette::Gold);
+
+        decRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, decRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        incRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, incRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        resetRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, resetRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        uiFont(U"-").drawAt(24, decRect.center(), Palette::White);
+        uiFont(U"+").drawAt(24, incRect.center(), Palette::White);
+        uiFont(U"{:.2f}"_fmt(entry.visualScale)).drawAt(26, Vec2{ panel.x + panel.w * 0.5, decRect.center().y }, Palette::White);
+        uiFont(U"Reset").drawAt(13, resetRect.center(), Palette::White);
     }
 
     inline void DrawAssetPreview(const MapEditorAsset& asset, const Vec2& center, const SizeF& size)
@@ -204,6 +241,7 @@ namespace LT3
         DrawMapEditorToolbar(editor, uiFont);
         DrawUiLayoutGridControl(editor, uiFont);
         DrawUnitCatalogList(editor, unitCatalog, uiFont);
+        DrawUnitParameterEditor(editor, unitCatalog, uiFont);
         if (!editor.enabled)
         {
             return;

@@ -234,6 +234,25 @@ namespace LT3
         }
     }
 
+    inline void DrawResourcePanel(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont)
+    {
+        const RectF panel{ 1320.0, 72.0, 250.0, 72.0 };
+        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
+
+        String goldName = U"Gold";
+        ColorF goldColor = Palette::Gold;
+        if (const auto it = defs.resourceByTag.find(U"gold"); it != defs.resourceByTag.end())
+        {
+            const ResourceDef& def = defs.resources[it->second];
+            goldName = def.name;
+            goldColor = def.color;
+        }
+
+        uiFont(U"資源").draw(16, panel.x + 16.0, panel.y + 10.0, Palette::White);
+        Circle{ panel.x + 30.0, panel.y + 50.0, 10.0 }.draw(goldColor).drawFrame(1.0, ColorF{ 0.25, 0.18, 0.02 });
+        uiFont(U"{}: {}"_fmt(goldName, world.resources.playerGold)).draw(16, panel.x + 48.0, panel.y + 38.0, Palette::White);
+    }
+
     inline void DrawResultOverlay(const BattleWorld& world, const Font& uiFont, const Font& titleFont)
     {
         if (!(world.victory || world.defeat))
@@ -294,6 +313,7 @@ namespace LT3
     {
         String image;
         String kind;
+        double visualScale = 1.0;
     };
 
     struct BattleRenderAssets
@@ -333,7 +353,7 @@ namespace LT3
         {
             if (!entry.tag.isEmpty())
             {
-                assets.unitVisualByTag[entry.tag] = UnitVisualInfo{ entry.image, entry.kind };
+                assets.unitVisualByTag[entry.tag] = UnitVisualInfo{ entry.image, entry.kind, entry.visualScale };
             }
         }
         return assets;
@@ -419,8 +439,46 @@ namespace LT3
             assets.unitTextureCache.emplace(unitPath, Texture{ unitPath });
         }
         const Texture& texture = assets.unitTextureCache.at(unitPath);
-        const double imageSize = (visual.kind.lowercased() == U"building") ? (def.radius * 2.2) : (def.radius * 2.0);
+        const double imageSize = ((visual.kind.lowercased() == U"building") ? (def.radius * 2.2) : (def.radius * 2.0)) * visual.visualScale;
         texture.resized(imageSize, imageSize).drawAt(pos);
+        return true;
+    }
+
+    inline FilePath ResolveBuildActionIconPath(const BuildActionDef& action, const DefinitionStores& defs, const BattleRenderAssets& assets)
+    {
+        if (action.spawnUnit < defs.units.size())
+        {
+            const String unitTag = defs.units[action.spawnUnit].tag;
+            const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, unitTag);
+            if (!visual.image.isEmpty())
+            {
+                return (visual.kind.lowercased() == U"building")
+                    ? ResolveBuildingChipPath(visual.image)
+                    : ResolveUnitChipPath(visual.image);
+            }
+        }
+
+        if (!action.icon.isEmpty())
+        {
+            return ResolveBuildIconPath(action.icon);
+        }
+
+        return FilePath{};
+    }
+
+    inline bool DrawBuildActionIcon(const BuildActionDef& action, const DefinitionStores& defs, const BattleRenderAssets& assets, const Vec2& center, double size)
+    {
+        const FilePath iconPath = ResolveBuildActionIconPath(action, defs, assets);
+        if (iconPath.isEmpty() || !FileSystem::Exists(iconPath))
+        {
+            return false;
+        }
+
+        if (!assets.iconTextureCache.contains(iconPath))
+        {
+            assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });
+        }
+        assets.iconTextureCache.at(iconPath).resized(size, size).drawAt(center);
         return true;
     }
 
@@ -464,6 +522,59 @@ namespace LT3
         return RectF{ origin + Vec2{ col * step.x, row * step.y }, 78, 78 };
     }
 
+    inline RectF BattleBuildQueuePanelRect(const MapEditorState& mapEditor, int32 rows)
+    {
+        const RectF commandPanel = BattleCommandPanelRect(mapEditor, rows);
+        return RectF{ commandPanel.x - 304.0, commandPanel.y, 292.0, commandPanel.h };
+    }
+
+    inline void DrawSelectedBuildQueuePanel(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const BattleRenderAssets& assets, const Font& uiFont, int32 commandRows)
+    {
+        const UnitId selected = GetSelectedUnit(world);
+        const Array<BuildActionDefId>& queue = GetQueuedBuildActions(world, selected);
+        if (queue.isEmpty())
+        {
+            return;
+        }
+
+        const RectF panel = BattleBuildQueuePanelRect(mapEditor, commandRows);
+        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.20 });
+        uiFont(U"キュー").draw(16, panel.x + 16.0, panel.y + 10.0, Palette::White);
+        uiFont(U"{}件"_fmt(queue.size())).draw(14, panel.x + panel.w - 56.0, panel.y + 12.0, Palette::Gold);
+
+        const size_t previewCount = Min<size_t>(4, queue.size());
+        for (size_t i = 0; i < previewCount; ++i)
+        {
+            const BuildActionDefId actionId = queue[i];
+            if (actionId >= defs.buildActions.size())
+            {
+                continue;
+            }
+
+            const BuildActionDef& action = defs.buildActions[actionId];
+            const RectF slot{ panel.x + 16.0 + i * 66.0, panel.y + 42.0, 56.0, 56.0 };
+            slot.draw(i == 0 ? ColorF{ 0.14, 0.12, 0.06, 0.96 } : ColorF{ 0.08, 0.08, 0.10, 0.92 });
+            slot.drawFrame(2.0, i == 0 ? ColorF{ 1.0, 0.84, 0.0, 0.90 } : ColorF{ 1, 1, 1, 0.18 });
+
+            if (!DrawBuildActionIcon(action, defs, assets, slot.center().movedBy(0, -3), 42.0))
+            {
+                uiFont(U"{}"_fmt(i + 1)).drawAt(16, slot.center().movedBy(0, -3), Palette::White);
+            }
+        }
+
+        const BuildActionDefId currentActionId = queue.front();
+        if (currentActionId < defs.buildActions.size())
+        {
+            const BuildActionDef& action = defs.buildActions[currentActionId];
+            const double rate = Clamp(world.buildQueues.progressSec[selected] / Max(0.001, action.buildTimeSec), 0.0, 1.0);
+            const RectF progressBack{ panel.x + 16.0, panel.y + panel.h - 24.0, panel.w - 32.0, 10.0 };
+            progressBack.draw(ColorF{ 0, 0, 0, 0.48 });
+            RectF{ progressBack.pos, progressBack.w * rate, progressBack.h }.draw(Palette::Gold);
+            progressBack.drawFrame(1.0, ColorF{ 1, 1, 1, 0.14 });
+            uiFont(action.name).draw(13, panel.x + 16.0, panel.y + panel.h - 48.0, Palette::Lightgray);
+        }
+    }
+
     inline void DrawQuarterCommandBar(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const BattleRenderAssets& assets, const Font& uiFont)
     {
         const Array<BuildActionUiState> visibleActions = CollectVisibleBuildActionsForSelectedUnit(world, defs);
@@ -499,33 +610,7 @@ namespace LT3
             }
             rect.drawFrame(2, frameColor);
 
-            FilePath iconPath;
-            if (action.spawnUnit < defs.units.size())
-            {
-                const String unitTag = defs.units[action.spawnUnit].tag;
-                const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, unitTag);
-                if (!visual.image.isEmpty())
-                {
-                    iconPath = (visual.kind.lowercased() == U"building")
-                        ? ResolveBuildingChipPath(visual.image)
-                        : ResolveUnitChipPath(visual.image);
-                }
-            }
-            if (iconPath.isEmpty() && !action.icon.isEmpty())
-            {
-                iconPath = ResolveBuildIconPath(action.icon);
-            }
-
-            const bool hasIcon = (!iconPath.isEmpty() && FileSystem::Exists(iconPath));
-            if (hasIcon)
-            {
-                if (!assets.iconTextureCache.contains(iconPath))
-                {
-                    assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });
-                }
-                const Texture& texture = assets.iconTextureCache.at(iconPath);
-                texture.resized(60, 60).drawAt(rect.center().movedBy(0, -5));
-            }
+            const bool hasIcon = DrawBuildActionIcon(action, defs, assets, rect.center().movedBy(0, -5), 60.0);
 
             if (!hasIcon)
             {
@@ -535,6 +620,8 @@ namespace LT3
             const ColorF costColor = affordable ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1.0, 0.25, 0.20 };
             uiFont(U"{}G"_fmt(action.costGold)).drawAt(12, rect.center().movedBy(0, 26), costColor);
         }
+
+        DrawSelectedBuildQueuePanel(world, defs, mapEditor, assets, uiFont, rows);
     }
 
     inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const MapEditorState& mapEditor, const ClickDebugState& debugState, bool showDebugInfo, const Font& uiFont, const Font& titleFont)
@@ -553,6 +640,7 @@ namespace LT3
         }
 
         DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);
+        DrawResourcePanel(world, defs, uiFont);
         DrawAreaSelectionFrame(world, assets);
         if (showDebugInfo)
         {

@@ -281,6 +281,9 @@ namespace LT3
         editor.paletteScroll = 0.0;
         editor.showUnitList = false;
         editor.unitListScroll = 0.0;
+        editor.selectedUnitCatalogIndex = -1;
+        editor.showUnitParameterEditor = false;
+        editor.unitCatalogDirty = false;
         editor.uiLayoutEditEnabled = false;
         editor.uiLayoutGridSize = 40;
         editor.uiSelectedInfoAnchor = { 24.0, 826.0 };

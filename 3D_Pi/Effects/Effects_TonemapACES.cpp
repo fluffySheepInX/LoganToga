@@ -33,6 +33,11 @@ namespace pe
             ui::SliderH(U"gamma: {:.2f}"_fmt(s->gamma),
                 s->gamma, 1.0, 2.4, pos + Vec2{ 0, 40 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->exposure = 1.0;
+            s->gamma = 1.0;
+        };
         return e;
     }
 }

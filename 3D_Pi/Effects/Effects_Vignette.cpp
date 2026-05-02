@@ -37,6 +37,12 @@ namespace pe
             ui::SliderH(U"round: {:.2f}"_fmt(s->roundness),
                 s->roundness, 0.0, 1.0, pos + Vec2{ 0, 80 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->intensity = 0.6;
+            s->smoothness = 0.5;
+            s->roundness = 0.0;
+        };
         return e;
     }
 }

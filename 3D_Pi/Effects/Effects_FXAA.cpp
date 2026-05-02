@@ -32,6 +32,10 @@ namespace pe
             ui::SliderH(U"strength: {:.2f}"_fmt(s->strength),
                 s->strength, 0.0, 1.0, pos, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->strength = 1.0;
+        };
         return e;
     }
 }

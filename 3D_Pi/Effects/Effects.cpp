@@ -1,4 +1,5 @@
-﻿//-----------------------------------------------
+﻿
+//-----------------------------------------------
 //
 //	Effects.cpp
 //	共通処理と効果一覧の実装
@@ -6,6 +7,7 @@
 //-----------------------------------------------
 
 # include "Effects.hpp"
+# include "../Addons/Pi3D/Shader/PiShaderLoader.hpp"
 
 namespace pe
 {
@@ -22,8 +24,8 @@ namespace pe
             bindings.push_back({ U"PSEffectParams", 1 });
         }
 
-        const FilePath hlslPath = U"example/shader/hlsl/" + String{ name } + U".hlsl";
-        const FilePath glslPath = U"example/shader/glsl/" + String{ name } + U".frag";
+        const FilePath hlslPath = Pi3D::PiShaderLoader::HLSL(name);
+        const FilePath glslPath = Pi3D::PiShaderLoader::GLSLFragment(name);
 
         // engine_log とは別に、確実に書き出されるテキストログにも残す
         {

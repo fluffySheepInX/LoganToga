@@ -40,6 +40,13 @@ namespace pe
             ui::SliderH(U"vig: {:.2f}"_fmt(s->vignette),
                 s->vignette, 0.0, 1.0, pos + Vec2{ 0, 120 }, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->curvature = 0.10;
+            s->scanline = 0.45;
+            s->mask = 0.35;
+            s->vignette = 0.55;
+        };
         return e;
     }
 }

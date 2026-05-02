@@ -153,6 +153,7 @@
     <ResourceCompile Include="App\Resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Addons\Pi3D\pi3d_improvement_suggestions.txt" />
     <Text Include="App\dll\soundtouch\COPYING.TXT" />
     <Text Include="App\engine\font\fontawesome\LICENSE.txt" />
     <Text Include="App\engine\soundfont\GMGSx.sf2.txt" />
@@ -172,6 +173,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="Addons\Pi3D\Resources\toml\effect_presets.toml" />
+    <None Include="Addons\Pi3D\Resources\toml\lighting_presets.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
     <None Include="App\engine\font\fontawesome\fontawesome-solid.otf.zstdcmp" />
@@ -253,6 +256,7 @@
     <None Include="App\example\shader\glsl\crt.frag" />
     <None Include="App\example\shader\glsl\dof_combine.frag" />
     <None Include="App\example\shader\glsl\dof_depth.frag" />
+    <None Include="App\example\shader\glsl\scene_fog.frag" />
     <None Include="App\example\shader\glsl\warm_grade.frag" />
     <None Include="App\example\shader\hlsl\dof_combine.hlsl">
       <FileType>Document</FileType>
@@ -313,6 +317,14 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChain.hpp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.hpp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiGroundMode.hpp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiRain.hpp" />
+    <ClInclude Include="Addons\Pi3D\Lighting\PiLighting.hpp" />
+    <ClInclude Include="Addons\Pi3D\Pi3D.hpp" />
+    <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
+    <ClInclude Include="Addons\Pi3D\Shader\PiShaderLoader.hpp" />
     <ClInclude Include="Effects\*.hpp" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="Lighting\Lighting.hpp" />
@@ -416,12 +428,12 @@
     <None Include="App\example\shader\hlsl\toon.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="App\example\shader\hlsl\scene_fog.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="App\example\shader\hlsl\bloom_extract.hlsl">
       <FileType>Document</FileType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Remove="App\example\shader\hlsl\*.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

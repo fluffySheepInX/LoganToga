@@ -1,0 +1,11 @@
+[[presets]]
+key = "cinematic"
+displayName = "Cinematic"
+description = "Bloom と ACES を軸にした映画風のチェイン"
+effects = ["Bloom", "Tonemap (ACES)", "Vignette", "Film Grain", "FXAA"]
+
+[[presets]]
+key = "dusty"
+displayName = "Dusty (古い洋ゲー風)"
+description = "黄土色寄り、乾いた空気感、古い洋ゲー風の画作り"
+effects = ["Bloom", "Tonemap (ACES)", "Warm Grade", "Vignette", "Film Grain", "FXAA"]

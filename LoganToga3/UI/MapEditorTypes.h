@@ -42,6 +42,9 @@ namespace LT3
         double paletteScroll = 0.0;
         bool showUnitList = false;
         double unitListScroll = 0.0;
+        int32 selectedUnitCatalogIndex = -1;
+        bool showUnitParameterEditor = false;
+        bool unitCatalogDirty = false;
         bool uiLayoutEditEnabled = false;
         int32 uiLayoutGridSize = 40;
         Vec2 uiSelectedInfoAnchor{ 24.0, 826.0 };
@@ -121,6 +124,40 @@ namespace LT3
     inline RectF EditorUnitListViewportRect()
     {
         return RectF{ 44, 126, 610, 530 };
+    }
+
+    inline RectF EditorUnitListRowRect(const RectF& viewport, int32 index, double scroll)
+    {
+        return RectF{ viewport.x, viewport.y + index * 86.0 - scroll, viewport.w, 78.0 };
+    }
+
+    inline RectF EditorUnitParameterPanelRect()
+    {
+        return RectF{ 700, 72, 360, 228 };
+    }
+
+    inline RectF EditorUnitScaleDecrementRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 24.0, panel.y + 128.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorUnitScaleIncrementRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 288.0, panel.y + 128.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorUnitScaleResetRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 132.0, panel.y + 176.0, 96.0, 34.0 };
+    }
+
+    inline RectF EditorUnitParameterCloseRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
     }
 
     inline RectF EditorUiLayoutGridPanelRect()

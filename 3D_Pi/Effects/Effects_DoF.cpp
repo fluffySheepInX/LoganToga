@@ -100,6 +100,14 @@ namespace pe
                 s->blurPass, 1.0, 6.0, pos + Vec2{ 0, 160 }, 130, 200);
             s->blurPass = std::round(s->blurPass);
         };
+        e.reset = [s]()
+        {
+            s->focusDistance = 18.0;
+            s->focusRange = 2.0;
+            s->nearTransition = 6.0;
+            s->farTransition = 10.0;
+            s->blurPass = 2.0;
+        };
         return e;
     }
 }

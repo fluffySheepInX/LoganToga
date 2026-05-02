@@ -27,6 +27,10 @@ namespace pe
             ui::SliderH(U"angle: {:.2f}"_fmt(s->angle),
                 s->angle, -8.0, 8.0, pos, 130, 200);
         };
+        e.reset = [s]()
+        {
+            s->angle = 4.0;
+        };
         return e;
     }
 }

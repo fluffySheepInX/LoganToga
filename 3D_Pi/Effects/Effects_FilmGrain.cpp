@@ -36,6 +36,11 @@ namespace pe
                 v, 0.0, 1.0, pos + Vec2{ 0, 40 }, 130, 200);
             s->lumaOnly = (0.5 < v);
         };
+        e.reset = [s]()
+        {
+            s->strength = 0.06;
+            s->lumaOnly = false;
+        };
         return e;
     }
 }
