@@ -133,7 +133,7 @@ namespace LT3
 
     inline RectF EditorUnitParameterPanelRect()
     {
-        return RectF{ 700, 72, 360, 228 };
+        return RectF{ 700, 72, 360, 316 };
     }
 
     inline RectF EditorUnitScaleDecrementRect()
@@ -152,6 +152,24 @@ namespace LT3
     {
         const RectF panel = EditorUnitParameterPanelRect();
         return RectF{ panel.x + 132.0, panel.y + 176.0, 96.0, 34.0 };
+    }
+
+    inline RectF EditorUnitMoveDecrementRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 24.0, panel.y + 228.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorUnitMoveIncrementRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 288.0, panel.y + 228.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorUnitMoveUseSpeedRect()
+    {
+        const RectF panel = EditorUnitParameterPanelRect();
+        return RectF{ panel.x + 116.0, panel.y + 276.0, 128.0, 28.0 };
     }
 
     inline RectF EditorUnitParameterCloseRect()

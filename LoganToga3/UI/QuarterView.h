@@ -14,6 +14,7 @@ namespace LT3
 
     inline Vec2 ToQuarterIso(const Vec2& worldPos);
     inline Vec2 ToQuarterWorld(const Vec2& screenPos);
+    inline void DragQuarterViewCamera(const Vec2& screenDelta);
 
     inline const Camera2DParameters& QuarterViewCameraParametersEnabled()
     {
@@ -43,14 +44,25 @@ namespace LT3
 
     inline void UpdateQuarterViewCamera2D(const bool enableControl, const bool allowWheelZoom = false)
     {
-        QuarterViewCamera2D.setParameters(enableControl
-            ? QuarterViewCameraParametersEnabled()
-            : QuarterViewCameraParametersDisabled());
-        if (enableControl)
+        QuarterViewCamera2D.setParameters(QuarterViewCameraParametersDisabled());
+
+        static Optional<Vec2> previousMiddleDragScreen;
+
+        if (enableControl && MouseM.pressed())
         {
-            QuarterViewCamera2D.update();
+            const Vec2 screenPos = Cursor::PosF();
+            if (previousMiddleDragScreen)
+            {
+                DragQuarterViewCamera(screenPos - *previousMiddleDragScreen);
+            }
+            previousMiddleDragScreen = screenPos;
         }
-        else if (allowWheelZoom)
+        else
+        {
+            previousMiddleDragScreen.reset();
+        }
+
+        if (enableControl || allowWheelZoom)
         {
             const double wheel = Mouse::Wheel();
             if (wheel != 0.0)

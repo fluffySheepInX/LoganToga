@@ -67,6 +67,8 @@ namespace LT3
 	{
 		world.selection.selected = InvalidUnitId;
         world.selection.selectedUnits.clear();
+       world.selection.formationPlacementActive = false;
+		world.selection.formationUnits.clear();
 	}
 
 	inline void ClearSelectionIfUnitSelected(BattleWorld& world, UnitId unit)

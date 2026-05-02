@@ -17,6 +17,19 @@ namespace LT3
         editor.unitCatalogDirty = true;
     }
 
+    inline void ChangeSelectedUnitMove(MapEditorState& editor, UnitCatalog& catalog, int32 delta)
+    {
+        if (editor.selectedUnitCatalogIndex < 0 || static_cast<int32>(catalog.entries.size()) <= editor.selectedUnitCatalogIndex)
+        {
+            return;
+        }
+
+        UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+        entry.move = Clamp(entry.move + delta, 0, 2000);
+        SaveUnitCatalogToml(catalog, editor.statusText);
+        editor.unitCatalogDirty = true;
+    }
+
     inline bool ProcessUnitCatalogEditorInput(MapEditorState& editor, UnitCatalog& catalog)
     {
         bool consumed = false;
@@ -63,12 +76,29 @@ namespace LT3
                     editor.unitCatalogDirty = true;
                 }
             }
+            if (EditorUnitMoveDecrementRect().leftClicked())
+            {
+                ChangeSelectedUnitMove(editor, catalog, -25);
+            }
+            if (EditorUnitMoveIncrementRect().leftClicked())
+            {
+                ChangeSelectedUnitMove(editor, catalog, 25);
+            }
+            if (EditorUnitMoveUseSpeedRect().leftClicked())
+            {
+                if (0 <= editor.selectedUnitCatalogIndex && editor.selectedUnitCatalogIndex < static_cast<int32>(catalog.entries.size()))
+                {
+                    catalog.entries[editor.selectedUnitCatalogIndex].move = 0;
+                    SaveUnitCatalogToml(catalog, editor.statusText);
+                    editor.unitCatalogDirty = true;
+                }
+            }
         }
 
         return consumed;
     }
 
-    inline bool ProcessMapEditorInput(MapEditorState& editor, UnitCatalog& catalog, const Vec2& screenMouse)
+    inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
     {
         bool consumed = false;
         if (EditorToolbarButtonRect(editor, 0).leftClicked())
@@ -161,8 +191,10 @@ namespace LT3
             }
 
             const bool showDetail = KeyControl.pressed();
+            const Array<BuildActionUiState> visibleActions = CollectVisibleBuildActionsForSelectedUnit(world, defs);
+            const int32 commandRows = Max(1, (static_cast<int32>(visibleActions.size()) + 2) / 3);
             const RectF infoRect = showDetail ? BattleInfoPanelDetailRect(editor) : BattleInfoPanelCompactRect(editor);
-            const RectF commandRect = BattleCommandPanelRect(editor, 3);
+            const RectF commandRect = BattleCommandPanelRect(editor, commandRows);
 
             const RectF infoHandle = UiLayoutDragHandleRect(infoRect);
             const RectF commandHandle = UiLayoutDragHandleRect(commandRect);

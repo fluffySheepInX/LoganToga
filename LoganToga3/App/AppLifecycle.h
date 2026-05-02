@@ -61,7 +61,7 @@ namespace LT3
 
         const Vec2 screenMouse = Cursor::PosF();
         const Vec2 worldMouse = ToWorldPos(screenMouse);
-        if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.unitCatalog, screenMouse))
+        if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.defs, definitions.unitCatalog, screenMouse))
         {
             if (ui.mapEditor.unitCatalogDirty)
             {

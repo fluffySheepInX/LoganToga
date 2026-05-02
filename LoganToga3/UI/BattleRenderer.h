@@ -346,6 +346,35 @@ namespace LT3
         DrawNineSliceTexture(assets.iconTextureCache.at(framePath), rect, 16.0);
     }
 
+    inline void DrawFormationPlacementPreview(const BattleWorld& world, const DefinitionStores& defs)
+    {
+        if (!world.selection.formationPlacementActive || world.selection.formationUnits.isEmpty())
+        {
+            return;
+        }
+
+        const Vec2 destinationWorld = world.selection.formationDestinationWorld;
+        const Vec2 facing = ResolveFormationFacingDirection(world, world.selection.formationUnits, destinationWorld, world.selection.formationCurrentWorld);
+        const Array<Vec2> targets = BuildFormationMoveTargets(world, defs, world.selection.formationUnits, destinationWorld, facing);
+
+        for (const Vec2& target : targets)
+        {
+            const Vec2 screen = ToQuarterViewportScreen(target);
+            Circle{ screen, 12.0 }.draw(ColorF{ 0.0, 0.75, 1.0, 0.10 }).drawFrame(2.0, ColorF{ 0.0, 0.85, 1.0, 0.85 });
+        }
+
+        const Vec2 destinationScreen = ToQuarterViewportScreen(destinationWorld);
+        Vec2 arrowTargetWorld = world.selection.formationCurrentWorld;
+        if ((arrowTargetWorld - destinationWorld).lengthSq() < 16.0)
+        {
+            arrowTargetWorld = destinationWorld + (facing * 120.0);
+        }
+        const Vec2 arrowTargetScreen = ToQuarterViewportScreen(arrowTargetWorld);
+
+        Circle{ destinationScreen, 7.0 }.draw(ColorF{ 1.0, 0.84, 0.0, 0.90 });
+        Line{ destinationScreen, arrowTargetScreen }.drawArrow(4.0, Vec2{ 18.0, 18.0 }, ColorF{ 1.0, 0.84, 0.0, 0.95 });
+    }
+
     inline BattleRenderAssets BuildBattleRenderAssets(const UnitCatalog& catalog)
     {
         BattleRenderAssets assets;
@@ -522,10 +551,12 @@ namespace LT3
         return RectF{ origin + Vec2{ col * step.x, row * step.y }, 78, 78 };
     }
 
-    inline RectF BattleBuildQueuePanelRect(const MapEditorState& mapEditor, int32 rows)
+    inline RectF BattleBuildQueuePanelRect(const MapEditorState& mapEditor, int32 rows, size_t previewCount)
     {
         const RectF commandPanel = BattleCommandPanelRect(mapEditor, rows);
-        return RectF{ commandPanel.x - 304.0, commandPanel.y, 292.0, commandPanel.h };
+        const double desiredHeight = 94.0 + static_cast<double>(previewCount) * 62.0;
+        const double panelHeight = Max(commandPanel.h, desiredHeight);
+        return RectF{ commandPanel.x - 304.0, commandPanel.y + commandPanel.h - panelHeight, 292.0, panelHeight };
     }
 
     inline void DrawSelectedBuildQueuePanel(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const BattleRenderAssets& assets, const Font& uiFont, int32 commandRows)
@@ -537,12 +568,12 @@ namespace LT3
             return;
         }
 
-        const RectF panel = BattleBuildQueuePanelRect(mapEditor, commandRows);
+        const size_t previewCount = Min<size_t>(4, queue.size());
+        const RectF panel = BattleBuildQueuePanelRect(mapEditor, commandRows, previewCount);
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.20 });
         uiFont(U"キュー").draw(16, panel.x + 16.0, panel.y + 10.0, Palette::White);
         uiFont(U"{}件"_fmt(queue.size())).draw(14, panel.x + panel.w - 56.0, panel.y + 12.0, Palette::Gold);
 
-        const size_t previewCount = Min<size_t>(4, queue.size());
         for (size_t i = 0; i < previewCount; ++i)
         {
             const BuildActionDefId actionId = queue[i];
@@ -552,7 +583,7 @@ namespace LT3
             }
 
             const BuildActionDef& action = defs.buildActions[actionId];
-            const RectF slot{ panel.x + 16.0 + i * 66.0, panel.y + 42.0, 56.0, 56.0 };
+            const RectF slot{ panel.x + 16.0, panel.y + 42.0 + static_cast<double>(i) * 62.0, 56.0, 56.0 };
             slot.draw(i == 0 ? ColorF{ 0.14, 0.12, 0.06, 0.96 } : ColorF{ 0.08, 0.08, 0.10, 0.92 });
             slot.drawFrame(2.0, i == 0 ? ColorF{ 1.0, 0.84, 0.0, 0.90 } : ColorF{ 1, 1, 1, 0.18 });
 
@@ -560,6 +591,8 @@ namespace LT3
             {
                 uiFont(U"{}"_fmt(i + 1)).drawAt(16, slot.center().movedBy(0, -3), Palette::White);
             }
+
+            uiFont(action.name).draw(13, panel.x + 82.0, slot.y + 8.0, i == 0 ? Palette::Gold : Palette::Lightgray);
         }
 
         const BuildActionDefId currentActionId = queue.front();
@@ -642,6 +675,7 @@ namespace LT3
         DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);
         DrawResourcePanel(world, defs, uiFont);
         DrawAreaSelectionFrame(world, assets);
+        DrawFormationPlacementPreview(world, defs);
         if (showDebugInfo)
         {
             DrawClickDebugOverlay(debugState, uiFont);

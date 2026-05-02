@@ -102,7 +102,9 @@ namespace LT3
             const UnitRole role = ResolveCatalogUnitRole(entry);
             const SkillDefId skill = ResolveCatalogSkill(defs, entry, role);
             const int32 hp = (role == UnitRole::Base && entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);
-            const double speed = (role == UnitRole::Base) ? 0.0 : Max(24.0, static_cast<double>(entry.speed));
+            const double speed = (role == UnitRole::Base)
+                ? 0.0
+                : Max(24.0, static_cast<double>((entry.move > 0) ? entry.move : entry.speed));
             const double radius = (role == UnitRole::Base) ? 26.0 : 14.0;
             const int32 gatherPower = (role == UnitRole::Worker) ? 7 : 0;
 

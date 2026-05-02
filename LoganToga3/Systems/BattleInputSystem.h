@@ -20,7 +20,9 @@ namespace LT3
 		UnitId unit = InvalidUnitId;
       Array<UnitId> units;
 		Vec2 position{ 0, 0 };
+     Vec2 direction{ 0, 0 };
 		BuildActionDefId buildAction = InvalidBuildActionDefId;
+      bool useFormation = false;
 	};
 
 	struct BattleInputIntent
@@ -61,7 +63,7 @@ namespace LT3
 			return;
 		}
 
-		intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, builder, {}, Vec2{ 0, 0 }, *actionId };
+        intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, builder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, *actionId, false };
 	}
 
 	inline Array<UnitId> PickUnitsInScreenRect(const BattleWorld& world, const DefinitionStores& defs, const RectF& screenRect, Faction faction)
@@ -100,7 +102,7 @@ namespace LT3
 
 			if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex).leftClicked())
 			{
-				intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, selectedBuilder, {}, Vec2{ 0, 0 }, static_cast<BuildActionDefId>(i) };
+             intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, selectedBuilder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, static_cast<BuildActionDefId>(i), false };
 				return intent;
 			}
 			++visibleBuildCommandIndex;
@@ -118,12 +120,7 @@ namespace LT3
 				previewSelected = InvalidUnitId;
 			}
 
-			intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, previewSelected, {}, Vec2{ 0, 0 }, InvalidBuildActionDefId };
-		}
-
-		if (MouseR.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor) && IsValidUnit(world, previewSelected))
-		{
-			intent.commands << BattleInputCommand{ BattleInputCommandType::MoveUnit, previewSelected, GetSelectedUnits(world), worldMouse, InvalidBuildActionDefId };
+            intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, previewSelected, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
 		}
 
 		if (Key1.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 0);
@@ -156,9 +153,16 @@ namespace LT3
 				}
 				else
 				{
-					for (const UnitId unit : command.units)
+                 if (command.useFormation)
 					{
-						IssueMove(world, unit, command.position);
+						IssueFormationMove(world, defs, command.units, command.position, command.direction);
+					}
+					else
+					{
+                       for (const UnitId unit : command.units)
+						{
+							IssueMove(world, unit, command.position);
+						}
 					}
 				}
 				break;
@@ -194,16 +198,86 @@ namespace LT3
 			const RectF rect = MakeDragSelectionRect(world.selection.areaDragStartScreen, world.selection.areaDragCurrentScreen);
 			if (rect.size.lengthSq() >= 36.0)
 			{
-				intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, InvalidBuildActionDefId };
+               intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
 			}
 			world.selection.areaDragging = false;
 		}
+	}
+
+	inline void ResetFormationPlacementPreview(BattleWorld& world)
+	{
+		world.selection.formationPlacementActive = false;
+		world.selection.formationUnits.clear();
+	}
+
+	inline void UpdateFormationPlacementPreview(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse, BattleInputIntent& intent)
+	{
+		const bool canStart = IsCursorOnMapArea(mapEditor, world, defs)
+			&& !IsCursorOnBuildCommandUi(world, defs, mapEditor)
+			&& !GetSelectedUnits(world).isEmpty();
+
+		if (MouseR.down())
+		{
+			if (canStart)
+			{
+				world.selection.formationPlacementActive = true;
+				world.selection.formationUnits = GetSelectedUnits(world);
+				world.selection.formationDestinationWorld = worldMouse;
+				world.selection.formationCurrentWorld = worldMouse;
+			}
+			else
+			{
+				ResetFormationPlacementPreview(world);
+			}
+			return;
+		}
+
+		if (!world.selection.formationPlacementActive)
+		{
+			return;
+		}
+
+		if (MouseR.pressed())
+		{
+			world.selection.formationCurrentWorld = worldMouse;
+			return;
+		}
+
+		if (MouseR.up())
+		{
+			world.selection.formationCurrentWorld = worldMouse;
+			const Array<UnitId> previewUnits = world.selection.formationUnits;
+			if (!previewUnits.isEmpty())
+			{
+				if (previewUnits.size() == 1)
+				{
+					intent.commands << BattleInputCommand{ BattleInputCommandType::MoveUnit, previewUnits.front(), {}, world.selection.formationDestinationWorld, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
+				}
+				else
+				{
+					intent.commands << BattleInputCommand{
+						BattleInputCommandType::MoveUnit,
+						previewUnits.front(),
+						previewUnits,
+						world.selection.formationDestinationWorld,
+						ResolveFormationFacingDirection(world, previewUnits, world.selection.formationDestinationWorld, world.selection.formationCurrentWorld),
+						InvalidBuildActionDefId,
+						true
+					};
+				}
+			}
+			ResetFormationPlacementPreview(world);
+			return;
+		}
+
+		ResetFormationPlacementPreview(world);
 	}
 
 	inline void HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse)
 	{
 		BattleInputIntent intent = ReadBattleInput(world, defs, mapEditor, worldMouse);
 		UpdateAreaSelectionDrag(world, defs, mapEditor, intent);
+        UpdateFormationPlacementPreview(world, defs, mapEditor, worldMouse, intent);
 		ApplyBattleInputIntent(world, defs, intent);
 	}
 }

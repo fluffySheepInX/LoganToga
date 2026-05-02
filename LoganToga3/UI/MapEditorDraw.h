@@ -108,7 +108,7 @@ namespace LT3
             RectF{ row.x + 10, row.y + 11, 48, 48 }.draw(isBuilding ? ColorF{ 0.72, 0.45, 0.18 } : ColorF{ 0.18, 0.42, 0.72 });
             uiFont(U"{}  scale:{:.2f}"_fmt(entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
             uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.tag, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
-            uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  COST:{}  skills:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.cost, entry.skills.join(U","))).draw(11, row.x + 70, row.y + 51, Palette::Gold);
+            uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  MOVE:{}  COST:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.move, entry.cost)).draw(11, row.x + 70, row.y + 51, Palette::Gold);
         }
 
         if (maxScroll > 0.0)
@@ -133,6 +133,9 @@ namespace LT3
         const RectF decRect = EditorUnitScaleDecrementRect();
         const RectF incRect = EditorUnitScaleIncrementRect();
         const RectF resetRect = EditorUnitScaleResetRect();
+        const RectF moveDecRect = EditorUnitMoveDecrementRect();
+        const RectF moveIncRect = EditorUnitMoveIncrementRect();
+        const RectF moveUseSpeedRect = EditorUnitMoveUseSpeedRect();
         const RectF closeRect = EditorUnitParameterCloseRect();
 
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
@@ -151,6 +154,16 @@ namespace LT3
         uiFont(U"+").drawAt(24, incRect.center(), Palette::White);
         uiFont(U"{:.2f}"_fmt(entry.visualScale)).drawAt(26, Vec2{ panel.x + panel.w * 0.5, decRect.center().y }, Palette::White);
         uiFont(U"Reset").drawAt(13, resetRect.center(), Palette::White);
+
+        uiFont(U"Move").draw(13, panel.x + 24, panel.y + 208, Palette::Gold);
+        moveDecRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, moveDecRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        moveIncRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, moveIncRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        moveUseSpeedRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, moveUseSpeedRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        uiFont(U"-").drawAt(24, moveDecRect.center(), Palette::White);
+        uiFont(U"+").drawAt(24, moveIncRect.center(), Palette::White);
+        uiFont(U"{}"_fmt(entry.move)).drawAt(26, Vec2{ panel.x + panel.w * 0.5, moveDecRect.center().y }, Palette::White);
+        uiFont(U"Use SPD").drawAt(12, moveUseSpeedRect.center(), Palette::White);
+        uiFont(U"0 = speed を使用").draw(11, panel.x + 24, panel.y + 246, Palette::Lightgray);
     }
 
     inline void DrawAssetPreview(const MapEditorAsset& asset, const Vec2& center, const SizeF& size)

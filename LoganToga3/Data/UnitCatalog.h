@@ -40,19 +40,21 @@ namespace LT3
 
     inline FilePath ResolveUnitCatalogTomlPath()
     {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml";
-        if (FileSystem::Exists(fromApp))
+        const Array<FilePath> candidates = {
+            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
+            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
+            U"LoganToga3/App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
+        };
+
+        for (const auto& path : candidates)
         {
-            return fromApp;
+            if (FileSystem::Exists(path))
+            {
+                return path;
+            }
         }
 
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml";
-        if (FileSystem::Exists(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
+        return candidates.back();
     }
 
     inline Array<String> ReadTomlStringArray(const TOMLValue& value)
@@ -108,12 +110,59 @@ namespace LT3
         writer << U"]";
     }
 
+    inline String BuildTomlStringArray(const Array<String>& values)
+    {
+        String result = U"[";
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            if (i > 0)
+            {
+                result += U", ";
+            }
+
+            result += U"\"" + UnitCatalogTomlEscape(values[i]) + U"\"";
+        }
+
+        result += U"]";
+        return result;
+    }
+
+    inline TOMLReader OpenUnitCatalogToml(FilePathView path)
+    {
+        TOMLReader toml{ path };
+        if (toml)
+        {
+            return toml;
+        }
+
+        if (Unicode::GetTextEncoding(path) != TextEncoding::UTF8_WITH_BOM)
+        {
+            return toml;
+        }
+
+        Blob blob;
+        if (!blob.createFromFile(path))
+        {
+            return toml;
+        }
+
+        constexpr size_t BomSize = 3;
+        if (blob.size() <= BomSize)
+        {
+            return toml;
+        }
+
+        Array<Byte> bytes = blob.asArray();
+        bytes.erase(bytes.begin(), bytes.begin() + BomSize);
+        return TOMLReader{ MemoryReader{ Blob{ std::move(bytes) } } };
+    }
+
     inline UnitCatalog LoadUnitCatalog()
     {
         UnitCatalog catalog;
         catalog.sourcePath = ResolveUnitCatalogTomlPath();
 
-        const TOMLReader toml{ catalog.sourcePath };
+        const TOMLReader toml = OpenUnitCatalogToml(catalog.sourcePath);
         if (!toml)
         {
             catalog.statusText = U"Unit TOML load failed: {}"_fmt(catalog.sourcePath);
@@ -161,7 +210,7 @@ namespace LT3
     inline bool SaveUnitCatalogToml(UnitCatalog& catalog, String& statusText)
     {
         FileSystem::CreateDirectories(FileSystem::ParentPath(catalog.sourcePath));
-        TextWriter writer{ catalog.sourcePath };
+        TextWriter writer{ catalog.sourcePath, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
         if (!writer)
         {
             statusText = U"Unit catalog save failed: {}"_fmt(catalog.sourcePath);
@@ -170,33 +219,33 @@ namespace LT3
 
         for (const auto& entry : catalog.entries)
         {
-            writer << U"[[units]]\n";
-            writer << U"tag = \"" << UnitCatalogTomlEscape(entry.tag) << U"\"\n";
-            writer << U"name = \"" << UnitCatalogTomlEscape(entry.name) << U"\"\n";
-            writer << U"kind = \"" << UnitCatalogTomlEscape(entry.kind) << U"\"\n";
-            writer << U"race = \"" << UnitCatalogTomlEscape(entry.race) << U"\"\n";
-            writer << U"image = \"" << UnitCatalogTomlEscape(entry.image) << U"\"\n";
-            writer << U"class_build = \"" << UnitCatalogTomlEscape(entry.classBuild) << U"\"\n";
-            writer << U"class_tag = \"" << UnitCatalogTomlEscape(entry.classTag) << U"\"\n";
-            writer << U"skills = ";
-            WriteTomlStringArray(writer, entry.skills);
-            writer << U"\n";
-            writer << U"level = " << entry.level << U"\n";
-            writer << U"level_max = " << entry.levelMax << U"\n";
-            writer << U"vision_radius = " << entry.visionRadius << U"\n";
-            writer << U"price = " << entry.price << U"\n";
-            writer << U"cost = " << entry.cost << U"\n";
-            writer << U"hp = " << entry.hp << U"\n";
-            writer << U"building_hp = " << entry.buildingHp << U"\n";
-            writer << U"mp = " << entry.mp << U"\n";
-            writer << U"attack = " << entry.attack << U"\n";
-            writer << U"defense = " << entry.defense << U"\n";
-            writer << U"magic = " << entry.magic << U"\n";
-            writer << U"magic_defense = " << entry.magicDefense << U"\n";
-            writer << U"speed = " << entry.speed << U"\n";
-            writer << U"move = " << entry.move << U"\n";
-            writer << U"maintain_range = " << entry.maintainRange << U"\n";
-            writer << U"visual_scale = " << entry.visualScale << U"\n\n";
+            String block;
+            block += U"[[units]]\n";
+            block += U"tag = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.tag));
+            block += U"name = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.name));
+            block += U"kind = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.kind));
+            block += U"race = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.race));
+            block += U"image = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.image));
+            block += U"class_build = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.classBuild));
+            block += U"class_tag = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.classTag));
+            block += U"skills = {}\n"_fmt(BuildTomlStringArray(entry.skills));
+            block += U"level = {}\n"_fmt(entry.level);
+            block += U"level_max = {}\n"_fmt(entry.levelMax);
+            block += U"vision_radius = {}\n"_fmt(entry.visionRadius);
+            block += U"price = {}\n"_fmt(entry.price);
+            block += U"cost = {}\n"_fmt(entry.cost);
+            block += U"hp = {}\n"_fmt(entry.hp);
+            block += U"building_hp = {}\n"_fmt(entry.buildingHp);
+            block += U"mp = {}\n"_fmt(entry.mp);
+            block += U"attack = {}\n"_fmt(entry.attack);
+            block += U"defense = {}\n"_fmt(entry.defense);
+            block += U"magic = {}\n"_fmt(entry.magic);
+            block += U"magic_defense = {}\n"_fmt(entry.magicDefense);
+            block += U"speed = {}\n"_fmt(entry.speed);
+            block += U"move = {}\n"_fmt(entry.move);
+            block += U"maintain_range = {}\n"_fmt(entry.maintainRange);
+            block += U"visual_scale = {}\n\n"_fmt(entry.visualScale);
+            writer.write(block);
         }
 
         catalog.statusText = U"Saved unit catalog: {}"_fmt(catalog.sourcePath);

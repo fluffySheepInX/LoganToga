@@ -23,7 +23,6 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 2
-
 [[units]]
 tag = "NewbieKouhei"
 name = "工兵"
@@ -49,7 +48,6 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 1
-
 [[units]]
 tag = "LineInfantryM14"
 name = "M14 Infantry Rifle"
@@ -75,7 +73,6 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 1
-
 [[units]]
 tag = "Home"
 name = "参謀本部"
@@ -100,8 +97,7 @@ magic_defense = 20
 speed = 5
 move = 500
 maintain_range = 0
-visual_scale = 2.8
-
+visual_scale = 2.45
 [[units]]
 tag = "sniperP99"
 name = "P99 Sniper Rifle"
@@ -127,7 +123,6 @@ speed = 60
 move = 500
 maintain_range = 650
 visual_scale = 1
-
 [[units]]
 tag = "SkirmisherEni"
 name = "Eni Skirmisher"

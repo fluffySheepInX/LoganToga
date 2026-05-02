@@ -139,6 +139,10 @@ namespace LT3
         bool areaDragging = false;
         Vec2 areaDragStartScreen{ 0, 0 };
         Vec2 areaDragCurrentScreen{ 0, 0 };
+        bool formationPlacementActive = false;
+        Array<UnitId> formationUnits;
+        Vec2 formationDestinationWorld{ 0, 0 };
+        Vec2 formationCurrentWorld{ 0, 0 };
     };
 
     struct BattleMapStore
