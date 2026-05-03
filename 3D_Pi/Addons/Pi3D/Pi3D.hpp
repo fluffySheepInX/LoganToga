@@ -78,23 +78,75 @@ namespace Pi3D
 		void drawUI()
 		{
 			const Font& uiFont = ui::DefaultFont();
-          const double environmentSectionBodyHeight = m_environmentCollapsed ? Environment::HeaderHeight : Environment::UIBodyHeight;
+
+			// --- 折りたたみ状態: 小さいトグルボタンのみ表示 ---
+			if (m_panelCollapsed)
+			{
+				const RectF toggleRect{ m_panelPos, CollapsedToggleSize, CollapsedToggleSize };
+				const RectF btnRect{ m_panelPos.movedBy(6, 6), CollapsedToggleSize - 12, CollapsedToggleSize - 12 };
+
+				// ドラッグ移動
+                if (MouseL.down() && toggleRect.mouseOver() && (not btnRect.mouseOver()))
+				{
+					m_panelDragging = true;
+					m_panelDragOffset = Cursor::PosF() - m_panelPos;
+				}
+				if (not MouseL.pressed())
+				{
+					m_panelDragging = false;
+				}
+				if (m_panelDragging)
+				{
+                  const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+					m_panelPos.x = Clamp(desiredPos.x, 0.0, static_cast<double>(Scene::Width()) - CollapsedToggleSize);
+					m_panelPos.y = Clamp(desiredPos.y, 0.0, static_cast<double>(Scene::Height()) - CollapsedToggleSize);
+				}
+
+				ui::Panel(RectF{ m_panelPos, CollapsedToggleSize, CollapsedToggleSize });
+				if (ui::Button(uiFont, U"▶", btnRect))
+				{
+					m_panelCollapsed = false;
+				}
+				return;
+			}
+
+			// --- 展開状態 ---
+		  const double environmentSectionBodyHeight = m_environmentCollapsed ? Environment::HeaderHeight : Environment::UIBodyHeight;
 			const double environmentSectionHeight = environmentSectionBodyHeight + ui::layout::SectionGap;
-          const double lightingSectionBodyHeight = m_lightingCollapsed ? m_lighting.getHeaderHeight() : m_lighting.getUIBodyHeight();
+		  const double lightingSectionBodyHeight = m_lightingCollapsed ? m_lighting.getHeaderHeight() : m_lighting.getUIBodyHeight();
 			const double lightingSectionHeight = lightingSectionBodyHeight + ui::layout::SectionGap;
-            const double chainListHeight = m_chainCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getChainListHeight();
+			const double chainListHeight = m_chainCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getChainListHeight();
 			const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getPresetHeight();
 			const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getParamsHeight();
 			const double contentHeight = environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight;
 			const double desiredPanelHeight = 46 + contentHeight;
 			const double maxPanelHeight = (Scene::Height() - ui::layout::PanelMargin * 2);
 			const double panelHeight = Clamp(desiredPanelHeight, ui::layout::MinPanelHeight, maxPanelHeight);
-			const RectF panelRect{
-				ui::layout::PanelMargin,
-				ui::layout::PanelMargin,
-				ui::layout::PanelWidth,
-				panelHeight
-			};
+
+			// パネル位置をクランプ
+           m_panelPos.x = Clamp(m_panelPos.x, 0.0, static_cast<double>(Scene::Width()) - ui::layout::PanelWidth);
+			m_panelPos.y = Clamp(m_panelPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight);
+
+			const RectF panelRect{ m_panelPos, ui::layout::PanelWidth, panelHeight };
+
+			// ヘッダーバーをドラッグで移動
+			const RectF headerBar{ panelRect.x, panelRect.y, panelRect.w - 44, ui::layout::HeaderHeight };
+			if (MouseL.down() && headerBar.mouseOver())
+			{
+				m_panelDragging = true;
+				m_panelDragOffset = Cursor::PosF() - m_panelPos;
+			}
+			if (not MouseL.pressed())
+			{
+				m_panelDragging = false;
+			}
+			if (m_panelDragging)
+			{
+              const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+				m_panelPos.x = Clamp(desiredPos.x, 0.0, static_cast<double>(Scene::Width()) - ui::layout::PanelWidth);
+				m_panelPos.y = Clamp(desiredPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight);
+			}
+
 			const RectF contentRect{
 				panelRect.x + ui::layout::PanelPadding,
 				panelRect.y + ui::layout::HeaderHeight,
@@ -115,6 +167,13 @@ namespace Pi3D
 			uiFont(U"効果チェイン (上から順に適用)").draw(
 				panelRect.pos.movedBy(ui::layout::PanelPadding, 12), ui::GetTheme().text);
 
+			// 折りたたみボタン
+			const RectF collapseBtn{ panelRect.rightX() - 44, panelRect.y + 8, 30, 28 };
+			if (ui::Button(uiFont, U"◀", collapseBtn))
+			{
+				m_panelCollapsed = true;
+			}
+
 			// 中ボタンドラッグで高速スクロール
 			if (contentRect.mouseOver() && MouseM.pressed())
 			{
@@ -127,7 +186,7 @@ namespace Pi3D
 				Graphics2D::SetScissorRect(contentRect.asRect());
 
 				Vec2 uiPos = contentRect.pos.movedBy(0, -m_panelScrollY);
-             drawCollapsibleSection(uiFont, uiPos, contentRect.w, U"環境", m_environmentCollapsed,
+			 drawCollapsibleSection(uiFont, uiPos, contentRect.w, U"環境", m_environmentCollapsed,
 					[&]() { m_environment.drawUI(uiFont, uiPos, contentRect.w); }, Environment::HeaderHeight);
 				drawCollapsibleSection(uiFont, uiPos, contentRect.w, U"ライティング", m_lightingCollapsed,
 					[&]() { m_lighting.drawUI(uiFont, uiPos, contentRect.w); }, m_lighting.getHeaderHeight());
@@ -233,6 +292,9 @@ namespace Pi3D
 			settings.lighting = m_lighting.getSettings();
 			settings.environment = m_environment.getSettings();
 			settings.effects = m_effectChain.getSettings();
+			settings.panelCollapsed = m_panelCollapsed;
+			settings.panelPosX = m_panelPos.x;
+			settings.panelPosY = m_panelPos.y;
 			return settings;
 		}
 
@@ -241,6 +303,12 @@ namespace Pi3D
 			m_lighting.applySettings(settings.lighting);
 			m_environment.applySettings(settings.environment);
 			m_effectChain.applySettings(settings.effects);
+			m_panelCollapsed = settings.panelCollapsed;
+			m_panelPos = Vec2{ settings.panelPosX, settings.panelPosY };
+            if ((settings.panelPosX == 16.0) && (settings.panelPosY == 16.0))
+			{
+				m_panelPos.y = 96.0;
+			}
 			m_lastSavedSettings = collectSettings();
 		}
 
@@ -266,12 +334,17 @@ namespace Pi3D
 		std::unique_ptr<RenderTexture> m_chainB;
      std::unique_ptr<RenderTexture> m_fogTexture;
 		std::unique_ptr<RenderTexture> m_sceneDepthTexture;
-     static constexpr double CollapsedSectionHeight = 42.0;
+	 static constexpr double CollapsedSectionHeight = 42.0;
+		static constexpr double CollapsedToggleSize = 48.0;
 		bool m_environmentCollapsed = false;
 		bool m_lightingCollapsed = false;
 		bool m_chainCollapsed = false;
 		bool m_effectPresetCollapsed = false;
 		bool m_effectParamsCollapsed = false;
+		bool m_panelCollapsed = false;
+		Vec2 m_panelPos{ ui::layout::PanelMargin, ui::layout::PanelMargin };
+		bool m_panelDragging = false;
+		Vec2 m_panelDragOffset{ 0, 0 };
 		PersistentSettings m_lastSavedSettings;
 		const VertexShader m_dofDepthVS;
 		const PixelShader m_dofDepthPS;

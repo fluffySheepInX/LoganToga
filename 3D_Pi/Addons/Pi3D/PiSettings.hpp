@@ -59,6 +59,9 @@ namespace Pi3D
         LightingSettings lighting;
         EnvironmentSettings environment;
         EffectChainSettings effects;
+        bool panelCollapsed = false;
+        double panelPosX = 16.0;
+        double panelPosY = 96.0;
 
         [[nodiscard]] bool operator ==(const PersistentSettings& other) const = default;
     };
@@ -216,6 +219,18 @@ namespace Pi3D
                     settings.effects.chainEnabled.resize(settings.effects.chainEffectNames.size(), true);
                 }
             }
+            if (const auto panelCollapsed = toml[U"panelCollapsed"].getOpt<bool>())
+            {
+                settings.panelCollapsed = *panelCollapsed;
+            }
+            if (const auto panelPosX = toml[U"panelPosX"].getOpt<double>())
+            {
+                settings.panelPosX = *panelPosX;
+            }
+            if (const auto panelPosY = toml[U"panelPosY"].getOpt<double>())
+            {
+                settings.panelPosY = *panelPosY;
+            }
         }
         catch (const std::exception&)
         {
@@ -284,6 +299,9 @@ namespace Pi3D
         }
         enabledLine += U"]";
         writer.writeln(enabledLine);
+        writer.writeln(U"panelCollapsed = {}"_fmt(settings.panelCollapsed ? U"true" : U"false"));
+        writer.writeln(U"panelPosX = {:.2f}"_fmt(settings.panelPosX));
+        writer.writeln(U"panelPosY = {:.2f}"_fmt(settings.panelPosY));
         return true;
     }
 }

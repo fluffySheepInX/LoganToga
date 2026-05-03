@@ -255,6 +255,60 @@
     <ClCompile Include="Effects\*.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -384,6 +438,10 @@
     <Text Include="App\example\LICENSE.txt">
       <Filter>Resource Files\example</Filter>
     </Text>
+    <Text Include="Addons\Pi3D\pi3d_improvement_suggestions.txt" />
+    <Text Include="AAA_road_rendering_notes.txt" />
+    <Text Include="road_boundary_solution_steps.txt" />
+    <Text Include="texture_editor_requirements.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll">
@@ -808,6 +866,14 @@
     <None Include="Addons\Pi3D\Resources\toml\effect_presets.toml" />
     <None Include="Addons\Pi3D\Resources\toml\lighting_presets.toml" />
     <None Include="App\example\shader\glsl\scene_fog.frag" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\hlsl\scene_fog.hlsl" />
+    <None Include="Road\road_decal_task_list.html" />
+    <None Include="Road\road_placement_assets.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -903,8 +969,38 @@
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="App\example\shader\hlsl\scene_fog.hlsl" />
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadEditor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadMaterialBuilder.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadMeshBuilder.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadSerializer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadGeometry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadPlacementTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadScatterRules.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ground\TextureEditor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

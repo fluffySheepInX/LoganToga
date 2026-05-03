@@ -1,0 +1,90 @@
+# Road scatter asset catalog
+# Paths are relative to App working directory used by the game runtime.
+
+[[assets]]
+id = "grass_short"
+displayName = "Short Grass"
+category = "grass"
+renderType = "model"
+resourcePath = "example/obj/pine.obj"
+defaultScaleMin = 0.35
+defaultScaleMax = 0.65
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "grass_dry"
+displayName = "Dry Grass"
+category = "grass"
+renderType = "model"
+resourcePath = "example/obj/tree.obj"
+defaultScaleMin = 0.25
+defaultScaleMax = 0.45
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "pebble_small"
+displayName = "Small Pebble"
+category = "pebble"
+renderType = "model"
+resourcePath = "example/obj/crystal1.obj"
+defaultScaleMin = 0.08
+defaultScaleMax = 0.16
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "pebble_scatter"
+displayName = "Pebble Cluster"
+category = "pebble"
+renderType = "model"
+resourcePath = "example/obj/crystal2.obj"
+defaultScaleMin = 0.08
+defaultScaleMax = 0.16
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "dirt_soft"
+displayName = "Soft Dirt"
+category = "dirt"
+renderType = "texture"
+resourcePath = "example/texture/ground.jpg"
+defaultScaleMin = 0.9
+defaultScaleMax = 1.5
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "mud_edge"
+displayName = "Mud Edge"
+category = "dirt"
+renderType = "texture"
+resourcePath = "texture/road.jpg"
+defaultScaleMin = 0.9
+defaultScaleMax = 1.8
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "prop_rock"
+displayName = "Small Rock"
+category = "prop"
+renderType = "model"
+resourcePath = "example/obj/crystal3.obj"
+defaultScaleMin = 0.18
+defaultScaleMax = 0.32
+alignToGround = true
+randomYaw = true
+
+[[assets]]
+id = "prop_tuft"
+displayName = "Tuft"
+category = "prop"
+renderType = "model"
+resourcePath = "example/obj/siv3d-kun.obj"
+defaultScaleMin = 0.08
+defaultScaleMax = 0.12
+alignToGround = true
+randomYaw = true

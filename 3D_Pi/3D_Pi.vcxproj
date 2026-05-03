@@ -153,6 +153,7 @@
     <ResourceCompile Include="App\Resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="AAA_road_rendering_notes.txt" />
     <Text Include="Addons\Pi3D\pi3d_improvement_suggestions.txt" />
     <Text Include="App\dll\soundtouch\COPYING.TXT" />
     <Text Include="App\engine\font\fontawesome\LICENSE.txt" />
@@ -170,6 +171,8 @@
     <Text Include="App\example\txt\kr.txt" />
     <Text Include="App\example\txt\sc.txt" />
     <Text Include="App\example\video\river.txt" />
+    <Text Include="road_boundary_solution_steps.txt" />
+    <Text Include="texture_editor_requirements.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -298,6 +301,8 @@
     <None Include="App\example\shader\glsl\terrain_normal.frag" />
     <None Include="App\example\shader\glsl\toon.frag" />
     <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="Road\road_decal_task_list.html" />
+    <None Include="Road\road_placement_assets.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\shot.mp3" />
@@ -326,8 +331,17 @@
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
     <ClInclude Include="Addons\Pi3D\Shader\PiShaderLoader.hpp" />
     <ClInclude Include="Effects\*.hpp" />
+    <ClInclude Include="Ground\TextureEditor.hpp" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="Lighting\Lighting.hpp" />
+    <ClInclude Include="Road\RoadEditor.hpp" />
+    <ClInclude Include="Road\RoadGeometry.hpp" />
+    <ClInclude Include="Road\RoadMaterialBuilder.hpp" />
+    <ClInclude Include="Road\RoadMeshBuilder.hpp" />
+    <ClInclude Include="Road\RoadPlacementTypes.hpp" />
+    <ClInclude Include="Road\RoadScatterRules.hpp" />
+    <ClInclude Include="Road\RoadSerializer.hpp" />
+    <ClInclude Include="Road\RoadTypes.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="UI\Layout.hpp" />
     <ClInclude Include="UI\RectUI.hpp" />

@@ -95,14 +95,27 @@ namespace ui
         return changed;
     }
 
-    inline bool SliderH(StringView label, double& value, const double min, const double max,
+    struct SliderResult
+    {
+        bool changed = false;
+        bool hovered = false;
+        bool decreaseClicked = false;
+        bool increaseClicked = false;
+    };
+
+    inline SliderResult SliderHEx(StringView label, double& value, const double min, const double max,
         const Vec2& pos, const double labelWidth = 130.0, const double sliderWidth = 200.0,
         const Theme& theme = GetTheme())
     {
         const Font& font = DefaultFont();
-        const RectF wholeRect{ pos, labelWidth + sliderWidth, 34 };
         const RectF labelRect{ pos, labelWidth, 34 };
-        const RectF trackRect{ pos.x + labelWidth + 10, pos.y + 14, sliderWidth - 20, 6 };
+        const double rightAreaX = (pos.x + labelWidth + 10.0);
+        const double buttonSize = 24.0;
+        const double buttonGap = 4.0;
+        const double trackWidth = Max(44.0, sliderWidth - ((buttonSize * 2.0) + (buttonGap * 3.0)));
+        const RectF trackRect{ rightAreaX, pos.y + 14, trackWidth, 6 };
+        const RectF decreaseRect{ trackRect.x + trackRect.w + buttonGap, pos.y + 5, buttonSize, buttonSize };
+        const RectF increaseRect{ decreaseRect.x + buttonSize + buttonGap, pos.y + 5, buttonSize, buttonSize };
 
         const double clampedValue = Clamp(value, min, max);
         const double t = (max > min) ? ((clampedValue - min) / (max - min)) : 0.0;
@@ -113,12 +126,12 @@ namespace ui
         const size_t sliderId = reinterpret_cast<size_t>(&value);
         const RectF hitRect = trackRect.stretched(12, 12);
 
-        if (MouseL.down() && (wholeRect.mouseOver() || knob.mouseOver()))
+        if (MouseL.down() && (labelRect.mouseOver() || hitRect.mouseOver() || knob.mouseOver()))
         {
             activeSlider = sliderId;
         }
 
-        bool changed = false;
+        SliderResult result;
         if (activeSlider && (*activeSlider == sliderId))
         {
             if (MouseL.pressed())
@@ -128,7 +141,7 @@ namespace ui
                 if (newValue != value)
                 {
                     value = newValue;
-                    changed = true;
+                    result.changed = true;
                 }
             }
             else
@@ -137,7 +150,11 @@ namespace ui
             }
         }
 
-        const bool hovered = hitRect.mouseOver() || knob.mouseOver() || (activeSlider && (*activeSlider == sliderId));
+        const bool hovered = labelRect.mouseOver() || hitRect.mouseOver() || knob.mouseOver() || decreaseRect.mouseOver() || increaseRect.mouseOver()
+            || (activeSlider && (*activeSlider == sliderId));
+        result.hovered = hovered;
+        result.decreaseClicked = decreaseRect.leftClicked();
+        result.increaseClicked = increaseRect.leftClicked();
 
         labelRect.rounded(6).draw(theme.item);
         labelRect.rounded(6).drawFrame(1.0, theme.panelBorder);
@@ -148,6 +165,37 @@ namespace ui
         knob.draw(hovered ? ColorF{ 1.0, 1.0, 1.0, 1.0 } : ColorF{ 0.96, 0.98, 1.0, 1.0 });
         knob.drawFrame(2.0, theme.panelBorder);
 
-        return changed;
+        for (const auto& buttonInfo : { std::pair{ decreaseRect, U"-" }, std::pair{ increaseRect, U"+" } })
+        {
+            const bool buttonHovered = buttonInfo.first.mouseOver();
+            const bool pressed = buttonHovered && MouseL.pressed();
+            const ColorF fill = pressed ? theme.itemPressed : (buttonHovered ? theme.itemHovered : theme.item);
+            buttonInfo.first.rounded(5).draw(fill);
+            buttonInfo.first.rounded(5).drawFrame(1.0, theme.panelBorder);
+            font(buttonInfo.second).drawAt(buttonInfo.first.center(), theme.text);
+        }
+
+        return result;
+    }
+
+    inline bool SliderH(StringView label, double& value, const double min, const double max,
+        const Vec2& pos, const double labelWidth = 130.0, const double sliderWidth = 200.0,
+        const Theme& theme = GetTheme())
+    {
+        return SliderHEx(label, value, min, max, pos, labelWidth, sliderWidth, theme).changed;
+    }
+
+    inline void Tooltip(const Font& font, StringView text, Vec2 pos)
+    {
+        const RectF textRegion = font(text).region();
+        RectF tooltip{ pos, (textRegion.w + 18), (textRegion.h + 14) };
+        tooltip.x = Min(tooltip.x, (Scene::Width() - tooltip.w - 12));
+        tooltip.y = Min(tooltip.y, (Scene::Height() - tooltip.h - 12));
+        tooltip.x = Max(tooltip.x, 12.0);
+        tooltip.y = Max(tooltip.y, 12.0);
+
+        tooltip.rounded(8).draw(ColorF{ 0.10, 0.13, 0.18, 0.94 });
+        tooltip.rounded(8).drawFrame(1.0, ColorF{ 0.70, 0.80, 0.96, 0.95 });
+        font(text).draw(tooltip.pos.movedBy(9, 7), Palette::White);
     }
 }

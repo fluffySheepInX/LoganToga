@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Road Decal / Prop Placement Task List</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --panel-2: #1f2937;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --accent: #60a5fa;
+            --accent-2: #34d399;
+            --warn: #f59e0b;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(180deg, #0b1220, var(--bg));
+            color: var(--text);
+        }
+        main {
+            width: min(1100px, calc(100% - 32px));
+            margin: 24px auto 64px;
+        }
+        h1, h2, h3 { line-height: 1.25; }
+        h1 { margin-bottom: 8px; font-size: 2rem; }
+        h2 {
+            margin-top: 32px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: #f8fafc;
+        }
+        p, li { color: var(--text); }
+        .muted { color: var(--muted); }
+        .card {
+            background: rgba(17, 24, 39, 0.88);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin: 16px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #08111f;
+            background: var(--accent);
+            font-weight: 600;
+        }
+        .tag.green { background: var(--accent-2); }
+        .tag.yellow { background: var(--warn); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            vertical-align: top;
+            text-align: left;
+        }
+        th {
+            background: var(--panel-2);
+            color: #f8fafc;
+        }
+        code {
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: #0b1220;
+            color: #bfdbfe;
+        }
+        ol > li, ul > li { margin: 6px 0; }
+        .priority-a { color: #93c5fd; font-weight: 700; }
+        .priority-b { color: #86efac; font-weight: 700; }
+        .priority-c { color: #fcd34d; font-weight: 700; }
+    </style>
+</head>
+<body>
+<main>
+    <header class="card">
+        <h1>道路端デカール / 小物配置 UI タスク一覧</h1>
+        <p class="muted">対象: 3D_Pi / RoadEditor。目的は「道路と地面の境界を馴染ませる」ために、草・小石・泥・路肩素材を道路文脈に沿って配置できるようにすること。</p>
+        <div>
+            <span class="tag">Road Editor</span>
+            <span class="tag green">UX First</span>
+            <span class="tag yellow">Environment Art</span>
+        </div>
+    </header>
+
+    <section>
+        <h2>1. 前提整理</h2>
+        <div class="card">
+            <ul>
+                <li>現状の主要課題は、道路内部の模様量ではなく <strong>道路と地面の境界の遷移不足</strong>。</li>
+                <li>改善には道路本体に加え、<strong>路肩・草・小石・泥</strong> の周辺情報が必要。</li>
+                <li>そのため、単なる道路マテリアル UI だけでなく、<strong>デカール / 小物配置 UI</strong> が必要。</li>
+                <li>ただし UX 上、道路作成フローと小物配置フローは混ぜない。<strong>モード分離</strong>が前提。</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. 実装ゴール</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>アート目標</h3>
+                <ul>
+                    <li>道路端に移行帯を作る</li>
+                    <li>路肩に草・小石・汚れを配置できる</li>
+                    <li>交差点や建物前だけ密度を変えられる</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>UX目標</h3>
+                <ul>
+                    <li>「道路編集」と「装飾配置」を分離</li>
+                    <li>現在の選択対象が分かりやすい</li>
+                    <li>プレビュー・削除・やり直しが明快</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>技術目標</h3>
+                <ul>
+                    <li>配置データを TOML 保存</li>
+                    <li>アセット種別ごとに描画・配置ルールを分離</li>
+                    <li>将来の自動散布へ拡張可能にする</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>3. 必要な機能ブロック</h2>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>機能</th>
+                        <th>内容</th>
+                        <th>優先度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Placement Mode</td>
+                        <td>道路編集と別の配置モード。草 / 小石 / 泥デカール / 小物を切替。</td>
+                        <td class="priority-a">A</td>
+                    </tr>
+                    <tr>
+                        <td>Asset Palette</td>
+                        <td>配置可能アセット一覧。カテゴリ、サムネイル、種別名を表示。</td>
+                        <td class="priority-a">A</td>
+                    </tr>
+                    <tr>
+                        <td>Placement Parameters</td>
+                        <td>サイズ、回転、密度、ランダム性、路肩優先度など。</td>
+                        <td class="priority-a">A</td>
+                    </tr>
+                    <tr>
+                        <td>Selection / Delete</td>
+                        <td>置いた要素の選択、再配置、削除。</td>
+                        <td class="priority-a">A</td>
+                    </tr>
+                    <tr>
+                        <td>Brush Placement</td>
+                        <td>1個置きではなく、ブラシで複数散布。</td>
+                        <td class="priority-b">B</td>
+                    </tr>
+                    <tr>
+                        <td>Rule-based Scatter</td>
+                        <td>道路端・交差点・建物前に応じて自動的に偏らせる。</td>
+                        <td class="priority-b">B</td>
+                    </tr>
+                    <tr>
+                        <td>Preset System</td>
+                        <td>「乾いた土道」「湿った路肩」などの配置プリセット。</td>
+                        <td class="priority-c">C</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>4. データ構造タスク</h2>
+        <div class="card">
+            <ol>
+                <li><strong>Asset definition</strong> を作る
+                    <ul>
+                        <li><code>id</code></li>
+                        <li><code>displayName</code></li>
+                        <li><code>category</code> : grass / pebble / dirtDecal / prop</li>
+                        <li><code>resourcePath</code></li>
+                        <li><code>placementType</code> : decal / billboard / mesh</li>
+                        <li><code>defaultScaleMin</code>, <code>defaultScaleMax</code></li>
+                        <li><code>alignToGround</code>, <code>randomYaw</code></li>
+                    </ul>
+                </li>
+                <li><strong>Placed instance</strong> を作る
+                    <ul>
+                        <li>assetId</li>
+                        <li>position</li>
+                        <li>rotation</li>
+                        <li>scale</li>
+                        <li>tint</li>
+                        <li>layer / priority</li>
+                        <li>optional: roadId, local distance to road edge</li>
+                    </ul>
+                </li>
+                <li><strong>Placement settings</strong> を作る
+                    <ul>
+                        <li>activeCategory</li>
+                        <li>activeAssetId</li>
+                        <li>brushRadius</li>
+                        <li>density</li>
+                        <li>jitter</li>
+                        <li>snapToRoadShoulder</li>
+                        <li>edgeBias</li>
+                    </ul>
+                </li>
+                <li><strong>Persistence</strong> を TOML に追加
+                    <ul>
+                        <li><code>[[placementAssets]]</code> は不要。定義はコード or 別 TOML で保持。</li>
+                        <li><code>[[placements]]</code> で配置インスタンスを保存。</li>
+                        <li><code>[placementSettings]</code> で現在の UI 状態を保存。</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section>
+        <h2>5. UI/UX タスク</h2>
+        <div class="card">
+            <h3>推奨タブ構成</h3>
+            <ul>
+                <li><strong>Edit</strong> : 道路形状編集</li>
+                <li><strong>Material</strong> : 道路材質調整</li>
+                <li><strong>Scatter</strong> : 草・小石・泥・小物配置</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3>Scatter タブの UI セクション</h3>
+            <ol>
+                <li><strong>Category</strong>
+                    <ul>
+                        <li>Grass</li>
+                        <li>Pebble</li>
+                        <li>Dirt / Mud Decal</li>
+                        <li>Props</li>
+                    </ul>
+                </li>
+                <li><strong>Asset Picker</strong>
+                    <ul>
+                        <li>名前だけでなく簡易プレビューを表示</li>
+                        <li>現在選択中を明確にハイライト</li>
+                    </ul>
+                </li>
+                <li><strong>Placement Mode</strong>
+                    <ul>
+                        <li>Single</li>
+                        <li>Brush</li>
+                        <li>Erase</li>
+                        <li>Select</li>
+                    </ul>
+                </li>
+                <li><strong>Brush Controls</strong>
+                    <ul>
+                        <li>Brush Radius</li>
+                        <li>Density</li>
+                        <li>Random Rotation</li>
+                        <li>Scale Range</li>
+                        <li>Road Edge Bias</li>
+                    </ul>
+                </li>
+                <li><strong>Context Rules</strong>
+                    <ul>
+                        <li>Only near road edge</li>
+                        <li>Avoid center lane</li>
+                        <li>Boost near intersections</li>
+                        <li>Boost near buildings</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        <div class="card">
+            <h3>UX注意点</h3>
+            <ul>
+                <li>道路編集と配置を同時に有効化しない。</li>
+                <li>配置前に <strong>ゴーストプレビュー</strong> を出す。</li>
+                <li>消去モードは色とカーソル形状を変えて誤操作を防ぐ。</li>
+                <li>選択中オブジェクトはアウトライン or ハイライトで判別可能にする。</li>
+                <li>1クリック1配置だけでなく、後でブラシ配置に進化できる構造にする。</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>6. 配置ロジック タスク</h2>
+        <div class="card">
+            <ol>
+                <li>地面へのレイキャスト位置取得</li>
+                <li>道路中心線への最近接点取得</li>
+                <li>道路からの横距離を使って <strong>road edge band</strong> を計算</li>
+                <li>その帯域に応じて草・小石・泥の置きやすさを変える</li>
+                <li>Single placement を先に実装</li>
+                <li>次に Brush placement を追加</li>
+                <li>最後に rule-based scatter を追加</li>
+            </ol>
+        </div>
+        <div class="card">
+            <h3>推奨ルール</h3>
+            <ul>
+                <li>Grass: 路肩外側に強く、道路中央は禁止</li>
+                <li>Pebble: 路肩と交差点にやや強く</li>
+                <li>Dirt decal: 道路端と交差点に強く</li>
+                <li>Small prop: 建物前 / 分岐周辺に限定</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>7. 描画タスク</h2>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>描画方式</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Grass</td>
+                        <td>Billboard / simple card</td>
+                        <td>道路端の輪郭を壊す</td>
+                    </tr>
+                    <tr>
+                        <td>Pebble</td>
+                        <td>Decal or tiny mesh cluster</td>
+                        <td>路肩の粒感・遷移帯</td>
+                    </tr>
+                    <tr>
+                        <td>Dirt / Mud</td>
+                        <td>Decal</td>
+                        <td>地面と道路の中間層</td>
+                    </tr>
+                    <tr>
+                        <td>Small Prop</td>
+                        <td>Mesh</td>
+                        <td>生活感・物語性</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>8. アセット最低セット</h2>
+        <div class="card">
+            <ul>
+                <li>草アルファ 2種（短草 / 枯れ草）</li>
+                <li>小石・砂利デカール 1〜2種</li>
+                <li>泥・汚れデカール 1〜2種</li>
+                <li>草混じり土タイル 1種</li>
+                <li>小さな岩片メッシュ 1〜2種</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>9. フェーズ別タスク</h2>
+        <div class="card">
+            <h3>Phase 1 - 基盤</h3>
+            <ol>
+                <li>配置データ構造追加</li>
+                <li>TOML 保存/読込追加</li>
+                <li>Scatter タブ UI 追加</li>
+                <li>Single placement 実装</li>
+                <li>Select / Delete 実装</li>
+            </ol>
+        </div>
+        <div class="card">
+            <h3>Phase 2 - 実用化</h3>
+            <ol>
+                <li>Grass / Pebble / Dirt のカテゴリ切替</li>
+                <li>Ghost preview</li>
+                <li>Brush placement</li>
+                <li>Scale / rotation randomization</li>
+                <li>簡易 edge bias</li>
+            </ol>
+        </div>
+        <div class="card">
+            <h3>Phase 3 - AAA寄り強化</h3>
+            <ol>
+                <li>道路局所座標に基づく rule-based scatter</li>
+                <li>交差点強調ルール</li>
+                <li>建物前補正ルール</li>
+                <li>プリセット保存</li>
+                <li>自動散布 + 手動仕上げの併用</li>
+            </ol>
+        </div>
+    </section>
+
+    <section>
+        <h2>10. 完了条件</h2>
+        <div class="card">
+            <ul>
+                <li>道路と地面の境界に草・小石・泥を配置できる</li>
+                <li>配置物を選択・削除・保存・読込できる</li>
+                <li>道路編集と配置編集が誤操作なく切り替えられる</li>
+                <li>交差点・路肩の見た目を手動で整えられる</li>
+                <li>将来の自動散布へ拡張しやすい構造になっている</li>
+            </ul>
+        </div>
+    </section>
+</main>
+</body>
+</html>

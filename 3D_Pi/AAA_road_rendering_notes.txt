@@ -1,0 +1,186 @@
+# 俯瞰視点向け AAA風道路表現・実装方針メモ
+
+## 目的
+軽量3D（Siv3D想定）で、Company of Heroes系のような情報量ある道路質感を、重いモデリングに依存せず再現する。
+
+主眼は「道路」。
+
+高ポリ地形ではなく、
+
+- テクスチャレイヤー
+- デカール
+- ノイズ
+- シェーダ補強
+
+で質感を作る。
+
+## 基本思想
+道路は1枚のベタ貼りではなく、周波数の異なる情報を積層する。
+
+構成は5層：
+
+1. Base Albedo（単色ベース）
+2. Macro Variation（大域色ムラ）
+3. Detail Tiling（細密タイリング）
+4. Decals（汚れ・轍・焦げ跡）
+5. Shader Detail（粗さや微細凹凸）
+
+## Layer1 Base
+道路ベース色：
+
+- 黄土寄りグレー
+- やや不均一な土色
+
+完全単色ではなく低周波ノイズで色ムラを入れる。
+
+例：
+
+baseColor *= macroNoise;
+
+## Layer2 Macro Variation
+大きいスケールで色変化。
+
+目的：
+
+- タイリング隠し
+- 単調さ除去
+
+Fractal/Perlin noise 使用。
+
+概念：
+
+f(x)=Σ ai noise(2^i x)
+
+## Layer3 Detail Tiling
+細密タイルテクスチャ。
+
+候補：
+
+- 砂
+- 小石混じり土
+- 荒れた土
+
+写真切り抜き素材でも可。
+
+条件：
+
+- 強い影なし
+- シームレス化
+- スケール破綻しない
+
+可能なら持つ情報：
+
+- diffuse
+- normal
+- roughness相当
+
+複数を混ぜても良い：
+
+color = mix(tex1, tex2, mask);
+
+## Layer4 Decals
+重要。
+
+本気モデリング代替として使う。
+
+対象：
+
+- 泥汚れ
+- 焦げ跡
+- ヒビ
+- 小石散布
+- 轍
+- 血痕
+
+オーバーレイ合成：
+
+baseColor = mix(baseColor,decalColor,decalMask);
+
+法線にも少し反映可。
+
+## Decal Scatter
+ランダムではなく
+
+Rule + Noise
+
+で散布。
+
+Pure randomは避ける。
+
+### Perlinによる散布
+
+if(noise > threshold)
+    spawn decal;
+
+または
+
+P(x,y)=smoothstep(a,b,noise)
+
+で密度制御。
+
+### 種別分岐
+
+0.0-0.3 小石
+0.3-0.6 泥
+0.6-0.8 轍
+0.8-1.0 焦げ
+
+### Rule Mask併用
+
+- 道路端に泥
+- 通行ラインに轍
+- 窪地に湿り
+
+finalMask = roadRuleMask * noiseMask;
+
+## Layer5 Shader Enhancement
+
+### Micro normal perturbation
+
+normal += noise * strength;
+
+### Roughness variation
+
+roughness = mix(dry,wet,noise);
+
+## 実装優先度
+最初は以下3つだけでも成立する：
+
+1. Macro color variation
+2. Detail normal map
+3. Decal dirt / tire tracks
+
+## 重いモデリングを避ける
+原則：
+
+80% デカール
+15% シェーダ補強
+5% 実ジオメトリ変形
+
+深い轍や段差だけメッシュ。
+
+## ノイズ候補
+Perlin:
+汎用
+
+Worley:
+泥だまりやセル状汚れ向き
+
+F(x)=min||x-pi||
+
+## 最小試作
+- 単色道路ベース
+- 砂利タイル1枚
+- マクロノイズ色ムラ
+- 焦げデカール散布
+- ノイズで汚れ分布
+
+## 避けたいこと
+- 高品質素材探しで停滞
+- 最初からPBR完全再現
+- 全部モデリングしようとする
+- 完全ランダム散布
+
+## ゴール
+ポリゴンではなく層構造で情報量を出す道路。
+AAA完全再現ではなく、AAAがやっている安く見栄えを作る考え方を取り込む。

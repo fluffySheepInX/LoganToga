@@ -1,0 +1,77 @@
+ソースを見る限り、道路境界問題は主に「境界用の考え方はあるが、実描画メッシュに反映されていない」ことが原因です。
+
+【現状の問題点】
+
+1. 道路メッシュは1枚の単純な帯だけ
+- RoadMeshBuilder.hpp の BuildRoadMesh() は、中心線から左右に halfWidth だけ広げたストリップ。
+- 道路外形が直線的で、境界が人工的に見えやすい。
+
+2. draw3D() で同じメッシュを2回描画
+- RoadEditor.hpp の draw3D() では、同一 mesh に対して shoulder texture と road texture を重ね描きしている。
+- 肩部分（ショルダー）が道路幅の外側に広がらない。
+
+3. 境界評価ロジックが描画に未反映
+- RoadGeometry.hpp に EvaluateEdgeWarp / EvaluateCoreMask / EvaluateShoulderMask などがある。
+- ただしメッシュ頂点生成（BuildRoadMesh）では使われていない。
+
+
+【解決ステップ】
+
+Step 1: 問題を2種類に分離
+- 形状境界問題（外形が硬い）
+- 質感境界問題（道路と地面の切替が急）
+
+Step 2: 道路本体メッシュとショルダーメッシュを分離
+- 既存の1メッシュ2回描きから、core / shoulder の別メッシュ構成にする。
+- 例: m_roadMeshes と m_roadShoulderMeshes を分ける。
+
+Step 3: ショルダー幅を道路幅より広げる
+- 例: core width = road.width
+- shoulder width = road.width + 1.6（目安）
+- 描画順は shoulder → core。
+
+Step 4: 道路本体テクスチャ端をフェード
+- CreateRoadMaterialTexture() 側で端部 alpha fade を追加。
+- 道路端の切り替えを和らげる。
+
+Step 5: ショルダーテクスチャの外側フェードを活かす
+- CreateRoadShoulderBlendTexture() の alpha 設計は既に方向性が良い。
+- ただしショルダーメッシュを拡幅しないと効果が狭い。
+
+Step 6: EvaluateEdgeWarp() をメッシュ生成に反映
+- 頂点の左右端（特にショルダー外周）を arcLength ベースで軽く揺らす。
+- core は弱め、shoulder は強めに歪ませる。
+
+Step 7: カーブ部の結合改善（必要なら）
+- 現在は簡易的な forward 平均による処理。
+- 鋭角で破綻が出る場合は miter/bevel の分岐を導入。
+
+Step 8: 交差点パッチも core / shoulder 分離
+- BuildConnectionPatchMesh() も将来的に2層化する。
+- 現在の同一パッチ2回描き構造を見直す。
+
+
+【実装優先順（推奨）】
+1. core / shoulder のメッシュ分離
+2. shoulder 拡幅
+3. core 端 alpha fade
+4. shoulder alpha調整
+5. edge warp の反映
+6. 交差点分離
+7. miter/bevel の高度化
+
+
+【最小修正で効果が大きいセット】
+- 対象ファイル:
+  - RoadMeshBuilder.hpp
+  - RoadEditor.hpp
+  - RoadMaterialBuilder.hpp
+
+- 実施内容:
+  1) m_roadShoulderMeshes を追加
+  2) RebuildRoadMeshes() で core / shoulder を別生成
+  3) shoulder width = road.width + 1.6
+  4) draw3D() で shoulder → core の順に描画
+  5) road texture の端に alpha fade
+
+この順で進めると、境界が「地面→ショルダー→道路本体」の層構造になり、道路境界問題を最小コストで改善できます。
