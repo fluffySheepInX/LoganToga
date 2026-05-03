@@ -74,9 +74,43 @@ void Main()
 	{
 		return getCameraPresetPanelRect().mouseOver();
 	};
+    const auto getWheelZoomFocusPosition = [&]() -> Optional<Vec3>
+	{
+		const Ray centerRay = camera.screenToRay(Scene::CenterF());
+		const InfinitePlane groundPlane{ Float3{ 0, 0, 0 }, Float3{ 0, 1, 0 } };
+
+		if (const auto distance = centerRay.intersects(groundPlane))
+		{
+			return centerRay.point_at(*distance);
+		}
+
+		return none;
+	};
+	const auto updateCameraWheelDragPan = [&]() -> bool
+	{
+		if (not MouseM.pressed()) return false;
+		if (roadEditor.wantsMouseCapture() || isCursorOnCameraPresetUI()) return false;
+
+		const Vec2 delta = Cursor::DeltaF();
+		if (delta.isZero()) return true;
+
+		const InfinitePlane gp{ Float3{ 0, 0, 0 }, Float3{ 0, 1, 0 } };
+		const Vec2 curPos = Cursor::PosF();
+		const Vec2 prevPos = curPos - delta;
+
+		const auto curHit  = camera.screenToRay(curPos).intersects(gp);
+		const auto prevHit = camera.screenToRay(prevPos).intersects(gp);
+		if (not curHit || not prevHit) return true;
+
+		const Vec3 panDelta = camera.screenToRay(prevPos).point_at(*prevHit)
+							- camera.screenToRay(curPos).point_at(*curHit);
+
+		camera.setView(camera.getEyePosition() + panDelta, camera.getFocusPosition() + panDelta);
+		return true;
+	};
    const auto updateCameraWheelFocus = [&]() -> bool
 	{
-     if (roadEditor.wantsMouseCapture() || isCursorOnCameraPresetUI())
+      if (roadEditor.wantsMouseCapture() || textureEditor.wantsMouseWheelCapture() || Pi3D::WantsMouseWheelCapture() || isCursorOnCameraPresetUI())
 		{
          return false;
 		}
@@ -87,18 +121,23 @@ void Main()
          return false;
 		}
 
-          const Vec3 focus = camera.getFocusPosition();
+     const auto zoomFocus = getWheelZoomFocusPosition();
+		if (not zoomFocus)
+		{
+			return false;
+		}
+
 		const Vec3 eye = camera.getEyePosition();
-       const Vec3 eyeOffset = eye - focus;
+		  const Vec3 eyeOffset = eye - *zoomFocus;
 		const double distance = eyeOffset.length();
 		if (distance <= 0.001)
 		{
          return false;
 		}
 
-      const double zoomScale = Math::Pow(1.16, wheel);
-		const double targetDistance = Clamp(distance * zoomScale, 2.0, 160.0);
-         camera.setView(focus + eyeOffset * (targetDistance / distance), focus);
+        const double zoomScale = Math::Pow(0.85, wheel);
+		const double targetDistance = Clamp(distance * zoomScale, 3.0, 80.0);
+			 camera.setView(*zoomFocus + eyeOffset * (targetDistance / distance), *zoomFocus);
       return true;
 	};
 	const auto drawScene = [&]()
@@ -122,9 +161,9 @@ void Main()
 
 	while (System::Update())
 	{
-     if (not updateCameraWheelFocus())
+	 if (not updateCameraWheelDragPan() && not updateCameraWheelFocus())
 		{
-            if (not isCursorOnCameraPresetUI())
+			if (not isCursorOnCameraPresetUI())
 			{
 				camera.update(6.0);
 			}

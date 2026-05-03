@@ -1,0 +1,181 @@
+﻿[settings]
+autoYOffset = true
+autoYOffsetStep = 0.00300
+baseYOffset = 0.00100
+
+[[layers]]
+id = "grass_base"
+label = "Grass Base"
+texturePath = "example/texture/grass.jpg"
+categoryIndex = 0
+positionX = 0.000
+positionZ = 0.000
+sizeW = 36.000
+sizeH = 30.000
+rotation = 0.00000
+yOffset = 0.00400
+tintR = 0.6000
+tintG = 0.6800
+tintB = 0.5600
+tintA = 0.9500
+tilingScale = 6.000
+edgeSoftness = 0.14000
+edgeNoiseAmount = 0.05000
+edgeNoiseFrequency = 2.5000
+edgeNoiseSeed = 10
+visible = true
+
+[[layers]]
+id = "plaza_center"
+label = "Plaza Center"
+texturePath = "example/texture/rock.jpg"
+categoryIndex = 2
+positionX = -1.000
+positionZ = 0.400
+sizeW = 12.500
+sizeH = 10.500
+rotation = -0.06981
+yOffset = 0.01400
+tintR = 0.7400
+tintG = 0.6600
+tintB = 0.6000
+tintA = 0.9600
+tilingScale = 4.000
+edgeSoftness = 0.10000
+edgeNoiseAmount = 0.04000
+edgeNoiseFrequency = 3.0000
+edgeNoiseSeed = 7
+visible = true
+
+[[layers]]
+id = "layer_6"
+label = "Layer 6"
+texturePath = "C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/texture/grass.jpg"
+categoryIndex = 0
+positionX = 5.200
+positionZ = -49.504
+sizeW = 24.792
+sizeH = 25.528
+rotation = -0.87266
+yOffset = 0.01400
+tintR = 1.0000
+tintG = 1.0000
+tintB = 1.0000
+tintA = 0.4062
+tilingScale = 4.000
+edgeSoftness = 0.12000
+edgeNoiseAmount = 0.04000
+edgeNoiseFrequency = 3.0000
+edgeNoiseSeed = 42
+visible = true
+
+[[layers]]
+id = "plaza_east"
+label = "Plaza East"
+texturePath = "example/texture/rock.jpg"
+categoryIndex = 2
+positionX = 5.500
+positionZ = 3.200
+sizeW = 8.000
+sizeH = 6.000
+rotation = 0.20944
+yOffset = 0.01400
+tintR = 0.7600
+tintG = 0.6800
+tintB = 0.6100
+tintA = 0.9200
+tilingScale = 4.000
+edgeSoftness = 0.10000
+edgeNoiseAmount = 0.04000
+edgeNoiseFrequency = 3.5000
+edgeNoiseSeed = 22
+visible = true
+
+[[layers]]
+id = "layer_4"
+label = "Layer 4"
+texturePath = "C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/texture/石畳N01.jpg"
+categoryIndex = 0
+positionX = 26.667
+positionZ = -32.593
+sizeW = 39.882
+sizeH = 39.882
+rotation = -0.81449
+yOffset = 0.01400
+tintR = 1.0000
+tintG = 1.0000
+tintB = 1.0000
+tintA = 0.8698
+tilingScale = 4.000
+edgeSoftness = 0.29839
+edgeNoiseAmount = 0.04000
+edgeNoiseFrequency = 3.0000
+edgeNoiseSeed = 42
+visible = true
+
+[[layers]]
+id = "layer_7"
+label = "Layer 7"
+texturePath = "C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/texture/石畳N01.jpg"
+categoryIndex = 0
+positionX = -7.271
+positionZ = -30.728
+sizeW = 32.889
+sizeH = 38.042
+rotation = -0.43633
+yOffset = 0.01400
+tintR = 1.0000
+tintG = 1.0000
+tintB = 1.0000
+tintA = 0.4948
+tilingScale = 4.806
+edgeSoftness = 0.20141
+edgeNoiseAmount = 0.09844
+edgeNoiseFrequency = 3.1354
+edgeNoiseSeed = 42
+visible = true
+
+[[layers]]
+id = "layer_5"
+label = "Layer 5"
+texturePath = "C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/texture/grass.jpg"
+categoryIndex = 0
+positionX = 8.622
+positionZ = -20.739
+sizeW = 20.743
+sizeH = 19.271
+rotation = 0.00000
+yOffset = 0.01400
+tintR = 1.0000
+tintG = 1.0000
+tintB = 1.0000
+tintA = 0.4167
+tilingScale = 4.000
+edgeSoftness = 0.12000
+edgeNoiseAmount = 0.04000
+edgeNoiseFrequency = 3.0000
+edgeNoiseSeed = 42
+visible = true
+
+[[layers]]
+id = "plaza_west"
+label = "Plaza West"
+texturePath = "example/texture/rock.jpg"
+categoryIndex = 2
+positionX = -8.300
+positionZ = 3.800
+sizeW = 7.500
+sizeH = 5.200
+rotation = -0.17453
+yOffset = 0.01400
+tintR = 0.7200
+tintG = 0.6500
+tintB = 0.5900
+tintA = 0.9000
+tilingScale = 4.000
+edgeSoftness = 0.10000
+edgeNoiseAmount = 0.03500
+edgeNoiseFrequency = 3.0000
+edgeNoiseSeed = 35
+visible = true
+

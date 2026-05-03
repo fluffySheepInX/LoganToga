@@ -8,15 +8,22 @@
 # include "RoadGeometry.hpp"
 # include "RoadPlacementTypes.hpp"
 # include "RoadScatterRules.hpp"
+# include "RoadSceneSnapshot.hpp"
+# include "RoadGhostViewState.hpp"
+# include "RoadEditSession.hpp"
+# include "RoadPresetSerializer.hpp"
 
 class RoadEditor
 {
 public:
-    explicit RoadEditor(const FilePath& texturePath, const FilePath& savePath = U"data/roads.toml")
+    explicit RoadEditor(const FilePath& texturePath, const FilePath& savePath = U"data/roads.toml",
+        const FilePath& presetsDir = U"data/road_presets/")
         : m_textureSourcePath{ texturePath }
         , m_savePath{ savePath }
+        , m_presetsDir{ presetsDir }
     {
         load();
+        m_presets = road::LoadAllPresets(m_presetsDir);
     }
 
     [[nodiscard]] bool isEnabled() const noexcept
@@ -59,6 +66,16 @@ public:
             load();
         }
 
+        if (KeyG.down())
+        {
+            toggleGhostVisible();
+        }
+
+        if (KeyBackspace.down() && m_session.canRestore())
+        {
+            restoreSession();
+        }
+
         if (KeyEnter.down())
         {
             confirmEditingRoad();
@@ -89,6 +106,8 @@ public:
     void draw3D() const
     {
         const ScopedRenderStates3D renderStates{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
+
+        drawGhostRoads3D();
 
         const size_t roadMeshCount = Min(m_roadMeshes.size(), m_roadShoulderMeshes.size());
         for (size_t i = 0; i < roadMeshCount; ++i)
@@ -259,6 +278,12 @@ private:
     Texture m_roadShoulderTexture;
     FilePath m_savePath;
     FilePath m_assetCatalogPath = U"Road/road_placement_assets.toml";
+    FilePath m_presetsDir = U"data/road_presets/";
+    Array<RoadSceneSnapshot> m_presets;
+    String m_presetNameInput = U"Preset1";
+    size_t m_selectedPresetIndex = 0;
+    RoadGhostViewState m_ghost;
+    RoadEditSession m_session;
     Font m_font{ 18 };
     bool m_enabled = false;
     bool m_uiCollapsed = false;
@@ -292,7 +317,7 @@ private:
             return RectF{ (Scene::Width() - 68), 20, 48, 48 };
         }
 
-        return RectF{ (Scene::Width() - 640), 20, 620, Min(740.0, Scene::Height() - 40.0) };
+        return RectF{ (Scene::Width() - 640), 20, 620, Min(800.0, Scene::Height() - 40.0) };
     }
 
     [[nodiscard]] bool isCursorOnUI() const
@@ -391,11 +416,11 @@ private:
     void drawEditTab(const RectF& panel)
     {
         const RectF workflowSection{ panel.x + 14, panel.y + 120, panel.w - 28, 214 };
-        const RectF statusSection{ panel.x + 14, panel.y + 346, panel.w - 28, 170 };
-        const RectF tipSection{ panel.x + 14, panel.y + 528, panel.w - 28, 120 };
+        const RectF presetSection   { panel.x + 14, panel.y + 346, panel.w - 28, 254 };
+        const RectF statusSection   { panel.x + 14, panel.y + 612, panel.w - 28, 120 };
         ui::Section(workflowSection);
+        ui::Section(presetSection);
         ui::Section(statusSection);
-        ui::Section(tipSection);
 
         m_font(U"Workflow").draw(workflowSection.pos.movedBy(12, 8), ui::GetTheme().text);
         const String workflow = U"R : Toggle editor"
@@ -403,8 +428,8 @@ private:
             U"\nEnter : Confirm road"
             U"\nRClick : Cancel current road"
             U"\nCtrl+Z : Undo point / road"
-            U"\nS : Save"
-            U"\nL : Load";
+            U"\nG : Toggle ghost  |  Backspace : Restore"
+            U"\nS : Save  |  L : Load";
         m_font(workflow).draw(workflowSection.pos.movedBy(12, 38), ui::GetTheme().textMuted);
         ui::SliderH(U"Snap Distance", m_snapDistance, MinSnapDistance, MaxSnapDistance, workflowSection.pos.movedBy(12, 170), 150, 200);
         if (ui::Button(m_font, U"Clear All", RectF{ workflowSection.x + workflowSection.w - 126, workflowSection.y + 166, 112, 34 }))
@@ -412,17 +437,94 @@ private:
             clearAllPlacedData();
         }
 
+        m_font(U"Preset & Trace").draw(presetSection.pos.movedBy(12, 8), ui::GetTheme().text);
+
+        const double px = presetSection.x + 12;
+        double py = presetSection.y + 38;
+
+        m_font(U"Name:").draw(px, py + 6, ui::GetTheme().textMuted);
+        const RectF nameBox{ px + 52, py, presetSection.w - 64, 32 };
+        nameBox.rounded(6).draw(ui::GetTheme().item);
+        nameBox.rounded(6).drawFrame(1.0, ui::GetTheme().panelBorder);
+        m_font(m_presetNameInput).draw(nameBox.pos.movedBy(8, 6), ui::GetTheme().text);
+        if (nameBox.mouseOver())
+        {
+            TextInput::UpdateText(m_presetNameInput);
+        }
+
+        py += 42;
+        if (ui::Button(m_font, U"Save As Preset", RectF{ px, py, 170, 34 }))
+        {
+            saveCurrentAsPreset(m_presetNameInput);
+        }
+        setTooltipIfHovered(RectF{ px, py, 170, 34 }.mouseOver(), U"Save current roads as a named preset.");
+
+        py += 44;
+        m_font(U"Presets").draw(px, py, ui::GetTheme().textMuted);
+        py += 26;
+
+        if (m_presets.isEmpty())
+        {
+            m_font(U"(none)").draw(px + 8, py, ui::GetTheme().textMuted);
+            py += 28;
+        }
+        else
+        {
+            const double listH = 28.0;
+            for (size_t i = 0; i < m_presets.size(); ++i)
+            {
+                const RectF row{ px, py, presetSection.w - 24, listH - 2 };
+                const bool selected = (m_selectedPresetIndex == i);
+                const ColorF fill = selected ? ColorF{ 0.86, 0.93, 1.0, 1.0 } : (row.mouseOver() ? ColorF{ 0.94, 0.97, 1.0 } : ui::GetTheme().item);
+                row.rounded(5).draw(fill);
+                row.rounded(5).drawFrame(1.0, ui::GetTheme().panelBorder);
+                m_font(m_presets[i].name).draw(row.pos.movedBy(8, 4), ui::GetTheme().text);
+                if (row.leftClicked())
+                {
+                    m_selectedPresetIndex = i;
+                }
+                py += listH;
+            }
+        }
+
+        py += 4;
+        const double btnW = (presetSection.w - 36) / 3.0;
+        const RectF traceBtn   { px,               py, btnW, 34 };
+        const RectF restoreBtn { px + btnW + 6,    py, btnW, 34 };
+        const RectF commitBtn  { px + (btnW + 6)*2, py, btnW, 34 };
+
+        if (ui::Button(m_font, U"Start Trace", traceBtn))
+        {
+            startTraceSession();
+        }
+        setTooltipIfHovered(traceBtn.mouseOver(), U"Save restore point, clear roads, show preset as ghost.");
+
+        {
+            const bool canRestore = m_session.canRestore();
+            if (ui::Button(m_font, U"Restore", restoreBtn))
+            {
+                if (canRestore)
+                {
+                    restoreSession();
+                }
+            }
+            setTooltipIfHovered(restoreBtn.mouseOver(), canRestore ? U"Revert to pre-trace state." : U"No restore point. Start Trace first.");
+        }
+
+        if (ui::Button(m_font, U"Commit", commitBtn))
+        {
+            commitSession();
+        }
+        setTooltipIfHovered(commitBtn.mouseOver(), U"Accept new roads and close the trace session.");
+
         m_font(U"Status").draw(statusSection.pos.movedBy(12, 8), ui::GetTheme().text);
-        const String status = U"Roads: {}"_fmt(m_roads.size())
+        const String sessionTag = m_session.active ? U" [TRACE]" : U"";
+        const String ghostTag   = m_ghost.visible  ? U" [GHOST]" : U"";
+        const String status = U"Roads: {}"_fmt(m_roads.size()) + sessionTag + ghostTag
             + U"\nEditing points: {}"_fmt((m_editingRoad ? m_editingRoad->points.size() : 0))
-            + U"\nEndpoint snap: On"
-            + U"\nCurrent tab: Edit"
+            + U"\nPresets: {}"_fmt(m_presets.size())
             + U"\nStatus: " + m_statusMessage;
         m_font(status).draw(statusSection.pos.movedBy(12, 38), ui::GetTheme().text);
-
-        m_font(U"UX note").draw(tipSection.pos.movedBy(12, 8), ui::GetTheme().text);
-        m_font(U"Separate building flow from look-dev. This reduces accidental edits and keeps primary actions predictable.")
-            .draw(tipSection.pos.movedBy(12, 38), ui::GetTheme().textMuted);
     }
 
     void drawMaterialTab(const RectF& panel)
@@ -880,6 +982,11 @@ private:
             }
         }
 
+        if (const auto ghostSnap = m_ghost.findSnapPoint(*point, nearestDistance))
+        {
+            result = ghostSnap;
+        }
+
         return result;
     }
 
@@ -962,6 +1069,106 @@ private:
         m_statusMessage = U"Placed road data cleared";
     }
 
+    void saveCurrentAsPreset(const String& name)
+    {
+        RoadSceneSnapshot snapshot;
+        snapshot.name     = name;
+        snapshot.roads    = m_roads;
+        snapshot.material = m_materialSettings;
+
+        if (road::SavePreset(m_presetsDir, snapshot))
+        {
+            for (auto& p : m_presets)
+            {
+                if (p.name == name)
+                {
+                    p = snapshot;
+                    m_statusMessage = U"Preset updated: " + name;
+                    return;
+                }
+            }
+            m_presets << snapshot;
+            m_selectedPresetIndex = m_presets.size() - 1;
+            m_statusMessage = U"Preset saved: " + name;
+        }
+        else
+        {
+            m_statusMessage = U"Preset save failed";
+        }
+    }
+
+    void startTraceSession()
+    {
+        if (m_presets.isEmpty())
+        {
+            m_statusMessage = U"No preset to trace from";
+            return;
+        }
+
+        const auto& preset = m_presets[m_selectedPresetIndex];
+
+        RoadSceneSnapshot restorePoint;
+        restorePoint.name     = U"__restore__";
+        restorePoint.roads    = m_roads;
+        restorePoint.material = m_materialSettings;
+        m_session.begin(restorePoint);
+
+        m_roads.clear();
+        m_roadMeshes.clear();
+        m_roadShoulderMeshes.clear();
+        m_connectionPatchMeshes.clear();
+        m_editingRoad.reset();
+        m_editingMesh.reset();
+        m_intersectionClusters.clear();
+
+        m_ghost.buildFrom(preset.roads, preset.material);
+        m_ghost.visible = true;
+
+        rebuildAllMeshes();
+        m_statusMessage = U"Trace session started: " + preset.name;
+    }
+
+    void restoreSession()
+    {
+        if (not m_session.canRestore())
+        {
+            return;
+        }
+
+        const auto& rp = *m_session.restorePoint;
+        m_roads           = rp.roads;
+        m_materialSettings = rp.material;
+        m_materialDirty   = true;
+
+        m_editingRoad.reset();
+        m_editingMesh.reset();
+        m_ghost.clear();
+        m_session.end();
+
+        rebuildAllMeshes();
+        refreshRoadMaterialTextureIfDirty();
+        m_statusMessage = U"Scene restored";
+    }
+
+    void commitSession()
+    {
+        m_ghost.clear();
+        m_session.end();
+        m_statusMessage = U"Trace session committed";
+    }
+
+    void toggleGhostVisible()
+    {
+        if (m_ghost.roads.isEmpty())
+        {
+            m_statusMessage = U"No ghost loaded";
+            return;
+        }
+
+        m_ghost.visible = not m_ghost.visible;
+        m_statusMessage = m_ghost.visible ? U"Ghost: ON" : U"Ghost: OFF";
+    }
+
     void undo()
     {
         if (m_editingRoad && (not m_editingRoad->points.isEmpty()))
@@ -1031,6 +1238,51 @@ private:
         for (const auto& point : road->points)
         {
             Sphere{ point + Vec3{ 0, 0.08, 0 }, 0.10 }.draw(pointColor);
+        }
+    }
+
+    void drawGhostRoads3D() const
+    {
+        if (not m_ghost.visible)
+        {
+            return;
+        }
+
+        const ColorF ghostRoad{ 0.72, 0.82, 1.0, m_ghost.opacity };
+        const ColorF ghostShoulder{ 0.72, 0.82, 1.0, m_ghost.opacity * 0.6 };
+
+        const size_t count = Min(m_ghost.roadMeshes.size(), m_ghost.shoulderMeshes.size());
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (m_ghost.shoulderMeshes[i])
+            {
+                m_ghost.shoulderMeshes[i]->draw(m_roadShoulderTexture, ghostShoulder);
+            }
+            if (m_ghost.roadMeshes[i])
+            {
+                m_ghost.roadMeshes[i]->draw(m_roadTexture, ghostRoad);
+            }
+        }
+
+        for (const auto& road : m_ghost.roads)
+        {
+            if (road.points.size() < 2)
+            {
+                continue;
+            }
+
+            for (size_t i = 1; i < road.points.size(); ++i)
+            {
+                Line3D{ road.points[i - 1] + Vec3{ 0, GuideYOffset * 2.0, 0 },
+                        road.points[i]     + Vec3{ 0, GuideYOffset * 2.0, 0 } }
+                    .draw(ColorF{ 0.60, 0.76, 1.0, m_ghost.opacity * 1.4 });
+            }
+
+            for (const auto& endpoint : { road.points.front(), road.points.back() })
+            {
+                Sphere{ endpoint + Vec3{ 0, 0.10, 0 }, 0.14 }
+                    .draw(ColorF{ 0.50, 0.70, 1.0, m_ghost.opacity * 1.8 });
+            }
         }
     }
 

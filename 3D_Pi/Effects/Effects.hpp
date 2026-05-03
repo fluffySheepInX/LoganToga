@@ -25,6 +25,7 @@ namespace pe
     [[nodiscard]] Effect MakeGrayscaleEffect();
     [[nodiscard]] Effect MakePosterizeEffect();
     [[nodiscard]] Effect MakeRGBShiftEffect();
+    [[nodiscard]] Effect MakeGlitchEffect();
     [[nodiscard]] Effect MakeSwirlEffect();
     [[nodiscard]] Effect MakeExtractBrightEffect();
     [[nodiscard]] Effect MakeBloomEffect();

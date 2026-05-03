@@ -138,6 +138,7 @@ namespace pe
         effects.push_back(MakeGrayscaleEffect());
         effects.push_back(MakePosterizeEffect());
         effects.push_back(MakeRGBShiftEffect());
+        effects.push_back(MakeGlitchEffect());
         effects.push_back(MakeSwirlEffect());
         effects.push_back(MakeExtractBrightEffect());
         effects.push_back(MakeBloomEffect());

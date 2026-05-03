@@ -82,7 +82,7 @@ namespace Pi3D
 			// --- 折りたたみ状態: 小さいトグルボタンのみ表示 ---
 			if (m_panelCollapsed)
 			{
-				const RectF toggleRect{ m_panelPos, CollapsedToggleSize, CollapsedToggleSize };
+             const RectF toggleRect = getCollapsedToggleRect();
 				const RectF btnRect{ m_panelPos.movedBy(6, 6), CollapsedToggleSize - 12, CollapsedToggleSize - 12 };
 
 				// ドラッグ移動
@@ -111,23 +111,13 @@ namespace Pi3D
 			}
 
 			// --- 展開状態 ---
-		  const double environmentSectionBodyHeight = m_environmentCollapsed ? Environment::HeaderHeight : Environment::UIBodyHeight;
-			const double environmentSectionHeight = environmentSectionBodyHeight + ui::layout::SectionGap;
-		  const double lightingSectionBodyHeight = m_lightingCollapsed ? m_lighting.getHeaderHeight() : m_lighting.getUIBodyHeight();
-			const double lightingSectionHeight = lightingSectionBodyHeight + ui::layout::SectionGap;
-			const double chainListHeight = m_chainCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getChainListHeight();
-			const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getPresetHeight();
-			const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getParamsHeight();
-			const double contentHeight = environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight;
-			const double desiredPanelHeight = 46 + contentHeight;
-			const double maxPanelHeight = (Scene::Height() - ui::layout::PanelMargin * 2);
-			const double panelHeight = Clamp(desiredPanelHeight, ui::layout::MinPanelHeight, maxPanelHeight);
+           const double panelHeight = getExpandedPanelHeight();
 
 			// パネル位置をクランプ
            m_panelPos.x = Clamp(m_panelPos.x, 0.0, static_cast<double>(Scene::Width()) - ui::layout::PanelWidth);
 			m_panelPos.y = Clamp(m_panelPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight);
 
-			const RectF panelRect{ m_panelPos, ui::layout::PanelWidth, panelHeight };
+           const RectF panelRect = getExpandedPanelRect();
 
 			// ヘッダーバーをドラッグで移動
 			const RectF headerBar{ panelRect.x, panelRect.y, panelRect.w - 44, ui::layout::HeaderHeight };
@@ -147,12 +137,8 @@ namespace Pi3D
 				m_panelPos.y = Clamp(desiredPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight);
 			}
 
-			const RectF contentRect{
-				panelRect.x + ui::layout::PanelPadding,
-				panelRect.y + ui::layout::HeaderHeight,
-				panelRect.w - ui::layout::PanelPadding * 2 - ui::layout::ScrollbarWidth - 8,
-				panelRect.h - ui::layout::HeaderHeight - ui::layout::PanelPadding
-			};
+            const RectF contentRect = getPanelContentRect(panelRect);
+            const double contentHeight = getPanelContentHeight();
 			const double maxScrollY = Max(0.0, contentHeight - contentRect.h);
 			if (contentRect.mouseOver())
 			{
@@ -242,7 +228,56 @@ namespace Pi3D
 		EffectChain& effects() { return m_effectChain; }
 		Lighting& lighting() { return m_lighting; }
 
+		[[nodiscard]] bool wantsMouseWheelCapture() const
+		{
+			if (m_panelCollapsed)
+			{
+				return getCollapsedToggleRect().mouseOver();
+			}
+
+			return getExpandedPanelRect().mouseOver();
+		}
+
 	private:
+     [[nodiscard]] double getPanelContentHeight() const
+		{
+			const double environmentSectionBodyHeight = m_environmentCollapsed ? Environment::HeaderHeight : Environment::UIBodyHeight;
+			const double environmentSectionHeight = environmentSectionBodyHeight + ui::layout::SectionGap;
+			const double lightingSectionBodyHeight = m_lightingCollapsed ? m_lighting.getHeaderHeight() : m_lighting.getUIBodyHeight();
+			const double lightingSectionHeight = lightingSectionBodyHeight + ui::layout::SectionGap;
+			const double chainListHeight = m_chainCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getChainListHeight();
+			const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getPresetHeight();
+			const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getParamsHeight();
+			return environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight;
+		}
+
+		[[nodiscard]] double getExpandedPanelHeight() const
+		{
+			const double desiredPanelHeight = 46 + getPanelContentHeight();
+			const double maxPanelHeight = (Scene::Height() - ui::layout::PanelMargin * 2);
+			return Clamp(desiredPanelHeight, ui::layout::MinPanelHeight, maxPanelHeight);
+		}
+
+		[[nodiscard]] RectF getExpandedPanelRect() const
+		{
+			return RectF{ m_panelPos, ui::layout::PanelWidth, getExpandedPanelHeight() };
+		}
+
+		[[nodiscard]] RectF getPanelContentRect(const RectF& panelRect) const
+		{
+			return RectF{
+				panelRect.x + ui::layout::PanelPadding,
+				panelRect.y + ui::layout::HeaderHeight,
+				panelRect.w - ui::layout::PanelPadding * 2 - ui::layout::ScrollbarWidth - 8,
+				panelRect.h - ui::layout::HeaderHeight - ui::layout::PanelPadding
+			};
+		}
+
+		[[nodiscard]] RectF getCollapsedToggleRect() const
+		{
+			return RectF{ m_panelPos, CollapsedToggleSize, CollapsedToggleSize };
+		}
+
       void resizeIfNeeded()
 		{
 			const Size currentSceneSize = Scene::Size();
@@ -394,6 +429,11 @@ namespace Pi3D
 	inline void DrawUI()
 	{
 		Instance().drawUI();
+	}
+
+	inline bool WantsMouseWheelCapture()
+	{
+		return Instance().wantsMouseWheelCapture();
 	}
 
 	inline Environment& EnvironmentRef()

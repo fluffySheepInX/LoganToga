@@ -30,6 +30,7 @@ public:
     {
         scanAvailableTextures();
         load();
+        m_lastPlacementReason = U"idle";
     }
 
     [[nodiscard]] bool wantsMouseCapture() const
@@ -37,11 +38,73 @@ public:
         return (not m_uiCollapsed) && getPanelRect().mouseOver();
     }
 
+    [[nodiscard]] bool wantsMouseWheelCapture() const
+    {
+        if (not m_enabled || m_uiCollapsed)
+        {
+            return false;
+        }
+
+        if (m_activeTabIndex == 0)
+        {
+            return getLayerListSectionRect().mouseOver();
+        }
+
+        if (m_activeTabIndex == 1)
+        {
+            return getTextureListRect().mouseOver();
+        }
+
+        return false;
+    }
+
     void update(const BasicCamera3D& camera)
     {
         if (KeyT.down())
         {
             m_enabled = (not m_enabled);
+            m_statusMessage = (m_enabled ? U"Texture Editor: ON" : U"Texture Editor: OFF");
+        }
+
+        m_lastCursorScreenPos = Cursor::Pos();
+        m_lastCursorGroundPos = cursorToGround(camera);
+        m_lastPlacementPanelHover = getPanelRect().mouseOver();
+        m_lastPlacementClickSeen = MouseL.down();
+        m_lastPlacementApplied = false;
+
+        if (m_placeAtClickRequested)
+        {
+            if (not hasSelectedLayer())
+            {
+                m_placeAtClickRequested = false;
+                m_lastPlacementReason = U"canceled: no selected layer";
+                m_statusMessage = U"Placement canceled: no selected layer";
+            }
+            else if (m_lastPlacementClickSeen)
+            {
+                if (m_lastPlacementPanelHover)
+                {
+                    m_lastPlacementReason = U"blocked: cursor is over the editor panel";
+                }
+                else if (not m_lastCursorGroundPos)
+                {
+                    m_lastPlacementReason = U"blocked: cursor ray did not hit the ground plane";
+                }
+                else
+                {
+                    applyPlacement(*m_lastCursorGroundPos, U"scene click");
+                }
+            }
+            else
+            {
+                m_lastPlacementReason = m_enabled
+                    ? U"armed: waiting for the next left click on the ground"
+                    : U"armed: waiting for the next left click (editor update is OFF)";
+            }
+        }
+        else
+        {
+            m_lastPlacementReason = U"idle";
         }
 
         if (not m_enabled)
@@ -75,16 +138,6 @@ public:
             removeLayer(m_selectedLayerIndex);
         }
 
-        if (m_placeAtClickRequested && MouseL.down() && (not getPanelRect().mouseOver()) && hasSelectedLayer())
-        {
-            if (const auto groundPos = cursorToGround(camera))
-            {
-                m_layers[m_selectedLayerIndex].position = *groundPos;
-                markLayerDirty(m_selectedLayerIndex);
-                m_placeAtClickRequested = false;
-                m_statusMessage = U"Placed texture at clicked position";
-            }
-        }
     }
 
     void draw3D()
@@ -137,6 +190,12 @@ public:
 
         m_font(U"Texture Editor").draw(panel.pos.movedBy(16, 12), ui::GetTheme().text);
         m_font(U"Ground layer painting").draw(panel.pos.movedBy(16, 40), ui::GetTheme().textMuted);
+
+        const RectF stateChip{ panel.x + 268, panel.y + 14, 112, 24 };
+        stateChip.rounded(12).draw(m_enabled ? ColorF{ 0.86, 0.94, 0.88, 0.96 } : ColorF{ 0.96, 0.90, 0.86, 0.96 });
+        stateChip.rounded(12).drawFrame(1.0, ui::GetTheme().panelBorder);
+        m_smallFont(U"Update: {}"_fmt(m_enabled ? U"ON" : U"OFF")).drawAt(stateChip.center(), ColorF{ 0.18, 0.26, 0.42 });
+        setTooltipIfHovered(stateChip.mouseOver(), U"T toggles update-time editor behavior.");
 
         const RectF collapseBtn{ panel.x + panel.w - 44, panel.y + 10, 28, 28 };
         if (ui::Button(m_font, U"◀", collapseBtn))
@@ -194,6 +253,7 @@ private:
 
     FilePath m_savePath;
     Font m_font{ 18 };
+    Font m_smallFont{ 12 };
     bool m_enabled = false;
     bool m_uiCollapsed = false;
     String m_statusMessage = U"Ready";
@@ -210,6 +270,15 @@ private:
     double m_autoYOffsetStep = 0.003;
     double m_baseYOffset = 0.002;
     bool m_placeAtClickRequested = false;
+    double m_layerListScroll = 0.0;
+    double m_textureListScroll = 0.0;
+    Point m_lastCursorScreenPos{ 0, 0 };
+    Optional<Vec2> m_lastCursorGroundPos;
+    bool m_lastPlacementPanelHover = false;
+    bool m_lastPlacementClickSeen = false;
+    bool m_lastPlacementApplied = false;
+    String m_lastPlacementReason;
+    double m_placementDiagnosticsCopiedUntil = -1.0;
 
     [[nodiscard]] RectF getPanelRect() const
     {
@@ -239,12 +308,83 @@ private:
         return (not m_layers.isEmpty()) && (m_selectedLayerIndex < m_layers.size());
     }
 
+    [[nodiscard]] RectF getLayerListSectionRect() const
+    {
+        const RectF panel = getPanelRect();
+        const double cx = panel.x + 14;
+        const double cy = panel.y + 166;
+        const double cw = panel.w - 28;
+        constexpr double RowHeight = 40.0;
+        const double maxListH = Min(static_cast<double>(Max<size_t>(m_layers.size(), 1)) * RowHeight + 36.0, 340.0);
+        return RectF{ cx, cy, cw, maxListH };
+    }
+
+    [[nodiscard]] RectF getTextureListRect() const
+    {
+        const RectF panel = getPanelRect();
+        const double cx = panel.x + 14;
+        const double cy = panel.y + 660;
+        const double cw = panel.w - 28;
+        return RectF{ cx + 12, cy + 92, cw - 24, 132 };
+    }
+
+    [[nodiscard]] double getLayerListMaxScroll() const
+    {
+        constexpr double RowHeight = 40.0;
+        const RectF listSection = getLayerListSectionRect();
+        const double visibleListHeight = Max(0.0, listSection.h - 36.0);
+        const double contentHeight = static_cast<double>(m_layers.size()) * RowHeight;
+        return Max(0.0, contentHeight - visibleListHeight);
+    }
+
     void setTooltipIfHovered(const bool hovered, const StringView text)
     {
         if (hovered)
         {
             m_hoverTooltip = text;
         }
+    }
+
+    void applyPlacement(const Vec2& groundPos, const StringView source)
+    {
+        if (not hasSelectedLayer())
+        {
+            m_lastPlacementReason = U"blocked: no selected layer";
+            return;
+        }
+
+        m_layers[m_selectedLayerIndex].position = groundPos;
+        markLayerDirty(m_selectedLayerIndex);
+        m_placeAtClickRequested = false;
+        m_lastPlacementApplied = true;
+        m_lastPlacementReason = U"applied via {}"_fmt(source);
+        m_statusMessage = U"Placed texture at ({:.2f}, {:.2f}) via {}"_fmt(groundPos.x, groundPos.y, source);
+    }
+
+    [[nodiscard]] String buildPlacementDiagnostics() const
+    {
+        const String selectedLayer = hasSelectedLayer()
+            ? U"{} (# {})"_fmt(m_layers[m_selectedLayerIndex].label, m_selectedLayerIndex)
+            : U"(none)";
+        const String groundText = m_lastCursorGroundPos
+            ? U"({:.3f}, {:.3f})"_fmt(m_lastCursorGroundPos->x, m_lastCursorGroundPos->y)
+            : U"none";
+        const String layerPosText = hasSelectedLayer()
+            ? U"({:.3f}, {:.3f})"_fmt(m_layers[m_selectedLayerIndex].position.x, m_layers[m_selectedLayerIndex].position.y)
+            : U"none";
+
+        return U"[TextureEditor.PlaceAtClick]\n"
+            U"updateEnabled = {}\n"_fmt(m_enabled ? U"true" : U"false")
+            + U"requestArmed = {}\n"_fmt(m_placeAtClickRequested ? U"true" : U"false")
+            + U"selectedLayer = {}\n"_fmt(selectedLayer)
+            + U"cursorScreen = ({}, {})\n"_fmt(m_lastCursorScreenPos.x, m_lastCursorScreenPos.y)
+            + U"cursorGround = {}\n"_fmt(groundText)
+            + U"panelHover = {}\n"_fmt(m_lastPlacementPanelHover ? U"true" : U"false")
+            + U"leftClickDown = {}\n"_fmt(m_lastPlacementClickSeen ? U"true" : U"false")
+            + U"placementApplied = {}\n"_fmt(m_lastPlacementApplied ? U"true" : U"false")
+            + U"layerPosition = {}\n"_fmt(layerPosText)
+            + U"reason = {}\n"_fmt(m_lastPlacementReason)
+            + U"status = {}"_fmt(m_statusMessage);
     }
 
     [[nodiscard]] static String categoryName(const int32 index)
@@ -386,6 +526,7 @@ private:
         m_layerTextures.emplace_back();
         m_layerDirty << true;
         m_selectedLayerIndex = m_layers.size() - 1;
+        m_layerListScroll = getLayerListMaxScroll();
     }
 
     void removeLayer(const size_t index)
@@ -401,6 +542,7 @@ private:
         {
             m_selectedLayerIndex = m_layers.size() - 1;
         }
+        m_layerListScroll = Clamp(m_layerListScroll, 0.0, getLayerListMaxScroll());
         m_statusMessage = U"Layer deleted";
     }
 
@@ -411,6 +553,7 @@ private:
         m_layerDirty.clear();
         m_selectedLayerIndex = 0;
         m_placeAtClickRequested = false;
+        m_layerListScroll = 0.0;
         m_statusMessage = U"All layers cleared";
     }
 
@@ -496,11 +639,12 @@ private:
         const double cw = panel.w - 28;
 
         // Action buttons row
-        const double btnW = (cw - 24.0) / 4.0;
+        const double btnW = (cw - 32.0) / 5.0;
         const RectF addBtn{ cx, cy, btnW, 34 };
         const RectF dupBtn{ cx + btnW + 8, cy, btnW, 34 };
         const RectF delBtn{ cx + (btnW + 8) * 2, cy, btnW, 34 };
         const RectF clearBtn{ cx + (btnW + 8) * 3, cy, btnW, 34 };
+        const RectF saveBtn{ cx + (btnW + 8) * 4, cy, btnW, 34 };
 
         if (ui::Button(m_font, U"+ Add", addBtn))
         {
@@ -531,27 +675,48 @@ private:
             clearAllLayers();
         }
 
+        if (ui::Button(m_font, U"Save", saveBtn))
+        {
+            save();
+            m_statusMessage = U"Saved";
+        }
+
         cy += 46;
 
         // Layer list
         constexpr double RowHeight = 40.0;
-        const double maxListH = Min(static_cast<double>(Max<size_t>(m_layers.size(), 1)) * RowHeight + 36.0, 340.0);
-        const RectF listSection{ cx, cy, cw, maxListH };
+        const RectF listSection = getLayerListSectionRect();
         ui::Section(listSection);
         m_font(U"Layers ({} total)"_fmt(m_layers.size())).draw(listSection.pos.movedBy(12, 8), ui::GetTheme().text);
 
-        const size_t maxVisible = static_cast<size_t>((maxListH - 36.0) / RowHeight);
-        const size_t startIndex = (m_selectedLayerIndex >= maxVisible)
-            ? (m_selectedLayerIndex - maxVisible + 1)
-            : 0;
+        const double visibleListHeight = Max(0.0, listSection.h - 36.0);
+        const double contentHeight = static_cast<double>(m_layers.size()) * RowHeight;
+        const double maxScroll = Max(0.0, contentHeight - visibleListHeight);
+        if (listSection.mouseOver())
+        {
+            m_layerListScroll = Clamp(m_layerListScroll - Mouse::Wheel() * RowHeight, 0.0, maxScroll);
+        }
+        else
+        {
+            m_layerListScroll = Clamp(m_layerListScroll, 0.0, maxScroll);
+        }
 
-        for (size_t i = startIndex; i < m_layers.size() && (i - startIndex) < maxVisible; ++i)
+        const size_t startIndex = static_cast<size_t>(m_layerListScroll / RowHeight);
+        const double rowOffset = Math::Fmod(m_layerListScroll, RowHeight);
+        const size_t visibleCount = static_cast<size_t>(visibleListHeight / RowHeight) + 2;
+
+        for (size_t i = startIndex; i < m_layers.size() && (i - startIndex) < visibleCount; ++i)
         {
             auto& layer = m_layers[i];
             const bool selected = (i == m_selectedLayerIndex);
-            const double rowY = listSection.y + 34 + (i - startIndex) * RowHeight;
+            const double rowY = listSection.y + 34 + ((i - startIndex) * RowHeight) - rowOffset;
 
             const RectF row{ listSection.x + 8, rowY, listSection.w - 16, RowHeight - 4 };
+            if ((row.y + row.h) < (listSection.y + 34.0) || row.y > (listSection.y + listSection.h - 2.0))
+            {
+                continue;
+            }
+
             const ColorF rowFill = selected
                 ? ColorF{ 0.88, 0.94, 1.0, 1.0 }
                 : (row.mouseOver() ? ui::GetTheme().itemHovered : ui::GetTheme().item);
@@ -592,7 +757,17 @@ private:
             }
         }
 
-        cy += maxListH + 10;
+        if (maxScroll > 0.0)
+        {
+            const RectF scrollTrack{ listSection.x + listSection.w - 10, listSection.y + 34, 6, listSection.h - 40 };
+            scrollTrack.rounded(3).draw(ColorF{ 0.82, 0.86, 0.90, 1.0 });
+
+            const double thumbHeight = Max(18.0, scrollTrack.h * (visibleListHeight / contentHeight));
+            const double thumbY = scrollTrack.y + (scrollTrack.h - thumbHeight) * (m_layerListScroll / maxScroll);
+            RectF{ scrollTrack.x, thumbY, scrollTrack.w, thumbHeight }.rounded(3).draw(ui::GetTheme().accent);
+        }
+
+        cy += listSection.h + 10;
 
         // Auto yOffset section
         const RectF autoSection{ cx, cy, cw, 116 };
@@ -656,21 +831,57 @@ private:
 
         // Position
         {
-            const RectF sec{ cx, cy, cw, 148 };
+            const RectF sec{ cx, cy, cw, 184 };
             ui::Section(sec);
             m_font(U"Position").draw(sec.pos.movedBy(12, 8), ui::GetTheme().text);
             dirty |= ui::SliderH(U"X", layer.position.x, -80.0, 80.0, Vec2{ cx + 12, cy + 38 }, lw, sw);
             dirty |= ui::SliderH(U"Z", layer.position.y, -80.0, 80.0, Vec2{ cx + 12, cy + 72 }, lw, sw);
-            const RectF placeBtn{ cx + 12, cy + 108, cw - 24, 28 };
+            const RectF placeBtn{ cx + 12, cy + 108, 216, 28 };
+            const RectF probeBtn{ cx + 236, cy + 108, 70, 28 };
+            const RectF copyBtn{ cx + 314, cy + 108, 70, 28 };
             if (ui::Button(m_font, m_placeAtClickRequested ? U"Click on ground to place..." : U"Place at clicked position", placeBtn))
             {
                 m_placeAtClickRequested = (not m_placeAtClickRequested);
+                if (m_placeAtClickRequested)
+                {
+                    m_statusMessage = U"Click on the ground to place the selected texture";
+                }
+                else
+                {
+                    m_statusMessage = U"Click placement canceled";
+                }
+            }
+            if (ui::Button(m_font, U"Probe", probeBtn))
+            {
+                if (m_lastCursorGroundPos)
+                {
+                    applyPlacement(*m_lastCursorGroundPos, U"probe button");
+                }
+                else
+                {
+                    m_lastPlacementApplied = false;
+                    m_lastPlacementReason = U"probe failed: no cached ground hit";
+                    m_statusMessage = U"Probe failed: cursor ray did not hit the ground";
+                }
+            }
+            if (ui::Button(m_font, (Scene::Time() < m_placementDiagnosticsCopiedUntil) ? U"Copied" : U"Copy", copyBtn))
+            {
+                Clipboard::SetText(buildPlacementDiagnostics());
+                m_placementDiagnosticsCopiedUntil = (Scene::Time() + 1.5);
+                m_statusMessage = U"Placement diagnostics copied";
             }
             if (m_placeAtClickRequested)
             {
                 placeBtn.rounded(6).drawFrame(2.0, ui::GetTheme().accent);
             }
-            cy += 156;
+            m_smallFont(U"armed={} update={} click={} panel={} hit={}"_fmt(
+                m_placeAtClickRequested ? U"true" : U"false",
+                m_enabled ? U"ON" : U"OFF",
+                m_lastPlacementClickSeen ? U"true" : U"false",
+                m_lastPlacementPanelHover ? U"true" : U"false",
+                m_lastCursorGroundPos ? U"yes" : U"no")).draw(Vec2{ cx + 12, cy + 144 }, ui::GetTheme().textMuted);
+            m_smallFont(U"reason: {}"_fmt(m_lastPlacementReason)).draw(Vec2{ cx + 12, cy + 160 }, ui::GetTheme().textMuted);
+            cy += 192;
         }
 
         // Size
@@ -711,7 +922,7 @@ private:
 
         // Texture
         {
-            const RectF sec{ cx, cy, cw, 88 };
+            const RectF sec{ cx, cy, cw, 236 };
             ui::Section(sec);
             m_font(U"Texture").draw(sec.pos.movedBy(12, 8), ui::GetTheme().text);
 
@@ -722,6 +933,7 @@ private:
 
             const RectF prevBtn{ cx + 12, cy + 56, 70, 26 };
             const RectF nextBtn{ cx + 90, cy + 56, 70, 26 };
+            const RectF loadBtn{ cx + 168, cy + 56, 70, 26 };
             if (ui::Button(m_font, U"◀ Prev", prevBtn))
             {
                 cycleTexture(layer, -1);
@@ -732,6 +944,12 @@ private:
                 cycleTexture(layer, 1);
                 dirty = true;
             }
+            if (ui::Button(m_font, U"Load", loadBtn))
+            {
+                load();
+                m_statusMessage = U"Loaded";
+                return;
+            }
 
             const RectF catBtn{ cx + cw - 86, cy + 56, 74, 26 };
             if (ui::Button(m_font, categoryName(layer.categoryIndex), catBtn))
@@ -739,6 +957,63 @@ private:
                 layer.categoryIndex = (layer.categoryIndex + 1) % 6;
             }
             setTooltipIfHovered(catBtn.mouseOver(), U"Click to cycle category");
+
+            const RectF listRect{ cx + 12, cy + 92, cw - 24, 132 };
+            ui::Section(listRect);
+
+            constexpr double TextureRowHeight = 28.0;
+            const double visibleListHeight = Max(0.0, listRect.h - 8.0);
+            const double contentHeight = static_cast<double>(m_availableTextures.size()) * TextureRowHeight;
+            const double maxScroll = Max(0.0, contentHeight - visibleListHeight);
+
+            if (listRect.mouseOver())
+            {
+                m_textureListScroll = Clamp(m_textureListScroll - Mouse::Wheel() * TextureRowHeight, 0.0, maxScroll);
+            }
+            else
+            {
+                m_textureListScroll = Clamp(m_textureListScroll, 0.0, maxScroll);
+            }
+
+            const size_t startIndex = static_cast<size_t>(m_textureListScroll / TextureRowHeight);
+            const double rowOffset = Math::Fmod(m_textureListScroll, TextureRowHeight);
+            const size_t visibleCount = static_cast<size_t>(visibleListHeight / TextureRowHeight) + 2;
+
+            for (size_t i = startIndex; i < m_availableTextures.size() && (i - startIndex) < visibleCount; ++i)
+            {
+                const double rowY = listRect.y + 4.0 + ((i - startIndex) * TextureRowHeight) - rowOffset;
+                const RectF row{ listRect.x + 4, rowY, listRect.w - 16, TextureRowHeight - 2.0 };
+
+                if ((row.y + row.h) < (listRect.y + 2.0) || row.y > (listRect.y + listRect.h - 2.0))
+                {
+                    continue;
+                }
+
+                const bool selectedTexture = (m_availableTextures[i] == layer.texturePath);
+                const ColorF fill = selectedTexture
+                    ? ColorF{ 0.88, 0.94, 1.0, 1.0 }
+                    : (row.mouseOver() ? ui::GetTheme().itemHovered : ui::GetTheme().item);
+                row.rounded(5).draw(fill);
+                row.rounded(5).drawFrame(selectedTexture ? 2.0 : 1.0, selectedTexture ? ui::GetTheme().accent : ui::GetTheme().panelBorder);
+
+                m_font(FileSystem::BaseName(m_availableTextures[i])).draw(row.x + 8, row.y + 3, ui::GetTheme().text);
+
+                if (row.leftClicked())
+                {
+                    layer.texturePath = m_availableTextures[i];
+                    dirty = true;
+                }
+            }
+
+            if (maxScroll > 0.0)
+            {
+                const RectF scrollTrack{ listRect.x + listRect.w - 10, listRect.y + 4, 6, listRect.h - 8 };
+                scrollTrack.rounded(3).draw(ColorF{ 0.82, 0.86, 0.90, 1.0 });
+
+                const double thumbHeight = Max(18.0, scrollTrack.h * (visibleListHeight / contentHeight));
+                const double thumbY = scrollTrack.y + (scrollTrack.h - thumbHeight) * (m_textureListScroll / maxScroll);
+                RectF{ scrollTrack.x, thumbY, scrollTrack.w, thumbHeight }.rounded(3).draw(ui::GetTheme().accent);
+            }
         }
 
         if (dirty)
@@ -872,6 +1147,8 @@ private:
         m_layerTextures.clear();
         m_layerDirty.clear();
         m_selectedLayerIndex = 0;
+        m_layerListScroll = 0.0;
+        m_textureListScroll = 0.0;
 
         if (not FileSystem::Exists(m_savePath))
         {

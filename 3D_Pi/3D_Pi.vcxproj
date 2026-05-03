@@ -171,6 +171,7 @@
     <Text Include="App\example\txt\kr.txt" />
     <Text Include="App\example\txt\sc.txt" />
     <Text Include="App\example\video\river.txt" />
+    <Text Include="Road\road_preset_ghost_architecture.txt" />
     <Text Include="road_boundary_solution_steps.txt" />
     <Text Include="texture_editor_requirements.txt" />
   </ItemGroup>
@@ -259,6 +260,7 @@
     <None Include="App\example\shader\glsl\crt.frag" />
     <None Include="App\example\shader\glsl\dof_combine.frag" />
     <None Include="App\example\shader\glsl\dof_depth.frag" />
+    <None Include="App\example\shader\glsl\glitch.frag" />
     <None Include="App\example\shader\glsl\scene_fog.frag" />
     <None Include="App\example\shader\glsl\warm_grade.frag" />
     <None Include="App\example\shader\hlsl\dof_combine.hlsl">
@@ -335,11 +337,15 @@
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="Lighting\Lighting.hpp" />
     <ClInclude Include="Road\RoadEditor.hpp" />
+    <ClInclude Include="Road\RoadEditSession.hpp" />
     <ClInclude Include="Road\RoadGeometry.hpp" />
+    <ClInclude Include="Road\RoadGhostViewState.hpp" />
     <ClInclude Include="Road\RoadMaterialBuilder.hpp" />
     <ClInclude Include="Road\RoadMeshBuilder.hpp" />
     <ClInclude Include="Road\RoadPlacementTypes.hpp" />
+    <ClInclude Include="Road\RoadPresetSerializer.hpp" />
     <ClInclude Include="Road\RoadScatterRules.hpp" />
+    <ClInclude Include="Road\RoadSceneSnapshot.hpp" />
     <ClInclude Include="Road\RoadSerializer.hpp" />
     <ClInclude Include="Road\RoadTypes.hpp" />
     <ClInclude Include="stdafx.h" />
@@ -446,6 +452,11 @@
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\bloom_extract.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App\example\shader\hlsl\glitch.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

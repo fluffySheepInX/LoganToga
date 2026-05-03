@@ -1,0 +1,604 @@
+Road Preset / Ghost Preview Architecture Design
+================================================
+
+Goal
+----
+現行の RoadEditor に対して、以下を保守性と拡張性を保ちながら追加する。
+
+1. 現在の道路状況をプリセットとして保存できる
+2. 現在の道路をクリアし、保存済みプリセットをゴースト表示できる
+3. ゴーストを見ながら新しい道路を上からなぞるように作れる
+4. 気に入らなければ編集開始前の状態に戻せる
+5. 将来的に複数プリセット、差し替え、比較表示、散布物保存にも拡張できる
+
+
+Current Problems
+----------------
+現状の実装では以下が不足している。
+
+- 保存先が m_savePath の単一ファイルのみ
+- 道路データの保存形式が「現在状態」しか持たない
+- ゴースト表示用の別レイヤが存在しない
+- Undo が「編集中ポイント」または「最後の1本道」のみ
+- 編集セッション単位での復元ポイントが無い
+- スナップ対象が現行道路の端点のみ
+- 道路状況に散布物を含めたい場合の保存余地が薄い
+
+このため、機能追加を RoadEditor に直書きすると状態管理が肥大化しやすい。
+
+
+Architecture Overview
+---------------------
+責務を 4 層に分ける。
+
+1. Data Layer
+   - 道路状況、プリセット、セッション状態などの純データを保持する
+2. Persistence Layer
+   - TOML への保存・読込を担当する
+3. Application Layer
+   - プリセット保存、ゴースト切替、復元などのユースケースを担当する
+4. Presentation Layer
+   - RoadEditor の UI / 入力 / 描画を担当する
+
+RoadEditor は「全部を持つ巨大クラス」ではなく、Application Layer を呼ぶファサードに寄せる。
+
+
+Recommended Core Types
+----------------------
+
+1. RoadSceneSnapshot
+--------------------
+用途:
+- ある時点の道路状況を丸ごと表現する
+- プリセット保存対象
+- セッション復元元
+- 将来の比較表示の元データ
+
+推奨内容:
+- Array<RoadPath> roads
+- RoadMaterialSettings material
+- Optional<Array<road::PlacedScatterItem>> scatterItems
+- String displayName
+- String sourceId
+- DateTime updatedAt
+- int32 schemaVersion
+
+設計意図:
+- 「現在状態」「プリセット」「復元元」を同じ型で表す
+- 保存対象が増えても型を伸ばせば済む
+- まずは roads + material だけでも開始できる
+
+
+2. RoadPresetRecord
+-------------------
+用途:
+- プリセット一覧に出す最小メタ情報
+
+推奨内容:
+- String presetId
+- String displayName
+- String description
+- bool isUserPreset
+- DateTime updatedAt
+
+設計意図:
+- UI 一覧表示では本体全ロードを毎回展開しない
+- 将来「お気に入り」「初期プリセット」「ロック」も追加しやすい
+
+
+3. RoadGhostViewState
+---------------------
+用途:
+- ゴースト表示専用の状態
+
+推奨内容:
+- bool visible
+- String sourcePresetId
+- RoadSceneSnapshot snapshot
+- Array<Optional<Mesh>> roadMeshes
+- Array<Optional<Mesh>> shoulderMeshes
+- Array<Mesh> connectionPatchMeshes
+- double opacity
+- bool snapEnabled
+
+設計意図:
+- ゴーストは現在道路と別レイヤで扱う
+- 描画用 mesh をキャッシュし、毎フレーム生成を避ける
+- 将来的に複数ゴースト比較にも対応しやすい
+
+
+4. RoadEditSessionState
+-----------------------
+用途:
+- 「いま新しくなぞっている作業」を管理する
+
+推奨内容:
+- bool active
+- Optional<RoadSceneSnapshot> restorePoint
+- Optional<String> ghostPresetId
+- bool clearPerformed
+- bool dirty
+
+設計意図:
+- Undo と Restore を分離する
+- Undo は局所操作、Restore はセッション全体復元
+- 「プリセットから作業を始めた状態」を明示できる
+
+
+5. RoadPresetCatalog
+--------------------
+用途:
+- プリセット群をメモリ上で扱う
+
+推奨内容:
+- Array<RoadPresetRecord> records
+- HashTable<String, RoadSceneSnapshot> snapshots
+
+設計意図:
+- 一覧と本体を分ける
+- 後で遅延ロード方式へ変えやすい
+
+
+Persistence Design
+------------------
+保存形式は TOML を継続利用する。
+
+推奨方針:
+- 現在状態保存ファイルとプリセットカタログ保存ファイルを分離する
+- 1ファイル肥大化を避けるため、プリセット本体は個別ファイルでもよい
+
+推奨構成 A: 個別プリセットファイル方式
+- data/roads_current.toml
+- data/road_presets/index.toml
+- data/road_presets/{presetId}.toml
+
+index.toml 役割:
+- 一覧メタデータだけ保持
+- presetId, displayName, updatedAt, description など
+
+{presetId}.toml 役割:
+- RoadSceneSnapshot 本体を保持
+
+利点:
+- 壊れたプリセットの影響範囲が小さい
+- 差分レビューしやすい
+- 将来の同期や削除が簡単
+
+推奨構成 B: 単一カタログ方式
+- data/road_presets.toml
+
+利点:
+- 初期実装が簡単
+
+欠点:
+- ファイル肥大化
+- 競合や破損時の影響が大きい
+
+結論:
+- 保守性と拡張性を優先するなら構成 A を推奨
+
+
+Persistence API Recommendation
+------------------------------
+RoadSerializer.hpp を肥大化させず、役割を分割する。
+
+推奨クラス:
+
+1. RoadSnapshotSerializer
+- SaveSnapshot(path, snapshot)
+- LoadSnapshot(path, snapshot, status)
+
+2. RoadPresetCatalogSerializer
+- LoadIndex(path, catalogRecords)
+- SaveIndex(path, catalogRecords)
+
+3. RoadPresetRepository
+- SavePreset(snapshot)
+- LoadPreset(presetId)
+- DeletePreset(presetId)
+- ListPresets()
+- Exists(presetId)
+
+設計意図:
+- Serializer はフォーマット変換専任
+- Repository は保存場所とファイル配置を隠蔽
+- RoadEditor はファイル構造を知らなくてよい
+
+
+Application Layer Design
+------------------------
+UI から直接 m_roads や m_savePath をいじらず、ユースケース単位のサービスを経由する。
+
+推奨クラス:
+
+1. RoadPresetService
+--------------------
+責務:
+- 現在状態からスナップショット生成
+- プリセット保存
+- プリセット読込
+- ゴースト用スナップショット取得
+
+主な API 例:
+- RoadSceneSnapshot CaptureCurrentScene(...)
+- bool SaveCurrentAsPreset(String displayName, ...)
+- Optional<RoadSceneSnapshot> LoadPresetSnapshot(String presetId)
+- Array<RoadPresetRecord> GetPresetList()
+
+
+2. RoadGhostService
+-------------------
+責務:
+- ゴースト状態の生成と切替
+- ゴースト描画用 mesh の再構築
+- ゴーストへのスナップ候補算出
+
+主な API 例:
+- void ShowGhost(const RoadSceneSnapshot& snapshot)
+- void HideGhost()
+- bool HasGhost() const
+- Optional<Vec3> FindGhostSnapPoint(const Vec3& point, double maxDistance) const
+- const RoadGhostViewState& GetViewState() const
+
+
+3. RoadEditSessionService
+-------------------------
+責務:
+- 編集開始前の復元ポイント保存
+- クリア開始
+- キャンセル時の全体復元
+- セッションの開始/完了/破棄
+
+主な API 例:
+- void BeginTraceSession(const RoadSceneSnapshot& restorePoint, Optional<String> ghostPresetId)
+- bool CanRestore() const
+- const RoadSceneSnapshot* GetRestorePoint() const
+- void EndSession()
+- void DiscardSession()
+
+
+Separation of RoadEditor Responsibilities
+-----------------------------------------
+RoadEditor は以下に縮小する。
+
+1. 入力受付
+   - ボタン押下
+   - ホットキー
+   - カーソル位置
+
+2. 表示
+   - 現在道路描画
+   - ゴースト描画
+   - 編集中道路ガイド描画
+   - プリセット UI 描画
+
+3. Application Layer 呼び出し
+   - SaveCurrentAsPreset
+   - ShowGhost
+   - BeginTraceSession
+   - Restore
+
+RoadEditor が直接持つべきもの:
+- 現在作業中道路
+- UI 状態
+- 一時 hover 状態
+
+RoadEditor から外へ出すべきもの:
+- プリセット一覧管理
+- スナップショットの保存/読込
+- ゴースト本体データ
+- 復元ポイント管理
+
+
+State Model
+-----------
+現在の道路レイヤを明確に 3 つに分ける。
+
+1. Current Layer
+- 現在確定済みの m_roads
+- 通常描画対象
+- 保存対象
+
+2. Editing Layer
+- m_editingRoad
+- 一時描画対象
+- confirm 時に Current Layer へ反映
+
+3. Ghost Layer
+- ゴースト表示専用
+- 保存対象ではない
+- 半透明描画対象
+- スナップ参照対象にはなれる
+
+重要ルール:
+- Ghost Layer を Current Layer に混ぜない
+- Ghost Layer は編集対象ではない
+- Ghost Layer は比較・参照専用
+
+この分離により、後で「2つのプリセット比較」へも伸ばしやすい。
+
+
+Recommended User Flow
+---------------------
+
+Flow A: 現在状態をプリセット保存してから新規トレース
+1. 現在状態を CaptureCurrentScene
+2. SaveCurrentAsPreset("name")
+3. BeginTraceSession(restorePoint = current snapshot, ghostPresetId = saved preset)
+4. Current Layer を clear
+5. GhostService.ShowGhost(saved preset)
+6. ユーザーが Ghost を見ながら新規道路を作成
+
+Flow B: 気に入らないので元に戻す
+1. session.CanRestore() を確認
+2. restorePoint を Current Layer に復元
+3. Editing Layer を破棄
+4. Ghost Layer を閉じる
+5. EndSession
+
+Flow C: 気に入ったので確定
+1. 必要なら現在状態を保存
+2. Ghost Layer を閉じる
+3. EndSession
+
+
+Undo vs Restore Policy
+----------------------
+Undo と Restore の責務を明確に分ける。
+
+Undo:
+- 編集中の点を戻す
+- 最後の1本道を取り消す
+- 局所操作
+
+Restore:
+- セッション開始前の道路一式へ戻す
+- ゴーストトレース全体を破棄する
+- 大域操作
+
+利点:
+- ユーザー操作の意味が明確
+- 実装も単純になる
+
+
+Ghost Rendering Design
+----------------------
+描画ルール:
+- Current Layer より暗め、薄め、低 opacity
+- Editing Layer よりさらに主張を弱くする
+- スナップ点や主要端点だけ少し強調してよい
+
+推奨パラメータ:
+- road opacity: 0.18 - 0.30
+- shoulder opacity: 0.10 - 0.18
+- color tint: 青白または灰青
+
+描画 API 方向性:
+- drawCurrentRoads()
+- drawGhostRoads()
+- drawEditingRoad()
+
+draw3D() 内でレイヤごとに関数分割する。
+これにより見た目調整や描画条件追加が簡単になる。
+
+
+Snap Strategy Design
+--------------------
+スナップ候補は優先順位付きにする。
+
+優先順位:
+1. Editing Layer の先頭/末尾との整合
+2. Current Layer の端点
+3. Ghost Layer の端点
+4. 将来必要なら Ghost 線分上の最近接点
+
+初期実装では Ghost 端点スナップのみで十分。
+将来「なぞる感じ」を強くしたい場合に線分スナップを追加する。
+
+推奨 API:
+- Optional<Vec3> findCurrentSnapPoint(...)
+- Optional<Vec3> findGhostSnapPoint(...)
+- Optional<Vec3> findBestSnapPoint(...)
+
+これによりロジックの差し替えが容易になる。
+
+
+Data Ownership Rules
+--------------------
+保守性のため、所有権を明確にする。
+
+- RoadEditor
+  - UI 状態を所有
+  - Current Layer を参照または限定的に所有
+- RoadPresetRepository
+  - 永続化データを所有
+- RoadGhostService
+  - Ghost Layer とその mesh を所有
+- RoadEditSessionService
+  - restorePoint を所有
+
+重要:
+- 同じ roads 配列を current と ghost で共有しない
+- 復元ポイントは deep copy する
+- mesh は snapshot の派生物であり、保存対象ではない
+
+
+Backward Compatibility Plan
+---------------------------
+既存の roads.toml を壊さずに段階導入する。
+
+Phase 1:
+- 既存の SaveRoadData / LoadRoadData を current 状態専用として残す
+- 新規に snapshot/preset 系 serializer を追加する
+
+Phase 2:
+- RoadEditor の保存ボタンは current 保存に使い続ける
+- 新規 UI で preset 保存を追加する
+
+Phase 3:
+- 必要なら current 保存も snapshot 化して統一する
+
+この段階導入なら既存機能の破壊を最小化できる。
+
+
+Suggested File Split
+--------------------
+推奨ファイル構成:
+
+- 3D_Pi/Road/RoadTypes.hpp
+  - RoadPath, RoadMaterialSettings
+
+- 3D_Pi/Road/RoadSceneSnapshot.hpp
+  - RoadSceneSnapshot, RoadPresetRecord
+
+- 3D_Pi/Road/RoadGhostState.hpp
+  - RoadGhostViewState
+
+- 3D_Pi/Road/RoadEditSessionState.hpp
+  - RoadEditSessionState
+
+- 3D_Pi/Road/RoadSnapshotSerializer.hpp
+  - snapshot 単体の TOML 変換
+
+- 3D_Pi/Road/RoadPresetCatalogSerializer.hpp
+  - index.toml の保存/読込
+
+- 3D_Pi/Road/RoadPresetRepository.hpp
+  - preset ファイル群の管理
+
+- 3D_Pi/Road/RoadPresetService.hpp
+  - 現在状態から preset を扱うアプリケーションサービス
+
+- 3D_Pi/Road/RoadGhostService.hpp
+  - ghost 表示と snap 候補管理
+
+- 3D_Pi/Road/RoadEditSessionService.hpp
+  - 復元ポイント管理
+
+- 3D_Pi/Road/RoadEditor.hpp
+  - UI / 入力 / 描画 / orchestration
+
+この分割なら各ファイルの責務が明確で読みやすい。
+
+
+Minimum Viable Implementation Order
+-----------------------------------
+最小リスクの実装順は以下。
+
+Step 1:
+- RoadSceneSnapshot を追加
+- 現在状態の Capture / Apply を実装
+
+Step 2:
+- RoadEditSessionState / Service を追加
+- restorePoint に戻す機能を実装
+
+Step 3:
+- RoadGhostViewState / Service を追加
+- ゴースト描画を実装
+
+Step 4:
+- RoadPresetRepository を追加
+- プリセット保存/読込を実装
+
+Step 5:
+- RoadEditor UI に以下を追加
+  - Save As Preset
+  - Clear For Trace
+  - Show Ghost
+  - Restore
+  - Commit Session
+
+Step 6:
+- Ghost スナップを追加
+
+この順序なら、途中段階でも機能が破綻しにくい。
+
+
+UI Recommendation
+-----------------
+Edit タブに専用セクションを追加する。
+
+推奨項目:
+- Preset Name input
+- Save Current as Preset
+- Preset List
+- Show as Ghost
+- Start Trace From Ghost
+- Restore Previous Scene
+- End Trace Session
+
+重要:
+- 「Clear All」と「Trace Session Start」を分ける
+- 破壊操作には意味の違いを出す
+
+推奨文言:
+- Save Current as Preset
+- Start Trace Session
+- Restore Pre-Trace Scene
+- End Trace Session
+
+この分離で誤操作を減らせる。
+
+
+Extension Points
+----------------
+この設計は以下へ拡張しやすい。
+
+1. 複数ゴースト比較表示
+- RoadGhostViewState を配列化
+
+2. ゴーストごとの色変更
+- tint を state に追加
+
+3. 散布物や交差点パッチもプリセット保存
+- RoadSceneSnapshot に追加
+
+4. サムネイル一覧
+- presetId ごとの preview image を追加保存
+
+5. 自動保存セッション
+- restorePoint を autosave 化
+
+6. 差分表示
+- snapshot A/B 比較サービスを追加
+
+
+Anti-Patterns to Avoid
+----------------------
+避けるべき実装:
+
+1. RoadEditor に m_presets, m_ghostRoads, m_restorePoint, m_catalog, m_repositoryPath など全部入れる
+- 状態爆発で保守困難になる
+
+2. ゴーストを m_roads に混ぜて色だけ変える
+- 保存や Undo の境界が壊れる
+
+3. Restore を Undo の延長で処理する
+- 意味が異なるため操作ミスを招く
+
+4. current 保存と preset 保存を同じ API に無理やり混ぜる
+- 呼び出し側が曖昧になる
+
+5. 1つの TOML に全プリセットを無制限保存する
+- 長期的に扱いづらい
+
+
+Final Recommendation
+--------------------
+最適な方針は以下。
+
+- まず「道路状況」を RoadSceneSnapshot として統一表現する
+- プリセット、復元、ゴーストをすべて snapshot ベースで扱う
+- RoadEditor は UI/描画に集中させる
+- 保存は Repository、ゴーストは GhostService、復元は SessionService に分離する
+- 永続化は current 保存と preset 保存を分ける
+- ゴーストは独立レイヤとして描画し、スナップ先にもできるようにする
+
+この構成なら、今回必要な
+- 保存してクリア
+- うっすら表示
+- なぞるように再作成
+- 気に入らなければ元に戻す
+
+を無理なく実装でき、将来の複数プリセットや比較表示にも耐えやすい。

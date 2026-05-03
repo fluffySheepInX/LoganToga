@@ -229,6 +229,10 @@ namespace Pi3D
 						m_openEffectSelectIndex = i;
 					}
 				}
+				if (selectRect.mouseOver())
+				{
+					ui::Tooltip(uiFont, getEffectTooltip(m_effectNames[m_chain[i]]), Cursor::PosF().movedBy(18, 20));
+				}
 
                 const RectF enableRect{ sectionRect.rightX() - 88, sectionRect.y + 8, 80, ui::layout::ButtonSize };
 				if (ui::Button(uiFont, m_chainEnabled[i] ? U"ON" : U"OFF", enableRect))
@@ -293,6 +297,10 @@ namespace Pi3D
 						rowRect.rounded(5).draw(fill);
 						rowRect.rounded(5).drawFrame(1.0, ui::GetTheme().panelBorder);
 						uiFont(m_effectNames[effectIndex]).draw(rowRect.x + 10, rowRect.y + 3, ui::GetTheme().text);
+                      if (hovered)
+						{
+							ui::Tooltip(uiFont, getEffectTooltip(m_effectNames[effectIndex]), Cursor::PosF().movedBy(18, 20));
+						}
 						if (rowRect.leftClicked())
 						{
 							m_chain[i] = effectIndex;
@@ -508,6 +516,88 @@ namespace Pi3D
 				return 0.0;
 			}
           return (40.0 * rows);
+		}
+
+		[[nodiscard]] String getEffectTooltip(StringView effectName) const
+		{
+			if (effectName == U"なし")
+			{
+				return U"画面に変化を加えません。比較用の基準です。\n使いどころ: 他のエフェクトとの差を見たい時、段ごとの効き具合確認時。";
+			}
+			if (effectName == U"トゥーン")
+			{
+				return U"明暗の段数を減らして、セル画っぽい陰影にします。\n使いどころ: アニメ調、陰影を整理したい時、形をくっきり見せたい時。";
+			}
+			if (effectName == U"ピクセルアート")
+			{
+				return U"色の階調を整理して、簡略化されたレトロ画面寄りにします。\n使いどころ: レトロゲーム風、粗い質感を出したい時、情報量を減らしたい時。";
+			}
+			if (effectName == U"アウトライン")
+			{
+				return U"輪郭線を強調して、被写体の外形を見やすくします。\n使いどころ: トゥーン表現、読みやすさ重視、オブジェクトを目立たせたい時。";
+			}
+			if (effectName == U"油絵 (Kuwahara)")
+			{
+				return U"色のばらつきをならして、筆で塗ったような油絵風にします。\n使いどころ: 絵画調、夢っぽい画、現実感を少し崩したい時。";
+			}
+			if (effectName == U"CRT")
+			{
+				return U"湾曲、走査線、色マスクで古いモニタ風にします。\n使いどころ: レトロSF、ブラウン管演出、監視画面やゲーム内端末の表現。";
+			}
+			if (effectName == U"グレースケール")
+			{
+				return U"色を抜いて白黒にします。\n使いどころ: 回想、監視カメラ、雰囲気確認、明暗だけで見たい時。";
+			}
+			if (effectName == U"ポスタライズ")
+			{
+				return U"色数を減らして、ベタ塗り感の強い見た目にします。\n使いどころ: 印刷物風、グラフィック調、派手な記号化をしたい時。";
+			}
+			if (effectName == U"RGB シフト")
+			{
+				return U"色チャンネルを少しずらして、色収差やズレを出します。\n使いどころ: 軽いグリッチ、酔った視界、異常感やサイバー感を足したい時。";
+			}
+			if (effectName == U"Glitch")
+			{
+				return U"横ずれ、RGB分離、ブロックノイズでデジタル破綻風にします。\n使いどころ: SFハッキング、通信障害、異常演出、サイバー感を強く出したい時。";
+			}
+			if (effectName == U"スワール")
+			{
+				return U"画面をねじるように歪ませます。\n使いどころ: ワープ、魔法、違和感演出、画面遷移のアクセント。";
+			}
+			if (effectName == U"ブライトパス抽出")
+			{
+				return U"明るい部分だけを抜き出します。単体では地味ですが Bloom の素材になります。\n使いどころ: 発光部分の確認、Bloom 用の事前抽出、輝度マスクの確認。";
+			}
+			if (effectName == U"Bloom")
+			{
+				return U"明るい部分をにじませて、発光感を足します。\n使いどころ: 夜景、ネオン、魔法、映像を少しリッチに見せたい時。";
+			}
+			if (effectName == U"DoF")
+			{
+				return U"ピント面以外をぼかして、被写界深度を作ります。\n使いどころ: 被写体強調、ミニチュア風、シネマ風、視線誘導したい時。";
+			}
+			if (effectName == U"Tonemap (ACES)")
+			{
+				return U"明るさを整えて、白飛びを抑えつつ映画っぽい階調に寄せます。\n使いどころ: HDR感の整理、Bloom 後の画作り、全体を自然にまとめたい時。";
+			}
+			if (effectName == U"Vignette")
+			{
+				return U"画面周辺を暗くして、中央へ視線を集めます。\n使いどころ: シネマ風、視線誘導、緊張感や閉塞感を足したい時。";
+			}
+			if (effectName == U"Film Grain")
+			{
+				return U"細かな粒状ノイズを重ねて、フィルムや高感度撮影っぽくします。\n使いどころ: 映画風、アナログ感、無機質なCGを少し馴染ませたい時。";
+			}
+			if (effectName == U"FXAA")
+			{
+				return U"輪郭のジャギーを軽くぼかして目立ちにくくします。\n使いどころ: 最終段でのギザギザ軽減、画面を少し滑らかに見せたい時。";
+			}
+			if (effectName == U"Warm Grade")
+			{
+				return U"全体を暖色寄りに寄せ、乾いた古い洋ゲー風の色味にします。\n使いどころ: 夕景、荒野、懐かしい海外ゲーム風、土っぽい空気感を出したい時。";
+			}
+
+			return U"このエフェクトの説明は未設定です。\n使いどころ: 実際に ON/OFF して差分を確認してください。";
 		}
 
 		[[nodiscard]] size_t findEffectIndex(StringView name) const

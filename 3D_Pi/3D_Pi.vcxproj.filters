@@ -442,6 +442,7 @@
     <Text Include="AAA_road_rendering_notes.txt" />
     <Text Include="road_boundary_solution_steps.txt" />
     <Text Include="texture_editor_requirements.txt" />
+    <Text Include="Road\road_preset_ghost_architecture.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll">
@@ -874,6 +875,7 @@
     <None Include="App\example\shader\hlsl\scene_fog.hlsl" />
     <None Include="Road\road_decal_task_list.html" />
     <None Include="Road\road_placement_assets.toml" />
+    <None Include="App\example\shader\glsl\glitch.frag" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1002,5 +1004,20 @@
     <ClInclude Include="Ground\TextureEditor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Road\RoadSceneSnapshot.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadGhostViewState.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadEditSession.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Road\RoadPresetSerializer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="App\example\shader\hlsl\glitch.hlsl" />
   </ItemGroup>
 </Project>

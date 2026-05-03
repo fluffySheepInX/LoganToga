@@ -4890,3 +4890,831 @@
   hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
   glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
   OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=glitch  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/glitch.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/glitch.frag
+  OK: glitch
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=glitch  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/glitch.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/glitch.frag
+  OK: glitch
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
+[LoadPS] name=toon  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/toon.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/toon.frag
+  OK: toon
+[LoadPS] name=pixelart  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/pixelart.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/pixelart.frag
+  OK: pixelart
+[LoadPS] name=outline  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/outline.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/outline.frag
+  OK: outline
+[LoadPS] name=kuwahara  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/kuwahara.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/kuwahara.frag
+  OK: kuwahara
+[LoadPS] name=crt  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/crt.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/crt.frag
+  OK: crt
+[LoadPS] name=grayscale  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/grayscale.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/grayscale.frag
+  OK: grayscale
+[LoadPS] name=posterize  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/posterize.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/posterize.frag
+  OK: posterize
+[LoadPS] name=rgb_shift  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/rgb_shift.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/rgb_shift.frag
+  OK: rgb_shift
+[LoadPS] name=glitch  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/glitch.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/glitch.frag
+  OK: glitch
+[LoadPS] name=swirl  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/swirl.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/swirl.frag
+  OK: swirl
+[LoadPS] name=extract_bright_linear  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/extract_bright_linear.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/extract_bright_linear.frag
+  OK: extract_bright_linear
+[LoadPS] name=bloom_extract  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/bloom_extract.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/bloom_extract.frag
+  OK: bloom_extract
+[LoadPS] name=dof_combine  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/dof_combine.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/dof_combine.frag
+  OK: dof_combine
+[LoadPS] name=tonemap_aces  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/tonemap_aces.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/tonemap_aces.frag
+  OK: tonemap_aces
+[LoadPS] name=vignette  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/vignette.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/vignette.frag
+  OK: vignette
+[LoadPS] name=film_grain  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/film_grain.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/film_grain.frag
+  OK: film_grain
+[LoadPS] name=fxaa  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/fxaa.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/fxaa.frag
+  OK: fxaa
+[LoadPS] name=warm_grade  hlsl_exists=true glsl_exists=true
+  hlsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/hlsl/warm_grade.hlsl
+  glsl_full=C:/Users/aband/source/repos/fluffySheepInX/LoganToga/3D_Pi/App/example/shader/glsl/warm_grade.frag
+  OK: warm_grade
