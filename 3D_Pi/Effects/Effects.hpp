@@ -37,6 +37,9 @@ namespace pe
     [[nodiscard]] Effect MakeKuwaharaEffect();
     [[nodiscard]] Effect MakeCRTEffect();
     [[nodiscard]] Effect MakeGrayscaleEffect();
+    [[nodiscard]] Effect MakeInvertEffect();
+    [[nodiscard]] Effect MakeMosaicEffect();
+    [[nodiscard]] Effect MakeBayerDitherEffect();
     [[nodiscard]] Effect MakePosterizeEffect();
     [[nodiscard]] Effect MakeRGBShiftEffect();
     [[nodiscard]] Effect MakeGlitchEffect();

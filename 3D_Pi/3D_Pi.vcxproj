@@ -257,11 +257,14 @@
     <None Include="App\example\script\paint.as" />
     <None Include="App\example\script\piano.as" />
     <None Include="App\example\script\test.as" />
+    <None Include="App\example\shader\glsl\bayer_dither.frag" />
     <None Include="App\example\shader\glsl\bloom_extract.frag" />
     <None Include="App\example\shader\glsl\crt.frag" />
     <None Include="App\example\shader\glsl\dof_combine.frag" />
     <None Include="App\example\shader\glsl\dof_depth.frag" />
     <None Include="App\example\shader\glsl\glitch.frag" />
+    <None Include="App\example\shader\glsl\invert.frag" />
+    <None Include="App\example\shader\glsl\mosaic.frag" />
     <None Include="App\example\shader\glsl\scene_fog.frag" />
     <None Include="App\example\shader\glsl\warm_grade.frag" />
     <None Include="App\example\shader\hlsl\dof_combine.hlsl">
@@ -407,10 +410,16 @@
     <None Include="App\example\shader\hlsl\grayscale.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="App\example\shader\hlsl\invert.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="App\example\shader\hlsl\homography.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\kuwahara.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\mosaic.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\multi_texture_blend.hlsl">
@@ -453,6 +462,9 @@
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\scene_fog.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\bayer_dither.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\bloom_extract.hlsl">
