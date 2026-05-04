@@ -39,10 +39,9 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"DoF";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext& context)
         {
-            const Optional<Texture>& depthTex = GetSceneDepthTexture();
+            const Optional<Texture>& depthTex = context.sceneDepthTexture;
             if (not depthTex)
             {
                 // 深度テクスチャ未設定時はスルー描画
@@ -50,7 +49,7 @@ namespace pe
                 return;
             }
 
-            s->ensureRT(src.size());
+            s->ensureRT(context.sourceSize);
 
             // 1) ハーフ解像度に縮小コピー
             {

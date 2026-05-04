@@ -171,6 +171,7 @@
     <Text Include="App\example\txt\kr.txt" />
     <Text Include="App\example\txt\sc.txt" />
     <Text Include="App\example\video\river.txt" />
+    <Text Include="effect_architecture_review.txt" />
     <Text Include="Road\road_preset_ghost_architecture.txt" />
     <Text Include="road_boundary_solution_steps.txt" />
     <Text Include="texture_editor_requirements.txt" />
@@ -325,6 +326,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Addons\Pi3D\Effects\PiEffectChain.hpp" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainPresets.ipp" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainRuntime.ipp" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainUI.ipp" />
     <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.hpp" />
     <ClInclude Include="Addons\Pi3D\Environment\PiGroundMode.hpp" />
     <ClInclude Include="Addons\Pi3D\Environment\PiRain.hpp" />

@@ -31,10 +31,9 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"Bloom";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext& context)
         {
-            s->ensureRT(src.size());
+            s->ensureRT(context.sourceSize);
 
             src.draw();
             Graphics2D::Flush();
@@ -63,7 +62,7 @@ namespace pe
 
             {
                 const ScopedRenderStates2D blend{ BlendState::Additive };
-                s->rtA.resized(src.size()).draw(ColorF{ s->intensity });
+                s->rtA.resized(context.sourceSize).draw(ColorF{ s->intensity });
             }
         };
         e.drawUI = [s](const Vec2& pos)

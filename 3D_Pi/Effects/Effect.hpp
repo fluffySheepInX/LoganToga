@@ -17,13 +17,23 @@
 
 namespace pe // post-effect
 {
+    struct EffectContext
+    {
+        Optional<Texture> sceneDepthTexture;
+        Size sourceSize{ 0, 0 };
+        double time = 0.0;
+    };
+
     // ひとつの 2D ポストエフェクト
     struct Effect
     {
         String name;
+        String tooltip;
+        int32 uiRowCount = 0;
+        bool requiresSceneDepth = false;
 
         // src を入力にして「現在の」レンダーターゲットへ描画する
-        std::function<void(const Texture&)> apply;
+        std::function<void(const Texture&, const EffectContext&)> apply;
 
         // 選択中だけ呼ばれるパラメータ UI 描画 (任意 / null 可)
         std::function<void(const Vec2& topLeft)> drawUI;

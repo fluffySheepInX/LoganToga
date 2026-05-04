@@ -1,0 +1,224 @@
+3D_Pi エフェクター機能 アーキテクチャ診断レポート
+
+対象
+- 3D_Pi/Effects/Effect.hpp
+- 3D_Pi/Effects/Effects.hpp
+- 3D_Pi/Effects/Effects.cpp
+- 3D_Pi/Effects/EffectsDetail.hpp
+- 3D_Pi/Addons/Pi3D/Effects/PiEffectChain.hpp
+- 主要な個別エフェクト実装 (Bloom / DoF / Toon / CRT / FXAA / Glitch など)
+- 3D_Pi/Addons/Pi3D/Resources/toml/effect_presets.toml
+
+総評
+- 現状は「個別エフェクトの物理分割」は概ねできており、1エフェクト単位の追加はしやすい。
+- 一方で「チェイン実行」「UI」「プリセット」「説明文」「パラメータ行数推定」「設定適用」が PiEffectChain.hpp に集中しており、変更時の読むべきコンテキスト量が大きい。
+- また、エフェクト実行時の文脈が Effect 構造体に明示されず、グローバル状態や名前ベース分岐に依存しているため、再利用性は中程度で頭打ちになっている。
+
+--------------------------------------------------
+1. 現状評価
+--------------------------------------------------
+
+1-1. 再利用性
+評価: 中
+
+良い点
+- Effect.hpp の pe::Effect は name / apply / drawUI / reset の最小構成で、単純な追加は容易。 (Effect.hpp:21-33)
+- 各エフェクトが個別 cpp に分かれており、Bloom, DoF, CRT などの差分追跡はしやすい。
+- プリセット定義を TOML 側に逃がす方針は拡張性がある。 (effect_presets.toml)
+
+弱い点
+- エフェクトが必要とする実行文脈が Effect に載っていない。
+  例: DoF は深度テクスチャ依存だが、それは Effect の契約ではなく、GetSceneDepthTexture() という暗黙依存になっている。 (Effects.cpp:68-76, EffectsDetail.hpp:14, Effects_DoF.cpp:45-47)
+- パラメータ UI の高さがエフェクト名ベースで分岐しており、UI メタ情報がロジック外に漏れている。 (PiEffectChain.hpp:484-509)
+- ツールチップ説明もエフェクト名ベースの巨大 if 連鎖で管理されており、追加時に複数箇所修正が必要。 (PiEffectChain.hpp:521-600)
+- 個別エフェクトの定型コードが多い。
+  例: PixelShader 読込 + ConstantBuffer 設定 + ScopedCustomShader2D + src.draw() のパターンが繰り返されている。 (Effects_Toon.cpp, Effects_CRT.cpp, Effects_FXAA.cpp, Effects_Glitch.cpp)
+
+1-2. コンテキスト量
+評価: 多い
+
+- PiEffectChain.hpp が apply / UI / 設定 / プリセット読込 / ツールチップ / チェイン編集まで 1 ファイルに集約されている。 (1-656 行)
+- 新しいエフェクトを安全に追加する際、少なくとも以下を追う必要がある。
+  - Effects.hpp の宣言
+  - Effects.cpp の CreateDefaultEffects()
+  - 個別実装ファイル
+  - PiEffectChain.hpp の getParamRows()
+  - PiEffectChain.hpp の getEffectTooltip()
+  - 場合によっては effect_presets.toml
+- つまり、実装は分割されていても「追加に必要な知識」は分散ではなく集中している。
+
+1-3. 物理分割の要否
+評価: 部分的に必要
+
+- 個別エフェクト cpp の分割は現状で妥当。さらに細かく割る優先度は低い。
+- 逆に PiEffectChain.hpp は役割が多すぎるため、物理分割の優先度が高い。
+- Effects.cpp も現状は許容範囲だが、グローバル文脈管理 (scene depth) を持っているため、今後の拡張では責務分離対象になる。
+
+--------------------------------------------------
+2. レベル別 改善提案
+--------------------------------------------------
+
+[Level 1] 小改修で効果が高いもの
+
+L1-1. Effect にメタ情報を追加する
+優先度: 高
+効果: 再利用性向上 / 追加時の漏れ削減
+
+提案
+- pe::Effect に以下のようなメタ情報を持たせる。
+  - tooltip
+  - uiRowCount または uiHeight
+  - requiresSceneDepth
+  - category (任意)
+
+改善理由
+- getParamRows() の名前比較を削除できる。 (PiEffectChain.hpp:491-506)
+- getEffectTooltip() の巨大 if を削減できる。 (PiEffectChain.hpp:521-600)
+- DoF のような依存関係を明示できる。
+
+L1-2. 定型 apply を小さなヘルパで共通化する
+優先度: 中
+効果: 実装重複削減 / 新規追加の手数低減
+
+提案
+- 「CB を入れて 2D シェーダで 1 枚描く」系の補助関数または軽量ビルダーを追加する。
+- 単純エフェクト群 (Toon / CRT / FXAA / Vignette / Glitch など) の雛形を共通化する。
+
+改善理由
+- 個別実装は短いが、構造がほぼ同じで量産時にコピペ増殖しやすい。
+
+L1-3. CreateDefaultEffects への手動登録負荷を下げる
+優先度: 中
+効果: 追加漏れ防止
+
+提案
+- ファクトリ一覧を 1 か所の配列で管理するか、EffectCatalog 的な登録テーブルへ寄せる。
+
+改善理由
+- 現状は宣言追加 + 実装追加 + CreateDefaultEffects 追加の手動運用。 (Effects.hpp:19-37, Effects.cpp:129-151)
+
+[Level 2] 中規模で構造が良くなるもの
+
+L2-1. PiEffectChain を「実行」「UI」「プリセット」に分割する
+優先度: 最優先
+効果: コンテキスト量大幅削減 / 保守性向上
+
+推奨分割
+- PiEffectChainRuntime
+  - チェイン適用
+  - 一時 RT の使用方針
+  - activeChain 解決
+- PiEffectChainPanel
+  - drawChainListUI
+  - drawPresetUI
+  - drawParamsUI
+  - ツールチップ表示
+- PiEffectPresetRepository
+  - TOML 読込
+  - defaultPresets
+  - 名前解決
+
+改善理由
+- 現在の PiEffectChain は責務が広く、UI 調整だけでも実行ロジックの近傍まで読む必要がある。 (PiEffectChain.hpp:62-108, 203-385, 400-468, 521-645)
+- 将来、ゲーム内 UI とエディタ UI を分ける場合にも有利。
+
+L2-2. グローバル scene depth 受け渡しを EffectContext 化する
+優先度: 高
+効果: 再利用性向上 / 暗黙依存の解消
+
+提案
+- 例: struct EffectContext { Optional<Texture> sceneDepth; Size sourceSize; double time; };
+- Effect::apply(const Texture&, const EffectContext&) のようにする。
+
+改善理由
+- 現状は SetSceneDepthTexture()/GetSceneDepthTexture() に依存するため、並列実行、複数チェイン、テスト、再入可能性に弱い。 (Effects.cpp:16, 68-76 / PiEffectChain.hpp:65 / Effects_DoF.cpp:45-47)
+
+L2-3. EffectDescriptor / EffectCatalog を導入する
+優先度: 高
+効果: 追加時の接点削減 / UI とランタイムの橋渡し改善
+
+含める内容の例
+- 表示名
+- 説明文
+- パラメータ UI 情報
+- 依存テクスチャ要件
+- ファクトリ関数
+
+改善理由
+- 現状は「Effect 実体」「説明文」「行数情報」「プリセット参照」が別管理で同期コストが高い。
+
+[Level 3] 今後の拡張を見据えた再設計
+
+L3-1. チェインから「パスグラフ」へ昇格させる
+優先度: 中
+効果: 高度な再利用 / 分岐・合成・依存解決が可能
+
+提案
+- 現在は線形チェイン前提。 Bloom や DoF は内部で独自 RT を持つため、複合エフェクトが増えると責務が各 effect 内に閉じる。
+- 将来的には
+  - 必要入力
+  - 中間ターゲット要求
+  - 出力先
+  を記述する軽量パスグラフにすると拡張しやすい。
+
+改善理由
+- Bloom や DoF はすでに 1 エフェクト内で複数パスを内包しており、エフェクトごとの内部実装差が大きくなっている。 (Effects_Bloom.cpp:20-29, 42-67 / Effects_DoF.cpp:28-37, 55-88)
+
+L3-2. ランタイム用と編集用の API を分離する
+優先度: 中
+効果: 利用箇所ごとの最小依存化
+
+提案
+- 実ゲーム側は apply() と設定のみ参照。
+- ツール/デバッグ UI 側のみ編集 API と説明文 API を参照。
+
+改善理由
+- 現状は同一クラスが UI を前提に肥大化しており、非 UI 利用時にも余計な責務を抱える。
+
+--------------------------------------------------
+3. 物理分割の判断
+--------------------------------------------------
+
+今すぐ分けるべき
+- PiEffectChain.hpp
+  理由: 責務集中が明確。ファイル長も長く、読み込みコンテキストが大きい。
+
+今はこのままでよい
+- 各 Effects_*.cpp
+  理由: 1ファイル1エフェクトで理解しやすい。分割済みの恩恵が出ている。
+
+将来的に分割候補
+- Effects.cpp
+  理由: 共有ローダ・プリセット関連・グローバルコンテキストが混在し始めている。
+- Effects.hpp
+  理由: 効果数がさらに増えるなら、契約定義とカタログ宣言を分ける価値が出る。
+
+--------------------------------------------------
+4. 優先順位付きアクションプラン
+--------------------------------------------------
+
+最優先
+1. PiEffectChain を Runtime / Panel / Preset に分割する。
+2. Effect に tooltip / uiRowCount / requiresSceneDepth を持たせる。
+3. sceneDepth のグローバル受け渡しを EffectContext に置き換える。
+
+次点
+4. 単純エフェクトの apply 雛形を共通化する。
+5. EffectCatalog を導入し、CreateDefaultEffects と UI 情報の分散を減らす。
+
+将来対応
+6. パスグラフ化を検討する。
+7. UI 専用 API と実行専用 API を分離する。
+
+--------------------------------------------------
+5. 結論
+--------------------------------------------------
+
+- 再利用性: 「最低限は良い」が、暗黙文脈と名前ベース分岐が増えており、このままでは拡張時の再利用効率が落ちる。
+- コンテキスト量: 主な問題点。特に PiEffectChain.hpp への集中が大きい。
+- 物理分割: 個別エフェクト側は十分。分割すべき本丸は PiEffectChain.hpp と、次点で共有文脈管理。
+
+短く言うと、
+- エフェクト実装の分け方は良い
+- 追加時に必要な知識の置き場は良くない
+- まずは「メタ情報の明示化」と「PiEffectChain 分割」が最も費用対効果が高い

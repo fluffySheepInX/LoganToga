@@ -15,18 +15,14 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"Glitch";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext& context)
         {
-            s->cb = Float4{
-                static_cast<float>(Scene::Time()),
-                static_cast<float>(s->intensity),
-                static_cast<float>(s->blockiness),
-                static_cast<float>(s->rgbShift) };
-            Graphics2D::SetPSConstantBuffer(1, s->cb);
-
-            const ScopedCustomShader2D shader{ s->ps };
-            src.draw();
+            ApplyFullscreenEffect(s->ps, s->cb,
+                Float4{
+                    static_cast<float>(context.time),
+                    static_cast<float>(s->intensity),
+                    static_cast<float>(s->blockiness),
+                    static_cast<float>(s->rgbShift) }, src);
         };
         e.drawUI = [s](const Vec2& pos)
         {

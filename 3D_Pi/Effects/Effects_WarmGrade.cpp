@@ -23,18 +23,14 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"Warm Grade";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext&)
         {
-            s->cb = Float4{
-                static_cast<float>(s->warmth),
-                static_cast<float>(s->saturation),
-                static_cast<float>(s->contrast),
-                static_cast<float>(s->lift) };
-            Graphics2D::SetPSConstantBuffer(1, s->cb);
-
-            const ScopedCustomShader2D shader{ s->ps };
-            src.draw();
+            ApplyFullscreenEffect(s->ps, s->cb,
+                Float4{
+                    static_cast<float>(s->warmth),
+                    static_cast<float>(s->saturation),
+                    static_cast<float>(s->contrast),
+                    static_cast<float>(s->lift) }, src);
         };
         e.drawUI = [s](const Vec2& pos)
         {

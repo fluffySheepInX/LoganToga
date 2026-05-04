@@ -14,18 +14,14 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"Film Grain";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext& context)
         {
-            s->cb = Float4{
-                static_cast<float>(Scene::Time()),
-                static_cast<float>(s->strength),
-                s->lumaOnly ? 1.0f : 0.0f,
-                0.0f };
-            Graphics2D::SetPSConstantBuffer(1, s->cb);
-
-            const ScopedCustomShader2D shader{ s->ps };
-            src.draw();
+            ApplyFullscreenEffect(s->ps, s->cb,
+                Float4{
+                    static_cast<float>(context.time),
+                    static_cast<float>(s->strength),
+                    s->lumaOnly ? 1.0f : 0.0f,
+                    0.0f }, src);
         };
         e.drawUI = [s](const Vec2& pos)
         {

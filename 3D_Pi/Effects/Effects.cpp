@@ -13,7 +13,42 @@ namespace pe
 {
     namespace
     {
-        Optional<Texture> g_sceneDepthTexture;
+        [[nodiscard]] Effect CreateEffectFromDescriptor(const EffectDescriptor& descriptor)
+        {
+            Effect effect = descriptor.factory ? descriptor.factory() : Effect{};
+            effect.name = descriptor.name;
+            effect.tooltip = descriptor.tooltip;
+            effect.uiRowCount = descriptor.uiRowCount;
+            effect.requiresSceneDepth = descriptor.requiresSceneDepth;
+            return effect;
+        }
+    }
+
+    const Array<EffectDescriptor>& GetDefaultEffectDescriptors()
+    {
+        static const Array<EffectDescriptor> descriptors = {
+            { U"なし", U"Utility", U"画面に変化を加えません。比較用の基準です。\n使いどころ: 他のエフェクトとの差を見たい時、段ごとの効き具合確認時。", 0, false, &MakeNoneEffect },
+            { U"トゥーン", U"Stylize", U"明暗の段数を減らして、セル画っぽい陰影にします。\n使いどころ: アニメ調、陰影を整理したい時、形をくっきり見せたい時。", 2, false, &MakeToonEffect },
+            { U"ピクセルアート", U"Stylize", U"色の階調を整理して、簡略化されたレトロ画面寄りにします。\n使いどころ: レトロゲーム風、粗い質感を出したい時、情報量を減らしたい時。", 1, false, &MakePixelArtEffect },
+            { U"アウトライン", U"Stylize", U"輪郭線を強調して、被写体の外形を見やすくします。\n使いどころ: トゥーン表現、読みやすさ重視、オブジェクトを目立たせたい時。", 3, false, &MakeOutlineEffect },
+            { U"油絵 (Kuwahara)", U"Stylize", U"色のばらつきをならして、筆で塗ったような油絵風にします。\n使いどころ: 絵画調、夢っぽい画、現実感を少し崩したい時。", 1, false, &MakeKuwaharaEffect },
+            { U"CRT", U"Display", U"湾曲、走査線、色マスクで古いモニタ風にします。\n使いどころ: レトロSF、ブラウン管演出、監視画面やゲーム内端末の表現。", 4, false, &MakeCRTEffect },
+            { U"グレースケール", U"Color", U"色を抜いて白黒にします。\n使いどころ: 回想、監視カメラ、雰囲気確認、明暗だけで見たい時。", 0, false, &MakeGrayscaleEffect },
+            { U"ポスタライズ", U"Color", U"色数を減らして、ベタ塗り感の強い見た目にします。\n使いどころ: 印刷物風、グラフィック調、派手な記号化をしたい時。", 0, false, &MakePosterizeEffect },
+            { U"RGB シフト", U"Distort", U"色チャンネルを少しずらして、色収差やズレを出します。\n使いどころ: 軽いグリッチ、酔った視界、異常感やサイバー感を足したい時。", 0, false, &MakeRGBShiftEffect },
+            { U"Glitch", U"Distort", U"横ずれ、RGB分離、ブロックノイズでデジタル破綻風にします。\n使いどころ: SFハッキング、通信障害、異常演出、サイバー感を強く出したい時。", 3, false, &MakeGlitchEffect },
+            { U"スワール", U"Distort", U"画面をねじるように歪ませます。\n使いどころ: ワープ、魔法、違和感演出、画面遷移のアクセント。", 1, false, &MakeSwirlEffect },
+            { U"ブライトパス抽出", U"Utility", U"明るい部分だけを抜き出します。単体では地味ですが Bloom の素材になります。\n使いどころ: 発光部分の確認、Bloom 用の事前抽出、輝度マスクの確認。", 0, false, &MakeExtractBrightEffect },
+            { U"Bloom", U"Light", U"明るい部分をにじませて、発光感を足します。\n使いどころ: 夜景、ネオン、魔法、映像を少しリッチに見せたい時。", 4, false, &MakeBloomEffect },
+            { U"DoF", U"Camera", U"ピント面以外をぼかして、被写界深度を作ります。\n使いどころ: 被写体強調、ミニチュア風、シネマ風、視線誘導したい時。", 5, true, &MakeDepthOfFieldEffect },
+            { U"Tonemap (ACES)", U"Color", U"明るさを整えて、白飛びを抑えつつ映画っぽい階調に寄せます。\n使いどころ: HDR感の整理、Bloom 後の画作り、全体を自然にまとめたい時。", 2, false, &MakeTonemapACESEffect },
+            { U"Vignette", U"Camera", U"画面周辺を暗くして、中央へ視線を集めます。\n使いどころ: シネマ風、視線誘導、緊張感や閉塞感を足したい時。", 3, false, &MakeVignetteEffect },
+            { U"Film Grain", U"Camera", U"細かな粒状ノイズを重ねて、フィルムや高感度撮影っぽくします。\n使いどころ: 映画風、アナログ感、無機質なCGを少し馴染ませたい時。", 2, false, &MakeFilmGrainEffect },
+            { U"FXAA", U"Utility", U"輪郭のジャギーを軽くぼかして目立ちにくくします。\n使いどころ: 最終段でのギザギザ軽減、画面を少し滑らかに見せたい時。", 1, false, &MakeFXAAEffect },
+            { U"Warm Grade", U"Color", U"全体を暖色寄りに寄せ、乾いた古い洋ゲー風の色味にします。\n使いどころ: 夕景、荒野、懐かしい海外ゲーム風、土っぽい空気感を出したい時。", 4, false, &MakeWarmGradeEffect },
+        };
+
+        return descriptors;
     }
 
     PixelShader LoadPS(StringView name, bool useEffectParams)
@@ -65,26 +100,16 @@ namespace pe
         return ps;
     }
 
-    void SetSceneDepthTexture(const Optional<Texture>& texture)
-    {
-        g_sceneDepthTexture = texture;
-    }
-
-    const Optional<Texture>& GetSceneDepthTexture()
-    {
-        return g_sceneDepthTexture;
-    }
-
     //-----------------------------------------------
     // Cinematic プリセット
     //-----------------------------------------------
-    Array<size_t> GetCinematicPresetChain(const Array<Effect>& effects)
+    Array<size_t> GetCinematicPresetChain(const Array<EffectDescriptor>& descriptors)
     {
         const auto findIndex = [&](StringView name) -> size_t
         {
-            for (size_t i = 0; i < effects.size(); ++i)
+            for (size_t i = 0; i < descriptors.size(); ++i)
             {
-                if (effects[i].name == name) { return i; }
+                if (descriptors[i].name == name) { return i; }
             }
             return 0; // 見つからなければ「なし」
         };
@@ -101,13 +126,13 @@ namespace pe
     //-----------------------------------------------
     // Dusty プリセット (2000s 海外ゲーム風)
     //-----------------------------------------------
-    Array<size_t> GetDustyPresetChain(const Array<Effect>& effects)
+    Array<size_t> GetDustyPresetChain(const Array<EffectDescriptor>& descriptors)
     {
         const auto findIndex = [&](StringView name) -> size_t
         {
-            for (size_t i = 0; i < effects.size(); ++i)
+            for (size_t i = 0; i < descriptors.size(); ++i)
             {
-                if (effects[i].name == name) { return i; }
+                if (descriptors[i].name == name) { return i; }
             }
             return 0;
         };
@@ -124,30 +149,19 @@ namespace pe
 
     //-----------------------------------------------
     // 既定の効果セット
-    //   新シェーダ追加時はこの関数に push_back を 1 行足すだけ
+    //   新規追加時は EffectDescriptor 一覧に 1 行足すだけ
     //-----------------------------------------------
     Array<Effect> CreateDefaultEffects()
     {
+        const auto& descriptors = GetDefaultEffectDescriptors();
         Array<Effect> effects;
-        effects.push_back(MakeNoneEffect());
-        effects.push_back(MakeToonEffect());
-        effects.push_back(MakePixelArtEffect());
-        effects.push_back(MakeOutlineEffect());
-        effects.push_back(MakeKuwaharaEffect());
-        effects.push_back(MakeCRTEffect());
-        effects.push_back(MakeGrayscaleEffect());
-        effects.push_back(MakePosterizeEffect());
-        effects.push_back(MakeRGBShiftEffect());
-        effects.push_back(MakeGlitchEffect());
-        effects.push_back(MakeSwirlEffect());
-        effects.push_back(MakeExtractBrightEffect());
-        effects.push_back(MakeBloomEffect());
-        effects.push_back(MakeDepthOfFieldEffect());
-        effects.push_back(MakeTonemapACESEffect());
-        effects.push_back(MakeVignetteEffect());
-        effects.push_back(MakeFilmGrainEffect());
-        effects.push_back(MakeFXAAEffect());
-        effects.push_back(MakeWarmGradeEffect());
+        effects.reserve(descriptors.size());
+
+        for (const auto& descriptor : descriptors)
+        {
+            effects << CreateEffectFromDescriptor(descriptor);
+        }
+
         return effects;
     }
 }

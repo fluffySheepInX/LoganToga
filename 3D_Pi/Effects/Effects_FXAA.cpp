@@ -13,19 +13,15 @@ namespace pe
         auto s = std::make_shared<State>();
 
         Effect e;
-        e.name = U"FXAA";
-        e.apply = [s](const Texture& src)
+        e.apply = [s](const Texture& src, const EffectContext& context)
         {
-            const Size sz = src.size();
-            s->cb = Float4{
-                1.0f / static_cast<float>(Max(1, sz.x)),
-                1.0f / static_cast<float>(Max(1, sz.y)),
-                static_cast<float>(s->strength),
-                0.0f };
-            Graphics2D::SetPSConstantBuffer(1, s->cb);
-
-            const ScopedCustomShader2D shader{ s->ps };
-            src.draw();
+            const Size sz = context.sourceSize;
+            ApplyFullscreenEffect(s->ps, s->cb,
+                Float4{
+                    1.0f / static_cast<float>(Max(1, sz.x)),
+                    1.0f / static_cast<float>(Max(1, sz.y)),
+                    static_cast<float>(s->strength),
+                    0.0f }, src);
         };
         e.drawUI = [s](const Vec2& pos)
         {
