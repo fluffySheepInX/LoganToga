@@ -115,8 +115,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Application\CameraController.cpp" />
+    <ClCompile Include="Application\SceneAssets.cpp" />
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
+    <ClCompile Include="Ground\TextureEditor.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Procedural\StairGenerator.cpp" />
+    <ClCompile Include="Road\RoadEditor.cpp" />
     <ClCompile Include="Effects\*.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -180,6 +185,7 @@
     <None Include=".editorconfig" />
     <None Include="Addons\Pi3D\Resources\toml\effect_presets.toml" />
     <None Include="Addons\Pi3D\Resources\toml\lighting_presets.toml" />
+    <None Include="Application\scene_assets.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
     <None Include="App\engine\font\fontawesome\fontawesome-solid.otf.zstdcmp" />
@@ -307,6 +313,7 @@
     <None Include="App\example\shader\glsl\terrain_normal.frag" />
     <None Include="App\example\shader\glsl\toon.frag" />
     <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="architecture_review.md" />
     <None Include="Road\road_decal_task_list.html" />
     <None Include="Road\road_placement_assets.toml" />
   </ItemGroup>
@@ -339,10 +346,13 @@
     <ClInclude Include="Addons\Pi3D\Pi3D.hpp" />
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
     <ClInclude Include="Addons\Pi3D\Shader\PiShaderLoader.hpp" />
+    <ClInclude Include="Application\CameraController.hpp" />
+    <ClInclude Include="Application\SceneAssets.hpp" />
     <ClInclude Include="Effects\*.hpp" />
     <ClInclude Include="Ground\TextureEditor.hpp" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="Lighting\Lighting.hpp" />
+    <ClInclude Include="Procedural\StairGenerator.hpp" />
     <ClInclude Include="Road\RoadEditor.hpp" />
     <ClInclude Include="Road\RoadEditSession.hpp" />
     <ClInclude Include="Road\RoadGeometry.hpp" />

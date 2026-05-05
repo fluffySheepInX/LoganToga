@@ -1,0 +1,51 @@
+[ground]
+texturePath = "example/texture/ground.jpg"
+size = 2000.0
+resolutionX = 400
+resolutionY = 400
+
+[[models]]
+id = "blacksmith"
+path = "example/obj/blacksmith.obj"
+positionX = 8.0
+positionY = 0.0
+positionZ = 4.0
+registerDiffuseTextures = false
+drawDoubleSided = false
+
+[[models]]
+id = "mill"
+path = "example/obj/mill.obj"
+positionX = -8.0
+positionY = 0.0
+positionZ = 4.0
+registerDiffuseTextures = false
+drawDoubleSided = false
+
+[[models]]
+id = "tree"
+path = "example/obj/tree.obj"
+positionX = 16.0
+positionY = 0.0
+positionZ = 4.0
+registerDiffuseTextures = true
+drawDoubleSided = true
+
+[[models]]
+id = "pine"
+path = "example/obj/pine.obj"
+positionX = 16.0
+positionY = 0.0
+positionZ = 0.0
+registerDiffuseTextures = true
+drawDoubleSided = true
+
+[[models]]
+id = "siv3d-kun"
+path = "example/obj/siv3d-kun.obj"
+positionX = 2.0
+positionY = 0.0
+positionZ = -2.0
+rotateYDegrees = 180.0
+registerDiffuseTextures = true
+drawDoubleSided = false

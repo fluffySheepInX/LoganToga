@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -138,13 +138,88 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Ground\TextureEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\StairGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Road\RoadEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Effects\*.cpp">
@@ -443,6 +518,7 @@
     <Text Include="road_boundary_solution_steps.txt" />
     <Text Include="texture_editor_requirements.txt" />
     <Text Include="Road\road_preset_ghost_architecture.txt" />
+    <Text Include="effect_architecture_review.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll">
@@ -876,6 +952,19 @@
     <None Include="Road\road_decal_task_list.html" />
     <None Include="Road\road_placement_assets.toml" />
     <None Include="App\example\shader\glsl\glitch.frag" />
+    <None Include="App\example\shader\glsl\bayer_dither.frag" />
+    <None Include="App\example\shader\glsl\invert.frag" />
+    <None Include="App\example\shader\glsl\mosaic.frag" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\hlsl\invert.hlsl" />
+    <None Include="App\example\shader\hlsl\mosaic.hlsl" />
+    <None Include="App\example\shader\hlsl\bayer_dither.hlsl" />
+    <None Include="App\example\shader\hlsl\glitch.hlsl" />
+    <None Include="architecture_review.md" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1016,8 +1105,17 @@
     <ClInclude Include="Road\RoadPresetSerializer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="App\example\shader\hlsl\glitch.hlsl" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainPresets.ipp" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainRuntime.ipp" />
+    <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainUI.ipp" />
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\StairGenerator.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

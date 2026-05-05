@@ -1,9 +1,12 @@
 ﻿# include <Siv3D.hpp>
 # include "libs/AddonGaussian.h"
 # include "Addons/Pi3D/Pi3D.hpp"
+# include "Application/CameraController.hpp"
+# include "Application/SceneAssets.hpp"
 # include "UI/RectUI.hpp"
 # include "Road/RoadEditor.hpp"
 # include "Ground/TextureEditor.hpp"
+# include "Procedural/StairGenerator.hpp"
 
 void Main()
 {
@@ -26,57 +29,22 @@ void Main()
 
 	Pi3D::RegisterAddon();
 
-	const Mesh groundPlane{ MeshData::OneSidedPlane(2000, { 400, 400 }) };
-  const Texture groundTexture{ U"example/texture/ground.jpg", TextureDesc::MippedSRGB };
-
-	const Model blacksmithModel{ U"example/obj/blacksmith.obj" };
-	const Model millModel{ U"example/obj/mill.obj" };
-	const Model treeModel{ U"example/obj/tree.obj" };
-	const Model pineModel{ U"example/obj/pine.obj" };
-	const Model siv3dkunModel{ U"example/obj/siv3d-kun.obj" };
-
-	Model::RegisterDiffuseTextures(treeModel, TextureDesc::MippedSRGB);
-	Model::RegisterDiffuseTextures(pineModel, TextureDesc::MippedSRGB);
-	Model::RegisterDiffuseTextures(siv3dkunModel, TextureDesc::MippedSRGB);
+  app::SceneAssets sceneAssets;
 	RoadEditor roadEditor{ U"texture/road.jpg" };
 	TextureEditor textureEditor;
-
-   struct CameraPreset
+	app::CameraController cameraController{ Scene::Size() };
+	procedural::StairGenerator stairGenerator;
+	const auto isCursorOnGeneratorUI = [&]()
 	{
-		String label;
-		Vec3 eye;
-		Vec3 focus;
+       return stairGenerator.wantsMouseCapture();
 	};
-
-	DebugCamera3D camera{ Scene::Size(), 40_deg, Vec3{ 0, 3, -16 } };
-
-	const Array<CameraPreset> cameraPresets = {
-		{ U"Low", Vec3{ 0, 3, -16 }, Vec3{ 0, 0, 0 } },
-		{ U"Medium", Vec3{ 0, 10, -18 }, Vec3{ 0, 0, 0 } },
-		{ U"Top", Vec3{ 0, 24, -0.6 }, Vec3{ 0, 0, 0 } },
-	};
-	size_t activeCameraPresetIndex = 0;
-	const auto applyCameraPreset = [&](const size_t index)
+	const auto isCursorOnMainUI = [&]()
 	{
-		if (index < cameraPresets.size())
-		{
-			activeCameraPresetIndex = index;
-			const Vec3 currentFocus = camera.getFocusPosition();
-			const Vec3 presetOffset = cameraPresets[index].eye - cameraPresets[index].focus;
-			camera.setView(currentFocus + presetOffset, currentFocus);
-		}
-	};
-	const auto getCameraPresetPanelRect = [&]()
-	{
-		return RectF{ (Scene::Width() * 0.5) - 206, Scene::Height() - 72, 412, 48 };
-	};
-	const auto isCursorOnCameraPresetUI = [&]()
-	{
-		return getCameraPresetPanelRect().mouseOver();
+      return cameraController.isCursorOnUI() || isCursorOnGeneratorUI();
 	};
     const auto getWheelZoomFocusPosition = [&]() -> Optional<Vec3>
 	{
-		const Ray centerRay = camera.screenToRay(Scene::CenterF());
+     const Ray centerRay = cameraController.camera().screenToRay(Scene::CenterF());
 		const InfinitePlane groundPlane{ Float3{ 0, 0, 0 }, Float3{ 0, 1, 0 } };
 
 		if (const auto distance = centerRay.intersects(groundPlane))
@@ -86,125 +54,47 @@ void Main()
 
 		return none;
 	};
-	const auto updateCameraWheelDragPan = [&]() -> bool
-	{
-		if (not MouseM.pressed()) return false;
-		if (roadEditor.wantsMouseCapture() || isCursorOnCameraPresetUI()) return false;
-
-		const Vec2 delta = Cursor::DeltaF();
-		if (delta.isZero()) return true;
-
-		const InfinitePlane gp{ Float3{ 0, 0, 0 }, Float3{ 0, 1, 0 } };
-		const Vec2 curPos = Cursor::PosF();
-		const Vec2 prevPos = curPos - delta;
-
-		const auto curHit  = camera.screenToRay(curPos).intersects(gp);
-		const auto prevHit = camera.screenToRay(prevPos).intersects(gp);
-		if (not curHit || not prevHit) return true;
-
-		const Vec3 panDelta = camera.screenToRay(prevPos).point_at(*prevHit)
-							- camera.screenToRay(curPos).point_at(*curHit);
-
-		camera.setView(camera.getEyePosition() + panDelta, camera.getFocusPosition() + panDelta);
-		return true;
-	};
-   const auto updateCameraWheelFocus = [&]() -> bool
-	{
-      if (roadEditor.wantsMouseCapture() || textureEditor.wantsMouseWheelCapture() || Pi3D::WantsMouseWheelCapture() || isCursorOnCameraPresetUI())
-		{
-         return false;
-		}
-
-		const double wheel = Mouse::Wheel();
-		if (wheel == 0.0)
-		{
-         return false;
-		}
-
-     const auto zoomFocus = getWheelZoomFocusPosition();
-		if (not zoomFocus)
-		{
-			return false;
-		}
-
-		const Vec3 eye = camera.getEyePosition();
-		  const Vec3 eyeOffset = eye - *zoomFocus;
-		const double distance = eyeOffset.length();
-		if (distance <= 0.001)
-		{
-         return false;
-		}
-
-        const double zoomScale = Math::Pow(0.85, wheel);
-		const double targetDistance = Clamp(distance * zoomScale, 3.0, 80.0);
-			 camera.setView(*zoomFocus + eyeOffset * (targetDistance / distance), *zoomFocus);
-      return true;
-	};
 	const auto drawScene = [&]()
 	{
-		Pi3D::EnvironmentRef().drawGround(groundPlane, groundTexture);
+      Pi3D::EnvironmentRef().drawGround(sceneAssets.groundPlane(), sceneAssets.groundTexture());
 		textureEditor.draw3D();
 		roadEditor.draw3D();
-		Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
-		blacksmithModel.draw(Vec3{ 8, 0, 4 });
-		millModel.draw(Vec3{ -8, 0, 4 });
-
-		{
-			const ScopedRenderStates3D renderStates{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
-			treeModel.draw(Vec3{ 16, 0, 4 });
-			pineModel.draw(Vec3{ 16, 0, 0 });
-		}
-
-		siv3dkunModel.draw(Vec3{ 2, 0, -2 }, Quaternion::RotateY(180_deg));
+     stairGenerator.draw3D(not cameraController.isUIHidden());
+		sceneAssets.drawStaticScene();
 		Pi3D::EnvironmentRef().draw3D();
 	};
 
 	while (System::Update())
 	{
-	 if (not updateCameraWheelDragPan() && not updateCameraWheelFocus())
-		{
-			if (not isCursorOnCameraPresetUI())
-			{
-				camera.update(6.0);
-			}
-		}
-     textureEditor.update(camera);
-		roadEditor.update(camera);
-		Graphics3D::SetCameraTransform(camera);
+       stairGenerator.setUIHidden(cameraController.isUIHidden());
+		cameraController.update({
+			.isDragPanBlocked = [&]() { return roadEditor.wantsMouseCapture() || isCursorOnMainUI(); },
+			.isWheelZoomBlocked = [&]() { return roadEditor.wantsMouseCapture() || textureEditor.wantsMouseWheelCapture() || Pi3D::WantsMouseWheelCapture() || isCursorOnMainUI(); },
+			.isFreeCameraBlocked = [&]() { return isCursorOnMainUI(); },
+			.getWheelZoomFocus = [&](const DebugCamera3D&) { return getWheelZoomFocusPosition(); }
+		});
+		stairGenerator.update(cameraController.camera(), isCursorOnMainUI());
+		textureEditor.update(cameraController.camera());
+		roadEditor.update(cameraController.camera());
+		Graphics3D::SetCameraTransform(cameraController.camera());
 
 #pragma region Addon
 		Pi3D::Update();
 		Pi3D::Begin3D(drawScene);
-		Pi3D::End3D(drawScene);
-		Pi3D::DrawUI();
-
-		const RectF cameraPresetPanel = getCameraPresetPanelRect();
-		ui::Panel(cameraPresetPanel);
-		const double buttonGap = 8.0;
-		const double innerPadding = 8.0;
-		const double buttonWidth = (cameraPresetPanel.w - (innerPadding * 2.0) - (buttonGap * 2.0)) / 3.0;
-		for (size_t i = 0; i < cameraPresets.size(); ++i)
+     Pi3D::End3D(drawScene);
+		if (not cameraController.isUIHidden())
 		{
-			const RectF buttonRect{
-				cameraPresetPanel.x + innerPadding + (i * (buttonWidth + buttonGap)),
-				cameraPresetPanel.y + 8,
-				buttonWidth,
-				32
-			};
-
-			if (ui::Button(ui::DefaultFont(), cameraPresets[i].label, buttonRect))
+            Pi3D::DrawUI();
+			const auto cameraEvents = cameraController.drawUI();
+			stairGenerator.drawUI();
+			if (cameraEvents.previewStarted)
 			{
-				applyCameraPreset(i);
+				stairGenerator.cancelTargetSelection();
 			}
 
-			if (i == activeCameraPresetIndex)
-			{
-				buttonRect.rounded(6).drawFrame(2.0, ui::GetTheme().accent);
-			}
+			roadEditor.drawUI();
+			textureEditor.drawUI();
 		}
-
-		roadEditor.drawUI();
-		textureEditor.drawUI();
 
 		if (GaussianFSAddon::TriggerOrDisplayESC()) break;
 		if (GaussianFSAddon::TriggerOrDisplayLang()) break;
