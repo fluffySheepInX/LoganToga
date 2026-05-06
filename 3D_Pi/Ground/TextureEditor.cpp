@@ -11,12 +11,14 @@ TextureEditor::TextureEditor(const FilePath& savePath )
         scanAvailableTextures();
         load();
         m_lastPlacementReason = U"idle";
+        m_panelPos = ui::editor_icon::GetDockedStackPosition(1);
     }
 
 
 
 bool TextureEditor::wantsMouseCapture() const{
-        return (not m_uiCollapsed) && getPanelRect().mouseOver();
+       syncCollapsedIconRegistry();
+       return getPanelRect().mouseOver();
     }
 
 
@@ -48,6 +50,8 @@ bool TextureEditor::wantsMouseWheelCapture() const{
             m_enabled = (not m_enabled);
             m_statusMessage = (m_enabled ? U"Texture Editor: ON" : U"Texture Editor: OFF");
         }
+
+        syncCollapsedIconRegistry();
 
         m_lastCursorScreenPos = Cursor::Pos();
         m_lastCursorGroundPos = cursorToGround(camera);
@@ -155,15 +159,47 @@ bool TextureEditor::wantsMouseWheelCapture() const{
 
     void TextureEditor::drawUI(){
         m_hoverTooltip.clear();
+     syncCollapsedIconRegistry();
         const RectF panel = getPanelRect();
-        ui::Panel(panel);
 
         if (m_uiCollapsed)
         {
-            const RectF btn{ panel.x + 6, panel.y + 6, panel.w - 12, panel.h - 12 };
-            if (ui::Button(m_font, U"T", btn))
+           const RectF btn = getCollapsedIconRect();
+
+            if (MouseL.down() && btn.mouseOver())
             {
-                m_uiCollapsed = false;
+                m_panelDragging = true;
+               m_ignoreCollapsedClickUntilRelease = false;
+                m_panelDragOffset = Cursor::PosF() - btn.pos;
+            }
+            if (not MouseL.pressed())
+            {
+                m_panelDragging = false;
+            }
+            if (m_panelDragging)
+            {
+                if (Cursor::PosF().distanceFrom(btn.pos + m_panelDragOffset) > 3.0)
+                {
+                    m_ignoreCollapsedClickUntilRelease = true;
+                }
+                updateCollapsedIconDrag(btn);
+            }
+
+            btn.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+            btn.drawFrame(2.0, Palette::Black);
+            if (m_toggleIcon)
+            {
+                const double iconScale = Min(btn.w / m_toggleIcon.width(), btn.h / m_toggleIcon.height());
+                m_toggleIcon.scaled(iconScale).drawAt(btn.center());
+            }
+
+          if ((not m_ignoreCollapsedClickUntilRelease) && btn.leftClicked())
+            {
+              expandFromCollapsedIcon();
+            }
+           if (not MouseL.pressed())
+            {
+                m_ignoreCollapsedClickUntilRelease = false;
             }
             setTooltipIfHovered(btn.mouseOver(), U"Expand Texture Editor (T to toggle)");
             if (not m_hoverTooltip.isEmpty())
@@ -172,6 +208,8 @@ bool TextureEditor::wantsMouseWheelCapture() const{
             }
             return;
         }
+
+        ui::Panel(panel);
 
         m_font(U"Texture Editor").draw(panel.pos.movedBy(16, 12), ui::GetTheme().text);
         m_font(U"Ground layer painting").draw(panel.pos.movedBy(16, 40), ui::GetTheme().textMuted);
@@ -182,10 +220,47 @@ bool TextureEditor::wantsMouseWheelCapture() const{
         m_smallFont(U"Update: {}"_fmt(m_enabled ? U"ON" : U"OFF")).drawAt(stateChip.center(), ColorF{ 0.18, 0.26, 0.42 });
         setTooltipIfHovered(stateChip.mouseOver(), U"T toggles update-time editor behavior.");
 
-        const RectF collapseBtn{ panel.x + panel.w - 44, panel.y + 10, 28, 28 };
-        if (ui::Button(m_font, U"◀", collapseBtn))
+        const RectF collapseBtn{ panel.x + panel.w - 74, panel.y + 10, 64, 64 };
+        if (MouseL.down() && collapseBtn.mouseOver())
         {
+            m_panelDragging = true;
+            m_ignoreCollapsedClickUntilRelease = false;
+            m_togglePressCursor = Cursor::PosF();
+            m_panelDragOffset = Cursor::PosF() - m_panelPos;
+        }
+        if (not MouseL.pressed())
+        {
+            m_panelDragging = false;
+        }
+        if (m_panelDragging)
+        {
+            const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+            m_panelPos.x = Clamp(desiredPos.x, 0.0, static_cast<double>(Scene::Width()) - panel.w);
+            m_panelPos.y = Clamp(desiredPos.y, 0.0, static_cast<double>(Scene::Height()) - panel.h);
+          if (Cursor::PosF().distanceFrom(m_togglePressCursor) > 3.0)
+            {
+                m_ignoreCollapsedClickUntilRelease = true;
+            }
+        }
+
+        collapseBtn.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        collapseBtn.drawFrame(2.0, Palette::Black);
+        if (m_toggleIcon)
+        {
+            const double iconScale = Min(collapseBtn.w / m_toggleIcon.width(), collapseBtn.h / m_toggleIcon.height());
+            m_toggleIcon.scaled(iconScale).drawAt(collapseBtn.center());
+        }
+
+      if ((not m_ignoreCollapsedClickUntilRelease) && collapseBtn.leftClicked())
+        {
+            m_panelPos = collapseBtn.pos;
+           m_panelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"TextureEditor", m_panelPos);
             m_uiCollapsed = true;
+           syncCollapsedIconRegistry();
+        }
+       if (not MouseL.pressed())
+        {
+            m_ignoreCollapsedClickUntilRelease = false;
         }
         setTooltipIfHovered(collapseBtn.mouseOver(), U"Collapse Texture Editor");
 
@@ -235,9 +310,44 @@ bool TextureEditor::wantsMouseWheelCapture() const{
 RectF TextureEditor::getPanelRect() const{
         if (m_uiCollapsed)
         {
-            return RectF{ 20, 192, 48, 48 };
+          return getCollapsedIconRect();
         }
-        return RectF{ 20.0, 20.0, PanelWidth, Min(PanelHeight, Scene::Height() - 40.0) };
+        const double panelHeight = Min(PanelHeight, Scene::Height() - 40.0);
+        const Vec2 clampedPos{
+            Clamp(m_panelPos.x, 0.0, static_cast<double>(Scene::Width()) - PanelWidth),
+            Clamp(m_panelPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight)
+        };
+        return RectF{ clampedPos, PanelWidth, panelHeight };
+    }
+
+
+
+RectF TextureEditor::getCollapsedIconRect() const{
+        const Vec2 resolvedPos = ui::editor_icon::ResolveCollapsedIconPosition(U"TextureEditor", m_panelPos);
+        return RectF{ resolvedPos, ui::editor_icon::CollapsedIconSize, ui::editor_icon::CollapsedIconSize };
+    }
+
+
+
+void TextureEditor::syncCollapsedIconRegistry() const{
+        ui::editor_icon::RegisterCollapsedIcon(U"TextureEditor", m_uiCollapsed ? Optional<RectF>{ getCollapsedIconRect() } : none);
+    }
+
+
+
+void TextureEditor::updateCollapsedIconDrag(const RectF& dragRect){
+        const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+        m_panelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"TextureEditor", desiredPos, dragRect.size);
+        syncCollapsedIconRegistry();
+    }
+
+
+
+void TextureEditor::expandFromCollapsedIcon(){
+        m_uiCollapsed = false;
+        m_panelPos = Vec2{ 20, 20 };
+        m_ignoreCollapsedClickUntilRelease = false;
+        syncCollapsedIconRegistry();
     }
 
 

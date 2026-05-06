@@ -1,9 +1,16 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../UI/RectUI.hpp"
+# include "../UI/EditorIconLayout.hpp"
 
 namespace procedural
 {
+    enum class GeneratedNatureType
+    {
+        Tree,
+        Mushroom,
+    };
+
     struct GeneratedStair
     {
         Vec3 origin;
@@ -17,6 +24,14 @@ namespace procedural
         bool useColorVariation = false;
         double dullNoiseAmount = 0.35;
         double colorVariationAmount = 0.20;
+    };
+
+    struct GeneratedNatureObject
+    {
+        Vec3 origin;
+        GeneratedNatureType type = GeneratedNatureType::Tree;
+        uint32 serial = 0;
+        uint32 variationSeed = 0;
     };
 
     class StairGenerator
@@ -47,7 +62,30 @@ namespace procedural
 
 
     private:
+       static constexpr double PanelWidth = 360.0;
+        static constexpr double HeaderHeight = 42.0;
+
         [[nodiscard]] RectF getPanelRect() const;
+
+
+
+        [[nodiscard]] RectF getCollapsedIconRect() const;
+
+
+
+        void syncCollapsedIconRegistry() const;
+
+
+
+        void updateCollapsedIconDrag(const RectF& dragRect);
+
+
+
+        void expandFromCollapsedIcon();
+
+
+
+        [[nodiscard]] double getExpandedPanelHeight() const;
 
 
 
@@ -59,45 +97,79 @@ namespace procedural
 
 
 
-        void drawCreationSection(const RectF& generatorPanel);
+        [[nodiscard]] uint32 makeNatureVariationSeed(uint32 serial) const;
 
 
 
-        void drawSelectionSection(const RectF& generatorPanel);
+        void regenerateNatureObjects();
 
 
 
-        static void drawTransformSection(const RectF& generatorPanel, GeneratedStair* selectedStair);
+        void addNatureObject(GeneratedNatureType type);
 
 
 
-        static void drawColorSection(const RectF& generatorPanel, GeneratedStair* selectedStair);
+        void drawNatureObject(const GeneratedNatureObject& naturalObject) const;
 
 
 
-        void drawMaterialSection(const RectF& generatorPanel, GeneratedStair* selectedStair);
+        [[nodiscard]] double drawCreationSection(const RectF& generatorPanel, double topY);
+
+
+
+        [[nodiscard]] double drawNatureSection(const RectF& generatorPanel, double topY);
+
+
+
+        [[nodiscard]] double drawSelectionSection(const RectF& generatorPanel, double topY);
+
+
+
+        [[nodiscard]] static double drawTransformSection(const RectF& generatorPanel, double topY, GeneratedStair* selectedStair);
+
+
+
+        [[nodiscard]] static double drawColorSection(const RectF& generatorPanel, double topY, GeneratedStair* selectedStair);
+
+
+
+        [[nodiscard]] double drawMaterialSection(const RectF& generatorPanel, double topY, GeneratedStair* selectedStair);
 
 
 
         Array<GeneratedStair> m_stairs;
 
+        Array<GeneratedNatureObject> m_naturalObjects;
+
         Optional<size_t> m_selectedIndex;
 
         Optional<Vec3> m_generatePosition;
 
-        Vec2 m_panelPos{ 24, 112 };
+     Vec2 m_panelPos{ ui::editor_icon::GetDockedStackPosition(3) };
 
         Vec2 m_dragOffset{ 0, 0 };
 
-        bool m_panelOpen = true;
+        Vec2 m_togglePressCursor{ 0, 0 };
+
+        bool m_panelOpen = false;
+
+        bool m_stairPanelOpen = true;
+
+        bool m_naturePanelOpen = true;
 
         bool m_materialPanelOpen = false;
 
         bool m_dragging = false;
 
+        bool m_ignoreCollapsedClickUntilRelease = false;
+
         bool m_waitingForPosition = false;
 
         bool m_uiHidden = false;
+
+        Texture m_toggleIcon{ U"texture/proIcon.png" };
+
+        uint32 m_nextNatureSerial = 1;
 
         double m_stepCount = 6.0;
 
@@ -106,5 +178,9 @@ namespace procedural
         double m_width = 3.0;
 
         double m_depth = 0.6;
+
+        double m_natureSeed = 1.0;
+
+        double m_natureWetness = 0.0;
     };
 }

@@ -1,0 +1,526 @@
+# Siv3D ライティング：モデル影・ボリュームライト設計メモ
+
+## 結論
+
+### 1. Siv3D のライティングでモデルに影を付けることは可能か
+可能。
+ただし、Siv3D の通常の 3D ライティングだけで自動的に影が落ちるわけではない。
+実装としては、シャドウマップを使ったカスタム描画パスを追加する。
+
+推奨方式：
+- Directional Light / Sun Light 用 Shadow Mapping
+- 可能なら Variance Shadow Map, VSM
+- 俯瞰視点なら最初は 1 枚のシャドウマップで十分
+- 広いマップでは Cascaded Shadow Map, CSM を検討
+
+### 2. Siv3D のライティングでボリュームライトは可能か
+可能。
+ただし、これも標準ライトだけではなく、ポストエフェクトまたは半透明ジオメトリ表現として実装する。
+
+推奨方式：
+- 低コスト版：スクリーンスペース・ライトシャフト, God Rays
+- 中コスト版：ライト方向に沿ったレイマーチング風ポストエフェクト
+- 演出重視版：半透明の光柱メッシュを重ねる
+
+添付画像のような雲間から差し込む光には、最初はスクリーンスペース方式が向いている。
+
+------------------------------------------------------------
+
+# A. モデルに影を付ける設計
+
+## A-1. 目的
+
+3D モデルや地形に対して、太陽光・月光などの方向ライトから影を落とす。
+
+対象：
+- キャラクター
+- 建物
+- 木
+- 岩
+- 地形
+- 車両
+- 大型オブジェクト
+
+## A-2. 基本方針
+
+描画を 2 パスに分ける。
+
+1. Shadow Depth Pass
+   ライト視点からシーンを描画し、深度をシャドウマップに保存する。
+
+2. Main Shading Pass
+   カメラ視点で通常描画しつつ、各ピクセルのワールド座標をライト空間へ変換し、シャドウマップと比較して影を判定する。
+
+## A-3. 必要なデータ
+
+### CPU 側
+
+ShadowSettings:
+- enabled
+- shadowMapSize
+  - 初期値 1024
+  - 品質重視 2048
+- lightDirection
+- lightViewProjection
+- shadowBias
+- normalBias
+- shadowStrength
+- lightBleedingReduction, VSM 使用時
+- blurRadius, VSM 使用時
+
+### GPU 側 Constant Buffer
+
+- world matrix
+- view projection matrix
+- light view projection matrix
+- sun direction
+- sun color
+- ambient color
+- eye position
+- shadow bias
+- shadow strength
+
+### Texture
+
+- shadowDepthTexture
+- shadowBlurTexture, VSM やぼかし用
+
+## A-4. シャドウ方式
+
+### 方式1：通常 Shadow Map
+
+メリット：
+- 実装が分かりやすい
+- デバッグしやすい
+
+デメリット：
+- ギザギザが目立ちやすい
+- PCF が必要
+- バイアス調整がややシビア
+
+### 方式2：Variance Shadow Map, VSM
+
+メリット：
+- ぼかしやすい
+- Siv3D の RenderTexture と相性が良い
+- 柔らかい影を作りやすい
+
+デメリット：
+- Light Bleeding が出ることがある
+- モーメント保存用の RG テクスチャが必要
+
+推奨：VSM。
+既存の OpenSiv3D サンプルにも VSM 風の実装例があるため、Siv3D ではこの方向が扱いやすい。
+
+## A-5. 描画フロー
+
+### 1. Shadow Depth Pass
+
+手順：
+
+1. ライト方向からライトカメラを作る。
+2. シーン全体、またはカメラ周辺だけをライト視点に収める。
+3. RenderTexture に深度を書き込む。
+4. VSM の場合は depth と depth^2 を RG に保存する。
+5. 必要なら GaussianBlur をかける。
+
+疑似処理：
+
+- setRenderTarget(shadowRenderTexture)
+- clear
+- setCamera(lightCamera)
+- useShadowDepthShader
+- drawShadowCasters
+- resetRenderTarget
+- blurShadowTexture if needed
+
+## A-6. Main Shading Pass
+
+各ピクセルで以下を行う。
+
+1. worldPosition を lightViewProjection でライト空間に変換する。
+2. 0～1 の shadow UV に変換する。
+3. shadowMap から深度を取得する。
+4. 現在ピクセルのライト視点深度と比較する。
+5. 影なら direct light を弱める。
+6. ambient は残す。
+
+重要：
+影は完全な黒にしない。
+俯瞰ゲームでは視認性が落ちるため、ambient を残す。
+
+例：
+- 日向：directLight = 1.0
+- 影：directLight = 0.35 ～ 0.6
+- ambient：常に加算
+
+## A-7. 影を受けるもの・落とすもの
+
+Renderable3D に以下のフラグを持たせる。
+
+- castShadow
+- receiveShadow
+
+例：
+
+地形：
+- castShadow = false または true
+- receiveShadow = true
+
+建物：
+- castShadow = true
+- receiveShadow = true
+
+小物：
+- castShadow = 距離次第
+- receiveShadow = true
+
+草・細かい破片：
+- castShadow = false 推奨
+- receiveShadow = true または false
+
+## A-8. 品質設定
+
+Low:
+- shadowMapSize = 1024
+- blur なし、または小
+- 小物は影なし
+
+Medium:
+- shadowMapSize = 2048
+- VSM + 軽い blur
+- 中距離まで影あり
+
+High:
+- shadowMapSize = 2048 ～ 4096
+- CSM 検討
+- 建物・木・大型ユニット影あり
+
+## A-9. 俯瞰ゲーム向けの注意
+
+俯瞰視点では、リアルな影よりも読みやすさが重要。
+
+推奨：
+- 影を濃くしすぎない
+- ユニットの足元影は別途 blob shadow でも良い
+- 遠景の小物影は省略
+- 影の方向を固定気味にして視認性を安定させる
+- マップ全体ではなくカメラ周辺だけをシャドウ範囲にする
+
+## A-10. 影実装の優先順位
+
+1. 地面に落ちるユニット・建物の影
+2. 建物から地形へ落ちる影
+3. 木や岩の影
+4. モデル同士の影
+5. CSM や高品質化
+
+最初から完全な影システムにしない。
+まずは太陽光 1 本 + 地面への影だけで十分。
+
+------------------------------------------------------------
+
+# B. ボリュームライト設計
+
+## B-1. 目的
+
+添付画像のような、雲間や建物の隙間から差し込む光の筋を表現する。
+
+呼び方：
+- Volumetric Light
+- Light Shaft
+- God Rays
+- Crepuscular Rays
+
+## B-2. 実装方式の候補
+
+### 方式1：スクリーンスペース・ライトシャフト
+
+画面上の光源位置から、遮蔽物マスクを使って放射状にブラーする。
+
+メリット：
+- 比較的軽い
+- 見た目の効果が大きい
+- Siv3D の 2D ポストエフェクトとして組み込みやすい
+
+デメリット：
+- 画面外光源に弱い
+- 厳密な 3D ボリュームではない
+- カメラ移動で破綻する場合がある
+
+添付画像のような演出には最初の実装として最適。
+
+### 方式2：レイマーチング風ポストエフェクト
+
+各ピクセルからカメラ方向にサンプルし、光方向・深度・シャドウマップを参照して散乱光を加算する。
+
+メリット：
+- 3D 的な整合性が高い
+- 影と連動した光の筋が作れる
+
+デメリット：
+- 重い
+- シェーダが複雑
+- 深度テクスチャが必要
+
+### 方式3：半透明メッシュによる疑似光柱
+
+光の筋に合わせた細長い板ポリゴン、円錐、ボリュームメッシュを置き、加算合成する。
+
+メリット：
+- 制御しやすい
+- 軽い
+- ゲーム的な演出に向く
+
+デメリット：
+- 見る角度によって嘘が見える
+- 大量に置くと管理が必要
+
+## B-3. 推奨構成
+
+初期実装は以下の組み合わせにする。
+
+1. スクリーンスペース・ライトシャフト
+2. 雲・遮蔽物マスク
+3. ノイズによる揺らぎ
+4. 加算またはスクリーン合成
+5. 必要に応じて半透明メッシュで補強
+
+## B-4. スクリーンスペース方式の描画フロー
+
+1. 通常の 3D シーンを描画する。
+2. 明るい空、太陽、雲の隙間、遮蔽物を元に light mask を作る。
+3. light mask を低解像度 RenderTexture に描画する。
+4. 光源スクリーン座標から radial blur をかける。
+5. ノイズで密度ムラを加える。
+6. 元の画面に加算合成する。
+
+## B-5. 必要な RenderTexture
+
+- sceneTexture
+  - 通常描画結果
+
+- lightMaskTexture
+  - 光が出る場所のマスク
+  - 低解像度で良い
+
+- lightShaftTexture
+  - radial blur 後の結果
+
+- optionalNoiseTexture
+  - 雲や空気密度用ノイズ
+
+## B-6. light mask の作り方
+
+候補：
+
+### 空から作る
+
+背景の空・太陽付近を白、遮蔽物を黒にする。
+
+### 雲テクスチャから作る
+
+雲の隙間を白くし、雲本体を黒～グレーにする。
+
+### 深度から作る
+
+近い 3D オブジェクトを遮蔽物として黒にする。
+
+### 手描きマスク
+
+ステージごとに光が差す場所をマスク画像で指定する。
+演出重視ならこれが最も安定する。
+
+## B-7. radial blur の考え方
+
+光源スクリーン座標 lightScreenPos から、現在ピクセル uv への方向を取り、複数回サンプルして蓄積する。
+
+パラメータ：
+- sampleCount
+  - 16 ～ 64
+- density
+  - 光の伸びる距離
+- weight
+  - サンプルの重み
+- decay
+  - 距離減衰
+- exposure
+  - 最終強度
+
+品質目安：
+
+Low:
+- sampleCount = 16
+- half resolution
+
+Medium:
+- sampleCount = 32
+- half resolution
+
+High:
+- sampleCount = 64
+- half or full resolution
+
+## B-8. ノイズによる自然化
+
+そのまま radial blur すると均一で CG 的になる。
+以下を加える。
+
+- Perlin noise
+- 雲テクスチャ
+- 時間変化する低速ノイズ
+- 光筋ごとの強弱
+
+例：
+- density *= lerp(0.75, 1.25, noise)
+- intensity *= cloudGapMask
+
+## B-9. シャドウマップとの連動
+
+より本格的にする場合、ボリュームライトにもシャドウマップを参照させる。
+
+考え方：
+- カメラから見た空間上のサンプル点を取る
+- その点がライトから見て影かどうかを判定する
+- 影でなければ散乱光を加算する
+
+これにより、建物や雲の裏から光が回り込まず、光の筋が自然になる。
+
+ただし処理負荷が高いため、最初は不要。
+
+## B-10. 添付画像風の表現手順
+
+画像のような雲間の光を作る場合：
+
+1. 空背景を用意する。
+2. 雲レイヤーを用意する。
+3. 雲の隙間マスクを作る。
+4. 太陽位置を画面左上～上部に置く。
+5. 雲の隙間から下方向へ light shaft を伸ばす。
+6. 光色を少し暖色にする。
+7. 地平線付近でフェードアウトする。
+8. 森や地形のシルエットで下部を少し隠す。
+
+推奨色：
+- lightColor = 暖色, RGB 1.0, 0.82, 0.55 付近
+- intensity = 0.2 ～ 0.8
+- exposure = 控えめ
+
+## B-11. ゲーム向けの軽量化
+
+- light shaft は半解像度または 1/4 解像度で描く
+- blur 結果を少しぼかしてから合成する
+- サンプル数を品質設定で変える
+- 画面に太陽がない時は無効化する
+- 屋内や曇天では無効化する
+- カメラが大きく動かない場面では更新頻度を落とす
+
+## B-12. 影とボリュームライトの統合順序
+
+推奨描画順：
+
+1. Shadow Depth Pass
+2. Main 3D Pass, shadow 適用
+3. Transparent Pass
+4. Light Mask Pass
+5. Light Shaft Post Effect
+6. Bloom
+7. Tone Mapping / Color Grading
+8. UI
+
+Bloom より前に light shaft を合成すると、光が自然ににじむ。
+UI より後に合成しないこと。
+
+------------------------------------------------------------
+
+# C. 実装ロードマップ
+
+## Phase 1：モデル影の最小実装
+
+目的：地面に建物・ユニットの影を落とす。
+
+作業：
+- shadow RenderTexture 作成
+- light camera 作成
+- shadow depth shader 作成
+- main shader に shadowMap 参照を追加
+- castShadow / receiveShadow フラグ追加
+
+完了条件：
+- 3D モデルが地面に影を落とす
+- 影の濃さを調整できる
+- 影が極端にちらつかない
+
+## Phase 2：影品質改善
+
+作業：
+- VSM 化
+- Gaussian blur
+- bias 調整
+- 距離による影対象の間引き
+
+完了条件：
+- 影のギザギザが目立ちにくい
+- 俯瞰視点で視認性が落ちない
+
+## Phase 3：簡易ボリュームライト
+
+作業：
+- light mask texture 作成
+- radial blur shader 作成
+- screen blend / additive blend 合成
+- ノイズで揺らぎ追加
+
+完了条件：
+- 雲間から差す光の筋が表示される
+- 強度・色・長さを調整できる
+- 重すぎない
+
+## Phase 4：影とボリュームライト連動
+
+作業：
+- depth texture 参照
+- shadow map 参照
+- raymarch 風サンプリング
+
+完了条件：
+- 建物や雲で光筋が遮られる
+- より立体的な光になる
+
+------------------------------------------------------------
+
+# D. 最初に作るべき最小プロトタイプ
+
+## 影
+
+- 太陽方向ライト 1 本
+- 1024 または 2048 の shadow map
+- 地面 + キューブ + 1 モデル
+- VSM または通常 shadow map
+- 影の濃さ調整 UI
+
+## ボリュームライト
+
+- 背景に太陽位置を設定
+- light mask を手描きまたは簡易生成
+- radial blur
+- 加算合成
+- intensity / density / decay / exposure 調整 UI
+
+------------------------------------------------------------
+
+# E. 判断
+
+モデル影：可能。
+Siv3D 標準ライトのみではなく、シャドウマップ付きのカスタム 3D シェーダとして実装する。
+
+ボリュームライト：可能。
+本格的な物理ベースの volumetric scattering ではなく、まずはスクリーンスペースの light shaft として実装するのが現実的。
+
+おすすめ順：
+
+1. モデル影, Shadow Mapping
+2. 簡易 Light Shaft
+3. VSM + blur で影を改善
+4. ノイズ付き Light Shaft
+5. 必要なら raymarch 型 Volumetric Light

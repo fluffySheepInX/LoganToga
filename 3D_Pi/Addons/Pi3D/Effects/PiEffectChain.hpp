@@ -16,6 +16,8 @@ namespace Pi3D
 
 		bool onLightingPresetChanged(StringView presetName, const size_t presetIndex);
 		void apply(const Texture& renderTexture, const RenderTexture& chainA, const RenderTexture& chainB, const Texture& sceneDepthTexture) const;
+		[[nodiscard]] bool hasActiveEffects() const;
+		[[nodiscard]] bool needsSceneDepth() const;
 
 		[[nodiscard]] double getControlSectionsHeight() const;
 		[[nodiscard]] double getChainListHeight() const;

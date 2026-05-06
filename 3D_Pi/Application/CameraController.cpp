@@ -3,6 +3,23 @@
 
 namespace app
 {
+    namespace
+    {
+        void ShowCopyFrameToastImpl(StringView message)
+        {
+# if SIV3D_PLATFORM(WINDOWS)
+            if (Platform::Windows::ToastNotification::IsAvailable())
+            {
+                Platform::Windows::ToastNotification::Show(ToastNotificationItem{
+                    .title = U"3D Pi",
+                    .message = String{ message },
+                    .audio = false,
+                });
+            }
+# endif
+        }
+    }
+
     CameraController::CameraController(const Size& sceneSize, Array<CameraPreset> presets)
         : m_camera{ sceneSize, 40_deg, Vec3{ 0, 3, -16 } }
         , m_presets{ std::move(presets) }
@@ -17,6 +34,8 @@ namespace app
 
     void CameraController::update(const CameraControllerUpdateArgs& args)
     {
+        processPendingFrameCopy();
+
         if (not updateWheelDragPan(args.isDragPanBlocked) && not updateWheelFocus(args))
         {
             if (not isBlocked(args.isFreeCameraBlocked))
@@ -35,47 +54,121 @@ namespace app
         }
 
         const RectF cameraPresetPanel = getCameraPresetPanelRect();
-        ui::Panel(cameraPresetPanel);
         const double buttonGap = 8.0;
-        const double innerPadding = 8.0;
-        const double buttonWidth = (cameraPresetPanel.w - (innerPadding * 2.0) - (buttonGap * 3.0)) / 4.0;
+        const double buttonSize = 32.0;
+        const ColorF hoverOverlay{ 1.0, 0.96, 0.55, 0.22 };
+        const ColorF selectedOverlay{ 1.0, 0.96, 0.55, 0.32 };
 
         for (size_t i = 0; i < m_presets.size(); ++i)
         {
             const RectF buttonRect{
-                cameraPresetPanel.x + innerPadding + (i * (buttonWidth + buttonGap)),
-                cameraPresetPanel.y + 8,
-                buttonWidth,
-                32
+                cameraPresetPanel.x + (i * (buttonSize + buttonGap)),
+                cameraPresetPanel.y,
+                buttonSize,
+                buttonSize
             };
 
-            if (ui::Button(ui::DefaultFont(), m_presets[i].label, buttonRect))
+            const bool hovered = buttonRect.mouseOver();
+            buttonRect.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+            buttonRect.drawFrame(2.0, Palette::Black);
+
+            if (buttonRect.leftClicked())
             {
                 applyPreset(i);
             }
 
+            if (const auto icon = getPresetIcon(m_presets[i].label))
+            {
+                const Texture& texture = icon->get();
+                const double iconScale = Min(buttonRect.w / texture.width(), buttonRect.h / texture.height());
+                texture.scaled(iconScale).drawAt(buttonRect.center());
+            }
+            else
+            {
+                ui::DefaultFont()(m_presets[i].label).drawAt(buttonRect.center(), ui::GetTheme().text);
+            }
+
+            if (hovered)
+            {
+                buttonRect.draw(hoverOverlay);
+            }
+
             if (i == m_activePresetIndex)
             {
-                buttonRect.rounded(6).drawFrame(2.0, ui::GetTheme().accent);
+                buttonRect.draw(selectedOverlay);
             }
         }
 
         const RectF resetButtonRect{
-            cameraPresetPanel.x + innerPadding + (3 * (buttonWidth + buttonGap)),
-            cameraPresetPanel.y + 8,
-            buttonWidth,
-            32
+            cameraPresetPanel.x + (3 * (buttonSize + buttonGap)),
+            cameraPresetPanel.y,
+            buttonSize,
+            buttonSize
         };
-        if (ui::Button(ui::DefaultFont(), U"Reset", resetButtonRect))
+        const bool resetHovered = resetButtonRect.mouseOver();
+        resetButtonRect.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        resetButtonRect.drawFrame(2.0, Palette::Black);
+        if (m_resetIcon)
+        {
+            const double resetIconScale = Min(resetButtonRect.w / m_resetIcon.width(), resetButtonRect.h / m_resetIcon.height());
+            m_resetIcon.scaled(resetIconScale).drawAt(resetButtonRect.center());
+        }
+        else
+        {
+            ui::DefaultFont()(U"R").drawAt(resetButtonRect.center(), ui::GetTheme().text);
+        }
+        if (resetButtonRect.leftClicked())
         {
             resetCamera();
         }
+        if (resetHovered)
+        {
+            resetButtonRect.draw(hoverOverlay);
+        }
 
         const RectF previewButton = getPreviewButtonRect();
-        if (ui::Button(ui::DefaultFont(), U"Preview", previewButton))
+        const bool previewHovered = previewButton.mouseOver();
+        previewButton.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        previewButton.drawFrame(2.0, Palette::Black);
+        if (m_previewIcon)
+        {
+            const double previewIconScale = Min(previewButton.w / m_previewIcon.width(), previewButton.h / m_previewIcon.height());
+            m_previewIcon.scaled(previewIconScale).drawAt(previewButton.center());
+        }
+        else
+        {
+            ui::DefaultFont()(U"Preview").drawAt(previewButton.center(), ui::GetTheme().text);
+        }
+        if (previewButton.leftClicked())
         {
             m_uiHiddenUntil = Scene::Time() + m_previewHideSeconds;
             events.previewStarted = true;
+        }
+        if (previewHovered)
+        {
+            previewButton.draw(hoverOverlay);
+        }
+
+        const RectF copyFrameButton = getCopyFrameButtonRect();
+        const bool copyHovered = copyFrameButton.mouseOver();
+        copyFrameButton.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        copyFrameButton.drawFrame(2.0, Palette::Black);
+        if (m_copyIcon)
+        {
+            const double copyIconScale = Min(copyFrameButton.w / m_copyIcon.width(), copyFrameButton.h / m_copyIcon.height());
+            m_copyIcon.scaled(copyIconScale).drawAt(copyFrameButton.center());
+        }
+        else
+        {
+            ui::DefaultFont()(U"Copy").drawAt(copyFrameButton.center(), ui::GetTheme().text);
+        }
+        if (copyFrameButton.leftClicked())
+        {
+            requestCopyCurrentFrameToClipboard();
+        }
+        if (copyHovered)
+        {
+            copyFrameButton.draw(hoverOverlay);
         }
 
         return events;
@@ -99,7 +192,7 @@ namespace app
     bool CameraController::isCursorOnUI() const
     {
         return (not isUIHidden())
-            && (getCameraPresetPanelRect().mouseOver() || getPreviewButtonRect().mouseOver());
+            && (getCameraPresetPanelRect().mouseOver() || getPreviewButtonRect().mouseOver() || getCopyFrameButtonRect().mouseOver());
     }
 
     Array<CameraPreset> CameraController::DefaultPresets()
@@ -135,17 +228,84 @@ namespace app
         m_camera.setView(m_presets[0].eye, m_presets[0].focus);
     }
 
+    void CameraController::requestCopyCurrentFrameToClipboard()
+    {
+        if (m_frameCopyPending)
+        {
+            return;
+        }
+
+        ScreenCapture::RequestCurrentFrame();
+        m_frameCopyPending = true;
+    }
+
+    void CameraController::processPendingFrameCopy()
+    {
+        if (not m_frameCopyPending)
+        {
+            return;
+        }
+
+        m_frameCopyPending = false;
+
+        Image screenshot;
+        if (ScreenCapture::GetFrame(screenshot) && screenshot)
+        {
+            Clipboard::SetImage(screenshot);
+            showCopyFrameToast(U"Copy Frame: copied to clipboard");
+        }
+        else
+        {
+            showCopyFrameToast(U"Copy Frame: failed");
+        }
+    }
+
+    void CameraController::showCopyFrameToast(StringView message)
+    {
+        ShowCopyFrameToastImpl(message);
+    }
+
+    Optional<std::reference_wrapper<const Texture>> CameraController::getPresetIcon(StringView label) const
+    {
+        if ((label == U"Low") && m_lowPresetIcon)
+        {
+            return std::cref(m_lowPresetIcon);
+        }
+
+        if (((label == U"Middle") || (label == U"Medium")) && m_middlePresetIcon)
+        {
+            return std::cref(m_middlePresetIcon);
+        }
+
+        if ((label == U"Top") && m_topPresetIcon)
+        {
+            return std::cref(m_topPresetIcon);
+        }
+
+        return none;
+    }
+
     RectF CameraController::getCameraPresetPanelRect() const
     {
-        return RectF{ (Scene::Width() * 0.5) - 266, Scene::Height() - 72, 532, 48 };
+        constexpr double buttonSize = 32.0;
+        constexpr double buttonGap = 8.0;
+        constexpr double totalWidth = (buttonSize * 4.0) + (buttonGap * 3.0);
+        return RectF{ (Scene::Width() * 0.5) - (totalWidth * 0.5), Scene::Height() - 56, totalWidth, buttonSize };
     }
 
     RectF CameraController::getPreviewButtonRect() const
     {
         const double windowBarHeight = 36.0;
-        const double buttonHeight = 32.0;
+        const double buttonSize = 96.0;
         const double offset = 10.0;
-        return RectF{ 12, Scene::Height() - windowBarHeight - buttonHeight - offset, 112, buttonHeight };
+        return RectF{ 12, Scene::Height() - windowBarHeight - offset - buttonSize, buttonSize, buttonSize };
+    }
+
+    RectF CameraController::getCopyFrameButtonRect() const
+    {
+        const RectF previewButton = getPreviewButtonRect();
+        const double buttonSize = 64.0;
+        return RectF{ (previewButton.rightX() + 12), previewButton.y + (previewButton.h - buttonSize), buttonSize, buttonSize };
     }
 
     bool CameraController::updateWheelDragPan(const std::function<bool()>& blockPredicate)

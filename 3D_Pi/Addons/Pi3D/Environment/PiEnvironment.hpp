@@ -53,6 +53,11 @@ namespace Pi3D
             m_rain.draw3D();
         }
 
+        [[nodiscard]] bool needsSceneDepth() const
+        {
+            return m_fogEnabled;
+        }
+
         void applyFog(const Texture& source, const Texture& depthTexture) const
         {
             if (not m_fogEnabled)

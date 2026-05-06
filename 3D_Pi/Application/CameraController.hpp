@@ -44,8 +44,13 @@ namespace app
         [[nodiscard]] bool isBlocked(const std::function<bool()>& predicate) const;
         void applyPreset(const size_t index);
         void resetCamera();
+        void requestCopyCurrentFrameToClipboard();
+        void processPendingFrameCopy();
+        static void showCopyFrameToast(StringView message);
+        [[nodiscard]] Optional<std::reference_wrapper<const Texture>> getPresetIcon(StringView label) const;
         [[nodiscard]] RectF getCameraPresetPanelRect() const;
         [[nodiscard]] RectF getPreviewButtonRect() const;
+        [[nodiscard]] RectF getCopyFrameButtonRect() const;
         [[nodiscard]] bool updateWheelDragPan(const std::function<bool()>& isBlocked);
         [[nodiscard]] bool updateWheelFocus(const CameraControllerUpdateArgs& args);
 
@@ -54,5 +59,12 @@ namespace app
         size_t m_activePresetIndex = 0;
         double m_uiHiddenUntil = 0.0;
         double m_previewHideSeconds = 5.0;
+        bool m_frameCopyPending = false;
+        Texture m_lowPresetIcon{ U"texture/Low.png" };
+        Texture m_middlePresetIcon{ U"texture/middle.png" };
+        Texture m_topPresetIcon{ U"texture/top.png" };
+        Texture m_resetIcon{ U"texture/reset.png" };
+        Texture m_previewIcon{ U"texture/preview.png" };
+        Texture m_copyIcon{ U"texture/copy.png" };
     };
 }

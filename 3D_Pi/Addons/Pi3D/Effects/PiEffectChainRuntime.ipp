@@ -47,6 +47,36 @@
         return inserted;
     }
 
+    inline bool PiEffectChain::hasActiveEffects() const
+    {
+        for (size_t i = 0; i < m_chain.size(); ++i)
+        {
+            if ((i < m_chainEnabled.size()) && m_chainEnabled[i] && (m_chain[i] != 0))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    inline bool PiEffectChain::needsSceneDepth() const
+    {
+        for (size_t i = 0; i < m_chain.size(); ++i)
+        {
+            if ((i < m_chainEnabled.size()) && m_chainEnabled[i])
+            {
+                const size_t effectIndex = m_chain[i];
+                if (effectIndex < m_descriptors.size() && m_descriptors[effectIndex].requiresSceneDepth)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     inline void PiEffectChain::apply(const Texture& renderTexture, const RenderTexture& chainA, const RenderTexture& chainB, const Texture& sceneDepthTexture) const
     {
         Graphics3D::Flush();

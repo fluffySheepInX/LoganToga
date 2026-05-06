@@ -1,0 +1,57 @@
+3D_Pi Phase 1 実装結果
+
+[現状]
+1) FPS 上限 / VSync / 省電力モード
+- PersistentSettings に performance 設定を追加:
+  - vSyncEnabled (default: true)
+  - maxFPS (default: 60)
+  - powerSavingMode (default: true)
+  - idleFPS (default: 30)
+  - backgroundFPS (default: 10)
+- save/pi3d_settings.toml への読み書き対応を追加。
+- Pi3D::System にフレームペーシングを追加。
+  - powerSavingMode OFF: maxFPS 固定
+  - powerSavingMode ON: 入力が 0.5 秒ない場合 idleFPS に低下
+  - 最小化相当(シーンサイズ極小)時 backgroundFPS を使用
+- VSync は設定反映時に Graphics::SetVSyncEnabled() で適用。
+
+2) 深度パスの条件付き実行
+- PiEnvironment に needsSceneDepth() を追加（現仕様では fog ON 時 true）。
+- PiEffectChain に以下を追加:
+  - hasActiveEffects()
+  - needsSceneDepth()
+- Pi3D::System::end3D() を分岐化:
+  - 深度が必要な時のみ depth pass 実行
+  - fog OFF かつ effect OFF の時は renderTexture を直接 draw
+  - fog ON かつ effect OFF の時は fogTexture を直接 draw
+  - effect ON の時のみ effectChain を適用
+
+3) ビルド
+- ワークスペース全体ビルド成功。
+
+
+[次のステップ]
+1) UI から performance 設定を操作可能にする
+- Pi3D パネルに以下を追加:
+  - VSync ON/OFF
+  - FPS cap (30/60/120/240)
+  - Power Saving ON/OFF
+  - Idle/Background FPS
+
+2) 背景判定の強化
+- 現在は Scene サイズで簡易判定。
+- 次は Window のアクティブ/最小化状態 API を使う実装へ置換する。
+
+3) フレームペーシングの微調整
+- sleep ベースから、必要に応じて高精度待機(短スピン併用)へ改善。
+- 入力直後のみ一時的に maxFPS へ戻すヒステリシス最適化。
+
+4) 深度依存判定の拡張
+- 今後、depth 依存エフェクト追加時は EffectDescriptor.requiresSceneDepth を確実に付与。
+- Environment 側も、将来の fog 実装変更に合わせて needsSceneDepth() を更新。
+
+5) 計測ログの追加
+- depth pass ON/OFF
+- active effect pass 数
+- target FPS（active/idle/background）
+を切替時だけログ出力して確認しやすくする。

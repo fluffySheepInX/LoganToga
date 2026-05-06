@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../UI/RectUI.hpp"
+# include "../UI/EditorIconLayout.hpp"
 
 struct GroundLayer
 {
@@ -62,7 +63,17 @@ private:
 
     bool m_enabled = false;
 
-    bool m_uiCollapsed = false;
+ bool m_uiCollapsed = true;
+
+    Vec2 m_panelPos{ 20, 20 };
+
+    bool m_panelDragging = false;
+
+    Vec2 m_panelDragOffset{ 0, 0 };
+
+    Vec2 m_togglePressCursor{ 0, 0 };
+
+    Texture m_toggleIcon{ U"texture/textureIcon.png" };
 
     String m_statusMessage = U"Ready";
 
@@ -110,8 +121,26 @@ private:
 
     double m_placementDiagnosticsCopiedUntil = -1.0;
 
+    bool m_ignoreCollapsedClickUntilRelease = false;
+
 
     [[nodiscard]] RectF getPanelRect() const;
+
+
+
+    [[nodiscard]] RectF getCollapsedIconRect() const;
+
+
+
+    void syncCollapsedIconRegistry() const;
+
+
+
+    void updateCollapsedIconDrag(const RectF& dragRect);
+
+
+
+    void expandFromCollapsedIcon();
 
 
 

@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../UI/RectUI.hpp"
+# include "../UI/EditorIconLayout.hpp"
 # include "RoadTypes.hpp"
 # include "RoadMaterialBuilder.hpp"
 # include "RoadMeshBuilder.hpp"
@@ -75,7 +76,17 @@ private:
 
     bool m_enabled = false;
 
-    bool m_uiCollapsed = false;
+ bool m_uiCollapsed = true;
+
+    Vec2 m_panelPos{ 20, 20 };
+
+    bool m_panelDragging = false;
+
+    Vec2 m_panelDragOffset{ 0, 0 };
+
+    Vec2 m_togglePressCursor{ 0, 0 };
+
+    Texture m_toggleIcon{ U"texture/roadIcon.png" };
 
     String m_statusMessage = U"Ready";
 
@@ -121,8 +132,26 @@ private:
 
     String m_hoverTooltip;
 
+    bool m_ignoreCollapsedClickUntilRelease = false;
+
 
     [[nodiscard]] RectF getPanelRect() const;
+
+
+
+    [[nodiscard]] RectF getCollapsedIconRect() const;
+
+
+
+    void syncCollapsedIconRegistry() const;
+
+
+
+    void updateCollapsedIconDrag(const RectF& dragRect);
+
+
+
+    void expandFromCollapsedIcon();
 
 
 

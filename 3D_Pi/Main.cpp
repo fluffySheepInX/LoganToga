@@ -40,7 +40,7 @@ void Main()
 	};
 	const auto isCursorOnMainUI = [&]()
 	{
-      return cameraController.isCursorOnUI() || isCursorOnGeneratorUI();
+      return cameraController.isCursorOnUI() || isCursorOnGeneratorUI() || sceneAssets.wantsMouseCapture();
 	};
     const auto getWheelZoomFocusPosition = [&]() -> Optional<Vec3>
 	{
@@ -60,7 +60,7 @@ void Main()
 		textureEditor.draw3D();
 		roadEditor.draw3D();
      stairGenerator.draw3D(not cameraController.isUIHidden());
-		sceneAssets.drawStaticScene();
+      sceneAssets.drawStaticScene(Pi3D::LightingRef().getEffectiveSunDirection());
 		Pi3D::EnvironmentRef().draw3D();
 	};
 
@@ -76,6 +76,7 @@ void Main()
 		stairGenerator.update(cameraController.camera(), isCursorOnMainUI());
 		textureEditor.update(cameraController.camera());
 		roadEditor.update(cameraController.camera());
+      sceneAssets.updateEditor();
 		Graphics3D::SetCameraTransform(cameraController.camera());
 
 #pragma region Addon
@@ -94,6 +95,7 @@ void Main()
 
 			roadEditor.drawUI();
 			textureEditor.drawUI();
+           sceneAssets.drawEditorUI();
 		}
 
 		if (GaussianFSAddon::TriggerOrDisplayESC()) break;

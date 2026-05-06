@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application\CameraController.cpp" />
+    <ClCompile Include="Application\SceneAssets.Editor.cpp" />
     <ClCompile Include="Application\SceneAssets.cpp" />
     <ClCompile Include="libs\GaussianFS\Gaussian.cpp" />
     <ClCompile Include="Ground\TextureEditor.cpp" />
@@ -177,8 +178,10 @@
     <Text Include="App\example\txt\sc.txt" />
     <Text Include="App\example\video\river.txt" />
     <Text Include="effect_architecture_review.txt" />
+    <Text Include="performance_phase1_status.txt" />
     <Text Include="Road\road_preset_ghost_architecture.txt" />
     <Text Include="road_boundary_solution_steps.txt" />
+    <Text Include="siv3d_lighting_shadow_volumetric_design.txt" />
     <Text Include="texture_editor_requirements.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -366,6 +369,7 @@
     <ClInclude Include="Road\RoadSerializer.hpp" />
     <ClInclude Include="Road\RoadTypes.hpp" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="UI\EditorIconLayout.hpp" />
     <ClInclude Include="UI\Layout.hpp" />
     <ClInclude Include="UI\RectUI.hpp" />
   </ItemGroup>
@@ -485,6 +489,13 @@
     <None Include="App\example\shader\hlsl\glitch.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="App\example\shader\hlsl\projected_shadow.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <EntryPointName>PS</EntryPointName>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

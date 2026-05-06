@@ -53,11 +53,23 @@ namespace Pi3D
         [[nodiscard]] bool operator ==(const EnvironmentSettings& other) const = default;
     };
 
+    struct PerformanceSettings
+    {
+        bool vSyncEnabled = true;
+        int32 maxFPS = 60;
+        bool powerSavingMode = true;
+        int32 idleFPS = 30;
+        int32 backgroundFPS = 10;
+
+        [[nodiscard]] bool operator ==(const PerformanceSettings& other) const = default;
+    };
+
     struct PersistentSettings
     {
         int32 schemaVersion = 1;
         LightingSettings lighting;
         EnvironmentSettings environment;
+        PerformanceSettings performance;
         EffectChainSettings effects;
         bool panelCollapsed = false;
         double panelPosX = 16.0;
@@ -223,6 +235,26 @@ namespace Pi3D
             {
                 settings.panelCollapsed = *panelCollapsed;
             }
+            if (const auto vSyncEnabled = toml[U"vSyncEnabled"].getOpt<bool>())
+            {
+                settings.performance.vSyncEnabled = *vSyncEnabled;
+            }
+            if (const auto maxFPS = toml[U"maxFPS"].getOpt<int32>())
+            {
+                settings.performance.maxFPS = Clamp(*maxFPS, 15, 240);
+            }
+            if (const auto powerSavingMode = toml[U"powerSavingMode"].getOpt<bool>())
+            {
+                settings.performance.powerSavingMode = *powerSavingMode;
+            }
+            if (const auto idleFPS = toml[U"idleFPS"].getOpt<int32>())
+            {
+                settings.performance.idleFPS = Clamp(*idleFPS, 5, 120);
+            }
+            if (const auto backgroundFPS = toml[U"backgroundFPS"].getOpt<int32>())
+            {
+                settings.performance.backgroundFPS = Clamp(*backgroundFPS, 1, 60);
+            }
             if (const auto panelPosX = toml[U"panelPosX"].getOpt<double>())
             {
                 settings.panelPosX = *panelPosX;
@@ -300,6 +332,11 @@ namespace Pi3D
         enabledLine += U"]";
         writer.writeln(enabledLine);
         writer.writeln(U"panelCollapsed = {}"_fmt(settings.panelCollapsed ? U"true" : U"false"));
+        writer.writeln(U"vSyncEnabled = {}"_fmt(settings.performance.vSyncEnabled ? U"true" : U"false"));
+        writer.writeln(U"maxFPS = {}"_fmt(settings.performance.maxFPS));
+        writer.writeln(U"powerSavingMode = {}"_fmt(settings.performance.powerSavingMode ? U"true" : U"false"));
+        writer.writeln(U"idleFPS = {}"_fmt(settings.performance.idleFPS));
+        writer.writeln(U"backgroundFPS = {}"_fmt(settings.performance.backgroundFPS));
         writer.writeln(U"panelPosX = {:.2f}"_fmt(settings.panelPosX));
         writer.writeln(U"panelPosY = {:.2f}"_fmt(settings.panelPosY));
         return true;

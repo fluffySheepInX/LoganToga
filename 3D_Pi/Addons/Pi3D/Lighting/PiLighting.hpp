@@ -90,6 +90,17 @@ namespace Pi3D
 		[[nodiscard]] ColorF apply() const
 		{
 			const Preset& p = m_presets[m_lightingPresetIndex];
+          const Vec3 dir = getEffectiveSunDirection();
+
+			Graphics3D::SetSunDirection(dir.normalized());
+			Graphics3D::SetSunColor(p.sunColor.removeSRGBCurve() * (p.sunIntensity * m_sunIntensityScale));
+			Graphics3D::SetGlobalAmbientColor(p.ambientColor.removeSRGBCurve() * m_ambientIntensityScale);
+			return p.backgroundColor.removeSRGBCurve();
+		}
+
+		[[nodiscard]] Vec3 getEffectiveSunDirection() const
+		{
+			const Preset& p = m_presets[m_lightingPresetIndex];
 			Vec3 dir = p.sunDirection;
 			if (m_sunDirectionOverride)
 			{
@@ -104,10 +115,7 @@ namespace Pi3D
 				}
 			}
 
-			Graphics3D::SetSunDirection(dir.normalized());
-			Graphics3D::SetSunColor(p.sunColor.removeSRGBCurve() * (p.sunIntensity * m_sunIntensityScale));
-			Graphics3D::SetGlobalAmbientColor(p.ambientColor.removeSRGBCurve() * m_ambientIntensityScale);
-			return p.backgroundColor.removeSRGBCurve();
+			return dir.normalized();
 		}
 
 		void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)

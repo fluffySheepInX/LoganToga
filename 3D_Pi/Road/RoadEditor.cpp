@@ -14,6 +14,7 @@ RoadEditor::RoadEditor(const FilePath& texturePath, const FilePath& savePath ,
 {
         load();
         m_presets = road::LoadAllPresets(m_presetsDir);
+        m_panelPos = ui::editor_icon::GetDockedStackPosition(0);
     }
 
 
@@ -25,6 +26,7 @@ bool RoadEditor::isEnabled() const noexcept{
 
 
 bool RoadEditor::wantsMouseCapture() const{
+      syncCollapsedIconRegistry();
         return isCursorOnUI();
     }
 
@@ -36,6 +38,8 @@ bool RoadEditor::wantsMouseCapture() const{
             m_enabled = (not m_enabled);
             m_statusMessage = (m_enabled ? U"Road Editor: ON" : U"Road Editor: OFF");
         }
+
+        syncCollapsedIconRegistry();
 
         if (not m_enabled)
         {
@@ -181,16 +185,49 @@ bool RoadEditor::wantsMouseCapture() const{
     void RoadEditor::drawUI(){
         refreshRoadMaterialTextureIfDirty();
         m_hoverTooltip.clear();
+        syncCollapsedIconRegistry();
 
         const RectF panel = getPanelRect();
-        ui::Panel(panel);
 
         if (m_uiCollapsed)
         {
-            const RectF expandButton{ panel.x + 6, panel.y + 6, panel.w - 12, panel.h - 12 };
-            if (ui::Button(m_font, U"▶", expandButton))
+          const RectF expandButton = getCollapsedIconRect();
+
+            if (MouseL.down() && expandButton.mouseOver())
             {
-                m_uiCollapsed = false;
+                m_panelDragging = true;
+              m_ignoreCollapsedClickUntilRelease = false;
+                m_panelDragOffset = Cursor::PosF() - expandButton.pos;
+            }
+            if (not MouseL.pressed())
+            {
+                m_panelDragging = false;
+            }
+            if (m_panelDragging)
+            {
+               if (Cursor::PosF().distanceFrom(expandButton.pos + m_panelDragOffset) > 3.0)
+                {
+                    m_ignoreCollapsedClickUntilRelease = true;
+                }
+               updateCollapsedIconDrag(expandButton);
+            }
+
+            expandButton.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+            expandButton.drawFrame(2.0, Palette::Black);
+            if (m_toggleIcon)
+            {
+                const double iconScale = Min(expandButton.w / m_toggleIcon.width(), expandButton.h / m_toggleIcon.height());
+                m_toggleIcon.scaled(iconScale).drawAt(expandButton.center());
+            }
+
+         if ((not m_ignoreCollapsedClickUntilRelease) && expandButton.leftClicked())
+            {
+              expandFromCollapsedIcon();
+            }
+
+            if (not MouseL.pressed())
+            {
+                m_ignoreCollapsedClickUntilRelease = false;
             }
 
             setTooltipIfHovered(expandButton.mouseOver(), U"Expand Road Editor");
@@ -202,13 +239,51 @@ bool RoadEditor::wantsMouseCapture() const{
             return;
         }
 
+        ui::Panel(panel);
+
+        const RectF collapseButton{ panel.x + panel.w - 74, panel.y + 10, 64, 64 };
+        if (MouseL.down() && collapseButton.mouseOver())
+        {
+            m_panelDragging = true;
+            m_ignoreCollapsedClickUntilRelease = false;
+            m_togglePressCursor = Cursor::PosF();
+            m_panelDragOffset = Cursor::PosF() - m_panelPos;
+        }
+        if (not MouseL.pressed())
+        {
+            m_panelDragging = false;
+        }
+        if (m_panelDragging)
+        {
+            const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+            m_panelPos.x = Clamp(desiredPos.x, 0.0, static_cast<double>(Scene::Width()) - panel.w);
+            m_panelPos.y = Clamp(desiredPos.y, 0.0, static_cast<double>(Scene::Height()) - panel.h);
+           if (Cursor::PosF().distanceFrom(m_togglePressCursor) > 3.0)
+            {
+                m_ignoreCollapsedClickUntilRelease = true;
+            }
+        }
+
         m_font(U"Road Editor").draw(panel.pos.movedBy(16, 12), ui::GetTheme().text);
         m_font(U"Build roads and tune material live").draw(panel.pos.movedBy(16, 40), ui::GetTheme().textMuted);
 
-        const RectF collapseButton{ panel.x + panel.w - 44, panel.y + 10, 28, 28 };
-        if (ui::Button(m_font, U"◀", collapseButton))
+        collapseButton.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        collapseButton.drawFrame(2.0, Palette::Black);
+        if (m_toggleIcon)
         {
+            const double iconScale = Min(collapseButton.w / m_toggleIcon.width(), collapseButton.h / m_toggleIcon.height());
+            m_toggleIcon.scaled(iconScale).drawAt(collapseButton.center());
+        }
+
+       if ((not m_ignoreCollapsedClickUntilRelease) && collapseButton.leftClicked())
+        {
+            m_panelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"RoadEditor", collapseButton.pos);
             m_uiCollapsed = true;
+           syncCollapsedIconRegistry();
+        }
+       if (not MouseL.pressed())
+        {
+            m_ignoreCollapsedClickUntilRelease = false;
         }
         setTooltipIfHovered(collapseButton.mouseOver(), U"Collapse Road Editor");
 
@@ -266,10 +341,45 @@ bool RoadEditor::wantsMouseCapture() const{
 RectF RoadEditor::getPanelRect() const{
         if (m_uiCollapsed)
         {
-            return RectF{ (Scene::Width() - 68), 20, 48, 48 };
+          return getCollapsedIconRect();
         }
 
-        return RectF{ (Scene::Width() - 640), 20, 620, Min(800.0, Scene::Height() - 40.0) };
+        const double panelHeight = Min(800.0, Scene::Height() - 40.0);
+        const Vec2 clampedPos{
+            Clamp(m_panelPos.x, 0.0, static_cast<double>(Scene::Width()) - 620.0),
+            Clamp(m_panelPos.y, 0.0, static_cast<double>(Scene::Height()) - panelHeight)
+        };
+        return RectF{ clampedPos, 620, panelHeight };
+    }
+
+
+
+RectF RoadEditor::getCollapsedIconRect() const{
+        const Vec2 resolvedPos = ui::editor_icon::ResolveCollapsedIconPosition(U"RoadEditor", m_panelPos);
+        return RectF{ resolvedPos, ui::editor_icon::CollapsedIconSize, ui::editor_icon::CollapsedIconSize };
+    }
+
+
+
+void RoadEditor::syncCollapsedIconRegistry() const{
+        ui::editor_icon::RegisterCollapsedIcon(U"RoadEditor", m_uiCollapsed ? Optional<RectF>{ getCollapsedIconRect() } : none);
+    }
+
+
+
+void RoadEditor::updateCollapsedIconDrag(const RectF& dragRect){
+        const Vec2 desiredPos = (Cursor::PosF() - m_panelDragOffset);
+        m_panelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"RoadEditor", desiredPos, dragRect.size);
+        syncCollapsedIconRegistry();
+    }
+
+
+
+void RoadEditor::expandFromCollapsedIcon(){
+        m_uiCollapsed = false;
+        m_panelPos = Vec2{ (Scene::Width() - 640), 20 };
+        m_ignoreCollapsedClickUntilRelease = false;
+        syncCollapsedIconRegistry();
     }
 
 

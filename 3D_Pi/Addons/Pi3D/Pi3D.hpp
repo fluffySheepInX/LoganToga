@@ -1,5 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include <chrono>
+# include <thread>
 # include "Environment/PiEnvironment.hpp"
 # include "Effects/PiEffectChain.hpp"
 # include "Lighting/PiLighting.hpp"
@@ -32,7 +34,9 @@ namespace Pi3D
 
 		void update()
 		{
+            applyFramePacing();
            resizeIfNeeded();
+            updateActivityState();
 			m_environment.update(Scene::DeltaTime());
 			m_currentBackground = m_lighting.apply();
 			if (m_effectChain.onLightingPresetChanged(m_lighting.getCurrentPresetName(), m_lighting.getPresetIndex()))
@@ -58,21 +62,61 @@ namespace Pi3D
 		template <class DrawScene>
 		void end3D(const DrawScene& drawSceneForDepth)
 		{
+          const bool needsFog = m_environment.needsSceneDepth();
+			const bool hasActiveEffects = m_effectChain.hasActiveEffects();
+			const bool needsSceneDepth = (needsFog || m_effectChain.needsSceneDepth());
+			if (needsSceneDepth)
 			{
-              const ScopedRenderTarget3D target{ m_sceneDepthTexture->clear(ColorF{ 100000.0, 0.0, 0.0, 1.0 }) };
+				const ScopedRenderTarget3D target{ m_sceneDepthTexture->clear(ColorF{ 100000.0, 0.0, 0.0, 1.0 }) };
 				const ScopedCustomShader3D shader{ m_dofDepthVS, m_dofDepthPS };
 				drawSceneForDepth();
-               Graphics3D::Flush();
+				Graphics3D::Flush();
 			}
            m_renderTexture->resolve();
-            {
+
+			const auto copyResolvedSceneToFogTexture = [&]()
+			{
+				const ScopedRenderTarget2D rt{ *m_fogTexture };
+				const ScopedRenderStates2D blend{ BlendState::Opaque };
+				m_fogTexture->clear(ColorF{ 0, 0, 0, 1 });
+				m_renderTexture->draw();
+				Graphics2D::Flush();
+			};
+
+			const auto renderFogToFogTexture = [&]()
+			{
 				const ScopedRenderTarget2D rt{ *m_fogTexture };
 				const ScopedRenderStates2D blend{ BlendState::Opaque };
 				m_fogTexture->clear(ColorF{ 0, 0, 0, 1 });
 				m_environment.applyFog(*m_renderTexture, *m_sceneDepthTexture);
+				Graphics2D::Flush();
+			};
+
+            if (needsFog)
+			{
+             renderFogToFogTexture();
+
+               if (hasActiveEffects)
+				{
+					m_effectChain.apply(*m_fogTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
+				}
+				else
+				{
+					m_fogTexture->draw();
+				}
 			}
-			Graphics2D::Flush();
-		  m_effectChain.apply(*m_fogTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
+			else
+			{
+               if (hasActiveEffects)
+				{
+                  copyResolvedSceneToFogTexture();
+					m_effectChain.apply(*m_fogTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
+				}
+				else
+				{
+					m_renderTexture->draw();
+				}
+			}
 		}
 
 		void drawUI()
@@ -155,6 +199,11 @@ namespace Pi3D
 
 			// 折りたたみボタン
 			const RectF collapseBtn{ panelRect.rightX() - 44, panelRect.y + 8, 30, 28 };
+          if (MouseL.down() && collapseBtn.mouseOver())
+			{
+				m_panelDragging = true;
+				m_panelDragOffset = Cursor::PosF() - m_panelPos;
+			}
 			if (ui::Button(uiFont, U"◀", collapseBtn))
 			{
 				m_panelCollapsed = true;
@@ -182,6 +231,8 @@ namespace Pi3D
 					[&]() { m_effectChain.drawPresetUI(uiFont, uiPos, contentRect.w, m_panelScrollY); });
 				drawCollapsibleSection(uiFont, uiPos, contentRect.w, U"パラメータ", m_effectParamsCollapsed,
 					[&]() { m_effectChain.drawParamsUI(uiFont, uiPos, contentRect.w); });
+				drawCollapsibleSection(uiFont, uiPos, contentRect.w, U"パフォーマンス", m_performanceCollapsed,
+					[&]() { drawPerformanceUI(uiFont, uiPos, contentRect.w); }, PerformanceSectionHeight);
 
 				Graphics2D::SetScissorRect(previousScissor);
 			}
@@ -239,6 +290,8 @@ namespace Pi3D
 		}
 
 	private:
+     static constexpr double PerformanceSectionHeight = 244.0;
+
      [[nodiscard]] double getPanelContentHeight() const
 		{
 			const double environmentSectionBodyHeight = m_environmentCollapsed ? Environment::HeaderHeight : Environment::UIBodyHeight;
@@ -248,7 +301,54 @@ namespace Pi3D
 			const double chainListHeight = m_chainCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getChainListHeight();
 			const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getPresetHeight();
 			const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getParamsHeight();
-			return environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight;
+            const double performanceHeight = m_performanceCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : (PerformanceSectionHeight + ui::layout::SectionGap);
+			return environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight + performanceHeight;
+		}
+
+		void drawPerformanceUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)
+		{
+			const RectF sectionRect{ uiPos, contentWidth, PerformanceSectionHeight };
+			ui::Section(sectionRect);
+			uiFont(U"パフォーマンス").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
+			uiFont(U"FPS 上限 / VSync / 省電力").draw(uiPos.movedBy(8, 26), Palette::Gray);
+
+			const RectF vSyncButton{ sectionRect.x + 8, sectionRect.y + 58, (sectionRect.w - 24) * 0.5, ui::layout::AddButtonHeight };
+			if (ui::Button(uiFont, m_performanceSettings.vSyncEnabled ? U"VSync: ON" : U"VSync: OFF", vSyncButton))
+			{
+				m_performanceSettings.vSyncEnabled = (not m_performanceSettings.vSyncEnabled);
+				Graphics::SetVSyncEnabled(m_performanceSettings.vSyncEnabled);
+			}
+
+			const RectF powerSaveButton{ vSyncButton.rightX() + 8, vSyncButton.y, (sectionRect.w - 24) * 0.5, ui::layout::AddButtonHeight };
+			if (ui::Button(uiFont, m_performanceSettings.powerSavingMode ? U"省電力: ON" : U"省電力: OFF", powerSaveButton))
+			{
+				m_performanceSettings.powerSavingMode = (not m_performanceSettings.powerSavingMode);
+			}
+
+			double maxFPS = static_cast<double>(m_performanceSettings.maxFPS);
+			if (ui::SliderH(U"Max FPS: {:.0f}"_fmt(maxFPS), maxFPS, 15.0, 240.0, uiPos.movedBy(8, 108), 120.0, contentWidth - 136.0))
+			{
+				m_performanceSettings.maxFPS = Clamp(static_cast<int32>(std::round(maxFPS)), 15, 240);
+			}
+
+			double idleFPS = static_cast<double>(m_performanceSettings.idleFPS);
+			if (ui::SliderH(U"Idle FPS: {:.0f}"_fmt(idleFPS), idleFPS, 5.0, static_cast<double>(m_performanceSettings.maxFPS), uiPos.movedBy(8, 148), 120.0, contentWidth - 136.0))
+			{
+				m_performanceSettings.idleFPS = Clamp(static_cast<int32>(std::round(idleFPS)), 5, m_performanceSettings.maxFPS);
+			}
+
+			double backgroundFPS = static_cast<double>(m_performanceSettings.backgroundFPS);
+			if (ui::SliderH(U"Background FPS: {:.0f}"_fmt(backgroundFPS), backgroundFPS, 1.0, static_cast<double>(m_performanceSettings.idleFPS), uiPos.movedBy(8, 188), 120.0, contentWidth - 136.0))
+			{
+				m_performanceSettings.backgroundFPS = Clamp(static_cast<int32>(std::round(backgroundFPS)), 1, m_performanceSettings.idleFPS);
+			}
+
+			m_performanceSettings.maxFPS = Clamp(m_performanceSettings.maxFPS, 15, 240);
+			m_performanceSettings.idleFPS = Clamp(m_performanceSettings.idleFPS, 5, m_performanceSettings.maxFPS);
+			m_performanceSettings.backgroundFPS = Clamp(m_performanceSettings.backgroundFPS, 1, m_performanceSettings.idleFPS);
+
+			uiFont(U"Target FPS: {}"_fmt(getTargetFPS())).draw(uiPos.movedBy(8, 226), ui::GetTheme().textMuted);
+			uiPos.y += sectionRect.h + ui::layout::SectionGap;
 		}
 
 		[[nodiscard]] double getExpandedPanelHeight() const
@@ -326,6 +426,7 @@ namespace Pi3D
 			PersistentSettings settings;
 			settings.lighting = m_lighting.getSettings();
 			settings.environment = m_environment.getSettings();
+         settings.performance = m_performanceSettings;
 			settings.effects = m_effectChain.getSettings();
 			settings.panelCollapsed = m_panelCollapsed;
 			settings.panelPosX = m_panelPos.x;
@@ -337,6 +438,19 @@ namespace Pi3D
 		{
 			m_lighting.applySettings(settings.lighting);
 			m_environment.applySettings(settings.environment);
+          m_performanceSettings = settings.performance;
+			m_performanceSettings.maxFPS = Clamp(m_performanceSettings.maxFPS, 15, 240);
+			m_performanceSettings.idleFPS = Clamp(m_performanceSettings.idleFPS, 5, 120);
+			m_performanceSettings.backgroundFPS = Clamp(m_performanceSettings.backgroundFPS, 1, 60);
+			if (m_performanceSettings.maxFPS < m_performanceSettings.idleFPS)
+			{
+				m_performanceSettings.idleFPS = m_performanceSettings.maxFPS;
+			}
+			if (m_performanceSettings.idleFPS < m_performanceSettings.backgroundFPS)
+			{
+				m_performanceSettings.backgroundFPS = m_performanceSettings.idleFPS;
+			}
+			Graphics::SetVSyncEnabled(m_performanceSettings.vSyncEnabled);
 			m_effectChain.applySettings(settings.effects);
 			m_panelCollapsed = settings.panelCollapsed;
 			m_panelPos = Vec2{ settings.panelPosX, settings.panelPosY };
@@ -347,11 +461,64 @@ namespace Pi3D
 			m_lastSavedSettings = collectSettings();
 		}
 
+		void updateActivityState()
+		{
+			const bool hasMouseInteraction = MouseL.pressed() || MouseR.pressed() || MouseM.pressed()
+				|| (Mouse::Wheel() != 0.0) || (Cursor::DeltaF().lengthSq() > 0.0);
+			if (hasMouseInteraction)
+			{
+				m_lastInteractionClock = std::chrono::steady_clock::now();
+			}
+		}
+
+		[[nodiscard]] int32 getTargetFPS() const
+		{
+			if (not m_performanceSettings.powerSavingMode)
+			{
+				return m_performanceSettings.maxFPS;
+			}
+
+			if ((Scene::Width() <= 1) || (Scene::Height() <= 1))
+			{
+				return m_performanceSettings.backgroundFPS;
+			}
+
+			const auto now = std::chrono::steady_clock::now();
+			const double idleSeconds = std::chrono::duration<double>(now - m_lastInteractionClock).count();
+			if (idleSeconds >= 0.5)
+			{
+				return m_performanceSettings.idleFPS;
+			}
+
+			return m_performanceSettings.maxFPS;
+		}
+
+		void applyFramePacing()
+		{
+			const int32 targetFPS = Max(1, getTargetFPS());
+			const auto now = std::chrono::steady_clock::now();
+			if (m_hasLastFrameStart)
+			{
+				const double elapsedSec = std::chrono::duration<double>(now - m_lastFrameStartClock).count();
+				const double targetSec = (1.0 / static_cast<double>(targetFPS));
+				if (elapsedSec < targetSec)
+				{
+					std::this_thread::sleep_for(std::chrono::duration<double>(targetSec - elapsedSec));
+				}
+			}
+			m_lastFrameStartClock = std::chrono::steady_clock::now();
+			m_hasLastFrameStart = true;
+		}
+
 		Environment m_environment;
 		EffectChain m_effectChain;
 		Lighting m_lighting;
+       PerformanceSettings m_performanceSettings;
 		ColorF m_currentBackground{ 0.4, 0.6, 0.8, 1.0 };
        Size m_sceneSize;
+        std::chrono::steady_clock::time_point m_lastFrameStartClock = std::chrono::steady_clock::now();
+		std::chrono::steady_clock::time_point m_lastInteractionClock = std::chrono::steady_clock::now();
+		bool m_hasLastFrameStart = false;
 		double m_panelScrollY = 0.0;
 		bool m_isScrollThumbDragging = false;
 		double m_scrollThumbGrabOffsetY = 0.0;
@@ -376,6 +543,7 @@ namespace Pi3D
 		bool m_chainCollapsed = false;
 		bool m_effectPresetCollapsed = false;
 		bool m_effectParamsCollapsed = false;
+      bool m_performanceCollapsed = false;
 		bool m_panelCollapsed = false;
 		Vec2 m_panelPos{ ui::layout::PanelMargin, ui::layout::PanelMargin };
 		bool m_panelDragging = false;
