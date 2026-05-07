@@ -4,9 +4,10 @@
 namespace ui::editor_icon
 {
     inline constexpr double CollapsedIconSize = 64.0;
- inline constexpr double DockGap = 8.0;
+    inline constexpr double DockGap = 8.0;
     inline constexpr double CollisionPadding = 8.0;
     inline constexpr double SearchStep = 8.0;
+    inline constexpr double ToggleIconVisualSize = 64.0;
 
     inline RectF GetPreviewButtonRect()
     {
@@ -41,6 +42,23 @@ namespace ui::editor_icon
             rect.w,
             rect.h
         };
+    }
+
+    inline Vec2 GetAnchoredTopRightPosition(const RectF& sourceRect, const SizeF& targetSize)
+    {
+        return ClampToScene(RectF{ sourceRect.rightX() - targetSize.x, sourceRect.y, targetSize }).pos;
+    }
+
+    inline void DrawToggleIcon(const Texture& texture, const RectF& buttonRect, const double preferredIconSize = ToggleIconVisualSize)
+    {
+        if (not texture)
+        {
+            return;
+        }
+
+        const double iconFrameSize = Min(Min(buttonRect.w, buttonRect.h), preferredIconSize);
+        const double iconScale = Min(iconFrameSize / texture.width(), iconFrameSize / texture.height());
+        texture.scaled(iconScale).drawAt(buttonRect.center());
     }
 
     inline void RegisterCollapsedIcon(const StringView id, const Optional<RectF>& rect)

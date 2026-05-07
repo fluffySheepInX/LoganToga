@@ -80,9 +80,29 @@
         return (isPresetSectionCollapsed() ? CollapsedSectionHeight : getPresetSectionBodyHeight()) + ui::layout::SectionGap;
     }
 
+    inline double PiEffectChain::getChainPanelHeight() const
+    {
+        if (isChainSectionCollapsed())
+        {
+            return 50.0;
+        }
+
+        double height = 50.0 + ui::layout::AddButtonHeight + ui::layout::SectionGap;
+        for (size_t i = 0; i < m_chain.size(); ++i)
+        {
+            height += getChainSectionHeight(i) + ui::layout::SectionGap;
+        }
+        return height;
+    }
+
     inline bool PiEffectChain::isPresetSectionCollapsed() const
     {
         return m_presetSectionCollapsed;
+    }
+
+    inline bool PiEffectChain::isChainSectionCollapsed() const
+    {
+        return m_chainSectionCollapsed;
     }
 
     inline String PiEffectChain::getCurrentPresetDisplayName() const

@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Editors/IEditorAddon.hpp"
 # include "../UI/RectUI.hpp"
 # include "../UI/EditorIconLayout.hpp"
 # include "RoadTypes.hpp"
@@ -13,6 +14,7 @@
 # include "RoadGhostViewState.hpp"
 # include "RoadEditSession.hpp"
 # include "RoadPresetSerializer.hpp"
+# include "RoadDocument.hpp"
 
 class RoadEditor
 {
@@ -21,24 +23,16 @@ public:
         const FilePath& presetsDir = U"data/road_presets/");
 
     [[nodiscard]] bool isEnabled() const noexcept;
-
-
+    [[nodiscard]] bool isPanelOpen() const noexcept;
+    bool handleCommand(app::EditorCommand command);
 
     [[nodiscard]] bool wantsMouseCapture() const;
 
-
-
     void update(const BasicCamera3D& camera);
-
-
 
     void draw3D() const;
 
-
-
     void drawUI();
-
-
 
 private:
     static constexpr double GuideYOffset = 0.05;
@@ -76,7 +70,7 @@ private:
 
     bool m_enabled = false;
 
- bool m_uiCollapsed = true;
+    bool m_uiCollapsed = true;
 
     Vec2 m_panelPos{ 20, 20 };
 
@@ -92,7 +86,9 @@ private:
 
     double m_snapDistance = 1.0;
 
-    Array<RoadPath> m_roads;
+    RoadDocument m_document;
+    Array<RoadPath>& m_roads = m_document.roads;
+    RoadMaterialSettings& m_materialSettings = m_document.material;
 
     Array<Optional<Mesh>> m_roadMeshes;
 
@@ -107,8 +103,6 @@ private:
     Optional<Vec3> m_hoverPoint;
 
     Optional<Vec3> m_snapPoint;
-
-    RoadMaterialSettings m_materialSettings = road::DefaultRoadMaterialSettings();
 
     size_t m_activeTabIndex = 0;
 
@@ -148,10 +142,12 @@ private:
 
 
     void updateCollapsedIconDrag(const RectF& dragRect);
+ 
 
 
 
     void expandFromCollapsedIcon();
+ 
 
 
 
@@ -160,42 +156,51 @@ private:
 
 
     void resetMaterialSettings();
+ 
 
 
 
     void refreshRoadMaterialTextureIfDirty();
+ 
 
 
 
     void setTooltipIfHovered(const bool hovered, const StringView text);
+ 
 
 
 
     bool drawAdjustableMaterialSlider(const StringView label, double& value, double& maxValue, const double minValue,
         const double maxLimit, const double maxStep, const Vec2& pos, const StringView tooltip,
         const double labelWidth = 136.0, const double sliderWidth = 126.0, const bool rebuildMesh = false);
+ 
 
 
 
     bool drawMaterialSlider(const StringView label, double& value, const double min, const double max, const Vec2& pos,
         const double labelWidth = 136.0, const double sliderWidth = 126.0);
+ 
 
 
 
     bool drawMaterialMeshSlider(const StringView label, double& value, const double min, const double max, const Vec2& pos,
         const double labelWidth = 136.0, const double sliderWidth = 126.0);
+ 
 
 
 
     void drawEditTab(const RectF& panel);
+ 
 
 
 
     void drawMaterialTab(const RectF& panel);
+ 
 
 
 
     void drawScatterTab(const RectF& panel);
+ 
 
 
 
@@ -208,6 +213,7 @@ private:
 
 
     void updateScatterInteraction();
+ 
 
 
 
@@ -232,50 +238,62 @@ private:
 
 
     void appendPoint(const Vec3& point);
+ 
 
 
 
     void confirmEditingRoad();
+ 
 
 
 
     void cancelEditingRoad();
+ 
 
 
 
     void clearAllPlacedData();
+ 
 
 
 
     void saveCurrentAsPreset(const String& name);
+ 
 
 
 
     void startTraceSession();
+ 
 
 
 
     void restoreSession();
+ 
 
 
 
     void commitSession();
+ 
 
 
 
     void toggleGhostVisible();
+ 
 
 
 
     void undo();
+ 
 
 
 
     void rebuildAllMeshes();
+ 
 
 
 
     void rebuildEditingMesh();
+ 
 
 
 
@@ -296,6 +314,7 @@ private:
 
 
     void load();
+ 
 
 
 

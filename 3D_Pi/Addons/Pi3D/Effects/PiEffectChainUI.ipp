@@ -15,12 +15,7 @@
 
     inline double PiEffectChain::getChainListHeight() const
     {
-        double height = ui::layout::AddButtonHeight + ui::layout::SectionGap;
-        for (size_t i = 0; i < m_chain.size(); ++i)
-        {
-            height += getChainSectionHeight(i) + ui::layout::SectionGap;
-        }
-        return height;
+        return getChainPanelHeight();
     }
 
     inline double PiEffectChain::getParamsHeight() const
@@ -47,6 +42,55 @@
 
     inline void PiEffectChain::drawChainListUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)
     {
+        const double panelTopOffset = 4.0;
+        const RectF chainPanelRect{ uiPos.x, uiPos.y + panelTopOffset, contentWidth, getChainPanelHeight() - panelTopOffset };
+        ui::Section(chainPanelRect);
+        const Vec2 panelPos = chainPanelRect.pos;
+        const double iconRowY = panelPos.y + 8.0;
+        String hoverTooltip;
+
+        const auto drawIconButton = [&](const RectF& rect, const Texture& icon)
+        {
+            const bool hovered = rect.mouseOver();
+            const bool pressed = hovered && MouseL.pressed();
+            rect.rounded(6).draw(pressed ? ui::GetTheme().itemPressed : (hovered ? ui::GetTheme().itemHovered : ui::GetTheme().item));
+            rect.rounded(6).drawFrame(1.0, ui::GetTheme().panelBorder);
+            if (icon)
+            {
+                icon.resized(static_cast<int32>(rect.w), static_cast<int32>(rect.h)).draw(rect.pos);
+            }
+            return rect.leftClicked();
+        };
+
+        const RectF helpRect{ panelPos.x + contentWidth - 80, iconRowY, 32, 32 };
+        drawIconButton(helpRect, m_helpIcon);
+        if (helpRect.mouseOver())
+        {
+            hoverTooltip = U"エフェクト設定パネルの説明";
+        }
+
+        const RectF openCloseRect{ panelPos.x + contentWidth - 40, iconRowY, 32, 32 };
+        if (drawIconButton(openCloseRect, m_openCloseIcon))
+        {
+            m_chainSectionCollapsed = (not m_chainSectionCollapsed);
+            m_openEffectSelectIndex.reset();
+        }
+        if (openCloseRect.mouseOver())
+        {
+            hoverTooltip = m_chainSectionCollapsed ? U"エフェクト設定を開く" : U"エフェクト設定を閉じる";
+        }
+
+        if (m_chainSectionCollapsed)
+        {
+            if (not hoverTooltip.isEmpty())
+            {
+                ui::Tooltip(uiFont, hoverTooltip, Cursor::PosF().movedBy(18, 20));
+            }
+            uiPos.y += getChainPanelHeight() + ui::layout::SectionGap;
+            return;
+        }
+
+        uiPos = panelPos.movedBy(0, 50);
         for (size_t i = 0; i < m_chain.size(); ++i)
         {
             const auto& descriptor = getDescriptor(m_chain[i]);
@@ -164,6 +208,11 @@
             m_chainEnabled.push_back(true);
         }
         uiPos.y += ui::layout::AddButtonHeight + ui::layout::SectionGap;
+
+        if (not hoverTooltip.isEmpty())
+        {
+            ui::Tooltip(uiFont, hoverTooltip, Cursor::PosF().movedBy(18, 20));
+        }
     }
 
     inline void PiEffectChain::drawPresetUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, double& panelScrollY)

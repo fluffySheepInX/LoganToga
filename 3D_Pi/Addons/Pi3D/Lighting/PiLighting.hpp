@@ -72,19 +72,15 @@ namespace Pi3D
 
 		[[nodiscard]] double getUIBodyHeight() const
 		{
-			return 76.0 + m_presets.size() * ui::layout::RowHeight + 8.0
-				+ 38.0
-				+ 42.0
-				+ 26.0
-				+ 98.0
-				+ 8.0
-				+ 30.0
-				+ 8.0;
+            const double contentTop = 48.0;
+			const double radioListHeight = m_presets.size() * ui::layout::RowHeight;
+			const double resetBottom = contentTop + 50.0 + radioListHeight + 8.0 + 38.0 + 42.0 + 26.0 + 98.0 + 8.0 + 30.0;
+			return (4.0 + resetBottom + 8.0);
 		}
 
 		[[nodiscard]] double getHeaderHeight() const
 		{
-			return 76.0;
+            return 50.0;
 		}
 
 		[[nodiscard]] ColorF apply() const
@@ -118,38 +114,81 @@ namespace Pi3D
 			return dir.normalized();
 		}
 
-		void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)
+     void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, bool& collapsed)
 		{
 			const Array<String> lightingPresetNames = m_presets.map([](const Preset& p) { return p.name; });
-			const double lightingSectionBodyHeight = getUIBodyHeight();
-			const RectF lightingSectionRect{ uiPos, contentWidth, lightingSectionBodyHeight };
+         const double lightingSectionBodyHeight = (collapsed ? getHeaderHeight() : getUIBodyHeight());
+			const RectF lightingSectionRect{ uiPos.x, uiPos.y + 4.0, contentWidth, lightingSectionBodyHeight - 4.0 };
 			ui::Section(lightingSectionRect);
+            const Vec2 panelPos = lightingSectionRect.pos;
+			const double iconRowY = panelPos.y + 8.0;
+			String hoverTooltip;
+			const auto drawIconButton = [&](const RectF& rect, const Texture& icon)
+			{
+				const bool hovered = rect.mouseOver();
+				const bool pressed = hovered && MouseL.pressed();
+				rect.rounded(6).draw(pressed ? ui::GetTheme().itemPressed : (hovered ? ui::GetTheme().itemHovered : ui::GetTheme().item));
+				rect.rounded(6).drawFrame(1.0, ui::GetTheme().panelBorder);
+				if (icon)
+				{
+					icon.resized(static_cast<int32>(rect.w), static_cast<int32>(rect.h)).draw(rect.pos);
+				}
+				return rect.leftClicked();
+			};
+
+			const RectF helpRect{ panelPos.x + contentWidth - 80, iconRowY, 32, 32 };
+			drawIconButton(helpRect, m_helpIcon);
+			if (helpRect.mouseOver())
+			{
+				hoverTooltip = U"ライティングパネルの説明";
+			}
+
+			const RectF openCloseRect{ panelPos.x + contentWidth - 40, iconRowY, 32, 32 };
+			if (drawIconButton(openCloseRect, m_openCloseIcon))
+			{
+				collapsed = (not collapsed);
+			}
+			if (openCloseRect.mouseOver())
+			{
+				hoverTooltip = collapsed ? U"ライティングパネルを開く" : U"ライティングパネルを閉じる";
+			}
+
+			if (collapsed)
+			{
+				if (not hoverTooltip.isEmpty())
+				{
+					ui::Tooltip(uiFont, hoverTooltip, Cursor::PosF().movedBy(18, 20));
+				}
+				uiPos.y += lightingSectionBodyHeight + ui::layout::SectionGap;
+				return;
+			}
+
 			const Preset& lp = m_presets[m_lightingPresetIndex];
-			uiFont(U"ライティング (時間帯)").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
-			uiFont(U"現在: {}"_fmt(lp.name)).draw(uiPos.movedBy(8, 26), Palette::Dimgray);
-			uiFont(lp.description).draw(uiPos.movedBy(8, 50), Palette::Gray);
+         const Vec2 contentPos = panelPos.movedBy(8, 48);
+			uiFont(U"現在: {}"_fmt(lp.name)).draw(contentPos, Palette::Dimgray);
+			uiFont(lp.description).draw(contentPos.movedBy(0, 24), Palette::Gray);
 
 			const RectF radioRect{
-				lightingSectionRect.x + 8,
-				lightingSectionRect.y + 76,
-				lightingSectionRect.w - 16,
+              panelPos.x + 8,
+				contentPos.y + 50,
+				contentWidth - 16,
 				m_presets.size() * ui::layout::RowHeight
 			};
 			ui::RadioList(uiFont, m_lightingPresetIndex, lightingPresetNames, radioRect, ui::layout::RowHeight);
 
-			double cy = 76.0 + m_presets.size() * ui::layout::RowHeight + 8.0;
+          double cy = 50.0 + m_presets.size() * ui::layout::RowHeight + 8.0;
 
 			const double sliderLabelW = 110.0;
 			const double sliderTotalW = lightingSectionRect.w - 16;
 			ui::SliderH(U"Sun 強度", m_sunIntensityScale, 0.0, 5.0,
-				uiPos.movedBy(8, cy), sliderLabelW, sliderTotalW - sliderLabelW);
+               contentPos.movedBy(0, cy), sliderLabelW, sliderTotalW - sliderLabelW);
 			cy += 38.0;
 
 			ui::SliderH(U"Ambient 強度", m_ambientIntensityScale, 0.0, 3.0,
-				uiPos.movedBy(8, cy), sliderLabelW, sliderTotalW - sliderLabelW);
+               contentPos.movedBy(0, cy), sliderLabelW, sliderTotalW - sliderLabelW);
 			cy += 42.0;
 
-			uiFont(U"Sun 方向 (水平方位)").draw(uiPos.movedBy(8, cy), ui::GetTheme().text);
+           uiFont(U"Sun 方向 (水平方位)").draw(contentPos.movedBy(0, cy), ui::GetTheme().text);
 			cy += 26.0;
 
 			constexpr int gridLayout[3][3] = {
@@ -158,7 +197,7 @@ namespace Pi3D
 				{ 5, 4, 3 },
 			};
 			constexpr double cellW = 60.0, cellH = 30.0, gap = 4.0;
-			const Vec2 gridOrigin = uiPos.movedBy(8, cy);
+           const Vec2 gridOrigin = contentPos.movedBy(0, cy);
 			for (int r = 0; r < 3; ++r)
 			{
 				for (int c = 0; c < 3; ++c)
@@ -183,10 +222,15 @@ namespace Pi3D
 			}
 			cy += 3 * cellH + 2 * gap + 8.0;
 
-			const RectF resetBtn{ uiPos.x + 8, uiPos.y + cy, lightingSectionRect.w - 16, 30.0 };
+            const RectF resetBtn{ contentPos.x, contentPos.y + cy, lightingSectionRect.w - 16, 30.0 };
 			if (ui::Button(uiFont, U"プリセット方向に戻す", resetBtn))
 			{
 				m_sunDirectionOverride.reset();
+			}
+
+			if (not hoverTooltip.isEmpty())
+			{
+				ui::Tooltip(uiFont, hoverTooltip, Cursor::PosF().movedBy(18, 20));
 			}
 
 			uiPos.y += lightingSectionRect.h + ui::layout::SectionGap;
@@ -324,5 +368,7 @@ namespace Pi3D
 		double m_sunIntensityScale = 1.0;
 		double m_ambientIntensityScale = 1.0;
 		Optional<size_t> m_sunDirectionOverride;
+      Texture m_helpIcon{ U"texture/hatena.png" };
+		Texture m_openCloseIcon{ U"texture/kaihei.png" };
 	};
 }

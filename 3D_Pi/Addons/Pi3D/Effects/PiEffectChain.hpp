@@ -21,8 +21,10 @@ namespace Pi3D
 
 		[[nodiscard]] double getControlSectionsHeight() const;
 		[[nodiscard]] double getChainListHeight() const;
+       [[nodiscard]] double getChainPanelHeight() const;
 		[[nodiscard]] double getPresetHeight() const;
 		[[nodiscard]] bool isPresetSectionCollapsed() const;
+        [[nodiscard]] bool isChainSectionCollapsed() const;
 		[[nodiscard]] Pi3D::EffectChainSettings getSettings() const;
 		void applySettings(const Pi3D::EffectChainSettings& settings);
 		[[nodiscard]] double getParamsHeight() const;
@@ -63,10 +65,13 @@ namespace Pi3D
 		Array<PresetEntry> m_presets;
 		Array<size_t> m_chain = { 0 };
        Array<bool> m_chainEnabled = { true };
+      bool m_chainSectionCollapsed = false;
 		bool m_presetSectionCollapsed = false;
 		Optional<size_t> m_openEffectSelectIndex;
 		size_t m_prevLightingPresetIndex = 0;
 		bool m_hasPrevLightingPreset = false;
+      Texture m_helpIcon{ U"texture/hatena.png" };
+		Texture m_openCloseIcon{ U"texture/kaihei.png" };
 	};
 }
 

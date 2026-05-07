@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "RoadTypes.hpp"
+# include "RoadDocument.hpp"
 # include "RoadMaterialBuilder.hpp"
 # include "RoadMeshBuilder.hpp"
 
@@ -55,6 +56,11 @@ namespace road
             writer.writeln(U"]");
             writer.writeln(U"");
         }
+    }
+
+    inline void SaveRoadData(const FilePath& savePath, const RoadDocument& document)
+    {
+        SaveRoadData(savePath, document.material, document.roads);
     }
 
     inline bool LoadRoadData(const FilePath& savePath, RoadMaterialSettings& materialSettings, Array<RoadPath>& roads, String& statusMessage)
@@ -123,5 +129,10 @@ namespace road
 
         statusMessage = U"Road data loaded";
         return true;
+    }
+
+    inline bool LoadRoadData(const FilePath& savePath, RoadDocument& document, String& statusMessage)
+    {
+        return LoadRoadData(savePath, document.material, document.roads, statusMessage);
     }
 }

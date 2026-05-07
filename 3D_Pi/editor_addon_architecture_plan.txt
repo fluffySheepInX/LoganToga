@@ -1,0 +1,487 @@
+3D_Pi Editor Addon Architecture Plan
+====================================
+
+目的
+----
+3D_Pi の RoadEditor / TextureEditor / StairGenerator / SceneAssets Editor などの editor 機能を全て Addon 化し、Main.cpp から個別 editor 依存を取り除く。
+これにより、各 editor を他プロジェクトや別シーンでも再利用しやすくし、入力競合・描画順依存・保存形式のばらつきを抑える。
+
+前提
+----
+- editor は全て Addon として登録・更新・描画される。
+- Main.cpp はアプリ起動、Addon 登録、Pi3D 実行、AppController 起動に近い薄い構成へ寄せる。
+- UI は既存方針通り Rect ベースの custom UI を使う。
+- 永続化は TOML を基本とする。
+- Road / Ground / Procedural / SceneAssets は editor UI と document/model を分離する。
+
+
+最優先の出血箇所
+================
+
+1. Main.cpp が editor を直接調停している
+--------------------------------------
+現状の問題:
+- Main.cpp が RoadEditor / TextureEditor / StairGenerator / SceneAssets を直接生成している。
+- update 順、draw3D 順、drawUI 順、wantsMouseCapture 判定を Main.cpp が個別に知っている。
+- editor が増えるたびに Main.cpp に依存が増える。
+
+治し方:
+- EditorAddonHost を作り、全 editor addon をそこへ登録する。
+- Main.cpp は EditorAddonHost の update / draw3D / drawUI / wantsMouseCapture だけを呼ぶ。
+- editor 固有の include を Main.cpp から消す。
+
+目標構成:
+
+Application/
+  AppController.hpp/.cpp
+  EditorAddonHost.hpp/.cpp
+  EditorInputContext.hpp/.cpp
+  RenderPipeline.hpp/.cpp
+
+Editors/
+  IEditorAddon.hpp
+  EditorAddonDescriptor.hpp
+
+Road/
+  RoadEditorAddon.hpp/.cpp
+  RoadDocument.hpp/.cpp
+  RoadRenderer.hpp/.cpp
+  RoadEditorPanel.hpp/.cpp
+
+Ground/
+  TextureEditorAddon.hpp/.cpp
+  GroundLayerDocument.hpp/.cpp
+  GroundLayerRenderer.hpp/.cpp
+  TextureEditorPanel.hpp/.cpp
+
+Procedural/
+  ProceduralEditorAddon.hpp/.cpp
+  ProceduralDocument.hpp/.cpp
+  ProceduralRenderer.hpp/.cpp
+  ProceduralEditorPanel.hpp/.cpp
+  StairSerializer.hpp/.cpp
+
+
+2. 入力キャプチャとショートカットが中央管理されていない
+----------------------------------------------------
+現状の問題:
+- RoadEditor と TextureEditor がどちらも S / L を直接処理している。
+- 複数 editor が有効な場合、保存・ロードなどが同時発火する危険がある。
+- wantsMouseCapture を Main.cpp が個別に問い合わせている。
+
+治し方:
+- EditorInputContext を導入する。
+- AddonHost が active editor / hovered editor / mouse capture / wheel capture を決定する。
+- 各 editor addon は KeyS などを直接見ず、EditorCommand を受け取る。
+
+EditorCommand 例:
+- Toggle
+- Save
+- Load
+- Undo
+- Duplicate
+- DeleteSelection
+- Confirm
+- Cancel
+- ToggleGhost
+
+入力優先順位:
+1. マウスが乗っている展開中 editor panel
+2. 最後にフォーカスされた editor
+3. 明示的に active 指定された editor
+4. global shortcut
+
+基本インターフェース案:
+
+class IEditorAddon
+{
+public:
+    virtual ~IEditorAddon() = default;
+
+    virtual StringView id() const noexcept = 0;
+    virtual StringView displayName() const noexcept = 0;
+
+    virtual void update(const EditorUpdateContext& context) = 0;
+    virtual void draw3D(const EditorDraw3DContext& context) const = 0;
+    virtual void drawUI(const EditorUIContext& context) = 0;
+
+    virtual bool wantsMouseCapture() const = 0;
+    virtual bool wantsMouseWheelCapture() const = 0;
+    virtual bool isEnabled() const = 0;
+    virtual bool isPanelOpen() const = 0;
+
+    virtual bool handleCommand(EditorCommand command) = 0;
+};
+
+重要:
+- KeyS / KeyL / KeyDelete などは addon 内で直接処理しない。
+- EditorAddonHost が入力を command に変換して active addon に配る。
+- editor 固有 command が必要な場合は command namespace を分ける。
+
+
+3. editor クラスが UI / 入力 / document / 描画 / 保存を抱えすぎている
+-----------------------------------------------------------------
+現状の問題:
+- RoadEditor / TextureEditor / StairGenerator が大きな状態を抱えている。
+- cpp は分割されていても、クラス責務はまだ肥大化している。
+- UI 変更が document や renderer に波及しやすい。
+
+治し方:
+各 editor addon を以下の層に分ける。
+
+Addon:
+- EditorAddonHost から呼ばれる外側。
+- update / draw3D / drawUI / handleCommand を受ける。
+- Document / Renderer / Panel / Serializer を束ねる。
+
+Document:
+- 保存対象データ。
+- UI 状態を持たない。
+- Undo / Redo の基礎になる。
+
+Renderer:
+- 3D 描画のみ担当。
+- UI 入力や保存を知らない。
+
+Panel:
+- Rect ベース UI の描画と UI 操作だけ担当。
+- document 変更は command または edit API 経由。
+
+Serializer:
+- TOML load / save のみ担当。
+
+Road 分割案:
+- RoadEditorAddon
+- RoadDocument
+- RoadInteractionTool
+- RoadRenderer
+- RoadEditorPanel
+- RoadSerializer
+- RoadPresetSerializer
+
+Ground 分割案:
+- TextureEditorAddon
+- GroundLayerDocument
+- GroundLayerPlacementTool
+- GroundLayerRenderer
+- TextureEditorPanel
+- GroundLayerSerializer
+
+Procedural 分割案:
+- ProceduralEditorAddon
+- ProceduralDocument
+- StairPlacementTool
+- ProceduralRenderer
+- ProceduralEditorPanel
+- StairSerializer
+- NatureGenerator
+
+SceneAssets Editor 分割案:
+- SceneAssetsEditorAddon
+- SceneAssetsDocument
+- SceneAssetsRenderer または既存 SceneAssets 側 renderer
+- SceneAssetsEditorPanel
+- SceneAssetsSerializer
+
+
+4. 階段・自然生成データの永続化が未整備
+--------------------------------------
+現状の問題:
+- GeneratedStair / GeneratedNatureObject がメモリ上中心。
+- Road / Ground / SceneAssets と保存形式が揃っていない。
+
+治し方:
+- ProceduralDocument を作る。
+- StairSerializer を追加する。
+- data/procedural.toml に保存する。
+
+TOML 方針:
+
+[[stairs]]
+origin = [0.0, 0.0, 0.0]
+steps = 6
+height = 0.35
+width = 3.0
+depth = 0.6
+rotation01 = 0.0
+color = [0.72, 0.68, 0.60, 1.0]
+useDullNoise = false
+useColorVariation = false
+dullNoiseAmount = 0.35
+colorVariationAmount = 0.20
+
+[[nature]]
+origin = [1.0, 0.0, 2.0]
+type = "Tree"
+serial = 1
+variationSeed = 123
+
+
+5. Visual Studio filters の重複
+------------------------------
+現状の問題:
+- 3D_Pi.vcxproj.filters に Effects\*.cpp が大量重複している。
+
+治し方:
+- 重複エントリを削除して 1 件にする。
+- 可能なら Effects\Effect.cpp のような明示列挙に寄せる。
+- Addon 化に合わせて Editors / Application / Road / Ground / Procedural の filter を整理する。
+
+
+Addon 化後の全体設計
+====================
+
+Main.cpp の理想形
+----------------
+Main.cpp は以下だけに近づける。
+
+- GaussianFSAddon 初期化
+- Pi3D::RegisterAddon()
+- AppController 生成
+- editor addon 登録
+- main loop で app.update() / app.draw()
+
+疑似構成:
+
+void Main()
+{
+    RegisterSystemAddons();
+    Pi3D::RegisterAddon();
+
+    app::AppController app;
+    app.editorHost().registerAddon(std::make_unique<RoadEditorAddon>());
+    app.editorHost().registerAddon(std::make_unique<TextureEditorAddon>());
+    app.editorHost().registerAddon(std::make_unique<ProceduralEditorAddon>());
+    app.editorHost().registerAddon(std::make_unique<SceneAssetsEditorAddon>());
+
+    while (System::Update())
+    {
+        app.update();
+        app.draw();
+    }
+}
+
+さらに進める場合:
+- TOML で editor addon の有効化を設定する。
+- Main.cpp から Road / Ground / Procedural の include も消す。
+
+例:
+Application/editor_addons.toml
+
+[[addons]]
+id = "RoadEditor"
+enabled = true
+savePath = "data/roads.toml"
+
+[[addons]]
+id = "TextureEditor"
+enabled = true
+savePath = "data/ground_layers.toml"
+
+[[addons]]
+id = "ProceduralEditor"
+enabled = true
+savePath = "data/procedural.toml"
+
+
+EditorAddonHost の責務
+---------------------
+- editor addon の lifetime 管理。
+- update 順の管理。
+- draw3D 順の管理。
+- drawUI 順の管理。
+- active editor の管理。
+- mouse capture / wheel capture の集約。
+- global shortcut を EditorCommand に変換。
+- editor panel の hover/focus 解決。
+
+想定 API:
+
+class EditorAddonHost
+{
+public:
+    void registerAddon(std::unique_ptr<IEditorAddon> addon);
+
+    void update(const EditorUpdateContext& context);
+    void draw3D(const EditorDraw3DContext& context) const;
+    void drawUI(const EditorUIContext& context);
+
+    bool wantsMouseCapture() const;
+    bool wantsMouseWheelCapture() const;
+
+    Optional<String> activeEditorId() const;
+    void setActiveEditor(StringView id);
+};
+
+
+Context 設計
+------------
+EditorUpdateContext:
+- BasicCamera3D reference
+- cursorBlockedByUI
+- uiHidden
+- deltaTime
+- scene size
+- input context
+
+EditorDraw3DContext:
+- BasicCamera3D reference
+- showGizmos
+- sunDirection
+- render pass
+
+EditorUIContext:
+- uiHidden
+- theme
+- scene size
+- active editor id
+
+
+RenderPipeline の最小設計
+=========================
+
+現状の drawScene 手続き順を RenderPipeline に移す。
+
+最初は submit 型まで作らず、固定 pass 関数でよい。
+
+RenderPipeline pass:
+1. Ground
+2. GroundDecal
+3. Road
+4. Procedural
+5. StaticModel
+6. Gizmo
+7. Environment
+
+初期実装:
+- SceneAssets::drawGround
+- EditorAddonHost::draw3D(RenderPass::GroundDecal)
+- EditorAddonHost::draw3D(RenderPass::Opaque)
+- SceneAssets::drawStaticScene
+- Pi3D::EnvironmentRef().draw3D
+
+将来:
+- transparent pass
+- selected outline pass
+- post effect pass
+- shadow pass
+
+
+最優先実装ステップ
+==================
+
+Phase 1: EditorAddonHost と IEditorAddon を追加
+----------------------------------------------
+目的:
+- Main.cpp の editor 直接調停をやめる入口を作る。
+
+作業:
+1. Editors/IEditorAddon.hpp を作る。
+2. Application/EditorAddonHost.hpp/.cpp を作る。
+3. EditorCommand / EditorUpdateContext / EditorDraw3DContext / EditorUIContext を定義する。
+4. 既存 editor をまだ大きく分割せず、adapter addon で包む。
+
+この時点では RoadEditor 自体はそのまま使ってよい。
+
+例:
+- RoadEditorAddon が内部に RoadEditor を持つ。
+- TextureEditorAddon が内部に TextureEditor を持つ。
+- ProceduralEditorAddon が内部に StairGenerator を持つ。
+- SceneAssetsEditorAddon は SceneAssets editor 部分を包む、または SceneAssets を AppController 側に残す。
+
+Phase 1 の成功条件:
+- Main.cpp が RoadEditor / TextureEditor / StairGenerator を直接 update/draw しない。
+- wantsMouseCapture 判定が EditorAddonHost 経由になる。
+
+
+Phase 2: shortcut を EditorAddonHost に集約
+------------------------------------------
+目的:
+- S / L / Delete / Ctrl+Z などの多重発火を止める。
+
+作業:
+1. RoadEditor に handleCommand を追加する。
+2. TextureEditor に handleCommand を追加する。
+3. StairGenerator に handleCommand を追加する。
+4. 各 editor 内の KeyS / KeyL / KeyDelete / Ctrl+Z 直接参照を段階的に削除する。
+5. EditorAddonHost が active addon にだけ command を送る。
+
+Phase 2 の成功条件:
+- Road と Texture が同時 ON でも S で片方だけ保存される。
+- active editor の概念が UI 操作と一致する。
+
+
+Phase 3: Document 分離
+---------------------
+目的:
+- Addon の再利用性を高める。
+- UI なしでも保存データを操作できるようにする。
+
+作業:
+1. RoadDocument を作る。
+2. GroundLayerDocument を作る。
+3. ProceduralDocument を作る。
+4. 既存 editor 内の保存対象データを document へ移す。
+5. serializer は document を読み書きする形にする。
+
+Phase 3 の成功条件:
+- editor panel を表示しなくても document load/save が可能。
+- renderer が document を読むだけで描画できる。
+
+
+Phase 4: Procedural TOML 永続化
+-------------------------------
+目的:
+- Road / Ground / Procedural の保存方針を揃える。
+
+作業:
+1. ProceduralDocument に stairs / nature を持たせる。
+2. StairSerializer を作る。
+3. data/procedural.toml を保存先にする。
+4. ProceduralEditorAddon の Save / Load command に接続する。
+
+Phase 4 の成功条件:
+- 生成した階段と自然物がアプリ再起動後に復元される。
+
+
+Phase 5: filters と project 構成整理
+-----------------------------------
+目的:
+- IDE 上の保守性を戻す。
+
+作業:
+1. 3D_Pi.vcxproj.filters の Effects\*.cpp 重複を削除。
+2. Editors filter を追加。
+3. Application / Road / Ground / Procedural の cpp/hpp を明示的に整理。
+
+Phase 5 の成功条件:
+- filters に重複 ClCompile がない。
+- 新規 Addon 関連ファイルが IDE 上で見つけやすい。
+
+
+推奨する実装順まとめ
+====================
+
+最優先:
+1. IEditorAddon 追加
+2. EditorAddonHost 追加
+3. 既存 editor を adapter addon で包む
+4. Main.cpp から editor 直接呼び出しを削除
+5. shortcut を host 集約
+
+次点:
+6. RoadDocument / GroundLayerDocument / ProceduralDocument 分離
+7. Procedural TOML 保存
+8. RenderPipeline 導入
+9. SceneAssets の ID 固有 shadow 分岐を TOML 化
+10. vcxproj.filters 整理
+
+
+判断
+====
+3D_Pi の現在の分割は進み始めているが、まだ editor がアプリ本体に密結合している。
+全 editor を Addon 化する前提なら、最初にやるべき手術は既存 editor の内部大改造ではなく、AddonHost と IEditorAddon を追加して依存の向きを変えること。
+
+最初から RoadEditor / TextureEditor / StairGenerator の中身を全部分割すると変更量が大きく危険。
+まず adapter addon で包み、Main.cpp から editor 依存を剥がす。
+その後、shortcut 集約、document 分離、serializer 統一の順に進めるのが安全。

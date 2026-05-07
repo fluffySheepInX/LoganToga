@@ -13,7 +13,11 @@ namespace Pi3D
     {
     public:
         static constexpr double HeaderHeight = 86.0;
-        static constexpr double UIBodyHeight = 690.0;
+
+        [[nodiscard]] double getUIBodyHeight() const
+        {
+            return m_environmentPanelOpened ? 790.0 : 94.0;
+        }
 
         void update(const double deltaTime)
         {
@@ -91,52 +95,199 @@ namespace Pi3D
 
         void drawUI(const Font& font, Vec2& uiPos, const double contentWidth)
         {
-            const RectF environmentSectionRect{ uiPos, contentWidth, UIBodyHeight };
+            const double bodyHeight = getUIBodyHeight();
+            const double panelTopOffset = (ui::layout::HeaderHeight + 4.0);
+            const double panelInnerPadding = 8.0;
+            const double panelBottomOffset = 6.0;
+            const RectF environmentSectionRect{ uiPos.x, uiPos.y + panelTopOffset, contentWidth, (bodyHeight - panelTopOffset) };
             ui::Section(environmentSectionRect);
-            font(U"環境").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
-            font(U"雨と地面表示を調整します").draw(uiPos.movedBy(8, 28), Palette::Gray);
+            const Vec2 panelPos = environmentSectionRect.pos;
 
-            const RectF rainRect{ uiPos.x + 8, uiPos.y + 58, (contentWidth - 24) * 0.5, ui::layout::AddButtonHeight };
-            if (ui::Button(font, m_rain.isEnabled() ? U"雨: ON" : U"雨: OFF", rainRect))
+            String hoverTooltip;
+            const auto drawIconButton = [&](const RectF& rect, const Texture& icon)
             {
-                m_rain.toggle();
-            }
-            if (m_rain.isEnabled())
+                const bool hovered = rect.mouseOver();
+                const bool pressed = hovered && MouseL.pressed();
+                rect.rounded(6).draw(pressed ? ui::GetTheme().itemPressed : (hovered ? ui::GetTheme().itemHovered : ui::GetTheme().item));
+                rect.rounded(6).drawFrame(1.0, ui::GetTheme().panelBorder);
+                if (icon)
+                {
+                    icon.resized(static_cast<int32>(rect.w), static_cast<int32>(rect.h)).draw(rect.pos);
+                }
+                return rect.leftClicked();
+            };
+
+            const auto drawSliderNoButtons = [&](StringView label, double& value, const double min, const double max, const Vec2& pos)
             {
-                rainRect.rounded(6).drawFrame(2.5, ui::GetTheme().accent);
+                const double labelWidth = 110.0;
+                const double trackWidth = contentWidth - 126.0;
+
+                const RectF labelRect{ pos, labelWidth, 34.0 };
+                const RectF trackRect{ pos.x + labelWidth + 10.0, pos.y + 14.0, trackWidth, 6.0 };
+
+                const double clampedValue = Clamp(value, min, max);
+                const double t = (max > min) ? ((clampedValue - min) / (max - min)) : 0.0;
+                const Vec2 knobCenter{ trackRect.x + trackRect.w * t, trackRect.centerY() };
+                const Circle knob{ knobCenter, 10.0 };
+
+                static Optional<size_t> activeSlider;
+                const size_t sliderId = reinterpret_cast<size_t>(&value);
+                const RectF hitRect = trackRect.stretched(12, 12);
+
+                if (MouseL.down() && (labelRect.mouseOver() || hitRect.mouseOver() || knob.mouseOver()))
+                {
+                    activeSlider = sliderId;
+                }
+
+                if (activeSlider && (*activeSlider == sliderId))
+                {
+                    if (MouseL.pressed())
+                    {
+                        const double nt = Clamp((Cursor::PosF().x - trackRect.x) / trackRect.w, 0.0, 1.0);
+                        value = Min(max, Max(min, (min + (max - min) * nt)));
+                    }
+                    else
+                    {
+                        activeSlider.reset();
+                    }
+                }
+
+                const bool hovered = labelRect.mouseOver() || hitRect.mouseOver() || knob.mouseOver() || (activeSlider && (*activeSlider == sliderId));
+
+                labelRect.rounded(6).draw(ui::GetTheme().item);
+                labelRect.rounded(6).drawFrame(1.0, ui::GetTheme().panelBorder);
+                font(label).draw(labelRect.x + 10, labelRect.y + 6, ui::GetTheme().text);
+
+                trackRect.rounded(3).draw(ColorF{ 0.78, 0.82, 0.88, 1.0 });
+                RectF{ trackRect.pos, Max(0.0, knobCenter.x - trackRect.x), trackRect.h }.rounded(3).draw(ui::GetTheme().accent);
+                knob.draw(hovered ? ColorF{ 1.0, 1.0, 1.0, 1.0 } : ColorF{ 0.96, 0.98, 1.0, 1.0 });
+                knob.drawFrame(2.0, ui::GetTheme().panelBorder);
+            };
+
+            const auto drawRainAmountSlider = [&](double& value, const double min, const double max, const RectF& iconRect)
+            {
+                const double trackLeft = (iconRect.rightX() + 12.0);
+                const double trackWidth = Max(44.0, (panelPos.x + contentWidth - 16.0) - trackLeft);
+                const RectF trackRect{ trackLeft, iconRect.y + 22.0, trackWidth, 6.0 };
+
+                const double clampedValue = Clamp(value, min, max);
+                const double t = (max > min) ? ((clampedValue - min) / (max - min)) : 0.0;
+                const Vec2 knobCenter{ trackRect.x + trackRect.w * t, trackRect.centerY() };
+                const Circle knob{ knobCenter, 10.0 };
+
+                static Optional<size_t> activeSlider;
+                const size_t sliderId = reinterpret_cast<size_t>(&value);
+                const RectF hitRect = trackRect.stretched(12, 12);
+
+                if (MouseL.down() && (hitRect.mouseOver() || knob.mouseOver()))
+                {
+                    activeSlider = sliderId;
+                }
+
+                if (activeSlider && (*activeSlider == sliderId))
+                {
+                    if (MouseL.pressed())
+                    {
+                        const double nt = Clamp((Cursor::PosF().x - trackRect.x) / trackRect.w, 0.0, 1.0);
+                        value = Min(max, Max(min, (min + (max - min) * nt)));
+                    }
+                    else
+                    {
+                        activeSlider.reset();
+                    }
+                }
+
+                const bool hovered = hitRect.mouseOver() || knob.mouseOver() || (activeSlider && (*activeSlider == sliderId));
+
+                drawIconButton(iconRect, m_rainAmountIcon);
+                font(U"雨量: {:.0f}"_fmt(value)).draw(trackLeft, iconRect.y - 2.0, ui::GetTheme().text);
+                trackRect.rounded(3).draw(ColorF{ 0.78, 0.82, 0.88, 1.0 });
+                RectF{ trackRect.pos, Max(0.0, knobCenter.x - trackRect.x), trackRect.h }.rounded(3).draw(ui::GetTheme().accent);
+                knob.draw(hovered ? ColorF{ 1.0, 1.0, 1.0, 1.0 } : ColorF{ 0.96, 0.98, 1.0, 1.0 });
+                knob.drawFrame(2.0, ui::GetTheme().panelBorder);
+            };
+
+            const double iconRowY = (panelPos.y + panelInnerPadding);
+            const RectF envHelpRect{ panelPos.x + contentWidth - 80, iconRowY, 32, 32 };
+            drawIconButton(envHelpRect, m_environmentHelpIcon);
+            if (envHelpRect.mouseOver())
+            {
+                hoverTooltip = U"環境パネルの説明";
             }
 
-            const RectF groundRect{ rainRect.rightX() + 8, rainRect.y, (contentWidth - 24) * 0.5, ui::layout::AddButtonHeight };
-            if (ui::Button(font, U"地面: {}"_fmt(getGroundModeLabel()), groundRect))
+            const RectF openCloseRect{ panelPos.x + contentWidth - 40, iconRowY, 32, 32 };
+            if (drawIconButton(openCloseRect, m_environmentOpenCloseIcon))
+            {
+                m_environmentPanelOpened = (not m_environmentPanelOpened);
+            }
+            if (openCloseRect.mouseOver())
+            {
+                hoverTooltip = m_environmentPanelOpened ? U"環境パネルを閉じる" : U"環境パネルを開く";
+            }
+
+            if (not m_environmentPanelOpened)
+            {
+                if (not hoverTooltip.isEmpty())
+                {
+                    ui::Tooltip(font, hoverTooltip, Cursor::PosF().movedBy(18, 20));
+                }
+                uiPos.y += bodyHeight + ui::layout::SectionGap;
+                return;
+            }
+
+            const RectF groundIconRect{ panelPos.x + panelInnerPadding, iconRowY, 32, 32 };
+            if (drawIconButton(groundIconRect, m_groundModeIcon))
             {
                 cycleGroundMode();
             }
             if (m_groundMode != PiGroundMode::Texture)
             {
-                groundRect.rounded(6).drawFrame(2.5, ui::GetTheme().accent);
+                groundIconRect.rounded(6).drawFrame(2.0, ui::GetTheme().accent);
+            }
+            if (groundIconRect.mouseOver())
+            {
+                hoverTooltip = U"地面テクスチャ切り替え";
+            }
+
+            const RectF rainIconRect{ panelPos.x + panelInnerPadding, groundIconRect.y + 40, 32, 32 };
+            if (drawIconButton(rainIconRect, m_rainToggleIcon))
+            {
+                m_rain.toggle();
+            }
+            if (m_rain.isEnabled())
+            {
+                rainIconRect.rounded(6).drawFrame(2.0, ui::GetTheme().accent);
+            }
+            if (rainIconRect.mouseOver())
+            {
+                hoverTooltip = U"雨 ON/OFF";
+            }
+
+            const RectF rainAmountIconRect{ rainIconRect.br().movedBy(-10, 6), 32, 32 };
+            if (rainAmountIconRect.mouseOver())
+            {
+                hoverTooltip = U"雨量";
             }
 
             double dropCount = static_cast<double>(m_rain.getDropCount());
-            ui::SliderH(U"雨量: {:.0f}"_fmt(dropCount), dropCount, 0.0, 1200.0,
-                uiPos.movedBy(8, 108), 110.0, contentWidth - 126.0);
+            drawRainAmountSlider(dropCount, 0.0, 1200.0, rainAmountIconRect);
             m_rain.setDropCount(static_cast<int32>(std::round(dropCount)));
 
+            const double rainControlStartY = (rainAmountIconRect.bottomY() + 14.0);
+
             double fallSpeed = m_rain.getFallSpeed();
-            ui::SliderH(U"速度: {:.1f}"_fmt(fallSpeed), fallSpeed, 1.0, 60.0,
-                uiPos.movedBy(8, 148), 110.0, contentWidth - 126.0);
+            drawSliderNoButtons(U"速度: {:.1f}"_fmt(fallSpeed), fallSpeed, 1.0, 60.0, Vec2{ panelPos.x + 8, rainControlStartY });
             m_rain.setFallSpeed(fallSpeed);
 
             double windStrength = m_rain.getWindStrength();
-            ui::SliderH(U"風: {:.2f}"_fmt(windStrength), windStrength, -0.5, 0.5,
-                uiPos.movedBy(8, 188), 110.0, contentWidth - 126.0);
+            drawSliderNoButtons(U"風: {:.2f}"_fmt(windStrength), windStrength, -0.5, 0.5, Vec2{ panelPos.x + 8, rainControlStartY + 40.0 });
             m_rain.setWindStrength(windStrength);
 
             double streakLength = m_rain.getStreakLength();
-            ui::SliderH(U"線長: {:.2f}"_fmt(streakLength), streakLength, 0.4, 4.0,
-                uiPos.movedBy(8, 228), 110.0, contentWidth - 126.0);
+            drawSliderNoButtons(U"線長: {:.2f}"_fmt(streakLength), streakLength, 0.4, 4.0, Vec2{ panelPos.x + 8, rainControlStartY + 80.0 });
             m_rain.setStreakLength(streakLength);
 
-            const RectF fogRect{ uiPos.x + 8, uiPos.y + 280, contentWidth - 16, ui::layout::AddButtonHeight };
+            const RectF fogRect{ panelPos.x + 8, rainControlStartY + 132.0, contentWidth - 16, ui::layout::AddButtonHeight };
             if (ui::Button(font, m_fogEnabled ? U"フォグ: ON" : U"フォグ: OFF", fogRect))
             {
                 m_fogEnabled = (not m_fogEnabled);
@@ -147,26 +298,26 @@ namespace Pi3D
             }
 
             ui::SliderH(U"Fog 開始: {:.1f}"_fmt(m_fogStartDistance), m_fogStartDistance, 0.0, 180.0,
-                uiPos.movedBy(8, 330), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 50.0 }, 110.0, contentWidth - 126.0);
             ui::SliderH(U"Fog 終端: {:.1f}"_fmt(m_fogEndDistance), m_fogEndDistance, 1.0, 260.0,
-                uiPos.movedBy(8, 370), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 90.0 }, 110.0, contentWidth - 126.0);
             ui::SliderH(U"Fog 濃度: {:.2f}"_fmt(m_fogDensity), m_fogDensity, 0.0, 1.0,
-                uiPos.movedBy(8, 410), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 130.0 }, 110.0, contentWidth - 126.0);
             if (m_fogEndDistance < (m_fogStartDistance + 1.0))
             {
                 m_fogEndDistance = m_fogStartDistance + 1.0;
             }
 
-            font(U"Fog 色").draw(uiPos.movedBy(8, 450), ui::GetTheme().text);
+            font(U"Fog 色").draw(Vec2{ panelPos.x + 8, fogRect.y + 170.0 }, ui::GetTheme().text);
             ui::SliderH(U"R: {:.2f}"_fmt(m_fogColor.r), m_fogColor.r, 0.0, 1.0,
-                uiPos.movedBy(8, 478), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 198.0 }, 110.0, contentWidth - 126.0);
             ui::SliderH(U"G: {:.2f}"_fmt(m_fogColor.g), m_fogColor.g, 0.0, 1.0,
-                uiPos.movedBy(8, 518), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 238.0 }, 110.0, contentWidth - 126.0);
             ui::SliderH(U"B: {:.2f}"_fmt(m_fogColor.b), m_fogColor.b, 0.0, 1.0,
-                uiPos.movedBy(8, 558), 110.0, contentWidth - 126.0);
+                Vec2{ panelPos.x + 8, fogRect.y + 278.0 }, 110.0, contentWidth - 126.0);
 
             const double presetButtonW = (contentWidth - 24) * 0.5;
-            const RectF morningFogRect{ uiPos.x + 8, uiPos.y + 604, presetButtonW, ui::layout::AddButtonHeight };
+            const RectF morningFogRect{ panelPos.x + 8, fogRect.y + 324.0, presetButtonW, ui::layout::AddButtonHeight };
             if (ui::Button(font, U"朝霧", morningFogRect))
             {
                 applyFogPreset(ColorF{ 0.74, 0.82, 0.90, 1.0 }, 14.0, 82.0, 0.52);
@@ -178,7 +329,7 @@ namespace Pi3D
                 applyFogPreset(ColorF{ 0.92, 0.58, 0.44, 1.0 }, 18.0, 100.0, 0.45);
             }
 
-            const RectF dustFogRect{ uiPos.x + 8, uiPos.y + 642, presetButtonW, ui::layout::AddButtonHeight };
+            const RectF dustFogRect{ panelPos.x + 8, fogRect.y + 362.0, presetButtonW, ui::layout::AddButtonHeight };
             if (ui::Button(font, U"砂埃", dustFogRect))
             {
                 applyFogPreset(ColorF{ 0.72, 0.61, 0.42, 1.0 }, 10.0, 74.0, 0.62);
@@ -190,7 +341,12 @@ namespace Pi3D
                 applyFogPreset(ColorF{ 0.25, 0.34, 0.55, 1.0 }, 12.0, 86.0, 0.58);
             }
 
-            uiPos.y += environmentSectionRect.h + ui::layout::SectionGap;
+            if (not hoverTooltip.isEmpty())
+            {
+                ui::Tooltip(font, hoverTooltip, Cursor::PosF().movedBy(18, 20));
+            }
+
+            uiPos.y += bodyHeight + ui::layout::SectionGap;
         }
 
         [[nodiscard]] Pi3D::EnvironmentSettings getSettings() const
@@ -327,6 +483,12 @@ namespace Pi3D
         PiGroundMode m_groundMode = PiGroundMode::Texture;
         PiRain m_rain;
         bool m_fogEnabled = false;
+        bool m_environmentPanelOpened = true;
+        Texture m_environmentHelpIcon{ U"texture/hatena.png" };
+        Texture m_environmentOpenCloseIcon{ U"texture/kaihei.png" };
+        Texture m_groundModeIcon{ U"texture/zimenTexture.png" };
+        Texture m_rainToggleIcon{ U"texture/ame.png" };
+        Texture m_rainAmountIcon{ U"texture/ryou.png" };
         double m_fogStartDistance = 22.0;
         double m_fogEndDistance = 90.0;
         double m_fogDensity = 0.65;

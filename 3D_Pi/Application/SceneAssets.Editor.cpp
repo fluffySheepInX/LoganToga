@@ -23,43 +23,31 @@ namespace app
         {
          const RectF button = getCollapsedIconRect();
 
-            if (MouseL.down() && button.mouseOver())
+            if (MouseR.down() && button.mouseOver())
             {
                 m_editorDragging = true;
-               m_ignoreCollapsedClickUntilRelease = false;
                 m_editorDragOffset = Cursor::PosF() - button.pos;
             }
-            if (not MouseL.pressed())
+            if (not MouseR.pressed())
             {
                 m_editorDragging = false;
             }
             if (m_editorDragging)
             {
-                if (Cursor::PosF().distanceFrom(button.pos + m_editorDragOffset) > 3.0)
-                {
-                    m_ignoreCollapsedClickUntilRelease = true;
-                }
                 updateCollapsedIconDrag(button);
             }
 
             button.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
             button.drawFrame(2.0, Palette::Black);
-            if (m_toggleIcon)
-            {
-                const double iconScale = Min(button.w / m_toggleIcon.width(), button.h / m_toggleIcon.height());
-                m_toggleIcon.scaled(iconScale).drawAt(button.center());
-            }
+            ui::editor_icon::DrawToggleIcon(m_toggleIcon, button);
 
-           if ((not m_ignoreCollapsedClickUntilRelease) && button.leftClicked())
+           if (button.leftClicked())
             {
+                const double panelHeight = Min(610.0, Scene::Height() - 40.0);
                 m_editorCollapsed = false;
-             m_editorPanelPos = Vec2{ 20, 20 };
-             m_ignoreCollapsedClickUntilRelease = false;
-               syncCollapsedIconRegistry();
-            }
-          if (not MouseL.pressed())
-            {
+                m_editorPanelPos = ui::editor_icon::GetAnchoredTopRightPosition(button, SizeF{ EditorPanelWidth, panelHeight });
                 m_ignoreCollapsedClickUntilRelease = false;
+               syncCollapsedIconRegistry();
             }
          if (not m_toggleIcon)
             {
@@ -73,7 +61,7 @@ namespace app
         m_editorFont(U"Shadow Editor").draw(panel.pos.movedBy(16, 12), ui::GetTheme().text);
         m_editorSmallFont(U"H : toggle update").draw(panel.pos.movedBy(16, 40), ui::GetTheme().textMuted);
 
-        const RectF collapseButton{ panel.x + panel.w - 44, panel.y + 10, 28, 28 };
+        const RectF collapseButton{ panel.x + panel.w - 74, panel.y + 10, 64, 64 };
      const RectF dragHeader{ panel.x, panel.y, panel.w, 42 };
         if (MouseL.down() && dragHeader.mouseOver() && (not collapseButton.mouseOver()))
         {
@@ -81,14 +69,13 @@ namespace app
          m_ignoreCollapsedClickUntilRelease = true;
             m_editorDragOffset = Cursor::PosF() - m_editorPanelPos;
         }
-       if (MouseL.down() && collapseButton.mouseOver())
+       if (MouseR.down() && collapseButton.mouseOver())
         {
             m_editorDragging = true;
             m_ignoreCollapsedClickUntilRelease = false;
-            m_togglePressCursor = Cursor::PosF();
             m_editorDragOffset = Cursor::PosF() - m_editorPanelPos;
         }
-        if (not MouseL.pressed())
+        if (not (MouseL.pressed() || MouseR.pressed()))
         {
             m_editorDragging = false;
         }
@@ -97,18 +84,19 @@ namespace app
             m_editorPanelPos = Cursor::PosF() - m_editorDragOffset;
             m_editorPanelPos.x = Clamp(m_editorPanelPos.x, 0.0, Max(0.0, Scene::Width() - EditorPanelWidth));
             m_editorPanelPos.y = Clamp(m_editorPanelPos.y, 0.0, Max(0.0, Scene::Height() - panel.h));
-          if (Cursor::PosF().distanceFrom(m_togglePressCursor) > 3.0)
-            {
-                m_ignoreCollapsedClickUntilRelease = true;
-            }
         }
-     if ((not m_ignoreCollapsedClickUntilRelease) && ui::Button(m_editorFont, U"◀", collapseButton))
+        collapseButton.draw(ColorF{ 1.0, 1.0, 1.0, 0.02 });
+        collapseButton.drawFrame(2.0, Palette::Black);
+        ui::editor_icon::DrawToggleIcon(m_toggleIcon, collapseButton);
+     if (collapseButton.leftClicked())
         {
-           m_editorPanelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"ShadowEditor", Vec2{ panel.x, panel.y });
+           const Vec2 desiredCollapsedPos = ui::editor_icon::GetAnchoredTopRightPosition(
+               collapseButton, SizeF{ CollapsedIconSize, CollapsedIconSize });
+           m_editorPanelPos = ui::editor_icon::ResolveCollapsedIconPosition(U"ShadowEditor", desiredCollapsedPos);
             m_editorCollapsed = true;
            syncCollapsedIconRegistry();
         }
-        if (not MouseL.pressed())
+        if (not (MouseL.pressed() || MouseR.pressed()))
         {
             m_ignoreCollapsedClickUntilRelease = false;
         }
