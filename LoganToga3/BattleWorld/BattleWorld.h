@@ -7,6 +7,13 @@ namespace LT3
     inline constexpr int32 DefaultBattleMapWidth = 12;
     inline constexpr int32 DefaultBattleMapHeight = 8;
 
+    struct QueuedBuildAction
+    {
+        BuildActionDefId actionId = InvalidBuildActionDefId;
+        Vec2 targetPosition{ 0, 0 };
+        bool hasTargetPosition = false;
+    };
+
     struct UnitRuntimeStore
     {
         Array<UnitDefId> defId;
@@ -17,6 +24,7 @@ namespace LT3
         Array<Vec2> targetPosition;
         Array<UnitId> attackTarget;
         Array<int32> hp;
+        Array<int32> resourceTargetNode;
 
         UnitId add(UnitDefId unitDef, Faction unitFaction, const Vec2& pos, const DefinitionStores& defs)
         {
@@ -29,6 +37,7 @@ namespace LT3
             targetPosition << pos;
             attackTarget << InvalidUnitId;
             hp << defs.units[unitDef].hp;
+            resourceTargetNode << -1;
             return id;
         }
 
@@ -51,12 +60,42 @@ namespace LT3
     struct BuildQueueStore
     {
         Array<double> progressSec;
-        Array<Array<BuildActionDefId>> actionIds;
+        Array<Array<QueuedBuildAction>> entries;
+        Array<QueuedBuildAction> pendingEntry;
+        Array<bool> hasPendingEntry;
+        Array<bool> locked;
 
         void addUnit()
         {
             progressSec << 0.0;
-            actionIds << Array<BuildActionDefId>{};
+            entries << Array<QueuedBuildAction>{};
+            pendingEntry << QueuedBuildAction{};
+            hasPendingEntry << false;
+            locked << false;
+        }
+    };
+
+    struct PlacedObjectStore
+    {
+        Array<Vec2> position;
+        Array<String> tag;
+        Array<String> icon;
+
+        void add(const Vec2& placedPosition, const String& objectTag, const String& iconName)
+        {
+            position << placedPosition;
+            tag << objectTag;
+            icon << iconName;
+        }
+    };
+
+    struct CarrierStore
+    {
+        Array<Array<UnitId>> storedUnits;
+
+        void addUnit()
+        {
+            storedUnits << Array<UnitId>{};
         }
     };
 
@@ -65,12 +104,18 @@ namespace LT3
         Array<ResourceDefId> defId;
         Array<Vec2> position;
         Array<int32> amount;
+        Array<int32> incomePerSec;
+        Array<Faction> owner;
+        Array<double> captureProgress;
 
-        void add(ResourceDefId resourceDef, const Vec2& pos, int32 value)
+        void add(ResourceDefId resourceDef, const Vec2& pos, int32 value, int32 income)
         {
             defId << resourceDef;
             position << pos;
             amount << value;
+            incomePerSec << income;
+            owner << Faction::Neutral;
+            captureProgress << 0.0;
         }
     };
 
@@ -116,18 +161,22 @@ namespace LT3
 
     struct ResourceRuntimeStore
     {
-        int32 playerGold = 0;
-        int32 enemyGold  = 0;
+        Array<int32> playerAmounts;
+        Array<int32> enemyAmounts;
+        double incomeTickAccumSec = 0.0;
     };
 
     inline ResourceRuntimeStore MakeResourceRuntimeStore(const DefinitionStores& defs)
     {
         ResourceRuntimeStore store;
-        if (const auto it = defs.resourceByTag.find(U"gold"); it != defs.resourceByTag.end())
+        store.playerAmounts.assign(defs.resources.size(), 0);
+        store.enemyAmounts.assign(defs.resources.size(), 0);
+
+        for (ResourceDefId id = 0; id < defs.resources.size(); ++id)
         {
-            const ResourceDef& def = defs.resources[it->second];
-            store.playerGold = def.initialAmount;
-            store.enemyGold  = def.initialAmount;
+            const ResourceDef& def = defs.resources[id];
+            store.playerAmounts[id] = def.initialAmount;
+            store.enemyAmounts[id] = def.initialAmount;
         }
         return store;
     }
@@ -143,13 +192,21 @@ namespace LT3
         Array<UnitId> formationUnits;
         Vec2 formationDestinationWorld{ 0, 0 };
         Vec2 formationCurrentWorld{ 0, 0 };
+        bool actionPlacementActive = false;
+        UnitId actionBuilder = InvalidUnitId;
+        BuildActionDefId actionId = InvalidBuildActionDefId;
+        Vec2 actionTargetWorld{ 0, 0 };
+        bool actionLineDragging = false;
+        Vec2 actionLineStartWorld{ 0, 0 };
+        Array<Vec2> actionLineTargets;
+        int32 hoveredResourceNode = -1;
     };
 
     struct BattleMapStore
     {
         int32 width  = 0;
         int32 height = 0;
-        Array<uint32>  flags;          // bit 0 = passable
+        Array<uint32>  flags;          // bit 0 = passable, bit 1 = reserved barrier block
         Array<UnitId>  occupying;      // InvalidUnitId = empty
 
         void init(int32 w, int32 h)
@@ -175,6 +232,29 @@ namespace LT3
         {
             return inBounds(row, col) && (flags[index(row, col)] & 1u) != 0;
         }
+
+        bool hasBarrierReservation(int32 row, int32 col) const
+        {
+            return inBounds(row, col) && (flags[index(row, col)] & 2u) != 0;
+        }
+
+        void setBarrierReservation(int32 row, int32 col, bool reserved)
+        {
+            if (!inBounds(row, col))
+            {
+                return;
+            }
+
+            uint32& tileFlags = flags[index(row, col)];
+            if (reserved)
+            {
+                tileFlags |= 2u;
+            }
+            else
+            {
+                tileFlags &= ~2u;
+            }
+        }
     };
 
     struct BattleWorld
@@ -186,6 +266,8 @@ namespace LT3
         BuildQueueStore buildQueues;
         ResourceNodeStore resourceNodes;
         ProjectileStore   projectiles;
+        PlacedObjectStore placedObjects;
+        CarrierStore carriers;
         ResourceRuntimeStore resources;
         SelectionStore    selection;
         BattleMapStore    map;
@@ -200,6 +282,12 @@ namespace LT3
         const UnitId id = world.units.add(unitDef, faction, pos, defs);
         world.cooldowns.addUnit();
         world.buildQueues.addUnit();
+        world.carriers.addUnit();
         return id;
+    }
+
+    inline void AddPlacedObjectToBattleWorld(BattleWorld& world, const Vec2& pos, const String& objectTag, const String& iconName)
+    {
+        world.placedObjects.add(pos, objectTag, iconName);
     }
 }

@@ -13,14 +13,22 @@
         applySettings(LoadSettings());
     }
 
-    inline void System::update()
+    inline void System::update(const Optional<Vec3>& cameraEye, const Optional<Vec3>& cameraFocus)
     {
         applyFramePacing();
+        const auto now = std::chrono::steady_clock::now();
+        double deltaTime = (1.0 / 60.0);
+        if (m_hasLastUpdateClock)
+        {
+            deltaTime = std::chrono::duration<double>(now - m_lastUpdateClock).count();
+        }
+        m_lastUpdateClock = now;
+        m_hasLastUpdateClock = true;
         resizeIfNeeded();
         updateActivityState();
         syncCollapsedIconRegistry();
-        m_environment.update(Scene::DeltaTime());
-        m_currentBackground = m_lighting.apply();
+        m_environment.update(deltaTime);
+        m_currentBackground = m_lighting.apply(cameraEye, cameraFocus);
         if (m_effectChain.onLightingPresetChanged(m_lighting.getCurrentPresetName(), m_lighting.getPresetIndex()))
         {
             m_panelScrollY = 0.0;

@@ -12,6 +12,7 @@ namespace LT3
 		SelectUnit,
 		MoveUnit,
 		StartBuildAction,
+      StartBuildLineAction,
 	};
 
 	struct BattleInputCommand
@@ -22,7 +23,9 @@ namespace LT3
 		Vec2 position{ 0, 0 };
      Vec2 direction{ 0, 0 };
 		BuildActionDefId buildAction = InvalidBuildActionDefId;
+      Array<Vec2> positions;
       bool useFormation = false;
+      bool hasTargetPosition = false;
 	};
 
 	struct BattleInputIntent
@@ -55,15 +58,129 @@ namespace LT3
 		return none;
 	}
 
-	inline void QueueVisibleBuildCommand(BattleInputIntent& intent, const BattleWorld& world, const DefinitionStores& defs, UnitId builder, int32 commandIndex)
+ inline void ResetActionPlacementPreview(BattleWorld& world)
 	{
+		world.selection.actionPlacementActive = false;
+		world.selection.actionBuilder = InvalidUnitId;
+		world.selection.actionId = InvalidBuildActionDefId;
+       world.selection.actionLineDragging = false;
+		world.selection.actionLineTargets.clear();
+	}
+
+	inline void BeginActionPlacementPreview(BattleWorld& world, UnitId builder, BuildActionDefId actionId, const Vec2& worldMouse)
+	{
+		world.selection.actionPlacementActive = true;
+		world.selection.actionBuilder = builder;
+		world.selection.actionId = actionId;
+     world.selection.actionTargetWorld = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+       world.selection.actionLineDragging = false;
+		world.selection.actionLineStartWorld = world.selection.actionTargetWorld;
+		world.selection.actionLineTargets.clear();
+	}
+
+	inline bool IsLinePlacementAction(const BuildActionDef& action)
+	{
+		return action.placementMode == BuildPlacementMode::Line && action.useRightDragPlacement;
+	}
+
+	inline bool UpdateLineBuildPlacementInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse, BattleInputIntent& intent)
+	{
+		if (!world.selection.actionPlacementActive || world.selection.actionId >= defs.buildActions.size())
+		{
+			return false;
+		}
+
+		const BuildActionDef& action = defs.buildActions[world.selection.actionId];
+		if (!IsLinePlacementAction(action))
+		{
+			return false;
+		}
+
+		const Vec2 snappedMouse = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+		world.selection.actionTargetWorld = snappedMouse;
+
+		if (KeyEscape.down())
+		{
+			ResetActionPlacementPreview(world);
+			return true;
+		}
+
+		if (MouseR.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
+		{
+			world.selection.actionLineDragging = true;
+			world.selection.actionLineStartWorld = snappedMouse;
+			world.selection.actionLineTargets = BuildLinePlacementTargets(world, action, snappedMouse, snappedMouse);
+			return true;
+		}
+
+		if (world.selection.actionLineDragging && MouseR.pressed())
+		{
+			world.selection.actionLineTargets = BuildLinePlacementTargets(world, action, world.selection.actionLineStartWorld, snappedMouse);
+			return true;
+		}
+
+		if (world.selection.actionLineDragging && MouseR.up())
+		{
+			world.selection.actionLineTargets = BuildLinePlacementTargets(world, action, world.selection.actionLineStartWorld, snappedMouse);
+			if (!world.selection.actionLineTargets.isEmpty())
+			{
+				intent.commands << BattleInputCommand{
+					BattleInputCommandType::StartBuildLineAction,
+					world.selection.actionBuilder,
+					{},
+					Vec2{ 0, 0 },
+					Vec2{ 0, 0 },
+					world.selection.actionId,
+					world.selection.actionLineTargets,
+					false,
+					false
+				};
+			}
+			ResetActionPlacementPreview(world);
+			return true;
+		}
+
+		if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
+		{
+			intent.commands << BattleInputCommand{
+				BattleInputCommandType::StartBuildAction,
+				world.selection.actionBuilder,
+				{},
+				snappedMouse,
+				Vec2{ 0, 0 },
+				world.selection.actionId,
+				{},
+				false,
+				true
+			};
+			ResetActionPlacementPreview(world);
+			return true;
+		}
+
+		return true;
+	}
+
+	inline void QueueVisibleBuildCommand(BattleInputIntent& intent, BattleWorld& world, const DefinitionStores& defs, UnitId builder, int32 commandIndex, const Vec2& worldMouse)
+	{
+        if (IsBuilderBusyWithBuildQueue(world, builder))
+		{
+			return;
+		}
+
 		const Optional<BuildActionDefId> actionId = ResolveVisibleBuildActionId(world, defs, builder, commandIndex);
 		if (!actionId)
 		{
 			return;
 		}
 
-        intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, builder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, *actionId, false };
+       const BuildActionDef& action = defs.buildActions[*actionId];
+		if (DoesBuildActionRequireTargetPosition(action))
+		{
+			BeginActionPlacementPreview(world, builder, *actionId, worldMouse);
+			return;
+		}
+
+        intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, builder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, *actionId, {}, false, false };
 	}
 
 	inline Array<UnitId> PickUnitsInScreenRect(const BattleWorld& world, const DefinitionStores& defs, const RectF& screenRect, Faction faction)
@@ -87,12 +204,56 @@ namespace LT3
 		return units;
 	}
 
-	inline BattleInputIntent ReadBattleInput(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse)
+   inline BattleInputIntent ReadBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse)
 	{
 		BattleInputIntent intent;
 		const UnitId selectedBuilder = GetSelectedUnit(world);
+		const Optional<size_t> hoveredResourceNode = FindHoveredResourceNode(world, worldMouse);
+		world.selection.hoveredResourceNode = hoveredResourceNode ? static_cast<int32>(*hoveredResourceNode) : -1;
+
+		if (world.selection.actionPlacementActive)
+		{
+            if (UpdateLineBuildPlacementInput(world, defs, mapEditor, worldMouse, intent))
+			{
+				return intent;
+			}
+
+         world.selection.actionTargetWorld = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+			if (MouseR.down() || KeyEscape.down())
+			{
+				ResetActionPlacementPreview(world);
+				return intent;
+			}
+
+			if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
+			{
+				intent.commands << BattleInputCommand{
+					BattleInputCommandType::StartBuildAction,
+					world.selection.actionBuilder,
+					{},
+					world.selection.actionTargetWorld,
+					Vec2{ 0, 0 },
+					world.selection.actionId,
+                  {},
+					false,
+					true
+				};
+				ResetActionPlacementPreview(world);
+			}
+			return intent;
+		}
 
 		int32 visibleBuildCommandIndex = 0;
+     int32 visibleBuildCommandCount = 0;
+		for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
+		{
+			if (CanUseBuildAction(world, defs, selectedBuilder, defs.buildActions[i]))
+			{
+				++visibleBuildCommandCount;
+			}
+		}
+
+		const int32 visibleBuildCommandRows = (visibleBuildCommandCount + 2) / 3;
 		for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
 		{
 			if (!CanUseBuildAction(world, defs, selectedBuilder, defs.buildActions[i]))
@@ -100,9 +261,16 @@ namespace LT3
 				continue;
 			}
 
-			if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex).leftClicked())
+           if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex, visibleBuildCommandRows).leftClicked())
 			{
-             intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, selectedBuilder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, static_cast<BuildActionDefId>(i), false };
+               const BuildActionDef& action = defs.buildActions[i];
+				if (DoesBuildActionRequireTargetPosition(action))
+				{
+					BeginActionPlacementPreview(world, selectedBuilder, static_cast<BuildActionDefId>(i), worldMouse);
+					return intent;
+				}
+
+             intent.commands << BattleInputCommand{ BattleInputCommandType::StartBuildAction, selectedBuilder, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, static_cast<BuildActionDefId>(i), {}, false, false };
 				return intent;
 			}
 			++visibleBuildCommandIndex;
@@ -111,6 +279,18 @@ namespace LT3
 		UnitId previewSelected = selectedBuilder;
 		if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
 		{
+         if (hoveredResourceNode && !GetSelectedUnits(world).isEmpty())
+			{
+				for (const UnitId unit : GetSelectedUnits(world))
+				{
+					if (!IsBuildQueueLocked(world, unit))
+					{
+						IssueMoveToResourceNode(world, unit, *hoveredResourceNode);
+					}
+				}
+				return intent;
+			}
+
 			if (const Optional<UnitId> unit = PickUnitAt(world, defs, worldMouse, Faction::Player))
 			{
 				previewSelected = *unit;
@@ -120,12 +300,12 @@ namespace LT3
 				previewSelected = InvalidUnitId;
 			}
 
-            intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, previewSelected, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
+               intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, previewSelected, {}, Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, {}, false, false };
 		}
 
-		if (Key1.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 0);
-		if (Key2.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 1);
-		if (Key3.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 2);
+     if (Key1.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 0, worldMouse);
+		if (Key2.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 1, worldMouse);
+		if (Key3.down()) QueueVisibleBuildCommand(intent, world, defs, selectedBuilder, 2, worldMouse);
 
 		return intent;
 	}
@@ -149,25 +329,42 @@ namespace LT3
 			case BattleInputCommandType::MoveUnit:
 				if (command.units.isEmpty())
 				{
-					IssueMove(world, command.unit, command.position);
+                   if (!IsBuildQueueLocked(world, command.unit))
+					{
+						IssueMove(world, command.unit, command.position);
+					}
 				}
 				else
 				{
                  if (command.useFormation)
 					{
-						IssueFormationMove(world, defs, command.units, command.position, command.direction);
+                        Array<UnitId> movableUnits;
+						for (const UnitId unit : command.units)
+						{
+							if (!IsBuildQueueLocked(world, unit))
+							{
+								movableUnits << unit;
+							}
+						}
+						IssueFormationMove(world, defs, movableUnits, command.position, command.direction);
 					}
 					else
 					{
                        for (const UnitId unit : command.units)
 						{
-							IssueMove(world, unit, command.position);
+                           if (!IsBuildQueueLocked(world, unit))
+							{
+								IssueMove(world, unit, command.position);
+							}
 						}
 					}
 				}
 				break;
 			case BattleInputCommandType::StartBuildAction:
-				TryStartBuild(world, defs, command.unit, command.buildAction);
+              TryStartBuild(world, defs, command.unit, command.buildAction, command.hasTargetPosition ? Optional<Vec2>{ command.position } : none);
+				break;
+           case BattleInputCommandType::StartBuildLineAction:
+				TryStartBuildLine(world, defs, command.unit, command.buildAction, command.positions);
 				break;
 			}
 		}
@@ -175,6 +372,12 @@ namespace LT3
 
 	inline void UpdateAreaSelectionDrag(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, BattleInputIntent& intent)
 	{
+       if (world.selection.actionPlacementActive)
+		{
+			world.selection.areaDragging = false;
+			return;
+		}
+
 		if (IsCursorOnBuildCommandUi(world, defs, mapEditor))
 		{
 			world.selection.areaDragging = false;
@@ -198,7 +401,7 @@ namespace LT3
 			const RectF rect = MakeDragSelectionRect(world.selection.areaDragStartScreen, world.selection.areaDragCurrentScreen);
 			if (rect.size.lengthSq() >= 36.0)
 			{
-               intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
+               intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, {}, false, false };
 			}
 			world.selection.areaDragging = false;
 		}
@@ -212,6 +415,12 @@ namespace LT3
 
 	inline void UpdateFormationPlacementPreview(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse, BattleInputIntent& intent)
 	{
+     if (world.selection.actionPlacementActive)
+		{
+			ResetFormationPlacementPreview(world);
+			return;
+		}
+
 		const bool canStart = IsCursorOnMapArea(mapEditor, world, defs)
 			&& !IsCursorOnBuildCommandUi(world, defs, mapEditor)
 			&& !GetSelectedUnits(world).isEmpty();
@@ -251,7 +460,7 @@ namespace LT3
 			{
 				if (previewUnits.size() == 1)
 				{
-					intent.commands << BattleInputCommand{ BattleInputCommandType::MoveUnit, previewUnits.front(), {}, world.selection.formationDestinationWorld, Vec2{ 0, 0 }, InvalidBuildActionDefId, false };
+                 intent.commands << BattleInputCommand{ BattleInputCommandType::MoveUnit, previewUnits.front(), {}, world.selection.formationDestinationWorld, Vec2{ 0, 0 }, InvalidBuildActionDefId, {}, false, false };
 				}
 				else
 				{
@@ -262,7 +471,9 @@ namespace LT3
 						world.selection.formationDestinationWorld,
 						ResolveFormationFacingDirection(world, previewUnits, world.selection.formationDestinationWorld, world.selection.formationCurrentWorld),
 						InvalidBuildActionDefId,
-						true
+                       {},
+                        true,
+						false
 					};
 				}
 			}

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorTypes.h"
+# include "MapEditorResourceData.h"
 # include "MapEditorUiLayout.h"
 
 namespace LT3
@@ -121,7 +122,28 @@ namespace LT3
             }
         }
 
-        editor.statusText = U"Map size: {} x {}"_fmt(editor.mapWidth, editor.mapHeight);
+        size_t removedNodeCount = 0;
+        editor.resourceNodes.remove_if([&](const ResourceNodeEditData& node)
+        {
+            const bool outOfBounds = (node.cell.x < 0)
+                || (node.cell.y < 0)
+                || (node.cell.x >= editor.mapWidth)
+                || (node.cell.y >= editor.mapHeight);
+            if (outOfBounds)
+            {
+                ++removedNodeCount;
+            }
+            return outOfBounds;
+        });
+        if (!IsValidSelectedResourceNodeIndex(editor))
+        {
+            editor.selectedResourceNodeIndex = -1;
+        }
+
+        editor.statusText = U"Map size: {} x {}{}"_fmt(
+            editor.mapWidth,
+            editor.mapHeight,
+            (removedNodeCount > 0) ? U"  removed {} resource nodes"_fmt(removedNodeCount) : U"");
     }
 
     inline void LoadMapEditorAssets(MapEditorState& editor)
@@ -129,7 +151,9 @@ namespace LT3
         editor.assetDirectory = ResolveMapEditorAssetDirectory();
         editor.savePath = editor.assetDirectory + U"map_editor_map.toml";
         editor.uiLayoutPath = ResolveBattleUiLayoutTomlPath();
+        editor.resourceNodeSavePath = ResolveResourceNodeTomlPath();
         editor.assets.clear();
+        editor.resourceIconTextures.clear();
 
         Size baseSize{ 0, 0 };
         const FilePath basePath = editor.assetDirectory + U"grass1.png";
@@ -188,6 +212,7 @@ namespace LT3
         {
             editor.enabled = toml[U"toolbar.map_editor_enabled"].getOr<bool>(editor.enabled);
             editor.showUnitList = toml[U"toolbar.unit_list"].getOr<bool>(editor.showUnitList);
+            editor.showBuildingEditor = toml[U"toolbar.building_editor"].getOr<bool>(editor.showBuildingEditor);
             editor.showDebugInfo = toml[U"toolbar.debug_info"].getOr<bool>(editor.showDebugInfo);
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
 
@@ -214,6 +239,27 @@ namespace LT3
             }
         }
         LoadBattleUiLayoutToml(editor);
+        LoadMapEditorResourceNodes(editor);
+
+        const FilePath resourcePath = ResolveResourceTomlPath();
+        const TOMLReader resourceToml{ resourcePath };
+        if (resourceToml)
+        {
+            for (const auto resourceValue : resourceToml[U"Map001"].tableArrayView())
+            {
+                const String icon = resourceValue[U"icon"].getOr<String>(U"");
+                if (icon.isEmpty() || editor.resourceIconTextures.contains(icon))
+                {
+                    continue;
+                }
+
+                const FilePath iconPath = ResolveSystemImagePath(icon);
+                if (FileSystem::Exists(iconPath))
+                {
+                    editor.resourceIconTextures.emplace(icon, Texture{ iconPath });
+                }
+            }
+        }
         editor.statusText = U"Loaded {} map images from {}"_fmt(editor.assets.size(), editor.assetDirectory);
         if (editor.assets.isEmpty())
         {
@@ -223,6 +269,7 @@ namespace LT3
 
     inline bool SaveMapEditorToml(MapEditorState& editor, bool updateStatus = true)
     {
+        SortMapEditorResourceNodes(editor);
         FileSystem::CreateDirectories(FileSystem::ParentPath(editor.savePath));
         TextWriter writer{ editor.savePath };
         if (!writer)
@@ -237,6 +284,7 @@ namespace LT3
         writer << U"[toolbar]\n";
         writer << U"map_editor_enabled = " << (editor.enabled ? U"true" : U"false") << U"\n";
         writer << U"unit_list = " << (editor.showUnitList ? U"true" : U"false") << U"\n";
+        writer << U"building_editor = " << (editor.showBuildingEditor ? U"true" : U"false") << U"\n";
         writer << U"debug_info = " << (editor.showDebugInfo ? U"true" : U"false") << U"\n";
         writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n\n";
 
@@ -262,9 +310,16 @@ namespace LT3
             }
         }
 
+        SaveMapEditorResourceNodes(editor);
+
+        const Array<String> resourceIssues = ValidateMapEditorResourceNodes(editor);
+
         if (updateStatus)
         {
-            editor.statusText = U"Saved TOML: {}"_fmt(editor.savePath);
+            editor.statusText = U"Saved TOML: {}, {}{}"_fmt(
+                editor.savePath,
+                editor.resourceNodeSavePath,
+                resourceIssues.isEmpty() ? U"" : U"  validation:{}"_fmt(resourceIssues.size()));
         }
         return true;
     }
@@ -280,6 +335,7 @@ namespace LT3
         editor.selectedAsset = InvalidMapEditorAsset;
         editor.paletteScroll = 0.0;
         editor.showUnitList = false;
+        editor.showBuildingEditor = false;
         editor.unitListScroll = 0.0;
         editor.selectedUnitCatalogIndex = -1;
         editor.showUnitParameterEditor = false;
@@ -294,6 +350,14 @@ namespace LT3
         editor.assetDirectory = ResolveMapEditorAssetDirectory();
         editor.savePath = editor.assetDirectory + U"map_editor_map.toml";
         editor.uiLayoutPath = ResolveBattleUiLayoutTomlPath();
+        editor.resourceNodeSavePath = ResolveResourceNodeTomlPath();
+        editor.resourceNodes.clear();
+        editor.selectedResourceNodeIndex = -1;
+        editor.resourceNodeListScroll = 0.0;
+        editor.resourceNodeDragging = false;
+        editor.resourceNodeFilterKind = -1;
+        editor.resourcePlacementDragKind.reset();
+        editor.resourceIconTextures.clear();
         editor.statusText = U"Map editor ready";
     }
 }

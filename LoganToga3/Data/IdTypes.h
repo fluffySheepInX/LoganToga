@@ -29,6 +29,7 @@ namespace LT3
         Soldier,
         Archer,
         Base,
+        Barrier,
     };
 
     enum class UnitTask : uint8
@@ -53,5 +54,18 @@ namespace LT3
         Unit,
         Object,
         Carrier,
+    };
+
+    enum class BuildPlacementMode : uint8
+    {
+        Point,
+        Line,
+    };
+
+    enum class BuildLineAxisMode : uint8
+    {
+        Auto,
+        HorizontalOnly,
+        VerticalOnly,
     };
 }

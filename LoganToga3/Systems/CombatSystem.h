@@ -10,6 +10,7 @@ namespace LT3
         for (UnitId unit = 0; unit < world.units.size(); ++unit)
         {
             if (!IsValidUnit(world, unit)) continue;
+            if (IsBuildQueueLocked(world, unit)) continue;
 
             world.cooldowns.attackLeftSec[unit] = Max(0.0, world.cooldowns.attackLeftSec[unit] - dt);
             const UnitDef& unitDef = defs.units[world.units.defId[unit]];

@@ -22,11 +22,16 @@ namespace LT3
             }
         }
 
-        return U"BuildMenu: actions={} visible={} file={} readable={}"_fmt(
+        const String pendingAction = (world.selection.actionPlacementActive && world.selection.actionId < defs.buildActions.size())
+            ? defs.buildActions[world.selection.actionId].name
+            : U"<none>";
+
+        return U"BuildMenu: actions={} visible={} file={} readable={} pending={}"_fmt(
             defs.buildActions.size(),
             visibleActionCount,
             buildMenuFileExists ? U"yes" : U"no",
-            buildMenuTomlReadable ? U"yes" : U"no");
+            buildMenuTomlReadable ? U"yes" : U"no",
+            pendingAction);
     }
 
     inline Array<String> BuildMenuDebugLines(const BattleWorld& world, const DefinitionStores& defs)

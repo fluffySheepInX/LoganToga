@@ -5,6 +5,7 @@
 # include "Application/SceneAssets.hpp"
 # include "Application/EditorAddonHost.hpp"
 # include "Application/SceneAssetsEditorAddon.hpp"
+# include "Application/CameraWorkEditorAddon.hpp"
 # include "Application/RenderPipeline.hpp"
 # include "Road/RoadEditorAddon.hpp"
 # include "Ground/TextureEditorAddon.hpp"
@@ -38,10 +39,11 @@ void Main()
 
     editorHost.registerAddon(std::make_unique<app::RoadEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::TextureEditorAddon>());
-    auto proceduralAddon = std::make_unique<app::ProceduralEditorAddon>();
-    app::ProceduralEditorAddon* proceduralAddonRef = proceduralAddon.get();
-    editorHost.registerAddon(std::move(proceduralAddon));
+    editorHost.registerAddon(std::make_unique<app::ProceduralEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::SceneAssetsEditorAddon>(sceneAssets));
+    auto cameraWorkEditor = std::make_unique<app::CameraWorkEditorAddon>();
+    auto* cameraWorkEditorPtr = cameraWorkEditor.get();
+    editorHost.registerAddon(std::move(cameraWorkEditor));
 
     const auto getWheelZoomFocusPosition = [&]() -> Optional<Vec3>
     {
@@ -61,8 +63,20 @@ void Main()
         renderPipeline.draw(cameraController.camera(), cameraController.isUIHidden());
     };
 
+    std::chrono::steady_clock::time_point lastEditorUpdateClock = std::chrono::steady_clock::now();
+    bool hasLastEditorUpdateClock = false;
+
     while (System::Update())
     {
+        const auto editorUpdateNow = std::chrono::steady_clock::now();
+        double editorDeltaTime = (1.0 / 60.0);
+        if (hasLastEditorUpdateClock)
+        {
+            editorDeltaTime = std::chrono::duration<double>(editorUpdateNow - lastEditorUpdateClock).count();
+        }
+        lastEditorUpdateClock = editorUpdateNow;
+        hasLastEditorUpdateClock = true;
+
         const bool cursorOnMainUI = cameraController.isCursorOnUI() || editorHost.wantsMouseCapture();
 
         cameraController.update({
@@ -76,29 +90,37 @@ void Main()
             .camera = cameraController.camera(),
             .cursorBlockedByUI = cursorOnMainUI,
             .uiHidden = cameraController.isUIHidden(),
-            .deltaTime = Scene::DeltaTime(),
+            .deltaTime = editorDeltaTime,
             .sceneSize = Scene::Size(),
         });
+
+        if (cameraWorkEditorPtr && cameraWorkEditorPtr->isPlaying())
+        {
+            const auto preview = cameraWorkEditorPtr->previewState();
+            cameraController.camera().setView(preview.eye, preview.focus);
+        }
 
         Graphics3D::SetCameraTransform(cameraController.camera());
 
 #pragma region Addon
-        Pi3D::Update();
+        Pi3D::Update(cameraController.camera().getEyePosition(), cameraController.camera().getFocusPosition());
         Pi3D::Begin3D(drawScene);
         Pi3D::End3D(drawScene);
         if (not cameraController.isUIHidden())
         {
             Pi3D::DrawUI();
             const auto cameraEvents = cameraController.drawUI();
-            if (cameraEvents.previewStarted && proceduralAddonRef)
+            if (cameraEvents.previewStarted)
             {
-                proceduralAddonRef->cancelTargetSelection();
+                editorHost.broadcastCommand(app::EditorCommand::CancelTransientTool);
             }
 
             editorHost.drawUI({
                 .uiHidden = cameraController.isUIHidden(),
                 .sceneSize = Scene::Size(),
                 .activeEditorId = editorHost.activeEditorId(),
+                .focusedEditorId = editorHost.focusedEditorId(),
+                .hoveredEditorId = editorHost.hoveredEditorId(),
             });
         }
 

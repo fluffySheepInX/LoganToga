@@ -19,7 +19,14 @@ namespace LT3
             if (distance <= Max(3.0, def.speed * dt))
             {
                 world.units.position[unit] = world.units.targetPosition[unit];
-                world.units.task[unit] = UnitTask::Idle;
+                if (world.units.resourceTargetNode[unit] >= 0)
+                {
+                    world.units.task[unit] = UnitTask::Gathering;
+                }
+                else
+                {
+                    world.units.task[unit] = UnitTask::Idle;
+                }
                 continue;
             }
 

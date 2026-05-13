@@ -10,6 +10,16 @@ namespace LT3
     inline bool IsCursorOnBuildCommandUi(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor)
     {
         const UnitId selectedUnit = GetSelectedUnit(world);
+        int32 visibleBuildCommandCount = 0;
+        for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
+        {
+            if (CanUseBuildAction(world, defs, selectedUnit, defs.buildActions[i]))
+            {
+                ++visibleBuildCommandCount;
+            }
+        }
+
+        const int32 visibleBuildCommandRows = (visibleBuildCommandCount + 2) / 3;
         int32 visibleBuildCommandIndex = 0;
         for (int32 i = 0; i < static_cast<int32>(defs.buildActions.size()); ++i)
         {
@@ -18,7 +28,7 @@ namespace LT3
                 continue;
             }
 
-            if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex).mouseOver())
+            if (BattleCommandIconRect(mapEditor, visibleBuildCommandIndex, visibleBuildCommandRows).mouseOver())
             {
                 return true;
             }
@@ -57,7 +67,7 @@ namespace LT3
     inline void UpdateQuarterViewCamera(const MapEditorState& mapEditor, const BattleWorld& world, const DefinitionStores& defs)
     {
         const bool mapHovered = IsCursorOnMapArea(mapEditor, world, defs);
-        const bool enableControl = mapHovered && (!mapEditor.enabled || KeySpace.pressed());
+        const bool enableControl = mapHovered;
         UpdateQuarterViewCamera2D(enableControl, mapHovered);
     }
 }

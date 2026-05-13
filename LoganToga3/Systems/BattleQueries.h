@@ -25,38 +25,142 @@ namespace LT3
         return (a == Faction::Player && b == Faction::Enemy) || (a == Faction::Enemy && b == Faction::Player);
     }
 
+    inline bool EqualsIgnoreCase(const String& a, const String& b)
+    {
+        return !a.isEmpty() && !b.isEmpty() && a.lowercased() == b.lowercased();
+    }
+
+    inline bool DoesUnitMatchOwnerTag(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const String& ownerTag)
+    {
+        if (!IsValidUnit(world, unit) || ownerTag.isEmpty())
+        {
+            return false;
+        }
+
+        const UnitDef& def = defs.units[world.units.defId[unit]];
+        return EqualsIgnoreCase(def.tag, ownerTag)
+            || EqualsIgnoreCase(def.classBuild, ownerTag)
+            || EqualsIgnoreCase(def.classTag, ownerTag);
+    }
+
+    inline bool IsBuildActionSupported(const BuildActionDef& action)
+    {
+        switch (action.resultType)
+        {
+        case BuildActionResultType::Unit:
+            return action.spawnUnit != InvalidUnitDefId;
+        case BuildActionResultType::Object:
+            return !action.resultTag.isEmpty();
+        case BuildActionResultType::Carrier:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    inline bool DoesBuildActionRequireTargetPosition(const BuildActionDef& action)
+    {
+        return action.isMove || action.resultType == BuildActionResultType::Object;
+    }
+
     inline bool CanUseBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
     {
         return IsValidUnit(world, unit)
             && world.units.faction[unit] == Faction::Player
-            && defs.units[world.units.defId[unit]].tag.lowercased() == action.ownerTag.lowercased();
+            && IsBuildActionSupported(action)
+            && DoesUnitMatchOwnerTag(world, defs, unit, action.ownerTag);
     }
 
     inline bool CanAffordBuildAction(const BattleWorld& world, const BuildActionDef& action)
     {
-        return world.resources.playerGold >= action.costGold;
+        return !world.resources.playerAmounts.isEmpty() && world.resources.playerAmounts[0] >= action.costGold;
+    }
+
+    inline ResourceDefId FindResourceDefByKind(const DefinitionStores& defs, ResourceKind kind)
+    {
+        for (ResourceDefId id = 0; id < defs.resources.size(); ++id)
+        {
+            if (defs.resources[id].kind == kind)
+            {
+                return id;
+            }
+        }
+
+        return InvalidResourceDefId;
+    }
+
+    inline int32 GetFactionResourceAmount(const BattleWorld& world, Faction faction, ResourceDefId resourceId)
+    {
+        if (resourceId == InvalidResourceDefId)
+        {
+            return 0;
+        }
+
+        const Array<int32>& values = (faction == Faction::Enemy)
+            ? world.resources.enemyAmounts
+            : world.resources.playerAmounts;
+        if (resourceId >= values.size())
+        {
+            return 0;
+        }
+
+        return values[resourceId];
+    }
+
+    inline int32 GetPlayerResourceAmount(const BattleWorld& world, ResourceDefId resourceId)
+    {
+        return GetFactionResourceAmount(world, Faction::Player, resourceId);
+    }
+
+    inline Optional<size_t> FindHoveredResourceNode(const BattleWorld& world, const Vec2& worldPos, double radius = 42.0)
+    {
+        size_t bestIndex = 0;
+        double bestDistanceSq = Square(radius);
+        bool found = false;
+
+        for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
+        {
+            if (world.resourceNodes.amount[node] <= 0)
+            {
+                continue;
+            }
+
+            const double distanceSq = world.resourceNodes.position[node].distanceFromSq(worldPos);
+            if (distanceSq <= bestDistanceSq)
+            {
+                bestDistanceSq = distanceSq;
+                bestIndex = node;
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            return none;
+        }
+
+        return bestIndex;
     }
 
     inline bool CanStartBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, BuildActionDefId actionId)
     {
         if (!IsValidUnit(world, unit)) return false;
         if (actionId >= defs.buildActions.size()) return false;
-        if (defs.units[world.units.defId[unit]].role != UnitRole::Base) return false;
 
         const BuildActionDef& action = defs.buildActions[actionId];
         return CanUseBuildAction(world, defs, unit, action)
             && CanAffordBuildAction(world, action);
     }
 
-    inline const Array<BuildActionDefId>& GetQueuedBuildActions(const BattleWorld& world, UnitId unit)
+    inline const Array<QueuedBuildAction>& GetQueuedBuildActionEntries(const BattleWorld& world, UnitId unit)
     {
-        static const Array<BuildActionDefId> empty;
-        if (!IsValidUnit(world, unit) || unit >= world.buildQueues.actionIds.size())
+        static const Array<QueuedBuildAction> empty;
+        if (!IsValidUnit(world, unit) || unit >= world.buildQueues.entries.size())
         {
             return empty;
         }
 
-        return world.buildQueues.actionIds[unit];
+        return world.buildQueues.entries[unit];
     }
 
     inline Array<BuildActionUiState> CollectVisibleBuildActions(const BattleWorld& world, const DefinitionStores& defs, UnitId unit)

@@ -3,6 +3,17 @@
 
 namespace app
 {
+    struct EditorAddonDescriptor
+    {
+        String id;
+        String displayName;
+        Optional<Input> toggleShortcut;
+        int32 updateOrder = 0;
+        int32 draw3DOrder = 0;
+        int32 drawUIOrder = 0;
+        int32 inputPriority = 0;
+    };
+
     enum class EditorCommand
     {
         Toggle,
@@ -14,6 +25,7 @@ namespace app
         Confirm,
         Cancel,
         ToggleGhost,
+        CancelTransientTool,
     };
 
     struct EditorUpdateContext
@@ -36,6 +48,8 @@ namespace app
         bool uiHidden = false;
         Size sceneSize{ 0, 0 };
         Optional<String> activeEditorId;
+        Optional<String> focusedEditorId;
+        Optional<String> hoveredEditorId;
     };
 
     class IEditorAddon
@@ -43,8 +57,17 @@ namespace app
     public:
         virtual ~IEditorAddon() = default;
 
-        virtual StringView id() const noexcept = 0;
-        virtual StringView displayName() const noexcept = 0;
+        virtual const EditorAddonDescriptor& descriptor() const noexcept = 0;
+
+        StringView id() const noexcept
+        {
+            return descriptor().id;
+        }
+
+        StringView displayName() const noexcept
+        {
+            return descriptor().displayName;
+        }
 
         virtual void update(const EditorUpdateContext& context) = 0;
         virtual void draw3D(const EditorDraw3DContext& context) = 0;

@@ -29,6 +29,7 @@ namespace procedural
             load();
             return true;
         case app::EditorCommand::Cancel:
+        case app::EditorCommand::CancelTransientTool:
             cancelTargetSelection();
             return true;
         default:

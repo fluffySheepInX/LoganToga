@@ -39,6 +39,33 @@ namespace LT3
             U"App/000_Warehouse/000_DefaultGame/015_BattleMapCellImage/" + imageName);
     }
 
+    inline FilePath ResolveCatalogVisualPath(const String& kind, const String& imageName)
+    {
+        if (imageName.isEmpty())
+        {
+            return FilePath{};
+        }
+
+        if (kind.lowercased() == U"building")
+        {
+            const FilePath buildingPath = ResolveBuildingChipPath(imageName);
+            if (FileSystem::Exists(buildingPath))
+            {
+                return buildingPath;
+            }
+
+            return ResolveUnitChipPath(imageName);
+        }
+
+        const FilePath unitPath = ResolveUnitChipPath(imageName);
+        if (FileSystem::Exists(unitPath))
+        {
+            return unitPath;
+        }
+
+        return ResolveBuildingChipPath(imageName);
+    }
+
     inline FilePath ResolveSystemImagePath(const String& imageName)
     {
         return ResolveAssetPath(

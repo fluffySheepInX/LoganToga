@@ -4,6 +4,76 @@
 
 namespace LT3
 {
+    inline FilePath ResolveResourceNodeTomlPath()
+    {
+        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml";
+        if (FileSystem::Exists(fromApp))
+        {
+            return fromApp;
+        }
+
+        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml";
+        if (FileSystem::Exists(fromRepo))
+        {
+            return fromRepo;
+        }
+
+        return fromApp;
+    }
+
+    inline void LoadDefaultBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs)
+    {
+        const TOMLReader toml{ ResolveResourceNodeTomlPath() };
+        if (toml)
+        {
+            const TOMLValue resourceNodes = toml[U"resource_nodes"];
+            if (resourceNodes.isEmpty())
+            {
+                return;
+            }
+
+            try
+            {
+                for (const auto& nodeValue : resourceNodes.tableArrayView())
+                {
+                    const String resourceKind = nodeValue[U"resource_kind"].getOr<String>(U"").lowercased();
+                    if (!defs.resourceByTag.contains(resourceKind))
+                    {
+                        continue;
+                    }
+
+                    Array<double> positionValues;
+                    const TOMLValue position = nodeValue[U"position"];
+                    if (position.isEmpty() || !position.isArray())
+                    {
+                        continue;
+                    }
+
+                    for (const auto& positionValue : position.arrayView())
+                    {
+                        if (const Optional<double> coordinate = positionValue.getOpt<double>())
+                        {
+                            positionValues << *coordinate;
+                        }
+                    }
+                    if (positionValues.size() < 2)
+                    {
+                        continue;
+                    }
+
+                    world.resourceNodes.add(
+                        defs.resourceByTag.at(resourceKind),
+                        Vec2{ positionValues[0], positionValues[1] },
+                        Max(0, nodeValue[U"amount"].getOr<int32>(0)),
+                        Max(0, nodeValue[U"income_per_sec"].getOr<int32>(0)));
+                }
+            }
+            catch (const std::exception&)
+            {
+            }
+        }
+    }
+
     inline void SpawnDefaultBattle(BattleWorld& world, const DefinitionStores& defs)
     {
         world.mapWidth  = DefaultBattleMapWidth;
@@ -13,32 +83,13 @@ namespace LT3
 
         world.resources = MakeResourceRuntimeStore(defs);
 
-        const UnitDefId worker = defs.unitByTag.at(U"worker");
-        const UnitDefId soldier = defs.unitByTag.at(U"soldier");
-        const UnitDefId archer = defs.unitByTag.at(U"archer");
-        const UnitDefId base = ResolveCommandBaseUnitDefId(defs);
-        const ResourceDefId gold = defs.resourceByTag.at(U"gold");
-
-        if (base == InvalidUnitDefId)
+        if (defs.unitByTag.contains(U"Home"))
         {
-            return;
+            const UnitDefId home = defs.unitByTag.at(U"Home");
+            AddUnitToBattleWorld(world, home, Faction::Player, Vec2{ 210, 450 }, defs);
+            AddUnitToBattleWorld(world, home, Faction::Enemy, Vec2{ 1390, 450 }, defs);
         }
 
-        AddUnitToBattleWorld(world, base, Faction::Player, Vec2{ 210, 450 }, defs);
-        AddUnitToBattleWorld(world, worker, Faction::Player, Vec2{ 285, 405 }, defs);
-        AddUnitToBattleWorld(world, worker, Faction::Player, Vec2{ 285, 495 }, defs);
-        AddUnitToBattleWorld(world, soldier, Faction::Player, Vec2{ 365, 450 }, defs);
-        AddUnitToBattleWorld(world, archer, Faction::Player, Vec2{ 335, 515 }, defs);
-
-        AddUnitToBattleWorld(world, base, Faction::Enemy, Vec2{ 1390, 450 }, defs);
-        AddUnitToBattleWorld(world, soldier, Faction::Enemy, Vec2{ 1280, 410 }, defs);
-        AddUnitToBattleWorld(world, soldier, Faction::Enemy, Vec2{ 1280, 490 }, defs);
-        AddUnitToBattleWorld(world, archer, Faction::Enemy, Vec2{ 1240, 450 }, defs);
-
-        world.resourceNodes.add(gold, Vec2{ 610, 310 }, 700);
-        world.resourceNodes.add(gold, Vec2{ 610, 590 }, 700);
-        world.resourceNodes.add(gold, Vec2{ 800, 450 }, 900);
-        world.resourceNodes.add(gold, Vec2{ 990, 310 }, 700);
-        world.resourceNodes.add(gold, Vec2{ 990, 590 }, 700);
+        LoadDefaultBattleResourceNodes(world, defs);
     }
 }

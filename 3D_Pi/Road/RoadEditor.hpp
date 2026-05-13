@@ -16,9 +16,15 @@
 # include "RoadPresetSerializer.hpp"
 # include "RoadDocument.hpp"
 
+class RoadEditorRenderer;
+class RoadEditorPanel;
+
 class RoadEditor
 {
 public:
+    friend class RoadEditorRenderer;
+    friend class RoadEditorPanel;
+
     explicit RoadEditor(const FilePath& texturePath, const FilePath& savePath = U"data/roads.toml",
         const FilePath& presetsDir = U"data/road_presets/");
 
@@ -33,6 +39,10 @@ public:
     void draw3D() const;
 
     void drawUI();
+
+    void drawRenderer3D() const;
+
+    void drawPanelUI();
 
 private:
     static constexpr double GuideYOffset = 0.05;

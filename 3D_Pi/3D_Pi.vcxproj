@@ -116,7 +116,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application\CameraController.cpp" />
-    <ClCompile Include="Application\SceneAssets.Editor.cpp" />
     <ClCompile Include="Application\SceneAssets.cpp" />
     <ClCompile Include="Ground\TextureEditor.Layers.cpp" />
     <ClCompile Include="Ground\TextureEditor.Persistence.cpp" />
@@ -134,6 +133,8 @@
     <ClCompile Include="Road\RoadEditor.Persistence.cpp" />
     <ClCompile Include="Road\RoadEditor.Scatter.cpp" />
     <ClCompile Include="Road\RoadEditor.UI.cpp" />
+    <ClCompile Include="Road\RoadEditorPanel.cpp" />
+    <ClCompile Include="Road\RoadEditorRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -362,6 +363,7 @@
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
     <ClInclude Include="Addons\Pi3D\Shader\PiShaderLoader.hpp" />
     <ClInclude Include="Application\CameraController.hpp" />
+    <ClInclude Include="Application\CameraWorkEditorAddon.hpp" />
     <ClInclude Include="Application\EditorAddonHost.hpp" />
     <ClInclude Include="Application\RenderPipeline.hpp" />
     <ClInclude Include="Application\SceneAssets.hpp" />
@@ -383,6 +385,8 @@
     <ClInclude Include="Road\RoadDocument.hpp" />
     <ClInclude Include="Road\RoadEditor.hpp" />
     <ClInclude Include="Road\RoadEditorAddon.hpp" />
+    <ClInclude Include="Road\RoadEditorPanel.hpp" />
+    <ClInclude Include="Road\RoadEditorRenderer.hpp" />
     <ClInclude Include="Road\RoadEditSession.hpp" />
     <ClInclude Include="Road\RoadGeometry.hpp" />
     <ClInclude Include="Road\RoadGhostViewState.hpp" />

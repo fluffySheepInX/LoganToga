@@ -29,6 +29,7 @@ namespace LT3
         int32 move = 0;
         int32 maintainRange = 0;
         double visualScale = 1.0;
+        Point visualOffset{ 0, 0 };
     };
 
     struct UnitCatalog
@@ -127,6 +128,35 @@ namespace LT3
         return result;
     }
 
+    inline Point ReadTomlPointArray(const TOMLValue& value)
+    {
+        Point result{ 0, 0 };
+        if (!value.isArray())
+        {
+            return result;
+        }
+
+        int32 index = 0;
+        for (const auto item : value.arrayView())
+        {
+            if (const Optional<int32> coordinate = item.getOpt<int32>())
+            {
+                if (index == 0)
+                {
+                    result.x = *coordinate;
+                }
+                else if (index == 1)
+                {
+                    result.y = *coordinate;
+                    break;
+                }
+                ++index;
+            }
+        }
+
+        return result;
+    }
+
     inline TOMLReader OpenUnitCatalogToml(FilePathView path)
     {
         TOMLReader toml{ path };
@@ -196,6 +226,7 @@ namespace LT3
             entry.move = unitValue[U"move"].getOr<int32>(0);
             entry.maintainRange = unitValue[U"maintain_range"].getOr<int32>(0);
             entry.visualScale = Clamp(unitValue[U"visual_scale"].getOr<double>(unitValue[U"scale"].getOr<double>(1.0)), 0.25, 3.0);
+            entry.visualOffset = ReadTomlPointArray(unitValue[U"visual_offset"]);
 
             if (!entry.tag.isEmpty())
             {
@@ -244,7 +275,8 @@ namespace LT3
             block += U"speed = {}\n"_fmt(entry.speed);
             block += U"move = {}\n"_fmt(entry.move);
             block += U"maintain_range = {}\n"_fmt(entry.maintainRange);
-            block += U"visual_scale = {}\n\n"_fmt(entry.visualScale);
+            block += U"visual_scale = {}\n"_fmt(entry.visualScale);
+            block += U"visual_offset = [{}, {}]\n\n"_fmt(entry.visualOffset.x, entry.visualOffset.y);
             writer.write(block);
         }
 

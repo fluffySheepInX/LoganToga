@@ -23,6 +23,7 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 2
+visual_offset = [0, 0]
 
 [[units]]
 tag = "NewbieKouhei"
@@ -49,6 +50,142 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 1
+visual_offset = [0, 0]
+
+[[units]]
+tag = "keisouTumejo"
+name = "軽装歩兵詰所"
+kind = "building"
+race = "human"
+image = "bu-keiso.png"
+class_build = "keisouHohei"
+class_tag = "LineInfantryM14"
+skills = []
+level = 1
+level_max = 100
+vision_radius = 6
+price = 100
+cost = 10
+hp = 0
+building_hp = 200
+mp = 100
+attack = 55
+defense = 25
+magic = 30
+magic_defense = 20
+speed = 5
+move = 0
+maintain_range = 0
+visual_scale = 1.6
+visual_offset = [0, 14]
+
+[[units]]
+tag = "LineInfantryM14Tumejo"
+name = "ラミィ小規模歩兵詰所"
+kind = "building"
+race = "human"
+image = "bu-keiso.png"
+class_build = "keisouHohei"
+class_tag = "LineInfantryM14"
+skills = []
+level = 1
+level_max = 100
+vision_radius = 6
+price = 100
+cost = 10
+hp = 0
+building_hp = 200
+mp = 100
+attack = 55
+defense = 25
+magic = 30
+magic_defense = 20
+speed = 5
+move = 0
+maintain_range = 0
+visual_scale = 2
+visual_offset = [0, 0]
+
+[[units]]
+tag = "BrenGunCarrier"
+name = "ブレンガン・キャリアー"
+kind = "unit"
+race = "human"
+image = "adsfsdfaasdfsda.png"
+class_build = "BrenGunCarrier"
+class_tag = "LineInfantryM14"
+skills = ["gunLaphroaig", "healKiai"]
+level = 1
+level_max = 100
+vision_radius = 6
+price = 1000
+cost = 10
+hp = 9999
+building_hp = 0
+mp = 100
+attack = 55
+defense = 25
+magic = 30
+magic_defense = 20
+speed = 500
+move = 500
+maintain_range = 0
+visual_scale = 1
+visual_offset = [0, 0]
+
+[[units]]
+tag = "Kettenkrad"
+name = "ケッテンクラート"
+kind = "unit"
+race = "human"
+image = "kettenkrad.png"
+class_build = "BrenGunCarrier"
+class_tag = "LineInfantryM14"
+skills = ["gunLaphroaig", "healKiai"]
+level = 1
+level_max = 100
+vision_radius = 6
+price = 1000
+cost = 10
+hp = 300
+building_hp = 0
+mp = 100
+attack = 55
+defense = 25
+magic = 30
+magic_defense = 20
+speed = 5
+move = 500
+maintain_range = 0
+visual_scale = 1
+visual_offset = [0, 0]
+
+[[units]]
+tag = "ironWall"
+name = "鉄条網"
+kind = "building"
+race = "human"
+image = "ironWall.png"
+class_build = "Kouhei"
+class_tag = "LineInfantryM14"
+skills = ["gunLaphroaig", "healKiai"]
+level = 1
+level_max = 100
+vision_radius = 6
+price = 1000
+cost = 10
+hp = 9999
+building_hp = 9999
+mp = 100
+attack = 55
+defense = 25
+magic = 30
+magic_defense = 20
+speed = 0
+move = 0
+maintain_range = 0
+visual_scale = 1
+visual_offset = [-8, 19]
 
 [[units]]
 tag = "LineInfantryM14"
@@ -75,6 +212,7 @@ speed = 30
 move = 500
 maintain_range = 0
 visual_scale = 1
+visual_offset = [0, 0]
 
 [[units]]
 tag = "Home"
@@ -101,6 +239,7 @@ speed = 5
 move = 500
 maintain_range = 0
 visual_scale = 2.8
+visual_offset = [0, 20]
 
 [[units]]
 tag = "sniperP99"
@@ -127,6 +266,7 @@ speed = 60
 move = 500
 maintain_range = 650
 visual_scale = 1
+visual_offset = [0, 0]
 
 [[units]]
 tag = "SkirmisherEni"
@@ -153,4 +293,5 @@ speed = 60
 move = 500
 maintain_range = 0
 visual_scale = 1
+visual_offset = [0, 0]
 

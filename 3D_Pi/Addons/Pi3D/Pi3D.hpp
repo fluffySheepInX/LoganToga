@@ -22,7 +22,7 @@ namespace Pi3D
 	public:
 		System();
 
-		void update();
+      void update(const Optional<Vec3>& cameraEye = none, const Optional<Vec3>& cameraFocus = none);
 
 		template <class DrawScene>
 		void begin3D(const DrawScene& drawScene);
@@ -71,8 +71,10 @@ namespace Pi3D
 		ColorF m_currentBackground{ 0.4, 0.6, 0.8, 1.0 };
 		Size m_sceneSize;
 		std::chrono::steady_clock::time_point m_lastFrameStartClock = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point m_lastUpdateClock = std::chrono::steady_clock::now();
 		std::chrono::steady_clock::time_point m_lastInteractionClock = std::chrono::steady_clock::now();
 		bool m_hasLastFrameStart = false;
+        bool m_hasLastUpdateClock = false;
 		double m_panelScrollY = 0.0;
 		bool m_isScrollThumbDragging = false;
 		double m_scrollThumbGrabOffsetY = 0.0;
@@ -134,9 +136,9 @@ namespace Pi3D
 		return *InstanceStorage();
 	}
 
-	inline void Update()
+    inline void Update(const Optional<Vec3>& cameraEye = none, const Optional<Vec3>& cameraFocus = none)
 	{
-		Instance().update();
+        Instance().update(cameraEye, cameraFocus);
 	}
 
 	template <class DrawScene>

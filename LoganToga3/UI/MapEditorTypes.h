@@ -30,6 +30,14 @@ namespace LT3
         int32 objectAsset = InvalidMapEditorAsset;
     };
 
+    struct ResourceNodeEditData
+    {
+        ResourceKind kind = ResourceKind::Gold;
+        Point cell{ 0, 0 };
+        int32 amount = 700;
+        int32 incomePerSec = 5;
+    };
+
     struct MapEditorState
     {
         bool enabled = false;
@@ -41,6 +49,7 @@ namespace LT3
         int32 selectedAsset = InvalidMapEditorAsset;
         double paletteScroll = 0.0;
         bool showUnitList = false;
+        bool showBuildingEditor = false;
         double unitListScroll = 0.0;
         int32 selectedUnitCatalogIndex = -1;
         bool showUnitParameterEditor = false;
@@ -55,6 +64,14 @@ namespace LT3
         FilePath assetDirectory;
         FilePath savePath;
         FilePath uiLayoutPath;
+        FilePath resourceNodeSavePath;
+        Array<ResourceNodeEditData> resourceNodes;
+        int32 selectedResourceNodeIndex = -1;
+        double resourceNodeListScroll = 0.0;
+        bool resourceNodeDragging = false;
+        int32 resourceNodeFilterKind = -1;
+        Optional<ResourceKind> resourcePlacementDragKind;
+        HashTable<String, Texture> resourceIconTextures;
         String statusText = U"Map editor ready";
     };
 
@@ -85,6 +102,8 @@ namespace LT3
             return 2;
         case 8:
             return 3;
+        case 9:
+            return 4;
         default:
             return none;
         }
@@ -201,6 +220,92 @@ namespace LT3
         return RectF{ panel.x + 48.0, panel.y + 10.0, panel.w - 96.0, 32.0 };
     }
 
+    inline RectF EditorResourceNodePanelRect()
+    {
+        return RectF{ 700, 404, 360, 248 };
+    }
+
+    inline RectF EditorResourceNodeCloseRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+    }
+
+    inline RectF EditorResourceNodeRemoveRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + panel.w - 128.0, panel.y + panel.h - 42.0, 104.0, 28.0 };
+    }
+
+    inline RectF EditorResourceNodeListPanelRect()
+    {
+        return RectF{ 1040, 132, 236, 320 };
+    }
+
+    inline RectF EditorResourceNodeListViewportRect()
+    {
+        const RectF panel = EditorResourceNodeListPanelRect();
+        return RectF{ panel.x + 10.0, panel.y + 34.0, panel.w - 20.0, panel.h - 44.0 };
+    }
+
+    inline RectF EditorResourceNodeListRowRect(const RectF& viewport, int32 index, double scroll)
+    {
+        return RectF{ viewport.x, viewport.y + index * 54.0 - scroll, viewport.w, 46.0 };
+    }
+
+    inline RectF EditorResourceNodeFilterRect(int32 index)
+    {
+        const RectF panel = EditorResourceNodeListPanelRect();
+        return RectF{ panel.x + 10.0 + index * 54.0, panel.y + panel.h + 8.0, 48.0, 28.0 };
+    }
+
+    inline RectF EditorResourcePalettePanelRect()
+    {
+        return RectF{ 1040, 662, 236, 86 };
+    }
+
+    inline RectF EditorResourcePaletteIconRect(int32 index)
+    {
+        const RectF panel = EditorResourcePalettePanelRect();
+        return RectF{ panel.x + 14.0 + index * 72.0, panel.y + 30.0, 56.0, 44.0 };
+    }
+
+    inline RectF EditorResourceClearAllRect()
+    {
+        const RectF panel = EditorResourcePalettePanelRect();
+        return RectF{ panel.x + panel.w - 98.0, panel.y + 4.0, 88.0, 22.0 };
+    }
+
+    inline RectF EditorResourceNodeKindRect(int32 index)
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + 24.0 + index * 104.0, panel.y + 96.0, 92.0, 32.0 };
+    }
+
+    inline RectF EditorResourceNodeAmountDecRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + 24.0, panel.y + 158.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorResourceNodeAmountIncRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + 288.0, panel.y + 158.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorResourceNodeIncomeDecRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + 24.0, panel.y + 206.0, 48.0, 40.0 };
+    }
+
+    inline RectF EditorResourceNodeIncomeIncRect()
+    {
+        const RectF panel = EditorResourceNodePanelRect();
+        return RectF{ panel.x + 288.0, panel.y + 206.0, 48.0, 40.0 };
+    }
+
     inline double EditorUnitListContentHeight(const UnitCatalog& catalog)
     {
         return catalog.entries.size() * 86.0;
@@ -258,5 +363,16 @@ namespace LT3
     inline size_t MapEditorCellIndex(const MapEditorState& editor, int32 x, int32 y)
     {
         return static_cast<size_t>(y * editor.mapWidth + x);
+    }
+
+    inline bool IsValidSelectedResourceNodeIndex(const MapEditorState& editor)
+    {
+        return 0 <= editor.selectedResourceNodeIndex
+            && editor.selectedResourceNodeIndex < static_cast<int32>(editor.resourceNodes.size());
+    }
+
+    inline double EditorResourceNodeListContentHeight(const MapEditorState& editor)
+    {
+        return editor.resourceNodes.size() * 54.0;
     }
 }

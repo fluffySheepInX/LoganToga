@@ -22,7 +22,13 @@ namespace app
                 .uiHidden = uiHidden,
             });
 
-            m_sceneAssets.drawStaticScene(Pi3D::LightingRef().getEffectiveSunDirection());
+            const auto& kicker = Pi3D::LightingRef().getKickerRuntime();
+            m_sceneAssets.drawStaticScene(Pi3D::LightingRef().getEffectiveSunDirection(), KickerLightDrawParams{
+                .enabled = kicker.enabled,
+                .direction = kicker.direction,
+                .colorLinear = kicker.colorLinear,
+                .intensity = kicker.intensity,
+            });
             Pi3D::EnvironmentRef().draw3D();
         }
 

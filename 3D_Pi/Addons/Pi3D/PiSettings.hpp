@@ -17,6 +17,12 @@ namespace Pi3D
         double sunIntensityScale = 1.0;
         double ambientIntensityScale = 1.0;
         Optional<size_t> sunDirectionOverride;
+        bool kickerEnabled = false;
+        bool kickerRightSide = true;
+        double kickerIntensity = 0.25;
+        double kickerYawDegrees = 120.0;
+        double kickerHeight = 0.2;
+        ColorF kickerColor{ 1.0, 0.95, 0.9, 1.0 };
 
         [[nodiscard]] bool operator ==(const LightingSettings& other) const = default;
     };
@@ -127,6 +133,49 @@ namespace Pi3D
                 if (0 <= *sunDirectionOverride)
                 {
                     settings.lighting.sunDirectionOverride = static_cast<size_t>(*sunDirectionOverride % 8);
+                }
+            }
+            if (const auto kickerEnabled = toml[U"kickerEnabled"].getOpt<bool>())
+            {
+                settings.lighting.kickerEnabled = *kickerEnabled;
+            }
+            if (const auto kickerRightSide = toml[U"kickerRightSide"].getOpt<bool>())
+            {
+                settings.lighting.kickerRightSide = *kickerRightSide;
+            }
+            if (const auto kickerIntensity = toml[U"kickerIntensity"].getOpt<double>())
+            {
+                settings.lighting.kickerIntensity = Clamp(*kickerIntensity, 0.0, 2.0);
+            }
+            if (const auto kickerYawDegrees = toml[U"kickerYawDegrees"].getOpt<double>())
+            {
+                settings.lighting.kickerYawDegrees = Clamp(*kickerYawDegrees, 45.0, 170.0);
+            }
+            if (const auto kickerHeight = toml[U"kickerHeight"].getOpt<double>())
+            {
+                settings.lighting.kickerHeight = Clamp(*kickerHeight, -0.3, 0.8);
+            }
+            if (const auto kickerColorNode = toml[U"kickerColor"]; kickerColorNode.isArray())
+            {
+                Array<double> colorValues;
+                for (const auto& item : kickerColorNode.arrayView())
+                {
+                    if (const auto value = item.getOpt<double>())
+                    {
+                        colorValues << Clamp(*value, 0.0, 1.0);
+                    }
+                    else if (const auto value = item.getOpt<int32>())
+                    {
+                        colorValues << Clamp(static_cast<double>(*value) / 255.0, 0.0, 1.0);
+                    }
+                    if (colorValues.size() >= 4)
+                    {
+                        break;
+                    }
+                }
+                if (colorValues.size() >= 3)
+                {
+                    settings.lighting.kickerColor = ColorF{ colorValues[0], colorValues[1], colorValues[2], (colorValues.size() >= 4 ? colorValues[3] : 1.0) };
                 }
             }
             if (const auto groundMode = toml[U"groundMode"].getOpt<String>())
@@ -291,6 +340,16 @@ namespace Pi3D
         writer.writeln(U"sunIntensityScale = {:.6f}"_fmt(settings.lighting.sunIntensityScale));
         writer.writeln(U"ambientIntensityScale = {:.6f}"_fmt(settings.lighting.ambientIntensityScale));
         writer.writeln(U"sunDirectionOverride = {}"_fmt(settings.lighting.sunDirectionOverride ? Format(*settings.lighting.sunDirectionOverride) : U"-1"));
+        writer.writeln(U"kickerEnabled = {}"_fmt(settings.lighting.kickerEnabled ? U"true" : U"false"));
+        writer.writeln(U"kickerRightSide = {}"_fmt(settings.lighting.kickerRightSide ? U"true" : U"false"));
+        writer.writeln(U"kickerIntensity = {:.6f}"_fmt(settings.lighting.kickerIntensity));
+        writer.writeln(U"kickerYawDegrees = {:.6f}"_fmt(settings.lighting.kickerYawDegrees));
+        writer.writeln(U"kickerHeight = {:.6f}"_fmt(settings.lighting.kickerHeight));
+        writer.writeln(U"kickerColor = [{:.6f}, {:.6f}, {:.6f}, {:.6f}]"_fmt(
+            settings.lighting.kickerColor.r,
+            settings.lighting.kickerColor.g,
+            settings.lighting.kickerColor.b,
+            settings.lighting.kickerColor.a));
         writer.writeln(U"groundMode = {}"_fmt(QuoteTomlString(settings.environment.groundMode)));
         writer.writeln(U"rainEnabled = {}"_fmt(settings.environment.rain.enabled ? U"true" : U"false"));
         writer.writeln(U"rainDropCount = {}"_fmt(settings.environment.rain.dropCount));

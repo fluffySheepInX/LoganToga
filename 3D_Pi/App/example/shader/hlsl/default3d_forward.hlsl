@@ -69,6 +69,12 @@ cbuffer PSPerView : register(b1)
 	float3 g_eyePosition;
 }
 
+cbuffer PSKicker : register(b2)
+{
+	float4 g_kickerDirectionIntensity;
+	float4 g_kickerColorEnable;
+}
+
 cbuffer PSPerMaterial : register(b3)
 {
 	float3 g_ambientColor;
@@ -137,5 +143,20 @@ float4 PS(s3d::PSInput input) : SV_TARGET
 	const float3 h = normalize(v + lightDirection);
 	const float3 specularReflection = CalculateSpecularReflection(n, h, g_shininess, dot(n, l), lightColor, g_specularColor);
 
-	return float4(diffuseReflection + specularReflection + g_emissionColor, diffuseColor.a);
+	// Kicker
+	const float kickerEnabled = g_kickerColorEnable.w;
+	const float3 kickerDirection = normalize(g_kickerDirectionIntensity.xyz);
+	const float kickerIntensity = max(g_kickerDirectionIntensity.w, 0.0);
+	const float3 kickerColor = g_kickerColorEnable.rgb;
+   const float kickerDot = dot(n, kickerDirection);
+	const float kickerNL = saturate(kickerDot);
+	const float rim = pow(1.0 - saturate(dot(n, v)), 1.5);
+	const float wrappedKicker = saturate((kickerDot + 0.35) / 1.35) * rim * 0.85;
+	const float kickerShape = max(kickerNL, wrappedKicker);
+	const float3 kickerDiffuse = (kickerColor * kickerIntensity * kickerShape) * diffuseColor.rgb;
+	const float3 kickerH = normalize(v + kickerDirection);
+  const float3 kickerSpecular = CalculateSpecularReflection(n, kickerH, g_shininess, kickerDot, (kickerColor * kickerIntensity), g_specularColor);
+	const float3 kickerReflection = (kickerDiffuse + kickerSpecular) * kickerEnabled;
+
+    return float4(diffuseReflection + specularReflection + kickerReflection + g_emissionColor, diffuseColor.a);
 }

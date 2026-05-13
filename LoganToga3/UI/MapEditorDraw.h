@@ -1,6 +1,8 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorInput.h"
+# include "MapEditorResourceDraw.h"
+# include "BuildingEditor.h"
 
 namespace LT3
 {
@@ -34,13 +36,36 @@ namespace LT3
             DrawEditorButton(EditorToolbarButtonRect(editor, 5), U"H +", false, uiFont);
         }
         DrawEditorButton(EditorToolbarButtonRect(editor, 6), U"Unit List", editor.showUnitList, uiFont);
-        DrawEditorButton(EditorToolbarButtonRect(editor, 7), U"Debug Info", editor.showDebugInfo, uiFont);
-        DrawEditorButton(EditorToolbarButtonRect(editor, 8), U"UI Edit", editor.uiLayoutEditEnabled, uiFont);
+        DrawEditorButton(EditorToolbarButtonRect(editor, 7), U"Build Edit", editor.showBuildingEditor, uiFont);
+        DrawEditorButton(EditorToolbarButtonRect(editor, 8), U"Debug Info", editor.showDebugInfo, uiFont);
+        DrawEditorButton(EditorToolbarButtonRect(editor, 9), U"UI Edit", editor.uiLayoutEditEnabled, uiFont);
 
-        const double mapTextX = editor.enabled ? 1040.0 : 500.0;
-        const double statusTextX = editor.enabled ? 1180.0 : 640.0;
+        const double mapTextX = editor.enabled ? 1260.0 : 620.0;
+        const double statusTextX = editor.enabled ? 1400.0 : 760.0;
         uiFont(U"Map: {} x {}"_fmt(editor.mapWidth, editor.mapHeight)).draw(mapTextX, 23, Palette::White);
         uiFont(editor.statusText).draw(statusTextX, 23, Palette::Lightgray);
+        if (editor.enabled)
+        {
+            uiFont(U"L/MMB/list:select  R:add/cycle  Shift+drag/arrow:move  Ctrl+D:dup").draw(640, 46, Palette::Aqua);
+        }
+    }
+
+    inline void DrawMapEditorCurrentCellMarker(const MapEditorState& editor, const Vec2& screenMouse)
+    {
+        if (!editor.enabled)
+        {
+            return;
+        }
+
+        const Optional<Point> cell = PickMapEditorCell(editor, screenMouse);
+        if (!cell)
+        {
+            return;
+        }
+
+        const Vec2 center = ToQuarterViewportScreen(MapEditorCellCenter(cell->x, cell->y));
+        Circle{ center.movedBy(0, -20), 10.0 }.draw(ColorF{ 1.0, 0.2, 0.2, 0.92 }).drawFrame(2.0, ColorF{ 1.0, 0.95, 0.95, 0.95 });
+        Circle{ center.movedBy(0, -20), 22.0 }.drawFrame(2.0, ColorF{ 1.0, 0.2, 0.2, 0.45 });
     }
 
     inline void DrawUiLayoutGridControl(const MapEditorState& editor, const Font& uiFont)
@@ -76,7 +101,7 @@ namespace LT3
         const RectF viewport = EditorUnitListViewportRect();
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Unit List").draw(44, 86, Palette::White);
-        uiFont(U"Click row: parameter editor").draw(160, 86, Palette::Lightgray);
+        uiFont(U"Click row: parameter / BuildingEditor").draw(160, 86, Palette::Lightgray);
         uiFont(U"{} entries"_fmt(catalog.entries.size())).draw(560, 86, Palette::Gold);
         uiFont(catalog.statusText).draw(11, 44, 106, Palette::Lightgray);
 
@@ -105,7 +130,34 @@ namespace LT3
                 frameColor = ColorF{ 0.0, 0.75, 1.0 };
             }
             row.draw(selected ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : (isBuilding ? ColorF{ 0.14, 0.10, 0.08, 0.92 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })).drawFrame(1, frameColor);
-            RectF{ row.x + 10, row.y + 11, 48, 48 }.draw(isBuilding ? ColorF{ 0.72, 0.45, 0.18 } : ColorF{ 0.18, 0.42, 0.72 });
+            const RectF previewRect{ row.x + 10, row.y + 11, 48, 48 };
+            previewRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+
+            const FilePath imagePath = ResolveCatalogVisualPath(entry.kind, entry.image);
+            if (!imagePath.isEmpty() && FileSystem::Exists(imagePath))
+            {
+                auto& textureCache = BuildingEditorTextureCache();
+                if (!textureCache.contains(imagePath))
+                {
+                    textureCache.emplace(imagePath, Texture{ imagePath });
+                }
+
+                const Texture& texture = textureCache.at(imagePath);
+                const double fitScale = Min((previewRect.w - 6.0) / Max(1.0, static_cast<double>(texture.width())), (previewRect.h - 6.0) / Max(1.0, static_cast<double>(texture.height())));
+                const TextureRegion previewTexture = texture.scaled(Min(fitScale, 1.0));
+                if (isBuilding)
+                {
+                    previewTexture.draw(Arg::bottomCenter = Vec2{ previewRect.center().x, previewRect.y + previewRect.h - 3.0 });
+                }
+                else
+                {
+                    previewTexture.drawAt(previewRect.center());
+                }
+            }
+            else
+            {
+                RectF{ row.x + 10, row.y + 11, 48, 48 }.draw(isBuilding ? ColorF{ 0.72, 0.45, 0.18 } : ColorF{ 0.18, 0.42, 0.72 });
+            }
             uiFont(U"{}  scale:{:.2f}"_fmt(entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
             uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.tag, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
             uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  MOVE:{}  COST:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.move, entry.cost)).draw(11, row.x + 70, row.y + 51, Palette::Gold);
@@ -253,12 +305,19 @@ namespace LT3
     {
         DrawMapEditorToolbar(editor, uiFont);
         DrawUiLayoutGridControl(editor, uiFont);
+        DrawMapEditorResourceNodeList(editor, uiFont);
+        DrawMapEditorResourceValidation(editor, uiFont);
+        DrawMapEditorResourcePalette(editor, uiFont);
         DrawUnitCatalogList(editor, unitCatalog, uiFont);
         DrawUnitParameterEditor(editor, unitCatalog, uiFont);
+        DrawBuildingEditor(editor, unitCatalog, uiFont);
+        DrawMapEditorResourceNodeEditor(editor, uiFont);
         if (!editor.enabled)
         {
             return;
         }
+
+        DrawMapEditorCurrentCellMarker(editor, screenMouse);
 
         const RectF palettePanel = EditorPalettePanelRect();
         const RectF paletteViewport = EditorPaletteViewportRect();

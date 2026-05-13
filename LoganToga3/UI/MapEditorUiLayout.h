@@ -33,15 +33,17 @@ namespace LT3
 
     inline RectF BattleCommandPanelRect(const MapEditorState& editor, int32 rows)
     {
-        return RectF{ editor.uiCommandPanelPos.x, editor.uiCommandPanelPos.y, 286.0, Max(112.0, rows * 88.0 + 24.0) };
+        const double panelHeight = Max(112.0, rows * 88.0 + 24.0);
+        const double panelY = Min(editor.uiCommandPanelPos.y, Max(0.0, Scene::Height() - panelHeight - 8.0));
+        return RectF{ editor.uiCommandPanelPos.x, panelY, 286.0, panelHeight };
     }
 
-    inline RectF BattleCommandIconRect(const MapEditorState& editor, int32 index)
+    inline RectF BattleCommandIconRect(const MapEditorState& editor, int32 index, int32 rows)
     {
         constexpr int32 columns = 3;
         const int32 col = index % columns;
         const int32 row = index / columns;
-        const Vec2 origin = editor.uiCommandPanelPos + Vec2{ 22.0, 22.0 };
+        const Vec2 origin = BattleCommandPanelRect(editor, rows).pos + Vec2{ 22.0, 22.0 };
         const Vec2 step{ 88.0, 88.0 };
         return RectF{ origin + Vec2{ col * step.x, row * step.y }, 78.0, 78.0 };
     }

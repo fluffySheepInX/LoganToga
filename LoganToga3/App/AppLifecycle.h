@@ -57,6 +57,11 @@ namespace LT3
             return;
         }
 
+        if (HandleDebugClipboardCaptureButton(ui))
+        {
+            return;
+        }
+
         UpdateQuarterViewCamera(ui.mapEditor, runtime.world, definitions.defs);
 
         const Vec2 screenMouse = Cursor::PosF();
@@ -102,6 +107,8 @@ namespace LT3
     inline void DrawAppUi(const AppDefinitionState& definitions, AppUiState& ui, const Font& uiFont)
     {
         DrawMapEditorOverlay(ui.mapEditor, definitions.unitCatalog, Cursor::PosF(), uiFont);
+        DrawDebugClipboardCaptureButton(ui, uiFont);
+        SubmitDebugClipboardCaptureRequest(ui);
     }
 
     inline void DrawApp(AppState& app)

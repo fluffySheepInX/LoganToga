@@ -9,11 +9,29 @@ namespace LT3
      const UnitId unitCount = static_cast<UnitId>(world.units.size());
 
         world.enemySpawnTimerSec += dt;
-        if (world.enemySpawnTimerSec >= 8.0)
+        if (world.enemySpawnTimerSec >= 8.0 && defs.units.size() > 0)
         {
             world.enemySpawnTimerSec = 0.0;
-            const UnitDefId spawn = RandomBool(0.55) ? defs.unitByTag.at(U"soldier") : defs.unitByTag.at(U"archer");
-            AddUnitToBattleWorld(world, spawn, Faction::Enemy, Vec2{ 1325, Random(350.0, 550.0) }, defs);
+            Array<UnitDefId> enemySpawnCandidates;
+            for (UnitDefId unitDefId = 0; unitDefId < defs.units.size(); ++unitDefId)
+            {
+                const UnitDef& def = defs.units[unitDefId];
+                if (def.role == UnitRole::Base || def.role == UnitRole::Barrier)
+                {
+                    continue;
+                }
+                if (def.speed <= 0.0)
+                {
+                    continue;
+                }
+                enemySpawnCandidates << unitDefId;
+            }
+
+            if (!enemySpawnCandidates.isEmpty())
+            {
+                const UnitDefId spawn = enemySpawnCandidates.choice();
+                AddUnitToBattleWorld(world, spawn, Faction::Enemy, Vec2{ 1325, Random(350.0, 550.0) }, defs);
+            }
         }
 
         for (UnitId unit = 0; unit < unitCount; ++unit)

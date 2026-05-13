@@ -8,14 +8,18 @@ namespace app
     class ProceduralEditorAddon final : public IEditorAddon
     {
     public:
-        StringView id() const noexcept override
+        const EditorAddonDescriptor& descriptor() const noexcept override
         {
-            return U"ProceduralEditor";
-        }
-
-        StringView displayName() const noexcept override
-        {
-            return U"Procedural Editor";
+            static const EditorAddonDescriptor descriptor{
+                U"ProceduralEditor",
+                U"Procedural Editor",
+                none,
+                0,
+                0,
+                0,
+                0
+            };
+            return descriptor;
         }
 
         void update(const EditorUpdateContext& context) override

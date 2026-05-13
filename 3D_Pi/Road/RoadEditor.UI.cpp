@@ -1,7 +1,14 @@
 ﻿# include "../stdafx.h"
 # include "RoadEditor.hpp"
+# include "RoadEditorPanel.hpp"
 
 void RoadEditor::drawUI(){
+        RoadEditorPanel::Draw(*this);
+    }
+
+
+
+    void RoadEditor::drawPanelUI(){
         refreshRoadMaterialTextureIfDirty();
         m_hoverTooltip.clear();
         syncCollapsedIconRegistry();

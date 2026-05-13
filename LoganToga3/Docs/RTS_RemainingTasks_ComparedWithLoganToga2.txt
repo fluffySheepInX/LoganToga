@@ -1,0 +1,175 @@
+LoganToga3 RTS 残タスク一覧（LoganToga2 比較）
+作成日: 2026-05-11
+
+目的
+- LoganToga2 の既存 RTS/戦闘要件と、LoganToga3 の現状実装を比較し、LoganToga3 を RTS として成立させるための残タスクを抽出する。
+- 参照した主な箇所:
+  - LoganToga2: ClassUnit.h / ClassSkill.h / ClassBuildAction.h / docs/GameDesign_Timeline.md / App/000_Warehouse/.../070_Scenario
+  - LoganToga3: BattleWorld/BattleWorld.h / Data/DefinitionStores.h / Data/UnitCatalog.h / Data/Loaders/*.h / Systems/*.h / UI/BattleRenderer.h / Docs/DataOrientedDesign_LoganToga2.html
+
+現状サマリ
+- LoganToga3 は DOD 風の BattleWorld、DefinitionStores、各種 System 分割、TOML ベースの一部ロード、選択・移動・簡易戦闘・建築キュー・資源ノード・敵スポーン・勝敗判定・エディタ UI を持つ。
+- 一方で LoganToga2 にあった RTS としての厚み（多様なスキル挙動、地形/経路、建築制約、資源/施設/フェーズ、シナリオ進行、UI 情報量、テスト互換）はまだ簡易実装または未移植が多い。
+
+優先度凡例
+- P0: RTS として最低限必要。ゲームプレイ成立/破綻防止。
+- P1: LoganToga2 相当の体験に近づけるため重要。
+- P2: 体験向上・拡張性・運用改善。
+
+P0: RTS コア成立に必要な残タスク
+
+1. マップ/地形/経路探索の本実装
+- LoganToga2 側: AStar.cpp/.h、ClassAStar、ClassMapBattle、MapTile、Unit の moveState/MoveType/タイル座標などが存在。
+- LoganToga3 現状: BattleMapStore は passable/occupying を持つが、UpdateMovement は直線移動のみ。map001〜map019.toml はあるが、戦闘ランタイムへの本格反映が限定的。
+- 残タスク:
+  - 既存 BattleMap TOML を読み込み、タイル通行可否・高低差/障害物・占有を BattleMapStore に反映する。
+  - A* またはグリッド経路探索を LoganToga3 の MovementSystem に追加する。
+  - 建物・資源・ユニット占有を移動/配置判定に使う。
+  - 直線移動で敵/建物/壁をすり抜ける状態を解消する。
+
+2. スキル定義と戦闘挙動の移植
+- LoganToga2 側: ClassSkill.h は SkillType、MoveType(line/arc/throw/drop/circle/swing)、Easing、MP、slow、範囲、ray、rush、homing、swing arc/reach など多数のパラメータを持つ。
+- LoganToga3 現状: SkillDef は range/cooldown/damage/color 程度。ProjectileSystem は homing 風の単一弾、DamageSystem は単純ダメージのみ。
+- 残タスク:
+  - SkillDef に LoganToga2 の主要フィールドを段階的に追加する（MP、属性、範囲最小/最大、速度、弾サイズ、MoveType、Easing、slow、ray、rush、swing、heal 等）。
+  - skill.toml/json から実データをロードする SkillDefLoader を実装する（現在は固定4スキル）。
+  - 近接、射撃、回復、範囲攻撃、ray、swing、homing、放物線/円弧などの挙動を System 化する。
+  - 防御/魔防/属性/回復/特殊効果のダメージ計算を実装する。
+
+3. ユニット定義の完全移植
+- LoganToga2 側: Unit は Help/Text/Race/Class/Image/Level/Price/Cost/Medical/HP/MP/Attack/Defense/Magic/MagDef/Move/Exp/Heal/Summon/Loyal/Alive_per/Escape_range/SkillName/Finance/MaintainRange など多数を保持。
+- LoganToga3 現状: UnitCatalog/UnitDef は一部を TOML から読むが、UnitDefLoader は worker/soldier/archer/base を固定追加し、カタログ由来は簡略化している。
+- 残タスク:
+  - Unit.json / UnitSample.toml / genUnit002.toml の役割を整理し、LoganToga3 の正規ユニットデータを一本化する。
+  - MP、Magic、MagicDefense、Move、visionRadius、MaintainRange、Help/Text、画像、種族/クラス、価格/維持費等を UnitDef に反映する。
+  - ユニットの skill 複数保持に対応する（現状は UnitDef.skill 1つ）。
+  - 「歩兵/砲兵/機械」等の役割・相性・デザインを UnitRole だけでなく戦闘処理に反映する。
+
+4. 建築/生産/配置ルールの本実装
+- LoganToga2 側: BuildAction は buildCount、createCount、cost HashTable、buildTime、category、requires、result、isMove、row/col target を持つ。
+- LoganToga3 現状: BuildActionDef は TOML BuildMenu を読むが costGold 単一、requirements 未検証、buildCount 未対応、配置判定は SnapWorldPositionToBattleCellCenter 程度。
+- 残タスク:
+  - 複数資源コスト（gold/food/trust/wood 等）を扱う ResourceCost 構造へ拡張する。
+  - requirements/buildCount/カテゴリ/前提施設/同種制限を検証する。
+  - 建築配置の可否（地形、占有、味方/敵領域、距離、建築不可タイル）を判定する。
+  - 生産キュー、キャンセル、予約中資源、建築中 HP/完成処理を実装する。
+
+5. RTS 操作 UI の最低限整備
+- LoganToga3 現状: 選択、範囲選択、編隊移動、選択ユニットパネル、資源パネル、ビルドアイコン等はあるが、プレイに必要な情報/操作が不足。
+- 残タスク:
+  - 複数選択時のユニット一覧/グループ情報を表示する。
+  - ビルドメニューでコスト不足、前提不足、配置待ち、キュー状態を明示する。
+  - 攻撃/移動/停止/集合地点/収納/解放などの基本コマンドを統一的に表示・入力する。
+  - RTS 用のミニマップまたは全体把握 UI を検討する。
+  - 可視メニューは既存方針どおり Rect ベース UI を維持する。
+
+P1: LoganToga2 相当へ近づける重要タスク
+
+6. 資源システムの拡張
+- LoganToga2 側: gold/trust/food などの資源画像/データ、資源ポイント、Finance、waitTimeResource などがある。
+- LoganToga3 現状: ResourceDef は kind/initial/passive、ResourceNode は amount/incomePerSec/owner/captureProgress。収集は player worker が近接 gold を直接加算。
+- 残タスク:
+  - gold/trust/food 等を正規 ResourceKind として扱う。
+  - 採集、占領、定期収入、消費、上限/維持費のルールを分離する。
+  - 敵側の資源収入/消費/生産にも同じルールを適用する。
+  - ResourceDefLoader を aaa.json/aaa.toml の実データ互換にする。
+
+7. 敵 AI / フェーズ進行 / ラッシュ演出
+- LoganToga2 側: GameDesign_Timeline.md に 0:00〜20:00 のフェーズ、敵アクション、再構築、ラッシュ、増援、破壊後の再登場などが記載されている。
+- LoganToga3 現状: EnemyDirectorSystem は 8秒ごとに soldier/archer をランダムスポーンし、近い敵へ移動するだけ。
+- 残タスク:
+  - 時間フェーズ/イベントスケジュールをデータ化する。
+  - 敵の生産、攻撃目標、撤退/再構築、全種ラッシュ、最終30秒などを実装する。
+  - 難易度パラメータ、ランダム性、勝敗条件との連動を整理する。
+
+8. 勝敗条件とゲームフロー
+- LoganToga3 現状: WinLoseSystem は存在するが、RTS としての条件は簡易と推定。BattleSetup は固定配置。
+- 残タスク:
+  - 拠点破壊、時間経過、フェーズ別敗北猶予、敵全滅/防衛成功など条件を整理する。
+  - LoganToga2 の -Battle / -Battle001 / -test 相当の入口とシーン遷移を確認する。
+  - リザルト、再挑戦、タイトル/シナリオ選択への戻りを実装する。
+
+9. キャリア/収納ユニットの仕様完成
+- LoganToga2 側: CarrierComponent は capacity と storedUnits を持ち、収納/円形解放する。
+- LoganToga3 現状: CarrierStore と StoreNearbyUnitsInCarrier/ReleaseStoredUnitsFromCarrier はあるが、容量、対象条件、UI、データ定義が不足。
+- 残タスク:
+  - UnitDef に carrierCapacity / canCarry / carriedSize 等を追加する。
+  - 容量制限、収納不可ユニット、死亡時解放/消滅、解放先の通行判定を実装する。
+  - UI で収納数・解放コマンド・収納対象を表示する。
+
+10. 画像/音/演出アセットの接続
+- LoganToga2/3 の Scenario データと ChipImage/BGM 等は概ねコピーされているが、LoganToga3 の BattleRenderer は色付き図形中心。
+- 残タスク:
+  - UnitDef.image、SkillDef.icon/image、BuildAction.icon、ResourceDef.icon を実描画へ接続する。
+  - BGM/SE をシーン・スキル・建築・警告に接続する。
+  - 弾道、ヒット、建築中、選択、警告の視覚フィードバックを追加する。
+
+11. シナリオ/ストーリー/プロセスデータの接続
+- 比較結果: InfoStory CSV、InfoScenario、InfoProcess、InfoEnemy、InfoPower 等は LoganToga2 と LoganToga3 の両方に存在する。
+- LoganToga3 現状: RTS 戦闘側からこれらを使う実装は未確認/限定的。
+- 残タスク:
+  - Scenario/Process/Story データを LoganToga3 のシーン進行に接続する。
+  - RTS 戦闘開始時のマップ、初期ユニット、敵構成、イベントをデータから決定する。
+  - 既存 CSV/JSON の文字コードと TOML 移行方針を整理する。
+
+12. マップエディタと戦闘ランタイムの往復
+- LoganToga3 現状: MapEditor 系ファイルと BattleUiLayout.toml がある。
+- 残タスク:
+  - エディタで編集した地形/資源/初期配置/建築不可領域を戦闘に反映する。
+  - 保存形式を TOML で安定化し、既存 map001〜map019.toml との互換を取る。
+  - エディタ UI は Rect ベースボタン/ツールバー方針を維持する。
+
+P2: 品質・拡張性・検証タスク
+
+13. データロードの互換性とバリデーション
+- 残タスク:
+  - JSON 互換ロードと TOML 正規ロードの責務を明確化する。
+  - 未解決タグ、重複タグ、負のステータス、存在しない画像/スキル/ユニットを検出する。
+  - ロード結果をデバッグオーバーレイまたはログに出す。
+
+14. セーブ/リプレイ/決定性
+- LoganToga2 再設計ドキュメントでは BattleWorld snapshot や save migration が想定されている。
+- 残タスク:
+  - BattleWorld の保存単位を定義する。
+  - ランダムシード、敵イベント、入力履歴を保存/再現可能にする。
+  - リプレイまたはデバッグ再現用ログを検討する。
+
+15. テスト整備
+- LoganToga2 側には TestRunner や ProjectileHitService/CooldownService/UsageService がある。
+- LoganToga3 側はヘッダ inline 実装中心で、専用テストは未確認。
+- 残タスク:
+  - Loader テスト: Unit/Skill/Build/Resource の件数・参照解決。
+  - System テスト: 移動到達、経路回避、攻撃間隔、弾命中、建築キュー、資源収入、キャリア解放。
+  - Scenario smoke: 起動、戦闘開始、勝敗到達、エディタ保存。
+
+16. パフォーマンス確認
+- DOD 化の狙いはあるが、実測ベンチは未確認。
+- 残タスク:
+  - 100/500/1000 ユニット時の UpdateMovement/Targeting/Projectile/Render を計測する。
+  - Targeting の全探索を空間分割へ置換する候補を検証する。
+  - Projectile removeAt の swap 副作用、ID 参照の安定性を確認する。
+
+17. コード構造の整理
+- 残タスク:
+  - inline ヘッダ実装が肥大化している System を .cpp 分割するか方針決定する。
+  - BattleWorld の UnitId と配列 index の寿命/削除方針を明文化する。
+  - Debug/Editor/Runtime の依存方向を整理する。
+
+推奨実装順
+1. P0-2: SkillDef/UnitDef の実データロード拡張（固定4スキル/固定3兵科から脱却）。
+2. P0-1: BattleMapStore と A*/通行判定をつなぐ。
+3. P0-4: 建築配置/コスト/前提条件を RTS として破綻しない水準にする。
+4. P0-5: プレイに必要な UI 情報（コスト不足、キュー、複数選択、基本命令）を追加。
+5. P1-7/P1-8: 敵フェーズと勝敗条件を GameDesign_Timeline に沿ってデータ化。
+6. P1-10/P1-11: アセット・シナリオ・ストーリー接続。
+7. P2-15/P2-16: テストと負荷計測。
+
+短期マイルストーン案
+- M1: 「小規模 RTS として遊べる」
+  - マップ通行判定、複数資源コスト、ユニット複数スキルの最小対応、建築配置不可判定、基本 UI。
+- M2: 「LoganToga2 の戦闘資産を使える」
+  - Unit/Skill/Build/Resource の既存データ互換ロード、画像/アイコン描画、主要スキル挙動。
+- M3: 「ゲームとして完走できる」
+  - フェーズ進行、敵 AI、勝敗、リザルト、シナリオ開始/終了。
+- M4: 「拡張可能」
+  - エディタ連携、テスト、保存/再現性、パフォーマンス最適化。

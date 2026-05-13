@@ -239,6 +239,8 @@ namespace app
         , m_settings{ LoadSettings(configPath) }
         , m_groundPlane{ MeshData::OneSidedPlane(m_settings.groundSize, m_settings.groundResolution) }
         , m_groundTexture{ m_settings.groundTexturePath, TextureDesc::MippedSRGB }
+        , m_defaultForwardVS{ HLSL{ Pi3D::PiShaderLoader::HLSL(U"default3d_forward"), U"VS" } | GLSL{ Pi3D::PiShaderLoader::GLSLVertex(U"default3d_forward"), m_defaultForwardVSBindings } }
+        , m_defaultForwardPS{ HLSL{ Pi3D::PiShaderLoader::HLSL(U"default3d_forward"), U"PS" } | GLSL{ Pi3D::PiShaderLoader::GLSLFragment(U"default3d_forward"), m_defaultForwardPSBindings } }
         , m_projectedShadowPS{ HLSL{ Pi3D::PiShaderLoader::HLSL(U"projected_shadow"), U"PS" } }
     {
         for (const auto& modelSettings : m_settings.models)
@@ -278,8 +280,21 @@ namespace app
         }
     }
 
-    void SceneAssets::drawStaticScene(const Vec3& sunDirection) const
+    void SceneAssets::drawStaticScene(const Vec3& sunDirection, const KickerLightDrawParams& kickerLight) const
     {
+        m_kickerBuffer->directionIntensity = Float4{
+            static_cast<float>(kickerLight.direction.x),
+            static_cast<float>(kickerLight.direction.y),
+            static_cast<float>(kickerLight.direction.z),
+            static_cast<float>(Clamp(kickerLight.intensity, 0.0, 2.0)) };
+        m_kickerBuffer->colorEnable = Float4{
+            static_cast<float>(kickerLight.colorLinear.r),
+            static_cast<float>(kickerLight.colorLinear.g),
+            static_cast<float>(kickerLight.colorLinear.b),
+            kickerLight.enabled ? 1.0f : 0.0f };
+        Graphics3D::SetPSConstantBuffer(2, m_kickerBuffer);
+        const ScopedCustomShader3D defaultForwardShader{ m_defaultForwardVS, m_defaultForwardPS };
+
         DrawTexturedGroundShadow(Vec3{ 0, 0, 0 }, Vec2{ 1.9, 1.3 }, Vec2{ 0.12, 0.10 }, DefaultUnitShadowTexture(), 0.66);
         Sphere{ { 0, 1, 0 }, 1 }.draw(ColorF{ 0.75 }.removeSRGBCurve());
 
@@ -308,6 +323,8 @@ namespace app
                 const ScopedCustomShader3D shader{ m_projectedShadowPS };
                 const Transformer3D transform{ world * projection * groundBias };
                 asset.model.draw();
+
+                Graphics3D::SetPSConstantBuffer(2, m_kickerBuffer);
             }
             else
             {
@@ -354,7 +371,69 @@ namespace app
         return m_settings;
     }
 
-    void SceneAssets::saveSettingsToConfig() const
+    size_t SceneAssets::editableModelCount() const noexcept
+    {
+        return m_models.size();
+    }
+
+    Array<String> SceneAssets::editableModelNames() const
+    {
+        Array<String> modelNames;
+        modelNames.reserve(m_models.size());
+
+        for (const auto& model : m_models)
+        {
+            modelNames << model.settings.id;
+        }
+
+        return modelNames;
+    }
+
+    Optional<SceneAssetEditorModel> SceneAssets::getEditableModel(const size_t index) const
+    {
+        if (index >= m_models.size())
+        {
+            return none;
+        }
+
+        const auto& model = m_models[index];
+        return SceneAssetEditorModel{
+            .id = model.settings.id,
+            .shadowSize = model.shadowSize,
+            .shadowOffsetXZ = model.shadowOffsetXZ,
+            .shadowOpacity = model.shadowOpacity,
+            .useProjectedShadow = model.useProjectedShadow,
+        };
+    }
+
+    bool SceneAssets::applyEditableModel(const size_t index, const SceneAssetEditorModel& model)
+    {
+        if ((index >= m_models.size()) || (index >= m_settings.models.size()))
+        {
+            return false;
+        }
+
+        auto& loaded = m_models[index];
+        auto& settings = m_settings.models[index];
+
+        loaded.shadowSize = model.shadowSize;
+        loaded.shadowOffsetXZ = model.shadowOffsetXZ;
+        loaded.shadowOpacity = ClampShadowOpacity(model.shadowOpacity);
+        loaded.useProjectedShadow = model.useProjectedShadow;
+
+        loaded.settings.shadowSizeXZ = loaded.shadowSize;
+        loaded.settings.shadowOffsetXZ = loaded.shadowOffsetXZ;
+        loaded.settings.shadowOpacity = loaded.shadowOpacity;
+        loaded.settings.projectedShadow = loaded.useProjectedShadow;
+
+        settings.shadowSizeXZ = loaded.shadowSize;
+        settings.shadowOffsetXZ = loaded.shadowOffsetXZ;
+        settings.shadowOpacity = loaded.shadowOpacity;
+        settings.projectedShadow = loaded.useProjectedShadow;
+        return true;
+    }
+
+    bool SceneAssets::saveSettingsToConfig() const
     {
         const FilePath dir = FileSystem::ParentPath(m_configPath);
         if (not dir.isEmpty())
@@ -365,7 +444,7 @@ namespace app
         TextWriter writer{ m_configPath };
         if (not writer)
         {
-            return;
+            return false;
         }
 
         writer.writeln(U"[ground]");
@@ -409,6 +488,8 @@ namespace app
             }
             writer.writeln(U"");
         }
+
+        return true;
     }
 
     SceneAssetSettings SceneAssets::LoadSettings(const FilePath& configPath)

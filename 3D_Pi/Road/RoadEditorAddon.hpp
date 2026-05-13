@@ -13,14 +13,18 @@ namespace app
             const FilePath& presetsDir = U"data/road_presets/")
             : m_editor{ texturePath, savePath, presetsDir } {}
 
-        StringView id() const noexcept override
+        const EditorAddonDescriptor& descriptor() const noexcept override
         {
-            return U"RoadEditor";
-        }
-
-        StringView displayName() const noexcept override
-        {
-            return U"Road Editor";
+            static const EditorAddonDescriptor descriptor{
+                U"RoadEditor",
+                U"Road Editor",
+                Optional<Input>{ KeyR },
+                0,
+                0,
+                0,
+                0
+            };
+            return descriptor;
         }
 
         void update(const EditorUpdateContext& context) override

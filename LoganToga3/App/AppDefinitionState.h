@@ -2,7 +2,7 @@
 # include <Siv3D.hpp>
 # include "../Data/DefinitionLoaders.h"
 # include "../Data/UnitCatalog.h"
-# include "../UI/BattleRenderer.h"
+# include "../UI/BattleUnitRenderer.h"
 
 namespace LT3
 {

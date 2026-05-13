@@ -1,5 +1,6 @@
 ﻿# include "../stdafx.h"
 # include "RoadEditor.hpp"
+# include "RoadEditorRenderer.hpp"
 
 RoadEditor::RoadEditor(const FilePath& texturePath, const FilePath& savePath ,
         const FilePath& presetsDir )
@@ -114,6 +115,12 @@ bool RoadEditor::wantsMouseCapture() const{
 
 
     void RoadEditor::draw3D() const{
+        RoadEditorRenderer::Draw(*this);
+    }
+
+
+
+    void RoadEditor::drawRenderer3D() const{
         const ScopedRenderStates3D renderStates{ BlendState::OpaqueAlphaToCoverage, RasterizerState::SolidCullNone };
 
         drawGhostRoads3D();

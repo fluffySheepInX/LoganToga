@@ -29,11 +29,15 @@ namespace LT3
         SkillDefId skill = InvalidSkillDefId;
         ColorF color = Palette::White;
         double visualScale = 1.0;
+        String classBuild;
+        String classTag;
+        bool blocksTileMovement = false;
     };
 
     struct BuildActionDef
     {
         String tag;
+        String id;
         String ownerTag;
         String name;
         String description;
@@ -41,21 +45,30 @@ namespace LT3
         String category;
         Array<String> requirements;
         String spawnTag;
+        String resultTag;
         BuildActionResultType resultType = BuildActionResultType::None;
         UnitDefId spawnUnit = InvalidUnitDefId;
         int32 costGold = 0;
         int32 createCount = 1;
         double buildTimeSec = 0.0;
         bool isMove = false;
+        BuildPlacementMode placementMode = BuildPlacementMode::Point;
+        BuildLineAxisMode lineAxisMode = BuildLineAxisMode::Auto;
+        int32 lineThicknessCells = 1;
+        int32 maxLineCells = 12;
+        bool useRightDragPlacement = false;
     };
 
     struct ResourceDef
     {
         String tag;
+        String id;
         String name;
+        String icon;
         ResourceKind kind = ResourceKind::Gold;
         ColorF color = Palette::Gold;
-        int32 initialAmount = 100;
+        int32 initialAmount = 0;
+        int32 passiveIncomePerSec = 0;
     };
 
     struct DefinitionStores

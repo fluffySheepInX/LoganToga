@@ -6,6 +6,13 @@ namespace LT3
 {
     inline void UpdateWinLose(BattleWorld& world, const DefinitionStores& defs)
     {
+        if (world.units.size() == 0)
+        {
+            world.victory = false;
+            world.defeat = false;
+            return;
+        }
+
         bool playerBaseAlive = false;
         bool enemyBaseAlive = false;
 

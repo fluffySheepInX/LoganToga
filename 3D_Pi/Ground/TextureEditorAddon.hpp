@@ -11,14 +11,18 @@ namespace app
         explicit TextureEditorAddon(const FilePath& savePath = U"data/ground_layers.toml")
             : m_editor{ savePath } {}
 
-        StringView id() const noexcept override
+        const EditorAddonDescriptor& descriptor() const noexcept override
         {
-            return U"TextureEditor";
-        }
-
-        StringView displayName() const noexcept override
-        {
-            return U"Texture Editor";
+            static const EditorAddonDescriptor descriptor{
+                U"TextureEditor",
+                U"Texture Editor",
+                Optional<Input>{ KeyT },
+                0,
+                0,
+                0,
+                0
+            };
+            return descriptor;
         }
 
         void update(const EditorUpdateContext& context) override

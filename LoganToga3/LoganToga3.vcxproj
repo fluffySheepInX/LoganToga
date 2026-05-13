@@ -168,10 +168,12 @@
     <Text Include="App\example\txt\kr.txt" />
     <Text Include="App\example\txt\sc.txt" />
     <Text Include="App\example\video\river.txt" />
+    <Text Include="Docs\RTS_RemainingTasks_ComparedWithLoganToga2.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitSample.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
@@ -366,12 +368,22 @@
     <ClInclude Include="Systems\WinLoseSystem.h" />
     <ClInclude Include="UI\BattleDebugOverlay.h" />
     <ClInclude Include="UI\BattleRenderer.h" />
+    <ClInclude Include="UI\BattleResourceRenderer.h" />
+    <ClInclude Include="UI\BattleUnitRenderer.h" />
+    <ClInclude Include="UI\BuildingEditor.h" />
     <ClInclude Include="UI\MapEditor.h" />
+    <ClInclude Include="UI\MapEditorCanvasInput.h" />
     <ClInclude Include="UI\MapEditorDraw.h" />
     <ClInclude Include="UI\MapEditorInput.h" />
     <ClInclude Include="UI\MapEditorMapData.h" />
+    <ClInclude Include="UI\MapEditorResourceData.h" />
+    <ClInclude Include="UI\MapEditorResourceDraw.h" />
+    <ClInclude Include="UI\MapEditorResourceInput.h" />
+    <ClInclude Include="UI\MapEditorToolbarInput.h" />
     <ClInclude Include="UI\MapEditorTypes.h" />
     <ClInclude Include="UI\MapEditorUiLayout.h" />
+    <ClInclude Include="UI\MapEditorUiLayoutInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogInput.h" />
     <ClInclude Include="UI\QuarterView.h" />
   </ItemGroup>
   <ItemGroup>

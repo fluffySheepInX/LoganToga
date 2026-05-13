@@ -1,5 +1,5 @@
 [[commands]]
-owner_tag = "home"
+owner_tag = "Home"
 id = "000"
 name = "傭兵-若人"
 description = "汎用部隊傭兵-若人"
@@ -15,7 +15,7 @@ type = "unit"
 spawn = "NewbieMercenary"
 
 [[commands]]
-owner_tag = "home"
+owner_tag = "Home"
 id = "001"
 name = "工兵"
 description = "工兵"
@@ -31,7 +31,7 @@ type = "unit"
 spawn = "NewbieKouhei"
 
 [[commands]]
-owner_tag = "home"
+owner_tag = "Home"
 id = "002"
 name = "軽装歩兵"
 description = "軽装歩兵"
@@ -63,7 +63,7 @@ type = "unit"
 spawn = "LineInfantryM14Tumejo"
 
 [[commands]]
-owner_tag = "Kouhei"
+owner_tag = "NewbieKouhei"
 id = "000"
 name = "軽装歩兵詰所"
 description = "浸透してヨシ、決死隊してヨシ、弾除けにヨシ！"
@@ -79,7 +79,7 @@ type = "unit"
 spawn = "keisouTumejo"
 
 [[commands]]
-owner_tag = "Kouhei"
+owner_tag = "NewbieKouhei"
 id = "001"
 name = "軽装歩兵産出"
 description = "びううｙぐゆｙぎゅゆｇ"
@@ -95,7 +95,7 @@ type = "unit"
 spawn = "LineInfantryM14"
 
 [[commands]]
-owner_tag = "Kouhei"
+owner_tag = "NewbieKouhei"
 id = "002"
 name = "鉄条網設置"
 description = "鉄条網"
@@ -106,12 +106,17 @@ build_time = 0.5
 category = "unit"
 requires = ["none"]
 is_move = true
+placement_mode = "line"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = true
 [[commands.result]]
 type = "unit"
 spawn = "ironWall"
 
 [[commands]]
-owner_tag = "Kouhei"
+owner_tag = "NewbieKouhei"
 id = "003"
 name = "ケッテンクラート産出"
 description = "ケッテンクラート"
@@ -127,7 +132,7 @@ type = "unit"
 spawn = "Kettenkrad"
 
 [[commands]]
-owner_tag = "Kouhei"
+owner_tag = "NewbieKouhei"
 id = "004"
 name = "ブレンガン・キャリアー産出"
 description = "ブレンガン・キャリアー"
@@ -173,7 +178,23 @@ type = "obj"
 spawn = "GateA"
 
 [[commands]]
-owner_tag = "keisouHohei"
+owner_tag = "keisouTumejo"
+id = "keisouHohei000"
+name = "ライフル銃兵産出"
+description = "ライフル銃兵産出"
+icon = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+[[commands.result]]
+type = "unit"
+spawn = "LineInfantryM14"
+
+[[commands]]
+owner_tag = "LineInfantryM14Tumejo"
 id = "keisouHohei000"
 name = "ライフル銃兵産出"
 description = "ライフル銃兵産出"

@@ -49,6 +49,12 @@ namespace LT3
         return UnitRole::Soldier;
     }
 
+    inline bool IsBarrierUnitEntry(const UnitCatalogEntry& entry)
+    {
+        const String loweredTag = entry.tag.lowercased();
+        return loweredTag.includes(U"ironwall") || loweredTag.includes(U"barbed") || loweredTag.includes(U"wire");
+    }
+
     inline UnitDef BuildCommandBaseFromCatalog(const UnitCatalog& catalog, SkillDefId baseSkill)
     {
         for (const auto& entry : catalog.entries)
@@ -69,12 +75,15 @@ namespace LT3
                     0,
                     baseSkill,
                     Palette::Slategray,
-                    entry.visualScale
+                    entry.visualScale,
+                    entry.classBuild,
+                    entry.classTag,
+                    false
                 };
             }
         }
 
-        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 0, baseSkill, Palette::Slategray };
+        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 0, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
     }
 
     inline void LoadUnitDefinitions(DefinitionStores& defs, const UnitCatalog& unitCatalog)
@@ -87,11 +96,6 @@ namespace LT3
         const SkillDefId arrow = defs.skillByTag.contains(U"arrow") ? defs.skillByTag.at(U"arrow") : InvalidSkillDefId;
         const SkillDefId baseShot = defs.skillByTag.contains(U"base_shot") ? defs.skillByTag.at(U"base_shot") : InvalidSkillDefId;
 
-        defs.addUnit({ U"worker", U"Worker", UnitRole::Worker, 42, 4, 0, 92.0, 12.0, 0, 7, workerHit, Palette::Dodgerblue });
-        defs.addUnit({ U"soldier", U"Soldier", UnitRole::Soldier, 70, 9, 1, 78.0, 15.0, 35, 0, sword, Palette::Limegreen });
-        defs.addUnit({ U"archer", U"Archer", UnitRole::Archer, 48, 7, 0, 74.0, 13.0, 45, 0, arrow, ColorF{ 0.0, 0.75, 1.0 } });
-        defs.addUnit(BuildCommandBaseFromCatalog(unitCatalog, baseShot));
-
         for (const auto& entry : unitCatalog.entries)
         {
             if (entry.tag.isEmpty() || defs.unitByTag.contains(entry.tag))
@@ -99,14 +103,18 @@ namespace LT3
                 continue;
             }
 
-            const UnitRole role = ResolveCatalogUnitRole(entry);
+            UnitRole role = ResolveCatalogUnitRole(entry);
+            if (IsBarrierUnitEntry(entry))
+            {
+                role = UnitRole::Barrier;
+            }
             const SkillDefId skill = ResolveCatalogSkill(defs, entry, role);
             const int32 hp = (role == UnitRole::Base && entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);
-            const double speed = (role == UnitRole::Base)
+            const double speed = (role == UnitRole::Base || role == UnitRole::Barrier)
                 ? 0.0
                 : Max(24.0, static_cast<double>((entry.move > 0) ? entry.move : entry.speed));
-            const double radius = (role == UnitRole::Base) ? 26.0 : 14.0;
-            const int32 gatherPower = (role == UnitRole::Worker) ? 7 : 0;
+            const double radius = (role == UnitRole::Base || role == UnitRole::Barrier) ? 26.0 : 14.0;
+            const bool blocksTileMovement = (role == UnitRole::Barrier);
 
             defs.addUnit({
                 entry.tag,
@@ -118,10 +126,13 @@ namespace LT3
                 speed,
                 radius,
                 entry.cost,
-                gatherPower,
+                1,
                 skill,
                 (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
-                entry.visualScale
+                entry.visualScale,
+                entry.classBuild,
+                entry.classTag,
+                blocksTileMovement
             });
         }
     }
