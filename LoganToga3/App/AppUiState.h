@@ -6,6 +6,13 @@
 
 namespace LT3
 {
+    enum class DebugNewGameRequest
+    {
+        None,
+        Normal,
+        EnemyAiStopped,
+    };
+
     struct AppUiState
     {
         MapEditorState mapEditor;
@@ -14,11 +21,27 @@ namespace LT3
         FilePath debugClipboardCaptureIconPath;
         bool debugClipboardCaptureRequested = false;
         bool debugClipboardCaptureInFlight = false;
+        DebugNewGameRequest debugNewGameRequest = DebugNewGameRequest::None;
     };
 
     inline RectF DebugClipboardCaptureButtonRect()
     {
         return RectF{ Scene::Width() - 76.0, 80.0, 64.0, 64.0 };
+    }
+
+    inline String DebugClipboardCaptureShortcutLabel()
+    {
+        return U"F12";
+    }
+
+    inline RectF DebugNewGameButtonRect()
+    {
+        return RectF{ Scene::Width() - 244.0, 80.0, 156.0, 30.0 };
+    }
+
+    inline RectF DebugNewGameEnemyAiStopButtonRect()
+    {
+        return RectF{ Scene::Width() - 244.0, 116.0, 156.0, 30.0 };
     }
 
     inline void ShowDebugClipboardCaptureToast(const String& title, const String& message, const FilePath& imagePath)
@@ -133,6 +156,56 @@ namespace LT3
         return true;
     }
 
+    inline bool HandleDebugClipboardCaptureShortcut(AppUiState& ui)
+    {
+        if (!ui.mapEditor.showDebugInfo)
+        {
+            return false;
+        }
+
+        if (!KeyF12.down())
+        {
+            return false;
+        }
+
+        if (!ui.debugClipboardCaptureRequested && !ui.debugClipboardCaptureInFlight)
+        {
+            ui.debugClipboardCaptureRequested = true;
+        }
+
+        return true;
+    }
+
+    inline bool HandleDebugNewGameButtons(AppUiState& ui)
+    {
+        if (!ui.mapEditor.showDebugInfo)
+        {
+            return false;
+        }
+
+        const RectF normalRect = DebugNewGameButtonRect();
+        const RectF enemyStopRect = DebugNewGameEnemyAiStopButtonRect();
+
+        if (normalRect.mouseOver() || enemyStopRect.mouseOver())
+        {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
+
+        if (normalRect.leftClicked())
+        {
+            ui.debugNewGameRequest = DebugNewGameRequest::Normal;
+            return true;
+        }
+
+        if (enemyStopRect.leftClicked())
+        {
+            ui.debugNewGameRequest = DebugNewGameRequest::EnemyAiStopped;
+            return true;
+        }
+
+        return false;
+    }
+
     inline void DrawDebugClipboardCaptureButton(const AppUiState& ui, const Font& uiFont)
     {
         if (!ui.mapEditor.showDebugInfo)
@@ -164,6 +237,33 @@ namespace LT3
         {
             uiFont(U"Copy").drawAt(12, buttonRect.center(), Palette::White);
         }
+
+        if (hovered)
+        {
+            const String tipText = U"Shortcut: {}"_fmt(DebugClipboardCaptureShortcutLabel());
+            const RectF tipRect{ buttonRect.x - 178.0, buttonRect.y + 18.0, 166.0, 28.0 };
+            tipRect.rounded(5.0).draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.22 });
+            uiFont(tipText).drawAt(11, tipRect.center(), Palette::Lightgray);
+        }
+    }
+
+    inline void DrawDebugNewGameButtons(const AppUiState& ui, const Font& uiFont)
+    {
+        if (!ui.mapEditor.showDebugInfo)
+        {
+            return;
+        }
+
+        const RectF normalRect = DebugNewGameButtonRect();
+        const RectF enemyStopRect = DebugNewGameEnemyAiStopButtonRect();
+        const bool normalHover = normalRect.mouseOver();
+        const bool enemyStopHover = enemyStopRect.mouseOver();
+
+        normalRect.draw(ColorF{ 0.14, 0.18, 0.12, 0.92 }).drawFrame(2.0, normalHover ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 1, 1, 1, 0.22 });
+        enemyStopRect.draw(ColorF{ 0.22, 0.12, 0.12, 0.92 }).drawFrame(2.0, enemyStopHover ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 1, 1, 1, 0.22 });
+
+        uiFont(U"NewGame").drawAt(14, normalRect.center(), Palette::White);
+        uiFont(U"NewGame (AI Stop)").drawAt(12, enemyStopRect.center(), Palette::White);
     }
 
     inline void SubmitDebugClipboardCaptureRequest(AppUiState& ui)

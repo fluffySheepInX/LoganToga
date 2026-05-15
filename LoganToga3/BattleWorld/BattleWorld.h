@@ -14,6 +14,24 @@ namespace LT3
         bool hasTargetPosition = false;
     };
 
+    struct PathRequest
+    {
+        UnitId unit = InvalidUnitId;
+        Vec2 destination{ 0, 0 };
+        Point startCell{ 0, 0 };
+        Point goalCell{ 0, 0 };
+        uint32 mapRevision = 0;
+    };
+
+    struct PathResult
+    {
+        UnitId unit = InvalidUnitId;
+        Vec2 destination{ 0, 0 };
+        Array<Vec2> waypoints;
+        bool success = false;
+        uint32 mapRevision = 0;
+    };
+
     struct UnitRuntimeStore
     {
         Array<UnitDefId> defId;
@@ -44,6 +62,46 @@ namespace LT3
         [[nodiscard]] size_t size() const
         {
             return defId.size();
+        }
+    };
+
+    struct PathRuntimeStore
+    {
+        Array<Array<Vec2>> waypoints;
+        Array<int32> waypointIndex;
+        Array<Vec2> destination;
+        Array<uint32> pathMapRevision;
+        Array<bool> hasPath;
+        Array<bool> requestPending;
+        Array<double> repathCooldownSec;
+        Array<PathRequest> requests;
+        Array<PathResult> results;
+        int32 maxRequestsPerFrame = 8;
+
+        void addUnit(const Vec2& initialPosition)
+        {
+            waypoints << Array<Vec2>{};
+            waypointIndex << 0;
+            destination << initialPosition;
+            pathMapRevision << 0u;
+            hasPath << false;
+            requestPending << false;
+            repathCooldownSec << 0.0;
+        }
+
+        void clearUnitPath(UnitId unit)
+        {
+            if (unit >= waypoints.size())
+            {
+                return;
+            }
+
+            waypoints[unit].clear();
+            waypointIndex[unit] = 0;
+            pathMapRevision[unit] = 0u;
+            hasPath[unit] = false;
+            requestPending[unit] = false;
+            repathCooldownSec[unit] = 0.0;
         }
     };
 
@@ -208,6 +266,7 @@ namespace LT3
         int32 height = 0;
         Array<uint32>  flags;          // bit 0 = passable, bit 1 = reserved barrier block
         Array<UnitId>  occupying;      // InvalidUnitId = empty
+        uint32 revision = 0;
 
         void init(int32 w, int32 h)
         {
@@ -216,6 +275,7 @@ namespace LT3
             const size_t n = static_cast<size_t>(w * h);
             flags.assign(n, 1u);       // all passable by default
             occupying.assign(n, InvalidUnitId);
+            revision = 0;
         }
 
         TileIndex index(int32 row, int32 col) const
@@ -257,6 +317,40 @@ namespace LT3
         }
     };
 
+    inline void ResizeBattleMapStore(BattleMapStore& map, int32 width, int32 height)
+    {
+        if (map.width == width && map.height == height)
+        {
+            return;
+        }
+
+        const int32 oldWidth = map.width;
+        const int32 oldHeight = map.height;
+        const Array<uint32> oldFlags = map.flags;
+        const Array<UnitId> oldOccupying = map.occupying;
+
+        map.init(width, height);
+        const int32 copyWidth = Min(oldWidth, width);
+        const int32 copyHeight = Min(oldHeight, height);
+        for (int32 row = 0; row < copyHeight; ++row)
+        {
+            for (int32 col = 0; col < copyWidth; ++col)
+            {
+                const size_t oldIndex = static_cast<size_t>(row * oldWidth + col);
+                const TileIndex newIndex = map.index(row, col);
+                if (oldIndex < oldFlags.size())
+                {
+                    map.flags[newIndex] = oldFlags[oldIndex];
+                }
+                if (oldIndex < oldOccupying.size())
+                {
+                    map.occupying[newIndex] = oldOccupying[oldIndex];
+                }
+            }
+        }
+        ++map.revision;
+    }
+
     struct BattleWorld
     {
         int32 mapWidth  = DefaultBattleMapWidth;
@@ -268,14 +362,25 @@ namespace LT3
         ProjectileStore   projectiles;
         PlacedObjectStore placedObjects;
         CarrierStore carriers;
+        PathRuntimeStore pathing;
         ResourceRuntimeStore resources;
         SelectionStore    selection;
         BattleMapStore    map;
+        bool enemyDirectorPaused = false;
         double enemySpawnTimerSec = 0.0;
         double elapsedSec         = 0.0;
         bool victory = false;
         bool defeat  = false;
     };
+
+    inline void EnsureBattleWorldMapSize(BattleWorld& world, int32 width, int32 height)
+    {
+        width = Max(1, width);
+        height = Max(1, height);
+        world.mapWidth = width;
+        world.mapHeight = height;
+        ResizeBattleMapStore(world.map, width, height);
+    }
 
     inline UnitId AddUnitToBattleWorld(BattleWorld& world, UnitDefId unitDef, Faction faction, const Vec2& pos, const DefinitionStores& defs)
     {
@@ -283,6 +388,7 @@ namespace LT3
         world.cooldowns.addUnit();
         world.buildQueues.addUnit();
         world.carriers.addUnit();
+        world.pathing.addUnit(pos);
         return id;
     }
 

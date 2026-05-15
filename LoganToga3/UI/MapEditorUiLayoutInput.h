@@ -61,7 +61,7 @@ namespace LT3
         {
             const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
             editor.uiCommandPanelPos.x = Clamp(snapped.x, 0.0, 1600.0 - commandRect.w);
-            editor.uiCommandPanelPos.y = Clamp(snapped.y, 70.0, 900.0 - commandRect.h);
+            editor.uiCommandPanelPos.y = Clamp(snapped.y, 70.0, Max(70.0, BattleUiBottomSafeY() - commandRect.h));
             consumed = true;
         }
 

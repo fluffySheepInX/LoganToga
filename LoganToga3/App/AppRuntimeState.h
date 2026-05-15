@@ -10,9 +10,15 @@ namespace LT3
         BattleWorld world;
     };
 
-    inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions)
+    inline void ResetBattleRuntimeState(AppRuntimeState& runtime, const DefinitionStores& defs, bool enemyDirectorPaused)
     {
         runtime.world = BattleWorld{};
-        SpawnDefaultBattle(runtime.world, definitions.defs);
+        SpawnDefaultBattle(runtime.world, defs);
+        runtime.world.enemyDirectorPaused = enemyDirectorPaused;
+    }
+
+    inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions)
+    {
+        ResetBattleRuntimeState(runtime, definitions.defs, false);
     }
 }

@@ -122,11 +122,11 @@ namespace LT3
                 const ResourceKind kind = (kindText == U"trust")
                     ? ResourceKind::Trust
                     : (kindText == U"food") ? ResourceKind::Food : ResourceKind::Gold;
-                const int32 x = Round(positionValues[0] / QuarterTileStep);
-                const int32 y = Round(positionValues[1] / QuarterTileStep);
+                const Vec2 worldPosition{ positionValues[0], positionValues[1] };
+                const Point cell = QuarterWorldPositionToBattleCell(worldPosition, editor.mapWidth, editor.mapHeight);
                 editor.resourceNodes << ResourceNodeEditData{
                     kind,
-                    Point{ x, y },
+                    cell,
                     Max(0, nodeValue[U"amount"].getOr<int32>(700)),
                     Max(0, nodeValue[U"income_per_sec"].getOr<int32>(5))
                 };
@@ -177,7 +177,7 @@ namespace LT3
 
         for (const auto& resourceNode : editor.resourceNodes)
         {
-            const Vec2 world = Vec2{ resourceNode.cell.x * QuarterTileStep, resourceNode.cell.y * QuarterTileStep };
+            const Vec2 world = QuarterBattleCellCenter(resourceNode.cell.x, resourceNode.cell.y);
             resourceWriter << U"[[resource_nodes]]\n";
             resourceWriter << U"resource_kind = \"" << ResourceKindToTag(resourceNode.kind) << U"\"\n";
             resourceWriter << U"position = [" << world.x << U", " << world.y << U"]\n";

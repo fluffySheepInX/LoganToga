@@ -8,6 +8,24 @@ namespace LT3
     {
         const RectF palettePanel = EditorPalettePanelRect();
         const RectF paletteViewport = EditorPaletteViewportRect();
+
+        for (int32 tabIndex = 0; tabIndex < 2; ++tabIndex)
+        {
+            if (EditorPaletteTabRect(tabIndex).leftClicked())
+            {
+                editor.paletteTabIndex = tabIndex;
+                editor.paletteScroll = 0.0;
+                if ((editor.selectedAsset < 0)
+                    || (editor.selectedAsset >= static_cast<int32>(editor.assets.size()))
+                    || (editor.assets[editor.selectedAsset].kind != CurrentMapEditorPaletteKind(editor)))
+                {
+                    editor.selectedAsset = InvalidMapEditorAsset;
+                }
+                editor.statusText = U"MapAssets tab: {}"_fmt(MapEditorPaletteTabLabel(tabIndex));
+                return true;
+            }
+        }
+
         if (!palettePanel.mouseOver())
         {
             return false;
@@ -16,15 +34,14 @@ namespace LT3
         const double maxScroll = Max(0.0, MapEditorPaletteContentHeight(editor) - paletteViewport.h);
         editor.paletteScroll = Clamp(editor.paletteScroll - Mouse::Wheel() * 42.0, 0.0, maxScroll);
 
+        const MapEditorAssetKind activeKind = CurrentMapEditorPaletteKind(editor);
         double y = paletteViewport.y - editor.paletteScroll;
-        Optional<MapEditorAssetKind> previousKind;
         for (int32 i = 0; i < static_cast<int32>(editor.assets.size()); ++i)
         {
             const MapEditorAsset& asset = editor.assets[i];
-            if (!previousKind || *previousKind != asset.kind)
+            if (asset.kind != activeKind)
             {
-                y += 30.0;
-                previousKind = asset.kind;
+                continue;
             }
 
             const RectF itemRect{ paletteViewport.x, y, paletteViewport.w, 46.0 };
@@ -48,6 +65,49 @@ namespace LT3
         }
 
         const Optional<Point> cell = PickMapEditorCell(editor, screenMouse);
+        const Vec2 worldMouse = ToQuarterWorld(screenMouse);
+
+        if (MouseL.down())
+        {
+            if (Circle{ ToQuarterViewportScreen(editor.playerHomePosition), 22.0 }.intersects(screenMouse))
+            {
+                editor.draggingPlayerHome = true;
+                editor.draggingEnemyHome = false;
+                editor.statusText = U"Dragging player Home";
+                return true;
+            }
+            if (Circle{ ToQuarterViewportScreen(editor.enemyHomePosition), 22.0 }.intersects(screenMouse))
+            {
+                editor.draggingEnemyHome = true;
+                editor.draggingPlayerHome = false;
+                editor.statusText = U"Dragging enemy Home";
+                return true;
+            }
+        }
+
+        if (editor.draggingPlayerHome && MouseL.pressed())
+        {
+            const int32 col = Clamp(static_cast<int32>(Math::Round(worldMouse.x / QuarterTileStep)), 0, Max(0, editor.mapWidth - 1));
+            const int32 row = Clamp(static_cast<int32>(Math::Round(worldMouse.y / QuarterTileStep)), 0, Max(0, editor.mapHeight - 1));
+            editor.playerHomePosition = Vec2{ col * QuarterTileStep, row * QuarterTileStep };
+            return true;
+        }
+        if (editor.draggingEnemyHome && MouseL.pressed())
+        {
+            const int32 col = Clamp(static_cast<int32>(Math::Round(worldMouse.x / QuarterTileStep)), 0, Max(0, editor.mapWidth - 1));
+            const int32 row = Clamp(static_cast<int32>(Math::Round(worldMouse.y / QuarterTileStep)), 0, Max(0, editor.mapHeight - 1));
+            editor.enemyHomePosition = Vec2{ col * QuarterTileStep, row * QuarterTileStep };
+            return true;
+        }
+        if (MouseL.up() && (editor.draggingPlayerHome || editor.draggingEnemyHome))
+        {
+            editor.draggingPlayerHome = false;
+            editor.draggingEnemyHome = false;
+            SaveMapEditorToml(editor, false);
+            editor.statusText = U"Home position updated";
+            return true;
+        }
+
         if (!cell)
         {
             if (editor.resourcePlacementDragKind && MouseL.up())

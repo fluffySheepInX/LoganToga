@@ -67,11 +67,11 @@ namespace LT3
             {
                 continue;
             }
-            const Vec2 center = ToQuarterScreen(MapEditorCellCenter(node.cell.x, node.cell.y));
+            const Vec2 center = QuarterTileFaceCenterScreen(MapEditorCellCenter(node.cell.x, node.cell.y));
             const ColorF color = ResourceKindColor(node.kind);
             const bool selected = editor.selectedResourceNodeIndex == i;
-            Circle{ center.movedBy(0, -20), 18.0 }.draw(ColorF{ color, 0.85 }).drawFrame(2.0, selected ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 1, 1, 1, 0.25 });
-            DrawResourceKindIcon(editor, node.kind, center.movedBy(0, -20), 22.0);
+            Circle{ center, 18.0 }.draw(ColorF{ color, 0.85 }).drawFrame(2.0, selected ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 1, 1, 1, 0.25 });
+            DrawResourceKindIcon(editor, node.kind, center, 22.0);
             uiFont(U"{}"_fmt(node.incomePerSec)).drawAt(10, center.movedBy(0, 26), Palette::Black);
             uiFont(ResourceKindLabel(node.kind)).drawAt(10, center.movedBy(0, 8), color);
         }

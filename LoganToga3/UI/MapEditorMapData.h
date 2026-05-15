@@ -3,149 +3,11 @@
 # include "MapEditorTypes.h"
 # include "MapEditorResourceData.h"
 # include "MapEditorUiLayout.h"
+# include "MapEditorAssetUtils.h"
+# include "MapEditorCellOps.h"
 
 namespace LT3
 {
-    inline FilePath ResolveMapEditorAssetDirectory()
-    {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/015_BattleMapCellImage/";
-        if (FileSystem::IsDirectory(fromApp))
-        {
-            return fromApp;
-        }
-
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/015_BattleMapCellImage/";
-        if (FileSystem::IsDirectory(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
-    }
-
-    inline bool IsMapEditorImageFile(const FilePath& path)
-    {
-        const String extension = FileSystem::Extension(path).lowercased();
-        return extension == U"png" || extension == U"jpg" || extension == U"jpeg" || extension == U"bmp" || extension == U"webp";
-    }
-
-    inline String TomlEscape(StringView text)
-    {
-        String result;
-        for (const char32 ch : text)
-        {
-            if (ch == U'\\')
-            {
-                result += U"\\\\";
-            }
-            else if (ch == U'\"')
-            {
-                result += U"\\\"";
-            }
-            else
-            {
-                result += ch;
-            }
-        }
-        return result;
-    }
-
-    inline int32 FindMapEditorAssetIndexByFileName(const MapEditorState& editor, StringView fileName)
-    {
-        for (int32 i = 0; i < static_cast<int32>(editor.assets.size()); ++i)
-        {
-            if (editor.assets[i].fileName == fileName)
-            {
-                return i;
-            }
-        }
-
-        return InvalidMapEditorAsset;
-    }
-
-    inline void InitializeMapEditorCells(MapEditorState& editor)
-    {
-        editor.cells.assign(editor.mapWidth * editor.mapHeight, MapEditorCell{});
-
-        int32 defaultTerrain = InvalidMapEditorAsset;
-        for (int32 i = 0; i < static_cast<int32>(editor.assets.size()); ++i)
-        {
-            if (editor.assets[i].fileName == U"grass1.png")
-            {
-                defaultTerrain = i;
-                break;
-            }
-        }
-        if (defaultTerrain == InvalidMapEditorAsset)
-        {
-            for (int32 i = 0; i < static_cast<int32>(editor.assets.size()); ++i)
-            {
-                if (editor.assets[i].kind == MapEditorAssetKind::Terrain)
-                {
-                    defaultTerrain = i;
-                    break;
-                }
-            }
-        }
-
-        for (auto& cell : editor.cells)
-        {
-            cell.terrainAsset = defaultTerrain;
-        }
-        editor.selectedAsset = defaultTerrain;
-    }
-
-    inline void ResizeMapEditorCells(MapEditorState& editor, int32 newWidth, int32 newHeight)
-    {
-        newWidth = Clamp(newWidth, 4, 40);
-        newHeight = Clamp(newHeight, 4, 40);
-        if (newWidth == editor.mapWidth && newHeight == editor.mapHeight)
-        {
-            return;
-        }
-
-        const int32 oldWidth = editor.mapWidth;
-        const int32 oldHeight = editor.mapHeight;
-        const Array<MapEditorCell> oldCells = editor.cells;
-
-        editor.mapWidth = newWidth;
-        editor.mapHeight = newHeight;
-        editor.cells.assign(editor.mapWidth * editor.mapHeight, MapEditorCell{});
-
-        const int32 copyWidth = Min(oldWidth, editor.mapWidth);
-        const int32 copyHeight = Min(oldHeight, editor.mapHeight);
-        for (int32 y = 0; y < copyHeight; ++y)
-        {
-            for (int32 x = 0; x < copyWidth; ++x)
-            {
-                editor.cells[MapEditorCellIndex(editor, x, y)] = oldCells[static_cast<size_t>(y * oldWidth + x)];
-            }
-        }
-
-        size_t removedNodeCount = 0;
-        editor.resourceNodes.remove_if([&](const ResourceNodeEditData& node)
-        {
-            const bool outOfBounds = (node.cell.x < 0)
-                || (node.cell.y < 0)
-                || (node.cell.x >= editor.mapWidth)
-                || (node.cell.y >= editor.mapHeight);
-            if (outOfBounds)
-            {
-                ++removedNodeCount;
-            }
-            return outOfBounds;
-        });
-        if (!IsValidSelectedResourceNodeIndex(editor))
-        {
-            editor.selectedResourceNodeIndex = -1;
-        }
-
-        editor.statusText = U"Map size: {} x {}{}"_fmt(
-            editor.mapWidth,
-            editor.mapHeight,
-            (removedNodeCount > 0) ? U"  removed {} resource nodes"_fmt(removedNodeCount) : U"");
-    }
-
     inline void LoadMapEditorAssets(MapEditorState& editor)
     {
         editor.assetDirectory = ResolveMapEditorAssetDirectory();
@@ -214,7 +76,14 @@ namespace LT3
             editor.showUnitList = toml[U"toolbar.unit_list"].getOr<bool>(editor.showUnitList);
             editor.showBuildingEditor = toml[U"toolbar.building_editor"].getOr<bool>(editor.showBuildingEditor);
             editor.showDebugInfo = toml[U"toolbar.debug_info"].getOr<bool>(editor.showDebugInfo);
+            editor.showBattleGrid = toml[U"toolbar.battle_grid"].getOr<bool>(editor.showBattleGrid);
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
+            editor.paletteTabIndex = Clamp(toml[U"toolbar.map_assets_tab"].getOr<int32>(editor.paletteTabIndex), 0, 1);
+            editor.showResourcePanels = toml[U"toolbar.resource_panels"].getOr<bool>(editor.showResourcePanels);
+            editor.playerHomePosition.x = toml[U"home.player_x"].getOr<double>(editor.playerHomePosition.x);
+            editor.playerHomePosition.y = toml[U"home.player_y"].getOr<double>(editor.playerHomePosition.y);
+            editor.enemyHomePosition.x = toml[U"home.enemy_x"].getOr<double>(editor.enemyHomePosition.x);
+            editor.enemyHomePosition.y = toml[U"home.enemy_y"].getOr<double>(editor.enemyHomePosition.y);
 
             for (const auto tileValue : toml[U"tiles"].tableArrayView())
             {
@@ -286,7 +155,16 @@ namespace LT3
         writer << U"unit_list = " << (editor.showUnitList ? U"true" : U"false") << U"\n";
         writer << U"building_editor = " << (editor.showBuildingEditor ? U"true" : U"false") << U"\n";
         writer << U"debug_info = " << (editor.showDebugInfo ? U"true" : U"false") << U"\n";
-        writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n\n";
+        writer << U"battle_grid = " << (editor.showBattleGrid ? U"true" : U"false") << U"\n";
+        writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n";
+        writer << U"map_assets_tab = " << Clamp(editor.paletteTabIndex, 0, 1) << U"\n";
+        writer << U"resource_panels = " << (editor.showResourcePanels ? U"true" : U"false") << U"\n\n";
+
+        writer << U"[home]\n";
+        writer << U"player_x = " << editor.playerHomePosition.x << U"\n";
+        writer << U"player_y = " << editor.playerHomePosition.y << U"\n";
+        writer << U"enemy_x = " << editor.enemyHomePosition.x << U"\n";
+        writer << U"enemy_y = " << editor.enemyHomePosition.y << U"\n\n";
 
         writer << U"[map]\n";
         writer << U"width = " << editor.mapWidth << U"\n";
@@ -328,12 +206,15 @@ namespace LT3
     {
         editor.enabled = false;
         editor.showDebugInfo = true;
+        editor.showBattleGrid = true;
         editor.assets.clear();
         editor.cells.clear();
         editor.mapWidth = DefaultMapEditorWidth;
         editor.mapHeight = DefaultMapEditorHeight;
         editor.selectedAsset = InvalidMapEditorAsset;
         editor.paletteScroll = 0.0;
+        editor.paletteTabIndex = 0;
+        editor.showResourcePanels = true;
         editor.showUnitList = false;
         editor.showBuildingEditor = false;
         editor.unitListScroll = 0.0;
@@ -358,6 +239,10 @@ namespace LT3
         editor.resourceNodeFilterKind = -1;
         editor.resourcePlacementDragKind.reset();
         editor.resourceIconTextures.clear();
+        editor.playerHomePosition = { 210.0, 450.0 };
+        editor.enemyHomePosition = { 1390.0, 450.0 };
+        editor.draggingPlayerHome = false;
+        editor.draggingEnemyHome = false;
         editor.statusText = U"Map editor ready";
     }
 }

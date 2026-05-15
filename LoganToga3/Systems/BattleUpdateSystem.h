@@ -4,6 +4,7 @@
 # include "CombatSystem.h"
 # include "EnemyDirectorSystem.h"
 # include "MovementSystem.h"
+# include "PathfindingSystem.h"
 # include "ProjectileSystem.h"
 # include "ResourceSystem.h"
 # include "WinLoseSystem.h"
@@ -22,7 +23,11 @@ namespace LT3
 
     inline void UpdateBattleSimulation(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
-        UpdateEnemyDirector(world, defs, dt);
+        if (!world.enemyDirectorPaused)
+        {
+            UpdateEnemyDirector(world, defs, dt);
+        }
+        UpdatePathfinding(world, defs, dt);
         UpdateMovement(world, defs, dt);
         UpdateGathering(world, defs, dt);
         UpdateCombat(world, defs, dt);

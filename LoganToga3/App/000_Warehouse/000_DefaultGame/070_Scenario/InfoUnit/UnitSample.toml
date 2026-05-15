@@ -24,6 +24,7 @@ move = 500
 maintain_range = 0
 visual_scale = 2
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "NewbieKouhei"
@@ -51,6 +52,7 @@ move = 500
 maintain_range = 0
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "keisouTumejo"
@@ -78,6 +80,7 @@ move = 0
 maintain_range = 0
 visual_scale = 1.6
 visual_offset = [0, 14]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "LineInfantryM14Tumejo"
@@ -105,6 +108,7 @@ move = 0
 maintain_range = 0
 visual_scale = 2
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "BrenGunCarrier"
@@ -132,6 +136,7 @@ move = 500
 maintain_range = 0
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "Kettenkrad"
@@ -159,6 +164,7 @@ move = 500
 maintain_range = 0
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "ironWall"
@@ -185,7 +191,8 @@ speed = 0
 move = 0
 maintain_range = 0
 visual_scale = 1
-visual_offset = [-8, 19]
+visual_offset = [0, -15]
+shadow_offset = [0, -49]
 
 [[units]]
 tag = "LineInfantryM14"
@@ -213,6 +220,7 @@ move = 500
 maintain_range = 0
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "Home"
@@ -240,6 +248,7 @@ move = 500
 maintain_range = 0
 visual_scale = 2.8
 visual_offset = [0, 20]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "sniperP99"
@@ -267,6 +276,7 @@ move = 500
 maintain_range = 650
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 
 [[units]]
 tag = "SkirmisherEni"
@@ -294,4 +304,5 @@ move = 500
 maintain_range = 0
 visual_scale = 1
 visual_offset = [0, 0]
+shadow_offset = [0, 0]
 

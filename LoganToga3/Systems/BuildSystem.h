@@ -13,7 +13,9 @@ namespace LT3
 
             if (unit < world.buildQueues.hasPendingEntry.size() && world.buildQueues.hasPendingEntry[unit])
             {
-                if (world.units.task[unit] == UnitTask::Idle || world.units.position[unit].distanceFromSq(world.units.targetPosition[unit]) <= Square(9.0))
+                const Vec2 pendingTarget = world.buildQueues.pendingEntry[unit].targetPosition;
+                const bool nearPendingBuildTarget = world.units.position[unit].distanceFromSq(pendingTarget) <= Square(QuarterTileStep * 1.1);
+                if (world.units.task[unit] == UnitTask::Idle || nearPendingBuildTarget)
                 {
                     Array<QueuedBuildAction>& queue = world.buildQueues.entries[unit];
                     const bool wasEmpty = queue.isEmpty();
@@ -106,6 +108,7 @@ namespace LT3
                     {
                         const Point cell = WorldPositionToBattleCell(world, queuedAction.hasTargetPosition ? queuedAction.targetPosition : world.units.position[unit]);
                         world.map.setBarrierReservation(cell.y, cell.x, true);
+                        ++world.map.revision;
                     }
                 }
 

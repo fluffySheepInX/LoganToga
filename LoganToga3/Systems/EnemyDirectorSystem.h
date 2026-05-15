@@ -38,12 +38,14 @@ namespace LT3
         {
             if (!IsValidUnit(world, unit)) continue;
             if (world.units.faction[unit] != Faction::Enemy) continue;
-            if (defs.units[world.units.defId[unit]].role == UnitRole::Base) continue;
+            const UnitDef& unitDef = defs.units[world.units.defId[unit]];
+            if (unitDef.role == UnitRole::Base) continue;
+            if (unitDef.skill == InvalidSkillDefId || unitDef.skill >= defs.skills.size()) continue;
 
             const UnitId target = FindNearestEnemy(world, unit, 620.0);
             if (IsValidUnit(world, target))
             {
-                const SkillDef& skill = defs.skills[defs.units[world.units.defId[unit]].skill];
+                const SkillDef& skill = defs.skills[unitDef.skill];
                 if (world.units.position[unit].distanceFrom(world.units.position[target]) > skill.range * 0.85)
                 {
                     IssueMove(world, unit, world.units.position[target]);

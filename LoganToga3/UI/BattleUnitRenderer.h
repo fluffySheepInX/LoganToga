@@ -14,6 +14,7 @@ namespace LT3
         String kind;
         double visualScale = 1.0;
         Point visualOffset{ 0, 0 };
+        Point shadowOffset{ 0, 0 };
     };
 
     struct BattleRenderAssets
@@ -31,7 +32,7 @@ namespace LT3
         {
             if (!entry.tag.isEmpty())
             {
-                assets.unitVisualByTag[entry.tag] = UnitVisualInfo{ entry.image, entry.kind, entry.visualScale, entry.visualOffset };
+                assets.unitVisualByTag[entry.tag] = UnitVisualInfo{ entry.image, entry.kind, entry.visualScale, entry.visualOffset, entry.shadowOffset };
             }
         }
         return assets;
@@ -61,7 +62,7 @@ namespace LT3
 
     inline void DrawSelectionDebugOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont)
     {
-        const RectF panel{ 24, 256, 640, 114 };
+        const RectF panel{ 24, 256, 640, 136 };
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Selection Debug").draw(44, 272, Palette::White);
 
@@ -87,6 +88,7 @@ namespace LT3
         uiFont(selectionText).draw(13, 44, 296, Palette::Lightgray);
         uiFont(visualText).draw(13, 44, 316, Palette::Skyblue);
         uiFont(pathText).draw(11, 44, 336, Palette::Lightgray);
+        uiFont(U"Map: {} x {}"_fmt(world.mapWidth, world.mapHeight)).draw(11, 44, 358, ColorF{ 0.76, 0.80, 0.88 });
     }
 
     inline ColorF GetUnitOutlineColor(const BattleWorld& world, UnitId unit)
@@ -215,7 +217,18 @@ namespace LT3
     inline void DrawUnitVisual(const UnitDef& def, const Vec2& pos, bool selected, const ColorF& outline, const BattleRenderAssets* assets)
     {
         const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
-        Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
+        Vec2 shadowCenter = pos;
+        if (assets)
+        {
+            const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.tag);
+            if (!visual.image.isEmpty())
+            {
+                const Vec2 shadowOffset = Vec2{ static_cast<double>(visual.shadowOffset.x), static_cast<double>(visual.shadowOffset.y) } * visual.visualScale;
+                shadowCenter += shadowOffset;
+            }
+        }
+
+        Ellipse{ shadowCenter + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
         if (!isStaticStructure)
         {
             Circle{ pos, def.radius + (selected ? 6.0 : 2.0) }.drawFrame(selected ? 4.0 : 2.0, outline);
@@ -229,6 +242,7 @@ namespace LT3
 
     inline void DrawUnits(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont, const BattleRenderAssets* assets = nullptr)
     {
+        const Vec2 mouse = Cursor::PosF();
         for (UnitId unit = 0; unit < world.units.size(); ++unit)
         {
             if (!world.units.alive[unit]) continue;
@@ -241,8 +255,12 @@ namespace LT3
             DrawUnitMovePath(world, unit, outline);
             DrawUnitVisual(def, pos, selected, outline, assets);
 
-            DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp);
-            uiFont(def.name).drawAt(13, pos + Vec2{ 0, def.radius + 17 }, Palette::White);
+            const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
+            const bool hovered = (mouse.distanceFrom(pos) <= (def.radius + 16.0));
+            if (!isStaticStructure || hovered)
+            {
+                DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp);
+            }
         }
     }
 }

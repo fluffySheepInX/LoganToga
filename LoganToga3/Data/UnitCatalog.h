@@ -30,6 +30,7 @@ namespace LT3
         int32 maintainRange = 0;
         double visualScale = 1.0;
         Point visualOffset{ 0, 0 };
+        Point shadowOffset{ 0, 0 };
     };
 
     struct UnitCatalog
@@ -227,6 +228,7 @@ namespace LT3
             entry.maintainRange = unitValue[U"maintain_range"].getOr<int32>(0);
             entry.visualScale = Clamp(unitValue[U"visual_scale"].getOr<double>(unitValue[U"scale"].getOr<double>(1.0)), 0.25, 3.0);
             entry.visualOffset = ReadTomlPointArray(unitValue[U"visual_offset"]);
+            entry.shadowOffset = ReadTomlPointArray(unitValue[U"shadow_offset"]);
 
             if (!entry.tag.isEmpty())
             {
@@ -276,7 +278,8 @@ namespace LT3
             block += U"move = {}\n"_fmt(entry.move);
             block += U"maintain_range = {}\n"_fmt(entry.maintainRange);
             block += U"visual_scale = {}\n"_fmt(entry.visualScale);
-            block += U"visual_offset = [{}, {}]\n\n"_fmt(entry.visualOffset.x, entry.visualOffset.y);
+            block += U"visual_offset = [{}, {}]\n"_fmt(entry.visualOffset.x, entry.visualOffset.y);
+            block += U"shadow_offset = [{}, {}]\n\n"_fmt(entry.shadowOffset.x, entry.shadowOffset.y);
             writer.write(block);
         }
 

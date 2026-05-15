@@ -11,7 +11,6 @@ namespace LT3
         if (EditorToolbarButtonRect(editor, 0).leftClicked())
         {
             editor.enabled = !editor.enabled;
-            editor.statusText = editor.enabled ? U"Map editor ON" : U"Map editor OFF";
             SaveMapEditorToml(editor, false);
             consumed = true;
         }
@@ -43,21 +42,18 @@ namespace LT3
         if (EditorToolbarButtonRect(editor, 6).leftClicked())
         {
             editor.showUnitList = !editor.showUnitList;
-            editor.statusText = editor.showUnitList ? U"Unit List ON" : U"Unit List OFF";
             SaveMapEditorToml(editor, false);
             consumed = true;
         }
         if (EditorToolbarButtonRect(editor, 7).leftClicked())
         {
             editor.showBuildingEditor = !editor.showBuildingEditor;
-            editor.statusText = editor.showBuildingEditor ? U"BuildingEditor ON" : U"BuildingEditor OFF";
             SaveMapEditorToml(editor, false);
             consumed = true;
         }
         if (EditorToolbarButtonRect(editor, 8).leftClicked())
         {
             editor.showDebugInfo = !editor.showDebugInfo;
-            editor.statusText = editor.showDebugInfo ? U"Debug Info ON" : U"Debug Info OFF";
             SaveMapEditorToml(editor, false);
             consumed = true;
         }
@@ -70,10 +66,12 @@ namespace LT3
             {
                 SaveBattleUiLayoutToml(editor);
             }
-            else
-            {
-                editor.statusText = U"UI Layout Edit ON";
-            }
+            SaveMapEditorToml(editor, false);
+            consumed = true;
+        }
+        if (EditorToolbarButtonRect(editor, 10).leftClicked())
+        {
+            editor.showBattleGrid = !editor.showBattleGrid;
             SaveMapEditorToml(editor, false);
             consumed = true;
         }

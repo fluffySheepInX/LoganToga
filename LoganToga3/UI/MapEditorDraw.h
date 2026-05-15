@@ -26,7 +26,7 @@ namespace LT3
     inline void DrawMapEditorToolbar(const MapEditorState& editor, const Font& uiFont)
     {
         EditorToolbarRect().draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
-        DrawEditorButton(EditorToolbarButtonRect(editor, 0), editor.enabled ? U"Map Editor: ON" : U"Map Editor: OFF", editor.enabled, uiFont);
+        DrawEditorButton(EditorToolbarButtonRect(editor, 0), U"Map Editor", editor.enabled, uiFont);
         if (editor.enabled)
         {
             DrawEditorButton(EditorToolbarButtonRect(editor, 1), U"Save TOML", false, uiFont);
@@ -39,14 +39,18 @@ namespace LT3
         DrawEditorButton(EditorToolbarButtonRect(editor, 7), U"Build Edit", editor.showBuildingEditor, uiFont);
         DrawEditorButton(EditorToolbarButtonRect(editor, 8), U"Debug Info", editor.showDebugInfo, uiFont);
         DrawEditorButton(EditorToolbarButtonRect(editor, 9), U"UI Edit", editor.uiLayoutEditEnabled, uiFont);
+        DrawEditorButton(EditorToolbarButtonRect(editor, 10), U"Battle Grid", editor.showBattleGrid, uiFont);
 
-        const double mapTextX = editor.enabled ? 1260.0 : 620.0;
-        const double statusTextX = editor.enabled ? 1400.0 : 760.0;
-        uiFont(U"Map: {} x {}"_fmt(editor.mapWidth, editor.mapHeight)).draw(mapTextX, 23, Palette::White);
-        uiFont(editor.statusText).draw(statusTextX, 23, Palette::Lightgray);
         if (editor.enabled)
         {
             uiFont(U"L/MMB/list:select  R:add/cycle  Shift+drag/arrow:move  Ctrl+D:dup").draw(640, 46, Palette::Aqua);
+        }
+
+        if (editor.showDebugInfo)
+        {
+            const RectF statusBar = EditorStatusBarRect();
+            statusBar.draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
+            uiFont(editor.statusText).draw(statusBar.x + 24.0, statusBar.y + 7.0, Palette::Lightgray);
         }
     }
 
@@ -242,7 +246,14 @@ namespace LT3
         }
     }
 
-    inline void DrawMapEditorTerrainLayer(const MapEditorState& editor)
+    inline void DrawHomeMarker(const Vec2& worldPos, const String& label, const ColorF& color, const Font& uiFont)
+    {
+        const Vec2 screenPos = ToQuarterViewportScreen(worldPos);
+        Circle{ screenPos, 13.0 }.draw(color).drawFrame(2.0, ColorF{ 1, 1, 1, 0.9 });
+        uiFont(label).drawAt(12, screenPos.movedBy(0, -22), Palette::White);
+    }
+
+    inline void DrawMapEditorTerrainLayer(const MapEditorState& editor, bool drawGrid)
     {
         if (editor.cells.isEmpty())
         {
@@ -266,7 +277,10 @@ namespace LT3
                 {
                     DrawPlacedMapAsset(editor.assets[cell.terrainAsset], bottomCenter);
                 }
-                tile.drawFrame(2.0, ColorF{ 0.0, 0.75, 1.0, 0.22 });
+                if (drawGrid)
+                {
+                    tile.drawFrame(2.0, ColorF{ 0.0, 0.75, 1.0, 0.22 });
+                }
             }
         }
     }
@@ -305,43 +319,58 @@ namespace LT3
     {
         DrawMapEditorToolbar(editor, uiFont);
         DrawUiLayoutGridControl(editor, uiFont);
-        DrawMapEditorResourceNodeList(editor, uiFont);
-        DrawMapEditorResourceValidation(editor, uiFont);
-        DrawMapEditorResourcePalette(editor, uiFont);
+        if (editor.showResourcePanels)
+        {
+            DrawMapEditorResourceNodeList(editor, uiFont);
+            DrawMapEditorResourceValidation(editor, uiFont);
+            DrawMapEditorResourcePalette(editor, uiFont);
+        }
         DrawUnitCatalogList(editor, unitCatalog, uiFont);
         DrawUnitParameterEditor(editor, unitCatalog, uiFont);
         DrawBuildingEditor(editor, unitCatalog, uiFont);
-        DrawMapEditorResourceNodeEditor(editor, uiFont);
+        if (editor.showResourcePanels)
+        {
+            DrawMapEditorResourceNodeEditor(editor, uiFont);
+        }
         if (!editor.enabled)
         {
             return;
         }
 
         DrawMapEditorCurrentCellMarker(editor, screenMouse);
+        DrawHomeMarker(editor.playerHomePosition, U"P Home", ColorF{ 0.15, 0.8, 1.0, 0.92 }, uiFont);
+        DrawHomeMarker(editor.enemyHomePosition, U"E Home", ColorF{ 1.0, 0.36, 0.30, 0.92 }, uiFont);
 
         const RectF palettePanel = EditorPalettePanelRect();
         const RectF paletteViewport = EditorPaletteViewportRect();
+        const RectF resourceToggleRect = EditorResourcePanelsToggleRect();
         palettePanel.draw(ColorF{ 0.02, 0.03, 0.045, 0.88 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
-        uiFont(U"Map Assets").draw(1240, 42, Palette::White);
-        uiFont(U"Wheel: scroll").draw(1420, 42, Palette::Lightgray);
+        resourceToggleRect.draw(editor.showResourcePanels ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+            .drawFrame(2, resourceToggleRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+        uiFont(U"★").drawAt(36, resourceToggleRect.center(), editor.showResourcePanels ? Palette::Yellow : Palette::Lightgray);
+
+        uiFont(U"Map Assets").draw(palettePanel.x + 20.0, palettePanel.y + 10.0, Palette::White);
+        uiFont(U"Wheel: scroll").draw(palettePanel.x + palettePanel.w - 150.0, palettePanel.y + 10.0, Palette::Lightgray);
+
+        for (int32 tabIndex = 0; tabIndex < 2; ++tabIndex)
+        {
+            const RectF tabRect = EditorPaletteTabRect(tabIndex);
+            const bool active = editor.paletteTabIndex == tabIndex;
+            tabRect.draw(active ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+                .drawFrame(2, tabRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+            uiFont(MapEditorPaletteTabLabel(tabIndex)).drawAt(12, tabRect.center(), active ? Palette::White : Palette::Lightgray);
+        }
 
         paletteViewport.draw(ColorF{ 0, 0, 0, 0.08 });
+        const MapEditorAssetKind activeKind = CurrentMapEditorPaletteKind(editor);
         double y = paletteViewport.y - editor.paletteScroll;
-        Optional<MapEditorAssetKind> previousKind;
         const double viewportBottom = (paletteViewport.y + paletteViewport.h);
         for (int32 i = 0; i < static_cast<int32>(editor.assets.size()); ++i)
         {
             const MapEditorAsset& asset = editor.assets[i];
-            if (!previousKind || *previousKind != asset.kind)
+            if (asset.kind != activeKind)
             {
-                const RectF headerRect{ paletteViewport.x, y + 2.0, paletteViewport.w, 24.0 };
-                if ((paletteViewport.y <= headerRect.y) && ((headerRect.y + headerRect.h) <= viewportBottom))
-                {
-                    headerRect.draw(ColorF{ 0.05, 0.07, 0.09, 0.94 });
-                    uiFont(MapEditorAssetKindLabel(asset.kind)).draw(13, paletteViewport.x + 8.0, y + 4.0, asset.kind == MapEditorAssetKind::Terrain ? Palette::Skyblue : Palette::Orange);
-                }
-                y += 30.0;
-                previousKind = asset.kind;
+                continue;
             }
 
             const RectF rect{ paletteViewport.x, y, paletteViewport.w, 46.0 };
@@ -373,5 +402,7 @@ namespace LT3
             RectF{ paletteViewport.x + paletteViewport.w + 6.0, paletteViewport.y, 6.0, paletteViewport.h }.draw(ColorF{ 1, 1, 1, 0.08 });
             RectF{ paletteViewport.x + paletteViewport.w + 6.0, handleY, 6.0, handleHeight }.draw(ColorF{ 1.0, 0.84, 0.0, 0.70 });
         }
+
+        uiFont(U"Drag P/E Home markers to change spawn positions").draw(640, 68, Palette::Orange);
     }
 }

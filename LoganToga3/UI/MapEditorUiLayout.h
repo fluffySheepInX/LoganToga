@@ -31,10 +31,20 @@ namespace LT3
         return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 220.0, 520.0, 220.0 };
     }
 
+    inline double BattleUiBottomSafeInset()
+    {
+        return 40.0;
+    }
+
+    inline double BattleUiBottomSafeY()
+    {
+        return Max(0.0, Scene::Height() - BattleUiBottomSafeInset());
+    }
+
     inline RectF BattleCommandPanelRect(const MapEditorState& editor, int32 rows)
     {
         const double panelHeight = Max(112.0, rows * 88.0 + 24.0);
-        const double panelY = Min(editor.uiCommandPanelPos.y, Max(0.0, Scene::Height() - panelHeight - 8.0));
+        const double panelY = Min(editor.uiCommandPanelPos.y, Max(0.0, BattleUiBottomSafeY() - panelHeight));
         return RectF{ editor.uiCommandPanelPos.x, panelY, 286.0, panelHeight };
     }
 

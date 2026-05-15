@@ -2,7 +2,29 @@
 
 resource_kind = "gold"
 
-position = [720, 600]
+position = [680, 570]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "trust"
+
+position = [440, 930]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "food"
+
+position = [1760, 930]
 
 amount = 700
 
@@ -13,7 +35,7 @@ income_per_sec = 5
 
 resource_kind = "gold"
 
-position = [1080, 1080]
+position = [200, 1170]
 
 amount = 700
 
@@ -24,7 +46,7 @@ income_per_sec = 5
 
 resource_kind = "gold"
 
-position = [1200, 1080]
+position = [800, 1170]
 
 amount = 700
 
@@ -35,7 +57,7 @@ income_per_sec = 5
 
 resource_kind = "gold"
 
-position = [0, 1200]
+position = [1760, 1290]
 
 amount = 700
 

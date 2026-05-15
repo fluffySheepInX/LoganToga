@@ -46,8 +46,9 @@ namespace LT3
     inline void InitializeApp(AppState& app)
     {
         Scene::SetBackground(ColorF{ 0.08, 0.14, 0.11 });
-        InitializeAppRuntimeState(app.runtime, app.definitions);
         InitializeAppUiState(app.ui);
+        InitializeAppRuntimeState(app.runtime, app.definitions);
+        SyncBattleWorldMapFromEditor(app.ui.mapEditor, app.runtime.world, app.definitions.defs);
     }
 
     inline void ProcessInput(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
@@ -58,6 +59,16 @@ namespace LT3
         }
 
         if (HandleDebugClipboardCaptureButton(ui))
+        {
+            return;
+        }
+
+        if (HandleDebugClipboardCaptureShortcut(ui))
+        {
+            return;
+        }
+
+        if (HandleDebugNewGameButtons(ui))
         {
             return;
         }
@@ -81,11 +92,19 @@ namespace LT3
             return;
         }
 
-        HandleBattleInput(runtime.world, definitions.defs, ui.mapEditor, worldMouse);
+        HandleBattleInput(runtime.world, definitions.defs, ui.mapEditor, screenMouse, worldMouse);
     }
 
     inline void UpdateAppRuntimeState(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
     {
+        if (ui.debugNewGameRequest != DebugNewGameRequest::None)
+        {
+            const bool enemyAiStopped = (ui.debugNewGameRequest == DebugNewGameRequest::EnemyAiStopped);
+            ResetBattleRuntimeState(runtime, definitions.defs, enemyAiStopped);
+            SyncBattleWorldMapFromEditor(ui.mapEditor, runtime.world, definitions.defs);
+            ui.debugNewGameRequest = DebugNewGameRequest::None;
+        }
+
         ProcessInput(runtime, definitions, ui);
         if (!ui.mapEditor.enabled)
         {
@@ -107,6 +126,7 @@ namespace LT3
     inline void DrawAppUi(const AppDefinitionState& definitions, AppUiState& ui, const Font& uiFont)
     {
         DrawMapEditorOverlay(ui.mapEditor, definitions.unitCatalog, Cursor::PosF(), uiFont);
+        DrawDebugNewGameButtons(ui, uiFont);
         DrawDebugClipboardCaptureButton(ui, uiFont);
         SubmitDebugClipboardCaptureRequest(ui);
     }

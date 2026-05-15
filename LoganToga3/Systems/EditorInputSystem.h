@@ -41,14 +41,19 @@ namespace LT3
         }
     }
 
+    inline void SyncBattleWorldMapFromEditor(const MapEditorState& mapEditor, BattleWorld& world, const DefinitionStores& defs)
+    {
+        EnsureBattleWorldMapSize(world, mapEditor.mapWidth, mapEditor.mapHeight);
+        SyncBattleResourceNodesFromEditor(mapEditor, world, defs);
+    }
+
     inline bool HandleEditorInput(MapEditorState& mapEditor, BattleWorld& world, const DefinitionStores& defs, UnitCatalog& unitCatalog, const Vec2& screenMouse)
     {
         const bool wasEditorEnabled = mapEditor.enabled;
         const bool consumed = ProcessMapEditorInput(mapEditor, world, defs, unitCatalog, screenMouse);
+        EnsureBattleWorldMapSize(world, mapEditor.mapWidth, mapEditor.mapHeight);
         if (wasEditorEnabled || mapEditor.enabled)
         {
-            world.mapWidth = mapEditor.mapWidth;
-            world.mapHeight = mapEditor.mapHeight;
             SyncBattleResourceNodesFromEditor(mapEditor, world, defs);
         }
         return consumed;

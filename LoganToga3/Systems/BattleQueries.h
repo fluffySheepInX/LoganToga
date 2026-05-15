@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../BattleWorld/BattleWorld.h"
+# include "../UI/QuarterView.h"
 
 namespace LT3
 {
@@ -112,11 +113,13 @@ namespace LT3
         return GetFactionResourceAmount(world, Faction::Player, resourceId);
     }
 
-    inline Optional<size_t> FindHoveredResourceNode(const BattleWorld& world, const Vec2& worldPos, double radius = 42.0)
+    inline Optional<size_t> FindHoveredResourceNode(const BattleWorld& world, const Vec2& screenPos, double radius = 42.0)
     {
         size_t bestIndex = 0;
         double bestDistanceSq = Square(radius);
         bool found = false;
+        const double scale = QuarterViewCamera2D.getScale();
+        const Vec2 cameraCenter = QuarterViewCamera2D.getCenter();
 
         for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
         {
@@ -125,7 +128,9 @@ namespace LT3
                 continue;
             }
 
-            const double distanceSq = world.resourceNodes.position[node].distanceFromSq(worldPos);
+            const Vec2 faceCenter = QuarterTileFaceCenterScreen(world.resourceNodes.position[node]);
+            const Vec2 nodeScreen = QuarterViewOrigin + ((faceCenter - QuarterViewOrigin) * scale) - (cameraCenter * scale);
+            const double distanceSq = nodeScreen.distanceFromSq(screenPos);
             if (distanceSq <= bestDistanceSq)
             {
                 bestDistanceSq = distanceSq;

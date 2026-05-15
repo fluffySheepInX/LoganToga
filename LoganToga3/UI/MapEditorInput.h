@@ -28,22 +28,22 @@ namespace LT3
             consumed = true;
         }
 
-        if (ProcessResourcePaletteInput(editor))
+        if (editor.showResourcePanels && ProcessResourcePaletteInput(editor))
         {
             consumed = true;
         }
 
-        if (ProcessResourceNodeListInput(editor))
+        if (editor.showResourcePanels && ProcessResourceNodeListInput(editor))
         {
             consumed = true;
         }
 
-        if (ProcessResourceNodeEditorPanelInput(editor))
+        if (editor.showResourcePanels && ProcessResourceNodeEditorPanelInput(editor))
         {
             consumed = true;
         }
 
-        if (editor.enabled && editor.resourcePlacementDragKind && MouseL.up())
+        if (editor.enabled && editor.showResourcePanels && editor.resourcePlacementDragKind && MouseL.up())
         {
             if (const Optional<Point> releaseCell = PickMapEditorCell(editor, screenMouse))
             {
@@ -84,6 +84,17 @@ namespace LT3
                 DuplicateSelectedResourceNode(editor);
                 consumed = true;
             }
+        }
+
+        if (editor.enabled && EditorResourcePanelsToggleRect().leftClicked())
+        {
+            editor.showResourcePanels = !editor.showResourcePanels;
+            if (!editor.showResourcePanels)
+            {
+                editor.resourcePlacementDragKind.reset();
+            }
+            editor.statusText = editor.showResourcePanels ? U"Resource panels ON" : U"Resource panels OFF";
+            consumed = true;
         }
 
         if (ProcessMapEditorUiLayoutInput(editor, world, defs, screenMouse))

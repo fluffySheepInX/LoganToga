@@ -42,14 +42,18 @@ namespace LT3
     {
         bool enabled = false;
         bool showDebugInfo = true;
+        bool showBattleGrid = true;
         Array<MapEditorAsset> assets;
         Array<MapEditorCell> cells;
         int32 mapWidth = DefaultMapEditorWidth;
         int32 mapHeight = DefaultMapEditorHeight;
         int32 selectedAsset = InvalidMapEditorAsset;
         double paletteScroll = 0.0;
+        int32 paletteTabIndex = 0;
+        bool showResourcePanels = true;
         bool showUnitList = false;
         bool showBuildingEditor = false;
+        int32 buildingEditorTab = 0;
         double unitListScroll = 0.0;
         int32 selectedUnitCatalogIndex = -1;
         bool showUnitParameterEditor = false;
@@ -72,12 +76,22 @@ namespace LT3
         int32 resourceNodeFilterKind = -1;
         Optional<ResourceKind> resourcePlacementDragKind;
         HashTable<String, Texture> resourceIconTextures;
+        Vec2 playerHomePosition{ 210.0, 450.0 };
+        Vec2 enemyHomePosition{ 1390.0, 450.0 };
+        bool draggingPlayerHome = false;
+        bool draggingEnemyHome = false;
         String statusText = U"Map editor ready";
     };
 
     inline RectF EditorToolbarRect()
     {
         return RectF{ 0, 8, 1600, 52 };
+    }
+
+    inline RectF EditorStatusBarRect()
+    {
+        const RectF toolbar = EditorToolbarRect();
+        return RectF{ toolbar.x, toolbar.y + toolbar.h + 4.0, toolbar.w, 32.0 };
     }
 
     inline RectF EditorToolbarButtonRect(int32 index)
@@ -104,6 +118,8 @@ namespace LT3
             return 3;
         case 9:
             return 4;
+        case 10:
+            return 5;
         default:
             return none;
         }
@@ -122,17 +138,31 @@ namespace LT3
 
     inline RectF EditorPaletteRect(int32 index)
     {
-        return RectF{ 1240.0, 298.0 + index * 54.0, 330.0, 46.0 };
+        return RectF{ 1240.0, 152.0 + index * 54.0, 330.0, 46.0 };
     }
 
     inline RectF EditorPalettePanelRect()
     {
-        return RectF{ 1220, 34, 370, 846 };
+        return RectF{ 1220, 72, 370, 808 };
+    }
+
+    inline RectF EditorPaletteTabRect(int32 index)
+    {
+        const RectF panel = EditorPalettePanelRect();
+        const double tabWidth = (panel.w - 40.0) * 0.5;
+        return RectF{ panel.x + 16.0 + index * (tabWidth + 8.0), panel.y + 36.0, tabWidth, 32.0 };
+    }
+
+    inline RectF EditorResourcePanelsToggleRect()
+    {
+        const RectF panel = EditorPalettePanelRect();
+        return RectF{ panel.x - 72.0, panel.y + 36.0, 64.0, 64.0 };
     }
 
     inline RectF EditorPaletteViewportRect()
     {
-        return RectF{ 1240, 70, 330, 798 };
+        const RectF panel = EditorPalettePanelRect();
+        return RectF{ panel.x + 20.0, panel.y + 80.0, panel.w - 40.0, panel.h - 92.0 };
     }
 
     inline RectF EditorUnitListPanelRect()
@@ -311,25 +341,29 @@ namespace LT3
         return catalog.entries.size() * 86.0;
     }
 
+    inline MapEditorAssetKind CurrentMapEditorPaletteKind(const MapEditorState& editor)
+    {
+        return (editor.paletteTabIndex == 0) ? MapEditorAssetKind::Terrain : MapEditorAssetKind::Object;
+    }
+
+    inline String MapEditorPaletteTabLabel(int32 tabIndex)
+    {
+        return (tabIndex == 0) ? U"Terrain" : U"Object / decal / building";
+    }
+
     inline double MapEditorPaletteContentHeight(const MapEditorState& editor)
     {
-        if (editor.assets.isEmpty())
-        {
-            return 0.0;
-        }
-
-        double height = 0.0;
-        Optional<MapEditorAssetKind> previousKind;
+        const MapEditorAssetKind activeKind = CurrentMapEditorPaletteKind(editor);
+        int32 count = 0;
         for (const auto& asset : editor.assets)
         {
-            if (!previousKind || *previousKind != asset.kind)
+            if (asset.kind == activeKind)
             {
-                height += 30.0;
-                previousKind = asset.kind;
+                ++count;
             }
-            height += 54.0;
         }
-        return height;
+
+        return count * 54.0;
     }
 
     inline String MapEditorAssetKindLabel(MapEditorAssetKind kind)
@@ -339,7 +373,7 @@ namespace LT3
 
     inline Vec2 MapEditorCellCenter(int32 x, int32 y)
     {
-        return Vec2{ 200.0 + x * QuarterTileStep, 90.0 + y * QuarterTileStep };
+        return QuarterBattleCellCenter(x, y);
     }
 
     inline Optional<Point> PickMapEditorCell(const MapEditorState& editor, const Vec2& screenPos)

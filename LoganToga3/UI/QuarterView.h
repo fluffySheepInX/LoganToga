@@ -8,6 +8,7 @@ namespace LT3
     inline constexpr double QuarterTileStep = 120.0;
     inline constexpr Vec2 QuarterTileOffset{ 50.0, 25.0 };
     inline constexpr double QuarterTileThickness = 15.0;
+    inline constexpr Vec2 QuarterBattleMapOrigin{ 200.0, 90.0 };
     inline constexpr double QuarterViewZoomMin = 0.5;
     inline constexpr double QuarterViewZoomMax = 2.5;
     inline Camera2D QuarterViewCamera2D{ Vec2{ 0.0, 0.0 }, 1.0, CameraControl::None_ };
@@ -179,6 +180,24 @@ namespace LT3
         const Vec2 bottom = bottomCenter.movedBy(0, -QuarterTileThickness);
         const Vec2 left = bottomCenter.movedBy(0, -QuarterTileThickness).movedBy(-QuarterTileOffset.x, -QuarterTileOffset.y);
         return Quad{ top, right, bottom, left };
+    }
+
+    inline Vec2 QuarterTileFaceCenterScreen(const Vec2& worldCenter)
+    {
+        return ToQuarterScreen(worldCenter).movedBy(0, -(QuarterTileOffset.y + QuarterTileThickness));
+    }
+
+    inline Vec2 QuarterBattleCellCenter(int32 x, int32 y)
+    {
+        return QuarterBattleMapOrigin + Vec2{ x * QuarterTileStep, y * QuarterTileStep };
+    }
+
+    inline Point QuarterWorldPositionToBattleCell(const Vec2& position, int32 width, int32 height)
+    {
+        const Vec2 local = position - QuarterBattleMapOrigin;
+        const int32 col = Clamp(static_cast<int32>(Math::Round(local.x / QuarterTileStep)), 0, Max(0, width - 1));
+        const int32 row = Clamp(static_cast<int32>(Math::Round(local.y / QuarterTileStep)), 0, Max(0, height - 1));
+        return Point{ col, row };
     }
 
     inline RectF BuildCommandRect(int32 index)

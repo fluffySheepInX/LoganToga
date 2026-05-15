@@ -33,7 +33,7 @@ namespace LT3
     {
         for (size_t i = 0; i < world.resourceNodes.position.size(); ++i)
         {
-            const Vec2 pos = ToQuarterScreen(world.resourceNodes.position[i]);
+            const Vec2 pos = QuarterTileFaceCenterScreen(world.resourceNodes.position[i]);
             const bool depleted = world.resourceNodes.amount[i] <= 0;
             const ResourceDef& def = defs.resources[world.resourceNodes.defId[i]];
             ColorF color = def.color;
