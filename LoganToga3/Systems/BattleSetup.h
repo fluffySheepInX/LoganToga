@@ -4,6 +4,85 @@
 
 namespace LT3
 {
+    inline FilePath ResolveMapEditorTomlPath();
+
+    inline Size LoadBattleMapSizeFromMapEditorToml()
+    {
+        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        if (!toml)
+        {
+            return Size{ DefaultBattleMapWidth, DefaultBattleMapHeight };
+        }
+
+        return Size{
+            Clamp(toml[U"map.width"].getOr<int32>(DefaultBattleMapWidth), 1, 40),
+            Clamp(toml[U"map.height"].getOr<int32>(DefaultBattleMapHeight), 1, 40)
+        };
+    }
+
+    inline bool IsDecalAssetFileNameForBattle(StringView fileName)
+    {
+        return String{ fileName }.lowercased().starts_with(U"decal_");
+    }
+
+    inline void ApplyDecalPassabilityFromMapEditorToml(BattleWorld& world)
+    {
+        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        if (!toml)
+        {
+            return;
+        }
+
+        const TOMLValue tilesValue = toml[U"tiles"];
+        if (!tilesValue.isTableArray())
+        {
+            return;
+        }
+
+        for (const auto tileValue : tilesValue.tableArrayView())
+        {
+            const int32 x = tileValue[U"x"].getOr<int32>(-1);
+            const int32 y = tileValue[U"y"].getOr<int32>(-1);
+            if (!world.map.inBounds(y, x))
+            {
+                continue;
+            }
+
+            bool blocksPassage = false;
+
+            const String object = tileValue[U"object"].getOr<String>(U"");
+            if (!object.isEmpty() && IsDecalAssetFileNameForBattle(object))
+            {
+                blocksPassage = tileValue[U"decal_blocks_passage"].getOr<bool>(false);
+            }
+
+            const TOMLValue decalsValue = tileValue[U"decals"];
+            if (!blocksPassage && decalsValue.isTableArray())
+            {
+                for (const auto decalValue : decalsValue.tableArrayView())
+                {
+                    if (decalValue[U"decal_blocks_passage"].getOr<bool>(false))
+                    {
+                        blocksPassage = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!blocksPassage)
+            {
+                continue;
+            }
+
+            const TileIndex idx = world.map.index(y, x);
+            if ((world.map.flags[idx] & 1u) != 0)
+            {
+                world.map.flags[idx] &= ~1u;
+                ++world.map.revision;
+            }
+        }
+    }
+
     inline FilePath ResolveMapEditorTomlPath()
     {
         const FilePath fromApp = U"000_Warehouse/000_DefaultGame/015_BattleMapCellImage/map_editor_map.toml";
@@ -111,10 +190,12 @@ namespace LT3
 
     inline void SpawnDefaultBattle(BattleWorld& world, const DefinitionStores& defs)
     {
-        world.mapWidth  = DefaultBattleMapWidth;
-        world.mapHeight = DefaultBattleMapHeight;
+        const Size mapSize = LoadBattleMapSizeFromMapEditorToml();
+        world.mapWidth  = mapSize.x;
+        world.mapHeight = mapSize.y;
 
         world.map.init(world.mapWidth, world.mapHeight);
+        ApplyDecalPassabilityFromMapEditorToml(world);
 
         world.resources = MakeResourceRuntimeStore(defs);
 

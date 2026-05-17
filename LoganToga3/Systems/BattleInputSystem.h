@@ -31,7 +31,7 @@ namespace LT3
 				return intent;
 			}
 
-         world.selection.actionTargetWorld = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+		 world.selection.actionTargetWorld = SnapWorldToBattleCellCenter(world, worldMouse);
 			if (MouseR.down() || KeyEscape.down())
 			{
 				ResetActionPlacementPreview(world);

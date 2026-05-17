@@ -4,6 +4,175 @@
 
 namespace LT3
 {
+    inline bool ProcessMapEditorDecalEditorInput(MapEditorState& editor)
+    {
+        if (!HasOpenDecalEditorTarget(editor))
+        {
+            return false;
+        }
+
+        bool consumed = false;
+        MapEditorAsset& asset = editor.assets[editor.decalEditorAssetIndex];
+        if (EditorDecalEditorCloseRect().leftClicked())
+        {
+            editor.showDecalEditor = false;
+            editor.decalEditorAssetIndex = InvalidMapEditorAsset;
+            editor.statusText = U"Decal editor closed";
+            return true;
+        }
+
+        if (EditorDecalOpacityDecRect().leftClicked())
+        {
+            asset.decalOpacity = Clamp(asset.decalOpacity - 0.05, 0.0, 1.0);
+            editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
+            consumed = true;
+        }
+        if (EditorDecalOpacityIncRect().leftClicked())
+        {
+            asset.decalOpacity = Clamp(asset.decalOpacity + 0.05, 0.0, 1.0);
+            editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
+            consumed = true;
+        }
+        if (EditorDecalScaleDecRect().leftClicked())
+        {
+            asset.decalScale = Clamp(asset.decalScale - 0.05, 0.1, 4.0);
+            editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
+            consumed = true;
+        }
+        if (EditorDecalScaleIncRect().leftClicked())
+        {
+            asset.decalScale = Clamp(asset.decalScale + 0.05, 0.1, 4.0);
+            editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
+            consumed = true;
+        }
+        if (EditorDecalOpacityRandomToggleRect().leftClicked())
+        {
+            asset.useRandomDecalOpacity = !asset.useRandomDecalOpacity;
+            editor.statusText = asset.useRandomDecalOpacity ? U"Random opacity ON" : U"Random opacity OFF";
+            consumed = true;
+        }
+        if (EditorDecalScaleRandomToggleRect().leftClicked())
+        {
+            asset.useRandomDecalScale = !asset.useRandomDecalScale;
+            editor.statusText = asset.useRandomDecalScale ? U"Random scale ON" : U"Random scale OFF";
+            consumed = true;
+        }
+        if (EditorDecalApplyRect().leftClicked())
+        {
+            NormalizeDecalSettings(asset);
+            const int32 appliedCount = ApplyDecalAssetToPlacedCells(editor, editor.decalEditorAssetIndex);
+            editor.statusText = U"Applied decal settings to {} placements"_fmt(appliedCount);
+            return true;
+        }
+
+        const auto stepRange = [&](const RectF& rect, double& value, double delta, double minValue, double maxValue, StringView label) -> bool
+        {
+            if (!rect.leftClicked())
+            {
+                return false;
+            }
+
+            value = Clamp(value + delta, minValue, maxValue);
+            editor.statusText = U"{}: {}"_fmt(label, value);
+            return true;
+        };
+
+        consumed = stepRange(EditorDecalOpacityMinDecRect(), asset.decalOpacityMin, -0.05, 0.0, 1.0, U"Opacity min") || consumed;
+        consumed = stepRange(EditorDecalOpacityMinIncRect(), asset.decalOpacityMin, 0.05, 0.0, 1.0, U"Opacity min") || consumed;
+        consumed = stepRange(EditorDecalOpacityMaxDecRect(), asset.decalOpacityMax, -0.05, 0.0, 1.0, U"Opacity max") || consumed;
+        consumed = stepRange(EditorDecalOpacityMaxIncRect(), asset.decalOpacityMax, 0.05, 0.0, 1.0, U"Opacity max") || consumed;
+        consumed = stepRange(EditorDecalScaleMinDecRect(), asset.decalScaleMin, -0.05, 0.1, 4.0, U"Scale min") || consumed;
+        consumed = stepRange(EditorDecalScaleMinIncRect(), asset.decalScaleMin, 0.05, 0.1, 4.0, U"Scale min") || consumed;
+        consumed = stepRange(EditorDecalScaleMaxDecRect(), asset.decalScaleMax, -0.05, 0.1, 4.0, U"Scale max") || consumed;
+        consumed = stepRange(EditorDecalScaleMaxIncRect(), asset.decalScaleMax, 0.05, 0.1, 4.0, U"Scale max") || consumed;
+
+        if (consumed)
+        {
+            NormalizeDecalSettings(asset);
+        }
+
+        return consumed || EditorDecalEditorPanelRect().mouseOver();
+    }
+
+    inline bool ProcessMapEditorZOrderPanelInput(MapEditorState& editor)
+    {
+        if (!editor.zOrderMode || !editor.zOrderSelectionRect)
+        {
+            return false;
+        }
+
+        const int32 maxStackSize = MaxDecalStackSizeInRect(editor, *editor.zOrderSelectionRect);
+        const RectF panel = EditorZOrderPanelRect(maxStackSize);
+        const RectF downRect = EditorZOrderDownRect(panel);
+        const RectF upRect = EditorZOrderUpRect(panel);
+        const RectF sendToBackRect = EditorZOrderSendToBackRect(panel);
+        const RectF bringToFrontRect = EditorZOrderBringToFrontRect(panel);
+        const RectF closeRect = EditorZOrderCloseRect(panel);
+
+        if (closeRect.leftClicked())
+        {
+            editor.zOrderSelectionRect.reset();
+            editor.zOrderSelectedStackIndex = 0;
+            editor.statusText = U"Z-order selection cleared";
+            return true;
+        }
+
+        editor.zOrderSelectedStackIndex = Clamp(editor.zOrderSelectedStackIndex, 0, Max(0, maxStackSize - 1));
+
+        // レイヤー行クリックで選択インデックス変更
+        const int32 visibleRows = Clamp(maxStackSize, 1, EditorZOrderMaxVisibleLayers);
+        for (int32 i = 0; i < visibleRows; ++i)
+        {
+            const RectF rowRect = EditorZOrderLayerRowRect(panel, i);
+            if (rowRect.leftClicked())
+            {
+                editor.zOrderSelectedStackIndex = i;
+                editor.statusText = U"Z-order selected layer {}"_fmt(i + 1);
+                return true;
+            }
+        }
+
+        if (sendToBackRect.leftClicked())
+        {
+            const int32 changed = MoveDecalToBackInRect(editor, *editor.zOrderSelectionRect, editor.zOrderSelectedStackIndex);
+            editor.zOrderSelectedStackIndex = 0;
+            editor.statusText = U"Z-order sent to BACK: {} cells"_fmt(changed);
+            return true;
+        }
+
+        if (bringToFrontRect.leftClicked())
+        {
+            const int32 changed = MoveDecalToFrontInRect(editor, *editor.zOrderSelectionRect, editor.zOrderSelectedStackIndex);
+            editor.zOrderSelectedStackIndex = Max(0, maxStackSize - 1);
+            editor.statusText = U"Z-order brought to FRONT: {} cells"_fmt(changed);
+            return true;
+        }
+
+        if (downRect.leftClicked())
+        {
+            const int32 changed = MoveDecalZOrderInRect(editor, *editor.zOrderSelectionRect, editor.zOrderSelectedStackIndex, -1);
+            if (changed > 0)
+            {
+                editor.zOrderSelectedStackIndex = Max(0, editor.zOrderSelectedStackIndex - 1);
+            }
+            editor.statusText = U"Z-order moved back: {} cells"_fmt(changed);
+            return true;
+        }
+
+        if (upRect.leftClicked())
+        {
+            const int32 changed = MoveDecalZOrderInRect(editor, *editor.zOrderSelectionRect, editor.zOrderSelectedStackIndex, 1);
+            if (changed > 0)
+            {
+                editor.zOrderSelectedStackIndex = Min(maxStackSize - 1, editor.zOrderSelectedStackIndex + 1);
+            }
+            editor.statusText = U"Z-order moved front: {} cells"_fmt(changed);
+            return true;
+        }
+
+        return panel.mouseOver();
+    }
+
     inline bool ProcessMapEditorPaletteInput(MapEditorState& editor)
     {
         const RectF palettePanel = EditorPalettePanelRect();
@@ -45,10 +214,34 @@ namespace LT3
             }
 
             const RectF itemRect{ paletteViewport.x, y, paletteViewport.w, 46.0 };
+            if (paletteViewport.intersects(itemRect) && IsMapEditorDecalAsset(editor, i))
+            {
+                const RectF checkRect = EditorPaletteDecalPassageCheckboxRect(itemRect);
+                if (checkRect.leftClicked())
+                {
+                    editor.assets[i].decalBlocksPassage = !editor.assets[i].decalBlocksPassage;
+                    editor.statusText = U"Decal {} passage: {}"_fmt(
+                        editor.assets[i].fileName,
+                        editor.assets[i].decalBlocksPassage ? U"blocked" : U"passable");
+                    return true;
+                }
+            }
             if (paletteViewport.intersects(itemRect) && itemRect.leftClicked())
             {
                 editor.selectedAsset = i;
                 editor.statusText = U"Selected: {}"_fmt(asset.fileName);
+            }
+            if (paletteViewport.intersects(itemRect) && itemRect.rightClicked() && asset.kind == MapEditorAssetKind::Object)
+            {
+                if (PromoteMapEditorAssetToDecal(editor, i))
+                {
+                    NormalizeDecalSettings(editor.assets[i]);
+                    ApplyDecalAssetToPlacedCells(editor, i);
+                    editor.showDecalEditor = true;
+                    editor.decalEditorAssetIndex = i;
+                    editor.statusText = U"Decal editor: {}"_fmt(editor.assets[i].fileName);
+                }
+                return true;
             }
 
             y += 54.0;
@@ -62,6 +255,16 @@ namespace LT3
         if (KeySpace.pressed())
         {
             return false;
+        }
+
+        if (MouseL.up())
+        {
+            editor.lastPaintCell.reset();
+            editor.lastPaintAsset = InvalidMapEditorAsset;
+        }
+        if (MouseR.up())
+        {
+            editor.lastEraseCell.reset();
         }
 
         const Optional<Point> cell = PickMapEditorCell(editor, screenMouse);
@@ -87,16 +290,14 @@ namespace LT3
 
         if (editor.draggingPlayerHome && MouseL.pressed())
         {
-            const int32 col = Clamp(static_cast<int32>(Math::Round(worldMouse.x / QuarterTileStep)), 0, Max(0, editor.mapWidth - 1));
-            const int32 row = Clamp(static_cast<int32>(Math::Round(worldMouse.y / QuarterTileStep)), 0, Max(0, editor.mapHeight - 1));
-            editor.playerHomePosition = Vec2{ col * QuarterTileStep, row * QuarterTileStep };
+            const Point cell = QuarterWorldToBattleCell(worldMouse, editor.mapWidth, editor.mapHeight);
+            editor.playerHomePosition = QuarterBattleCellCenter(cell.x, cell.y);
             return true;
         }
         if (editor.draggingEnemyHome && MouseL.pressed())
         {
-            const int32 col = Clamp(static_cast<int32>(Math::Round(worldMouse.x / QuarterTileStep)), 0, Max(0, editor.mapWidth - 1));
-            const int32 row = Clamp(static_cast<int32>(Math::Round(worldMouse.y / QuarterTileStep)), 0, Max(0, editor.mapHeight - 1));
-            editor.enemyHomePosition = Vec2{ col * QuarterTileStep, row * QuarterTileStep };
+            const Point cell = QuarterWorldToBattleCell(worldMouse, editor.mapWidth, editor.mapHeight);
+            editor.enemyHomePosition = QuarterBattleCellCenter(cell.x, cell.y);
             return true;
         }
         if (MouseL.up() && (editor.draggingPlayerHome || editor.draggingEnemyHome))
@@ -115,6 +316,11 @@ namespace LT3
                 editor.resourcePlacementDragKind.reset();
                 return true;
             }
+            if (MouseR.down())
+            {
+                editor.showDecalEditor = false;
+                editor.decalEditorAssetIndex = InvalidMapEditorAsset;
+            }
             return false;
         }
 
@@ -131,66 +337,53 @@ namespace LT3
             return true;
         }
 
-        if (KeyR.down())
+        if (editor.zOrderMode)
+        {
+            if (MouseL.down())
+            {
+                editor.zOrderDragStartCell = *cell;
+                editor.zOrderSelectionRect.reset();
+                editor.statusText = U"Z-order drag start: ({}, {})"_fmt(cell->x, cell->y);
+                return true;
+            }
+
+            if (MouseL.pressed() && editor.zOrderDragStartCell)
+            {
+                editor.zOrderSelectionRect = NormalizeMapEditorCellRect(*editor.zOrderDragStartCell, *cell);
+                return true;
+            }
+
+            if (MouseL.up() && editor.zOrderDragStartCell)
+            {
+                editor.zOrderSelectionRect = NormalizeMapEditorCellRect(*editor.zOrderDragStartCell, *cell);
+                editor.zOrderDragStartCell.reset();
+                editor.zOrderSelectedStackIndex = 0;
+                const int32 maxStackSize = MaxDecalStackSizeInRect(editor, *editor.zOrderSelectionRect);
+                editor.statusText = U"Z-order range: ({}, {}) - ({}, {}), stack {}"_fmt(
+                    editor.zOrderSelectionRect->x,
+                    editor.zOrderSelectionRect->y,
+                    editor.zOrderSelectionRect->x + editor.zOrderSelectionRect->w - 1,
+                    editor.zOrderSelectionRect->y + editor.zOrderSelectionRect->h - 1,
+                    maxStackSize);
+                return true;
+            }
+
+            return true;
+        }
+
+        if (MouseL.down())
         {
             if (const Optional<size_t> existing = FindResourceNodeAtCell(editor, *cell))
             {
-                editor.resourceNodes[*existing].kind = NextResourceKind(editor.resourceNodes[*existing].kind);
-                editor.selectedResourceNodeIndex = static_cast<int32>(*existing);
-                editor.statusText = U"Resource kind: {}"_fmt(ResourceKindToTag(editor.resourceNodes[*existing].kind));
-            }
-            else
-            {
-                editor.resourceNodes << ResourceNodeEditData{ ResourceKind::Gold, *cell, 700, 5 };
-                SortMapEditorResourceNodes(editor);
-                editor.selectedResourceNodeIndex = static_cast<int32>(editor.resourceNodes.size() - 1);
-                if (const Optional<size_t> index = FindResourceNodeAtCell(editor, *cell))
+                if (PassesResourceNodeFilter(editor, editor.resourceNodes[*existing].kind))
                 {
-                    editor.selectedResourceNodeIndex = static_cast<int32>(*index);
+                    SelectResourceNodeIndex(editor, static_cast<int32>(*existing));
+                    editor.statusText = U"Selected resource node: {}"_fmt(ResourceKindLabel(editor.resourceNodes[*existing].kind));
+                    return true;
                 }
-                editor.statusText = U"Resource node added";
-            }
-            consumed = true;
-        }
-        if (KeyDelete.down() || KeyBackspace.down())
-        {
-            SelectResourceNodeAtCell(editor, *cell);
-            RemoveSelectedResourceNode(editor);
-            consumed = true;
-        }
-        if (const Optional<size_t> existing = FindResourceNodeAtCell(editor, *cell))
-        {
-            editor.selectedResourceNodeIndex = static_cast<int32>(*existing);
-            if (KeyPageUp.down())
-            {
-                editor.resourceNodes[*existing].incomePerSec += 1;
-                editor.statusText = U"Resource income: {}"_fmt(editor.resourceNodes[*existing].incomePerSec);
-                consumed = true;
-            }
-            if (KeyPageDown.down())
-            {
-                editor.resourceNodes[*existing].incomePerSec = Max(0, editor.resourceNodes[*existing].incomePerSec - 1);
-                editor.statusText = U"Resource income: {}"_fmt(editor.resourceNodes[*existing].incomePerSec);
-                consumed = true;
             }
         }
 
-        if (MouseM.down())
-        {
-            SelectResourceNodeAtCell(editor, *cell);
-            if (IsValidSelectedResourceNodeIndex(editor))
-            {
-                editor.statusText = U"Selected resource node: {}"_fmt(ResourceKindLabel(editor.resourceNodes[editor.selectedResourceNodeIndex].kind));
-                consumed = true;
-            }
-        }
-
-        if (IsValidSelectedResourceNodeIndex(editor) && MouseL.down() && KeyShift.pressed())
-        {
-            editor.resourceNodeDragging = true;
-            editor.statusText = U"Dragging resource node";
-            consumed = true;
-        }
         if (editor.resourceNodeDragging && MouseL.pressed() && IsValidSelectedResourceNodeIndex(editor))
         {
             editor.resourceNodes[editor.selectedResourceNodeIndex].cell = *cell;
@@ -214,35 +407,63 @@ namespace LT3
 
         if (MouseL.pressed() && 0 <= editor.selectedAsset && editor.selectedAsset < static_cast<int32>(editor.assets.size()))
         {
-            if (const Optional<size_t> existing = FindResourceNodeAtCell(editor, *cell))
-            {
-                if (PassesResourceNodeFilter(editor, editor.resourceNodes[*existing].kind))
-                {
-                    SelectResourceNodeIndex(editor, static_cast<int32>(*existing));
-                    editor.statusText = U"Selected resource node: {}"_fmt(ResourceKindLabel(editor.resourceNodes[*existing].kind));
-                    return true;
-                }
-            }
-            if (IsValidSelectedResourceNodeIndex(editor) && KeyShift.pressed())
-            {
-                return true;
-            }
             MapEditorCell& target = editor.cells[MapEditorCellIndex(editor, cell->x, cell->y)];
+            const bool samePaintTarget = editor.lastPaintCell
+                && (*editor.lastPaintCell == *cell)
+                && (editor.lastPaintAsset == editor.selectedAsset);
             if (editor.assets[editor.selectedAsset].kind == MapEditorAssetKind::Terrain)
             {
-                target.terrainAsset = editor.selectedAsset;
+                if (!samePaintTarget)
+                {
+                    target.terrainAsset = editor.selectedAsset;
+                    editor.lastPaintCell = *cell;
+                    editor.lastPaintAsset = editor.selectedAsset;
+                    consumed = true;
+                }
+            }
+            else if (IsMapEditorDecalAsset(editor, editor.selectedAsset))
+            {
+                if (!samePaintTarget)
+                {
+                    AddDecalAssetToCell(target, editor.selectedAsset, editor.assets[editor.selectedAsset]);
+                    editor.lastPaintCell = *cell;
+                    editor.lastPaintAsset = editor.selectedAsset;
+                    consumed = true;
+                }
             }
             else
             {
-                target.objectAsset = editor.selectedAsset;
+                if (!samePaintTarget)
+                {
+                    target.objectAsset = editor.selectedAsset;
+                    target.decalOpacity = 1.0;
+                    target.decalScale = 1.0;
+                    editor.lastPaintCell = *cell;
+                    editor.lastPaintAsset = editor.selectedAsset;
+                    consumed = true;
+                }
             }
-            consumed = true;
         }
         if (MouseR.pressed())
         {
             MapEditorCell& target = editor.cells[MapEditorCellIndex(editor, cell->x, cell->y)];
-            target.objectAsset = InvalidMapEditorAsset;
-            consumed = true;
+            const bool sameEraseTarget = editor.lastEraseCell && (*editor.lastEraseCell == *cell);
+            if (!sameEraseTarget)
+            {
+                if (!target.decals.isEmpty())
+                {
+                    target.decals.pop_back();
+                    SyncLegacyDecalFieldsFromStack(target);
+                }
+                else
+                {
+                    target.objectAsset = InvalidMapEditorAsset;
+                    target.decalOpacity = 1.0;
+                    target.decalScale = 1.0;
+                }
+                editor.lastEraseCell = *cell;
+                consumed = true;
+            }
         }
 
         return consumed;

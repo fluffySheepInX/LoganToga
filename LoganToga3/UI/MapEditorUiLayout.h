@@ -23,12 +23,12 @@ namespace LT3
 
     inline RectF BattleInfoPanelCompactRect(const MapEditorState& editor)
     {
-        return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 96.0, 520.0, 96.0 };
+        return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 124.0 + EditorBarTopAnchorOffset(editor, editor.uiSelectedInfoTopAnchor), 282.0, 124.0 };
     }
 
     inline RectF BattleInfoPanelDetailRect(const MapEditorState& editor)
     {
-        return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 220.0, 520.0, 220.0 };
+        return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 340.0 + EditorBarTopAnchorOffset(editor, editor.uiSelectedInfoTopAnchor), 282.0, 340.0 };
     }
 
     inline double BattleUiBottomSafeInset()
@@ -45,7 +45,7 @@ namespace LT3
     {
         const double panelHeight = Max(112.0, rows * 88.0 + 24.0);
         const double panelY = Min(editor.uiCommandPanelPos.y, Max(0.0, BattleUiBottomSafeY() - panelHeight));
-        return RectF{ editor.uiCommandPanelPos.x, panelY, 286.0, panelHeight };
+        return RectF{ editor.uiCommandPanelPos.x, panelY + EditorBarTopAnchorOffset(editor, editor.uiCommandPanelTopAnchor), 286.0, panelHeight };
     }
 
     inline RectF BattleCommandIconRect(const MapEditorState& editor, int32 index, int32 rows)
@@ -96,6 +96,17 @@ namespace LT3
         writer << U"info_bottom = " << editor.uiSelectedInfoAnchor.y << U"\n";
         writer << U"command_x = " << editor.uiCommandPanelPos.x << U"\n";
         writer << U"command_y = " << editor.uiCommandPanelPos.y << U"\n";
+        writer << U"resource_x = " << editor.uiResourcePanelPos.x << U"\n";
+        writer << U"resource_y = " << editor.uiResourcePanelPos.y << U"\n";
+        writer << U"param_editor_x = " << editor.uiParamEditorPos.x << U"\n";
+        writer << U"param_editor_y = " << editor.uiParamEditorPos.y << U"\n";
+        writer << U"building_editor_x = " << editor.uiBuildingEditorPos.x << U"\n";
+        writer << U"building_editor_y = " << editor.uiBuildingEditorPos.y << U"\n";
+        writer << U"info_top_anchor = " << (editor.uiSelectedInfoTopAnchor ? U"true" : U"false") << U"\n";
+        writer << U"command_top_anchor = " << (editor.uiCommandPanelTopAnchor ? U"true" : U"false") << U"\n";
+        writer << U"resource_top_anchor = " << (editor.uiResourcePanelTopAnchor ? U"true" : U"false") << U"\n";
+        writer << U"param_editor_top_anchor = " << (editor.uiParamEditorTopAnchor ? U"true" : U"false") << U"\n";
+        writer << U"building_editor_top_anchor = " << (editor.uiBuildingEditorTopAnchor ? U"true" : U"false") << U"\n";
 
         if (updateStatus)
         {
@@ -119,5 +130,16 @@ namespace LT3
         editor.uiSelectedInfoAnchor.y = toml[U"layout.info_bottom"].getOr<double>(editor.uiSelectedInfoAnchor.y);
         editor.uiCommandPanelPos.x = toml[U"layout.command_x"].getOr<double>(editor.uiCommandPanelPos.x);
         editor.uiCommandPanelPos.y = toml[U"layout.command_y"].getOr<double>(editor.uiCommandPanelPos.y);
+        editor.uiResourcePanelPos.x = toml[U"layout.resource_x"].getOr<double>(editor.uiResourcePanelPos.x);
+        editor.uiResourcePanelPos.y = toml[U"layout.resource_y"].getOr<double>(editor.uiResourcePanelPos.y);
+        editor.uiParamEditorPos.x = toml[U"layout.param_editor_x"].getOr<double>(editor.uiParamEditorPos.x);
+        editor.uiParamEditorPos.y = toml[U"layout.param_editor_y"].getOr<double>(editor.uiParamEditorPos.y);
+        editor.uiBuildingEditorPos.x = toml[U"layout.building_editor_x"].getOr<double>(editor.uiBuildingEditorPos.x);
+        editor.uiBuildingEditorPos.y = toml[U"layout.building_editor_y"].getOr<double>(editor.uiBuildingEditorPos.y);
+        editor.uiSelectedInfoTopAnchor = toml[U"layout.info_top_anchor"].getOr<bool>(editor.uiSelectedInfoTopAnchor);
+        editor.uiCommandPanelTopAnchor = toml[U"layout.command_top_anchor"].getOr<bool>(editor.uiCommandPanelTopAnchor);
+        editor.uiResourcePanelTopAnchor = toml[U"layout.resource_top_anchor"].getOr<bool>(editor.uiResourcePanelTopAnchor);
+        editor.uiParamEditorTopAnchor = toml[U"layout.param_editor_top_anchor"].getOr<bool>(editor.uiParamEditorTopAnchor);
+        editor.uiBuildingEditorTopAnchor = toml[U"layout.building_editor_top_anchor"].getOr<bool>(editor.uiBuildingEditorTopAnchor);
     }
 }

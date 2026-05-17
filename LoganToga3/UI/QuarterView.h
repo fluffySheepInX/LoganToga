@@ -192,12 +192,59 @@ namespace LT3
         return QuarterBattleMapOrigin + Vec2{ x * QuarterTileStep, y * QuarterTileStep };
     }
 
-    inline Point QuarterWorldPositionToBattleCell(const Vec2& position, int32 width, int32 height)
+    inline Point QuarterWorldToBattleCell(const Vec2& worldPosition, int32 width, int32 height)
     {
-        const Vec2 local = position - QuarterBattleMapOrigin;
+        const Vec2 local = worldPosition - QuarterBattleMapOrigin;
         const int32 col = Clamp(static_cast<int32>(Math::Round(local.x / QuarterTileStep)), 0, Max(0, width - 1));
         const int32 row = Clamp(static_cast<int32>(Math::Round(local.y / QuarterTileStep)), 0, Max(0, height - 1));
         return Point{ col, row };
+    }
+
+    inline Point QuarterScreenToBattleCell(const Vec2& screenPos, int32 width, int32 height)
+    {
+        const Vec2 preCameraScreenPos = ToQuarterPreCameraScreen(screenPos);
+        const Vec2 worldPos = FromQuarterIso(preCameraScreenPos - QuarterViewOrigin);
+        const Vec2 local = worldPos - QuarterBattleMapOrigin;
+
+        const int32 approxCol = Clamp(static_cast<int32>(Math::Round(local.x / QuarterTileStep)), 0, Max(0, width - 1));
+        const int32 approxRow = Clamp(static_cast<int32>(Math::Round(local.y / QuarterTileStep)), 0, Max(0, height - 1));
+
+        Optional<Point> bestCell;
+        int32 bestDiagonal = INT32_MIN;
+        int32 bestXOnDiagonal = INT32_MIN;
+
+        for (int32 dy = -2; dy <= 2; ++dy)
+        {
+            for (int32 dx = -2; dx <= 2; ++dx)
+            {
+                const int32 col = approxCol + dx;
+                const int32 row = approxRow + dy;
+                if (col < 0 || row < 0 || col >= width || row >= height)
+                {
+                    continue;
+                }
+
+                if (ToQuarterTile(QuarterBattleCellCenter(col, row)).intersects(preCameraScreenPos))
+                {
+                    const int32 diagonal = col + row;
+                    if (!bestCell
+                        || diagonal > bestDiagonal
+                        || (diagonal == bestDiagonal && col > bestXOnDiagonal))
+                    {
+                        bestCell = Point{ col, row };
+                        bestDiagonal = diagonal;
+                        bestXOnDiagonal = col;
+                    }
+                }
+            }
+        }
+
+        if (bestCell)
+        {
+            return *bestCell;
+        }
+
+        return Point{ approxCol, approxRow };
     }
 
     inline RectF BuildCommandRect(int32 index)

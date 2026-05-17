@@ -1,8 +1,8 @@
 ﻿[[resource_nodes]]
 
-resource_kind = "gold"
+resource_kind = "trust"
 
-position = [680, 570]
+position = [4280, 450]
 
 amount = 700
 
@@ -13,7 +13,7 @@ income_per_sec = 5
 
 resource_kind = "trust"
 
-position = [440, 930]
+position = [1280, 570]
 
 amount = 700
 
@@ -24,7 +24,18 @@ income_per_sec = 5
 
 resource_kind = "food"
 
-position = [1760, 930]
+position = [2600, 570]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "trust"
+
+position = [560, 1410]
 
 amount = 700
 
@@ -35,7 +46,7 @@ income_per_sec = 5
 
 resource_kind = "gold"
 
-position = [200, 1170]
+position = [2240, 2130]
 
 amount = 700
 
@@ -44,9 +55,9 @@ income_per_sec = 5
 
 [[resource_nodes]]
 
-resource_kind = "gold"
+resource_kind = "food"
 
-position = [800, 1170]
+position = [4040, 2130]
 
 amount = 700
 
@@ -55,9 +66,64 @@ income_per_sec = 5
 
 [[resource_nodes]]
 
-resource_kind = "gold"
+resource_kind = "food"
 
-position = [1760, 1290]
+position = [2600, 2370]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "food"
+
+position = [680, 2490]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "trust"
+
+position = [2360, 2490]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "food"
+
+position = [2000, 4170]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "trust"
+
+position = [560, 4290]
+
+amount = 700
+
+income_per_sec = 5
+
+
+[[resource_nodes]]
+
+resource_kind = "trust"
+
+position = [2960, 4290]
 
 amount = 700
 

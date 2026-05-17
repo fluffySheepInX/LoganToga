@@ -94,7 +94,7 @@ namespace LT3
 			for (const Vec2& target : targets)
 			{
 				const Quad tile = buildPreviewTile(target);
-				const BuildPlacementCellState state = EvaluateBuildPlacementCell(world, target);
+				const BuildPlacementCellState state = EvaluateBuildPlacementCell(world, defs, target);
 				if (state == BuildPlacementCellState::Allowed)
 				{
 					tile.draw(ColorF{ 0.0, 0.75, 1.0, 0.14 }).drawFrame(2.0, ColorF{ 0.0, 0.85, 1.0, 0.90 });

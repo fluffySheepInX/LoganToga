@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../Systems/BattleQueries.h"
+# include "../Systems/SelectionSystem.h"
 # include "MapEditorMapData.h"
 
 namespace LT3
@@ -33,20 +34,50 @@ namespace LT3
         const int32 commandRows = Max(1, (static_cast<int32>(visibleActions.size()) + 2) / 3);
         const RectF infoRect = showDetail ? BattleInfoPanelDetailRect(editor) : BattleInfoPanelCompactRect(editor);
         const RectF commandRect = BattleCommandPanelRect(editor, commandRows);
+        const RectF resourceRect = BattleResourcePanelRect(editor, defs.resources.size());
 
         const RectF infoHandle = UiLayoutDragHandleRect(infoRect);
         const RectF commandHandle = UiLayoutDragHandleRect(commandRect);
+        const RectF resourceHandle = UiLayoutDragHandleRect(resourceRect);
+        const RectF infoTopAnchorRect = UiLayoutTopAnchorToggleRect(infoHandle);
+        const RectF commandTopAnchorRect = UiLayoutTopAnchorToggleRect(commandHandle);
+        const RectF resourceTopAnchorRect = UiLayoutTopAnchorToggleRect(resourceHandle);
 
-        if (!editor.uiLayoutDraggingCommandPanel && MouseL.down() && infoHandle.mouseOver())
+        if (infoTopAnchorRect.leftClicked())
+        {
+            editor.uiSelectedInfoTopAnchor = !editor.uiSelectedInfoTopAnchor;
+            SaveBattleUiLayoutToml(editor, false);
+            consumed = true;
+        }
+        if (commandTopAnchorRect.leftClicked())
+        {
+            editor.uiCommandPanelTopAnchor = !editor.uiCommandPanelTopAnchor;
+            SaveBattleUiLayoutToml(editor, false);
+            consumed = true;
+        }
+        if (resourceTopAnchorRect.leftClicked())
+        {
+            editor.uiResourcePanelTopAnchor = !editor.uiResourcePanelTopAnchor;
+            SaveBattleUiLayoutToml(editor, false);
+            consumed = true;
+        }
+
+        if (!editor.uiLayoutDraggingCommandPanel && !editor.uiLayoutDraggingResourcePanel && MouseL.down() && infoHandle.mouseOver())
         {
             editor.uiLayoutDraggingSelectedInfo = true;
             editor.uiLayoutDragOffset = screenMouse - editor.uiSelectedInfoAnchor;
             consumed = true;
         }
-        if (!editor.uiLayoutDraggingSelectedInfo && MouseL.down() && commandHandle.mouseOver())
+        if (!editor.uiLayoutDraggingSelectedInfo && !editor.uiLayoutDraggingResourcePanel && MouseL.down() && commandHandle.mouseOver())
         {
             editor.uiLayoutDraggingCommandPanel = true;
             editor.uiLayoutDragOffset = screenMouse - editor.uiCommandPanelPos;
+            consumed = true;
+        }
+        if (!editor.uiLayoutDraggingSelectedInfo && !editor.uiLayoutDraggingCommandPanel && MouseL.down() && resourceHandle.mouseOver())
+        {
+            editor.uiLayoutDraggingResourcePanel = true;
+            editor.uiLayoutDragOffset = screenMouse - editor.uiResourcePanelPos;
             consumed = true;
         }
 
@@ -64,12 +95,20 @@ namespace LT3
             editor.uiCommandPanelPos.y = Clamp(snapped.y, 70.0, Max(70.0, BattleUiBottomSafeY() - commandRect.h));
             consumed = true;
         }
+        if (editor.uiLayoutDraggingResourcePanel && MouseL.pressed())
+        {
+            const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
+            editor.uiResourcePanelPos.x = Clamp(snapped.x, 0.0, 1600.0 - resourceRect.w);
+            editor.uiResourcePanelPos.y = Clamp(snapped.y, 0.0, 900.0 - resourceRect.h);
+            consumed = true;
+        }
 
         if (MouseL.up())
         {
-            const bool wasDragging = editor.uiLayoutDraggingSelectedInfo || editor.uiLayoutDraggingCommandPanel;
+            const bool wasDragging = editor.uiLayoutDraggingSelectedInfo || editor.uiLayoutDraggingCommandPanel || editor.uiLayoutDraggingResourcePanel;
             editor.uiLayoutDraggingSelectedInfo = false;
             editor.uiLayoutDraggingCommandPanel = false;
+            editor.uiLayoutDraggingResourcePanel = false;
             if (wasDragging)
             {
                 SaveBattleUiLayoutToml(editor, false);
@@ -77,7 +116,7 @@ namespace LT3
             }
         }
 
-        if (infoRect.mouseOver() || commandRect.mouseOver())
+        if (infoRect.mouseOver() || commandRect.mouseOver() || resourceRect.mouseOver())
         {
             consumed = true;
         }

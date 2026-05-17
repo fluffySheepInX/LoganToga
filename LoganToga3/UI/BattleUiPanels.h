@@ -79,6 +79,22 @@ namespace LT3
 		handle.draw(ColorF{ 1.0, 0.84, 0.0, 0.18 }).drawFrame(2.0, ColorF{ 1.0, 0.84, 0.0, 0.90 });
 	}
 
+	inline void DrawUiLayoutTopAnchorToggle(const RectF& panelRect, bool active, bool topAnchor)
+	{
+		if (!active)
+		{
+			return;
+		}
+
+		const RectF toggleRect = UiLayoutTopAnchorToggleRect(UiLayoutDragHandleRect(panelRect));
+		toggleRect.draw(topAnchor ? ColorF{ 0.16, 0.24, 0.18, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+			.drawFrame(2.0, toggleRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.18 });
+
+		const Vec2 center = toggleRect.center();
+		Line{ center.x - 5.0, center.y - 4.0, center.x + 5.0, center.y - 4.0 }.draw(2.0, topAnchor ? Palette::White : Palette::Lightgray);
+		Triangle{ Vec2{ center.x, center.y - 7.0 }, Vec2{ center.x - 4.0, center.y }, Vec2{ center.x + 4.0, center.y } }.draw(topAnchor ? Palette::White : Palette::Lightgray);
+	}
+
 	inline void DrawSelectedUnitPanel(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Font& uiFont, bool showDebugInfo)
 	{
 		const UnitId selected = GetSelectedUnit(world);
@@ -89,12 +105,14 @@ namespace LT3
 
 		const UnitDef& def = defs.units[world.units.defId[selected]];
 		const bool showDetail = KeyControl.pressed();
+		const double lineStep = 24.0;
 
 		const RectF info = showDetail
 			? BattleInfoPanelDetailRect(mapEditor)
 			: BattleInfoPanelCompactRect(mapEditor);
 		info.draw(ColorF{ 0.02, 0.03, 0.045, 0.78 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
 		DrawUiLayoutDragHandle(info, mapEditor.uiLayoutEditEnabled);
+		DrawUiLayoutTopAnchorToggle(info, mapEditor.uiLayoutEditEnabled, mapEditor.uiSelectedInfoTopAnchor);
 
 		const double nameY = info.y + 18.0;
 		uiFont(def.name).draw(info.x + 18.0, nameY, Palette::White);
@@ -104,7 +122,7 @@ namespace LT3
 		const double hpY = nameY + 34.0;
 		uiFont(U"HP:").draw(info.x + 18.0, hpY, Palette::Lightgray);
 
-		const RectF hpBack{ info.x + 66.0, hpY + 4.0, 180.0, 14.0 };
+		const RectF hpBack{ info.x + 66.0, hpY + 4.0, 116.0, 14.0 };
 		hpBack.draw(ColorF{ 0.08, 0.08, 0.08, 0.82 });
 		ColorF hpColor{ 1.0, 0.25, 0.20 };
 		if (hpRate > 0.35)
@@ -114,11 +132,12 @@ namespace LT3
 		RectF{ hpBack.pos, hpBack.w * hpRate, hpBack.h }.draw(hpColor);
 		hpBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.18 });
 
-		uiFont(U"{}/{}  {}%"_fmt(world.units.hp[selected], def.hp, static_cast<int32>(hpRate * 100.0))).draw(info.x + 258.0, hpY, Palette::White);
-		if (hpRate <= 0.30)
-		{
-			uiFont(U"⚠").draw(info.x + 412.0, hpY, ColorF{ 1.0, 0.70, 0.20 });
-		}
+		const double hpTextY = hpY + lineStep;
+		uiFont(U"{}/{}  {}%"_fmt(world.units.hp[selected], def.hp, static_cast<int32>(hpRate * 100.0))).draw(info.x + 18.0, hpTextY, Palette::White);
+			if (hpRate <= 0.30)
+			{
+				uiFont(U"⚠").draw(info.x + 188.0, hpTextY, ColorF{ 1.0, 0.70, 0.20 });
+			}
 
 		if (!showDetail)
 		{
@@ -126,17 +145,28 @@ namespace LT3
 			return;
 		}
 
-		uiFont(U"Tag: {}  Faction: {}"_fmt(def.tag, FormatFaction(world.units.faction[selected]))).draw(info.x + 18.0, info.y + 82.0, Palette::Skyblue);
-		uiFont(U"ATK: {}  SPD: {:.0f}  Task: {}"_fmt(def.attack, def.speed, static_cast<int32>(world.units.task[selected]))).draw(info.x + 18.0, info.y + 106.0, Palette::Lightgray);
+		const double tagY = hpTextY + lineStep;
+		const double factionY = tagY + lineStep;
+		const double atkY = factionY + lineStep;
+		const double spdY = atkY + lineStep;
+		const double taskY = spdY + lineStep;
+		uiFont(U"Tag: {}"_fmt(def.tag)).draw(info.x + 18.0, tagY, Palette::Skyblue);
+		uiFont(U"Faction: {}"_fmt(FormatFaction(world.units.faction[selected]))).draw(info.x + 18.0, factionY, Palette::Skyblue);
+		uiFont(U"ATK: {}"_fmt(def.attack)).draw(info.x + 18.0, atkY, Palette::Lightgray);
+		uiFont(U"SPD: {:.0f}"_fmt(def.speed)).draw(info.x + 18.0, spdY, Palette::Lightgray);
+		uiFont(U"Task: {}"_fmt(static_cast<int32>(world.units.task[selected]))).draw(info.x + 18.0, taskY, Palette::Lightgray);
 
 		const Array<QueuedBuildAction>& buildQueue = GetQueuedBuildActionEntries(world, selected);
 		if (!buildQueue.isEmpty() && buildQueue.front().actionId < defs.buildActions.size())
 		{
 			const BuildActionDef& action = defs.buildActions[buildQueue.front().actionId];
 			const double rate = Clamp(world.buildQueues.progressSec[selected] / Max(0.001, action.buildTimeSec), 0.0, 1.0);
-			uiFont(U"Build: {}  Queue: {}"_fmt(action.name, buildQueue.size())).draw(info.x + 18.0, info.y + 132.0, Palette::Gold);
-			RectF{ info.x + 240.0, info.y + 138.0, 180.0, 12.0 }.draw(ColorF{ 0, 0, 0, 0.45 });
-			RectF{ info.x + 240.0, info.y + 138.0, 180.0 * rate, 12.0 }.draw(Palette::Gold);
+			const double buildY = taskY + lineStep;
+			const double queueY = buildY + lineStep;
+			uiFont(U"Build: {}"_fmt(action.name)).draw(info.x + 18.0, buildY, Palette::Gold);
+			uiFont(U"Queue: {}"_fmt(buildQueue.size())).draw(info.x + 18.0, queueY, Palette::Gold);
+			RectF{ info.x + 120.0, queueY + 6.0, 150.0, 12.0 }.draw(ColorF{ 0, 0, 0, 0.45 });
+			RectF{ info.x + 120.0, queueY + 6.0, 150.0 * rate, 12.0 }.draw(Palette::Gold);
 
 			const size_t previewCount = Min<size_t>(3, buildQueue.size());
 			for (size_t i = 0; i < previewCount; ++i)
@@ -148,7 +178,7 @@ namespace LT3
 				}
 
 				const String prefix = (i == 0) ? U">" : U"-";
-				uiFont(U"{} {}"_fmt(prefix, defs.buildActions[queuedActionId].name)).draw(16, info.x + 18.0, info.y + 156.0 + static_cast<int32>(i) * 18, Palette::Lightgray);
+				uiFont(U"{} {}"_fmt(prefix, defs.buildActions[queuedActionId].name)).draw(16, info.x + 18.0, queueY + lineStep + static_cast<int32>(i) * 18, Palette::Lightgray);
 			}
 		}
 
@@ -247,6 +277,7 @@ namespace LT3
 		const RectF panel = BattleCommandPanelRect(mapEditor, rows);
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.20 });
 		DrawUiLayoutDragHandle(panel, mapEditor.uiLayoutEditEnabled);
+		DrawUiLayoutTopAnchorToggle(panel, mapEditor.uiLayoutEditEnabled, mapEditor.uiCommandPanelTopAnchor);
 
 		for (int32 visibleIndex = 0; visibleIndex < static_cast<int32>(visibleActions.size()); ++visibleIndex)
 		{

@@ -46,7 +46,7 @@ namespace LT3
 		world.selection.actionPlacementActive = true;
 		world.selection.actionBuilder = builder;
 		world.selection.actionId = actionId;
-		world.selection.actionTargetWorld = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+		world.selection.actionTargetWorld = SnapWorldToBattleCellCenter(world, worldMouse);
 		world.selection.actionLineDragging = false;
 		world.selection.actionLineStartWorld = world.selection.actionTargetWorld;
 		world.selection.actionLineTargets.clear();
@@ -70,7 +70,7 @@ namespace LT3
 			return false;
 		}
 
-		const Vec2 snappedMouse = SnapWorldPositionToBattleCellCenter(world, worldMouse);
+		const Vec2 snappedMouse = SnapWorldToBattleCellCenter(world, worldMouse);
 		world.selection.actionTargetWorld = snappedMouse;
 
 		if (KeyEscape.down())

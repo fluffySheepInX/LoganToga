@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../DefinitionStores.h"
+# include "../BuildLineIconOverrides.h"
 
 namespace LT3
 {
@@ -151,6 +152,9 @@ namespace LT3
             action.name = commandValue[U"name"].getOr<String>(id);
             action.description = commandValue[U"description"].getOr<String>(U"");
             action.icon = commandValue[U"icon"].getOr<String>(U"");
+            action.lineIconHorizontal = commandValue[U"icon_horizontal"].getOr<String>(action.icon);
+            action.lineIconDiagUpRight = commandValue[U"icon_diag_up_right"].getOr<String>(action.lineIconHorizontal);
+            action.lineIconDiagUpLeft = commandValue[U"icon_diag_up_left"].getOr<String>(action.lineIconHorizontal);
             action.category = commandValue[U"category"].getOr<String>(U"");
             action.requirements = ReadTomlStringArrayValue(commandValue[U"requires"]);
             action.spawnTag = resultTag;
@@ -183,5 +187,7 @@ namespace LT3
                 defs.addBuildAction(action);
             }
         }
+
+        ApplyBuildLineIconOverrides(defs.buildActions);
     }
 }

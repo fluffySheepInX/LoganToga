@@ -73,6 +73,7 @@ namespace LT3
                     26.0,
                     entry.cost,
                     0,
+                    Max(0, entry.visionRadius),
                     baseSkill,
                     Palette::Slategray,
                     entry.visualScale,
@@ -83,7 +84,7 @@ namespace LT3
             }
         }
 
-        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 0, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
+        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 0, 6, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
     }
 
     inline void LoadUnitDefinitions(DefinitionStores& defs, const UnitCatalog& unitCatalog)
@@ -127,6 +128,7 @@ namespace LT3
                 radius,
                 entry.cost,
                 1,
+                Max(0, entry.visionRadius),
                 skill,
                 (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
                 entry.visualScale,

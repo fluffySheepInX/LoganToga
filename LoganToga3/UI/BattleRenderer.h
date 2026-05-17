@@ -14,18 +14,20 @@ namespace LT3
 
         {
             const auto cameraTransform = CreateQuarterViewTransformer();
+            const Array<bool> fogVisibleMask = BuildFogVisibleCellMask(world, defs);
 
             DrawMapEditorTerrainLayer(mapEditor, mapEditor.enabled || mapEditor.showBattleGrid);
             DrawResourceNodes(world, defs, assets, uiFont);
             DrawProjectiles(world, defs);
             DrawPlacedBattleObjects(world, uiFont, assets);
-            DrawUnits(world, defs, uiFont, &assets);
-
-            DrawMapEditorObjectLayer(mapEditor);
+            DrawMapEditorObjectLayer(mapEditor, MapEditorObjectLayerPass::Back);
+            DrawUnits(world, defs, uiFont, &assets, &fogVisibleMask, world.mapWidth, world.mapHeight);
+            DrawMapEditorObjectLayer(mapEditor, MapEditorObjectLayerPass::Front);
+            DrawFogOfWarOverlay(world, defs, mapEditor);
         }
 
         DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);
-        DrawResourcePanel(world, defs, assets, uiFont);
+        DrawResourcePanel(world, defs, assets, uiFont, mapEditor);
         DrawAreaSelectionFrame(world, assets);
         DrawFormationPlacementPreview(world, defs);
         DrawBuildActionPlacementPreview(world, defs, assets, uiFont);

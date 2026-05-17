@@ -6,8 +6,18 @@ namespace LT3
 {
     inline bool ProcessMapEditorToolbarInput(MapEditorState& editor)
     {
+        if (IsEditorBarPreviewHidden(editor))
+        {
+            return false;
+        }
+
         bool consumed = false;
 
+        if (EditorToolbarPreviewHideButtonRect().leftClicked())
+        {
+            editor.editorBarHiddenUntilSec = Scene::Time() + EditorBarPreviewHideSec();
+            consumed = true;
+        }
         if (EditorToolbarButtonRect(editor, 0).leftClicked())
         {
             editor.enabled = !editor.enabled;

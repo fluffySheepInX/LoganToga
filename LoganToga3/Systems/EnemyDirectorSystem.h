@@ -4,6 +4,47 @@
 
 namespace LT3
 {
+    inline Vec2 ResolveEnemySpawnOrigin(const BattleWorld& world, const DefinitionStores& defs)
+    {
+        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        {
+            if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
+            {
+                continue;
+            }
+            if (world.units.defId[unit] >= defs.units.size())
+            {
+                continue;
+            }
+
+            const UnitDef& def = defs.units[world.units.defId[unit]];
+            if (def.role == UnitRole::Base && def.tag.lowercased() == U"home")
+            {
+                return world.units.position[unit] + Vec2{ -QuarterTileStep * 1.5, 0.0 };
+            }
+        }
+
+        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        {
+            if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
+            {
+                continue;
+            }
+            if (world.units.defId[unit] >= defs.units.size())
+            {
+                continue;
+            }
+
+            const UnitDef& def = defs.units[world.units.defId[unit]];
+            if (def.role == UnitRole::Base)
+            {
+                return world.units.position[unit] + Vec2{ -QuarterTileStep * 1.5, 0.0 };
+            }
+        }
+
+        return Vec2{ 1325, 450.0 };
+    }
+
     inline void UpdateEnemyDirector(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
      const UnitId unitCount = static_cast<UnitId>(world.units.size());
@@ -30,7 +71,8 @@ namespace LT3
             if (!enemySpawnCandidates.isEmpty())
             {
                 const UnitDefId spawn = enemySpawnCandidates.choice();
-                AddUnitToBattleWorld(world, spawn, Faction::Enemy, Vec2{ 1325, Random(350.0, 550.0) }, defs);
+                const Vec2 enemySpawnOrigin = ResolveEnemySpawnOrigin(world, defs);
+                AddUnitToBattleWorld(world, spawn, Faction::Enemy, enemySpawnOrigin + Vec2{ 0.0, Random(-100.0, 100.0) }, defs);
             }
         }
 

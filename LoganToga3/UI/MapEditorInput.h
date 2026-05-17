@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "MapEditorCanvasInput.h"
 # include "MapEditorMapData.h"
+# include "MapEditorPerlinNoise.h"
 # include "MapEditorResourceInput.h"
 # include "MapEditorToolbarInput.h"
 # include "MapEditorUiLayoutInput.h"
@@ -10,10 +11,71 @@
 
 namespace LT3
 {
+    inline bool HandleUnitBuildingEditorTabBar(MapEditorState& editor)
+    {
+        const bool show = editor.showUnitParameterEditor || editor.showBuildingEditor;
+        if (!show)
+        {
+            return false;
+        }
+
+        const bool layoutEditing = editor.uiLayoutEditEnabled;
+        const RectF tabParam = EditorUnitBuildingTabRect(editor, 0);
+        const RectF tabBuilding = EditorUnitBuildingTabRect(editor, 1);
+        const RectF closeRect = EditorUnitBuildingCloseRect(editor);
+
+        // 共通 × ボタン
+        if (!layoutEditing && closeRect.leftClicked())
+        {
+            editor.showUnitParameterEditor = false;
+            editor.showBuildingEditor = false;
+            editor.statusText = U"Editor closed";
+            return true;
+        }
+
+        // Unit Param タブ
+        if (tabParam.leftClicked())
+        {
+            editor.showUnitParameterEditor = true;
+            editor.showBuildingEditor = false;
+            return true;
+        }
+
+        // Building Edit タブ
+        if (tabBuilding.leftClicked())
+        {
+            editor.showBuildingEditor = true;
+            editor.showUnitParameterEditor = false;
+            return true;
+        }
+
+        return false;
+    }
+
     inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
     {
         bool consumed = false;
+        if (HandleUnitBuildingEditorTabBar(editor))
+        {
+            consumed = true;
+        }
+
         if (ProcessMapEditorToolbarInput(editor))
+        {
+            consumed = true;
+        }
+
+        if (ProcessStarToolMenuInput(editor))
+        {
+            consumed = true;
+        }
+
+        if (ProcessPerlinNoisePanelInput(editor))
+        {
+            consumed = true;
+        }
+
+        if (ProcessFogPanelInput(editor))
         {
             consumed = true;
         }
@@ -23,7 +85,7 @@ namespace LT3
             consumed = true;
         }
 
-        if (ProcessBuildingEditorInput(editor, catalog))
+        if (ProcessBuildingEditorInput(editor, catalog, defs))
         {
             consumed = true;
         }
@@ -43,6 +105,16 @@ namespace LT3
             consumed = true;
         }
 
+        if (ProcessMapEditorDecalEditorInput(editor))
+        {
+            consumed = true;
+        }
+
+        if (ProcessMapEditorZOrderPanelInput(editor))
+        {
+            consumed = true;
+        }
+
         if (editor.enabled && editor.showResourcePanels && editor.resourcePlacementDragKind && MouseL.up())
         {
             if (const Optional<Point> releaseCell = PickMapEditorCell(editor, screenMouse))
@@ -55,46 +127,6 @@ namespace LT3
             }
 
             return true;
-        }
-
-        if (IsValidSelectedResourceNodeIndex(editor))
-        {
-            if (KeyUp.down())
-            {
-                NudgeSelectedResourceNode(editor, 0, -1);
-                consumed = true;
-            }
-            if (KeyDown.down())
-            {
-                NudgeSelectedResourceNode(editor, 0, 1);
-                consumed = true;
-            }
-            if (KeyLeft.down())
-            {
-                NudgeSelectedResourceNode(editor, -1, 0);
-                consumed = true;
-            }
-            if (KeyRight.down())
-            {
-                NudgeSelectedResourceNode(editor, 1, 0);
-                consumed = true;
-            }
-            if (KeyD.down() && KeyControl.pressed())
-            {
-                DuplicateSelectedResourceNode(editor);
-                consumed = true;
-            }
-        }
-
-        if (editor.enabled && EditorResourcePanelsToggleRect().leftClicked())
-        {
-            editor.showResourcePanels = !editor.showResourcePanels;
-            if (!editor.showResourcePanels)
-            {
-                editor.resourcePlacementDragKind.reset();
-            }
-            editor.statusText = editor.showResourcePanels ? U"Resource panels ON" : U"Resource panels OFF";
-            consumed = true;
         }
 
         if (ProcessMapEditorUiLayoutInput(editor, world, defs, screenMouse))

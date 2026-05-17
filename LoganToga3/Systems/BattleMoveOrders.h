@@ -67,15 +67,15 @@ namespace LT3
 			|| (!GetQueuedBuildActionEntries(world, unit).isEmpty());
 	}
 
-	inline Vec2 SnapWorldPositionToBattleCellCenter(const BattleWorld& world, const Vec2& position)
+	inline Vec2 SnapWorldToBattleCellCenter(const BattleWorld& world, const Vec2& worldPosition)
 	{
-		const Point cell = QuarterWorldPositionToBattleCell(position, world.mapWidth, world.mapHeight);
+		const Point cell = QuarterWorldToBattleCell(worldPosition, world.mapWidth, world.mapHeight);
 		return QuarterBattleCellCenter(cell.x, cell.y);
 	}
 
-	inline Point WorldPositionToBattleCell(const BattleWorld& world, const Vec2& position)
+	inline Point WorldToBattleCell(const BattleWorld& world, const Vec2& worldPosition)
 	{
-		return QuarterWorldPositionToBattleCell(position, world.mapWidth, world.mapHeight);
+		return QuarterWorldToBattleCell(worldPosition, world.mapWidth, world.mapHeight);
 	}
 
 	inline Vec2 BattleCellToWorldPosition(const Point& cell)

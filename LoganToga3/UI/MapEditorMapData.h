@@ -1,5 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../Data/BattleAssetPaths.h"
+# include "../Data/Loaders/ResourceDefLoader.h"
 # include "MapEditorTypes.h"
 # include "MapEditorResourceData.h"
 # include "MapEditorUiLayout.h"
@@ -37,18 +39,15 @@ namespace LT3
                     continue;
                 }
 
-                const Image image{ path };
-                if (!image)
-                {
-                    continue;
-                }
-
                 MapEditorAsset asset;
                 asset.path = path;
                 asset.fileName = FileSystem::FileName(path);
-                asset.imageSize = image.size();
-                asset.texture = Texture{ image };
+                if (!LoadMapEditorAssetVisual(asset))
+                {
+                    continue;
+                }
                 asset.kind = (baseSize != Size{ 0, 0 } && asset.imageSize != baseSize) ? MapEditorAssetKind::Object : MapEditorAssetKind::Terrain;
+                NormalizeDecalSettings(asset);
                 editor.assets << asset;
             }
         }
@@ -61,6 +60,16 @@ namespace LT3
             }
             return a.fileName < b.fileName;
         });
+        const int32 assetCount = static_cast<int32>(editor.assets.size());
+        if ((editor.selectedAsset < 0) || (assetCount <= editor.selectedAsset))
+        {
+            editor.selectedAsset = InvalidMapEditorAsset;
+        }
+        if ((editor.decalEditorAssetIndex < 0) || (assetCount <= editor.decalEditorAssetIndex))
+        {
+            editor.decalEditorAssetIndex = InvalidMapEditorAsset;
+            editor.showDecalEditor = false;
+        }
 
         const TOMLReader toml{ editor.savePath };
         if (toml)
@@ -80,31 +89,93 @@ namespace LT3
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
             editor.paletteTabIndex = Clamp(toml[U"toolbar.map_assets_tab"].getOr<int32>(editor.paletteTabIndex), 0, 1);
             editor.showResourcePanels = toml[U"toolbar.resource_panels"].getOr<bool>(editor.showResourcePanels);
+            editor.showPerlinNoisePanel = false;
+            editor.showStarToolMenu = false;
+            editor.showFogPanel = false;
+            editor.perlinMapWidth = editor.mapWidth;
+            editor.perlinMapHeight = editor.mapHeight;
+            editor.fogEnabled = toml[U"fog.enabled"].getOr<bool>(editor.fogEnabled);
+            editor.fogColor.r = Clamp(toml[U"fog.color_r"].getOr<double>(editor.fogColor.r), 0.0, 1.0);
+            editor.fogColor.g = Clamp(toml[U"fog.color_g"].getOr<double>(editor.fogColor.g), 0.0, 1.0);
+            editor.fogColor.b = Clamp(toml[U"fog.color_b"].getOr<double>(editor.fogColor.b), 0.0, 1.0);
+            editor.fogOpacity = Clamp(toml[U"fog.opacity"].getOr<double>(editor.fogOpacity), 0.0, 1.0);
+            editor.fogPreviewVision = toml[U"fog.preview_vision"].getOr<bool>(editor.fogPreviewVision);
             editor.playerHomePosition.x = toml[U"home.player_x"].getOr<double>(editor.playerHomePosition.x);
             editor.playerHomePosition.y = toml[U"home.player_y"].getOr<double>(editor.playerHomePosition.y);
             editor.enemyHomePosition.x = toml[U"home.enemy_x"].getOr<double>(editor.enemyHomePosition.x);
             editor.enemyHomePosition.y = toml[U"home.enemy_y"].getOr<double>(editor.enemyHomePosition.y);
 
-            for (const auto tileValue : toml[U"tiles"].tableArrayView())
+            const TOMLValue tilesValue = toml[U"tiles"];
+            if (tilesValue.isTableArray())
             {
-                const int32 x = tileValue[U"x"].getOr<int32>(-1);
-                const int32 y = tileValue[U"y"].getOr<int32>(-1);
-                if ((x < 0) || (y < 0) || (x >= editor.mapWidth) || (y >= editor.mapHeight))
+                for (const auto tileValue : tilesValue.tableArrayView())
                 {
-                    continue;
+                    const int32 x = tileValue[U"x"].getOr<int32>(-1);
+                    const int32 y = tileValue[U"y"].getOr<int32>(-1);
+                    if ((x < 0) || (y < 0) || (x >= editor.mapWidth) || (y >= editor.mapHeight))
+                    {
+                        continue;
+                    }
+
+                    MapEditorCell& cell = editor.cells[MapEditorCellIndex(editor, x, y)];
+                    cell.decals.clear();
+
+                    const String terrain = tileValue[U"terrain"].getOr<String>(U"");
+                    cell.terrainAsset = terrain.isEmpty()
+                        ? InvalidMapEditorAsset
+                        : FindMapEditorAssetIndexByFileName(editor, terrain);
+
+                    const String object = tileValue[U"object"].getOr<String>(U"");
+                    cell.objectAsset = object.isEmpty()
+                        ? InvalidMapEditorAsset
+                        : FindMapEditorAssetIndexByFileName(editor, object);
+                    if (IsMapEditorDecalAsset(editor, cell.objectAsset))
+                    {
+                        cell.objectAsset = InvalidMapEditorAsset;
+                    }
+
+                    bool hasDecals = false;
+                    const TOMLValue decalsValue = tileValue[U"decals"];
+                    if (decalsValue.isTableArray())
+                    {
+                        for (const auto decalValue : decalsValue.tableArrayView())
+                        {
+                            const String decalFileName = decalValue[U"asset"].getOr<String>(U"");
+                            const int32 decalAssetIndex = decalFileName.isEmpty()
+                                ? InvalidMapEditorAsset
+                                : FindMapEditorAssetIndexByFileName(editor, decalFileName);
+                            if (!IsMapEditorDecalAsset(editor, decalAssetIndex))
+                            {
+                                continue;
+                            }
+
+                            MapEditorAsset& asset = editor.assets[decalAssetIndex];
+                            asset.decalOpacity = decalValue[U"decal_opacity"].getOr<double>(asset.decalOpacity);
+                            asset.decalScale = decalValue[U"decal_scale"].getOr<double>(asset.decalScale);
+                            asset.decalBlocksPassage = decalValue[U"decal_blocks_passage"].getOr<bool>(asset.decalBlocksPassage);
+                            asset.useRandomDecalOpacity = decalValue[U"decal_opacity_random"].getOr<bool>(asset.useRandomDecalOpacity);
+                            asset.decalOpacityMin = decalValue[U"decal_opacity_min"].getOr<double>(asset.decalOpacityMin);
+                            asset.decalOpacityMax = decalValue[U"decal_opacity_max"].getOr<double>(asset.decalOpacityMax);
+                            asset.useRandomDecalScale = decalValue[U"decal_scale_random"].getOr<bool>(asset.useRandomDecalScale);
+                            asset.decalScaleMin = decalValue[U"decal_scale_min"].getOr<double>(asset.decalScaleMin);
+                            asset.decalScaleMax = decalValue[U"decal_scale_max"].getOr<double>(asset.decalScaleMax);
+                            NormalizeDecalSettings(asset);
+                            cell.decals << MapEditorDecalPlacement{
+                                decalAssetIndex,
+                                Clamp(decalValue[U"decal_applied_opacity"].getOr<double>(asset.decalOpacity), 0.0, 1.0),
+                                Clamp(decalValue[U"decal_applied_scale"].getOr<double>(asset.decalScale), 0.1, 4.0)
+                            };
+                            hasDecals = true;
+                        }
+                    }
+
+                    if (!hasDecals)
+                    {
+                        cell.decalOpacity = 1.0;
+                        cell.decalScale = 1.0;
+                    }
+                    SyncLegacyDecalFieldsFromStack(cell);
                 }
-
-                MapEditorCell& cell = editor.cells[MapEditorCellIndex(editor, x, y)];
-
-                const String terrain = tileValue[U"terrain"].getOr<String>(U"");
-                cell.terrainAsset = terrain.isEmpty()
-                    ? InvalidMapEditorAsset
-                    : FindMapEditorAssetIndexByFileName(editor, terrain);
-
-                const String object = tileValue[U"object"].getOr<String>(U"");
-                cell.objectAsset = object.isEmpty()
-                    ? InvalidMapEditorAsset
-                    : FindMapEditorAssetIndexByFileName(editor, object);
             }
         }
         LoadBattleUiLayoutToml(editor);
@@ -160,6 +231,14 @@ namespace LT3
         writer << U"map_assets_tab = " << Clamp(editor.paletteTabIndex, 0, 1) << U"\n";
         writer << U"resource_panels = " << (editor.showResourcePanels ? U"true" : U"false") << U"\n\n";
 
+        writer << U"[fog]\n";
+        writer << U"enabled = " << (editor.fogEnabled ? U"true" : U"false") << U"\n";
+        writer << U"color_r = " << Clamp(editor.fogColor.r, 0.0, 1.0) << U"\n";
+        writer << U"color_g = " << Clamp(editor.fogColor.g, 0.0, 1.0) << U"\n";
+        writer << U"color_b = " << Clamp(editor.fogColor.b, 0.0, 1.0) << U"\n";
+        writer << U"opacity = " << Clamp(editor.fogOpacity, 0.0, 1.0) << U"\n";
+        writer << U"preview_vision = " << (editor.fogPreviewVision ? U"true" : U"false") << U"\n\n";
+
         writer << U"[home]\n";
         writer << U"player_x = " << editor.playerHomePosition.x << U"\n";
         writer << U"player_y = " << editor.playerHomePosition.y << U"\n";
@@ -178,13 +257,37 @@ namespace LT3
             {
                 const MapEditorCell& cell = editor.cells[MapEditorCellIndex(editor, x, y)];
                 const String terrain = (0 <= cell.terrainAsset && cell.terrainAsset < static_cast<int32>(editor.assets.size())) ? editor.assets[cell.terrainAsset].fileName : U"";
-                const String object = (0 <= cell.objectAsset && cell.objectAsset < static_cast<int32>(editor.assets.size())) ? editor.assets[cell.objectAsset].fileName : U"";
+                const bool legacyObjectIsDecal = IsMapEditorDecalAsset(editor, cell.objectAsset);
+                const String object = (!legacyObjectIsDecal && 0 <= cell.objectAsset && cell.objectAsset < static_cast<int32>(editor.assets.size())) ? editor.assets[cell.objectAsset].fileName : U"";
 
                 writer << U"[[tiles]]\n";
                 writer << U"x = " << x << U"\n";
                 writer << U"y = " << y << U"\n";
                 writer << U"terrain = \"" << TomlEscape(terrain) << U"\"\n";
-                writer << U"object = \"" << TomlEscape(object) << U"\"\n\n";
+                writer << U"object = \"" << TomlEscape(object) << U"\"\n";
+                for (const MapEditorDecalPlacement& decal : cell.decals)
+                {
+                    if (!IsMapEditorDecalAsset(editor, decal.assetIndex))
+                    {
+                        continue;
+                    }
+
+                    const MapEditorAsset& asset = editor.assets[decal.assetIndex];
+                    writer << U"[[tiles.decals]]\n";
+                    writer << U"asset = \"" << TomlEscape(asset.fileName) << U"\"\n";
+                    writer << U"decal_opacity = " << asset.decalOpacity << U"\n";
+                    writer << U"decal_scale = " << asset.decalScale << U"\n";
+                    writer << U"decal_blocks_passage = " << (asset.decalBlocksPassage ? U"true" : U"false") << U"\n";
+                    writer << U"decal_opacity_random = " << (asset.useRandomDecalOpacity ? U"true" : U"false") << U"\n";
+                    writer << U"decal_opacity_min = " << asset.decalOpacityMin << U"\n";
+                    writer << U"decal_opacity_max = " << asset.decalOpacityMax << U"\n";
+                    writer << U"decal_scale_random = " << (asset.useRandomDecalScale ? U"true" : U"false") << U"\n";
+                    writer << U"decal_scale_min = " << asset.decalScaleMin << U"\n";
+                    writer << U"decal_scale_max = " << asset.decalScaleMax << U"\n";
+                    writer << U"decal_applied_opacity = " << decal.opacity << U"\n";
+                    writer << U"decal_applied_scale = " << decal.scale << U"\n";
+                }
+                writer << U"\n";
             }
         }
 
@@ -217,6 +320,12 @@ namespace LT3
         editor.showResourcePanels = true;
         editor.showUnitList = false;
         editor.showBuildingEditor = false;
+        editor.buildingEditorTab = 0;
+        editor.buildingEditorLineActionTag.clear();
+        editor.buildingEditorIconHorizontal.clear();
+        editor.buildingEditorIconDiagUpRight.clear();
+        editor.buildingEditorIconDiagUpLeft.clear();
+        editor.buildLineIconsDirty = false;
         editor.unitListScroll = 0.0;
         editor.selectedUnitCatalogIndex = -1;
         editor.showUnitParameterEditor = false;
@@ -239,10 +348,29 @@ namespace LT3
         editor.resourceNodeFilterKind = -1;
         editor.resourcePlacementDragKind.reset();
         editor.resourceIconTextures.clear();
+        editor.showStarToolMenu = false;
+        editor.showPerlinNoisePanel = false;
+        editor.showFogPanel = false;
+        editor.fogEnabled = true;
+        editor.fogColor = ColorF{ 0.02, 0.025, 0.035 };
+        editor.fogOpacity = 0.52;
+        editor.fogPreviewVision = true;
+        editor.perlinStack.clear();
+        editor.perlinMapWidth = editor.mapWidth;
+        editor.perlinMapHeight = editor.mapHeight;
         editor.playerHomePosition = { 210.0, 450.0 };
         editor.enemyHomePosition = { 1390.0, 450.0 };
         editor.draggingPlayerHome = false;
         editor.draggingEnemyHome = false;
+        editor.lastPaintCell.reset();
+        editor.lastPaintAsset = InvalidMapEditorAsset;
+        editor.lastEraseCell.reset();
+        editor.showDecalEditor = false;
+        editor.decalEditorAssetIndex = InvalidMapEditorAsset;
+        editor.zOrderMode = false;
+        editor.zOrderDragStartCell.reset();
+        editor.zOrderSelectionRect.reset();
+        editor.zOrderSelectedStackIndex = 0;
         editor.statusText = U"Map editor ready";
     }
 }

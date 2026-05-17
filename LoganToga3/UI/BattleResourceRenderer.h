@@ -4,9 +4,38 @@
 # include "../Data/BattleAssetPaths.h"
 # include "BattleUnitRenderer.h"
 # include "QuarterView.h"
+# include "MapEditorTypes.h"
+# include "MapEditorLayoutRects.h"
 
 namespace LT3
 {
+    inline void DrawResourcePanelUiLayoutDragHandle(const RectF& panelRect, bool active)
+    {
+        if (!active)
+        {
+            return;
+        }
+
+        const RectF handle{ panelRect.x + panelRect.w - 24.0, panelRect.y + 6.0, 18.0, 18.0 };
+        handle.draw(ColorF{ 1.0, 0.84, 0.0, 0.18 }).drawFrame(2.0, ColorF{ 1.0, 0.84, 0.0, 0.90 });
+    }
+
+    inline void DrawResourcePanelTopAnchorToggle(const RectF& panelRect, bool active, bool topAnchor)
+    {
+        if (!active)
+        {
+            return;
+        }
+
+        const RectF toggleRect{ panelRect.x + panelRect.w - 48.0, panelRect.y + 6.0, 18.0, 18.0 };
+        toggleRect.draw(topAnchor ? ColorF{ 0.16, 0.24, 0.18, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+            .drawFrame(2.0, toggleRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.18 });
+
+        const Vec2 center = toggleRect.center();
+        Line{ center.x - 5.0, center.y - 4.0, center.x + 5.0, center.y - 4.0 }.draw(2.0, topAnchor ? Palette::White : Palette::Lightgray);
+        Triangle{ Vec2{ center.x, center.y - 7.0 }, Vec2{ center.x - 4.0, center.y }, Vec2{ center.x + 4.0, center.y } }.draw(topAnchor ? Palette::White : Palette::Lightgray);
+    }
+
     inline bool DrawResourceIcon(const ResourceDef& def, const BattleRenderAssets& assets, const Vec2& center, double size)
     {
         if (def.icon.isEmpty())
@@ -80,9 +109,7 @@ namespace LT3
 
     inline void DrawResourcePanel(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont)
     {
-        const double rowHeight = 22.0;
-        const double panelHeight = 42.0 + rowHeight * Max<size_t>(1, defs.resources.size());
-        const RectF panel{ 1288.0, 72.0, 282.0, panelHeight };
+        const RectF panel{ 1288.0, 72.0, 282.0, 42.0 + 22.0 * Max<size_t>(1, defs.resources.size()) };
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
 
         uiFont(U"資源").draw(16, panel.x + 16.0, panel.y + 10.0, Palette::White);
@@ -90,7 +117,29 @@ namespace LT3
         for (ResourceDefId resourceId = 0; resourceId < defs.resources.size(); ++resourceId)
         {
             const ResourceDef& def = defs.resources[resourceId];
-            const double rowY = panel.y + 38.0 + static_cast<double>(resourceId) * rowHeight;
+            const double rowY = panel.y + 38.0 + static_cast<double>(resourceId) * 22.0;
+            const int32 amount = GetPlayerResourceAmount(world, resourceId);
+
+            const Vec2 iconCenter{ panel.x + 30.0, rowY + 10.0 };
+            Circle{ iconCenter, 9.0 }.draw(def.color).drawFrame(1.0, ColorF{ 0.25, 0.18, 0.02 });
+            DrawResourceIcon(def, assets, iconCenter, 18.0);
+            uiFont(U"{}: {}"_fmt(def.name, amount)).draw(16, panel.x + 48.0, rowY, Palette::White);
+        }
+    }
+
+    inline void DrawResourcePanel(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, const MapEditorState& mapEditor)
+    {
+        const RectF panel = BattleResourcePanelRect(mapEditor, defs.resources.size());
+        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
+        DrawResourcePanelUiLayoutDragHandle(panel, mapEditor.uiLayoutEditEnabled);
+        DrawResourcePanelTopAnchorToggle(panel, mapEditor.uiLayoutEditEnabled, mapEditor.uiResourcePanelTopAnchor);
+
+        uiFont(U"資源").draw(16, panel.x + 16.0, panel.y + 10.0, Palette::White);
+
+        for (ResourceDefId resourceId = 0; resourceId < defs.resources.size(); ++resourceId)
+        {
+            const ResourceDef& def = defs.resources[resourceId];
+            const double rowY = panel.y + 38.0 + static_cast<double>(resourceId) * 22.0;
             const int32 amount = GetPlayerResourceAmount(world, resourceId);
 
             const Vec2 iconCenter{ panel.x + 30.0, rowY + 10.0 };

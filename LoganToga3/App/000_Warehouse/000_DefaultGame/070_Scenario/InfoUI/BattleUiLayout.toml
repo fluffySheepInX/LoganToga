@@ -2,11 +2,33 @@
 
 grid = 16
 
-info_x = 16
+info_x = 1296
 
-info_bottom = 848
+info_bottom = 352
 
 command_x = 1296
 
 command_y = 736
+
+resource_x = 1296
+
+resource_y = 112
+
+param_editor_x = 678
+
+param_editor_y = 106
+
+building_editor_x = 678
+
+building_editor_y = 106
+
+info_top_anchor = true
+
+command_top_anchor = false
+
+resource_top_anchor = true
+
+param_editor_top_anchor = false
+
+building_editor_top_anchor = false
 

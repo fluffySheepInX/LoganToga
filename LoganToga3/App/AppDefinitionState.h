@@ -18,7 +18,7 @@ namespace LT3
         AppDefinitionState state;
         state.unitCatalog = LoadUnitCatalog();
         state.defs = CreateDefaultDefinitions(state.unitCatalog);
-        state.renderAssets = BuildBattleRenderAssets(state.unitCatalog);
+        state.renderAssets = BuildBattleRenderAssets(state.unitCatalog, &state.defs);
         return state;
     }
 }

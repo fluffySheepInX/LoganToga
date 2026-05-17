@@ -3,6 +3,64 @@
 
 namespace LT3
 {
+    enum class UnitPlacementAnchor
+    {
+        Center,
+        BottomCenter,
+    };
+
+    enum class UnitRenderSizeMode
+    {
+        Gameplay,
+        Art,
+    };
+
+    enum class UnitArtWidthReference
+    {
+        Cell,
+        Pixel,
+    };
+
+    inline UnitPlacementAnchor ParseUnitPlacementAnchor(const String& value, const String& kind)
+    {
+        const String lowered = value.lowercased();
+        if (lowered == U"bottom" || lowered == U"bottom_center")
+        {
+            return UnitPlacementAnchor::BottomCenter;
+        }
+        if (lowered == U"center")
+        {
+            return UnitPlacementAnchor::Center;
+        }
+
+        return (kind.lowercased() == U"building") ? UnitPlacementAnchor::BottomCenter : UnitPlacementAnchor::Center;
+    }
+
+    inline String UnitPlacementAnchorToTomlValue(UnitPlacementAnchor anchor)
+    {
+        return (anchor == UnitPlacementAnchor::BottomCenter) ? U"bottom_center" : U"center";
+    }
+
+    inline UnitRenderSizeMode ParseUnitRenderSizeMode(const String& value)
+    {
+        return (value.lowercased() == U"art") ? UnitRenderSizeMode::Art : UnitRenderSizeMode::Gameplay;
+    }
+
+    inline String UnitRenderSizeModeToTomlValue(UnitRenderSizeMode mode)
+    {
+        return (mode == UnitRenderSizeMode::Art) ? U"art" : U"gameplay";
+    }
+
+    inline UnitArtWidthReference ParseUnitArtWidthReference(const String& value)
+    {
+        return (value.lowercased() == U"pixel") ? UnitArtWidthReference::Pixel : UnitArtWidthReference::Cell;
+    }
+
+    inline String UnitArtWidthReferenceToTomlValue(UnitArtWidthReference reference)
+    {
+        return (reference == UnitArtWidthReference::Pixel) ? U"pixel" : U"cell";
+    }
+
     struct UnitCatalogEntry
     {
         String tag;
@@ -31,6 +89,18 @@ namespace LT3
         double visualScale = 1.0;
         Point visualOffset{ 0, 0 };
         Point shadowOffset{ 0, 0 };
+        UnitPlacementAnchor placementAnchor = UnitPlacementAnchor::Center;
+        UnitRenderSizeMode renderSizeMode = UnitRenderSizeMode::Gameplay;
+        double gameplaySizeMul = 2.2;
+        UnitArtWidthReference artWidthReference = UnitArtWidthReference::Cell;
+        double artWidthValue = 1.0;
+        double artWidthValueLineHorizontal = 1.0;
+        double artWidthValueLineDiagUpRight = 1.0;
+        double artWidthValueLineDiagUpLeft = 1.0;
+        bool artKeepAspect = true;
+        Point lineIconHorizontalOffset{ 0, 0 };
+        Point lineIconDiagUpRightOffset{ 0, 0 };
+        Point lineIconDiagUpLeftOffset{ 0, 0 };
     };
 
     struct UnitCatalog
@@ -229,6 +299,25 @@ namespace LT3
             entry.visualScale = Clamp(unitValue[U"visual_scale"].getOr<double>(unitValue[U"scale"].getOr<double>(1.0)), 0.25, 3.0);
             entry.visualOffset = ReadTomlPointArray(unitValue[U"visual_offset"]);
             entry.shadowOffset = ReadTomlPointArray(unitValue[U"shadow_offset"]);
+            entry.placementAnchor = ParseUnitPlacementAnchor(unitValue[U"placement_anchor"].getOr<String>(U""), entry.kind);
+            entry.renderSizeMode = ParseUnitRenderSizeMode(unitValue[U"render_size_mode"].getOr<String>(U"gameplay"));
+            if (const Optional<double> gameplaySizeMul = unitValue[U"gameplay_size_mul"].getOpt<double>())
+            {
+                entry.gameplaySizeMul = Clamp(*gameplaySizeMul, 0.2, 8.0);
+            }
+            else
+            {
+                entry.gameplaySizeMul = (entry.kind.lowercased() == U"building") ? 2.2 : 2.0;
+            }
+            entry.artWidthReference = ParseUnitArtWidthReference(unitValue[U"art_width_ref"].getOr<String>(U"cell"));
+            entry.artWidthValue = Clamp(unitValue[U"art_width_value"].getOr<double>(1.0), 0.1, 8.0);
+            entry.artWidthValueLineHorizontal = Clamp(unitValue[U"art_width_value_line_horizontal"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artWidthValueLineDiagUpRight = Clamp(unitValue[U"art_width_value_line_diag_up_right"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artWidthValueLineDiagUpLeft = Clamp(unitValue[U"art_width_value_line_diag_up_left"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artKeepAspect = unitValue[U"art_keep_aspect"].getOr<bool>(true);
+            entry.lineIconHorizontalOffset = ReadTomlPointArray(unitValue[U"line_icon_horizontal_offset"]);
+            entry.lineIconDiagUpRightOffset = ReadTomlPointArray(unitValue[U"line_icon_diag_up_right_offset"]);
+            entry.lineIconDiagUpLeftOffset = ReadTomlPointArray(unitValue[U"line_icon_diag_up_left_offset"]);
 
             if (!entry.tag.isEmpty())
             {
@@ -279,7 +368,19 @@ namespace LT3
             block += U"maintain_range = {}\n"_fmt(entry.maintainRange);
             block += U"visual_scale = {}\n"_fmt(entry.visualScale);
             block += U"visual_offset = [{}, {}]\n"_fmt(entry.visualOffset.x, entry.visualOffset.y);
-            block += U"shadow_offset = [{}, {}]\n\n"_fmt(entry.shadowOffset.x, entry.shadowOffset.y);
+            block += U"shadow_offset = [{}, {}]\n"_fmt(entry.shadowOffset.x, entry.shadowOffset.y);
+            block += U"placement_anchor = \"{}\"\n"_fmt(UnitPlacementAnchorToTomlValue(entry.placementAnchor));
+            block += U"render_size_mode = \"{}\"\n"_fmt(UnitRenderSizeModeToTomlValue(entry.renderSizeMode));
+            block += U"gameplay_size_mul = {}\n"_fmt(entry.gameplaySizeMul);
+            block += U"art_width_ref = \"{}\"\n"_fmt(UnitArtWidthReferenceToTomlValue(entry.artWidthReference));
+            block += U"art_width_value = {}\n"_fmt(entry.artWidthValue);
+            block += U"art_width_value_line_horizontal = {}\n"_fmt(entry.artWidthValueLineHorizontal);
+            block += U"art_width_value_line_diag_up_right = {}\n"_fmt(entry.artWidthValueLineDiagUpRight);
+            block += U"art_width_value_line_diag_up_left = {}\n"_fmt(entry.artWidthValueLineDiagUpLeft);
+            block += U"art_keep_aspect = {}\n"_fmt(entry.artKeepAspect ? U"true" : U"false");
+            block += U"line_icon_horizontal_offset = [{}, {}]\n"_fmt(entry.lineIconHorizontalOffset.x, entry.lineIconHorizontalOffset.y);
+            block += U"line_icon_diag_up_right_offset = [{}, {}]\n"_fmt(entry.lineIconDiagUpRightOffset.x, entry.lineIconDiagUpRightOffset.y);
+            block += U"line_icon_diag_up_left_offset = [{}, {}]\n\n"_fmt(entry.lineIconDiagUpLeftOffset.x, entry.lineIconDiagUpLeftOffset.y);
             writer.write(block);
         }
 

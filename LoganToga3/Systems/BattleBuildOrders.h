@@ -13,7 +13,7 @@ namespace LT3
 		BlockedByOccupancy,
 	};
 
-	inline BuildPlacementCellState EvaluateBuildPlacementCell(const BattleWorld& world, const Point& cell)
+	inline BuildPlacementCellState EvaluateBuildPlacementCell(const BattleWorld& world, const DefinitionStores& defs, const Point& cell)
 	{
 		if (!world.map.inBounds(cell.y, cell.x))
 		{
@@ -22,7 +22,7 @@ namespace LT3
 
 		for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
 		{
-			const Point resourceCell = WorldPositionToBattleCell(world, world.resourceNodes.position[node]);
+			const Point resourceCell = WorldToBattleCell(world, world.resourceNodes.position[node]);
 			if (resourceCell == cell)
 			{
 				return BuildPlacementCellState::BlockedByResource;
@@ -34,9 +34,37 @@ namespace LT3
 			return BuildPlacementCellState::BlockedByOccupancy;
 		}
 
+		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		{
+			if (!IsValidUnit(world, unit))
+			{
+				continue;
+			}
+
+			if (world.units.defId[unit] >= defs.units.size())
+			{
+				continue;
+			}
+
+			const UnitDef& unitDef = defs.units[world.units.defId[unit]];
+			const bool occupiesCell = (unitDef.role == UnitRole::Base)
+				|| (unitDef.role == UnitRole::Barrier)
+				|| unitDef.blocksTileMovement;
+			if (!occupiesCell)
+			{
+				continue;
+			}
+
+			const Point occupiedCell = WorldToBattleCell(world, world.units.position[unit]);
+			if (occupiedCell == cell)
+			{
+				return BuildPlacementCellState::BlockedByOccupancy;
+			}
+		}
+
 		for (size_t i = 0; i < world.placedObjects.position.size(); ++i)
 		{
-			const Point objectCell = WorldPositionToBattleCell(world, world.placedObjects.position[i]);
+			const Point objectCell = WorldToBattleCell(world, world.placedObjects.position[i]);
 			if (objectCell == cell)
 			{
 				return BuildPlacementCellState::BlockedByOccupancy;
@@ -46,14 +74,14 @@ namespace LT3
 		return BuildPlacementCellState::Allowed;
 	}
 
-	inline BuildPlacementCellState EvaluateBuildPlacementCell(const BattleWorld& world, const Vec2& worldPosition)
+	inline BuildPlacementCellState EvaluateBuildPlacementCell(const BattleWorld& world, const DefinitionStores& defs, const Vec2& worldPosition)
 	{
-		return EvaluateBuildPlacementCell(world, WorldPositionToBattleCell(world, worldPosition));
+		return EvaluateBuildPlacementCell(world, defs, WorldToBattleCell(world, worldPosition));
 	}
 
 	inline Vec2 ResolveBuildApproachPosition(const BattleWorld& world, const Vec2& buildTarget)
 	{
-		const Point targetCell = WorldPositionToBattleCell(world, buildTarget);
+		const Point targetCell = WorldToBattleCell(world, buildTarget);
 		const Point offsets[4] = {
 			Point{ 1, 0 },
 			Point{ -1, 0 },
@@ -94,21 +122,32 @@ namespace LT3
 
 	inline Array<Vec2> BuildLinePlacementTargets(const BattleWorld& world, const BuildActionDef& action, const Vec2& startWorld, const Vec2& currentWorld)
 	{
-		const Point start = WorldPositionToBattleCell(world, startWorld);
-		Point end = WorldPositionToBattleCell(world, currentWorld);
+		const Point start = WorldToBattleCell(world, startWorld);
+		Point end = WorldToBattleCell(world, currentWorld);
 
 		const int32 dx = end.x - start.x;
 		const int32 dy = end.y - start.y;
-		const bool horizontal = (action.lineAxisMode == BuildLineAxisMode::HorizontalOnly)
-			|| (action.lineAxisMode == BuildLineAxisMode::Auto && Abs(dx) >= Abs(dy));
-
-		if (horizontal)
+		const bool horizontalOnly = (action.lineAxisMode == BuildLineAxisMode::HorizontalOnly);
+		const bool verticalOnly = (action.lineAxisMode == BuildLineAxisMode::VerticalOnly);
+		const bool autoDiagonal = (!horizontalOnly && !verticalOnly && dx != 0 && dy != 0);
+		if (horizontalOnly)
 		{
 			end.y = start.y;
 		}
-		else
+		else if (verticalOnly)
 		{
 			end.x = start.x;
+		}
+		else if (!autoDiagonal)
+		{
+			if (Abs(dx) >= Abs(dy))
+			{
+				end.y = start.y;
+			}
+			else
+			{
+				end.x = start.x;
+			}
 		}
 
 		Array<Vec2> targets;
@@ -120,8 +159,8 @@ namespace LT3
 		const int32 halfThickness = thickness / 2;
 		targets.reserve(count * thickness);
 
-		const int32 offsetStepX = (stepX == 0) ? 1 : 0;
-		const int32 offsetStepY = (stepY == 0) ? 1 : 0;
+		const int32 offsetStepX = (stepX == 0) ? 1 : (autoDiagonal ? 0 : 0);
+		const int32 offsetStepY = (stepY == 0) ? 1 : (autoDiagonal ? 0 : 0);
 
 		for (int32 i = 0; i < count; ++i)
 		{
@@ -166,6 +205,53 @@ namespace LT3
 		return false;
 	}
 
+	inline String ResolveLinePlacementIconByDelta(const BuildActionDef& action, const Point& delta)
+	{
+		const int32 screenDx = (delta.x - delta.y);
+		const int32 screenDy = (delta.x + delta.y);
+
+		// 画面上で水平または垂直に並ぶ方向（対角ワールド移動）は「横」アイコン
+		if (screenDy == 0 || screenDx == 0)
+		{
+			return action.lineIconHorizontal;
+		}
+
+		if ((screenDx * screenDy) < 0)
+		{
+			return action.lineIconDiagUpRight;
+		}
+
+		return action.lineIconDiagUpLeft;
+	}
+
+	inline String ResolveLinePlacementIconAt(const BattleWorld& world, const BuildActionDef& action, const Array<Vec2>& targets, size_t index, const Point& fallbackDirection)
+	{
+		if (targets.isEmpty() || index >= targets.size())
+		{
+			return action.lineIconHorizontal;
+		}
+
+		if (targets.size() <= 1)
+		{
+			return action.lineIconHorizontal;
+		}
+
+		Point direction = fallbackDirection;
+		const Point current = WorldToBattleCell(world, targets[index]);
+		if ((index + 1) < targets.size())
+		{
+			const Point next = WorldToBattleCell(world, targets[index + 1]);
+			direction = Point{ next.x - current.x, next.y - current.y };
+		}
+		else if (index > 0)
+		{
+			const Point prev = WorldToBattleCell(world, targets[index - 1]);
+			direction = Point{ current.x - prev.x, current.y - prev.y };
+		}
+
+		return ResolveLinePlacementIconByDelta(action, direction);
+	}
+
 	inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Optional<Vec2>& targetPosition = none)
 	{
 		if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
@@ -195,11 +281,16 @@ namespace LT3
 		}
 
 		const Optional<Vec2> resolvedTargetPosition = targetPosition.has_value()
-			? Optional<Vec2>{ SnapWorldPositionToBattleCellCenter(world, *targetPosition) }
+			? Optional<Vec2>{ SnapWorldToBattleCellCenter(world, *targetPosition) }
 			: none;
 
 		if (resolvedTargetPosition && IsBuildingStyleBuildAction(defs, action))
 		{
+			if (EvaluateBuildPlacementCell(world, defs, *resolvedTargetPosition) != BuildPlacementCellState::Allowed)
+			{
+				return false;
+			}
+
 			world.buildQueues.pendingEntry[builder] = QueuedBuildAction{ actionId, *resolvedTargetPosition, true };
 			world.buildQueues.hasPendingEntry[builder] = true;
 			world.buildQueues.locked[builder] = true;
@@ -236,8 +327,8 @@ namespace LT3
 		validTargets.reserve(targetPositions.size());
 		for (const Vec2& target : targetPositions)
 		{
-			const Vec2 snappedTarget = SnapWorldPositionToBattleCellCenter(world, target);
-			if (EvaluateBuildPlacementCell(world, snappedTarget) == BuildPlacementCellState::Allowed)
+			const Vec2 snappedTarget = SnapWorldToBattleCellCenter(world, target);
+			if (EvaluateBuildPlacementCell(world, defs, snappedTarget) == BuildPlacementCellState::Allowed)
 			{
 				validTargets << snappedTarget;
 			}
@@ -260,14 +351,32 @@ namespace LT3
 		}
 
 		const Vec2 firstTarget = validTargets.front();
-		world.buildQueues.pendingEntry[builder] = QueuedBuildAction{ actionId, firstTarget, true };
+		const Point firstCell = WorldToBattleCell(world, firstTarget);
+		Point fallbackDirection{ 1, 0 };
+		if (validTargets.size() >= 2)
+		{
+			const Point secondCell = WorldToBattleCell(world, validTargets[1]);
+			fallbackDirection = Point{ secondCell.x - firstCell.x, secondCell.y - firstCell.y };
+		}
+
+		world.buildQueues.pendingEntry[builder] = QueuedBuildAction{
+			actionId,
+			firstTarget,
+			true,
+			ResolveLinePlacementIconAt(world, action, validTargets, 0, fallbackDirection)
+		};
 		world.buildQueues.hasPendingEntry[builder] = true;
 
 		Array<QueuedBuildAction>& queue = world.buildQueues.entries[builder];
 		const bool wasEmpty = queue.isEmpty();
 		for (size_t i = 1; i < validTargets.size(); ++i)
 		{
-			queue << QueuedBuildAction{ actionId, validTargets[i], true };
+			queue << QueuedBuildAction{
+				actionId,
+				validTargets[i],
+				true,
+				ResolveLinePlacementIconAt(world, action, validTargets, i, fallbackDirection)
+			};
 		}
 
 		world.buildQueues.locked[builder] = true;

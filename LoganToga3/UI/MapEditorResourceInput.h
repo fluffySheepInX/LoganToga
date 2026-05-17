@@ -238,8 +238,48 @@ namespace LT3
             if (EditorResourceNodeFilterRect(i).leftClicked())
             {
                 editor.resourceNodeFilterKind = (i == 0) ? -1 : (i - 1);
+                const Optional<Point> selectedCell = IsValidSelectedResourceNodeIndex(editor)
+                    ? Optional<Point>{ editor.resourceNodes[editor.selectedResourceNodeIndex].cell }
+                    : none;
+                if (editor.resourceNodeFilterKind >= 0)
+                {
+                    const ResourceKind targetKind = static_cast<ResourceKind>(editor.resourceNodeFilterKind);
+                    editor.resourceNodes.sort_by([targetKind](const ResourceNodeEditData& a, const ResourceNodeEditData& b)
+                    {
+                        const bool aTarget = (a.kind == targetKind);
+                        const bool bTarget = (b.kind == targetKind);
+                        if (aTarget != bTarget)
+                        {
+                            return aTarget;
+                        }
+                        if (a.cell.y != b.cell.y)
+                        {
+                            return a.cell.y < b.cell.y;
+                        }
+                        if (a.cell.x != b.cell.x)
+                        {
+                            return a.cell.x < b.cell.x;
+                        }
+                        return static_cast<int32>(a.kind) < static_cast<int32>(b.kind);
+                    });
+                }
+                else
+                {
+                    SortMapEditorResourceNodes(editor);
+                }
+                if (selectedCell)
+                {
+                    if (const Optional<size_t> newSelected = FindResourceNodeAtCell(editor, *selectedCell))
+                    {
+                        editor.selectedResourceNodeIndex = static_cast<int32>(*newSelected);
+                    }
+                    else
+                    {
+                        editor.selectedResourceNodeIndex = -1;
+                    }
+                }
                 editor.resourceNodeListScroll = 0.0;
-                editor.statusText = U"Resource filter: {}"_fmt((i == 0) ? U"All" : ResourceKindLabel(static_cast<ResourceKind>(i - 1)));
+                editor.statusText = U"Resource filter + sort: {}"_fmt((i == 0) ? U"All" : ResourceKindLabel(static_cast<ResourceKind>(i - 1)));
                 return true;
             }
         }
@@ -251,13 +291,15 @@ namespace LT3
         const double maxScroll = Max(0.0, EditorResourceNodeListContentHeight(editor) - viewport.h);
         editor.resourceNodeListScroll = Clamp(editor.resourceNodeListScroll - Mouse::Wheel() * 42.0, 0.0, maxScroll);
 
+        int32 visibleIndex = 0;
         for (int32 i = 0; i < static_cast<int32>(editor.resourceNodes.size()); ++i)
         {
             if (!PassesResourceNodeFilter(editor, editor.resourceNodes[i].kind))
             {
                 continue;
             }
-            const RectF row = EditorResourceNodeListRowRect(viewport, i, editor.resourceNodeListScroll);
+            const RectF row = EditorResourceNodeListRowRect(viewport, visibleIndex, editor.resourceNodeListScroll);
+            ++visibleIndex;
             if (viewport.intersects(row) && row.leftClicked())
             {
                 editor.selectedResourceNodeIndex = i;

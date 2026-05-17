@@ -123,7 +123,7 @@ namespace LT3
                     ? ResourceKind::Trust
                     : (kindText == U"food") ? ResourceKind::Food : ResourceKind::Gold;
                 const Vec2 worldPosition{ positionValues[0], positionValues[1] };
-                const Point cell = QuarterWorldPositionToBattleCell(worldPosition, editor.mapWidth, editor.mapHeight);
+                const Point cell = QuarterWorldToBattleCell(worldPosition, editor.mapWidth, editor.mapHeight);
                 editor.resourceNodes << ResourceNodeEditData{
                     kind,
                     cell,

@@ -54,7 +54,7 @@ namespace LT3
 
 	inline Point PathWorldToBattleCell(const BattleWorld& world, const Vec2& position)
 	{
-		return QuarterWorldPositionToBattleCell(position, world.mapWidth, world.mapHeight);
+		return QuarterWorldToBattleCell(position, world.mapWidth, world.mapHeight);
 	}
 
 	inline Vec2 PathBattleCellToWorldPosition(const Point& cell)

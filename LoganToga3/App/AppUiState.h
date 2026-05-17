@@ -31,7 +31,7 @@ namespace LT3
 
     inline String DebugClipboardCaptureShortcutLabel()
     {
-        return U"F12";
+        return U"Ctrl+V";
     }
 
     inline RectF DebugNewGameButtonRect()
@@ -163,7 +163,7 @@ namespace LT3
             return false;
         }
 
-        if (!KeyF12.down())
+        if (!(KeyControl + KeyV).down())
         {
             return false;
         }

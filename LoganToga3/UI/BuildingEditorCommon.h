@@ -1,0 +1,349 @@
+﻿#pragma once
+# include <Siv3D.hpp>
+# include "MapEditorTypes.h"
+# include "../Data/BattleAssetPaths.h"
+# include "../Data/UnitCatalog.h"
+# include "../Data/BuildLineIconOverrides.h"
+
+namespace LT3
+{
+	inline RectF BuildingEditorPanelRect()
+	{
+		const RectF bar{ 600, 60, 420, 32 };
+		return RectF{ bar.x, bar.y + bar.h, bar.w, 680.0 };
+	}
+
+	inline RectF BuildingEditorTabRect(const MapEditorState& editor, int32 tabIndex)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0 + tabIndex * 70.0, panel.y + 14.0, 66.0, 24.0 };
+	}
+
+	inline RectF BuildingEditorPreviewRect(const MapEditorState& editor)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0, panel.y + 50.0, panel.w - 48.0, 118.0 };
+	}
+
+	inline RectF BuildingEditorLineIconPathRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		const double yBase = panel.y + panel.h - 98.0;
+		return RectF{ panel.x + 24.0, yBase + index * 22.0, panel.w - 112.0, 18.0 };
+	}
+
+	inline RectF BuildingEditorLineIconBrowseRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		const double yBase = panel.y + panel.h - 104.0;
+		return RectF{ panel.x + panel.w - 84.0, yBase + index * 22.0, 60.0, 18.0 };
+	}
+
+	inline RectF BuildingEditorCloseRect(const MapEditorState& editor)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+	}
+
+	inline RectF BuildingEditorAxisButtonRect(const MapEditorState& editor, int32 axisIndex, int32 buttonIndex)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 56.0 + buttonIndex * 54.0, panel.y + 230.0 + axisIndex * 60.0, 48.0, 36.0 };
+	}
+
+	inline RectF BuildingEditorAnchorButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0 + index * 98.0, panel.y + 376.0, 90.0, 28.0 };
+	}
+
+	inline RectF BuildingEditorRenderSizeModeButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0 + index * 98.0, panel.y + 420.0, 90.0, 28.0 };
+	}
+
+	inline RectF BuildingEditorArtWidthRefButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0 + index * 98.0, panel.y + 464.0, 90.0, 28.0 };
+	}
+
+	inline RectF BuildingEditorSizeValueButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 142.0 + index * 54.0, panel.y + 508.0, 48.0, 34.0 };
+	}
+
+	inline RectF BuildingEditorKeepAspectButtonRect(const MapEditorState& editor)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 24.0, panel.y + 508.0, 110.0, 34.0 };
+	}
+
+	inline RectF BuildingEditorResetRect(const MapEditorState& editor)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + panel.w - 122.0, panel.y + panel.h - 46.0, 98.0, 28.0 };
+	}
+
+	inline Optional<const BuildActionDef*> FindLineBuildActionForCatalogEntry(const UnitCatalogEntry& entry, const DefinitionStores& defs)
+	{
+		if (entry.tag.isEmpty())
+		{
+			return none;
+		}
+
+		for (const auto& action : defs.buildActions)
+		{
+			if (action.placementMode != BuildPlacementMode::Line)
+			{
+				continue;
+			}
+
+			if (action.ownerTag == entry.tag || action.spawnTag == entry.tag || action.resultTag == entry.tag)
+			{
+				return &action;
+			}
+		}
+
+		return none;
+	}
+
+
+	inline HashTable<FilePath, Texture>& BuildingEditorTextureCache()
+	{
+		static HashTable<FilePath, Texture> cache;
+		return cache;
+	}
+
+	inline bool HasSelectedCatalogEntry(const MapEditorState& editor, const UnitCatalog& catalog)
+	{
+		return 0 <= editor.selectedUnitCatalogIndex
+			&& editor.selectedUnitCatalogIndex < static_cast<int32>(catalog.entries.size());
+	}
+
+	inline void ChangeSelectedUnitPointOffset(MapEditorState& editor, UnitCatalog& catalog, Point UnitCatalogEntry::* field, const Point& delta)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		Point& offset = entry.*field;
+		offset.x = Clamp(offset.x + delta.x, -128, 128);
+		offset.y = Clamp(offset.y + delta.y, -128, 128);
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void ResetSelectedUnitPointOffset(MapEditorState& editor, UnitCatalog& catalog, Point UnitCatalogEntry::* field)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		entry.*field = Point{ 0, 0 };
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void ChangeSelectedUnitVisualOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		ChangeSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::visualOffset, delta);
+	}
+
+	inline void ResetSelectedUnitVisualOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::visualOffset);
+	}
+
+	inline void ChangeSelectedUnitShadowOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		ChangeSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::shadowOffset, delta);
+	}
+
+	inline void ResetSelectedUnitShadowOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::shadowOffset);
+	}
+
+	inline void ChangeSelectedUnitLineIconHorizontalOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		ChangeSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconHorizontalOffset, delta);
+	}
+
+	inline void ResetSelectedUnitLineIconHorizontalOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconHorizontalOffset);
+	}
+
+	inline void ChangeSelectedUnitLineIconDiagUpRightOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		ChangeSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconDiagUpRightOffset, delta);
+	}
+
+	inline void ResetSelectedUnitLineIconDiagUpRightOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconDiagUpRightOffset);
+	}
+
+	inline void ChangeSelectedUnitLineIconDiagUpLeftOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		ChangeSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconDiagUpLeftOffset, delta);
+	}
+
+	inline void ResetSelectedUnitLineIconDiagUpLeftOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconDiagUpLeftOffset);
+	}
+
+	inline void SetSelectedUnitPlacementAnchor(MapEditorState& editor, UnitCatalog& catalog, UnitPlacementAnchor anchor)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		if (entry.placementAnchor == anchor)
+		{
+			return;
+		}
+
+		entry.placementAnchor = anchor;
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void SetSelectedUnitRenderSizeMode(MapEditorState& editor, UnitCatalog& catalog, UnitRenderSizeMode mode)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		if (entry.renderSizeMode == mode)
+		{
+			return;
+		}
+
+		entry.renderSizeMode = mode;
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void SetSelectedUnitArtWidthReference(MapEditorState& editor, UnitCatalog& catalog, UnitArtWidthReference reference)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		if (entry.artWidthReference == reference)
+		{
+			return;
+		}
+
+		entry.artWidthReference = reference;
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void ChangeSelectedUnitArtWidthValue(MapEditorState& editor, UnitCatalog& catalog, double delta)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		entry.artWidthValue = Clamp(entry.artWidthValue + delta, 0.1, 8.0);
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline double GetSelectedUnitArtWidthValueForTab(const UnitCatalogEntry& entry, int32 tab)
+	{
+		if (tab == 2)
+		{
+			return entry.artWidthValueLineHorizontal;
+		}
+		if (tab == 3)
+		{
+			return entry.artWidthValueLineDiagUpRight;
+		}
+		if (tab == 4)
+		{
+			return entry.artWidthValueLineDiagUpLeft;
+		}
+
+		return entry.artWidthValue;
+	}
+
+	inline void ChangeSelectedUnitArtWidthValueForTab(MapEditorState& editor, UnitCatalog& catalog, int32 tab, double delta)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		if (tab == 2)
+		{
+			entry.artWidthValueLineHorizontal = Clamp(entry.artWidthValueLineHorizontal + delta, 0.1, 8.0);
+		}
+		else if (tab == 3)
+		{
+			entry.artWidthValueLineDiagUpRight = Clamp(entry.artWidthValueLineDiagUpRight + delta, 0.1, 8.0);
+		}
+		else if (tab == 4)
+		{
+			entry.artWidthValueLineDiagUpLeft = Clamp(entry.artWidthValueLineDiagUpLeft + delta, 0.1, 8.0);
+		}
+		else
+		{
+			entry.artWidthValue = Clamp(entry.artWidthValue + delta, 0.1, 8.0);
+		}
+
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void ChangeSelectedUnitGameplaySizeMul(MapEditorState& editor, UnitCatalog& catalog, double delta)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		entry.gameplaySizeMul = Clamp(entry.gameplaySizeMul + delta, 0.2, 8.0);
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void ToggleSelectedUnitArtKeepAspect(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		if (!HasSelectedCatalogEntry(editor, catalog))
+		{
+			return;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		entry.artKeepAspect = !entry.artKeepAspect;
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+	}
+
+	inline void DrawBuildingEditorButton(const RectF& rect, StringView text, const Font& uiFont)
+	{
+		rect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		uiFont(text).drawAt(16, rect.center(), Palette::White);
+	}
+}

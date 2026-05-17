@@ -60,6 +60,24 @@ namespace LT3
 
     inline void DrawMapEditorResourceNodes(const MapEditorState& editor, const Font& uiFont)
     {
+        if (!editor.enabled)
+        {
+            return;
+        }
+
+        const bool hideMarkersByUiHover = EditorResourceNodeListPanelRect().mouseOver()
+            || EditorResourceNodeFilterRect(0).mouseOver()
+            || EditorResourceNodeFilterRect(1).mouseOver()
+            || EditorResourceNodeFilterRect(2).mouseOver()
+            || EditorResourceNodeFilterRect(3).mouseOver()
+            || EditorResourcePalettePanelRect().mouseOver()
+            || EditorResourceValidationPanelRect().mouseOver()
+            || (IsValidSelectedResourceNodeIndex(editor) && EditorResourceNodePanelRect().mouseOver());
+        if (hideMarkersByUiHover)
+        {
+            return;
+        }
+
         for (int32 i = 0; i < static_cast<int32>(editor.resourceNodes.size()); ++i)
         {
             const auto& node = editor.resourceNodes[i];
@@ -88,10 +106,13 @@ namespace LT3
         const RectF viewport = EditorResourceNodeListViewportRect();
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Resource Nodes").draw(panel.x + 12.0, panel.y + 8.0, Palette::White);
-        uiFont(U"{} nodes"_fmt(editor.resourceNodes.size())).draw(panel.x + 132.0, panel.y + 10.0, Palette::Gold);
+        const String nodeCountText = U"{}"_fmt(editor.resourceNodes.size());
+        const RectF nodeCountRegion{ panel.x + 120.0, panel.y + 8.0, panel.w - 132.0, 20.0 };
+        uiFont(nodeCountText).draw(Arg::rightCenter = nodeCountRegion.rightCenter(), Palette::Gold);
 
         viewport.draw(ColorF{ 0, 0, 0, 0.08 });
         const double viewportBottom = viewport.y + viewport.h;
+        int32 visibleIndex = 0;
         for (int32 i = 0; i < static_cast<int32>(editor.resourceNodes.size()); ++i)
         {
             const ResourceNodeEditData& node = editor.resourceNodes[i];
@@ -99,7 +120,8 @@ namespace LT3
             {
                 continue;
             }
-            const RectF row = EditorResourceNodeListRowRect(viewport, i, editor.resourceNodeListScroll);
+            const RectF row = EditorResourceNodeListRowRect(viewport, visibleIndex, editor.resourceNodeListScroll);
+            ++visibleIndex;
             if (!((viewport.y <= row.y) && ((row.y + row.h) <= viewportBottom)))
             {
                 continue;
@@ -194,7 +216,7 @@ namespace LT3
         }
 
         const Array<String> issues = ValidateMapEditorResourceNodes(editor);
-        const RectF panel{ 1040, 462, 236, 190 };
+        const RectF panel = EditorResourceValidationPanelRect();
         panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Resource Validation").draw(panel.x + 12.0, panel.y + 8.0, Palette::White);
         if (issues.isEmpty())
@@ -210,4 +232,5 @@ namespace LT3
             uiFont(issues[i]).draw(11, panel.x + 12.0, panel.y + 36.0 + static_cast<double>(i) * 22.0, Palette::Lightgray);
         }
     }
+
 }

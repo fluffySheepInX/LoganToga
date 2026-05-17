@@ -14,3 +14,4 @@
 
 ## LoganToga3 Guidelines
 - For LoganToga3 editor UI, use Rect-based buttons and do not use SimpleGUI; future editor interfaces should be added to the editor toolbar/bar。
+- In LoganToga3, identify decals by the filename prefix `decal_`. When right-clicking a non-decal asset, add the `decal_` prefix to decal-ize it.

@@ -26,6 +26,7 @@ namespace LT3
         double radius = 14.0;
         int32 priceGold = 0;
         int32 gatherPower = 0;
+        int32 visionRadiusCells = 6;
         SkillDefId skill = InvalidSkillDefId;
         ColorF color = Palette::White;
         double visualScale = 1.0;
@@ -42,6 +43,9 @@ namespace LT3
         String name;
         String description;
         String icon;
+        String lineIconHorizontal;
+        String lineIconDiagUpRight;
+        String lineIconDiagUpLeft;
         String category;
         Array<String> requirements;
         String spawnTag;
