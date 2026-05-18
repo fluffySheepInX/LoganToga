@@ -84,6 +84,7 @@ namespace LT3
             editor.enabled = toml[U"toolbar.map_editor_enabled"].getOr<bool>(editor.enabled);
             editor.showUnitList = toml[U"toolbar.unit_list"].getOr<bool>(editor.showUnitList);
             editor.showBuildingEditor = toml[U"toolbar.building_editor"].getOr<bool>(editor.showBuildingEditor);
+            editor.showCommandEditor = toml[U"toolbar.command_editor"].getOr<bool>(editor.showCommandEditor);
             editor.showDebugInfo = toml[U"toolbar.debug_info"].getOr<bool>(editor.showDebugInfo);
             editor.showBattleGrid = toml[U"toolbar.battle_grid"].getOr<bool>(editor.showBattleGrid);
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
@@ -225,6 +226,7 @@ namespace LT3
         writer << U"map_editor_enabled = " << (editor.enabled ? U"true" : U"false") << U"\n";
         writer << U"unit_list = " << (editor.showUnitList ? U"true" : U"false") << U"\n";
         writer << U"building_editor = " << (editor.showBuildingEditor ? U"true" : U"false") << U"\n";
+        writer << U"command_editor = " << (editor.showCommandEditor ? U"true" : U"false") << U"\n";
         writer << U"debug_info = " << (editor.showDebugInfo ? U"true" : U"false") << U"\n";
         writer << U"battle_grid = " << (editor.showBattleGrid ? U"true" : U"false") << U"\n";
         writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n";
@@ -320,12 +322,17 @@ namespace LT3
         editor.showResourcePanels = true;
         editor.showUnitList = false;
         editor.showBuildingEditor = false;
+        editor.showCommandEditor = false;
         editor.buildingEditorTab = 0;
         editor.buildingEditorLineActionTag.clear();
         editor.buildingEditorIconHorizontal.clear();
         editor.buildingEditorIconDiagUpRight.clear();
         editor.buildingEditorIconDiagUpLeft.clear();
         editor.buildLineIconsDirty = false;
+        editor.commandListScroll = 0.0;
+        editor.commandUnitListScroll = 0.0;
+        editor.selectedCommandActionIndex = -1;
+        editor.commandEditorMode = 0;
         editor.unitListScroll = 0.0;
         editor.selectedUnitCatalogIndex = -1;
         editor.showUnitParameterEditor = false;

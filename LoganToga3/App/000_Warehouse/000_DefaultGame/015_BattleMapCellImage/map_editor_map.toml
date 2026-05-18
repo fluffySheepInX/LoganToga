@@ -6,7 +6,9 @@ unit_list = false
 
 building_editor = false
 
-debug_info = true
+command_editor = false
+
+debug_info = false
 
 battle_grid = false
 

@@ -40,6 +40,7 @@ namespace LT3
         String tag;
         String id;
         String ownerTag;
+        Array<String> ownerTags;
         String name;
         String description;
         String icon;
@@ -49,9 +50,11 @@ namespace LT3
         String category;
         Array<String> requirements;
         String spawnTag;
+        Array<String> spawnTags;
         String resultTag;
         BuildActionResultType resultType = BuildActionResultType::None;
         UnitDefId spawnUnit = InvalidUnitDefId;
+        Array<UnitDefId> spawnUnits;
         int32 costGold = 0;
         int32 createCount = 1;
         double buildTimeSec = 0.0;

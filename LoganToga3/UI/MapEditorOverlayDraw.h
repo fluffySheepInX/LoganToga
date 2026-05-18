@@ -16,6 +16,7 @@ namespace LT3
 			DrawMapEditorResourcePalette(editor, uiFont);
 		}
 		DrawUnitCatalogList(editor, unitCatalog, uiFont);
+		DrawCommandEditor(editor, unitCatalog, defs, uiFont);
 		DrawUnitBuildingEditorTabBar(editor, uiFont);
 		DrawUnitParameterEditor(editor, unitCatalog, uiFont);
 		DrawBuildingEditor(editor, unitCatalog, defs, uiFont);

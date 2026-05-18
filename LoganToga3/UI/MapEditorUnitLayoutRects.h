@@ -96,6 +96,16 @@ namespace LT3
 		return RectF{ row.x + 218.0 + buttonIndex * 36.0, row.y + 7.0, 32.0, row.h - 14.0 };
 	}
 
+	inline RectF EditorUnitRowMoveUpRect(const RectF& row)
+	{
+		return RectF{ row.x + row.w - 66.0, row.y + 10.0, 24.0, 24.0 };
+	}
+
+	inline RectF EditorUnitRowMoveDownRect(const RectF& row)
+	{
+		return RectF{ row.x + row.w - 36.0, row.y + 10.0, 24.0, 24.0 };
+	}
+
 	inline RectF EditorUnitScaleDecrementRect()
 	{
 		const RectF panel = EditorUnitParameterPanelRect();

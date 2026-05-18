@@ -303,6 +303,53 @@ namespace LT3
 			return false;
 		}
 
+		if (FileSystem::Extension(iconPath).lowercased() == U"gif")
+		{
+			if (!assets.unitGifFrameCache.contains(iconPath))
+			{
+				AnimatedGIFReader reader{ iconPath };
+				Array<Image> frames;
+				Array<int32> frameDelaysMillisec;
+				int32 durationMillisec = 0;
+				if (reader && reader.read(frames, frameDelaysMillisec, durationMillisec) && !frames.isEmpty())
+				{
+					Array<Texture> textures;
+					textures.reserve(frames.size());
+					for (const auto& frame : frames)
+					{
+						textures << Texture{ frame };
+					}
+					assets.unitGifFrameCache.emplace(iconPath, std::move(textures));
+					assets.unitGifFrameDelaysMillisecCache.emplace(iconPath, std::move(frameDelaysMillisec));
+					assets.unitGifDurationMillisecCache.emplace(iconPath, Max(durationMillisec, 1));
+				}
+			}
+
+			if (assets.unitGifFrameCache.contains(iconPath))
+			{
+				const Array<Texture>& frames = assets.unitGifFrameCache.at(iconPath);
+				if (!frames.isEmpty())
+				{
+					const bool animate = RectF{ Arg::center = center, size + 6.0, size + 6.0 }.mouseOver();
+					size_t frameIndex = 0;
+					if (animate
+						&& assets.unitGifFrameDelaysMillisecCache.contains(iconPath)
+						&& assets.unitGifDurationMillisecCache.contains(iconPath))
+					{
+						const Array<int32>& delays = assets.unitGifFrameDelaysMillisecCache.at(iconPath);
+						const int32 duration = assets.unitGifDurationMillisecCache.at(iconPath);
+						if (!delays.isEmpty() && duration > 0)
+						{
+							frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delays, duration);
+						}
+					}
+
+					frames[Min(frameIndex, frames.size() - 1)].resized(size, size).drawAt(center);
+					return true;
+				}
+			}
+		}
+
 		if (!assets.iconTextureCache.contains(iconPath))
 		{
 			assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });

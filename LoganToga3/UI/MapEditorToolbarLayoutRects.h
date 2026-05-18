@@ -60,6 +60,8 @@ namespace LT3
 			return 4;
 		case 10:
 			return 5;
+		case 11:
+			return 6;
 		default:
 			return none;
 		}
@@ -204,5 +206,78 @@ namespace LT3
 	inline RectF EditorUnitRenameOverlayRect(const RectF& row)
 	{
 		return RectF{ row.x + 70.0, row.y + 6.0, 360.0, 30.0 };
+	}
+
+	inline RectF EditorCommandPanelRect()
+	{
+		return RectF{ 692.0, 72.0, 876.0, 610.0 };
+	}
+
+	inline RectF EditorCommandListViewportRect()
+	{
+		const RectF panel = EditorCommandPanelRect();
+		return RectF{ panel.x + 20.0, panel.y + 58.0, 316.0, panel.h - 78.0 };
+	}
+
+	inline RectF EditorCommandRowRect(const RectF& viewport, int32 index, double scroll)
+	{
+		return RectF{ viewport.x, viewport.y + index * 66.0 - scroll, viewport.w, 58.0 };
+	}
+
+	inline RectF EditorCommandUnitViewportRect()
+	{
+		const RectF panel = EditorCommandPanelRect();
+		return RectF{ panel.x + 356.0, panel.y + 94.0, panel.w - 376.0, panel.h - 166.0 };
+	}
+
+	inline RectF EditorCommandModeTabRect(int32 index)
+	{
+		const RectF panel = EditorCommandPanelRect();
+		const double x = panel.x + 356.0 + index * 108.0;
+		return RectF{ x, panel.y + 58.0, 100.0, 28.0 };
+	}
+
+	inline RectF EditorCommandUnitCellRect(const RectF& viewport, int32 index, int32 columns, double scroll)
+	{
+		const int32 safeColumns = Max(1, columns);
+		const int32 col = (index % safeColumns);
+		const int32 row = (index / safeColumns);
+		const Vec2 origin = viewport.pos + Vec2{ 8.0, 8.0 - scroll };
+		const Vec2 step{ 96.0, 96.0 };
+		return RectF{ origin + Vec2{ col * step.x, row * step.y }, 88.0, 88.0 };
+	}
+
+	inline RectF EditorCommandSaveRect()
+	{
+		const RectF panel = EditorCommandPanelRect();
+		return RectF{ panel.x + panel.w - 220.0, panel.y + panel.h - 56.0, 96.0, 34.0 };
+	}
+
+	inline RectF EditorCommandNormalizeIdsRect()
+	{
+		const RectF panel = EditorCommandPanelRect();
+		return RectF{ panel.x + panel.w - 364.0, panel.y + panel.h - 56.0, 132.0, 34.0 };
+	}
+
+	inline RectF EditorCommandCloseRect()
+	{
+		const RectF panel = EditorCommandPanelRect();
+		return RectF{ panel.x + panel.w - 112.0, panel.y + panel.h - 56.0, 88.0, 34.0 };
+	}
+
+	inline RectF EditorCommandContextMenuRect(const Vec2& pos)
+	{
+		return RectF{ pos.x, pos.y, 180.0, 104.0 };
+	}
+
+	inline RectF EditorCommandContextMenuItemRect(const Vec2& pos, int32 index)
+	{
+		const RectF menu = EditorCommandContextMenuRect(pos);
+		return RectF{ menu.x + 4.0, menu.y + 4.0 + index * 30.0, menu.w - 8.0, 26.0 };
+	}
+
+	inline RectF EditorCommandRenameOverlayRect(const RectF& row)
+	{
+		return RectF{ row.x + 56.0, row.y + 6.0, row.w - 64.0, 30.0 };
 	}
 }

@@ -77,9 +77,10 @@ namespace LT3
             const String id = commandValue[U"id"].getOr<String>(U"");
 
             String spawnTag;
+            Array<String> spawnTags;
             BuildActionResultType parsedResultType = BuildActionResultType::None;
             const TOMLValue resultArray = commandValue[U"result"];
-            const bool hasReadableResult = TryReadBuildActionResult(resultArray, parsedResultType, spawnTag);
+            const bool hasReadableResult = TryReadBuildActionResult(resultArray, parsedResultType, spawnTag, spawnTags);
 
             String resultType = U"<none>";
             switch (parsedResultType)

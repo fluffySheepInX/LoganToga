@@ -90,6 +90,12 @@ namespace LT3
 		bool showResourcePanels = true;
 		bool showUnitList = false;
 		bool showBuildingEditor = false;
+		bool showCommandEditor = false;
+		double commandListScroll = 0.0;
+		double commandUnitListScroll = 0.0;
+		int32 selectedCommandActionIndex = -1;
+		int32 commandEditorMode = 0;
+		bool commandBindingsDirty = false;
 		int32 buildingEditorTab = 0;
 		String buildingEditorLineActionTag;
 		String buildingEditorIconHorizontal;
@@ -164,5 +170,14 @@ namespace LT3
 		Optional<int32> unitRenameTargetIndex;
 		String unitRenameEditText;
 		bool unitRenameIsDuplicate = false;
+
+		// Command right-click context menu
+		Optional<int32> commandContextMenuTargetIndex;
+		Vec2 commandContextMenuPos{ 0.0, 0.0 };
+
+		// Command inline rename after duplicate
+		Optional<int32> commandRenameTargetIndex;
+		String commandRenameEditText;
+		bool commandRenameIsDuplicate = false;
 	};
 }

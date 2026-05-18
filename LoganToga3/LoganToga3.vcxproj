@@ -401,15 +401,20 @@
     <ClInclude Include="UI\MapEditorBattleLayoutRects.h" />
     <ClInclude Include="UI\MapEditorCanvasInput.h" />
     <ClInclude Include="UI\MapEditorCellOps.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorInput.h" />
     <ClInclude Include="UI\MapEditorCoreTypes.h" />
     <ClInclude Include="UI\MapEditorDecalLayoutRects.h" />
     <ClInclude Include="UI\MapEditorDraw.h" />
     <ClInclude Include="UI\MapEditorDrawBase.h" />
     <ClInclude Include="UI\MapEditorDrawBaseAssetHelpers.h" />
+    <ClInclude Include="UI\MapEditorDrawBaseCommandEditor.h" />
     <ClInclude Include="UI\MapEditorDrawBasePanels.h" />
     <ClInclude Include="UI\MapEditorDrawBasePanelsCore.h" />
     <ClInclude Include="UI\MapEditorDrawBasePanelsDecal.h" />
     <ClInclude Include="UI\MapEditorDrawBasePanelsUnitEditors.h" />
+    <ClInclude Include="UI\MapEditorDrawBaseUnitCatalogList.h" />
+    <ClInclude Include="UI\MapEditorDrawBaseUnitEditorHelpers.h" />
+    <ClInclude Include="UI\MapEditorDrawBaseUnitParameterEditor.h" />
     <ClInclude Include="UI\MapEditorHelpers.h" />
     <ClInclude Include="UI\MapEditorInput.h" />
     <ClInclude Include="UI\MapEditorLayoutRects.h" />
@@ -426,7 +431,10 @@
     <ClInclude Include="UI\MapEditorTypes.h" />
     <ClInclude Include="UI\MapEditorUiLayout.h" />
     <ClInclude Include="UI\MapEditorUiLayoutInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogFileOps.h" />
     <ClInclude Include="UI\MapEditorUnitCatalogInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogLayoutInput.h" />
     <ClInclude Include="UI\MapEditorUnitLayoutRects.h" />
     <ClInclude Include="UI\QuarterView.h" />
   </ItemGroup>

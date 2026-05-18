@@ -85,6 +85,12 @@ namespace LT3
             SaveMapEditorToml(editor, false);
             consumed = true;
         }
+        if (EditorToolbarButtonRect(editor, 11).leftClicked())
+        {
+            editor.showCommandEditor = !editor.showCommandEditor;
+            SaveMapEditorToml(editor, false);
+            consumed = true;
+        }
         if (EditorToolbarRect().mouseOver())
         {
             consumed = true;

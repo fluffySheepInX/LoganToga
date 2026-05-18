@@ -99,7 +99,7 @@ namespace LT3
         SyncBattleResourceNodesFromEditor(mapEditor, world, defs);
     }
 
-    inline bool HandleEditorInput(MapEditorState& mapEditor, BattleWorld& world, const DefinitionStores& defs, UnitCatalog& unitCatalog, const Vec2& screenMouse)
+    inline bool HandleEditorInput(MapEditorState& mapEditor, BattleWorld& world, DefinitionStores& defs, UnitCatalog& unitCatalog, const Vec2& screenMouse)
     {
         const bool wasEditorEnabled = mapEditor.enabled;
         const bool consumed = ProcessMapEditorInput(mapEditor, world, defs, unitCatalog, screenMouse);

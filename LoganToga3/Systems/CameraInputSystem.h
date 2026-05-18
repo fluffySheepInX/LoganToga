@@ -52,6 +52,10 @@ namespace LT3
         {
             return false;
         }
+        if (mapEditor.showCommandEditor && EditorCommandPanelRect().mouseOver())
+        {
+            return false;
+        }
         if ((!mapEditor.enabled) && RectF{ 1240, 90, 330, 245 }.mouseOver())
         {
             return false;

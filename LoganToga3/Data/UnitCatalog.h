@@ -74,8 +74,9 @@ namespace LT3
         int32 level = 1;
         int32 levelMax = 1;
         int32 visionRadius = 0;
-        int32 price = 0;
-        int32 cost = 0;
+        int32 goldCost = 0;
+        int32 trustCost = 0;
+        int32 foodCost = 0;
         int32 hp = 0;
         int32 buildingHp = 0;
         int32 mp = 0;
@@ -284,8 +285,9 @@ namespace LT3
             entry.level = unitValue[U"level"].getOr<int32>(1);
             entry.levelMax = unitValue[U"level_max"].getOr<int32>(1);
             entry.visionRadius = unitValue[U"vision_radius"].getOr<int32>(0);
-            entry.price = unitValue[U"price"].getOr<int32>(0);
-            entry.cost = unitValue[U"cost"].getOr<int32>(0);
+            entry.goldCost = unitValue[U"gold_cost"].getOr<int32>(unitValue[U"cost"].getOr<int32>(0));
+            entry.trustCost = unitValue[U"trust_cost"].getOr<int32>(unitValue[U"price"].getOr<int32>(0));
+            entry.foodCost = unitValue[U"food_cost"].getOr<int32>(0);
             entry.hp = unitValue[U"hp"].getOr<int32>(0);
             entry.buildingHp = unitValue[U"building_hp"].getOr<int32>(0);
             entry.mp = unitValue[U"mp"].getOr<int32>(0);
@@ -354,8 +356,9 @@ namespace LT3
             block += U"level = {}\n"_fmt(entry.level);
             block += U"level_max = {}\n"_fmt(entry.levelMax);
             block += U"vision_radius = {}\n"_fmt(entry.visionRadius);
-            block += U"price = {}\n"_fmt(entry.price);
-            block += U"cost = {}\n"_fmt(entry.cost);
+            block += U"gold_cost = {}\n"_fmt(entry.goldCost);
+            block += U"trust_cost = {}\n"_fmt(entry.trustCost);
+            block += U"food_cost = {}\n"_fmt(entry.foodCost);
             block += U"hp = {}\n"_fmt(entry.hp);
             block += U"building_hp = {}\n"_fmt(entry.buildingHp);
             block += U"mp = {}\n"_fmt(entry.mp);

@@ -44,6 +44,23 @@ namespace LT3
             || EqualsIgnoreCase(def.classTag, ownerTag);
     }
 
+    inline bool DoesUnitMatchAnyOwnerTag(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
+    {
+        if (!action.ownerTags.isEmpty())
+        {
+            for (const auto& ownerTag : action.ownerTags)
+            {
+                if (DoesUnitMatchOwnerTag(world, defs, unit, ownerTag))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return DoesUnitMatchOwnerTag(world, defs, unit, action.ownerTag);
+    }
+
     inline bool IsBuildActionSupported(const BuildActionDef& action)
     {
         switch (action.resultType)
@@ -69,7 +86,7 @@ namespace LT3
         return IsValidUnit(world, unit)
             && world.units.faction[unit] == Faction::Player
             && IsBuildActionSupported(action)
-            && DoesUnitMatchOwnerTag(world, defs, unit, action.ownerTag);
+            && DoesUnitMatchAnyOwnerTag(world, defs, unit, action);
     }
 
     inline bool CanAffordBuildAction(const BattleWorld& world, const BuildActionDef& action)

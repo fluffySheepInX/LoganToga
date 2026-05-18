@@ -45,6 +45,7 @@ namespace LT3
 		DrawEditorButton(EditorToolbarButtonRect(editor, 8), U"Debug Info", editor.showDebugInfo, uiFont);
 		DrawEditorButton(EditorToolbarButtonRect(editor, 9), U"UI Edit", editor.uiLayoutEditEnabled, uiFont);
 		DrawEditorButton(EditorToolbarButtonRect(editor, 10), U"Battle Grid", editor.showBattleGrid, uiFont);
+		DrawEditorButton(EditorToolbarButtonRect(editor, 11), U"Command", editor.showCommandEditor, uiFont);
 		DrawEditorButton(EditorToolbarPreviewHideButtonRect(), U"Hide Bar 3s", false, uiFont);
 
 		if (editor.showDebugInfo)
@@ -68,6 +69,7 @@ namespace LT3
 			|| EditorPerlinNoisePanelRect().mouseOver()
 			|| EditorFogPanelRect().mouseOver()
 			|| EditorUnitListPanelRect().mouseOver()
+			|| EditorCommandPanelRect().mouseOver()
 			|| EditorUnitParameterPanelRect(editor).mouseOver()
 			|| BuildingEditorPanelWithPosRect(editor).mouseOver()
 			|| EditorResourceNodeListPanelRect().mouseOver()

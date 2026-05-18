@@ -52,7 +52,7 @@ namespace LT3
         return false;
     }
 
-    inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
+    inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
     {
         bool consumed = false;
         if (HandleUnitBuildingEditorTabBar(editor))
@@ -81,6 +81,11 @@ namespace LT3
         }
 
         if (ProcessUnitCatalogEditorInput(editor, catalog))
+        {
+            consumed = true;
+        }
+
+        if (ProcessCommandEditorInput(editor, catalog, defs))
         {
             consumed = true;
         }

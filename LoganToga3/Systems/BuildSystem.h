@@ -4,6 +4,37 @@
 
 namespace LT3
 {
+    inline UnitDefId ResolvePrimarySpawnUnit(const BuildActionDef& action, const DefinitionStores& defs)
+    {
+        if (action.spawnUnit != InvalidUnitDefId)
+        {
+            return action.spawnUnit;
+        }
+
+        for (const auto spawnUnit : action.spawnUnits)
+        {
+            if (spawnUnit < defs.units.size())
+            {
+                return spawnUnit;
+            }
+        }
+
+        for (const auto& spawnTag : action.spawnTags)
+        {
+            if (defs.unitByTag.contains(spawnTag))
+            {
+                return defs.unitByTag.at(spawnTag);
+            }
+        }
+
+        if (!action.spawnTag.isEmpty() && defs.unitByTag.contains(action.spawnTag))
+        {
+            return defs.unitByTag.at(action.spawnTag);
+        }
+
+        return InvalidUnitDefId;
+    }
+
     inline void UpdateBuildQueues(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
         const UnitId unitCount = static_cast<UnitId>(world.units.size());
@@ -68,6 +99,7 @@ namespace LT3
             }
 
             const BuildActionDef& action = defs.buildActions[actionId];
+            const UnitDefId primarySpawnUnit = ResolvePrimarySpawnUnit(action, defs);
             world.buildQueues.progressSec[unit] += dt;
             if (world.buildQueues.progressSec[unit] >= action.buildTimeSec)
             {
@@ -75,10 +107,10 @@ namespace LT3
                 const bool requiresPlacementValidation = queuedAction.hasTargetPosition
                     && (action.resultType == BuildActionResultType::Object
                         || (action.resultType == BuildActionResultType::Unit
-                            && action.spawnUnit < defs.units.size()
-                            && (defs.units[action.spawnUnit].role == UnitRole::Base
-                                || defs.units[action.spawnUnit].role == UnitRole::Barrier
-                                || defs.units[action.spawnUnit].blocksTileMovement)));
+                            && primarySpawnUnit < defs.units.size()
+                            && (defs.units[primarySpawnUnit].role == UnitRole::Base
+                                || defs.units[primarySpawnUnit].role == UnitRole::Barrier
+                                || defs.units[primarySpawnUnit].blocksTileMovement)));
                 if (requiresPlacementValidation
                     && EvaluateBuildPlacementCell(world, defs, completionTarget) != BuildPlacementCellState::Allowed)
                 {
@@ -98,24 +130,24 @@ namespace LT3
                 queue.remove_at(0);
                 world.buildQueues.progressSec[unit] = 0.0;
 
-               if (action.resultType == BuildActionResultType::Unit && action.spawnUnit != InvalidUnitDefId)
+                if (action.resultType == BuildActionResultType::Unit && primarySpawnUnit != InvalidUnitDefId)
                 {
                     const Vec2 spawnOrigin = completionTarget;
-                  const bool isStaticPlacement = action.spawnUnit < defs.units.size()
+                  const bool isStaticPlacement = primarySpawnUnit < defs.units.size()
                         && queuedAction.hasTargetPosition
-                        && (defs.units[action.spawnUnit].role == UnitRole::Base
-                            || defs.units[action.spawnUnit].role == UnitRole::Barrier
-                            || defs.units[action.spawnUnit].blocksTileMovement);
+                        && (defs.units[primarySpawnUnit].role == UnitRole::Base
+                            || defs.units[primarySpawnUnit].role == UnitRole::Barrier
+                            || defs.units[primarySpawnUnit].blocksTileMovement);
                     if (isStaticPlacement)
                     {
-                        AddUnitToBattleWorld(world, action.spawnUnit, world.units.faction[unit], spawnOrigin, defs, queuedAction.iconOverride);
+                        AddUnitToBattleWorld(world, primarySpawnUnit, world.units.faction[unit], spawnOrigin, defs, queuedAction.iconOverride);
                     }
                     else
                     {
                         for (int32 count = 0; count < action.createCount; ++count)
                         {
                             const Vec2 rally = spawnOrigin + Vec2{ 74 + count * 18.0, Random(-48.0, 48.0) };
-                            AddUnitToBattleWorld(world, action.spawnUnit, world.units.faction[unit], rally, defs, queuedAction.iconOverride);
+                            AddUnitToBattleWorld(world, primarySpawnUnit, world.units.faction[unit], rally, defs, queuedAction.iconOverride);
                         }
                     }
                 }
@@ -125,9 +157,9 @@ namespace LT3
                     AddPlacedObjectToBattleWorld(world, placedPos, action.resultTag, action.icon);
                 }
 
-                if (action.resultType == BuildActionResultType::Unit && action.spawnUnit < defs.units.size())
+                if (action.resultType == BuildActionResultType::Unit && primarySpawnUnit < defs.units.size())
                 {
-                    const UnitDef& spawnedDef = defs.units[action.spawnUnit];
+                    const UnitDef& spawnedDef = defs.units[primarySpawnUnit];
                     if (spawnedDef.blocksTileMovement)
                     {
                         const Point cell = WorldToBattleCell(world, queuedAction.hasTargetPosition ? queuedAction.targetPosition : world.units.position[unit]);
