@@ -5,6 +5,32 @@
 
 namespace LT3
 {
+	inline bool NormalizeVisibleUnitCatalogIds(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		for (int32 i = 0; i < static_cast<int32>(catalog.entries.size()); ++i)
+		{
+			catalog.entries[i].id = i;
+		}
+
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+		editor.statusText = U"Renumbered unit ids from 0 in visible order";
+		return true;
+	}
+
+	inline bool StoreUnitCatalogIdsToUnitIds(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		for (auto& entry : catalog.entries)
+		{
+			entry.unit_id = ToString(entry.id);
+		}
+
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+		editor.statusText = U"Stored ids into unit_id";
+		return true;
+	}
+
 	inline bool ProcessUnitCatalogEditorInput(MapEditorState& editor, UnitCatalog& catalog)
 	{
 		bool consumed = false;
@@ -42,7 +68,7 @@ namespace LT3
 						: editor.unitRenameEditText;
 					SaveUnitCatalogToml(catalog, editor.statusText);
 					editor.unitCatalogDirty = true;
-					editor.statusText = U"Renamed unit: {}"_fmt(catalog.entries[idx].tag);
+					editor.statusText = U"Renamed unit: {}"_fmt(catalog.entries[idx].unit_id);
 				}
 				editor.unitRenameTargetIndex = none;
 				editor.unitRenameEditText = U"";
@@ -83,14 +109,14 @@ namespace LT3
 				if (0 <= srcIdx && srcIdx < static_cast<int32>(catalog.entries.size()))
 				{
 					UnitCatalogEntry newEntry = catalog.entries[srcIdx];
-					String baseTag = newEntry.tag;
-					String candidateTag = baseTag + U"_copy";
+					String baseUnitId = newEntry.unit_id;
+					String candidateUnitId = baseUnitId + U"_copy";
 					int32 suffix = 2;
-					while (catalog.entries.any([&](const UnitCatalogEntry& e) { return e.tag == candidateTag; }))
+					while (catalog.entries.any([&](const UnitCatalogEntry& e) { return e.unit_id == candidateUnitId; }))
 					{
-						candidateTag = baseTag + U"_copy" + Format(suffix++);
+						candidateUnitId = baseUnitId + U"_copy" + Format(suffix++);
 					}
-					newEntry.tag = candidateTag;
+					newEntry.unit_id = candidateUnitId;
 					catalog.entries << newEntry;
 					const int32 newIdx = static_cast<int32>(catalog.entries.size()) - 1;
 					editor.selectedUnitCatalogIndex = newIdx;
@@ -139,6 +165,17 @@ namespace LT3
 
 		if (editor.showUnitList && EditorUnitListPanelRect().mouseOver())
 		{
+			const RectF normalizeIdsRect = EditorUnitNormalizeIdsRect();
+			if (normalizeIdsRect.leftClicked())
+			{
+				return NormalizeVisibleUnitCatalogIds(editor, catalog);
+			}
+			const RectF storeIdToTagRect = EditorUnitStoreIdToTagRect();
+			if (storeIdToTagRect.leftClicked())
+			{
+				return StoreUnitCatalogIdsToUnitIds(editor, catalog);
+			}
+
 			const RectF viewport = EditorUnitListViewportRect();
 			const double maxScroll = Max(0.0, EditorUnitListContentHeight(catalog) - viewport.h);
 			editor.unitListScroll = Clamp(editor.unitListScroll - Mouse::Wheel() * 42.0, 0.0, maxScroll);
@@ -162,7 +199,7 @@ namespace LT3
 					editor.selectedUnitCatalogIndex = i - 1;
 					SaveUnitCatalogToml(catalog, editor.statusText);
 					editor.unitCatalogDirty = true;
-					editor.statusText = U"Moved unit up: {}"_fmt(catalog.entries[i - 1].tag);
+					editor.statusText = U"Moved unit up: {}"_fmt(catalog.entries[i - 1].unit_id);
 					return true;
 				}
 				if ((i + 1 < static_cast<int32>(catalog.entries.size())) && moveDownRect.leftClicked())
@@ -173,7 +210,7 @@ namespace LT3
 					editor.selectedUnitCatalogIndex = i + 1;
 					SaveUnitCatalogToml(catalog, editor.statusText);
 					editor.unitCatalogDirty = true;
-					editor.statusText = U"Moved unit down: {}"_fmt(catalog.entries[i + 1].tag);
+					editor.statusText = U"Moved unit down: {}"_fmt(catalog.entries[i + 1].unit_id);
 					return true;
 				}
 
@@ -184,14 +221,14 @@ namespace LT3
 					editor.showUnitParameterEditor = true;
 					if (!ChangeSelectedUnitImageFromDialog(editor, catalog))
 					{
-						editor.statusText = U"Editing unit: {}"_fmt(catalog.entries[i].tag);
+						editor.statusText = U"Editing unit: {}"_fmt(catalog.entries[i].unit_id);
 					}
 				}
 				else if (row.leftClicked())
 				{
 					editor.selectedUnitCatalogIndex = i;
 					editor.showUnitParameterEditor = true;
-					editor.statusText = U"Editing unit: {}"_fmt(catalog.entries[i].tag);
+					editor.statusText = U"Editing unit: {}"_fmt(catalog.entries[i].unit_id);
 				}
 				else if (row.rightClicked())
 				{
@@ -199,6 +236,14 @@ namespace LT3
 					editor.unitContextMenuPos = Cursor::PosF();
 				}
 			}
+		}
+		else if (editor.showUnitList && EditorUnitNormalizeIdsRect().leftClicked())
+		{
+			return NormalizeVisibleUnitCatalogIds(editor, catalog);
+		}
+		else if (editor.showUnitList && EditorUnitStoreIdToTagRect().leftClicked())
+		{
+				return StoreUnitCatalogIdsToUnitIds(editor, catalog);
 		}
 
 		if (editor.showUnitParameterEditor && EditorUnitParameterPanelRect(editor).mouseOver())

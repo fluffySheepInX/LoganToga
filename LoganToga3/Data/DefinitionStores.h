@@ -16,7 +16,7 @@ namespace LT3
 
     struct UnitDef
     {
-        String tag;
+        String unit_id;
         String name;
         UnitRole role = UnitRole::Soldier;
         int32 hp = 50;
@@ -30,8 +30,8 @@ namespace LT3
         SkillDefId skill = InvalidSkillDefId;
         ColorF color = Palette::White;
         double visualScale = 1.0;
-        String classBuild;
-        String classTag;
+        String building_category;
+        String unit_family;
         bool blocksTileMovement = false;
     };
 
@@ -44,6 +44,7 @@ namespace LT3
         String name;
         String description;
         String icon;
+        Array<String> iconLayers;
         String lineIconHorizontal;
         String lineIconDiagUpRight;
         String lineIconDiagUpLeft;
@@ -101,7 +102,7 @@ namespace LT3
         {
             const UnitDefId id = static_cast<UnitDefId>(units.size());
             units << def;
-            unitByTag[def.tag] = id;
+            unitByTag[def.unit_id] = id;
             return id;
         }
 

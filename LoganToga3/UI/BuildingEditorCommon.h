@@ -89,7 +89,7 @@ namespace LT3
 
 	inline Optional<const BuildActionDef*> FindLineBuildActionForCatalogEntry(const UnitCatalogEntry& entry, const DefinitionStores& defs)
 	{
-		if (entry.tag.isEmpty())
+		if (entry.unit_id.isEmpty())
 		{
 			return none;
 		}
@@ -101,7 +101,7 @@ namespace LT3
 				continue;
 			}
 
-			if (action.ownerTag == entry.tag || action.spawnTag == entry.tag || action.resultTag == entry.tag)
+			if (action.ownerTag == entry.unit_id || action.spawnTag == entry.unit_id || action.resultTag == entry.unit_id)
 			{
 				return &action;
 			}

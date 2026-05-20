@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -351,6 +351,7 @@
     <ClInclude Include="Data\DefinitionStores.h" />
     <ClInclude Include="Data\IdTypes.h" />
     <ClInclude Include="Data\Loaders\BuildActionDefLoader.h" />
+    <ClInclude Include="Data\Loaders\BuildActionDefTomlHelpers.h" />
     <ClInclude Include="Data\Loaders\ResourceDefLoader.h" />
     <ClInclude Include="Data\Loaders\SkillDefLoader.h" />
     <ClInclude Include="Data\Loaders\UnitDefLoader.h" />
@@ -401,6 +402,7 @@
     <ClInclude Include="UI\MapEditorBattleLayoutRects.h" />
     <ClInclude Include="UI\MapEditorCanvasInput.h" />
     <ClInclude Include="UI\MapEditorCellOps.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorHelpers.h" />
     <ClInclude Include="UI\MapEditorCommandEditorInput.h" />
     <ClInclude Include="UI\MapEditorCoreTypes.h" />
     <ClInclude Include="UI\MapEditorDecalLayoutRects.h" />

@@ -103,7 +103,7 @@ namespace LT3
 		BuildingEditorTextureCache().erase(ResolveCatalogVisualPath(entry.kind, fileName));
 		SaveUnitCatalogToml(catalog, editor.statusText);
 		editor.unitCatalogDirty = true;
-		editor.statusText = U"Unit image changed: {} -> {}"_fmt(entry.tag, fileName);
+		editor.statusText = U"Unit image changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}
 }

@@ -80,7 +80,7 @@ namespace LT3
 		}
 
 		uiFont(entry.name).draw(14, panel.x + 24.0, panel.y + 178.0, Palette::White);
-		uiFont(U"tag:{}  image:{}"_fmt(entry.tag, entry.image)).draw(11, panel.x + 24.0, panel.y + 196.0, Palette::Lightgray);
+		uiFont(U"unit_id:{}  image:{}"_fmt(entry.unit_id, entry.image)).draw(11, panel.x + 24.0, panel.y + 196.0, Palette::Lightgray);
 		uiFont(offsetLabel).draw(13, panel.x + 24.0, panel.y + 212.0, Palette::Gold);
 
 		uiFont(U"Anchor").draw(12, panel.x + 24.0, panel.y + 360.0, Palette::Aqua);

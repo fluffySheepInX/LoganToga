@@ -1,185 +1,9 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
-# include "MapEditorMapData.h"
-# include "BuildingEditorCommon.h"
-# include "../Data/Loaders/BuildActionDefLoader.h"
+# include "MapEditorCommandEditorHelpers.h"
 
 namespace LT3
 {
-		inline bool NormalizeCommandIdsContainsOwnerTag(const Array<String>& tags, StringView target)
-		{
-			for (const auto& tag : tags)
-			{
-				if (!tag.isEmpty() && !target.isEmpty() && tag.lowercased() == String{ target }.lowercased())
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		inline Array<String> NormalizeCommandIdsOwnerTags(const Array<String>& source)
-		{
-			Array<String> normalized;
-			for (const auto& tag : source)
-			{
-				if (tag.isEmpty())
-				{
-					continue;
-				}
-
-				if (!NormalizeCommandIdsContainsOwnerTag(normalized, tag))
-				{
-					normalized << tag;
-				}
-			}
-
-			return normalized;
-		}
-
-	inline Array<String> NormalizeSpawnTagsForEditor(const Array<String>& source)
-	{
-		return NormalizeCommandIdsOwnerTags(source);
-	}
-
-	inline bool IsFacilityUnitCatalogEntry(const UnitCatalogEntry& entry)
-	{
-		const String kind = entry.kind.lowercased();
-		const String classBuild = entry.classBuild.lowercased();
-		return (kind == U"building") || (classBuild == U"home");
-	}
-
-	inline bool ActionOwnerIncludesFacilityUnit(const BuildActionDef& action, const UnitCatalog& catalog)
-	{
-		const Array<String> ownerTags = action.ownerTags.isEmpty()
-			? Array<String>{ action.ownerTag }
-			: NormalizeCommandIdsOwnerTags(action.ownerTags);
-
-		for (const auto& ownerTag : ownerTags)
-		{
-			for (const auto& entry : catalog.entries)
-			{
-				if (EqualsIgnoreCaseOwnerTag(entry.tag, ownerTag) && IsFacilityUnitCatalogEntry(entry))
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	inline void RefreshActionSpawnSelection(BuildActionDef& action, const DefinitionStores& defs)
-	{
-		action.spawnTags = NormalizeSpawnTagsForEditor(action.spawnTags);
-		action.spawnUnits.clear();
-		for (const auto& spawnTag : action.spawnTags)
-		{
-			if (defs.unitByTag.contains(spawnTag))
-			{
-				action.spawnUnits << defs.unitByTag.at(spawnTag);
-			}
-		}
-
-		action.spawnTag = action.spawnTags.isEmpty() ? U"" : action.spawnTags.front();
-		action.resultTag = action.spawnTag;
-		action.spawnUnit = action.spawnUnits.isEmpty() ? InvalidUnitDefId : action.spawnUnits.front();
-	}
-
-		inline bool NormalizeCommandIdsForOwnerTags(MapEditorState& editor, DefinitionStores& defs, const Array<String>& targetOwnerTags)
-		{
-			Array<String> normalizedOwnerTags = NormalizeCommandIdsOwnerTags(targetOwnerTags);
-			if (normalizedOwnerTags.isEmpty())
-			{
-				return false;
-			}
-
-			int32 serial = 0;
-			int32 updatedCount = 0;
-			for (auto& action : defs.buildActions)
-			{
-				Array<String> actionOwnerTags = NormalizeCommandIdsOwnerTags(action.ownerTags);
-				if (actionOwnerTags.isEmpty() && !action.ownerTag.isEmpty())
-				{
-					actionOwnerTags << action.ownerTag;
-				}
-
-				bool ownerMatched = false;
-				for (const auto& ownerTag : actionOwnerTags)
-				{
-					if (NormalizeCommandIdsContainsOwnerTag(normalizedOwnerTags, ownerTag))
-					{
-						ownerMatched = true;
-						break;
-					}
-				}
-
-				if (!ownerMatched)
-				{
-					continue;
-				}
-
-				action.ownerTags = actionOwnerTags;
-				action.ownerTag = actionOwnerTags.isEmpty() ? U"" : actionOwnerTags.front();
-				action.id = U"{:03d}"_fmt(serial++);
-				action.tag = U"{}:{}"_fmt(action.ownerTag, action.id);
-				++updatedCount;
-			}
-
-			if (updatedCount <= 0)
-			{
-				return false;
-			}
-
-			editor.commandBindingsDirty = true;
-			editor.statusText = U"Normalized command ids: {}"_fmt(updatedCount);
-			return true;
-		}
-
-	inline bool EqualsOwnerTagIgnoreCase(StringView a, StringView b)
-	{
-		return !a.isEmpty() && !b.isEmpty() && String{ a }.lowercased() == String{ b }.lowercased();
-	}
-
-	inline bool ContainsOwnerTag(const Array<String>& tags, StringView target)
-	{
-		for (const auto& tag : tags)
-		{
-			if (EqualsOwnerTagIgnoreCase(tag, target))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	inline Array<String> NormalizeOwnerTagsForEditor(const Array<String>& source)
-	{
-		Array<String> normalized;
-		for (const auto& tag : source)
-		{
-			if (tag.isEmpty())
-			{
-				continue;
-			}
-
-			if (!ContainsOwnerTag(normalized, tag))
-			{
-				normalized << tag;
-			}
-		}
-
-		return normalized;
-	}
-
-	inline bool IsCommandSelectableImageFile(const FilePath& path)
-	{
-		const String extension = FileSystem::Extension(path).lowercased();
-		return extension == U"png" || extension == U"gif";
-	}
-
 	inline bool ChangeSelectedCommandImageFromDialog(MapEditorState& editor, DefinitionStores& defs, int32 actionIndex)
 	{
 		if (actionIndex < 0 || static_cast<int32>(defs.buildActions.size()) <= actionIndex)
@@ -188,42 +12,50 @@ namespace LT3
 		}
 
 		const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::GIF(), FileFilter::AllFiles() };
-		const Optional<FilePath> sourcePath = Dialog::OpenFile(imageFilters);
-		if (!sourcePath)
+		const Array<FilePath> sourcePaths = Dialog::OpenFiles(imageFilters);
+		if (sourcePaths.isEmpty())
 		{
 			return false;
-		}
-
-		if (!IsCommandSelectableImageFile(*sourcePath))
-		{
-			editor.statusText = U"Command image must be png or gif: {}"_fmt(*sourcePath);
-			return true;
 		}
 
 		BuildActionDef& action = defs.buildActions[actionIndex];
 		const FilePath targetDirectory = FileSystem::ParentPath(ResolveBuildIconPath(U"__lt3_directory_probe__.png"));
 		FileSystem::CreateDirectories(targetDirectory);
+		Array<String> iconLayers;
+		iconLayers.reserve(sourcePaths.size());
 
-		const String fileName = FileSystem::FileName(*sourcePath);
-		const FilePath targetPath = targetDirectory + fileName;
-		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
+		for (const auto& sourcePath : sourcePaths)
 		{
-			if (FileSystem::Exists(targetPath))
+			if (!IsCommandSelectableImageFile(sourcePath))
 			{
-				FileSystem::Remove(targetPath);
-			}
-
-			if (!FileSystem::Copy(*sourcePath, targetPath))
-			{
-				editor.statusText = U"Command image copy failed: {}"_fmt(targetPath);
+				editor.statusText = U"Command image must be png or gif: {}"_fmt(sourcePath);
 				return true;
 			}
+
+			const String fileName = FileSystem::FileName(sourcePath);
+			const FilePath targetPath = targetDirectory + fileName;
+			if (FileSystem::FullPath(sourcePath) != FileSystem::FullPath(targetPath))
+			{
+				if (FileSystem::Exists(targetPath))
+				{
+					FileSystem::Remove(targetPath);
+				}
+
+				if (!FileSystem::Copy(sourcePath, targetPath))
+				{
+					editor.statusText = U"Command image copy failed: {}"_fmt(targetPath);
+					return true;
+				}
+			}
+
+			iconLayers << fileName;
+			BuildingEditorTextureCache().erase(ResolveBuildIconPath(fileName));
 		}
 
-		action.icon = fileName;
-		BuildingEditorTextureCache().erase(ResolveBuildIconPath(fileName));
+		action.iconLayers = NormalizeCommandIconLayers(iconLayers);
+		action.icon = action.iconLayers.isEmpty() ? U"" : action.iconLayers.front();
 		editor.commandBindingsDirty = true;
-		editor.statusText = U"Command image changed: {} -> {}"_fmt(action.id, fileName);
+		editor.statusText = U"Command image layers changed: {} ({} files)"_fmt(action.id, action.iconLayers.size());
 		return true;
 	}
 
@@ -451,7 +283,8 @@ namespace LT3
 		if (editor.selectedCommandActionIndex >= 0 && editor.selectedCommandActionIndex < commandCount)
 		{
 			constexpr int32 columns = 5;
-			const int32 unitCount = static_cast<int32>(catalog.entries.size());
+			const Array<int32> sortedUnitIndices = SortedUnitCatalogEntryIndicesById(catalog);
+			const int32 unitCount = static_cast<int32>(sortedUnitIndices.size());
 			const int32 unitRows = (unitCount + columns - 1) / columns;
 			const double unitContentHeight = unitRows * 96.0 + 8.0;
 			const double unitMaxScroll = Max(0.0, unitContentHeight - unitViewport.h);
@@ -467,7 +300,7 @@ namespace LT3
 			{
 				for (int32 i = 0; i < unitCount; ++i)
 				{
-					const UnitCatalogEntry& entry = catalog.entries[i];
+					const UnitCatalogEntry& entry = catalog.entries[sortedUnitIndices[i]];
 					const RectF cell = EditorCommandUnitCellRect(unitViewport, i, columns, editor.commandUnitListScroll);
 					if ((cell.y + cell.h) < unitViewport.y || unitViewportBottom < cell.y)
 					{
@@ -479,14 +312,14 @@ namespace LT3
 						if (editor.commandEditorMode == 0)
 						{
 							Array<String>& ownerTags = action.ownerTags;
-							const bool hasTag = ContainsOwnerTag(ownerTags, entry.tag);
+							const bool hasTag = ContainsOwnerTag(ownerTags, entry.unit_id);
 
 							if (hasTag)
 							{
 								Array<String> filtered;
 								for (const auto& value : ownerTags)
 								{
-									if (!EqualsOwnerTagIgnoreCase(value, entry.tag))
+									if (!EqualsOwnerTagIgnoreCase(value, entry.unit_id))
 									{
 										filtered << value;
 									}
@@ -495,7 +328,7 @@ namespace LT3
 							}
 							else
 							{
-								ownerTags << entry.tag;
+								ownerTags << entry.unit_id;
 							}
 
 							ownerTags = NormalizeOwnerTagsForEditor(ownerTags);
@@ -513,7 +346,7 @@ namespace LT3
 							}
 
 							const bool allowMultipleSpawns = ActionOwnerIncludesFacilityUnit(action, catalog);
-							const bool alreadySelected = ContainsOwnerTag(spawnTags, entry.tag);
+							const bool alreadySelected = ContainsOwnerTag(spawnTags, entry.unit_id);
 							if (allowMultipleSpawns)
 							{
 								if (alreadySelected)
@@ -521,7 +354,7 @@ namespace LT3
 									Array<String> filtered;
 									for (const auto& value : spawnTags)
 									{
-										if (!EqualsOwnerTagIgnoreCase(value, entry.tag))
+										if (!EqualsOwnerTagIgnoreCase(value, entry.unit_id))
 										{
 											filtered << value;
 										}
@@ -530,12 +363,12 @@ namespace LT3
 								}
 								else
 								{
-									spawnTags << entry.tag;
+									spawnTags << entry.unit_id;
 								}
 							}
 							else
 							{
-								spawnTags = alreadySelected ? spawnTags : Array<String>{ entry.tag };
+								spawnTags = alreadySelected ? spawnTags : Array<String>{ entry.unit_id };
 							}
 
 							action.spawnTags = std::move(spawnTags);

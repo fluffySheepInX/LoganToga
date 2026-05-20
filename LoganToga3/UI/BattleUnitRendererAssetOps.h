@@ -47,7 +47,7 @@ namespace LT3
 		BattleRenderAssets assets;
 		for (const auto& entry : catalog.entries)
 		{
-			if (!entry.tag.isEmpty())
+			if (!entry.unit_id.isEmpty())
 			{
 				UnitVisualInfo info{
 					entry.image,
@@ -73,7 +73,7 @@ namespace LT3
 				{
 					for (const auto& action : defs->buildActions)
 					{
-						if (action.ownerTag == entry.tag || action.spawnTag == entry.tag || action.resultTag == entry.tag)
+						if (action.ownerTag == entry.unit_id || action.spawnTag == entry.unit_id || action.resultTag == entry.unit_id)
 						{
 							info.lineIconHorizontalName = action.lineIconHorizontal;
 							info.lineIconDiagUpRightName = action.lineIconDiagUpRight;
@@ -83,7 +83,7 @@ namespace LT3
 					}
 				}
 
-				assets.unitVisualByTag[entry.tag] = info;
+				assets.unitVisualByTag[entry.unit_id] = info;
 			}
 		}
 		return assets;
@@ -188,7 +188,7 @@ namespace LT3
 
 	inline bool DrawUnitTexture(const BattleRenderAssets& assets, const UnitDef& def, const Vec2& pos, bool isMoving, StringView iconOverride = U"", const Vec2& iconOverrideOffset = Vec2{ 0, 0 })
 	{
-		const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, def.tag);
+		const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, def.unit_id);
 		const auto resolveOverrideArtWidth = [&](const String& overrideName) -> double
 		{
 			if (!visual.lineIconHorizontalName.isEmpty() && overrideName == visual.lineIconHorizontalName)
@@ -275,7 +275,7 @@ namespace LT3
 	{
 		if (action.spawnUnit < defs.units.size())
 		{
-			const String unitTag = defs.units[action.spawnUnit].tag;
+			const String unitTag = defs.units[action.spawnUnit].unit_id;
 			const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, unitTag);
 			if (!visual.image.isEmpty())
 			{
@@ -295,66 +295,109 @@ namespace LT3
 		return FilePath{};
 	}
 
+	inline Array<FilePath> ResolveBuildActionIconPaths(const BuildActionDef& action, const DefinitionStores& defs, const BattleRenderAssets& assets)
+	{
+		Array<FilePath> iconPaths;
+		if (!action.iconLayers.isEmpty())
+		{
+			for (const auto& icon : action.iconLayers)
+			{
+				if (icon.isEmpty())
+				{
+					continue;
+				}
+
+				iconPaths << ResolveBuildIconPath(icon);
+			}
+
+			if (!iconPaths.isEmpty())
+			{
+				return iconPaths;
+			}
+		}
+
+		const FilePath fallbackPath = ResolveBuildActionIconPath(action, defs, assets);
+		if (!fallbackPath.isEmpty())
+		{
+			iconPaths << fallbackPath;
+		}
+
+		return iconPaths;
+	}
+
 	inline bool DrawBuildActionIcon(const BuildActionDef& action, const DefinitionStores& defs, const BattleRenderAssets& assets, const Vec2& center, double size)
 	{
-		const FilePath iconPath = ResolveBuildActionIconPath(action, defs, assets);
-		if (iconPath.isEmpty() || !FileSystem::Exists(iconPath))
+		const Array<FilePath> iconPaths = ResolveBuildActionIconPaths(action, defs, assets);
+		if (iconPaths.isEmpty())
 		{
 			return false;
 		}
 
-		if (FileSystem::Extension(iconPath).lowercased() == U"gif")
+		bool drewAny = false;
+		for (const auto& iconPath : iconPaths)
 		{
-			if (!assets.unitGifFrameCache.contains(iconPath))
+			if (iconPath.isEmpty() || !FileSystem::Exists(iconPath))
 			{
-				AnimatedGIFReader reader{ iconPath };
-				Array<Image> frames;
-				Array<int32> frameDelaysMillisec;
-				int32 durationMillisec = 0;
-				if (reader && reader.read(frames, frameDelaysMillisec, durationMillisec) && !frames.isEmpty())
-				{
-					Array<Texture> textures;
-					textures.reserve(frames.size());
-					for (const auto& frame : frames)
-					{
-						textures << Texture{ frame };
-					}
-					assets.unitGifFrameCache.emplace(iconPath, std::move(textures));
-					assets.unitGifFrameDelaysMillisecCache.emplace(iconPath, std::move(frameDelaysMillisec));
-					assets.unitGifDurationMillisecCache.emplace(iconPath, Max(durationMillisec, 1));
-				}
+				continue;
 			}
 
-			if (assets.unitGifFrameCache.contains(iconPath))
+			if (FileSystem::Extension(iconPath).lowercased() == U"gif")
 			{
-				const Array<Texture>& frames = assets.unitGifFrameCache.at(iconPath);
-				if (!frames.isEmpty())
+				if (!assets.unitGifFrameCache.contains(iconPath))
 				{
-					const bool animate = RectF{ Arg::center = center, size + 6.0, size + 6.0 }.mouseOver();
-					size_t frameIndex = 0;
-					if (animate
-						&& assets.unitGifFrameDelaysMillisecCache.contains(iconPath)
-						&& assets.unitGifDurationMillisecCache.contains(iconPath))
+					AnimatedGIFReader reader{ iconPath };
+					Array<Image> frames;
+					Array<int32> frameDelaysMillisec;
+					int32 durationMillisec = 0;
+					if (reader && reader.read(frames, frameDelaysMillisec, durationMillisec) && !frames.isEmpty())
 					{
-						const Array<int32>& delays = assets.unitGifFrameDelaysMillisecCache.at(iconPath);
-						const int32 duration = assets.unitGifDurationMillisecCache.at(iconPath);
-						if (!delays.isEmpty() && duration > 0)
+						Array<Texture> textures;
+						textures.reserve(frames.size());
+						for (const auto& frame : frames)
 						{
-							frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delays, duration);
+							textures << Texture{ frame };
 						}
+						assets.unitGifFrameCache.emplace(iconPath, std::move(textures));
+						assets.unitGifFrameDelaysMillisecCache.emplace(iconPath, std::move(frameDelaysMillisec));
+						assets.unitGifDurationMillisecCache.emplace(iconPath, Max(durationMillisec, 1));
 					}
-
-					frames[Min(frameIndex, frames.size() - 1)].resized(size, size).drawAt(center);
-					return true;
 				}
+
+				if (assets.unitGifFrameCache.contains(iconPath))
+				{
+					const Array<Texture>& frames = assets.unitGifFrameCache.at(iconPath);
+					if (!frames.isEmpty())
+					{
+						const bool animate = RectF{ Arg::center = center, size + 6.0, size + 6.0 }.mouseOver();
+						size_t frameIndex = 0;
+						if (animate
+							&& assets.unitGifFrameDelaysMillisecCache.contains(iconPath)
+							&& assets.unitGifDurationMillisecCache.contains(iconPath))
+						{
+							const Array<int32>& delays = assets.unitGifFrameDelaysMillisecCache.at(iconPath);
+							const int32 duration = assets.unitGifDurationMillisecCache.at(iconPath);
+							if (!delays.isEmpty() && duration > 0)
+							{
+								frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delays, duration);
+							}
+						}
+
+						frames[Min(frameIndex, frames.size() - 1)].resized(size, size).drawAt(center);
+						drewAny = true;
+					}
+				}
+
+				continue;
 			}
+
+			if (!assets.iconTextureCache.contains(iconPath))
+			{
+				assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });
+			}
+			assets.iconTextureCache.at(iconPath).resized(size, size).drawAt(center);
+			drewAny = true;
 		}
 
-		if (!assets.iconTextureCache.contains(iconPath))
-		{
-			assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });
-		}
-		assets.iconTextureCache.at(iconPath).resized(size, size).drawAt(center);
-		return true;
+		return drewAny;
 	}
 }

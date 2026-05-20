@@ -3,6 +3,57 @@
 
 namespace LT3
 {
+    namespace UnitCatalogToml
+    {
+        inline constexpr int32 SchemaVersion = 1;
+
+        inline constexpr const char32* KeySchemaVersion = U"schema_version";
+        inline constexpr const char32* KeyUnits = U"units";
+        inline constexpr const char32* KeyId = U"id";
+        inline constexpr const char32* KeyUnitId = U"unit_id";
+        inline constexpr const char32* KeyName = U"name";
+        inline constexpr const char32* KeyKind = U"kind";
+        inline constexpr const char32* KeyRace = U"race";
+        inline constexpr const char32* KeyImage = U"image";
+        inline constexpr const char32* KeyBuildingCategory = U"building_category";
+        inline constexpr const char32* KeyUnitFamily = U"unit_family";
+        inline constexpr const char32* KeySkills = U"skills";
+        inline constexpr const char32* KeyLevel = U"level";
+        inline constexpr const char32* KeyLevelMax = U"level_max";
+        inline constexpr const char32* KeyVisionRadius = U"vision_radius";
+        inline constexpr const char32* KeyGoldCost = U"gold_cost";
+        inline constexpr const char32* KeyCost = U"cost";
+        inline constexpr const char32* KeyTrustCost = U"trust_cost";
+        inline constexpr const char32* KeyPrice = U"price";
+        inline constexpr const char32* KeyFoodCost = U"food_cost";
+        inline constexpr const char32* KeyHp = U"hp";
+        inline constexpr const char32* KeyBuildingHp = U"building_hp";
+        inline constexpr const char32* KeyMp = U"mp";
+        inline constexpr const char32* KeyAttack = U"attack";
+        inline constexpr const char32* KeyDefense = U"defense";
+        inline constexpr const char32* KeyMagic = U"magic";
+        inline constexpr const char32* KeyMagicDefense = U"magic_defense";
+        inline constexpr const char32* KeySpeed = U"speed";
+        inline constexpr const char32* KeyMove = U"move";
+        inline constexpr const char32* KeyMaintainRange = U"maintain_range";
+        inline constexpr const char32* KeyVisualScale = U"visual_scale";
+        inline constexpr const char32* KeyScale = U"scale";
+        inline constexpr const char32* KeyVisualOffset = U"visual_offset";
+        inline constexpr const char32* KeyShadowOffset = U"shadow_offset";
+        inline constexpr const char32* KeyPlacementAnchor = U"placement_anchor";
+        inline constexpr const char32* KeyRenderSizeMode = U"render_size_mode";
+        inline constexpr const char32* KeyGameplaySizeMul = U"gameplay_size_mul";
+        inline constexpr const char32* KeyArtWidthRef = U"art_width_ref";
+        inline constexpr const char32* KeyArtWidthValue = U"art_width_value";
+        inline constexpr const char32* KeyArtWidthValueLineHorizontal = U"art_width_value_line_horizontal";
+        inline constexpr const char32* KeyArtWidthValueLineDiagUpRight = U"art_width_value_line_diag_up_right";
+        inline constexpr const char32* KeyArtWidthValueLineDiagUpLeft = U"art_width_value_line_diag_up_left";
+        inline constexpr const char32* KeyArtKeepAspect = U"art_keep_aspect";
+        inline constexpr const char32* KeyLineIconHorizontalOffset = U"line_icon_horizontal_offset";
+        inline constexpr const char32* KeyLineIconDiagUpRightOffset = U"line_icon_diag_up_right_offset";
+        inline constexpr const char32* KeyLineIconDiagUpLeftOffset = U"line_icon_diag_up_left_offset";
+    }
+
     enum class UnitPlacementAnchor
     {
         Center,
@@ -63,13 +114,14 @@ namespace LT3
 
     struct UnitCatalogEntry
     {
-        String tag;
+        int32 id = 0;
+        String unit_id;
         String name;
         String kind;
         String race;
         String image;
-        String classBuild;
-        String classTag;
+        String building_category;
+        String unit_family;
         Array<String> skills;
         int32 level = 1;
         int32 levelMax = 1;
@@ -200,6 +252,30 @@ namespace LT3
         return result;
     }
 
+    inline Array<int32> SortedUnitCatalogEntryIndicesById(const UnitCatalog& catalog)
+    {
+        Array<int32> indices;
+        indices.reserve(catalog.entries.size());
+        for (int32 i = 0; i < static_cast<int32>(catalog.entries.size()); ++i)
+        {
+            indices << i;
+        }
+
+        std::sort(indices.begin(), indices.end(), [&](const int32 a, const int32 b)
+        {
+            const UnitCatalogEntry& left = catalog.entries[a];
+            const UnitCatalogEntry& right = catalog.entries[b];
+            if (left.id != right.id)
+            {
+                return left.id < right.id;
+            }
+
+            return left.unit_id < right.unit_id;
+        });
+
+        return indices;
+    }
+
     inline Point ReadTomlPointArray(const TOMLValue& value)
     {
         Point result{ 0, 0 };
@@ -271,39 +347,47 @@ namespace LT3
             return catalog;
         }
 
-        for (const auto unitValue : toml[U"units"].tableArrayView())
+        const int32 schemaVersion = toml[UnitCatalogToml::KeySchemaVersion].getOr<int32>(0);
+        if (schemaVersion != UnitCatalogToml::SchemaVersion)
+        {
+            catalog.statusText = U"Unsupported unit schema_version {} in {}"_fmt(schemaVersion, catalog.sourcePath);
+            return catalog;
+        }
+
+        for (const auto unitValue : toml[UnitCatalogToml::KeyUnits].tableArrayView())
         {
             UnitCatalogEntry entry;
-            entry.tag = unitValue[U"tag"].getOr<String>(U"");
-            entry.name = unitValue[U"name"].getOr<String>(entry.tag);
-            entry.kind = unitValue[U"kind"].getOr<String>(U"unit");
-            entry.race = unitValue[U"race"].getOr<String>(U"");
-            entry.image = unitValue[U"image"].getOr<String>(U"");
-            entry.classBuild = unitValue[U"class_build"].getOr<String>(U"");
-            entry.classTag = unitValue[U"class_tag"].getOr<String>(U"");
-            entry.skills = ReadTomlStringArray(unitValue[U"skills"]);
-            entry.level = unitValue[U"level"].getOr<int32>(1);
-            entry.levelMax = unitValue[U"level_max"].getOr<int32>(1);
-            entry.visionRadius = unitValue[U"vision_radius"].getOr<int32>(0);
-            entry.goldCost = unitValue[U"gold_cost"].getOr<int32>(unitValue[U"cost"].getOr<int32>(0));
-            entry.trustCost = unitValue[U"trust_cost"].getOr<int32>(unitValue[U"price"].getOr<int32>(0));
-            entry.foodCost = unitValue[U"food_cost"].getOr<int32>(0);
-            entry.hp = unitValue[U"hp"].getOr<int32>(0);
-            entry.buildingHp = unitValue[U"building_hp"].getOr<int32>(0);
-            entry.mp = unitValue[U"mp"].getOr<int32>(0);
-            entry.attack = unitValue[U"attack"].getOr<int32>(0);
-            entry.defense = unitValue[U"defense"].getOr<int32>(0);
-            entry.magic = unitValue[U"magic"].getOr<int32>(0);
-            entry.magicDefense = unitValue[U"magic_defense"].getOr<int32>(0);
-            entry.speed = unitValue[U"speed"].getOr<int32>(0);
-            entry.move = unitValue[U"move"].getOr<int32>(0);
-            entry.maintainRange = unitValue[U"maintain_range"].getOr<int32>(0);
-            entry.visualScale = Clamp(unitValue[U"visual_scale"].getOr<double>(unitValue[U"scale"].getOr<double>(1.0)), 0.25, 3.0);
-            entry.visualOffset = ReadTomlPointArray(unitValue[U"visual_offset"]);
-            entry.shadowOffset = ReadTomlPointArray(unitValue[U"shadow_offset"]);
-            entry.placementAnchor = ParseUnitPlacementAnchor(unitValue[U"placement_anchor"].getOr<String>(U""), entry.kind);
-            entry.renderSizeMode = ParseUnitRenderSizeMode(unitValue[U"render_size_mode"].getOr<String>(U"gameplay"));
-            if (const Optional<double> gameplaySizeMul = unitValue[U"gameplay_size_mul"].getOpt<double>())
+            entry.id = unitValue[UnitCatalogToml::KeyId].getOr<int32>(0);
+            entry.unit_id = unitValue[UnitCatalogToml::KeyUnitId].getOr<String>(U"");
+            entry.name = unitValue[UnitCatalogToml::KeyName].getOr<String>(entry.unit_id);
+            entry.kind = unitValue[UnitCatalogToml::KeyKind].getOr<String>(U"unit");
+            entry.race = unitValue[UnitCatalogToml::KeyRace].getOr<String>(U"");
+            entry.image = unitValue[UnitCatalogToml::KeyImage].getOr<String>(U"");
+            entry.building_category = unitValue[UnitCatalogToml::KeyBuildingCategory].getOr<String>(U"");
+            entry.unit_family = unitValue[UnitCatalogToml::KeyUnitFamily].getOr<String>(U"");
+            entry.skills = ReadTomlStringArray(unitValue[UnitCatalogToml::KeySkills]);
+            entry.level = unitValue[UnitCatalogToml::KeyLevel].getOr<int32>(1);
+            entry.levelMax = unitValue[UnitCatalogToml::KeyLevelMax].getOr<int32>(1);
+            entry.visionRadius = unitValue[UnitCatalogToml::KeyVisionRadius].getOr<int32>(0);
+            entry.goldCost = unitValue[UnitCatalogToml::KeyGoldCost].getOr<int32>(unitValue[UnitCatalogToml::KeyCost].getOr<int32>(0));
+            entry.trustCost = unitValue[UnitCatalogToml::KeyTrustCost].getOr<int32>(unitValue[UnitCatalogToml::KeyPrice].getOr<int32>(0));
+            entry.foodCost = unitValue[UnitCatalogToml::KeyFoodCost].getOr<int32>(0);
+            entry.hp = unitValue[UnitCatalogToml::KeyHp].getOr<int32>(0);
+            entry.buildingHp = unitValue[UnitCatalogToml::KeyBuildingHp].getOr<int32>(0);
+            entry.mp = unitValue[UnitCatalogToml::KeyMp].getOr<int32>(0);
+            entry.attack = unitValue[UnitCatalogToml::KeyAttack].getOr<int32>(0);
+            entry.defense = unitValue[UnitCatalogToml::KeyDefense].getOr<int32>(0);
+            entry.magic = unitValue[UnitCatalogToml::KeyMagic].getOr<int32>(0);
+            entry.magicDefense = unitValue[UnitCatalogToml::KeyMagicDefense].getOr<int32>(0);
+            entry.speed = unitValue[UnitCatalogToml::KeySpeed].getOr<int32>(0);
+            entry.move = unitValue[UnitCatalogToml::KeyMove].getOr<int32>(0);
+            entry.maintainRange = unitValue[UnitCatalogToml::KeyMaintainRange].getOr<int32>(0);
+            entry.visualScale = Clamp(unitValue[UnitCatalogToml::KeyVisualScale].getOr<double>(unitValue[UnitCatalogToml::KeyScale].getOr<double>(1.0)), 0.25, 3.0);
+            entry.visualOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyVisualOffset]);
+            entry.shadowOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyShadowOffset]);
+            entry.placementAnchor = ParseUnitPlacementAnchor(unitValue[UnitCatalogToml::KeyPlacementAnchor].getOr<String>(U""), entry.kind);
+            entry.renderSizeMode = ParseUnitRenderSizeMode(unitValue[UnitCatalogToml::KeyRenderSizeMode].getOr<String>(U"gameplay"));
+            if (const Optional<double> gameplaySizeMul = unitValue[UnitCatalogToml::KeyGameplaySizeMul].getOpt<double>())
             {
                 entry.gameplaySizeMul = Clamp(*gameplaySizeMul, 0.2, 8.0);
             }
@@ -311,17 +395,17 @@ namespace LT3
             {
                 entry.gameplaySizeMul = (entry.kind.lowercased() == U"building") ? 2.2 : 2.0;
             }
-            entry.artWidthReference = ParseUnitArtWidthReference(unitValue[U"art_width_ref"].getOr<String>(U"cell"));
-            entry.artWidthValue = Clamp(unitValue[U"art_width_value"].getOr<double>(1.0), 0.1, 8.0);
-            entry.artWidthValueLineHorizontal = Clamp(unitValue[U"art_width_value_line_horizontal"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
-            entry.artWidthValueLineDiagUpRight = Clamp(unitValue[U"art_width_value_line_diag_up_right"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
-            entry.artWidthValueLineDiagUpLeft = Clamp(unitValue[U"art_width_value_line_diag_up_left"].getOr<double>(entry.artWidthValue), 0.1, 8.0);
-            entry.artKeepAspect = unitValue[U"art_keep_aspect"].getOr<bool>(true);
-            entry.lineIconHorizontalOffset = ReadTomlPointArray(unitValue[U"line_icon_horizontal_offset"]);
-            entry.lineIconDiagUpRightOffset = ReadTomlPointArray(unitValue[U"line_icon_diag_up_right_offset"]);
-            entry.lineIconDiagUpLeftOffset = ReadTomlPointArray(unitValue[U"line_icon_diag_up_left_offset"]);
+            entry.artWidthReference = ParseUnitArtWidthReference(unitValue[UnitCatalogToml::KeyArtWidthRef].getOr<String>(U"cell"));
+            entry.artWidthValue = Clamp(unitValue[UnitCatalogToml::KeyArtWidthValue].getOr<double>(1.0), 0.1, 8.0);
+            entry.artWidthValueLineHorizontal = Clamp(unitValue[UnitCatalogToml::KeyArtWidthValueLineHorizontal].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artWidthValueLineDiagUpRight = Clamp(unitValue[UnitCatalogToml::KeyArtWidthValueLineDiagUpRight].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artWidthValueLineDiagUpLeft = Clamp(unitValue[UnitCatalogToml::KeyArtWidthValueLineDiagUpLeft].getOr<double>(entry.artWidthValue), 0.1, 8.0);
+            entry.artKeepAspect = unitValue[UnitCatalogToml::KeyArtKeepAspect].getOr<bool>(true);
+            entry.lineIconHorizontalOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyLineIconHorizontalOffset]);
+            entry.lineIconDiagUpRightOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyLineIconDiagUpRightOffset]);
+            entry.lineIconDiagUpLeftOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyLineIconDiagUpLeftOffset]);
 
-            if (!entry.tag.isEmpty())
+            if (!entry.unit_id.isEmpty())
             {
                 catalog.entries << entry;
             }
@@ -341,49 +425,52 @@ namespace LT3
             return false;
         }
 
+        writer << UnitCatalogToml::KeySchemaVersion << U" = " << UnitCatalogToml::SchemaVersion << U"\n\n";
+
         for (const auto& entry : catalog.entries)
         {
             String block;
-            block += U"[[units]]\n";
-            block += U"tag = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.tag));
-            block += U"name = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.name));
-            block += U"kind = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.kind));
-            block += U"race = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.race));
-            block += U"image = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.image));
-            block += U"class_build = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.classBuild));
-            block += U"class_tag = \"{}\"\n"_fmt(UnitCatalogTomlEscape(entry.classTag));
-            block += U"skills = {}\n"_fmt(BuildTomlStringArray(entry.skills));
-            block += U"level = {}\n"_fmt(entry.level);
-            block += U"level_max = {}\n"_fmt(entry.levelMax);
-            block += U"vision_radius = {}\n"_fmt(entry.visionRadius);
-            block += U"gold_cost = {}\n"_fmt(entry.goldCost);
-            block += U"trust_cost = {}\n"_fmt(entry.trustCost);
-            block += U"food_cost = {}\n"_fmt(entry.foodCost);
-            block += U"hp = {}\n"_fmt(entry.hp);
-            block += U"building_hp = {}\n"_fmt(entry.buildingHp);
-            block += U"mp = {}\n"_fmt(entry.mp);
-            block += U"attack = {}\n"_fmt(entry.attack);
-            block += U"defense = {}\n"_fmt(entry.defense);
-            block += U"magic = {}\n"_fmt(entry.magic);
-            block += U"magic_defense = {}\n"_fmt(entry.magicDefense);
-            block += U"speed = {}\n"_fmt(entry.speed);
-            block += U"move = {}\n"_fmt(entry.move);
-            block += U"maintain_range = {}\n"_fmt(entry.maintainRange);
-            block += U"visual_scale = {}\n"_fmt(entry.visualScale);
-            block += U"visual_offset = [{}, {}]\n"_fmt(entry.visualOffset.x, entry.visualOffset.y);
-            block += U"shadow_offset = [{}, {}]\n"_fmt(entry.shadowOffset.x, entry.shadowOffset.y);
-            block += U"placement_anchor = \"{}\"\n"_fmt(UnitPlacementAnchorToTomlValue(entry.placementAnchor));
-            block += U"render_size_mode = \"{}\"\n"_fmt(UnitRenderSizeModeToTomlValue(entry.renderSizeMode));
-            block += U"gameplay_size_mul = {}\n"_fmt(entry.gameplaySizeMul);
-            block += U"art_width_ref = \"{}\"\n"_fmt(UnitArtWidthReferenceToTomlValue(entry.artWidthReference));
-            block += U"art_width_value = {}\n"_fmt(entry.artWidthValue);
-            block += U"art_width_value_line_horizontal = {}\n"_fmt(entry.artWidthValueLineHorizontal);
-            block += U"art_width_value_line_diag_up_right = {}\n"_fmt(entry.artWidthValueLineDiagUpRight);
-            block += U"art_width_value_line_diag_up_left = {}\n"_fmt(entry.artWidthValueLineDiagUpLeft);
-            block += U"art_keep_aspect = {}\n"_fmt(entry.artKeepAspect ? U"true" : U"false");
-            block += U"line_icon_horizontal_offset = [{}, {}]\n"_fmt(entry.lineIconHorizontalOffset.x, entry.lineIconHorizontalOffset.y);
-            block += U"line_icon_diag_up_right_offset = [{}, {}]\n"_fmt(entry.lineIconDiagUpRightOffset.x, entry.lineIconDiagUpRightOffset.y);
-            block += U"line_icon_diag_up_left_offset = [{}, {}]\n\n"_fmt(entry.lineIconDiagUpLeftOffset.x, entry.lineIconDiagUpLeftOffset.y);
+            block += U"[[{}]]\n"_fmt(UnitCatalogToml::KeyUnits);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyId, entry.id);
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyUnitId, UnitCatalogTomlEscape(entry.unit_id));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyName, UnitCatalogTomlEscape(entry.name));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyKind, UnitCatalogTomlEscape(entry.kind));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyRace, UnitCatalogTomlEscape(entry.race));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyImage, UnitCatalogTomlEscape(entry.image));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyBuildingCategory, UnitCatalogTomlEscape(entry.building_category));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyUnitFamily, UnitCatalogTomlEscape(entry.unit_family));
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySkills, BuildTomlStringArray(entry.skills));
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyLevel, entry.level);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyLevelMax, entry.levelMax);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyVisionRadius, entry.visionRadius);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyGoldCost, entry.goldCost);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyTrustCost, entry.trustCost);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyFoodCost, entry.foodCost);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyHp, entry.hp);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyBuildingHp, entry.buildingHp);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMp, entry.mp);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyAttack, entry.attack);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyDefense, entry.defense);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMagic, entry.magic);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMagicDefense, entry.magicDefense);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySpeed, entry.speed);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMove, entry.move);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMaintainRange, entry.maintainRange);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyVisualScale, entry.visualScale);
+            block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyVisualOffset, entry.visualOffset.x, entry.visualOffset.y);
+            block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyShadowOffset, entry.shadowOffset.x, entry.shadowOffset.y);
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyPlacementAnchor, UnitPlacementAnchorToTomlValue(entry.placementAnchor));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyRenderSizeMode, UnitRenderSizeModeToTomlValue(entry.renderSizeMode));
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyGameplaySizeMul, entry.gameplaySizeMul);
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyArtWidthRef, UnitArtWidthReferenceToTomlValue(entry.artWidthReference));
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyArtWidthValue, entry.artWidthValue);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyArtWidthValueLineHorizontal, entry.artWidthValueLineHorizontal);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyArtWidthValueLineDiagUpRight, entry.artWidthValueLineDiagUpRight);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyArtWidthValueLineDiagUpLeft, entry.artWidthValueLineDiagUpLeft);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyArtKeepAspect, entry.artKeepAspect ? U"true" : U"false");
+            block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyLineIconHorizontalOffset, entry.lineIconHorizontalOffset.x, entry.lineIconHorizontalOffset.y);
+            block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyLineIconDiagUpRightOffset, entry.lineIconDiagUpRightOffset.x, entry.lineIconDiagUpRightOffset.y);
+            block += U"{} = [{}, {}]\n\n"_fmt(UnitCatalogToml::KeyLineIconDiagUpLeftOffset, entry.lineIconDiagUpLeftOffset.x, entry.lineIconDiagUpLeftOffset.y);
             writer.write(block);
         }
 

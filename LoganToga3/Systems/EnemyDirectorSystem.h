@@ -18,7 +18,7 @@ namespace LT3
             }
 
             const UnitDef& def = defs.units[world.units.defId[unit]];
-            if (def.role == UnitRole::Base && def.tag.lowercased() == U"home")
+            if (def.role == UnitRole::Base && def.unit_id.lowercased() == U"home")
             {
                 return world.units.position[unit] + Vec2{ -QuarterTileStep * 1.5, 0.0 };
             }

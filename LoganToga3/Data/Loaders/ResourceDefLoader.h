@@ -4,6 +4,15 @@
 
 namespace LT3
 {
+    namespace ResourceToml
+    {
+        inline constexpr auto KeyResources = U"Map001";
+        inline constexpr auto KeyKind = U"kind";
+        inline constexpr auto KeyId = U"id";
+        inline constexpr auto KeyName = U"name";
+        inline constexpr auto KeyIcon = U"icon";
+    }
+
     inline FilePath ResolveResourceTomlPath()
     {
         const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml";
@@ -82,9 +91,9 @@ namespace LT3
         }
 
         HashSet<String> loadedTags;
-        for (const auto resourceValue : toml[U"Map001"].tableArrayView())
+        for (const auto resourceValue : toml[ResourceToml::KeyResources].tableArrayView())
         {
-            const String tag = resourceValue[U"kind"].getOr<String>(U"").lowercased();
+            const String tag = resourceValue[ResourceToml::KeyKind].getOr<String>(U"").lowercased();
             if (tag.isEmpty() || loadedTags.contains(tag))
             {
                 continue;
@@ -94,9 +103,9 @@ namespace LT3
             const int32 passiveIncomePerSec = (kind == ResourceKind::Gold) ? 10 : 0;
             defs.addResource({
                 tag,
-                resourceValue[U"id"].getOr<String>(U""),
-                resourceValue[U"name"].getOr<String>(tag),
-                ResolveResourceIcon(kind, resourceValue[U"icon"].getOr<String>(U"")),
+                resourceValue[ResourceToml::KeyId].getOr<String>(U""),
+                resourceValue[ResourceToml::KeyName].getOr<String>(tag),
+                ResolveResourceIcon(kind, resourceValue[ResourceToml::KeyIcon].getOr<String>(U"")),
                 kind,
                 ResolveResourceColor(kind),
                 (kind == ResourceKind::Gold) ? 110 : 0,

@@ -1,10 +1,9 @@
 ﻿[[commands]]
-owner_tag = "Home"
-owner_tags = ["Home"]
-id = "000"
-name = "傭兵-若人"
+owner_tags = ["Home", "0"]
+id = "cmd_000"
+name = "カスクート傭兵の雇用"
 description = "汎用部隊傭兵-若人"
-icon = "NewbieMercenary.png"
+icon = "NewbieMercenary.gif"
 icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
@@ -22,37 +21,12 @@ use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
 spawn = "NewbieMercenary"
+spawns = ["NewbieMercenary", "1"]
 
 [[commands]]
-owner_tag = "Home"
-owner_tags = ["Home"]
-id = "001"
-name = "軽装歩兵"
-description = "汎用部隊傭兵-若人"
-icon = "chipGene006.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
-cost = { wood = 15 }
-build_time = 0.5
-category = "unit"
-requires = ["none"]
-is_move = false
-placement_mode = "point"
-line_axis_mode = "auto"
-line_thickness_cells = 1
-max_line_cells = 12
-use_right_drag_placement = false
-[[commands.result]]
-type = "unit"
-spawn = "NewbieMercenary_copy"
-
-[[commands]]
-owner_tag = "Home"
-owner_tags = ["Home"]
-id = "002"
-name = "A27軽工兵"
+owner_tags = ["Home", "0"]
+id = "cmd_001"
+name = "A8式工兵の招集"
 description = "汎用部隊傭兵-若人"
 icon = "pi.gif"
 icon_horizontal = "keisou-chipGene006.png"
@@ -72,14 +46,14 @@ use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
 spawn = "NewbieKouhei"
+spawns = ["NewbieKouhei", "2"]
 
 [[commands]]
-owner_tag = "LineInfantryM14Tumejo"
-owner_tags = ["LineInfantryM14Tumejo"]
-id = "000_copy_copy_copy"
-name = "ケッテンクラート"
+owner_tags = ["Home", "0"]
+id = "cmd_002"
+name = "軽装歩兵隊の編成"
 description = "汎用部隊傭兵-若人"
-icon = "kettenkrad.png"
+icon = "RightInf.gif"
 icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
@@ -96,13 +70,112 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "Kettenkrad"
+spawn = "NewbieMercenary_copy"
+spawns = ["NewbieMercenary_copy", "4"]
 
 [[commands]]
-owner_tag = "LineInfantryM14Tumejo_copy"
-owner_tags = ["LineInfantryM14Tumejo_copy"]
-id = "000"
-name = "チャクラム兵"
+owner_tags = ["NewbieKouhei", "2"]
+id = "build_barbed_wire"
+name = "鉄条網の敷設"
+description = "汎用部隊傭兵-若人"
+icon = "ironWall.png"
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "3"
+
+[[commands]]
+owner_tags = ["NewbieMercenary", "1"]
+id = "establish_casque_base"
+name = "カスクート式拠点の設立"
+description = "汎用部隊傭兵-若人"
+icon = "bu-keiso.png"
+icons = ["bu-keiso.png", "decal_ido.png"]
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "5"
+
+[[commands]]
+owner_tags = ["NewbieKouhei", "2"]
+id = "assemble_engineer_warehouse"
+name = "工兵作業倉庫の組み立て"
+description = "汎用部隊傭兵-若人"
+icon = "bu-keiso.png"
+icons = ["bu-keiso.png", "decal_sakuraLike.png"]
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "6"
+
+[[commands]]
+owner_tags = ["NewbieMercenary_copy", "4"]
+id = "place_mobile_marker"
+name = "機動部隊招集マーカー設置"
+description = "汎用部隊傭兵-若人"
+icon = "bu-keiso.png"
+icons = ["bu-keiso.png", "uma.png"]
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "7"
+
+[[commands]]
+owner_tags = ["Home", "5"]
+id = "cmd_003"
+name = "チャクラム兵の雇用"
 description = "汎用部隊傭兵-若人"
 icon = "Chakram.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -121,38 +194,13 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "NewbieMercenary_copy_copy2"
+spawn = "NewbieMercenary"
+spawns = ["NewbieMercenary", "8"]
 
 [[commands]]
-owner_tag = "LineInfantryM14Tumejo_copy"
-owner_tags = ["LineInfantryM14Tumejo_copy"]
-id = "001"
-name = "シュビムワーゲン"
-description = "汎用部隊傭兵-若人"
-icon = "unicarri.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
-cost = { wood = 15 }
-build_time = 0.5
-category = "unit"
-requires = ["none"]
-is_move = false
-placement_mode = "point"
-line_axis_mode = "auto"
-line_thickness_cells = 1
-max_line_cells = 12
-use_right_drag_placement = false
-[[commands.result]]
-type = "unit"
-spawn = "BrenGunCarrier"
-
-[[commands]]
-owner_tag = "LineInfantryM14Tumejo_copy"
-owner_tags = ["LineInfantryM14Tumejo_copy"]
-id = "002"
-name = "ライフル銃兵"
+owner_tags = ["Home", "5"]
+id = "cmd_004"
+name = "ライフル銃兵の雇用"
 description = "汎用部隊傭兵-若人"
 icon = "chipGene001.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -171,13 +219,38 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "LineInfantryM14"
+spawn = "NewbieMercenary"
+spawns = ["NewbieMercenary", "9"]
 
 [[commands]]
-owner_tag = "LineInfantryM14Tumejo"
-owner_tags = ["LineInfantryM14Tumejo"]
-id = "000_copy_copy_copy"
-name = "ファランクス"
+owner_tags = ["Home", "5"]
+id = "cmd_005"
+name = "ブレンガン・キャリアーの雇用"
+description = "汎用部隊傭兵-若人"
+icon = "unicarri.png"
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "NewbieMercenary"
+spawns = ["NewbieMercenary", "10"]
+
+[[commands]]
+owner_tags = ["Home", "6"]
+id = "cmd_006"
+name = "ファランクスの招集"
 description = "汎用部隊傭兵-若人"
 icon = "Phalanx.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -196,13 +269,38 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "LineInfantryM14_copy"
+spawn = "NewbieKouhei"
+spawns = ["NewbieKouhei", "11"]
 
 [[commands]]
-owner_tag = "keisouTumejo"
-owner_tags = ["keisouTumejo"]
-id = "000"
-name = "偵察騎兵"
+owner_tags = ["Home", "6"]
+id = "cmd_007"
+name = "ケッテンクラートの招集"
+description = "汎用部隊傭兵-若人"
+icon = "kettenkrad.png"
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 15 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+[[commands.result]]
+type = "unit"
+spawn = "NewbieMercenary"
+spawns = ["NewbieMercenary", "12"]
+
+[[commands]]
+owner_tags = ["Home", "7"]
+id = "cmd_008"
+name = "偵察騎兵の編成"
 description = "汎用部隊傭兵-若人"
 icon = "偵察騎兵.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -221,13 +319,13 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "NewbieMercenary_copy_copy"
+spawn = "NewbieMercenary_copy"
+spawns = ["NewbieMercenary_copy", "13"]
 
 [[commands]]
-owner_tag = "keisouTumejo"
-owner_tags = ["keisouTumejo"]
-id = "001"
-name = "槍騎兵"
+owner_tags = ["Home", "7"]
+id = "cmd_009"
+name = "槍騎兵の編成"
 description = "汎用部隊傭兵-若人"
 icon = "槍騎兵.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -246,13 +344,13 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "NewbieMercenary_copy_copy_copy"
+spawn = "NewbieMercenary_copy"
+spawns = ["NewbieMercenary_copy", "14"]
 
 [[commands]]
-owner_tag = "keisouTumejo"
-owner_tags = ["keisouTumejo"]
-id = "002"
-name = "バイクライフル"
+owner_tags = ["Home", "7"]
+id = "cmd_010"
+name = "バイクライフルの編成"
 description = "汎用部隊傭兵-若人"
 icon = "バイクライフル.png"
 icon_horizontal = "keisou-chipGene006.png"
@@ -271,79 +369,5 @@ max_line_cells = 12
 use_right_drag_placement = false
 [[commands.result]]
 type = "unit"
-spawn = "NewbieMercenary_copy_copy_copy_copy"
-
-[[commands]]
-owner_tag = "NewbieMercenary"
-owner_tags = ["NewbieMercenary"]
-id = "003"
-name = "傭兵-若人 copy"
-description = "汎用部隊傭兵-若人"
-icon = "bu-keiso.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
-cost = { wood = 15 }
-build_time = 0.5
-category = "unit"
-requires = ["none"]
-is_move = false
-placement_mode = "point"
-line_axis_mode = "auto"
-line_thickness_cells = 1
-max_line_cells = 12
-use_right_drag_placement = false
-[[commands.result]]
-type = "unit"
-spawn = "LineInfantryM14Tumejo_copy"
-
-[[commands]]
-owner_tag = "NewbieKouhei"
-owner_tags = ["NewbieKouhei"]
-id = "000_copy_copy"
-name = "傭兵-若人 copy copy"
-description = "汎用部隊傭兵-若人"
-icon = "bu-keiso.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
-cost = { wood = 15 }
-build_time = 0.5
-category = "unit"
-requires = ["none"]
-is_move = false
-placement_mode = "point"
-line_axis_mode = "auto"
-line_thickness_cells = 1
-max_line_cells = 12
-use_right_drag_placement = false
-[[commands.result]]
-type = "unit"
-spawn = "LineInfantryM14Tumejo"
-
-[[commands]]
-owner_tag = "NewbieMercenary_copy"
-owner_tags = ["NewbieMercenary_copy"]
-id = "000_copy_copy_copy"
-name = "傭兵-若人 copy copy copy"
-description = "汎用部隊傭兵-若人"
-icon = "bu-keiso.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
-cost = { wood = 15 }
-build_time = 0.5
-category = "unit"
-requires = ["none"]
-is_move = false
-placement_mode = "point"
-line_axis_mode = "auto"
-line_thickness_cells = 1
-max_line_cells = 12
-use_right_drag_placement = false
-[[commands.result]]
-type = "unit"
-spawn = "keisouTumejo"
+spawn = "NewbieMercenary_copy"
+spawns = ["NewbieMercenary_copy", "15"]

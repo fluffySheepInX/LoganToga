@@ -30,12 +30,12 @@ namespace LT3
 
     inline UnitRole ResolveCatalogUnitRole(const UnitCatalogEntry& entry)
     {
-        if (entry.kind.lowercased() == U"building" || entry.classBuild.lowercased() == U"home")
+        if (entry.kind.lowercased() == U"building" || entry.building_category.lowercased() == U"home")
         {
             return UnitRole::Base;
         }
 
-        const String loweredTag = entry.tag.lowercased();
+        const String loweredTag = entry.unit_id.lowercased();
         if (loweredTag.includes(U"worker") || loweredTag.includes(U"kouhei"))
         {
             return UnitRole::Worker;
@@ -51,7 +51,7 @@ namespace LT3
 
     inline bool IsBarrierUnitEntry(const UnitCatalogEntry& entry)
     {
-        const String loweredTag = entry.tag.lowercased();
+        const String loweredTag = entry.unit_id.lowercased();
         return loweredTag.includes(U"ironwall") || loweredTag.includes(U"barbed") || loweredTag.includes(U"wire");
     }
 
@@ -59,11 +59,11 @@ namespace LT3
     {
         for (const auto& entry : catalog.entries)
         {
-            if (entry.tag.lowercased() == U"home")
+            if (entry.unit_id.lowercased() == U"home")
             {
                 const int32 hp = (entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);
                 return UnitDef{
-                    entry.tag,
+                    entry.unit_id,
                     entry.name.isEmpty() ? U"Command Base" : entry.name,
                     UnitRole::Base,
                     hp,
@@ -77,8 +77,8 @@ namespace LT3
                     baseSkill,
                     Palette::Slategray,
                     entry.visualScale,
-                    entry.classBuild,
-                    entry.classTag,
+                    entry.building_category,
+                    entry.unit_family,
                     false
                 };
             }
@@ -99,7 +99,7 @@ namespace LT3
 
         for (const auto& entry : unitCatalog.entries)
         {
-            if (entry.tag.isEmpty() || defs.unitByTag.contains(entry.tag))
+            if (entry.unit_id.isEmpty() || defs.unitByTag.contains(entry.unit_id))
             {
                 continue;
             }
@@ -118,8 +118,8 @@ namespace LT3
             const bool blocksTileMovement = (role == UnitRole::Barrier);
 
             defs.addUnit({
-                entry.tag,
-                entry.name.isEmpty() ? entry.tag : entry.name,
+                entry.unit_id,
+                entry.name.isEmpty() ? entry.unit_id : entry.name,
                 role,
                 hp,
                 entry.attack,
@@ -132,8 +132,8 @@ namespace LT3
                 skill,
                 (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
                 entry.visualScale,
-                entry.classBuild,
-                entry.classTag,
+                entry.building_category,
+                entry.unit_family,
                 blocksTileMovement
             });
         }

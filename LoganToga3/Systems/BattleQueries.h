@@ -39,9 +39,9 @@ namespace LT3
         }
 
         const UnitDef& def = defs.units[world.units.defId[unit]];
-        return EqualsIgnoreCase(def.tag, ownerTag)
-            || EqualsIgnoreCase(def.classBuild, ownerTag)
-            || EqualsIgnoreCase(def.classTag, ownerTag);
+        return EqualsIgnoreCase(def.unit_id, ownerTag)
+            || EqualsIgnoreCase(def.building_category, ownerTag)
+            || EqualsIgnoreCase(def.unit_family, ownerTag);
     }
 
     inline bool DoesUnitMatchAnyOwnerTag(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
@@ -232,7 +232,7 @@ namespace LT3
         for (UnitDefId id = 0; id < defs.units.size(); ++id)
         {
             const UnitDef& def = defs.units[id];
-            if (def.role == UnitRole::Base && def.tag.lowercased() == U"home")
+            if (def.role == UnitRole::Base && def.unit_id.lowercased() == U"home")
             {
                 return id;
             }

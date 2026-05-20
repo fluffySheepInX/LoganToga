@@ -150,7 +150,7 @@ namespace LT3
 		const double atkY = factionY + lineStep;
 		const double spdY = atkY + lineStep;
 		const double taskY = spdY + lineStep;
-		uiFont(U"Tag: {}"_fmt(def.tag)).draw(info.x + 18.0, tagY, Palette::Skyblue);
+		uiFont(U"Unit ID: {}"_fmt(def.unit_id)).draw(info.x + 18.0, tagY, Palette::Skyblue);
 		uiFont(U"Faction: {}"_fmt(FormatFaction(world.units.faction[selected]))).draw(info.x + 18.0, factionY, Palette::Skyblue);
 		uiFont(U"ATK: {}"_fmt(def.attack)).draw(info.x + 18.0, atkY, Palette::Lightgray);
 		uiFont(U"SPD: {:.0f}"_fmt(def.speed)).draw(info.x + 18.0, spdY, Palette::Lightgray);

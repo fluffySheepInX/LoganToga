@@ -68,7 +68,7 @@ namespace LT3
 		}
 
 		uiFont(entry.name).draw(14, panel.x + 18.0, panel.y + 52.0, Palette::White);
-		uiFont(U"tag:{}  image:{}"_fmt(entry.tag, entry.image)).draw(11, panel.x + 18.0, panel.y + 72.0, Palette::Lightgray);
+		uiFont(U"unit_id:{}  image:{}"_fmt(entry.unit_id, entry.image)).draw(11, panel.x + 18.0, panel.y + 72.0, Palette::Lightgray);
 
 		const RectF listHeader = EditorUnitParamListHeaderRect(editor);
 		listHeader.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });

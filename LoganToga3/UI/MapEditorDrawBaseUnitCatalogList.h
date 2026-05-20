@@ -19,6 +19,15 @@ namespace LT3
 		uiFont(U"{} entries"_fmt(catalog.entries.size())).draw(560, 86, Palette::Gold);
 		uiFont(catalog.statusText).draw(11, 44, 106, Palette::Lightgray);
 
+		const RectF normalizeIdsRect = EditorUnitNormalizeIdsRect();
+		normalizeIdsRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 })
+			.drawFrame(2, normalizeIdsRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		uiFont(U"IDを一括変更").drawAt(13, normalizeIdsRect.center(), Palette::White);
+		const RectF storeIdToTagRect = EditorUnitStoreIdToTagRect();
+		storeIdToTagRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 })
+			.drawFrame(2, storeIdToTagRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		uiFont(U"unit_idにIDを格納").drawAt(13, storeIdToTagRect.center(), Palette::White);
+
 		const double maxScroll = Max(0.0, EditorUnitListContentHeight(catalog) - viewport.h);
 		if (panel.mouseOver())
 		{
@@ -92,8 +101,8 @@ namespace LT3
 			{
 				previewRect.draw(isBuilding ? ColorF{ 0.72, 0.45, 0.18 } : ColorF{ 0.18, 0.42, 0.72 });
 			}
-			uiFont(U"{}  scale:{:.2f}"_fmt(entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
-			uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.tag, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
+			uiFont(U"[{}] {}  scale:{:.2f}"_fmt(entry.id, entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
+			uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.unit_id, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
 			uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  MOVE:{}  G:{} T:{} F:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.move, entry.goldCost, entry.trustCost, entry.foodCost)).draw(11, row.x + 70, row.y + 51, Palette::Gold);
 
 			const RectF moveUpRect = EditorUnitRowMoveUpRect(row);

@@ -1132,5 +1132,11 @@
     <ClInclude Include="UI\MapEditorDrawBaseUnitParameterEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\BuildActionDefTomlHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

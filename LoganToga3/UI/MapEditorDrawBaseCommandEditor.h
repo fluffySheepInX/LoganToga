@@ -47,20 +47,20 @@ namespace LT3
 	inline bool IsCommandEditorFacilityUnit(const UnitCatalogEntry& entry)
 	{
 		const String kind = entry.kind.lowercased();
-		const String classBuild = entry.classBuild.lowercased();
-		return (kind == U"building") || (classBuild == U"home");
+		const String buildingCategory = entry.building_category.lowercased();
+		return (kind == U"building") || (buildingCategory == U"home");
 	}
 
 	inline bool CommandEditorActionOwnedByEntry(const BuildActionDef& action, const UnitCatalogEntry& entry)
 	{
-		if (CommandEditorOwnerTagEquals(action.ownerTag, entry.tag))
+		if (CommandEditorOwnerTagEquals(action.ownerTag, entry.unit_id))
 		{
 			return true;
 		}
 
 		for (const auto& ownerTag : action.ownerTags)
 		{
-			if (CommandEditorOwnerTagEquals(ownerTag, entry.tag))
+			if (CommandEditorOwnerTagEquals(ownerTag, entry.unit_id))
 			{
 				return true;
 			}
@@ -90,6 +90,51 @@ namespace LT3
 		}
 
 		return false;
+	}
+
+	inline Array<FilePath> CommandEditorIconPaths(const BuildActionDef& action)
+	{
+		Array<FilePath> paths;
+		if (!action.iconLayers.isEmpty())
+		{
+			for (const auto& icon : action.iconLayers)
+			{
+				if (icon.isEmpty())
+				{
+					continue;
+				}
+
+				paths << ResolveBuildIconPath(icon);
+			}
+		}
+		else if (!action.icon.isEmpty())
+		{
+			paths << ResolveBuildIconPath(action.icon);
+		}
+
+		return paths;
+	}
+
+	inline void DrawCommandEditorLayeredIcon(const BuildActionDef& action, const RectF& iconRect)
+	{
+		const Array<FilePath> iconPaths = CommandEditorIconPaths(action);
+		for (const auto& iconPath : iconPaths)
+		{
+			if (!FileSystem::Exists(iconPath))
+			{
+				continue;
+			}
+
+			auto& cache = BuildingEditorTextureCache();
+			if (!cache.contains(iconPath))
+			{
+				cache.emplace(iconPath, Texture{ iconPath });
+			}
+
+			const Texture& iconTexture = cache.at(iconPath);
+			const double fitScale = Min((iconRect.w - 4.0) / Max(1.0, static_cast<double>(iconTexture.width())), (iconRect.h - 4.0) / Max(1.0, static_cast<double>(iconTexture.height())));
+			iconTexture.scaled(Min(1.0, fitScale)).drawAt(iconRect.center());
+		}
 	}
 
 	inline void DrawCommandEditor(MapEditorState& editor, const UnitCatalog& catalog, const DefinitionStores& defs, const Font& uiFont)
@@ -136,18 +181,7 @@ namespace LT3
 
 			const RectF iconRect{ row.x + 8.0, row.y + 9.0, 40.0, 40.0 };
 			iconRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
-			const FilePath iconPath = ResolveBuildIconPath(action.icon);
-			if (FileSystem::Exists(iconPath))
-			{
-				auto& cache = BuildingEditorTextureCache();
-				if (!cache.contains(iconPath))
-				{
-					cache.emplace(iconPath, Texture{ iconPath });
-				}
-				const Texture& iconTexture = cache.at(iconPath);
-				const double fitScale = Min((iconRect.w - 4.0) / Max(1.0, static_cast<double>(iconTexture.width())), (iconRect.h - 4.0) / Max(1.0, static_cast<double>(iconTexture.height())));
-				iconTexture.scaled(Min(1.0, fitScale)).drawAt(iconRect.center());
-			}
+			DrawCommandEditorLayeredIcon(action, iconRect);
 
 			uiFont(action.name).draw(12, row.x + 56.0, row.y + 7.0, Palette::White);
 			uiFont(U"{}:{}"_fmt(action.ownerTag, action.id)).draw(10, row.x + 56.0, row.y + 29.0, Palette::Lightgray);
@@ -203,7 +237,8 @@ namespace LT3
 		}
 
 		constexpr int32 columns = 5;
-		const int32 unitCount = static_cast<int32>(catalog.entries.size());
+		const Array<int32> sortedUnitIndices = SortedUnitCatalogEntryIndicesById(catalog);
+		const int32 unitCount = static_cast<int32>(sortedUnitIndices.size());
 		const int32 unitRows = (unitCount + columns - 1) / columns;
 		const double unitContentHeight = unitRows * 96.0 + 8.0;
 		const double unitMaxScroll = Max(0.0, unitContentHeight - unitViewport.h);
@@ -231,7 +266,7 @@ namespace LT3
 			const double unitViewportBottom = unitViewport.y + unitViewport.h;
 			for (int32 i = 0; i < unitCount; ++i)
 			{
-				const UnitCatalogEntry& entry = catalog.entries[i];
+				const UnitCatalogEntry& entry = catalog.entries[sortedUnitIndices[i]];
 				const RectF cell = EditorCommandUnitCellRect(unitViewport, i, columns, editor.commandUnitListScroll);
 				if ((cell.y + cell.h) < unitViewport.y || unitViewportBottom < cell.y)
 				{
@@ -243,7 +278,7 @@ namespace LT3
 					: ((selectedAction.resultType == BuildActionResultType::Unit)
 						&& selectedSpawnTags.any([&](const String& spawnTag)
 						{
-							return CommandEditorOwnerTagEquals(entry.tag, spawnTag);
+							return CommandEditorOwnerTagEquals(entry.unit_id, spawnTag);
 						}));
 				cell.draw(selectedByMode ? ColorF{ 0.15, 0.21, 0.15, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
 					.drawFrame(2, cell.mouseOver() ? ColorF{ 0.0, 0.75, 1.0 } : (selectedByMode ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.14 }));

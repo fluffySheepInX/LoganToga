@@ -208,6 +208,18 @@ namespace LT3
 		return RectF{ row.x + 70.0, row.y + 6.0, 360.0, 30.0 };
 	}
 
+	inline RectF EditorUnitNormalizeIdsRect()
+	{
+		const RectF panel = EditorUnitListPanelRect();
+		return RectF{ panel.x + 20.0, panel.y + panel.h + 8.0, 164.0, 34.0 };
+	}
+
+	inline RectF EditorUnitStoreIdToTagRect()
+	{
+		const RectF normalizeRect = EditorUnitNormalizeIdsRect();
+		return RectF{ normalizeRect.x + normalizeRect.w + 8.0, normalizeRect.y, 198.0, normalizeRect.h };
+	}
+
 	inline RectF EditorCommandPanelRect()
 	{
 		return RectF{ 692.0, 72.0, 876.0, 610.0 };

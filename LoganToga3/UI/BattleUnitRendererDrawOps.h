@@ -24,16 +24,16 @@ namespace LT3
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
 		uiFont(U"Selection Debug").draw(44, 272, Palette::White);
 
-		String selectionText = U"Selected unit: id=n/a tag=n/a";
+		String selectionText = U"Selected unit: id=n/a unit_id=n/a";
 		String visualText = U"Visual: kind=n/a image=n/a exists=n/a";
 		String pathText = U"Path: n/a";
 		const UnitId selected = GetSelectedUnit(world);
 		if (selected != InvalidUnitId)
 		{
 			const UnitDef& def = defs.units[world.units.defId[selected]];
-			selectionText = U"Selected unit: id={} tag={} role={}"_fmt(selected, def.tag, static_cast<int32>(def.role));
+			selectionText = U"Selected unit: id={} unit_id={} role={}"_fmt(selected, def.unit_id, static_cast<int32>(def.role));
 
-			const UnitVisualInfo visualInfo = FindUnitVisualInfoByTag(assets, def.tag);
+			const UnitVisualInfo visualInfo = FindUnitVisualInfoByTag(assets, def.unit_id);
 			const FilePath resolvedPath = ResolveCatalogVisualPath(visualInfo.kind, visualInfo.image);
 
 			const String visualKind = visualInfo.kind.isEmpty() ? U"<empty>" : visualInfo.kind;
@@ -105,7 +105,7 @@ namespace LT3
 		Vec2 shadowCenter = pos;
 		if (assets)
 		{
-			const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.tag);
+			const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.unit_id);
 			if (!visual.image.isEmpty())
 			{
 				const Vec2 shadowOffset = Vec2{ static_cast<double>(visual.shadowOffset.x), static_cast<double>(visual.shadowOffset.y) } * visual.visualScale;
@@ -122,7 +122,7 @@ namespace LT3
 		Vec2 iconOffset{ 0, 0 };
 		if (!iconOverride.isEmpty() && assets)
 		{
-			const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.tag);
+			const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.unit_id);
 			const String overrideName = String{ iconOverride };
 			if (!visual.lineIconHorizontalName.isEmpty() && overrideName == visual.lineIconHorizontalName)
 			{

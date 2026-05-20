@@ -9,8 +9,8 @@ namespace LT3
 		inline bool DoesCatalogEntryMatchStoredOwnerTag(const UnitCatalogEntry& entry, const String& ownerTag)
 		{
 			return !ownerTag.isEmpty()
-				&& !entry.tag.isEmpty()
-				&& entry.tag.lowercased() == ownerTag.lowercased();
+				&& !entry.unit_id.isEmpty()
+				&& entry.unit_id.lowercased() == ownerTag.lowercased();
 		}
 
 	inline bool DoesCatalogEntryMatchOwnerTag(const UnitCatalogEntry& entry, const String& ownerTag)
@@ -21,9 +21,9 @@ namespace LT3
 		}
 
 		const String ownerLower = ownerTag.lowercased();
-		return (!entry.tag.isEmpty() && entry.tag.lowercased() == ownerLower)
-			|| (!entry.classBuild.isEmpty() && entry.classBuild.lowercased() == ownerLower)
-			|| (!entry.classTag.isEmpty() && entry.classTag.lowercased() == ownerLower);
+		return (!entry.unit_id.isEmpty() && entry.unit_id.lowercased() == ownerLower)
+			|| (!entry.building_category.isEmpty() && entry.building_category.lowercased() == ownerLower)
+			|| (!entry.unit_family.isEmpty() && entry.unit_family.lowercased() == ownerLower);
 	}
 
 	inline bool IsCatalogEntryBoundToAction(const UnitCatalogEntry& entry, const BuildActionDef& action)
