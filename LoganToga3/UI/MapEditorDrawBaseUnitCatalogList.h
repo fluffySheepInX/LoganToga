@@ -103,7 +103,7 @@ namespace LT3
 			}
 			uiFont(U"[{}] {}  scale:{:.2f}"_fmt(entry.id, entry.name, entry.visualScale)).draw(15, row.x + 70, row.y + 8, Palette::White);
 			uiFont(U"{}  {}  image:{}"_fmt(entry.kind, entry.unit_id, entry.image)).draw(11, row.x + 70, row.y + 31, Palette::Lightgray);
-			uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  MOVE:{}  G:{} T:{} F:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.move, entry.goldCost, entry.trustCost, entry.foodCost)).draw(11, row.x + 70, row.y + 51, Palette::Gold);
+			uiFont(U"HP:{} / BHP:{}  ATK:{}  DEF:{}  SPD:{}  MOVE:{}  RANGE:{}"_fmt(entry.hp, entry.buildingHp, entry.attack, entry.defense, entry.speed, entry.move, entry.maintainRange)).draw(11, row.x + 70, row.y + 51, Palette::Gold);
 
 			const RectF moveUpRect = EditorUnitRowMoveUpRect(row);
 			const RectF moveDownRect = EditorUnitRowMoveDownRect(row);

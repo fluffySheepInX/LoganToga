@@ -114,9 +114,6 @@ namespace LT3
 			break;
 		default:
 			rows = {
-				{ U"GOLD", U"{}"_fmt(entry.goldCost), U"Gold 資源コストを増減します" },
-				{ U"TRUST", U"{}"_fmt(entry.trustCost), U"Trust 資源コストを増減します" },
-				{ U"FOOD", U"{}"_fmt(entry.foodCost), U"Food 資源コストを増減します" },
 				{ U"RANGE", U"{}"_fmt(entry.maintainRange), U"maintain_range を増減します" }
 			};
 			break;

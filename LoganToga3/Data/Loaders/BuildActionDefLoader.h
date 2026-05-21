@@ -57,12 +57,18 @@ namespace LT3
             action.createCount = Max<int32>(1, commandValue[BuildActionToml::KeyCreateCount].getOr<int32>(1));
 
             int32 costGold = 0;
+            int32 costTrust = 0;
+            int32 costFood = 0;
             const TOMLValue costTable = commandValue[BuildActionToml::KeyCost];
             if (costTable.isTable())
             {
                 costGold = costTable[String{ BuildActionToml::KeyWood }].getOr<int32>(costTable[String{ BuildActionToml::KeyGold }].getOr<int32>(0));
+                costTrust = costTable[String{ BuildActionToml::KeyTrust }].getOr<int32>(0);
+                costFood = costTable[String{ BuildActionToml::KeyFood }].getOr<int32>(0);
             }
             action.costGold = costGold;
+            action.costTrust = costTrust;
+            action.costFood = costFood;
             action.buildTimeSec = commandValue[BuildActionToml::KeyBuildTime].getOr<double>(0.0);
             action.isMove = commandValue[BuildActionToml::KeyIsMove].getOr<bool>(false);
             action.placementMode = ParseBuildPlacementMode(commandValue[BuildActionToml::KeyPlacementMode].getOr<String>(U"point"));
@@ -168,7 +174,9 @@ namespace LT3
             tomlText += U"icon_diag_up_right = \"" + BuildActionTomlEscape(action.lineIconDiagUpRight) + U"\"\n";
             tomlText += U"icon_diag_up_left = \"" + BuildActionTomlEscape(action.lineIconDiagUpLeft) + U"\"\n";
             tomlText += U"create_count = {}\n"_fmt(Max(1, action.createCount));
-            tomlText += U"cost = { wood = " + Format(Max(0, action.costGold)) + U" }\n";
+            tomlText += U"cost = { wood = " + Format(Max(0, action.costGold))
+                + U", trust = " + Format(Max(0, action.costTrust))
+                + U", food = " + Format(Max(0, action.costFood)) + U" }\n";
             tomlText += U"build_time = {}\n"_fmt(Max(0.0, action.buildTimeSec));
             tomlText += U"category = \"" + BuildActionTomlEscape(action.category) + U"\"\n";
             tomlText += U"requires = " + BuildTomlStringArrayValue(action.requirements) + U"\n";

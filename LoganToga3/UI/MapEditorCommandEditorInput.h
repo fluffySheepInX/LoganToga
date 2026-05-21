@@ -197,6 +197,7 @@ namespace LT3
 		const RectF normalizeIdsRect = EditorCommandNormalizeIdsRect();
 		const RectF saveRect = EditorCommandSaveRect();
 		const RectF closeRect = EditorCommandCloseRect();
+		const RectF inspectTopViewport = EditorCommandInspectTopViewportRect();
 
 		const int32 commandCount = static_cast<int32>(defs.buildActions.size());
 		if (commandCount > 0)
@@ -295,6 +296,131 @@ namespace LT3
 			}
 
 			BuildActionDef& action = defs.buildActions[editor.selectedCommandActionIndex];
+			if (editor.commandEditorMode == 2)
+			{
+				const bool showLineSettings = (action.placementMode == BuildPlacementMode::Line);
+				const double inspectContentHeight = showLineSettings ? 544.0 : 460.0;
+				const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
+				editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
+				if (inspectTopViewport.mouseOver())
+				{
+					editor.commandInspectScroll = Clamp(editor.commandInspectScroll - Mouse::Wheel() * 42.0, 0.0, inspectMaxScroll);
+					consumed = true;
+				}
+
+				const double scroll = editor.commandInspectScroll;
+				const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
+				const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
+				const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
+				const RectF lineDragPlacementToggleRect = EditorCommandLineDragPlacementToggleRect(scroll);
+				const RectF lineAxisAutoRect = EditorCommandLineAxisAutoRect(scroll);
+				const RectF lineAxisHorizontalRect = EditorCommandLineAxisHorizontalRect(scroll);
+				const RectF lineAxisVerticalRect = EditorCommandLineAxisVerticalRect(scroll);
+				const Array<RectF> costRows = { EditorCommandCostRowRect(0, scroll), EditorCommandCostRowRect(1, scroll), EditorCommandCostRowRect(2, scroll) };
+
+				if (placementToggleRect.leftClicked())
+				{
+					action.isMove = !action.isMove;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command placement toggled: {} -> {}"_fmt(action.name, action.isMove ? U"ON" : U"OFF");
+					consumed = true;
+				}
+				if (placementModePointRect.leftClicked())
+				{
+					action.placementMode = BuildPlacementMode::Point;
+					action.useRightDragPlacement = false;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command placement mode: {} -> point"_fmt(action.name);
+					consumed = true;
+				}
+				if (placementModeLineRect.leftClicked())
+				{
+					action.placementMode = BuildPlacementMode::Line;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command placement mode: {} -> line"_fmt(action.name);
+					consumed = true;
+				}
+				if (action.placementMode == BuildPlacementMode::Line && lineDragPlacementToggleRect.leftClicked())
+				{
+					action.useRightDragPlacement = !action.useRightDragPlacement;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command line drag input: {} -> {}"_fmt(action.name, action.useRightDragPlacement ? U"right-drag" : U"click-only");
+					consumed = true;
+				}
+				if (action.placementMode == BuildPlacementMode::Line && lineAxisAutoRect.leftClicked())
+				{
+					action.lineAxisMode = BuildLineAxisMode::Auto;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command line axis: {} -> auto"_fmt(action.name);
+					consumed = true;
+				}
+				if (action.placementMode == BuildPlacementMode::Line && lineAxisHorizontalRect.leftClicked())
+				{
+					action.lineAxisMode = BuildLineAxisMode::HorizontalOnly;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command line axis: {} -> horizontal"_fmt(action.name);
+					consumed = true;
+				}
+				if (action.placementMode == BuildPlacementMode::Line && lineAxisVerticalRect.leftClicked())
+				{
+					action.lineAxisMode = BuildLineAxisMode::VerticalOnly;
+					editor.commandBindingsDirty = true;
+					editor.statusText = U"Command line axis: {} -> vertical"_fmt(action.name);
+					consumed = true;
+				}
+
+				auto adjustCostValue = [&](int32& value, int32 buttonIndex)
+				{
+					if (buttonIndex == 0)
+					{
+						value = Max(0, value - 10);
+					}
+					else if (buttonIndex == 1)
+					{
+						value = Min(99999, value + 10);
+					}
+					else
+					{
+						value = 0;
+					}
+				};
+
+				for (int32 rowIndex = 0; rowIndex < static_cast<int32>(costRows.size()); ++rowIndex)
+				{
+					for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+					{
+						const RectF buttonRect = EditorCommandCostButtonRect(costRows[rowIndex], buttonIndex);
+						if (!buttonRect.leftClicked())
+						{
+							continue;
+						}
+
+						if (rowIndex == 0)
+						{
+							adjustCostValue(action.costGold, buttonIndex);
+							editor.statusText = U"Command cost updated: {} Gold={}"_fmt(action.name, action.costGold);
+						}
+						else if (rowIndex == 1)
+						{
+							adjustCostValue(action.costTrust, buttonIndex);
+							editor.statusText = U"Command cost updated: {} Trust={}"_fmt(action.name, action.costTrust);
+						}
+						else
+						{
+							adjustCostValue(action.costFood, buttonIndex);
+							editor.statusText = U"Command cost updated: {} Food={}"_fmt(action.name, action.costFood);
+						}
+
+						editor.commandBindingsDirty = true;
+						consumed = true;
+						break;
+					}
+					if (consumed)
+					{
+						break;
+					}
+				}
+			}
 			const double unitViewportBottom = unitViewport.y + unitViewport.h;
 			if (editor.commandEditorMode != 2)
 			{

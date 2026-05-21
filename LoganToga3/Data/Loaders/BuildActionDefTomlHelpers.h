@@ -4,7 +4,7 @@
 
 namespace LT3
 {
-	namespace BuildActionToml
+		namespace BuildActionToml
 	{
 		inline constexpr auto KeyCommands = U"commands";
 		inline constexpr auto KeyOwnerTag = U"owner_tag";
@@ -27,6 +27,8 @@ namespace LT3
 		inline constexpr auto KeyCost = U"cost";
 		inline constexpr auto KeyWood = U"wood";
 		inline constexpr auto KeyGold = U"gold";
+		inline constexpr auto KeyTrust = U"trust";
+		inline constexpr auto KeyFood = U"food";
 		inline constexpr auto KeyBuildTime = U"build_time";
 		inline constexpr auto KeyIsMove = U"is_move";
 		inline constexpr auto KeyPlacementMode = U"placement_mode";

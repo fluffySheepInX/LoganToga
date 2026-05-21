@@ -9,3 +9,14 @@ icon_diag_up_right = "ironWallNanameMigi.png"
 icon_diag_up_left = "ironWallNanameHidari.png"
 
 
+[[overrides]]
+
+action_tag = "build_barbed_wire"
+
+icon_horizontal = "ironWallYoko.png"
+
+icon_diag_up_right = "ironWallNanameMigi.png"
+
+icon_diag_up_left = "ironWallNanameHidari.png"
+
+

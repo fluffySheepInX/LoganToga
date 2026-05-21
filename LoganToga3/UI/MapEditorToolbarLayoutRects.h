@@ -277,6 +277,81 @@ namespace LT3
 		return RectF{ panel.x + panel.w - 112.0, panel.y + panel.h - 56.0, 88.0, 34.0 };
 	}
 
+	inline RectF EditorCommandInspectBottomPanelRect()
+	{
+		const RectF viewport = EditorCommandUnitViewportRect();
+		return RectF{ viewport.x, viewport.y + viewport.h - 76.0, viewport.w, 76.0 };
+	}
+
+	inline RectF EditorCommandInspectTopViewportRect()
+	{
+		const RectF viewport = EditorCommandUnitViewportRect();
+		const RectF bottomPanel = EditorCommandInspectBottomPanelRect();
+		return RectF{ viewport.x, viewport.y, viewport.w, Max(120.0, bottomPanel.y - viewport.y - 8.0) };
+	}
+
+	inline RectF EditorCommandPlacementToggleRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + 168.0 - scroll, Min(340.0, viewport.w - 24.0), 30.0 };
+	}
+
+	inline RectF EditorCommandPlacementModePointRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + 224.0 - scroll, Min(164.0, (viewport.w - 36.0) * 0.5), 28.0 };
+	}
+
+	inline RectF EditorCommandPlacementModeLineRect(double scroll = 0.0)
+	{
+		const RectF pointRect = EditorCommandPlacementModePointRect(scroll);
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		const double rightMargin = 12.0;
+		const double spacing = 12.0;
+		const double width = Min(164.0, Max(80.0, viewport.x + viewport.w - rightMargin - (pointRect.x + pointRect.w + spacing)));
+		return RectF{ pointRect.x + pointRect.w + spacing, pointRect.y, width, pointRect.h };
+	}
+
+	inline RectF EditorCommandLineDragPlacementToggleRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + 278.0 - scroll, Min(340.0, viewport.w - 24.0), 28.0 };
+	}
+
+	inline RectF EditorCommandLineAxisAutoRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		const double available = Max(120.0, viewport.w - 24.0);
+		const double width = Min(108.0, (available - 16.0) / 3.0);
+		return RectF{ viewport.x + 12.0, viewport.y + 332.0 - scroll, width, 28.0 };
+	}
+
+	inline RectF EditorCommandLineAxisHorizontalRect(double scroll = 0.0)
+	{
+		const RectF autoRect = EditorCommandLineAxisAutoRect(scroll);
+		return RectF{ autoRect.x + autoRect.w + 8.0, autoRect.y, autoRect.w, autoRect.h };
+	}
+
+	inline RectF EditorCommandLineAxisVerticalRect(double scroll = 0.0)
+	{
+		const RectF horizontalRect = EditorCommandLineAxisHorizontalRect(scroll);
+		return RectF{ horizontalRect.x + horizontalRect.w + 8.0, horizontalRect.y, horizontalRect.w, horizontalRect.h };
+	}
+
+	inline RectF EditorCommandCostRowRect(int32 index, double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + 380.0 + index * 30.0 - scroll, Min(340.0, viewport.w - 24.0), 26.0 };
+	}
+
+	inline RectF EditorCommandCostButtonRect(const RectF& row, int32 buttonIndex)
+	{
+		const double buttonSize = 24.0;
+		const double gap = 4.0;
+		const double startX = row.x + row.w - (buttonSize * 3.0 + gap * 2.0) - 4.0;
+		return RectF{ startX + buttonIndex * (buttonSize + gap), row.y + 1.0, buttonSize, buttonSize };
+	}
+
 	inline RectF EditorCommandContextMenuRect(const Vec2& pos)
 	{
 		return RectF{ pos.x, pos.y, 180.0, 104.0 };

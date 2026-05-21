@@ -289,9 +289,6 @@ namespace LT3
 				Move,
 				Vision,
 				VisualScale,
-				GoldCost,
-				TrustCost,
-				FoodCost,
 				MaintainRange,
 			};
 
@@ -329,9 +326,6 @@ namespace LT3
 				break;
 			default:
 				rows = {
-					{ UnitParamRowKind::GoldCost, U"Gold 資源コストを増減します" },
-					{ UnitParamRowKind::TrustCost, U"Trust 資源コストを増減します" },
-					{ UnitParamRowKind::FoodCost, U"Food 資源コストを増減します" },
 					{ UnitParamRowKind::MaintainRange, U"maintain_range を増減します" }
 				};
 				break;
@@ -445,21 +439,7 @@ namespace LT3
 							commit();
 						}
 						break;
-					case UnitParamRowKind::GoldCost:
-						if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::goldCost, -10, 0, 99999);
-						else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::goldCost, 10, 0, 99999);
-						else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::goldCost, 0);
-						break;
-					case UnitParamRowKind::TrustCost:
-						if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::trustCost, -10, 0, 99999);
-						else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::trustCost, 10, 0, 99999);
-						else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::trustCost, 0);
-						break;
-					case UnitParamRowKind::FoodCost:
-						if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::foodCost, -10, 0, 99999);
-						else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::foodCost, 10, 0, 99999);
-						else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::foodCost, 0);
-						break;
+
 					case UnitParamRowKind::MaintainRange:
 						if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::maintainRange, -1, 0, 99999);
 						else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::maintainRange, 1, 0, 99999);

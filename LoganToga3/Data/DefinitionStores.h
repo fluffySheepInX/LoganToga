@@ -24,7 +24,6 @@ namespace LT3
         int32 defense = 0;
         double speed = 80.0;
         double radius = 14.0;
-        int32 priceGold = 0;
         int32 gatherPower = 0;
         int32 visionRadiusCells = 6;
         SkillDefId skill = InvalidSkillDefId;
@@ -57,6 +56,8 @@ namespace LT3
         UnitDefId spawnUnit = InvalidUnitDefId;
         Array<UnitDefId> spawnUnits;
         int32 costGold = 0;
+        int32 costTrust = 0;
+        int32 costFood = 0;
         int32 createCount = 1;
         double buildTimeSec = 0.0;
         bool isMove = false;

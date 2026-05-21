@@ -308,7 +308,7 @@ namespace LT3
 			}
 
 			const ColorF costColor = affordable ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1.0, 0.25, 0.20 };
-			uiFont(U"{}G"_fmt(action.costGold)).drawAt(12, rect.center().movedBy(0, 26), costColor);
+			uiFont(U"G{} T{} F{}"_fmt(action.costGold, action.costTrust, action.costFood)).drawAt(10, rect.center().movedBy(0, 26), costColor);
 		}
 
 		DrawSelectedBuildQueuePanel(world, defs, mapEditor, assets, uiFont, rows);

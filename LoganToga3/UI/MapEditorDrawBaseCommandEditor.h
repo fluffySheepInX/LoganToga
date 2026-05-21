@@ -147,6 +147,8 @@ namespace LT3
 		const RectF panel = EditorCommandPanelRect();
 		const RectF commandViewport = EditorCommandListViewportRect();
 		const RectF unitViewport = EditorCommandUnitViewportRect();
+		const RectF inspectTopViewport = EditorCommandInspectTopViewportRect();
+		const RectF inspectBottomPanel = EditorCommandInspectBottomPanelRect();
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
 		uiFont(U"Command Editor").draw(18, panel.x + 20.0, panel.y + 18.0, Palette::White);
 		uiFont(U"左:Command  右:実行可能Unit").draw(12, panel.x + 220.0, panel.y + 22.0, Palette::Lightgray);
@@ -185,6 +187,12 @@ namespace LT3
 
 			uiFont(action.name).draw(12, row.x + 56.0, row.y + 7.0, Palette::White);
 			uiFont(U"{}:{}"_fmt(action.ownerTag, action.id)).draw(10, row.x + 56.0, row.y + 29.0, Palette::Lightgray);
+			if (action.isMove)
+			{
+				const RectF placeBadge{ row.x + row.w - 70.0, row.y + 8.0, 62.0, 18.0 };
+				placeBadge.draw(ColorF{ 0.10, 0.20, 0.30, 0.94 }).drawFrame(1, ColorF{ 0.45, 0.90, 1.0, 0.85 });
+				uiFont(U"PLACE").drawAt(9, placeBadge.center(), Palette::Aqua);
+			}
 
 			if (editor.commandRenameTargetIndex == i)
 			{
@@ -246,19 +254,98 @@ namespace LT3
 
 		if (editor.commandEditorMode == 2)
 		{
-			uiFont(U"Owner").draw(12, unitViewport.x + 12.0, unitViewport.y + 12.0, Palette::Lightgray);
-			uiFont(selectedAction.ownerTag).draw(12, unitViewport.x + 120.0, unitViewport.y + 12.0, Palette::White);
-			uiFont(U"ID").draw(12, unitViewport.x + 12.0, unitViewport.y + 40.0, Palette::Lightgray);
-			uiFont(selectedAction.id).draw(12, unitViewport.x + 120.0, unitViewport.y + 40.0, Palette::White);
-			uiFont(U"Result Type").draw(12, unitViewport.x + 12.0, unitViewport.y + 68.0, Palette::Lightgray);
-			uiFont(BuildActionResultTypeToTomlValue(selectedAction.resultType)).draw(12, unitViewport.x + 120.0, unitViewport.y + 68.0, Palette::White);
-			uiFont(U"Spawn").draw(12, unitViewport.x + 12.0, unitViewport.y + 96.0, Palette::Lightgray);
-			uiFont(selectedSpawnTags.isEmpty() ? U"(none)" : selectedSpawnTags.join(U", ")).draw(12, unitViewport.x + 120.0, unitViewport.y + 96.0, Palette::White);
+			const bool showLineSettings = (selectedAction.placementMode == BuildPlacementMode::Line);
+			const double inspectContentHeight = showLineSettings ? 544.0 : 460.0;
+			const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
+			editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
+
+			const auto drawToggleButton = [&](const RectF& rect, bool active, StringView label, const ColorF& activeFrame = ColorF{ 0.45, 0.90, 1.0, 0.85 })
+			{
+				rect.draw(active ? ColorF{ 0.12, 0.24, 0.18, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+					.drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : (active ? activeFrame : ColorF{ 1, 1, 1, 0.16 }));
+				uiFont(label).drawAt(11, rect.center(), active ? Palette::Aqua : Palette::Lightgray);
+			};
+
+			inspectTopViewport.draw(ColorF{ 0.0, 0.0, 0.0, 0.14 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
+			const double scroll = editor.commandInspectScroll;
+			uiFont(U"Owner").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 12.0 - scroll, Palette::Lightgray);
+			uiFont(selectedAction.ownerTag).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 12.0 - scroll, Palette::White);
+			uiFont(U"ID").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 40.0 - scroll, Palette::Lightgray);
+			uiFont(selectedAction.id).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 40.0 - scroll, Palette::White);
+			uiFont(U"Result Type").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 68.0 - scroll, Palette::Lightgray);
+			uiFont(BuildActionResultTypeToTomlValue(selectedAction.resultType)).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 68.0 - scroll, Palette::White);
+			uiFont(U"Spawn").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 96.0 - scroll, Palette::Lightgray);
+			uiFont(selectedSpawnTags.isEmpty() ? U"(none)" : selectedSpawnTags.join(U", ")).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 96.0 - scroll, Palette::White);
+			uiFont(U"Placement").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 124.0 - scroll, Palette::Lightgray);
+			const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
+			drawToggleButton(placementToggleRect, selectedAction.isMove, selectedAction.isMove ? U"[ON] 場所指定して実行" : U"[OFF] 場所指定して実行");
+
+			uiFont(U"Placement Mode").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 206.0 - scroll, Palette::Lightgray);
+			const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
+			const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
+			drawToggleButton(placementModePointRect, selectedAction.placementMode == BuildPlacementMode::Point, U"Point");
+			drawToggleButton(placementModeLineRect, selectedAction.placementMode == BuildPlacementMode::Line, U"Line");
+
+			if (showLineSettings)
+			{
+				uiFont(U"Line Drag Input").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 260.0 - scroll, Palette::Lightgray);
+				const RectF lineDragRect = EditorCommandLineDragPlacementToggleRect(scroll);
+				drawToggleButton(lineDragRect, selectedAction.useRightDragPlacement,
+					selectedAction.useRightDragPlacement ? U"[ON] 右ドラッグで範囲指定" : U"[OFF] 左クリック配置のみ");
+
+				uiFont(U"Line Axis").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 314.0 - scroll, Palette::Lightgray);
+				const RectF axisAutoRect = EditorCommandLineAxisAutoRect(scroll);
+				const RectF axisHorizontalRect = EditorCommandLineAxisHorizontalRect(scroll);
+				const RectF axisVerticalRect = EditorCommandLineAxisVerticalRect(scroll);
+				drawToggleButton(axisAutoRect, selectedAction.lineAxisMode == BuildLineAxisMode::Auto, U"Auto");
+				drawToggleButton(axisHorizontalRect, selectedAction.lineAxisMode == BuildLineAxisMode::HorizontalOnly, U"Horizontal");
+				drawToggleButton(axisVerticalRect, selectedAction.lineAxisMode == BuildLineAxisMode::VerticalOnly, U"Vertical");
+			}
+			const Array<std::pair<String, int32>> costRows = {
+				{ U"Gold", selectedAction.costGold },
+				{ U"Trust", selectedAction.costTrust },
+				{ U"Food", selectedAction.costFood }
+			};
+			for (int32 i = 0; i < static_cast<int32>(costRows.size()); ++i)
+			{
+				const RectF row = EditorCommandCostRowRect(i, scroll);
+				row.draw(ColorF{ 0.07, 0.08, 0.10, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
+				uiFont(costRows[i].first).draw(11, row.x + 8.0, row.y + 4.0, Palette::Lightgray);
+				uiFont(U"{}"_fmt(costRows[i].second)).draw(11, row.x + 92.0, row.y + 4.0, Palette::Gold);
+				for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+				{
+					const RectF buttonRect = EditorCommandCostButtonRect(row, buttonIndex);
+					buttonRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, buttonRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+					if (buttonIndex == 0)
+					{
+						uiFont(U"-").drawAt(14, buttonRect.center(), Palette::White);
+					}
+					else if (buttonIndex == 1)
+					{
+						uiFont(U"+").drawAt(14, buttonRect.center(), Palette::White);
+					}
+					else
+					{
+						uiFont(U"R").drawAt(14, buttonRect.center(), Palette::White);
+					}
+				}
+			}
+
+			if (inspectMaxScroll > 0.0)
+			{
+				const double scrollRate = editor.commandInspectScroll / inspectMaxScroll;
+				const double handleHeight = Max(28.0, inspectTopViewport.h * inspectTopViewport.h / Max(inspectTopViewport.h, inspectContentHeight));
+				const double handleY = inspectTopViewport.y + (inspectTopViewport.h - handleHeight) * scrollRate;
+				RectF{ inspectTopViewport.x + inspectTopViewport.w - 6.0, inspectTopViewport.y, 6.0, inspectTopViewport.h }.draw(ColorF{ 1, 1, 1, 0.08 });
+				RectF{ inspectTopViewport.x + inspectTopViewport.w - 6.0, handleY, 6.0, handleHeight }.draw(ColorF{ 1.0, 0.84, 0.0, 0.70 });
+			}
+
+			inspectBottomPanel.draw(ColorF{ 0.03, 0.05, 0.07, 0.95 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
 			if (missingSpawnForUnitResult)
 			{
-				uiFont(U"WARN: Unit result requires spawn target").draw(12, unitViewport.x + 12.0, unitViewport.y + 124.0, Palette::Orange);
+				uiFont(U"WARN: Unit result requires spawn target").draw(12, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 10.0, Palette::Orange);
 			}
-			uiFont(U"Mode: Inspect は閲覧専用").draw(12, unitViewport.x + 12.0, unitViewport.y + 140.0, Palette::Aqua);
+			uiFont(U"Inspect: placement / line設定 + コスト編集").draw(12, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 34.0, Palette::Aqua);
 		}
 		else
 		{

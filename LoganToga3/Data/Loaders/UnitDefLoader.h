@@ -71,7 +71,6 @@ namespace LT3
                     entry.defense,
                     0.0,
                     26.0,
-                    entry.goldCost,
                     0,
                     Max(0, entry.visionRadius),
                     baseSkill,
@@ -84,7 +83,7 @@ namespace LT3
             }
         }
 
-        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 0, 6, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
+        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 6, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
     }
 
     inline void LoadUnitDefinitions(DefinitionStores& defs, const UnitCatalog& unitCatalog)
@@ -126,7 +125,6 @@ namespace LT3
                 entry.defense,
                 speed,
                 radius,
-                entry.goldCost,
                 1,
                 Max(0, entry.visionRadius),
                 skill,

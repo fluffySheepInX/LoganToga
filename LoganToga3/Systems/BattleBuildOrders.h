@@ -262,23 +262,36 @@ namespace LT3
 			return false;
 		}
 
+		auto consumeBuildActionCost = [&]()
+		{
+			const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
+			const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
+			const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+			if (goldResource != InvalidResourceDefId && goldResource < world.resources.playerAmounts.size())
+			{
+				world.resources.playerAmounts[goldResource] -= action.costGold;
+			}
+			if (trustResource != InvalidResourceDefId && trustResource < world.resources.playerAmounts.size())
+			{
+				world.resources.playerAmounts[trustResource] -= action.costTrust;
+			}
+			if (foodResource != InvalidResourceDefId && foodResource < world.resources.playerAmounts.size())
+			{
+				world.resources.playerAmounts[foodResource] -= action.costFood;
+			}
+		};
+
 		if (action.resultType == BuildActionResultType::Carrier)
 		{
 			if (!TryExecuteCarrierAction(world, defs, builder, action))
 			{
 				return false;
 			}
-			if (!world.resources.playerAmounts.isEmpty())
-			{
-				world.resources.playerAmounts[0] -= action.costGold;
-			}
+			consumeBuildActionCost();
 			return true;
 		}
 
-		if (!world.resources.playerAmounts.isEmpty())
-		{
-			world.resources.playerAmounts[0] -= action.costGold;
-		}
+		consumeBuildActionCost();
 
 		const Optional<Vec2> resolvedTargetPosition = targetPosition.has_value()
 			? Optional<Vec2>{ SnapWorldToBattleCellCenter(world, *targetPosition) }
@@ -340,14 +353,36 @@ namespace LT3
 		}
 
 		const int32 totalCostGold = action.costGold * static_cast<int32>(validTargets.size());
-		if (!world.resources.playerAmounts.isEmpty() && world.resources.playerAmounts[0] < totalCostGold)
+		const int32 totalCostTrust = action.costTrust * static_cast<int32>(validTargets.size());
+		const int32 totalCostFood = action.costFood * static_cast<int32>(validTargets.size());
+		const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
+		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
+		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+
+		if (goldResource != InvalidResourceDefId && (goldResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[goldResource] < totalCostGold))
+		{
+			return false;
+		}
+		if (trustResource != InvalidResourceDefId && (trustResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[trustResource] < totalCostTrust))
+		{
+			return false;
+		}
+		if (foodResource != InvalidResourceDefId && (foodResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[foodResource] < totalCostFood))
 		{
 			return false;
 		}
 
-		if (!world.resources.playerAmounts.isEmpty())
+		if (goldResource != InvalidResourceDefId && goldResource < world.resources.playerAmounts.size())
 		{
-			world.resources.playerAmounts[0] -= totalCostGold;
+			world.resources.playerAmounts[goldResource] -= totalCostGold;
+		}
+		if (trustResource != InvalidResourceDefId && trustResource < world.resources.playerAmounts.size())
+		{
+			world.resources.playerAmounts[trustResource] -= totalCostTrust;
+		}
+		if (foodResource != InvalidResourceDefId && foodResource < world.resources.playerAmounts.size())
+		{
+			world.resources.playerAmounts[foodResource] -= totalCostFood;
 		}
 
 		const Vec2 firstTarget = validTargets.front();

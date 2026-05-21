@@ -1,5 +1,5 @@
 ﻿[[commands]]
-owner_tags = ["Home", "0"]
+owner_tags = ["0"]
 id = "cmd_000"
 name = "カスクート傭兵の雇用"
 description = "汎用部隊傭兵-若人"
@@ -8,7 +8,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -24,7 +24,7 @@ spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "1"]
 
 [[commands]]
-owner_tags = ["Home", "0"]
+owner_tags = ["0"]
 id = "cmd_001"
 name = "A8式工兵の招集"
 description = "汎用部隊傭兵-若人"
@@ -33,7 +33,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -49,7 +49,7 @@ spawn = "NewbieKouhei"
 spawns = ["NewbieKouhei", "2"]
 
 [[commands]]
-owner_tags = ["Home", "0"]
+owner_tags = ["0"]
 id = "cmd_002"
 name = "軽装歩兵隊の編成"
 description = "汎用部隊傭兵-若人"
@@ -58,7 +58,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -79,20 +79,20 @@ id = "build_barbed_wire"
 name = "鉄条網の敷設"
 description = "汎用部隊傭兵-若人"
 icon = "ironWall.png"
-icon_horizontal = "keisou-chipGene006.png"
-icon_diag_up_right = "keisou-chipGene006.png"
-icon_diag_up_left = "keisou-chipGene006.png"
+icon_horizontal = "ironWallYoko.png"
+icon_diag_up_right = "ironWallNanameMigi.png"
+icon_diag_up_left = "ironWallNanameHidari.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 30, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
-is_move = false
-placement_mode = "point"
+is_move = true
+placement_mode = "line"
 line_axis_mode = "auto"
 line_thickness_cells = 1
 max_line_cells = 12
-use_right_drag_placement = false
+use_right_drag_placement = true
 [[commands.result]]
 type = "unit"
 spawn = "3"
@@ -108,11 +108,11 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 0, trust = 50, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
-is_move = false
+is_move = true
 placement_mode = "point"
 line_axis_mode = "auto"
 line_thickness_cells = 1
@@ -133,11 +133,11 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 0, trust = 50, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
-is_move = false
+is_move = true
 placement_mode = "point"
 line_axis_mode = "auto"
 line_thickness_cells = 1
@@ -149,7 +149,7 @@ spawn = "6"
 
 [[commands]]
 owner_tags = ["NewbieMercenary_copy", "4"]
-id = "place_mobile_marker"
+id = "cmd_011"
 name = "機動部隊招集マーカー設置"
 description = "汎用部隊傭兵-若人"
 icon = "bu-keiso.png"
@@ -158,11 +158,11 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 0, trust = 50, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
-is_move = false
+is_move = true
 placement_mode = "point"
 line_axis_mode = "auto"
 line_thickness_cells = 1
@@ -173,7 +173,7 @@ type = "unit"
 spawn = "7"
 
 [[commands]]
-owner_tags = ["Home", "5"]
+owner_tags = ["5"]
 id = "cmd_003"
 name = "チャクラム兵の雇用"
 description = "汎用部隊傭兵-若人"
@@ -182,7 +182,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -198,7 +198,7 @@ spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "8"]
 
 [[commands]]
-owner_tags = ["Home", "5"]
+owner_tags = ["5"]
 id = "cmd_004"
 name = "ライフル銃兵の雇用"
 description = "汎用部隊傭兵-若人"
@@ -207,7 +207,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -223,7 +223,7 @@ spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "9"]
 
 [[commands]]
-owner_tags = ["Home", "5"]
+owner_tags = ["5"]
 id = "cmd_005"
 name = "ブレンガン・キャリアーの雇用"
 description = "汎用部隊傭兵-若人"
@@ -232,7 +232,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -248,7 +248,7 @@ spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "10"]
 
 [[commands]]
-owner_tags = ["Home", "6"]
+owner_tags = ["6"]
 id = "cmd_006"
 name = "ファランクスの招集"
 description = "汎用部隊傭兵-若人"
@@ -257,7 +257,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -273,7 +273,7 @@ spawn = "NewbieKouhei"
 spawns = ["NewbieKouhei", "11"]
 
 [[commands]]
-owner_tags = ["Home", "6"]
+owner_tags = ["6"]
 id = "cmd_007"
 name = "ケッテンクラートの招集"
 description = "汎用部隊傭兵-若人"
@@ -282,7 +282,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -298,7 +298,7 @@ spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "12"]
 
 [[commands]]
-owner_tags = ["Home", "7"]
+owner_tags = ["7"]
 id = "cmd_008"
 name = "偵察騎兵の編成"
 description = "汎用部隊傭兵-若人"
@@ -307,7 +307,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -323,7 +323,7 @@ spawn = "NewbieMercenary_copy"
 spawns = ["NewbieMercenary_copy", "13"]
 
 [[commands]]
-owner_tags = ["Home", "7"]
+owner_tags = ["7"]
 id = "cmd_009"
 name = "槍騎兵の編成"
 description = "汎用部隊傭兵-若人"
@@ -332,7 +332,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]
@@ -348,7 +348,7 @@ spawn = "NewbieMercenary_copy"
 spawns = ["NewbieMercenary_copy", "14"]
 
 [[commands]]
-owner_tags = ["Home", "7"]
+owner_tags = ["7"]
 id = "cmd_010"
 name = "バイクライフルの編成"
 description = "汎用部隊傭兵-若人"
@@ -357,7 +357,7 @@ icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
 create_count = 3
-cost = { wood = 15 }
+cost = { wood = 15, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
 requires = ["none"]

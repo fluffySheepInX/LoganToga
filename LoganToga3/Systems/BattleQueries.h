@@ -39,9 +39,7 @@ namespace LT3
         }
 
         const UnitDef& def = defs.units[world.units.defId[unit]];
-        return EqualsIgnoreCase(def.unit_id, ownerTag)
-            || EqualsIgnoreCase(def.building_category, ownerTag)
-            || EqualsIgnoreCase(def.unit_family, ownerTag);
+        return EqualsIgnoreCase(def.unit_id, ownerTag);
     }
 
     inline bool DoesUnitMatchAnyOwnerTag(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
@@ -89,9 +87,52 @@ namespace LT3
             && DoesUnitMatchAnyOwnerTag(world, defs, unit, action);
     }
 
-    inline bool CanAffordBuildAction(const BattleWorld& world, const BuildActionDef& action)
+    inline bool CanAffordBuildAction(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action)
     {
-        return !world.resources.playerAmounts.isEmpty() && world.resources.playerAmounts[0] >= action.costGold;
+        if (world.resources.playerAmounts.isEmpty())
+        {
+            return false;
+        }
+
+        auto findResourceDefByKind = [&](const ResourceKind kind) -> ResourceDefId
+        {
+            for (ResourceDefId id = 0; id < defs.resources.size(); ++id)
+            {
+                if (defs.resources[id].kind == kind)
+                {
+                    return id;
+                }
+            }
+            return InvalidResourceDefId;
+        };
+
+        auto getPlayerResourceAmount = [&](const ResourceDefId resourceId) -> int32
+        {
+            if (resourceId == InvalidResourceDefId || resourceId >= world.resources.playerAmounts.size())
+            {
+                return 0;
+            }
+            return world.resources.playerAmounts[resourceId];
+        };
+
+        const ResourceDefId goldResource = findResourceDefByKind(ResourceKind::Gold);
+        const ResourceDefId trustResource = findResourceDefByKind(ResourceKind::Trust);
+        const ResourceDefId foodResource = findResourceDefByKind(ResourceKind::Food);
+
+        if (goldResource != InvalidResourceDefId && getPlayerResourceAmount(goldResource) < action.costGold)
+        {
+            return false;
+        }
+        if (trustResource != InvalidResourceDefId && getPlayerResourceAmount(trustResource) < action.costTrust)
+        {
+            return false;
+        }
+        if (foodResource != InvalidResourceDefId && getPlayerResourceAmount(foodResource) < action.costFood)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     inline ResourceDefId FindResourceDefByKind(const DefinitionStores& defs, ResourceKind kind)
@@ -171,7 +212,7 @@ namespace LT3
 
         const BuildActionDef& action = defs.buildActions[actionId];
         return CanUseBuildAction(world, defs, unit, action)
-            && CanAffordBuildAction(world, action);
+            && CanAffordBuildAction(world, defs, action);
     }
 
     inline const Array<QueuedBuildAction>& GetQueuedBuildActionEntries(const BattleWorld& world, UnitId unit)
@@ -195,7 +236,7 @@ namespace LT3
             const BuildActionDef& action = defs.buildActions[i];
             if (CanUseBuildAction(world, defs, unit, action))
             {
-                visibleActions << BuildActionUiState{ static_cast<BuildActionDefId>(i), CanAffordBuildAction(world, action) };
+                visibleActions << BuildActionUiState{ static_cast<BuildActionDefId>(i), CanAffordBuildAction(world, defs, action) };
             }
         }
 

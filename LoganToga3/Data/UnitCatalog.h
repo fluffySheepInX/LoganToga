@@ -5,7 +5,7 @@ namespace LT3
 {
     namespace UnitCatalogToml
     {
-        inline constexpr int32 SchemaVersion = 1;
+        inline constexpr int32 SchemaVersion = 2;
 
         inline constexpr const char32* KeySchemaVersion = U"schema_version";
         inline constexpr const char32* KeyUnits = U"units";
@@ -21,11 +21,6 @@ namespace LT3
         inline constexpr const char32* KeyLevel = U"level";
         inline constexpr const char32* KeyLevelMax = U"level_max";
         inline constexpr const char32* KeyVisionRadius = U"vision_radius";
-        inline constexpr const char32* KeyGoldCost = U"gold_cost";
-        inline constexpr const char32* KeyCost = U"cost";
-        inline constexpr const char32* KeyTrustCost = U"trust_cost";
-        inline constexpr const char32* KeyPrice = U"price";
-        inline constexpr const char32* KeyFoodCost = U"food_cost";
         inline constexpr const char32* KeyHp = U"hp";
         inline constexpr const char32* KeyBuildingHp = U"building_hp";
         inline constexpr const char32* KeyMp = U"mp";
@@ -126,9 +121,6 @@ namespace LT3
         int32 level = 1;
         int32 levelMax = 1;
         int32 visionRadius = 0;
-        int32 goldCost = 0;
-        int32 trustCost = 0;
-        int32 foodCost = 0;
         int32 hp = 0;
         int32 buildingHp = 0;
         int32 mp = 0;
@@ -350,7 +342,7 @@ namespace LT3
         const int32 schemaVersion = toml[UnitCatalogToml::KeySchemaVersion].getOr<int32>(0);
         if (schemaVersion != UnitCatalogToml::SchemaVersion)
         {
-            catalog.statusText = U"Unsupported unit schema_version {} in {}"_fmt(schemaVersion, catalog.sourcePath);
+            catalog.statusText = U"Unsupported unit schema_version {} in {} (expected {})"_fmt(schemaVersion, catalog.sourcePath, UnitCatalogToml::SchemaVersion);
             return catalog;
         }
 
@@ -369,9 +361,6 @@ namespace LT3
             entry.level = unitValue[UnitCatalogToml::KeyLevel].getOr<int32>(1);
             entry.levelMax = unitValue[UnitCatalogToml::KeyLevelMax].getOr<int32>(1);
             entry.visionRadius = unitValue[UnitCatalogToml::KeyVisionRadius].getOr<int32>(0);
-            entry.goldCost = unitValue[UnitCatalogToml::KeyGoldCost].getOr<int32>(unitValue[UnitCatalogToml::KeyCost].getOr<int32>(0));
-            entry.trustCost = unitValue[UnitCatalogToml::KeyTrustCost].getOr<int32>(unitValue[UnitCatalogToml::KeyPrice].getOr<int32>(0));
-            entry.foodCost = unitValue[UnitCatalogToml::KeyFoodCost].getOr<int32>(0);
             entry.hp = unitValue[UnitCatalogToml::KeyHp].getOr<int32>(0);
             entry.buildingHp = unitValue[UnitCatalogToml::KeyBuildingHp].getOr<int32>(0);
             entry.mp = unitValue[UnitCatalogToml::KeyMp].getOr<int32>(0);
@@ -443,9 +432,6 @@ namespace LT3
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyLevel, entry.level);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyLevelMax, entry.levelMax);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyVisionRadius, entry.visionRadius);
-            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyGoldCost, entry.goldCost);
-            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyTrustCost, entry.trustCost);
-            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyFoodCost, entry.foodCost);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyHp, entry.hp);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyBuildingHp, entry.buildingHp);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyMp, entry.mp);

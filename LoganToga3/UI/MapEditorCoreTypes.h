@@ -93,6 +93,7 @@ namespace LT3
 		bool showCommandEditor = false;
 		double commandListScroll = 0.0;
 		double commandUnitListScroll = 0.0;
+		double commandInspectScroll = 0.0;
 		int32 selectedCommandActionIndex = -1;
 		int32 commandEditorMode = 0;
 		bool commandBindingsDirty = false;
