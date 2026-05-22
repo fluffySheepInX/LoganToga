@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "BattleOrders.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -92,7 +93,7 @@ namespace LT3
                 {
                     IssueMove(world, unit, world.units.position[target]);
                 }
-                world.units.attackTarget[unit] = target;
+                SetUnitAttackTarget(world, unit, target);
             }
         }
     }

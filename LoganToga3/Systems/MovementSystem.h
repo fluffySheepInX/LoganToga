@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "BattleQueries.h"
 # include "PathfindingSystem.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -31,10 +32,10 @@ namespace LT3
             {
                 if (world.units.task[unit] == UnitTask::Moving || world.units.task[unit] == UnitTask::Gathering)
                 {
-                    world.units.task[unit] = UnitTask::Idle;
-                    world.units.targetPosition[unit] = world.units.position[unit];
-                    world.units.resourceTargetNode[unit] = -1;
-                    world.pathing.clearUnitPath(unit);
+                    SetUnitIdle(world, unit);
+                    SetUnitTargetPosition(world, unit, world.units.position[unit]);
+                    ClearUnitResourceTarget(world, unit);
+                    ClearUnitPath(world, unit);
                 }
                 continue;
             }
@@ -45,7 +46,7 @@ namespace LT3
                 && (world.pathing.pathMapRevision[unit] != world.map.revision);
             if (pathOutdated)
             {
-                world.pathing.clearUnitPath(unit);
+                ClearUnitPath(world, unit);
             }
 
             const bool needsPath = (unit < world.pathing.hasPath.size())
@@ -80,14 +81,14 @@ namespace LT3
 
                 if (reachedPathEnd)
                 {
-                    world.pathing.clearUnitPath(unit);
+                    ClearUnitPath(world, unit);
                     if (world.units.resourceTargetNode[unit] >= 0)
                     {
-                        world.units.task[unit] = UnitTask::Gathering;
+                        SetUnitGathering(world, unit);
                     }
                     else
                     {
-                        world.units.task[unit] = UnitTask::Idle;
+                        SetUnitIdle(world, unit);
                     }
                 }
 
@@ -99,11 +100,11 @@ namespace LT3
             {
                 if (world.units.resourceTargetNode[unit] >= 0)
                 {
-                    world.units.task[unit] = UnitTask::Gathering;
+                    SetUnitGathering(world, unit);
                 }
                 else
                 {
-                    world.units.task[unit] = UnitTask::Idle;
+                    SetUnitIdle(world, unit);
                 }
             }
         }

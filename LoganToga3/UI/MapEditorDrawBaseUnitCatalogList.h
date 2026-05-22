@@ -144,6 +144,9 @@ namespace LT3
 			const RectF renameItem = EditorUnitContextMenuItemRect(editor.unitContextMenuPos, 1);
 			renameItem.draw(renameItem.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
 			uiFont(U"名前編集").draw(13, renameItem.x + 8.0, renameItem.y + 5.0, Palette::White);
+			const RectF descriptionItem = EditorUnitContextMenuItemRect(editor.unitContextMenuPos, 2);
+			descriptionItem.draw(descriptionItem.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
+			uiFont(U"説明文編集").draw(13, descriptionItem.x + 8.0, descriptionItem.y + 5.0, Palette::White);
 		}
 	}
 }

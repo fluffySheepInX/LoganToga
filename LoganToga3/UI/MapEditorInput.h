@@ -8,6 +8,9 @@
 # include "MapEditorUiLayoutInput.h"
 # include "MapEditorUnitCatalogInput.h"
 # include "BuildingEditor.h"
+# include "SkillEditor.h"
+# include "MapEditorDescriptionEditor.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -20,12 +23,9 @@ namespace LT3
         }
 
         const bool layoutEditing = editor.uiLayoutEditEnabled;
-        const RectF tabParam = EditorUnitBuildingTabRect(editor, 0);
-        const RectF tabBuilding = EditorUnitBuildingTabRect(editor, 1);
         const RectF closeRect = EditorUnitBuildingCloseRect(editor);
 
-        // 共通 × ボタン
-        if (!layoutEditing && closeRect.leftClicked())
+        if (!layoutEditing && HandleRectButtonClick(closeRect))
         {
             editor.showUnitParameterEditor = false;
             editor.showBuildingEditor = false;
@@ -33,19 +33,14 @@ namespace LT3
             return true;
         }
 
-        // Unit Param タブ
-        if (tabParam.leftClicked())
+        int32 selectedTab = editor.showBuildingEditor ? 1 : 0;
+        if (HandleIntTabButtons(selectedTab, 2, [&](int32 index)
+            {
+                return EditorUnitBuildingTabRect(editor, index);
+            }))
         {
-            editor.showUnitParameterEditor = true;
-            editor.showBuildingEditor = false;
-            return true;
-        }
-
-        // Building Edit タブ
-        if (tabBuilding.leftClicked())
-        {
-            editor.showBuildingEditor = true;
-            editor.showUnitParameterEditor = false;
+            editor.showUnitParameterEditor = (selectedTab == 0);
+            editor.showBuildingEditor = (selectedTab == 1);
             return true;
         }
 
@@ -55,6 +50,11 @@ namespace LT3
     inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
     {
         bool consumed = false;
+        if (ProcessDescriptionEditorInput(editor, catalog, defs))
+        {
+            return true;
+        }
+
         if (HandleUnitBuildingEditorTabBar(editor))
         {
             consumed = true;
@@ -86,6 +86,11 @@ namespace LT3
         }
 
         if (ProcessCommandEditorInput(editor, catalog, defs))
+        {
+            consumed = true;
+        }
+
+        if (ProcessSkillEditorInput(editor, defs, catalog))
         {
             consumed = true;
         }

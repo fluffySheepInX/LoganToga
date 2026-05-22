@@ -8,6 +8,8 @@ building_editor = false
 
 command_editor = false
 
+skill_editor = true
+
 debug_info = false
 
 battle_grid = false

@@ -85,6 +85,7 @@ namespace LT3
             editor.showUnitList = toml[U"toolbar.unit_list"].getOr<bool>(editor.showUnitList);
             editor.showBuildingEditor = toml[U"toolbar.building_editor"].getOr<bool>(editor.showBuildingEditor);
             editor.showCommandEditor = toml[U"toolbar.command_editor"].getOr<bool>(editor.showCommandEditor);
+            editor.showSkillEditor = toml[U"toolbar.skill_editor"].getOr<bool>(editor.showSkillEditor);
             editor.showDebugInfo = toml[U"toolbar.debug_info"].getOr<bool>(editor.showDebugInfo);
             editor.showBattleGrid = toml[U"toolbar.battle_grid"].getOr<bool>(editor.showBattleGrid);
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
@@ -227,6 +228,7 @@ namespace LT3
         writer << U"unit_list = " << (editor.showUnitList ? U"true" : U"false") << U"\n";
         writer << U"building_editor = " << (editor.showBuildingEditor ? U"true" : U"false") << U"\n";
         writer << U"command_editor = " << (editor.showCommandEditor ? U"true" : U"false") << U"\n";
+        writer << U"skill_editor = " << (editor.showSkillEditor ? U"true" : U"false") << U"\n";
         writer << U"debug_info = " << (editor.showDebugInfo ? U"true" : U"false") << U"\n";
         writer << U"battle_grid = " << (editor.showBattleGrid ? U"true" : U"false") << U"\n";
         writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n";

@@ -77,7 +77,21 @@ namespace LT3
 		for (size_t i = 0; i < world.projectiles.position.size(); ++i)
 		{
 			const SkillDef& skill = defs.skills[world.projectiles.skill[i]];
-			Circle{ ToQuarterScreen(world.projectiles.position[i]), 4 }.draw(skill.color);
+			const Vec2 base = ToQuarterScreen(world.projectiles.position[i]);
+			const Vec2 drawPos = base + Vec2{ 0.0, -world.projectiles.height[i] };
+			if (world.projectiles.motion[i] == SkillProjectileMotion::Parabola && world.projectiles.height[i] > 1.0)
+			{
+				Circle{ base, 3.5 }.draw(ColorF{ 0, 0, 0, 0.25 });
+				Line{ base, drawPos }.draw(1.0, ColorF{ skill.color, 0.28 });
+			}
+			if (world.projectiles.motion[i] == SkillProjectileMotion::Orbit)
+			{
+				Circle{ drawPos, 6 }.drawFrame(2.0, skill.color);
+			}
+			else
+			{
+				Circle{ drawPos, 4 }.draw(skill.color);
+			}
 		}
 	}
 

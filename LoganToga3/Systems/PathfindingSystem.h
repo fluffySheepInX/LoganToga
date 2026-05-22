@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include <queue>
 # include "BattleQueries.h"
+# include "BattleUnitState.h"
 # include "../UI/QuarterView.h"
 
 namespace LT3
@@ -371,7 +372,7 @@ namespace LT3
 
 		if (!result.success || result.waypoints.isEmpty())
 		{
-			world.pathing.clearUnitPath(unit);
+			ClearUnitPath(world, unit);
 			world.pathing.repathCooldownSec[unit] = 0.35;
 			return;
 		}
@@ -380,7 +381,7 @@ namespace LT3
 		world.pathing.waypointIndex[unit] = 0;
 		world.pathing.pathMapRevision[unit] = result.mapRevision;
 		world.pathing.hasPath[unit] = true;
-		world.units.targetPosition[unit] = result.destination;
+		SetUnitTargetPosition(world, unit, result.destination);
 		world.pathing.repathCooldownSec[unit] = 0.0;
 	}
 

@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "SelectionSystem.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -11,7 +12,7 @@ namespace LT3
         world.units.hp[target] -= Max(1, skill.damage - targetDef.defense);
         if (world.units.hp[target] <= 0)
         {
-            world.units.alive[target] = false;
+            SetUnitAlive(world, target, false);
          ClearSelectionIfUnitSelected(world, target);
         }
     }

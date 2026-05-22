@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "SelectionSystem.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -47,10 +48,10 @@ namespace LT3
 
 			RemoveStoredUnitFromAllCarriers(world, unit);
 			stored << unit;
-			world.units.alive[unit] = false;
-			world.units.task[unit] = UnitTask::Idle;
-			world.units.targetPosition[unit] = carrierPos;
-			world.units.attackTarget[unit] = InvalidUnitId;
+			SetUnitAlive(world, unit, false);
+			SetUnitIdle(world, unit);
+			SetUnitTargetPosition(world, unit, carrierPos);
+			ClearUnitAttackTarget(world, unit);
 			if (world.selection.selected == unit || world.selection.selectedUnits.contains(unit))
 			{
 				ClearSelection(world);
@@ -85,11 +86,11 @@ namespace LT3
 
 			const double angle = (Math::TwoPi * static_cast<double>(i)) / Max(1.0, static_cast<double>(stored.size()));
 			const Vec2 offset = Circular{ 42.0 + 10.0 * static_cast<double>(i / 6), angle };
-			world.units.alive[unit] = true;
+			SetUnitAlive(world, unit, true);
 			world.units.position[unit] = carrierPos + offset;
-			world.units.targetPosition[unit] = carrierPos + offset;
-			world.units.task[unit] = UnitTask::Idle;
-			world.units.attackTarget[unit] = InvalidUnitId;
+			SetUnitTargetPosition(world, unit, carrierPos + offset);
+			SetUnitIdle(world, unit);
+			ClearUnitAttackTarget(world, unit);
 		}
 
 		stored.clear();

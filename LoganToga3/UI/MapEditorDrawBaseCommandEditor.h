@@ -216,6 +216,9 @@ namespace LT3
 			const RectF imageItem = EditorCommandContextMenuItemRect(editor.commandContextMenuPos, 2);
 			imageItem.draw(imageItem.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
 			uiFont(U"イメージ変更").draw(13, imageItem.x + 8.0, imageItem.y + 5.0, Palette::White);
+			const RectF descriptionItem = EditorCommandContextMenuItemRect(editor.commandContextMenuPos, 3);
+			descriptionItem.draw(descriptionItem.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
+			uiFont(U"説明文編集").draw(13, descriptionItem.x + 8.0, descriptionItem.y + 5.0, Palette::White);
 		}
 
 		const BuildActionDef& selectedAction = defs.buildActions[editor.selectedCommandActionIndex];
@@ -255,7 +258,7 @@ namespace LT3
 		if (editor.commandEditorMode == 2)
 		{
 			const bool showLineSettings = (selectedAction.placementMode == BuildPlacementMode::Line);
-			const double inspectContentHeight = showLineSettings ? 544.0 : 460.0;
+			const double inspectContentHeight = showLineSettings ? 576.0 : 492.0;
 			const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 			editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 
@@ -276,7 +279,32 @@ namespace LT3
 			uiFont(BuildActionResultTypeToTomlValue(selectedAction.resultType)).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 68.0 - scroll, Palette::White);
 			uiFont(U"Spawn").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 96.0 - scroll, Palette::Lightgray);
 			uiFont(selectedSpawnTags.isEmpty() ? U"(none)" : selectedSpawnTags.join(U", ")).draw(12, inspectTopViewport.x + 120.0, inspectTopViewport.y + 96.0 - scroll, Palette::White);
-			uiFont(U"Placement").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 124.0 - scroll, Palette::Lightgray);
+			uiFont(U"Spawn Count").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 124.0 - scroll, Palette::Lightgray);
+			const RectF spawnCountRow = EditorCommandSpawnCountRowRect(scroll);
+			const RectF spawnCountValueRect = EditorCommandSpawnCountValueRect(spawnCountRow);
+			const bool spawnCountEditable = (selectedAction.resultType == BuildActionResultType::Unit);
+			spawnCountRow.draw(ColorF{ 0.07, 0.08, 0.10, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
+			spawnCountValueRect.draw(spawnCountEditable ? ColorF{ 0.09, 0.10, 0.12, 0.96 } : ColorF{ 0.05, 0.06, 0.08, 0.80 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
+			uiFont(U"{}"_fmt(Max(1, selectedAction.createCount))).drawAt(12, spawnCountValueRect.center(), spawnCountEditable ? Palette::White : Palette::Gray);
+			for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+			{
+				const RectF buttonRect = EditorCommandSpawnCountButtonRect(spawnCountRow, buttonIndex);
+				buttonRect.draw(spawnCountEditable ? ColorF{ 0.08, 0.09, 0.11, 0.92 } : ColorF{ 0.05, 0.06, 0.08, 0.72 })
+					.drawFrame(2, buttonRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+				if (buttonIndex == 0)
+				{
+					uiFont(U"-").drawAt(14, buttonRect.center(), spawnCountEditable ? Palette::White : Palette::Gray);
+				}
+				else if (buttonIndex == 1)
+				{
+					uiFont(U"+").drawAt(14, buttonRect.center(), spawnCountEditable ? Palette::White : Palette::Gray);
+				}
+				else
+				{
+					uiFont(U"R").drawAt(14, buttonRect.center(), spawnCountEditable ? Palette::White : Palette::Gray);
+				}
+			}
+			uiFont(U"Placement").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 156.0 - scroll, Palette::Lightgray);
 			const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
 			drawToggleButton(placementToggleRect, selectedAction.isMove, selectedAction.isMove ? U"[ON] 場所指定して実行" : U"[OFF] 場所指定して実行");
 
@@ -345,7 +373,12 @@ namespace LT3
 			{
 				uiFont(U"WARN: Unit result requires spawn target").draw(12, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 10.0, Palette::Orange);
 			}
+			else if (selectedAction.resultType == BuildActionResultType::Unit)
+			{
+				uiFont(U"Spawn Count: 1回の実行で生成する人数").draw(12, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 10.0, Palette::Aqua);
+			}
 			uiFont(U"Inspect: placement / line設定 + コスト編集").draw(12, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 34.0, Palette::Aqua);
+			uiFont(U"固定設置系Unitは現在1体のみ配置").draw(11, inspectBottomPanel.x + 12.0, inspectBottomPanel.y + 54.0, Palette::Lightgray);
 		}
 		else
 		{

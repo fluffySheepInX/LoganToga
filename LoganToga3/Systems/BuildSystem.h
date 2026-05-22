@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "BattleQueries.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -55,8 +56,8 @@ namespace LT3
                     world.buildQueues.pendingEntry[unit] = QueuedBuildAction{};
                     if (wasEmpty)
                     {
-                        world.units.task[unit] = UnitTask::Building;
-                        world.buildQueues.progressSec[unit] = 0.0;
+                        SetUnitBuilding(world, unit);
+                        ResetBuildQueueProgress(world, unit);
                     }
                 }
                 else
@@ -70,19 +71,16 @@ namespace LT3
             {
                 if (world.units.task[unit] == UnitTask::Building)
                 {
-                    world.units.task[unit] = UnitTask::Idle;
-                    world.buildQueues.progressSec[unit] = 0.0;
+                    SetUnitIdle(world, unit);
+                    ResetBuildQueueProgress(world, unit);
                 }
-                if (unit < world.buildQueues.locked.size())
-                {
-                    world.buildQueues.locked[unit] = false;
-                }
+                SetBuildQueueLocked(world, unit, false);
                 continue;
             }
 
             if (world.units.task[unit] != UnitTask::Building)
             {
-                world.units.task[unit] = UnitTask::Building;
+                SetUnitBuilding(world, unit);
             }
 
             const QueuedBuildAction queuedAction = queue.front();
@@ -90,10 +88,10 @@ namespace LT3
             if (actionId >= defs.buildActions.size())
             {
                 queue.remove_at(0);
-                world.buildQueues.progressSec[unit] = 0.0;
+                ResetBuildQueueProgress(world, unit);
                 if (queue.isEmpty())
                 {
-                    world.units.task[unit] = UnitTask::Idle;
+                    SetUnitIdle(world, unit);
                 }
                 continue;
             }
@@ -115,20 +113,16 @@ namespace LT3
                     && EvaluateBuildPlacementCell(world, defs, completionTarget) != BuildPlacementCellState::Allowed)
                 {
                     queue.remove_at(0);
-                    world.buildQueues.progressSec[unit] = 0.0;
+                    ResetBuildQueueProgress(world, unit);
                     if (queue.isEmpty())
                     {
-                        world.units.task[unit] = UnitTask::Idle;
-                        if (unit < world.buildQueues.locked.size())
-                        {
-                            world.buildQueues.locked[unit] = false;
-                        }
+                        ResetCompletedBuildQueueState(world, unit);
                     }
                     continue;
                 }
 
                 queue.remove_at(0);
-                world.buildQueues.progressSec[unit] = 0.0;
+                ResetBuildQueueProgress(world, unit);
 
                 if (action.resultType == BuildActionResultType::Unit && primarySpawnUnit != InvalidUnitDefId)
                 {
@@ -170,11 +164,7 @@ namespace LT3
 
                 if (queue.isEmpty())
                 {
-                    world.units.task[unit] = UnitTask::Idle;
-                    if (unit < world.buildQueues.locked.size())
-                    {
-                        world.buildQueues.locked[unit] = false;
-                    }
+                    ResetCompletedBuildQueueState(world, unit);
                 }
             }
         }

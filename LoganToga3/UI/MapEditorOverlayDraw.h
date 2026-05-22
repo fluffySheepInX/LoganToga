@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "MapEditorMapLayersDraw.h"
 # include "MapEditorPerlinNoise.h"
+# include "MapEditorDescriptionEditor.h"
 
 namespace LT3
 {
@@ -17,6 +18,7 @@ namespace LT3
 		}
 		DrawUnitCatalogList(editor, unitCatalog, uiFont);
 		DrawCommandEditor(editor, unitCatalog, defs, uiFont);
+		DrawSkillEditor(editor, unitCatalog, defs, uiFont);
 		DrawUnitBuildingEditorTabBar(editor, uiFont);
 		DrawUnitParameterEditor(editor, unitCatalog, uiFont);
 		DrawBuildingEditor(editor, unitCatalog, defs, uiFont);
@@ -26,6 +28,7 @@ namespace LT3
 		}
 		DrawMapEditorDecalEditor(editor, uiFont);
 		DrawMapEditorZOrderOverlay(editor, screenMouse, uiFont);
+		DrawDescriptionEditor(editor, uiFont);
 		if (!editor.enabled)
 		{
 			return;

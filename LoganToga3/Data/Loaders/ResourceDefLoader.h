@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../DefinitionStores.h"
+# include "../TomlTextUtils.h"
 
 namespace LT3
 {
@@ -15,19 +16,10 @@ namespace LT3
 
     inline FilePath ResolveResourceTomlPath()
     {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml";
-        if (FileSystem::Exists(fromApp))
-        {
-            return fromApp;
-        }
-
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml";
-        if (FileSystem::Exists(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
+        return ResolveFirstExistingPath({
+            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml",
+            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml",
+        });
     }
 
     inline ResourceKind ParseResourceKind(const String& value)

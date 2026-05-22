@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "ProjectileSystem.h"
 # include "TargetingSystem.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -20,10 +21,14 @@ namespace LT3
             const UnitId target = ResolveAttackTarget(world, defs, unit);
             if (!IsValidUnit(world, target)) continue;
 
-            world.units.task[unit] = UnitTask::Attacking;
+            SetUnitAttacking(world, unit);
             if (world.cooldowns.attackLeftSec[unit] > 0.0) continue;
 
-            SpawnProjectile(world, unit, target, unitDef.skill);
+            const int32 burstCount = Max(1, skill.burstCount);
+            for (int32 burstIndex = 0; burstIndex < burstCount; ++burstIndex)
+            {
+                SpawnProjectile(world, defs, unit, target, unitDef.skill, burstIndex);
+            }
             world.cooldowns.attackLeftSec[unit] = skill.cooldownSec;
         }
     }

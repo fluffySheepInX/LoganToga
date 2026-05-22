@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "BuildingEditorCommon.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -17,7 +18,7 @@ namespace LT3
 			return false;
 		}
 
-		if (!editor.uiLayoutEditEnabled && (BuildingEditorCloseRect(editor).leftClicked() || EditorUnitBuildingCloseRect(editor).leftClicked()))
+		if (!editor.uiLayoutEditEnabled && (HandleRectButtonClick(BuildingEditorCloseRect(editor)) || HandleRectButtonClick(EditorUnitBuildingCloseRect(editor))))
 		{
 			editor.showBuildingEditor = false;
 			editor.showUnitParameterEditor = false;
@@ -25,29 +26,11 @@ namespace LT3
 			return true;
 		}
 
-		if (BuildingEditorTabRect(editor, 0).leftClicked())
+		if (HandleIntTabButtons(editor.buildingEditorTab, 5, [&](int32 index)
+			{
+				return BuildingEditorTabRect(editor, index);
+			}))
 		{
-			editor.buildingEditorTab = 0;
-			return true;
-		}
-		if (BuildingEditorTabRect(editor, 1).leftClicked())
-		{
-			editor.buildingEditorTab = 1;
-			return true;
-		}
-		if (BuildingEditorTabRect(editor, 2).leftClicked())
-		{
-			editor.buildingEditorTab = 2;
-			return true;
-		}
-		if (BuildingEditorTabRect(editor, 3).leftClicked())
-		{
-			editor.buildingEditorTab = 3;
-			return true;
-		}
-		if (BuildingEditorTabRect(editor, 4).leftClicked())
-		{
-			editor.buildingEditorTab = 4;
 			return true;
 		}
 
@@ -57,22 +40,22 @@ namespace LT3
 		}
 
 		const UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		if (BuildingEditorAnchorButtonRect(editor, 0).leftClicked())
+		if (HandleRectButtonClick(BuildingEditorAnchorButtonRect(editor, 0)))
 		{
 			SetSelectedUnitPlacementAnchor(editor, catalog, UnitPlacementAnchor::Center);
 			return true;
 		}
-		if (BuildingEditorAnchorButtonRect(editor, 1).leftClicked())
+		if (HandleRectButtonClick(BuildingEditorAnchorButtonRect(editor, 1)))
 		{
 			SetSelectedUnitPlacementAnchor(editor, catalog, UnitPlacementAnchor::BottomCenter);
 			return true;
 		}
-		if (BuildingEditorRenderSizeModeButtonRect(editor, 0).leftClicked())
+		if (HandleRectButtonClick(BuildingEditorRenderSizeModeButtonRect(editor, 0)))
 		{
 			SetSelectedUnitRenderSizeMode(editor, catalog, UnitRenderSizeMode::Gameplay);
 			return true;
 		}
-		if (BuildingEditorRenderSizeModeButtonRect(editor, 1).leftClicked())
+		if (HandleRectButtonClick(BuildingEditorRenderSizeModeButtonRect(editor, 1)))
 		{
 			SetSelectedUnitRenderSizeMode(editor, catalog, UnitRenderSizeMode::Art);
 			return true;
@@ -81,62 +64,38 @@ namespace LT3
 		const bool artMode = (entry.renderSizeMode == UnitRenderSizeMode::Art);
 		if (artMode)
 		{
-			if (BuildingEditorArtWidthRefButtonRect(editor, 0).leftClicked())
+			if (HandleRectButtonClick(BuildingEditorArtWidthRefButtonRect(editor, 0)))
 			{
 				SetSelectedUnitArtWidthReference(editor, catalog, UnitArtWidthReference::Cell);
 				return true;
 			}
-			if (BuildingEditorArtWidthRefButtonRect(editor, 1).leftClicked())
+			if (HandleRectButtonClick(BuildingEditorArtWidthRefButtonRect(editor, 1)))
 			{
 				SetSelectedUnitArtWidthReference(editor, catalog, UnitArtWidthReference::Pixel);
 				return true;
 			}
-			if (BuildingEditorKeepAspectButtonRect(editor).leftClicked())
+			if (HandleRectButtonClick(BuildingEditorKeepAspectButtonRect(editor)))
 			{
 				ToggleSelectedUnitArtKeepAspect(editor, catalog);
 				return true;
 			}
-			if (BuildingEditorSizeValueButtonRect(editor, 0).leftClicked())
+			if (const Optional<double> delta = FindClickedDeltaButton({ -0.4, -0.1, 0.1, 0.4 }, [&](int32 index)
+				{
+					return BuildingEditorSizeValueButtonRect(editor, index);
+				}))
 			{
-				ChangeSelectedUnitArtWidthValueForTab(editor, catalog, editor.buildingEditorTab, -0.4);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 1).leftClicked())
-			{
-				ChangeSelectedUnitArtWidthValueForTab(editor, catalog, editor.buildingEditorTab, -0.1);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 2).leftClicked())
-			{
-				ChangeSelectedUnitArtWidthValueForTab(editor, catalog, editor.buildingEditorTab, 0.1);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 3).leftClicked())
-			{
-				ChangeSelectedUnitArtWidthValueForTab(editor, catalog, editor.buildingEditorTab, 0.4);
+				ChangeSelectedUnitArtWidthValueForTab(editor, catalog, editor.buildingEditorTab, *delta);
 				return true;
 			}
 		}
 		else
 		{
-			if (BuildingEditorSizeValueButtonRect(editor, 0).leftClicked())
+			if (const Optional<double> delta = FindClickedDeltaButton({ -0.4, -0.1, 0.1, 0.4 }, [&](int32 index)
+				{
+					return BuildingEditorSizeValueButtonRect(editor, index);
+				}))
 			{
-				ChangeSelectedUnitGameplaySizeMul(editor, catalog, -0.4);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 1).leftClicked())
-			{
-				ChangeSelectedUnitGameplaySizeMul(editor, catalog, -0.1);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 2).leftClicked())
-			{
-				ChangeSelectedUnitGameplaySizeMul(editor, catalog, 0.1);
-				return true;
-			}
-			if (BuildingEditorSizeValueButtonRect(editor, 3).leftClicked())
-			{
-				ChangeSelectedUnitGameplaySizeMul(editor, catalog, 0.4);
+				ChangeSelectedUnitGameplaySizeMul(editor, catalog, *delta);
 				return true;
 			}
 		}
@@ -200,219 +159,24 @@ namespace LT3
 			}
 		}
 
-		const bool shadowTab = (editor.buildingEditorTab == 1);
-		const bool lineHorizontalTab = (editor.buildingEditorTab == 2);
-		const bool lineRightTab = (editor.buildingEditorTab == 3);
-		const bool lineLeftTab = (editor.buildingEditorTab == 4);
-
-		if (BuildingEditorAxisButtonRect(editor, 0, 0).leftClicked())
+		const Point offsetDeltas[2][4] = {
+			{ Point{ -4, 0 }, Point{ -1, 0 }, Point{ 1, 0 }, Point{ 4, 0 } },
+			{ Point{ 0, -4 }, Point{ 0, -1 }, Point{ 0, 1 }, Point{ 0, 4 } },
+		};
+		for (int32 axisIndex = 0; axisIndex < 2; ++axisIndex)
 		{
-			if (shadowTab)
+			for (int32 buttonIndex = 0; buttonIndex < 4; ++buttonIndex)
 			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ -4, 0 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ -4, 0 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ -4, 0 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ -4, 0 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ -4, 0 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 0, 1).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ -1, 0 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ -1, 0 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ -1, 0 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ -1, 0 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ -1, 0 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 0, 2).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 1, 0 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 1, 0 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 1, 0 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 1, 0 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 1, 0 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 0, 3).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 4, 0 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 4, 0 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 4, 0 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 4, 0 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 4, 0 });
+				if (HandleRectButtonClick(BuildingEditorAxisButtonRect(editor, axisIndex, buttonIndex)))
+				{
+					ChangeSelectedUnitEditorTabOffset(editor, catalog, offsetDeltas[axisIndex][buttonIndex]);
+				}
 			}
 		}
 
-		if (BuildingEditorAxisButtonRect(editor, 1, 0).leftClicked())
+		if (HandleRectButtonClick(BuildingEditorResetRect(editor)))
 		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 0, -4 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 0, -4 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 0, -4 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 0, -4 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 0, -4 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 1, 1).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 0, -1 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 0, -1 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 0, -1 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 0, -1 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 0, -1 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 1, 2).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 0, 1 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 0, 1 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 0, 1 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 0, 1 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 0, 1 });
-			}
-		}
-		if (BuildingEditorAxisButtonRect(editor, 1, 3).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ChangeSelectedUnitShadowOffset(editor, catalog, Point{ 0, 4 });
-			}
-			else if (lineHorizontalTab)
-			{
-				ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, Point{ 0, 4 });
-			}
-			else if (lineRightTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, Point{ 0, 4 });
-			}
-			else if (lineLeftTab)
-			{
-				ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, Point{ 0, 4 });
-			}
-			else
-			{
-				ChangeSelectedUnitVisualOffset(editor, catalog, Point{ 0, 4 });
-			}
-		}
-
-		if (BuildingEditorResetRect(editor).leftClicked())
-		{
-			if (shadowTab)
-			{
-				ResetSelectedUnitShadowOffset(editor, catalog);
-			}
-			else if (lineHorizontalTab)
-			{
-				ResetSelectedUnitLineIconHorizontalOffset(editor, catalog);
-			}
-			else if (lineRightTab)
-			{
-				ResetSelectedUnitLineIconDiagUpRightOffset(editor, catalog);
-			}
-			else if (lineLeftTab)
-			{
-				ResetSelectedUnitLineIconDiagUpLeftOffset(editor, catalog);
-			}
-			else
-			{
-				ResetSelectedUnitVisualOffset(editor, catalog);
-			}
+			ResetSelectedUnitEditorTabOffset(editor, catalog);
 		}
 
 		return true;

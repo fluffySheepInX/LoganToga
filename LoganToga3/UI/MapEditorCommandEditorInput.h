@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorCommandEditorHelpers.h"
+# include "MapEditorDescriptionEditor.h"
 
 namespace LT3
 {
@@ -181,6 +182,19 @@ namespace LT3
 				}
 				return true;
 			}
+			const RectF descriptionItem = EditorCommandContextMenuItemRect(editor.commandContextMenuPos, 3);
+			if (descriptionItem.leftClicked())
+			{
+				const int32 srcIdx = *editor.commandContextMenuTargetIndex;
+				editor.commandContextMenuTargetIndex = none;
+				if (0 <= srcIdx && srcIdx < static_cast<int32>(defs.buildActions.size()))
+				{
+					editor.selectedCommandActionIndex = srcIdx;
+					const BuildActionDef& action = defs.buildActions[srcIdx];
+					OpenDescriptionEditor(editor, DescriptionEditorTargetKind::Command, srcIdx, U"Command: {}"_fmt(action.name.isEmpty() ? action.id : action.name), action.description);
+				}
+				return true;
+			}
 			else if (!menuRect.mouseOver() && (MouseL.down() || MouseR.down()))
 			{
 				editor.commandContextMenuTargetIndex = none;
@@ -299,7 +313,7 @@ namespace LT3
 			if (editor.commandEditorMode == 2)
 			{
 				const bool showLineSettings = (action.placementMode == BuildPlacementMode::Line);
-				const double inspectContentHeight = showLineSettings ? 544.0 : 460.0;
+				const double inspectContentHeight = showLineSettings ? 576.0 : 492.0;
 				const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 				editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 				if (inspectTopViewport.mouseOver())
@@ -310,6 +324,7 @@ namespace LT3
 
 				const double scroll = editor.commandInspectScroll;
 				const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
+				const RectF spawnCountRow = EditorCommandSpawnCountRowRect(scroll);
 				const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 				const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
 				const RectF lineDragPlacementToggleRect = EditorCommandLineDragPlacementToggleRect(scroll);
@@ -324,6 +339,44 @@ namespace LT3
 					editor.commandBindingsDirty = true;
 					editor.statusText = U"Command placement toggled: {} -> {}"_fmt(action.name, action.isMove ? U"ON" : U"OFF");
 					consumed = true;
+				}
+				if (action.resultType == BuildActionResultType::Unit)
+				{
+					for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+					{
+						const RectF buttonRect = EditorCommandSpawnCountButtonRect(spawnCountRow, buttonIndex);
+						if (!buttonRect.leftClicked())
+						{
+							continue;
+						}
+
+						if (buttonIndex == 0)
+						{
+							action.createCount = Max(1, action.createCount - 1);
+						}
+						else if (buttonIndex == 1)
+						{
+							action.createCount = Min(32, Max(1, action.createCount) + 1);
+						}
+						else
+						{
+							action.createCount = 1;
+						}
+
+						action.createCount = Clamp(action.createCount, 1, 32);
+						editor.commandBindingsDirty = true;
+						editor.statusText = U"Command spawn count updated: {} x{}"_fmt(action.name, action.createCount);
+						consumed = true;
+						break;
+					}
+				}
+				else
+				{
+					action.createCount = 1;
+				}
+				if (consumed)
+				{
+					return true;
 				}
 				if (placementModePointRect.leftClicked())
 				{

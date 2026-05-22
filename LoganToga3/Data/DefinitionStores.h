@@ -8,9 +8,23 @@ namespace LT3
     {
         String tag;
         String name;
+        String description;
+        String icon;
+        Array<String> iconLayers;
+        SkillKind kind = SkillKind::Missile;
         double range = 120.0;
         double cooldownSec = 0.8;
+        int32 mpCost = 0;
         int32 damage = 8;
+        double projectileSpeed = 380.0;
+        SkillProjectileMotion projectileMotion = SkillProjectileMotion::Direct;
+        int32 burstCount = 1;
+        double burstIntervalSec = 0.0;
+        double spreadDeg = 0.0;
+        double arcHeight = 72.0;
+        double orbitRadius = 54.0;
+        double orbitAngularSpeedDeg = 220.0;
+        double orbitDurationSec = 1.2;
         ColorF color = Palette::White;
     };
 

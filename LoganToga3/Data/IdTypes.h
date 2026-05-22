@@ -48,6 +48,23 @@ namespace LT3
         Food,
     };
 
+    enum class SkillKind : uint8
+    {
+        Missile,
+        Sword,
+        Heal,
+        Summon,
+        Charge,
+        Status,
+    };
+
+    enum class SkillProjectileMotion : uint8
+    {
+        Direct,
+        Parabola,
+        Orbit,
+    };
+
     enum class BuildActionResultType : uint8
     {
         None,

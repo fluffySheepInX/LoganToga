@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoganToga3 保守性・拡張性 改善レポート</title>
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --panel: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #dbe3ef;
+            --accent: #2563eb;
+            --good: #15803d;
+            --warn: #b45309;
+            --danger: #b91c1c;
+            --soft-blue: #eaf2ff;
+            --soft-green: #eaf8ef;
+            --soft-orange: #fff3e4;
+            --soft-red: #feecec;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Yu Gothic UI", "Segoe UI", system-ui, sans-serif;
+            line-height: 1.72;
+        }
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 62%, #60a5fa 100%);
+            color: #fff;
+            padding: 42px 28px;
+        }
+        header .wrap, main { max-width: 1180px; margin: 0 auto; }
+        h1 { margin: 0 0 10px; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.2; }
+        h2 { color: #172554; border-bottom: 2px solid var(--line); padding-bottom: 8px; margin-top: 0; }
+        h3 { color: #1d4ed8; margin-bottom: 8px; }
+        main { padding: 28px; }
+        section, .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+            margin-bottom: 24px;
+            padding: 24px;
+        }
+        .subtitle { color: #dbeafe; max-width: 940px; font-size: 1.08rem; }
+        .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .pill {
+            display: inline-flex;
+            border: 1px solid rgba(255,255,255,.24);
+            background: rgba(255,255,255,.14);
+            color: #fff;
+            border-radius: 999px;
+            padding: 5px 12px;
+            font-size: .92rem;
+        }
+        .grid { display: grid; gap: 16px; }
+        .grid.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid.three { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+        .note { border-left: 5px solid var(--accent); background: var(--soft-blue); padding: 14px 16px; border-radius: 12px; }
+        .good { border-left-color: var(--good); background: var(--soft-green); }
+        .warn { border-left-color: var(--warn); background: var(--soft-orange); }
+        .danger { border-left-color: var(--danger); background: var(--soft-red); }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+        th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+        th { background: #eff6ff; color: #1e3a8a; }
+        tr:last-child td { border-bottom: none; }
+        code { font-family: Consolas, "Cascadia Mono", monospace; background: #eef2ff; color: #1e3a8a; padding: 1px 5px; border-radius: 5px; }
+        .tag { display: inline-block; border-radius: 8px; padding: 2px 8px; font-weight: 700; font-size: .82rem; }
+        .p1 { color: var(--danger); background: var(--soft-red); }
+        .p2 { color: var(--warn); background: var(--soft-orange); }
+        .p3 { color: var(--good); background: var(--soft-green); }
+        .small { color: var(--muted); font-size: .94rem; }
+        ul { padding-left: 1.3rem; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <h1>LoganToga3 保守性・拡張性 改善レポート</h1>
+        <p class="subtitle">LoganToga3 の App / BattleWorld / Systems / Data / UI を横断して、冗長または削除可能な処理、抽象化できるロジック、今後の拡張に備えた分離ポイントを整理した設計レビューです。</p>
+        <div class="meta">
+            <span class="pill">対象: LoganToga3</span>
+            <span class="pill">目的: maintainability / extensibility</span>
+            <span class="pill">方針: テンプレートより関数・小クラス・データ駆動を優先</span>
+            <span class="pill">形式: 静的 HTML</span>
+        </div>
+    </div>
+</header>
+<main>
+    <section>
+        <h2>1. 要約</h2>
+        <div class="grid three">
+            <div class="note danger">
+                <h3>最優先</h3>
+                <p>UI 入力・描画・Rect 定義に重複が多く、機能追加時の変更箇所が増えやすい状態です。特にツールバー、タブ、数値増減ボタン、パネル hover 判定は共通化効果が高いです。</p>
+            </div>
+            <div class="note warn">
+                <h3>中優先</h3>
+                <p>資源コスト、TOML 配列読み書き、ファイルパス解決、enum 変換が複数箇所に散っています。データ操作の小さな共通関数へ寄せると安全性が上がります。</p>
+            </div>
+            <div class="note good">
+                <h3>低リスク</h3>
+                <p>既にヘッダ単位で機能分割されており、段階的に整理できます。大規模な継承階層やテンプレート化を行わなくても改善可能です。</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. 調査した主な領域</h2>
+        <table>
+            <thead><tr><th>領域</th><th>主なファイル</th><th>観察</th></tr></thead>
+            <tbody>
+                <tr><td>アプリ入口</td><td><code>Main.cpp</code>, <code>App/AppUpdate.h</code>, <code>App/AppRender.h</code>, <code>App/AppUiState.h</code></td><td>Gaussian アドオン、入力、更新、描画の流れは単純。ただしデバッグ UI と定義再生成処理が App 層に直接置かれています。</td></tr>
+                <tr><td>戦闘ワールド</td><td><code>BattleWorld/BattleWorldStores.h</code>, <code>BattleWorld/BattleWorldOps.h</code>, <code>Systems/*</code></td><td>SoA 形式のストアは方向性が明確です。一方、ユニット追加時に複数ストアの同期が手作業で、漏れに弱い構造です。</td></tr>
+                <tr><td>データ定義</td><td><code>Data/DefinitionStores.h</code>, <code>Data/UnitCatalog.h</code>, <code>Data/Loaders/*.h</code></td><td>TOML ベースの設計はプロジェクト方針に合っています。文字列配列、エスケープ、パス解決に重複があります。</td></tr>
+                <tr><td>エディタ UI</td><td><code>UI/MapEditor*.h</code>, <code>UI/BuildingEditor*.h</code></td><td>Rect ベース UI の方針は一貫していますが、ボタン定義・入力・描画が別々に増殖しやすい状態です。</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>3. 冗長または削除候補の処理</h2>
+        <table>
+            <thead><tr><th>優先度</th><th>対象</th><th>内容</th><th>推奨</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><span class="tag p1">P1</span></td>
+                    <td><code>App/AppUiState.h</code> のデバッグボタン</td>
+                    <td><code>HandleDebugClipboardCaptureButton</code>、<code>HandleDebugClipboardCaptureShortcut</code>、<code>HandleDebugNewGameButtons</code>、描画関数で、表示条件・hover・busy・クリック処理が個別に書かれています。</td>
+                    <td>「デバッグ用 Rect ボタン」を扱う小さな関数にまとめます。テンプレートではなく、<code>DebugButtonSpec</code> のような構造体と通常関数で十分です。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p1">P1</span></td>
+                    <td><code>UI/MapEditorToolbarInput.h</code> と <code>UI/MapEditorDrawBasePanelsCore.h</code></td>
+                    <td>ツールバーのボタン番号、ラベル、active 条件、クリック時処理が入力側と描画側に分散しています。</td>
+                    <td>ボタン一覧を配列データ化し、入力と描画が同じ定義を読む形にします。処理はラムダで保持できます。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p1">P1</span></td>
+                    <td><code>UI/BuildingEditorInput.h</code></td>
+                    <td>タブ 0〜4、サイズ変更ボタン、軸方向ボタン、reset 処理で同じ if パターンが繰り返されています。</td>
+                    <td>タブ切替はループ化、軸方向は <code>Point</code> 配列 + 「現在のタブに応じてどの setter を呼ぶか」を関数化します。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p2">P2</span></td>
+                    <td><code>Systems/BattleQueries.h</code> と <code>Systems/BattleBuildOrders.h</code></td>
+                    <td>資源の検索、所持量確認、消費処理が複数箇所にあります。建築ラインでは合計コスト計算も別実装です。</td>
+                    <td><code>BuildActionCost</code> 風の通常 struct と <code>CanPayCost</code> / <code>PayCost</code> を作り、単体・複数配置の両方で使います。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p2">P2</span></td>
+                    <td><code>Data/UnitCatalog.h</code> と <code>Data/Loaders/BuildActionDefTomlHelpers.h</code></td>
+                    <td>TOML 文字列配列の読み書き、文字列エスケープ、TextWriter へ直接書く未使用風関数が重複しています。</td>
+                    <td><code>Data/TomlTextUtils.h</code> のような非テンプレート helper に寄せます。未使用の writer 直書き関数は参照確認後に削除候補です。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p2">P2</span></td>
+                    <td><code>Resolve*TomlPath</code> 系</td>
+                    <td>App 配下と repo 配下を順番に見る処理が複数あります。候補数や fallback の方針もファイルごとに揺れています。</td>
+                    <td><code>ResolveFirstExistingPath(candidates)</code> を追加し、各ローダーは候補リストだけ持つ形にします。</td>
+                </tr>
+                <tr>
+                    <td><span class="tag p3">P3</span></td>
+                    <td><code>App/AppLifecycle.h</code>, <code>BattleWorld/BattleWorld.h</code>, <code>MapEditor.h</code> など</td>
+                    <td>集約 include だけのヘッダが多いです。便利ですが依存関係を見えにくくし、ビルド範囲を広げる可能性があります。</td>
+                    <td>即削除ではなく、編集頻度が高いファイルだけ直接 include へ寄せる検討をします。</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>4. 抽象化できるロジック</h2>
+        <div class="grid two">
+            <div class="card">
+                <h3>4.1 Rect ベース UI 部品</h3>
+                <p>プロジェクト方針として SimpleGUI ではなく Rect ベースの UI を使うべきなので、抽象化も Rect を前提にします。</p>
+                <ul>
+                    <li><code>DrawEditorButton</code> を中心に、hover・active・disabled を扱う共通描画関数へ拡張する。</li>
+                    <li>クリック判定と描画を同じ <code>ButtonSpec</code> データから作る。</li>
+                    <li>タブ、close ボタン、+/- ボタンは専用の小関数へ分ける。</li>
+                </ul>
+                <p class="small">テンプレート不要。struct と通常関数、必要ならラムダで実現できます。</p>
+            </div>
+            <div class="card">
+                <h3>4.2 エディタのパネル hover 判定</h3>
+                <p><code>DrawMapEditorCurrentCellMarker</code> では多数の Rect を OR でつないでいます。新パネル追加時に漏れやすい構造です。</p>
+                <ul>
+                    <li><code>CollectBlockingEditorPanelRects(editor)</code> を作る。</li>
+                    <li>各パネルが「カーソルをブロックする Rect」を返すように分離する。</li>
+                    <li>描画と入力で同じブロック判定を使えるようにする。</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>4.3 戦闘の資源コスト</h3>
+                <p>現在は gold/trust/food が個別メンバーとして広がっています。資源種類が増えると修正箇所が多くなります。</p>
+                <ul>
+                    <li><code>BuildActionCost { gold, trust, food }</code> を導入する。</li>
+                    <li><code>ScaleCost(cost, count)</code>、<code>CanPayCost(world, defs, faction, cost)</code>、<code>PayCost(...)</code> に寄せる。</li>
+                    <li>UI 表示・保存は既存フィールドを維持し、内部処理から段階的に置き換える。</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>4.4 TOML ユーティリティ</h3>
+                <p><code>UnitCatalog</code> と <code>BuildActionDefTomlHelpers</code> に似た処理があります。</p>
+                <ul>
+                    <li>文字列エスケープ、文字列配列読み込み、文字列配列生成を共通化する。</li>
+                    <li>「行ごとの自動改行を避ける」という既存方針に合わせ、全文を String として組み立てる関数を優先する。</li>
+                    <li>writer へ直接配列を書く関数は、参照がなければ削除候補にする。</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>5. 戦闘システム設計の改善ポイント</h2>
+        <table>
+            <thead><tr><th>対象</th><th>問題</th><th>改善案</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>SoA ストア同期</td>
+                    <td><code>AddUnitToBattleWorld</code> が <code>units</code>、<code>cooldowns</code>、<code>buildQueues</code>、<code>carriers</code>、<code>pathing</code> を順番に add しています。新ストア追加時に呼び忘れやすいです。</td>
+                    <td><code>BattleWorldUnitStores::addUnitAll</code> 相当の関数へ寄せるか、<code>AddUnitToBattleWorld</code> の直下に「追加必須ストア一覧」をコメントではなくコード上の配列的な構造で表す。</td>
+                </tr>
+                <tr>
+                    <td>タスク遷移</td>
+                    <td><code>Idle</code>、<code>Moving</code>、<code>Gathering</code>、<code>Building</code>、<code>Attacking</code> への変更が各 system に散っています。</td>
+                    <td><code>SetUnitTaskIdle</code>、<code>SetUnitTaskMoving</code> のような副作用込み関数を作り、target / attackTarget / resourceTarget / path clear をまとめる。</td>
+                </tr>
+                <tr>
+                    <td>更新順</td>
+                    <td><code>UpdateBattleSimulation</code> に順序が直書きされています。読みやすい一方、追加 system の意図が残りにくいです。</td>
+                    <td>当面は直書きでよいですが、各行の目的を短い関数名に寄せる。テンプレートや system registry はまだ不要です。</td>
+                </tr>
+                <tr>
+                    <td>配置判定</td>
+                    <td><code>EvaluateBuildPlacementCell</code> が resource / reservation / unit / object を直接調べています。</td>
+                    <td><code>IsCellBlockedByResource</code>、<code>IsCellBlockedByUnit</code>、<code>IsCellBlockedByObject</code> に分けると、将来の地形制限や陣営制限を足しやすくなります。</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>6. 削除前に確認すべき候補</h2>
+        <div class="note warn">
+            <p>以下は「すぐ削除」ではなく、参照検索・実行確認後の削除候補です。</p>
+        </div>
+        <ul>
+            <li><code>WriteTomlStringArray</code> / <code>WriteTomlStringArrayValue</code>: 現在の保存処理は文字列を組み立てて <code>writer.write</code> する方針に寄っているため、未使用なら削除候補です。</li>
+            <li><code>BuildCommandBaseFromCatalog</code>: 読み込み処理内で直接使われていない場合、旧設計の残骸である可能性があります。</li>
+            <li>集約 include だけのヘッダ: 公開 API として必要なもの以外は、将来の依存整理時に削減候補です。</li>
+            <li><code>App/example</code> 配下の Siv3D サンプル資産: 配布物や実行時に不要なら、プロジェクトから除外または別管理候補です。ただし Siv3D の標準配置に依存している可能性があるため慎重に確認します。</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>7. 推奨リファクタリング順序</h2>
+        <table>
+            <thead><tr><th>順序</th><th>作業</th><th>理由</th><th>リスク</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Rect ボタン描画と入力の小さな共通関数化</td><td>UI の重複が最も多く、効果が見えやすい。</td><td>低</td></tr>
+                <tr><td>2</td><td>BuildingEditor のタブ・数値増減・軸オフセット処理をループ化</td><td>同一パターンの if が多く、バグ混入を減らせる。</td><td>低〜中</td></tr>
+                <tr><td>3</td><td>TOML 文字列ユーティリティを共通化</td><td>保存形式の一貫性を保ちやすい。</td><td>中。改行方針を必ず維持する。</td></tr>
+                <tr><td>4</td><td>資源コスト処理を <code>CanPay</code> / <code>Pay</code> へ統合</td><td>建築、ライン建築、将来の AI 消費で再利用できる。</td><td>中。ゲームバランスに影響するためテスト必須。</td></tr>
+                <tr><td>5</td><td>ユニットタスク遷移の関数化</td><td>移動・採集・建築・攻撃の副作用を集約できる。</td><td>中。既存挙動との差分確認が必要。</td></tr>
+                <tr><td>6</td><td>未使用 helper と不要資産の削除</td><td>最後に行うと、必要な helper を誤削除しにくい。</td><td>低〜中。参照検索と起動確認が必要。</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>8. テンプレートを避けた抽象化方針</h2>
+        <div class="note good">
+            <p>このコードベースでは、テンプレートを使わずに十分な抽象化が可能です。主に次の 4 つを使うのが安全です。</p>
+        </div>
+        <ul>
+            <li><strong>小さな struct:</strong> ボタン、タブ、コスト、パネル Rect のようなデータをまとめる。</li>
+            <li><strong>通常関数:</strong> <code>DrawButton</code>、<code>HandleButtonClick</code>、<code>CanPayCost</code> のように明確な名前で共通化する。</li>
+            <li><strong>ラムダ:</strong> その関数内だけで使う一時的な処理、例えば「クリックされたらこの値を変える」に使う。</li>
+            <li><strong>データ駆動テーブル:</strong> ツールバーやタブのように「同じ形の項目が並ぶ」ものは配列で管理する。</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>9. 結論</h2>
+        <p>LoganToga3 は、データ指向の BattleWorld と Rect ベース UI という方向性が既に見えています。現在の主な課題は、機能追加のたびに同じような入力・描画・保存・資源処理を各所へ足している点です。</p>
+        <p>最初に UI ボタンと BuildingEditor の重複を削ると、見た目や操作感を変えずに保守性を改善できます。その後、TOML ユーティリティと資源コスト処理を整理すると、ユニット・建築・資源の拡張がしやすくなります。</p>
+    </section>
+</main>
+</body>
+</html>

@@ -36,12 +36,13 @@ namespace LT3
 		const Vec2 worldMouse = ToWorldPos(screenMouse);
 		if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.defs, definitions.unitCatalog, screenMouse))
 		{
-			if (ui.mapEditor.unitCatalogDirty || ui.mapEditor.buildLineIconsDirty)
+			if (ui.mapEditor.unitCatalogDirty || ui.mapEditor.buildLineIconsDirty || ui.mapEditor.skillDefsDirty)
 			{
 				definitions.defs = CreateDefaultDefinitions(definitions.unitCatalog);
 				definitions.renderAssets = BuildBattleRenderAssets(definitions.unitCatalog, &definitions.defs);
 				ui.mapEditor.unitCatalogDirty = false;
 				ui.mapEditor.buildLineIconsDirty = false;
+				ui.mapEditor.skillDefsDirty = false;
 			}
 			return;
 		}

@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "BattleQueries.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -14,7 +15,7 @@ namespace LT3
         const UnitDef& unitDef = defs.units[world.units.defId[unit]];
         if (unitDef.skill == InvalidSkillDefId)
         {
-            world.units.attackTarget[unit] = InvalidUnitId;
+            ClearUnitAttackTarget(world, unit);
             return InvalidUnitId;
         }
 
@@ -25,7 +26,7 @@ namespace LT3
             || world.units.position[unit].distanceFrom(world.units.position[target]) > skill.range)
         {
             target = FindNearestEnemy(world, unit, skill.range);
-            world.units.attackTarget[unit] = target;
+            SetUnitAttackTarget(world, unit, target);
         }
 
         return target;

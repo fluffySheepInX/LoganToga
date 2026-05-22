@@ -174,6 +174,7 @@
     <None Include=".editorconfig" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitSample.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
@@ -355,6 +356,7 @@
     <ClInclude Include="Data\Loaders\ResourceDefLoader.h" />
     <ClInclude Include="Data\Loaders\SkillDefLoader.h" />
     <ClInclude Include="Data\Loaders\UnitDefLoader.h" />
+    <ClInclude Include="Data\TomlTextUtils.h" />
     <ClInclude Include="Data\UnitCatalog.h" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="stdafx.h" />
@@ -369,6 +371,7 @@
     <ClInclude Include="Systems\BattleSelectionInputSystem.h" />
     <ClInclude Include="Systems\BattleSetup.h" />
     <ClInclude Include="Systems\BattleSystems.h" />
+    <ClInclude Include="Systems\BattleUnitState.h" />
     <ClInclude Include="Systems\BattleUpdateSystem.h" />
     <ClInclude Include="Systems\BuildSystem.h" />
     <ClInclude Include="Systems\CameraInputSystem.h" />
@@ -406,6 +409,7 @@
     <ClInclude Include="UI\MapEditorCommandEditorInput.h" />
     <ClInclude Include="UI\MapEditorCoreTypes.h" />
     <ClInclude Include="UI\MapEditorDecalLayoutRects.h" />
+    <ClInclude Include="UI\MapEditorDescriptionEditor.h" />
     <ClInclude Include="UI\MapEditorDraw.h" />
     <ClInclude Include="UI\MapEditorDrawBase.h" />
     <ClInclude Include="UI\MapEditorDrawBaseAssetHelpers.h" />
@@ -430,6 +434,7 @@
     <ClInclude Include="UI\MapEditorResourceLayoutRects.h" />
     <ClInclude Include="UI\MapEditorToolbarInput.h" />
     <ClInclude Include="UI\MapEditorToolbarLayoutRects.h" />
+    <ClInclude Include="UI\MapEditorToolbarModel.h" />
     <ClInclude Include="UI\MapEditorTypes.h" />
     <ClInclude Include="UI\MapEditorUiLayout.h" />
     <ClInclude Include="UI\MapEditorUiLayoutInput.h" />
@@ -439,6 +444,11 @@
     <ClInclude Include="UI\MapEditorUnitCatalogLayoutInput.h" />
     <ClInclude Include="UI\MapEditorUnitLayoutRects.h" />
     <ClInclude Include="UI\QuarterView.h" />
+    <ClInclude Include="UI\RectUiHelpers.h" />
+    <ClInclude Include="UI\SkillEditor.h" />
+    <ClInclude Include="UI\SkillEditorCommon.h" />
+    <ClInclude Include="UI\SkillEditorDraw.h" />
+    <ClInclude Include="UI\SkillEditorInput.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">

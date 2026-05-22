@@ -4,6 +4,7 @@
 # include "../UI/BattleRenderer.h"
 # include "../UI/MapEditor.h"
 # include "../UI/QuarterView.h"
+# include "../UI/SkillEditorCommon.h"
 
 namespace LT3
 {
@@ -53,6 +54,10 @@ namespace LT3
             return false;
         }
         if (mapEditor.showCommandEditor && EditorCommandPanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (mapEditor.showSkillEditor && SkillEditorPanelRect().mouseOver())
         {
             return false;
         }

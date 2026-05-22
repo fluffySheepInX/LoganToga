@@ -306,9 +306,9 @@ namespace LT3
 
 			world.buildQueues.pendingEntry[builder] = QueuedBuildAction{ actionId, *resolvedTargetPosition, true };
 			world.buildQueues.hasPendingEntry[builder] = true;
-			world.buildQueues.locked[builder] = true;
-			world.buildQueues.progressSec[builder] = 0.0;
-			world.units.attackTarget[builder] = InvalidUnitId;
+			SetBuildQueueLocked(world, builder, true);
+			ResetBuildQueueProgress(world, builder);
+			ClearUnitAttackTarget(world, builder);
 			IssueMove(world, builder, ResolveBuildApproachPosition(world, *resolvedTargetPosition));
 			return true;
 		}
@@ -316,11 +316,11 @@ namespace LT3
 		Array<QueuedBuildAction>& queue = world.buildQueues.entries[builder];
 		const bool wasEmpty = queue.isEmpty();
 		queue << QueuedBuildAction{ actionId, resolvedTargetPosition.value_or(Vec2{ 0, 0 }), resolvedTargetPosition.has_value() };
-		world.buildQueues.locked[builder] = true;
+		SetBuildQueueLocked(world, builder, true);
 		if (wasEmpty)
 		{
-			world.units.task[builder] = UnitTask::Building;
-			world.buildQueues.progressSec[builder] = 0.0;
+			SetUnitBuilding(world, builder);
+			ResetBuildQueueProgress(world, builder);
 		}
 		return true;
 	}
@@ -414,11 +414,11 @@ namespace LT3
 			};
 		}
 
-		world.buildQueues.locked[builder] = true;
+		SetBuildQueueLocked(world, builder, true);
 		if (wasEmpty)
 		{
 			IssueMove(world, builder, ResolveBuildApproachPosition(world, firstTarget));
-			world.buildQueues.progressSec[builder] = 0.0;
+			ResetBuildQueueProgress(world, builder);
 		}
 		return true;
 	}

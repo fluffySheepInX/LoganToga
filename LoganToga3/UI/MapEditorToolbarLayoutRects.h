@@ -3,6 +3,41 @@
 
 namespace LT3
 {
+	inline RectF EditorDescriptionPanelRect()
+	{
+		return RectF{ 520.0, 220.0, 560.0, 300.0 };
+	}
+
+	inline RectF EditorDescriptionTextRect()
+	{
+		const RectF panel = EditorDescriptionPanelRect();
+		return RectF{ panel.x + 18.0, panel.y + 62.0, panel.w - 36.0, 132.0 };
+	}
+
+	inline RectF EditorDescriptionCopyRect()
+	{
+		const RectF panel = EditorDescriptionPanelRect();
+		return RectF{ panel.x + 18.0, panel.y + 210.0, 120.0, 28.0 };
+	}
+
+	inline RectF EditorDescriptionPasteRect()
+	{
+		const RectF panel = EditorDescriptionPanelRect();
+		return RectF{ panel.x + 148.0, panel.y + 210.0, 120.0, 28.0 };
+	}
+
+	inline RectF EditorDescriptionSaveRect()
+	{
+		const RectF panel = EditorDescriptionPanelRect();
+		return RectF{ panel.x + panel.w - 158.0, panel.y + panel.h - 42.0, 64.0, 28.0 };
+	}
+
+	inline RectF EditorDescriptionCancelRect()
+	{
+		const RectF panel = EditorDescriptionPanelRect();
+		return RectF{ panel.x + panel.w - 84.0, panel.y + panel.h - 42.0, 64.0, 28.0 };
+	}
+
 	inline RectF EditorToolbarRect()
 	{
 		return RectF{ 0, 8, 1600, 52 };
@@ -36,7 +71,7 @@ namespace LT3
 
 	inline RectF EditorToolbarPreviewHideButtonRect()
 	{
-		return RectF{ 1360.0, 18.0, 184.0, 32.0 };
+		return RectF{ 1472.0, 18.0, 104.0, 32.0 };
 	}
 
 	inline Optional<int32> EditorToolbarVisualIndex(const MapEditorState& editor, int32 buttonIndex)
@@ -62,6 +97,8 @@ namespace LT3
 			return 5;
 		case 11:
 			return 6;
+		case 12:
+			return 7;
 		default:
 			return none;
 		}
@@ -194,7 +231,7 @@ namespace LT3
 
 	inline RectF EditorUnitContextMenuRect(const Vec2& pos)
 	{
-		return RectF{ pos.x, pos.y, 140.0, 72.0 };
+		return RectF{ pos.x, pos.y, 132.0, 90.0 };
 	}
 
 	inline RectF EditorUnitContextMenuItemRect(const Vec2& pos, int32 index)
@@ -296,6 +333,27 @@ namespace LT3
 		return RectF{ viewport.x + 12.0, viewport.y + 168.0 - scroll, Min(340.0, viewport.w - 24.0), 30.0 };
 	}
 
+	inline RectF EditorCommandSpawnCountRowRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + 140.0 - scroll, Min(340.0, viewport.w - 24.0), 26.0 };
+	}
+
+	inline RectF EditorCommandSpawnCountValueRect(const RectF& row)
+	{
+		const double valueWidth = 64.0;
+		const double rightPadding = 88.0;
+		return RectF{ row.x + row.w - rightPadding - valueWidth, row.y + 1.0, valueWidth, 24.0 };
+	}
+
+	inline RectF EditorCommandSpawnCountButtonRect(const RectF& row, int32 buttonIndex)
+	{
+		const double buttonSize = 24.0;
+		const double gap = 4.0;
+		const double startX = row.x + row.w - (buttonSize * 3.0 + gap * 2.0) - 4.0;
+		return RectF{ startX + buttonIndex * (buttonSize + gap), row.y + 1.0, buttonSize, buttonSize };
+	}
+
 	inline RectF EditorCommandPlacementModePointRect(double scroll = 0.0)
 	{
 		const RectF viewport = EditorCommandInspectTopViewportRect();
@@ -354,7 +412,7 @@ namespace LT3
 
 	inline RectF EditorCommandContextMenuRect(const Vec2& pos)
 	{
-		return RectF{ pos.x, pos.y, 180.0, 104.0 };
+		return RectF{ pos.x, pos.y, 156.0, 120.0 };
 	}
 
 	inline RectF EditorCommandContextMenuItemRect(const Vec2& pos, int32 index)

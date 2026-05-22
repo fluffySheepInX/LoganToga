@@ -10,6 +10,14 @@ namespace LT3
 	inline constexpr int32 DefaultMapEditorHeight = 8;
 	inline constexpr int32 InvalidMapEditorAsset = -1;
 
+	enum class DescriptionEditorTargetKind
+	{
+		None,
+		Command,
+		Unit,
+		Skill,
+	};
+
 	enum class MapEditorAssetKind
 	{
 		Terrain,
@@ -91,6 +99,7 @@ namespace LT3
 		bool showUnitList = false;
 		bool showBuildingEditor = false;
 		bool showCommandEditor = false;
+		bool showSkillEditor = false;
 		double commandListScroll = 0.0;
 		double commandUnitListScroll = 0.0;
 		double commandInspectScroll = 0.0;
@@ -103,6 +112,13 @@ namespace LT3
 		String buildingEditorIconDiagUpRight;
 		String buildingEditorIconDiagUpLeft;
 		bool buildLineIconsDirty = false;
+		double skillListScroll = 0.0;
+		double skillUnitListScroll = 0.0;
+		double skillDetailScroll = 0.0;
+		int32 selectedSkillIndex = 0;
+		bool skillDefsDirty = false;
+		Optional<int32> skillContextMenuTargetIndex;
+		Vec2 skillContextMenuPos{ 0.0, 0.0 };
 		double unitListScroll = 0.0;
 		int32 selectedUnitCatalogIndex = -1;
 		bool showUnitParameterEditor = false;
@@ -180,5 +196,11 @@ namespace LT3
 		Optional<int32> commandRenameTargetIndex;
 		String commandRenameEditText;
 		bool commandRenameIsDuplicate = false;
+
+		// Shared description editor
+		DescriptionEditorTargetKind descriptionEditorTargetKind = DescriptionEditorTargetKind::None;
+		int32 descriptionEditorTargetIndex = -1;
+		String descriptionEditorTitle;
+		String descriptionEditorText;
 	};
 }

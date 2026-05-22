@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Data/TomlTextUtils.h"
 # include "BattleQueries.h"
 
 namespace LT3
@@ -85,19 +86,10 @@ namespace LT3
 
     inline FilePath ResolveMapEditorTomlPath()
     {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/015_BattleMapCellImage/map_editor_map.toml";
-        if (FileSystem::Exists(fromApp))
-        {
-            return fromApp;
-        }
-
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/015_BattleMapCellImage/map_editor_map.toml";
-        if (FileSystem::Exists(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
+        return ResolveFirstExistingPath({
+            U"000_Warehouse/000_DefaultGame/015_BattleMapCellImage/map_editor_map.toml",
+            U"App/000_Warehouse/000_DefaultGame/015_BattleMapCellImage/map_editor_map.toml",
+        });
     }
 
     inline std::pair<Vec2, Vec2> LoadHomePositionsFromMapEditorToml()
@@ -120,19 +112,10 @@ namespace LT3
 
     inline FilePath ResolveResourceNodeTomlPath()
     {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml";
-        if (FileSystem::Exists(fromApp))
-        {
-            return fromApp;
-        }
-
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml";
-        if (FileSystem::Exists(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
+        return ResolveFirstExistingPath({
+            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml",
+            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Map001.ResourceNodes.toml",
+        });
     }
 
     inline void LoadDefaultBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs)

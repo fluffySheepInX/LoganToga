@@ -4,6 +4,7 @@
 # include "../Data/BattleAssetPaths.h"
 # include "../Data/UnitCatalog.h"
 # include "../Data/BuildLineIconOverrides.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -201,6 +202,54 @@ namespace LT3
 		ResetSelectedUnitPointOffset(editor, catalog, &UnitCatalogEntry::lineIconDiagUpLeftOffset);
 	}
 
+	inline void ChangeSelectedUnitEditorTabOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
+	{
+		if (editor.buildingEditorTab == 1)
+		{
+			ChangeSelectedUnitShadowOffset(editor, catalog, delta);
+		}
+		else if (editor.buildingEditorTab == 2)
+		{
+			ChangeSelectedUnitLineIconHorizontalOffset(editor, catalog, delta);
+		}
+		else if (editor.buildingEditorTab == 3)
+		{
+			ChangeSelectedUnitLineIconDiagUpRightOffset(editor, catalog, delta);
+		}
+		else if (editor.buildingEditorTab == 4)
+		{
+			ChangeSelectedUnitLineIconDiagUpLeftOffset(editor, catalog, delta);
+		}
+		else
+		{
+			ChangeSelectedUnitVisualOffset(editor, catalog, delta);
+		}
+	}
+
+	inline void ResetSelectedUnitEditorTabOffset(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		if (editor.buildingEditorTab == 1)
+		{
+			ResetSelectedUnitShadowOffset(editor, catalog);
+		}
+		else if (editor.buildingEditorTab == 2)
+		{
+			ResetSelectedUnitLineIconHorizontalOffset(editor, catalog);
+		}
+		else if (editor.buildingEditorTab == 3)
+		{
+			ResetSelectedUnitLineIconDiagUpRightOffset(editor, catalog);
+		}
+		else if (editor.buildingEditorTab == 4)
+		{
+			ResetSelectedUnitLineIconDiagUpLeftOffset(editor, catalog);
+		}
+		else
+		{
+			ResetSelectedUnitVisualOffset(editor, catalog);
+		}
+	}
+
 	inline void SetSelectedUnitPlacementAnchor(MapEditorState& editor, UnitCatalog& catalog, UnitPlacementAnchor anchor)
 	{
 		if (!HasSelectedCatalogEntry(editor, catalog))
@@ -343,7 +392,9 @@ namespace LT3
 
 	inline void DrawBuildingEditorButton(const RectF& rect, StringView text, const Font& uiFont)
 	{
-		rect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(text).drawAt(16, rect.center(), Palette::White);
+		RectButtonStyle style;
+		style.normalText = Palette::White;
+		style.fontSize = 16;
+		DrawRectButton(rect, text, false, uiFont, style);
 	}
 }

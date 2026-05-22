@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "MapEditorUnitCatalogFileOps.h"
 # include "MapEditorUnitCatalogLayoutInput.h"
+# include "MapEditorDescriptionEditor.h"
 
 namespace LT3
 {
@@ -142,6 +143,20 @@ namespace LT3
 					editor.unitRenameTargetIndex = srcIdx;
 					editor.unitRenameEditText = catalog.entries[srcIdx].name;
 					editor.unitRenameIsDuplicate = false;
+				}
+				return true;
+			}
+			const RectF descriptionItem = EditorUnitContextMenuItemRect(editor.unitContextMenuPos, 2);
+			if (descriptionItem.leftClicked())
+			{
+				const int32 srcIdx = *editor.unitContextMenuTargetIndex;
+				editor.unitContextMenuTargetIndex = none;
+				if (0 <= srcIdx && srcIdx < static_cast<int32>(catalog.entries.size()))
+				{
+					editor.selectedUnitCatalogIndex = srcIdx;
+					editor.showUnitParameterEditor = true;
+					const UnitCatalogEntry& entry = catalog.entries[srcIdx];
+					OpenDescriptionEditor(editor, DescriptionEditorTargetKind::Unit, srcIdx, U"Unit: {}"_fmt(entry.name.isEmpty() ? entry.unit_id : entry.name), entry.description);
 				}
 				return true;
 			}

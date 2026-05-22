@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "TomlTextUtils.h"
 
 namespace LT3
 {
@@ -12,6 +13,7 @@ namespace LT3
         inline constexpr const char32* KeyId = U"id";
         inline constexpr const char32* KeyUnitId = U"unit_id";
         inline constexpr const char32* KeyName = U"name";
+        inline constexpr const char32* KeyDescription = U"description";
         inline constexpr const char32* KeyKind = U"kind";
         inline constexpr const char32* KeyRace = U"race";
         inline constexpr const char32* KeyImage = U"image";
@@ -112,6 +114,7 @@ namespace LT3
         int32 id = 0;
         String unit_id;
         String name;
+        String description;
         String kind;
         String race;
         String image;
@@ -157,91 +160,26 @@ namespace LT3
 
     inline FilePath ResolveUnitCatalogTomlPath()
     {
-        const Array<FilePath> candidates = {
+        return ResolveFirstExistingPath({
             U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
             U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
             U"LoganToga3/App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
-        };
-
-        for (const auto& path : candidates)
-        {
-            if (FileSystem::Exists(path))
-            {
-                return path;
-            }
-        }
-
-        return candidates.back();
+        });
     }
 
     inline Array<String> ReadTomlStringArray(const TOMLValue& value)
     {
-        Array<String> result;
-        if (!value.isArray())
-        {
-            return result;
-        }
-
-        for (const auto item : value.arrayView())
-        {
-            if (const Optional<String> text = item.getOpt<String>())
-            {
-                result << *text;
-            }
-        }
-        return result;
+        return ReadTomlStringArrayValue(value);
     }
 
     inline String UnitCatalogTomlEscape(StringView text)
     {
-        String result;
-        for (const char32 ch : text)
-        {
-            if (ch == U'\\')
-            {
-                result += U"\\\\";
-            }
-            else if (ch == U'\"')
-            {
-                result += U"\\\"";
-            }
-            else
-            {
-                result += ch;
-            }
-        }
-        return result;
-    }
-
-    inline void WriteTomlStringArray(TextWriter& writer, const Array<String>& values)
-    {
-        writer << U"[";
-        for (size_t i = 0; i < values.size(); ++i)
-        {
-            if (i > 0)
-            {
-                writer << U", ";
-            }
-            writer << U"\"" << UnitCatalogTomlEscape(values[i]) << U"\"";
-        }
-        writer << U"]";
+        return EscapeTomlBasicString(text);
     }
 
     inline String BuildTomlStringArray(const Array<String>& values)
     {
-        String result = U"[";
-        for (size_t i = 0; i < values.size(); ++i)
-        {
-            if (i > 0)
-            {
-                result += U", ";
-            }
-
-            result += U"\"" + UnitCatalogTomlEscape(values[i]) + U"\"";
-        }
-
-        result += U"]";
-        return result;
+        return BuildTomlStringArrayValue(values);
     }
 
     inline Array<int32> SortedUnitCatalogEntryIndicesById(const UnitCatalog& catalog)
@@ -352,6 +290,7 @@ namespace LT3
             entry.id = unitValue[UnitCatalogToml::KeyId].getOr<int32>(0);
             entry.unit_id = unitValue[UnitCatalogToml::KeyUnitId].getOr<String>(U"");
             entry.name = unitValue[UnitCatalogToml::KeyName].getOr<String>(entry.unit_id);
+            entry.description = unitValue[UnitCatalogToml::KeyDescription].getOr<String>(U"");
             entry.kind = unitValue[UnitCatalogToml::KeyKind].getOr<String>(U"unit");
             entry.race = unitValue[UnitCatalogToml::KeyRace].getOr<String>(U"");
             entry.image = unitValue[UnitCatalogToml::KeyImage].getOr<String>(U"");
@@ -423,6 +362,7 @@ namespace LT3
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyId, entry.id);
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyUnitId, UnitCatalogTomlEscape(entry.unit_id));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyName, UnitCatalogTomlEscape(entry.name));
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyDescription, UnitCatalogTomlEscape(entry.description));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyKind, UnitCatalogTomlEscape(entry.kind));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyRace, UnitCatalogTomlEscape(entry.race));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyImage, UnitCatalogTomlEscape(entry.image));

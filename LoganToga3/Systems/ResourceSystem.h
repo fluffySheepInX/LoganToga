@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "BattleQueries.h"
+# include "BattleUnitState.h"
 
 namespace LT3
 {
@@ -156,10 +157,10 @@ namespace LT3
                 const size_t node = static_cast<size_t>(resourceTargetNode);
                 if (world.resourceNodes.amount[node] <= 0)
                 {
-                    world.units.resourceTargetNode[unit] = -1;
+                    ClearUnitResourceTarget(world, unit);
                     if (world.units.task[unit] != UnitTask::Building && world.units.task[unit] != UnitTask::Attacking)
                     {
-                        world.units.task[unit] = UnitTask::Idle;
+                        SetUnitIdle(world, unit);
                     }
                 }
                 else if (world.units.position[unit].distanceFrom(world.resourceNodes.position[node]) <= 34.0)
@@ -167,15 +168,15 @@ namespace LT3
                     if (world.resourceNodes.owner[node] == world.units.faction[unit]
                         && world.resourceNodes.captureProgress[node] >= 1.0)
                     {
-                        world.units.resourceTargetNode[unit] = -1;
+                        ClearUnitResourceTarget(world, unit);
                         if (world.units.task[unit] != UnitTask::Building && world.units.task[unit] != UnitTask::Attacking)
                         {
-                            world.units.task[unit] = UnitTask::Idle;
+                            SetUnitIdle(world, unit);
                         }
                     }
                     else if (world.units.task[unit] != UnitTask::Building && world.units.task[unit] != UnitTask::Attacking)
                     {
-                        world.units.task[unit] = UnitTask::Gathering;
+                        SetUnitGathering(world, unit);
                     }
                 }
             }

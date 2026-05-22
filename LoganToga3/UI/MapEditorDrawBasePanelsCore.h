@@ -3,67 +3,39 @@
 # include "MapEditorDrawBaseAssetHelpers.h"
 # include "MapEditorResourceDraw.h"
 # include "BuildingEditor.h"
+# include "MapEditorToolbarModel.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
 	inline void DrawEditorButton(const RectF& rect, const String& text, bool active, const Font& uiFont)
 	{
-		ColorF backColor{ 0.08, 0.09, 0.11, 0.92 };
-		if (active)
-		{
-			backColor = ColorF{ 0.12, 0.22, 0.18, 0.96 };
-		}
-		ColorF frameColor{ 1, 1, 1, 0.16 };
-		if (rect.mouseOver())
-		{
-			frameColor = ColorF{ 1.0, 0.84, 0.0 };
-		}
+		DrawRectButton(rect, text, active, uiFont);
+	}
 
+	inline void DrawEditorPanelFrame(const RectF& rect, const ColorF& backColor, const ColorF& frameColor, double frameThickness = 1.0)
+	{
+		rect.draw(backColor).drawFrame(frameThickness, frameColor);
+	}
+
+	inline void DrawEditorIconButton(const RectF& rect, const String& label, const Font& uiFont, int32 fontSize, const ColorF& backColor)
+	{
+		DrawEditorPanelFrame(rect, backColor, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		uiFont(label).drawAt(fontSize, rect.center(), Palette::White);
+	}
+
+	inline void DrawEditorDisabledButton(const RectF& rect, const String& label, bool disabled, const Font& uiFont, int32 fontSize)
+	{
+		const ColorF backColor = disabled ? ColorF{ 0.06, 0.06, 0.07, 0.70 } : ColorF{ 0.08, 0.09, 0.11, 0.92 };
+		const ColorF frameColor = disabled ? ColorF{ 1, 1, 1, 0.08 } : (rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		const ColorF textColor = disabled ? ColorF{ 0.40, 0.40, 0.40 } : ColorF{ Palette::White };
 		rect.draw(backColor).drawFrame(2, frameColor);
-		uiFont(text).drawAt(14, rect.center(), active ? Palette::White : Palette::Lightgray);
+		uiFont(label).drawAt(fontSize, rect.center(), textColor);
 	}
 
-	inline void DrawMapEditorToolbar(const MapEditorState& editor, const Font& uiFont)
+	inline bool IsMapEditorUiPanelHovered(const MapEditorState& editor)
 	{
-		if (IsEditorBarPreviewHidden(editor))
-		{
-			return;
-		}
-
-		EditorToolbarRect().draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
-		DrawEditorButton(EditorToolbarButtonRect(editor, 0), U"Map Editor", editor.enabled, uiFont);
-		if (editor.enabled)
-		{
-			DrawEditorButton(EditorToolbarButtonRect(editor, 1), U"Save TOML", false, uiFont);
-			DrawEditorButton(EditorToolbarButtonRect(editor, 2), U"W -", false, uiFont);
-			DrawEditorButton(EditorToolbarButtonRect(editor, 3), U"W +", false, uiFont);
-			DrawEditorButton(EditorToolbarButtonRect(editor, 4), U"H -", false, uiFont);
-			DrawEditorButton(EditorToolbarButtonRect(editor, 5), U"H +", false, uiFont);
-		}
-		DrawEditorButton(EditorToolbarButtonRect(editor, 6), U"Unit List", editor.showUnitList, uiFont);
-		DrawEditorButton(EditorToolbarButtonRect(editor, 7), U"Build Edit", editor.showBuildingEditor, uiFont);
-		DrawEditorButton(EditorToolbarButtonRect(editor, 8), U"Debug Info", editor.showDebugInfo, uiFont);
-		DrawEditorButton(EditorToolbarButtonRect(editor, 9), U"UI Edit", editor.uiLayoutEditEnabled, uiFont);
-		DrawEditorButton(EditorToolbarButtonRect(editor, 10), U"Battle Grid", editor.showBattleGrid, uiFont);
-		DrawEditorButton(EditorToolbarButtonRect(editor, 11), U"Command", editor.showCommandEditor, uiFont);
-		DrawEditorButton(EditorToolbarPreviewHideButtonRect(), U"Hide Bar 3s", false, uiFont);
-
-		if (editor.showDebugInfo)
-		{
-			const RectF statusBar = EditorStatusBarRect();
-			statusBar.draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
-			uiFont(editor.statusText).draw(statusBar.x + 24.0, statusBar.y + 7.0, Palette::Lightgray);
-		}
-	}
-
-	inline void DrawMapEditorCurrentCellMarker(const MapEditorState& editor, const Vec2& screenMouse)
-	{
-		if (!editor.enabled)
-		{
-			return;
-		}
-
-		const bool panelHovered = EditorPalettePanelRect().mouseOver()
+		return EditorPalettePanelRect().mouseOver()
 			|| EditorResourcePanelsToggleRect().mouseOver()
 			|| EditorStarToolMenuRect().mouseOver()
 			|| EditorPerlinNoisePanelRect().mouseOver()
@@ -82,7 +54,146 @@ namespace LT3
 			|| (IsValidSelectedResourceNodeIndex(editor) && EditorResourceNodePanelRect().mouseOver())
 			|| (HasOpenDecalEditorTarget(editor) && EditorDecalEditorPanelRect().mouseOver())
 			|| (editor.zOrderMode && EditorZOrderPanelRectFallback().mouseOver());
-		if (panelHovered)
+	}
+
+	inline void DrawZOrderLayerRowFrame(const RectF& rowRect, bool selected)
+	{
+		const ColorF rowBack = selected ? ColorF{ 0.18, 0.22, 0.14, 0.96 } : ColorF{ 0.06, 0.07, 0.09, 0.90 };
+		const ColorF rowFrame = selected ? ColorF{ 1.0, 0.84, 0.0 } : (rowRect.mouseOver() ? ColorF{ 0.0, 0.75, 1.0 } : ColorF{ 1, 1, 1, 0.14 });
+		rowRect.draw(rowBack).drawFrame(1.5, rowFrame);
+	}
+
+	inline String ZOrderLayerLabel(int32 index, int32 visibleRows)
+	{
+		if (index == visibleRows - 1)
+		{
+			return U"FRONT";
+		}
+
+		if (index == 0)
+		{
+			return U"BACK ";
+		}
+
+		return U"  {}  "_fmt(index + 1);
+	}
+
+	inline ColorF ZOrderLayerLabelColor(int32 index, int32 visibleRows)
+	{
+		if (index == visibleRows - 1)
+		{
+			return ColorF{ 1.0, 0.55, 0.2 };
+		}
+
+		if (index == 0)
+		{
+			return ColorF{ 0.4, 0.7, 1.0 };
+		}
+
+		return ColorF{ 0.8, 0.8, 0.8 };
+	}
+
+	inline int32 FindDominantZOrderAsset(const HashTable<int32, int32>& assetCounts)
+	{
+		int32 repAsset = InvalidMapEditorAsset;
+		int32 repCount = 0;
+		for (const auto& [assetIndex, count] : assetCounts)
+		{
+			if (count > repCount)
+			{
+				repCount = count;
+				repAsset = assetIndex;
+			}
+		}
+
+		return repAsset;
+	}
+
+	inline int32 CountZOrderLayerCells(const HashTable<int32, int32>& assetCounts)
+	{
+		int32 total = 0;
+		for (const auto& [assetIndex, count] : assetCounts)
+		{
+			total += count;
+		}
+		return total;
+	}
+
+	inline void DrawZOrderLayerRow(const MapEditorState& editor, const RectF& rowRect, int32 index, int32 visibleRows, const HashTable<int32, int32>& assetCounts, bool selected, const Font& uiFont)
+	{
+		DrawZOrderLayerRowFrame(rowRect, selected);
+		uiFont(ZOrderLayerLabel(index, visibleRows)).draw(10, rowRect.x + 6.0, rowRect.y + 4.0, ZOrderLayerLabelColor(index, visibleRows));
+
+		const double thumbSize = EditorZOrderLayerRowHeight - 10.0;
+		const double thumbX = rowRect.x + 48.0;
+		const double thumbY = rowRect.y + (rowRect.h - thumbSize) * 0.5;
+
+		if (assetCounts.empty())
+		{
+			uiFont(U"(empty)").draw(12, thumbX + thumbSize + 8.0, rowRect.y + 8.0, ColorF{ 0.45, 0.45, 0.45 });
+			return;
+		}
+
+		const int32 repAsset = FindDominantZOrderAsset(assetCounts);
+		if (repAsset < 0 || repAsset >= static_cast<int32>(editor.assets.size()))
+		{
+			return;
+		}
+
+		const MapEditorAsset& asset = editor.assets[repAsset];
+		DrawAssetPreview(asset, Vec2{ thumbX + thumbSize * 0.5, thumbY + thumbSize * 0.5 }, SizeF{ thumbSize, thumbSize });
+
+		const String nameText = asset.fileName;
+		const String countText = (assetCounts.size() > 1)
+			? U"{} (+{} types)"_fmt(nameText, assetCounts.size() - 1)
+			: nameText;
+		uiFont(countText).draw(11, thumbX + thumbSize + 8.0, rowRect.y + 4.0, Palette::White);
+
+		const int32 totalCells = CountZOrderLayerCells(assetCounts);
+		uiFont(U"{} cell{}"_fmt(totalCells, totalCells > 1 ? U"s" : U"")).draw(10, thumbX + thumbSize + 8.0, rowRect.y + 20.0, ColorF{ 0.65, 0.65, 0.65 });
+	}
+
+	inline void DrawMapEditorToolbar(const MapEditorState& editor, const Font& uiFont)
+	{
+		if (IsEditorBarPreviewHidden(editor))
+		{
+			return;
+		}
+
+		EditorToolbarRect().draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
+		for (const auto& spec : MapEditorToolbarButtonSpecs())
+		{
+			if (!IsMapEditorToolbarButtonVisible(editor, spec))
+			{
+				continue;
+			}
+
+			DrawEditorButton(
+				MapEditorToolbarButtonRect(editor, spec),
+				String{ spec.label },
+				IsMapEditorToolbarButtonActive(editor, spec),
+				uiFont);
+		}
+
+		const MapEditorToolbarButtonSpec previewHideSpec = MapEditorToolbarPreviewHideButtonSpec();
+		DrawEditorButton(MapEditorToolbarButtonRect(editor, previewHideSpec), String{ previewHideSpec.label }, false, uiFont);
+
+		if (editor.showDebugInfo)
+		{
+			const RectF statusBar = EditorStatusBarRect();
+			statusBar.draw(ColorF{ 0.025, 0.03, 0.045, 0.93 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
+			uiFont(editor.statusText).draw(statusBar.x + 24.0, statusBar.y + 7.0, Palette::Lightgray);
+		}
+	}
+
+	inline void DrawMapEditorCurrentCellMarker(const MapEditorState& editor, const Vec2& screenMouse)
+	{
+		if (!editor.enabled)
+		{
+			return;
+		}
+
+		if (IsMapEditorUiPanelHovered(editor))
 		{
 			return;
 		}
@@ -169,93 +280,26 @@ namespace LT3
 		const RectF bringToFrontRect = EditorZOrderBringToFrontRect(panel);
 		const RectF closeRect = EditorZOrderCloseRect(panel);
 
-		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
+		DrawEditorPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
 		uiFont(U"Decal Z-Order").draw(panel.x + 18.0, panel.y + 14.0, Palette::White);
 		uiFont(U"click row to select  |  ⇤ Back … Front ⇥  to reorder").draw(10, panel.x + 18.0, panel.y + 34.0, ColorF{ 0.65, 0.65, 0.65 });
-		closeRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, closeRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"×").drawAt(18, closeRect.center(), Palette::White);
+		DrawEditorIconButton(closeRect, U"×", uiFont, 18, ColorF{ 0.12, 0.05, 0.05, 0.95 });
 
 		// レイヤーリスト（index 0 = back, index N-1 = front）
 		for (int32 i = 0; i < visibleRows; ++i)
 		{
 			const RectF rowRect = EditorZOrderLayerRowRect(panel, i);
-			const bool isSelected = (i == selectedIndex);
-
-			// 行背景
-			ColorF rowBack = isSelected ? ColorF{ 0.18, 0.22, 0.14, 0.96 } : ColorF{ 0.06, 0.07, 0.09, 0.90 };
-			ColorF rowFrame = isSelected ? ColorF{ 1.0, 0.84, 0.0 } : (rowRect.mouseOver() ? ColorF{ 0.0, 0.75, 1.0 } : ColorF{ 1, 1, 1, 0.14 });
-			rowRect.draw(rowBack).drawFrame(1.5, rowFrame);
-
-			// レイヤー番号バッジ（1=back … N=front）
-			const bool isFront = (i == visibleRows - 1);
-			const bool isBack  = (i == 0);
-			const String layerLabel = isFront ? U"FRONT" : (isBack ? U"BACK " : U"  {}  "_fmt(i + 1));
-			const ColorF labelColor = isFront ? ColorF{ 1.0, 0.55, 0.2 } : (isBack ? ColorF{ 0.4, 0.7, 1.0 } : ColorF{ 0.8, 0.8, 0.8 });
-			uiFont(layerLabel).draw(10, rowRect.x + 6.0, rowRect.y + 4.0, labelColor);
-
-			// サムネイル + ファイル名表示
-			// 集計結果から最多セル数のアセットを代表として表示
-			const double thumbSize = EditorZOrderLayerRowHeight - 10.0;
-			const double thumbX = rowRect.x + 48.0;
-			const double thumbY = rowRect.y + (rowRect.h - thumbSize) * 0.5;
-
-			if (layerInfo[i].empty())
-			{
-				uiFont(U"(empty)").draw(12, thumbX + thumbSize + 8.0, rowRect.y + 8.0, ColorF{ 0.45, 0.45, 0.45 });
-			}
-			else
-			{
-				// 最多セルのアセットを代表表示
-				int32 repAsset = InvalidMapEditorAsset;
-				int32 repCount = 0;
-				for (const auto& [ai, cnt] : layerInfo[i])
-				{
-					if (cnt > repCount)
-					{
-						repCount = cnt;
-						repAsset = ai;
-					}
-				}
-
-				if (repAsset >= 0 && repAsset < static_cast<int32>(editor.assets.size()))
-				{
-					const MapEditorAsset& asset = editor.assets[repAsset];
-					DrawAssetPreview(asset, Vec2{ thumbX + thumbSize * 0.5, thumbY + thumbSize * 0.5 }, SizeF{ thumbSize, thumbSize });
-
-					const String nameText = asset.fileName;
-					const String countText = (layerInfo[i].size() > 1)
-						? U"{} (+{} types)"_fmt(nameText, layerInfo[i].size() - 1)
-						: nameText;
-					uiFont(countText).draw(11, thumbX + thumbSize + 8.0, rowRect.y + 4.0, Palette::White);
-
-					// セル数
-					const int32 totalCells = [&] {
-						int32 s = 0;
-						for (const auto& [ai, cnt] : layerInfo[i]) { s += cnt; }
-						return s;
-					}();
-					uiFont(U"{} cell{}"_fmt(totalCells, totalCells > 1 ? U"s" : U"")).draw(10, thumbX + thumbSize + 8.0, rowRect.y + 20.0, ColorF{ 0.65, 0.65, 0.65 });
-				}
-			}
+			DrawZOrderLayerRow(editor, rowRect, i, visibleRows, layerInfo[i], (i == selectedIndex), uiFont);
 		}
 
 		// フッター: ⇤ SendToBack / ← Back / Front → / BringToFront ⇥
 		const bool atBack  = (selectedIndex == 0);
 		const bool atFront = (selectedIndex == visibleRows - 1);
 
-		auto drawFooterBtn = [&](const RectF& r, const String& label, bool disabled)
-		{
-			const ColorF bg    = disabled ? ColorF{ 0.06, 0.06, 0.07, 0.70 } : ColorF{ 0.08, 0.09, 0.11, 0.92 };
-			const ColorF frame = disabled ? ColorF{ 1, 1, 1, 0.08 } : (r.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-			const ColorF text  = disabled ? ColorF{ 0.40, 0.40, 0.40 } : ColorF{ Palette::White };
-			r.draw(bg).drawFrame(2, frame);
-			uiFont(label).drawAt(11, r.center(), text);
-		};
-
-		drawFooterBtn(sendToBackRect,   U"⇤ BACK端",  atBack);
-		drawFooterBtn(downRect,         U"← Back",    atBack);
-		drawFooterBtn(upRect,           U"Front →",   atFront);
-		drawFooterBtn(bringToFrontRect, U"FRONT端 ⇥", atFront);
+		DrawEditorDisabledButton(sendToBackRect,   U"⇤ BACK端",  atBack, uiFont, 11);
+		DrawEditorDisabledButton(downRect,         U"← Back",    atBack, uiFont, 11);
+		DrawEditorDisabledButton(upRect,           U"Front →",   atFront, uiFont, 11);
+		DrawEditorDisabledButton(bringToFrontRect, U"FRONT端 ⇥", atFront, uiFont, 11);
 
 		const Rect& r = *editor.zOrderSelectionRect;
 		uiFont(U"cells ({},{})–({},{})"_fmt(r.x, r.y, r.x + r.w - 1, r.y + r.h - 1)).drawAt(10, Vec2{ panel.x + panel.w * 0.5, sendToBackRect.center().y + 22.0 }, Palette::Lightgray);
@@ -273,13 +317,10 @@ namespace LT3
 		const RectF incRect = EditorUiLayoutGridIncrementRect();
 		const RectF valueRect = EditorUiLayoutGridValueRect();
 
-		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
-		decRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, decRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		incRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, incRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		valueRect.draw(ColorF{ 0.06, 0.08, 0.10, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.12 });
-
-		uiFont(U"-").drawAt(20, decRect.center(), Palette::White);
-		uiFont(U"+").drawAt(20, incRect.center(), Palette::White);
+		DrawEditorPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.92 }, ColorF{ 1, 1, 1, 0.16 });
+		DrawEditorIconButton(decRect, U"-", uiFont, 20, ColorF{ 0.08, 0.09, 0.11, 0.92 });
+		DrawEditorIconButton(incRect, U"+", uiFont, 20, ColorF{ 0.08, 0.09, 0.11, 0.92 });
+		DrawEditorPanelFrame(valueRect, ColorF{ 0.06, 0.08, 0.10, 0.96 }, ColorF{ 1, 1, 1, 0.12 });
 		uiFont(U"Grid {} px"_fmt(editor.uiLayoutGridSize)).drawAt(14, valueRect.center(), Palette::White);
 	}
 }

@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "SelectionSystem.h"
 # include "PathfindingSystem.h"
+# include "BattleUnitState.h"
 # include "../UI/QuarterView.h"
 
 namespace LT3
@@ -26,10 +27,7 @@ namespace LT3
 	inline void IssueMove(BattleWorld& world, UnitId unit, const Vec2& destination)
 	{
 		if (!IsValidUnit(world, unit)) return;
-		world.units.targetPosition[unit] = destination;
-		world.units.attackTarget[unit] = InvalidUnitId;
-		world.units.resourceTargetNode[unit] = -1;
-		world.units.task[unit] = UnitTask::Moving;
+		SetUnitMoving(world, unit, destination, true);
 		EnqueuePathRequest(world, unit, destination);
 	}
 
@@ -40,10 +38,8 @@ namespace LT3
 			return;
 		}
 
-		world.units.targetPosition[unit] = world.resourceNodes.position[nodeIndex];
-		world.units.attackTarget[unit] = InvalidUnitId;
-		world.units.resourceTargetNode[unit] = static_cast<int32>(nodeIndex);
-		world.units.task[unit] = UnitTask::Moving;
+		SetUnitMoving(world, unit, world.resourceNodes.position[nodeIndex], false);
+		SetUnitResourceTarget(world, unit, static_cast<int32>(nodeIndex));
 	}
 
 	inline bool IsBuildQueueLocked(const BattleWorld& world, UnitId unit)

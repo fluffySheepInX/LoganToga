@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../DefinitionStores.h"
+# include "../TomlTextUtils.h"
 
 namespace LT3
 {
@@ -74,74 +75,7 @@ namespace LT3
 
 	inline String BuildActionTomlEscape(StringView text)
 	{
-		String result;
-		for (const char32 ch : text)
-		{
-			if (ch == U'\\')
-			{
-				result += U"\\\\";
-			}
-			else if (ch == U'\"')
-			{
-				result += U"\\\"";
-			}
-			else
-			{
-				result += ch;
-			}
-		}
-
-		return result;
-	}
-
-	inline void WriteTomlStringArrayValue(TextWriter& writer, const Array<String>& values)
-	{
-		writer << U"[";
-		for (size_t i = 0; i < values.size(); ++i)
-		{
-			if (i > 0)
-			{
-				writer << U", ";
-			}
-			writer << U"\"" << BuildActionTomlEscape(values[i]) << U"\"";
-		}
-		writer << U"]";
-	}
-
-	inline String BuildTomlStringArrayValue(const Array<String>& values)
-	{
-		String result = U"[";
-		for (size_t i = 0; i < values.size(); ++i)
-		{
-			if (i > 0)
-			{
-				result += U", ";
-			}
-
-			result += U"\"" + BuildActionTomlEscape(values[i]) + U"\"";
-		}
-
-		result += U"]";
-		return result;
-	}
-
-	inline Array<String> ReadTomlStringArrayValue(const TOMLValue& value)
-	{
-		Array<String> result;
-		if (!value.isArray())
-		{
-			return result;
-		}
-
-		for (const auto item : value.arrayView())
-		{
-			if (const Optional<String> text = item.getOpt<String>())
-			{
-				result << *text;
-			}
-		}
-
-		return result;
+		return EscapeTomlBasicString(text);
 	}
 
 	inline Array<String> ReadOwnerTags(const TOMLValue& ownerTagsValue, const String& fallbackOwnerTag)
@@ -278,19 +212,10 @@ namespace LT3
 
 	inline FilePath ResolveBuildActionTomlPath()
 	{
-		const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoBuildMenu/BuildMenu.toml";
-		if (FileSystem::Exists(fromApp))
-		{
-			return fromApp;
-		}
-
-		const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoBuildMenu/BuildMenu.toml";
-		if (FileSystem::Exists(fromRepo))
-		{
-			return fromRepo;
-		}
-
-		return fromApp;
+		return ResolveFirstExistingPath({
+			U"000_Warehouse/000_DefaultGame/070_Scenario/InfoBuildMenu/BuildMenu.toml",
+			U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoBuildMenu/BuildMenu.toml",
+		});
 	}
 
 	inline String BuildActionResultTypeToTomlValue(BuildActionResultType type)

@@ -185,19 +185,40 @@ namespace LT3
 	{
 		Array<Vec2> position;
 		Array<Vec2> velocity;
+		Array<Vec2> startPosition;
+		Array<Vec2> endPosition;
 		Array<UnitId> target;
+		Array<UnitId> owner;
 		Array<Faction> faction;
 		Array<SkillDefId> skill;
+		Array<SkillProjectileMotion> motion;
 		Array<double> lifeSec;
+		Array<double> ageSec;
+		Array<double> maxLifeSec;
+		Array<double> height;
+		Array<double> angleRad;
 
-		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction owner, SkillDefId skillDef)
+		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction ownerFaction, SkillDefId skillDef)
+		{
+			add(pos, vel, pos, pos + vel, targetUnit, InvalidUnitId, ownerFaction, skillDef, SkillProjectileMotion::Direct, 2.5, 0.0);
+		}
+
+		void add(const Vec2& pos, const Vec2& vel, const Vec2& start, const Vec2& end, UnitId targetUnit, UnitId ownerUnit, Faction ownerFaction, SkillDefId skillDef, SkillProjectileMotion projectileMotion, double maxLife, double initialAngleRad)
 		{
 			position << pos;
 			velocity << vel;
+			startPosition << start;
+			endPosition << end;
 			target << targetUnit;
-			faction << owner;
+			owner << ownerUnit;
+			faction << ownerFaction;
 			skill << skillDef;
-			lifeSec << 2.5;
+			motion << projectileMotion;
+			lifeSec << maxLife;
+			ageSec << 0.0;
+			maxLifeSec << maxLife;
+			height << 0.0;
+			angleRad << initialAngleRad;
 		}
 
 		void removeAt(size_t index)
@@ -205,19 +226,35 @@ namespace LT3
 			const size_t last = position.size() - 1;
 			if (index != last)
 			{
-				position[index]  = position[last];
-				velocity[index]  = velocity[last];
-				target[index]    = target[last];
-				faction[index]   = faction[last];
-				skill[index]     = skill[last];
-				lifeSec[index]   = lifeSec[last];
+				position[index]      = position[last];
+				velocity[index]      = velocity[last];
+				startPosition[index] = startPosition[last];
+				endPosition[index]   = endPosition[last];
+				target[index]        = target[last];
+				owner[index]         = owner[last];
+				faction[index]       = faction[last];
+				skill[index]         = skill[last];
+				motion[index]        = motion[last];
+				lifeSec[index]       = lifeSec[last];
+				ageSec[index]        = ageSec[last];
+				maxLifeSec[index]    = maxLifeSec[last];
+				height[index]        = height[last];
+				angleRad[index]      = angleRad[last];
 			}
 			position.pop_back();
 			velocity.pop_back();
+			startPosition.pop_back();
+			endPosition.pop_back();
 			target.pop_back();
+			owner.pop_back();
 			faction.pop_back();
 			skill.pop_back();
+			motion.pop_back();
 			lifeSec.pop_back();
+			ageSec.pop_back();
+			maxLifeSec.pop_back();
+			height.pop_back();
+			angleRad.pop_back();
 		}
 	};
 
