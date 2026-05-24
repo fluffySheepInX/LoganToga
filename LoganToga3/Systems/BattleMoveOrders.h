@@ -24,10 +24,10 @@ namespace LT3
 		return none;
 	}
 
-	inline void IssueMove(BattleWorld& world, UnitId unit, const Vec2& destination)
+	inline void IssueMove(BattleWorld& world, UnitId unit, const Vec2& destination, bool ignoreCombatWhileMoving = false)
 	{
 		if (!IsValidUnit(world, unit)) return;
-		SetUnitMoving(world, unit, destination, true);
+		SetUnitMoving(world, unit, destination, true, ignoreCombatWhileMoving);
 		EnqueuePathRequest(world, unit, destination);
 	}
 

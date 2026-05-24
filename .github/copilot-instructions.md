@@ -16,3 +16,6 @@
 - For LoganToga3 editor UI, use Rect-based buttons and do not use SimpleGUI; future editor interfaces should be added to the editor toolbar/bar。
 - In LoganToga3, identify decals by the filename prefix `decal_`. When right-clicking a non-decal asset, add the `decal_` prefix to decal-ize it.
 - For LoganToga3 TOML writes, do not use any API or pattern that automatically appends newline codes per line or at the end during output; build the full text first and add only the minimum required newlines explicitly。
+- For LoganToga3, unify asset specifications such as SkillIcon image sizes to be multiples of 32.
+- For LoganToga3 SkillIcon assets, require canvas width/height to be multiples of 32, require the main image and frame image layers to use the same canvas size, and treat icon alignment as center-origin based.
+- LoganToga3 の SkillIcon 命名規約は `w_xx_name` を枠画像、`n_name` を主画像とし、`w` は最後に自動整列、`xx` は最大2桁のソート順として扱う。

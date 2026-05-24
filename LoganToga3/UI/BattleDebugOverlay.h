@@ -4,6 +4,16 @@
 
 namespace LT3
 {
+    inline RectF DebugEnemyMoveMarkersCheckboxRect(const RectF& anchorRect)
+    {
+        return RectF{ anchorRect.x, anchorRect.y, 18.0, 18.0 };
+    }
+
+    inline RectF DebugEnemyMoveMarkersRowRect(const RectF& anchorRect)
+    {
+        return RectF{ anchorRect.x - 6.0, anchorRect.y - 6.0, 232.0, 28.0 };
+    }
+
     inline String BuildMenuDebugText(const BattleWorld& world, const DefinitionStores& defs)
     {
         const FilePath buildMenuPath = ResolveBuildActionTomlPath();
@@ -116,7 +126,7 @@ namespace LT3
         return lines;
     }
 
-    inline void DrawBattleDebugOverlay(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont, const RectF& panelRect)
+    inline void DrawBattleDebugOverlay(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Font& uiFont, const RectF& panelRect)
     {
         uiFont(BuildMenuDebugText(world, defs)).draw(panelRect.x + 18, panelRect.y + 94, Palette::Orange);
         const Array<String> buildMenuDebugLines = BuildMenuDebugLines(world, defs);
@@ -124,5 +134,20 @@ namespace LT3
         {
             uiFont(buildMenuDebugLines[i]).draw(11, panelRect.x + 18, panelRect.y + 118 + static_cast<int32>(i) * 16, Palette::Lightgray);
         }
+    }
+
+    inline void DrawDebugEnemyMoveMarkersToggle(const MapEditorState& mapEditor, const Font& uiFont, const RectF& anchorRect)
+    {
+        const RectF rowRect = DebugEnemyMoveMarkersRowRect(anchorRect);
+        const RectF checkRect = DebugEnemyMoveMarkersCheckboxRect(anchorRect);
+        rowRect.draw(ColorF{ 0.02, 0.03, 0.045, 0.72 }).drawFrame(1.0, ColorF{ 1, 1, 1, 0.12 });
+        checkRect.draw(mapEditor.showEnemyMoveMarkers ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+            .drawFrame(2.0, checkRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.18 });
+        if (mapEditor.showEnemyMoveMarkers)
+        {
+            Line{ checkRect.tl().movedBy(3.0, 10.0), checkRect.tl().movedBy(7.0, 14.0) }.draw(2.6, Palette::Orange);
+            Line{ checkRect.tl().movedBy(7.0, 14.0), checkRect.tl().movedBy(15.0, 4.0) }.draw(2.6, Palette::Orange);
+        }
+        uiFont(U"Enemy move markers").draw(12, checkRect.x + 28.0, checkRect.y - 2.0, Palette::Lightgray);
     }
 }

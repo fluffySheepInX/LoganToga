@@ -9,6 +9,37 @@
 
 namespace LT3
 {
+	inline void DrawSelectedUnitSkillRangeOutline(const BattleWorld& world, const DefinitionStores& defs)
+	{
+		const UnitId selected = GetSelectedUnit(world);
+		if (!IsValidUnit(world, selected) || world.units.defId[selected] >= defs.units.size())
+		{
+			return;
+		}
+
+		const UnitDef& def = defs.units[world.units.defId[selected]];
+		if (def.skill == InvalidSkillDefId || def.skill >= defs.skills.size())
+		{
+			return;
+		}
+
+		const SkillDef& skill = defs.skills[def.skill];
+		const double range = ResolveEffectiveAttackRange(def, skill);
+		if (range <= 1.0)
+		{
+			return;
+		}
+
+		const Vec2 center = ToQuarterScreen(world.units.position[selected]);
+		const double radiusX = range * QuarterViewScale.x;
+		const double radiusY = range * QuarterViewScale.y;
+		const ColorF color = (world.units.faction[selected] == Faction::Player)
+			? ColorF{ 0.10, 0.95, 1.0, 0.78 }
+			: ColorF{ 1.0, 0.45, 0.20, 0.82 };
+
+		Ellipse{ center, radiusX, radiusY }.drawFrame(2.0, color);
+	}
+
 	inline void DrawAreaSelectionFrame(const BattleWorld& world, const BattleRenderAssets& assets)
 	{
 		if (!IsDragSelectionActive(world))

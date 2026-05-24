@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -774,6 +774,7 @@
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoAI\AiProfiles.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -917,9 +918,6 @@
     <ClInclude Include="App\AppLifecycle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Data\Loaders\SkillDefLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Data\Loaders\UnitDefLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -957,9 +955,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\MapEditorUnitCatalogInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\MapEditorCanvasInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\MapEditorToolbarInput.h">
@@ -1109,12 +1104,6 @@
     <ClInclude Include="UI\MapEditorDrawBasePanelsDecal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\MapEditorCommandEditorInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UI\MapEditorUnitCatalogFileOps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1164,6 +1153,123 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\MapEditorDescriptionEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleProjectileRendererOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUnitRendererDebugOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUnitRendererUnitOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorInputCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorInput.ImageOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorInput.RenameContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorInput.DetailInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandEditorInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefLoaderCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefIconRules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefValueParsing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefLoading.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\SkillDefLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.IdOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInputCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.RenameContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.ListInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.ParamEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInput.DecalEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInput.ZOrder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInputCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInput.Palette.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInput.Core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCanvasInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Loaders\AiProfileDefLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorDraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\EnemyDirectorCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\EnemyDirectorAttackWave.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\EnemyDirectorSpawn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\EnemyDirectorTactics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorLayout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorAssets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

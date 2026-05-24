@@ -25,7 +25,18 @@ namespace LT3
         double orbitRadius = 54.0;
         double orbitAngularSpeedDeg = 220.0;
         double orbitDurationSec = 1.2;
+        double projectileWidth = 54.0;
+        double projectileHeight = 72.0;
+        double swingRadius = 0.0;
+        double swingAngleDeg = 90.0;
         ColorF color = Palette::White;
+        SkillProjectileCenter projectileCenter = SkillProjectileCenter::Off;
+        bool projectileHoming = false;
+        bool projectileD360 = false;
+        double projectileStartDegree = 0.0;
+        int32 projectileStartDegreeType = 0;
+        String projectileImage;
+        String projectileDiagonalImage;
     };
 
     struct UnitDef
@@ -94,16 +105,48 @@ namespace LT3
         int32 passiveIncomePerSec = 0;
     };
 
+    struct AiUnitWeightDef
+    {
+        String unitTag;
+        double weight = 1.0;
+    };
+
+    struct AiProfileDef
+    {
+        String tag;
+        String name;
+        String description;
+        String presetType;
+        double openingDelaySec = 10.0;
+        double spawnIntervalSec = 8.0;
+        double attackWaveIntervalSec = 35.0;
+        double aggression = 0.5;
+        double economyFocus = 0.5;
+        double defenseFocus = 0.5;
+        double techFocus = 0.3;
+        int32 attackGroupSize = 4;
+        int32 maxArmySize = 24;
+        double retreatHpRatio = 0.0;
+        bool freeSpawnEnabled = true;
+        double resourceMultiplier = 1.0;
+        String contactBehavior = U"ignore";
+        Array<AiUnitWeightDef> unitWeights;
+        Array<String> targetPriority;
+    };
+
     struct DefinitionStores
     {
         Array<SkillDef> skills;
         Array<UnitDef> units;
         Array<BuildActionDef> buildActions;
         Array<ResourceDef> resources;
+        Array<AiProfileDef> aiProfiles;
+        HashTable<String, Array<String>> skillIconWarningsByTag;
         HashTable<String, SkillDefId> skillByTag;
         HashTable<String, UnitDefId> unitByTag;
         HashTable<String, BuildActionDefId> buildActionByTag;
         HashTable<String, ResourceDefId> resourceByTag;
+        HashTable<String, AiProfileDefId> aiProfileByTag;
 
         SkillDefId addSkill(const SkillDef& def)
         {
@@ -134,6 +177,14 @@ namespace LT3
             const ResourceDefId id = static_cast<ResourceDefId>(resources.size());
             resources << def;
             resourceByTag[def.tag] = id;
+            return id;
+        }
+
+        AiProfileDefId addAiProfile(const AiProfileDef& def)
+        {
+            const AiProfileDefId id = static_cast<AiProfileDefId>(aiProfiles.size());
+            aiProfiles << def;
+            aiProfileByTag[def.tag] = id;
             return id;
         }
     };

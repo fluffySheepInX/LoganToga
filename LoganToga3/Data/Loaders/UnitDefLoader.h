@@ -15,6 +15,11 @@ namespace LT3
             }
         }
 
+        if (!entry.skills.isEmpty())
+        {
+            return InvalidSkillDefId;
+        }
+
         if (role == UnitRole::Base)
         {
             return defs.skillByTag.contains(U"base_shot") ? defs.skillByTag.at(U"base_shot") : InvalidSkillDefId;
@@ -90,11 +95,6 @@ namespace LT3
     {
         defs.units.clear();
         defs.unitByTag.clear();
-
-        const SkillDefId workerHit = defs.skillByTag.contains(U"worker_hit") ? defs.skillByTag.at(U"worker_hit") : InvalidSkillDefId;
-        const SkillDefId sword = defs.skillByTag.contains(U"sword") ? defs.skillByTag.at(U"sword") : InvalidSkillDefId;
-        const SkillDefId arrow = defs.skillByTag.contains(U"arrow") ? defs.skillByTag.at(U"arrow") : InvalidSkillDefId;
-        const SkillDefId baseShot = defs.skillByTag.contains(U"base_shot") ? defs.skillByTag.at(U"base_shot") : InvalidSkillDefId;
 
         for (const auto& entry : unitCatalog.entries)
         {

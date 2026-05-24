@@ -66,6 +66,10 @@ namespace LT3
             editor.showSkillEditor = !editor.showSkillEditor;
             SaveMapEditorToml(editor, false);
             break;
+        case MapEditorToolbarAction::ToggleAiEditor:
+            editor.showAiEditor = !editor.showAiEditor;
+            SaveMapEditorToml(editor, false);
+            break;
         }
     }
 

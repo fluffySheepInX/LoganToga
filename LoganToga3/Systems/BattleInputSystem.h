@@ -104,7 +104,12 @@ namespace LT3
 				return intent;
 			}
 
-			if (const Optional<UnitId> unit = PickUnitAt(world, defs, worldMouse, Faction::Player))
+			Optional<UnitId> unit = PickUnitAt(world, defs, worldMouse, Faction::Player);
+			if (!unit)
+			{
+				unit = PickUnitAt(world, defs, worldMouse, Faction::Enemy);
+			}
+			if (unit)
 			{
 				previewSelected = *unit;
 			}

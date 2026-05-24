@@ -83,10 +83,26 @@ namespace LT3
 		int32 assetIndex = InvalidMapEditorAsset;
 	};
 
+	struct SkillSandboxProjectile
+	{
+		Vec2 position{ 0.0, 0.0 };
+		Vec2 velocity{ 0.0, 0.0 };
+		Vec2 startPosition{ 0.0, 0.0 };
+		Vec2 endPosition{ 0.0, 0.0 };
+		double lifeSec = 0.0;
+		double ageSec = 0.0;
+		double maxLifeSec = 0.0;
+		double height = 0.0;
+		double angleRad = 0.0;
+		double baseAngleRad = 0.0;
+		SkillProjectileMotion motion = SkillProjectileMotion::Direct;
+	};
+
 	struct MapEditorState
 	{
 		bool enabled = false;
 		bool showDebugInfo = true;
+		bool showEnemyMoveMarkers = false;
 		bool showBattleGrid = true;
 		Array<MapEditorAsset> assets;
 		Array<MapEditorCell> cells;
@@ -100,6 +116,7 @@ namespace LT3
 		bool showBuildingEditor = false;
 		bool showCommandEditor = false;
 		bool showSkillEditor = false;
+		bool showAiEditor = false;
 		double commandListScroll = 0.0;
 		double commandUnitListScroll = 0.0;
 		double commandInspectScroll = 0.0;
@@ -112,10 +129,26 @@ namespace LT3
 		String buildingEditorIconDiagUpRight;
 		String buildingEditorIconDiagUpLeft;
 		bool buildLineIconsDirty = false;
+		double aiProfileListScroll = 0.0;
+		double aiProfileDetailScroll = 0.0;
+		int32 selectedAiProfileIndex = 0;
+		String selectedAiProfileTag = U"balanced";
+		bool aiProfileSelectionInitialized = false;
+		bool aiProfilesDirty = false;
 		double skillListScroll = 0.0;
 		double skillUnitListScroll = 0.0;
 		double skillDetailScroll = 0.0;
 		int32 selectedSkillIndex = 0;
+		bool showSkillSandboxPreview = false;
+		Vec2 skillSandboxCasterPos{ 136.0, 404.0 };
+		Vec2 skillSandboxTargetPos{ 512.0, 404.0 };
+		int32 skillSandboxTargetHp = 100;
+		int32 skillSandboxTargetMaxHp = 100;
+		double skillSandboxCooldownLeftSec = 0.0;
+		bool skillSandboxAutoFire = true;
+		bool skillSandboxDraggingTarget = false;
+		int32 skillSandboxSkillIndex = -1;
+		Array<SkillSandboxProjectile> skillSandboxProjectiles;
 		bool skillDefsDirty = false;
 		Optional<int32> skillContextMenuTargetIndex;
 		Vec2 skillContextMenuPos{ 0.0, 0.0 };

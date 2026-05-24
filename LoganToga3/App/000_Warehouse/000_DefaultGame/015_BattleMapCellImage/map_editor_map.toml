@@ -10,7 +10,11 @@ command_editor = false
 
 skill_editor = true
 
+ai_editor = false
+
 debug_info = false
+
+enemy_move_markers = true
 
 battle_grid = false
 
@@ -23,17 +27,17 @@ resource_panels = false
 
 [fog]
 
-enabled = true
+enabled = false
 
 color_r = 0.02
 
 color_g = 0.025
 
-color_b = 0.035
+color_b = 0.09
 
 opacity = 0.52
 
-preview_vision = true
+preview_vision = false
 
 
 [home]
@@ -45,6 +49,11 @@ player_y = 330
 enemy_x = 4520
 
 enemy_y = 4410
+
+
+[ai]
+
+selected_profile = "blitz"
 
 
 [map]

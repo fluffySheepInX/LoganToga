@@ -1,0 +1,83 @@
+﻿[[profiles]]
+tag = "balanced"
+name = "Balanced"
+description = "標準的な攻撃・防衛バランスの AI"
+preset_type = "balanced"
+opening_delay_sec = 10
+spawn_interval_sec = 8
+attack_wave_interval_sec = 35
+aggression = 0.55
+economy_focus = 0.5
+defense_focus = 0.45
+tech_focus = 0.35
+attack_group_size = 4
+max_army_size = 24
+retreat_hp_ratio = 0.1
+free_spawn_enabled = true
+resource_multiplier = 1
+contact_behavior = "ignore"
+target_priority = ["base", "resource", "unit"]
+[[profiles.unit_weights]]
+unit = "kouhei"
+weight = 1
+[[profiles.unit_weights]]
+unit = "archer"
+weight = 0.7
+[[profiles.unit_weights]]
+unit = "worker"
+weight = 0.25
+
+[[profiles]]
+tag = "long_war"
+name = "Long War"
+description = "序盤は控えめに守り、中盤以降に大きな攻撃波を作る長期戦 AI"
+preset_type = "long_war"
+opening_delay_sec = 25
+spawn_interval_sec = 11
+attack_wave_interval_sec = 55
+aggression = 0.45
+economy_focus = 0.8
+defense_focus = 0.65
+tech_focus = 0.55
+attack_group_size = 7
+max_army_size = 36
+retreat_hp_ratio = 0.22
+free_spawn_enabled = true
+resource_multiplier = 1.1
+contact_behavior = "ignore"
+target_priority = ["resource", "base", "unit"]
+[[profiles.unit_weights]]
+unit = "kouhei"
+weight = 0.9
+[[profiles.unit_weights]]
+unit = "archer"
+weight = 1
+[[profiles.unit_weights]]
+unit = "worker"
+weight = 0.35
+
+[[profiles]]
+tag = "blitz"
+name = "Blitz"
+description = "序盤から小規模部隊を頻繁に送り込む電撃戦 AI"
+preset_type = "blitz"
+opening_delay_sec = 4
+spawn_interval_sec = 5
+attack_wave_interval_sec = 18
+aggression = 0.9
+economy_focus = 0.25
+defense_focus = 0.2
+tech_focus = 0.2
+attack_group_size = 3
+max_army_size = 18
+retreat_hp_ratio = 0
+free_spawn_enabled = true
+resource_multiplier = 0.9
+contact_behavior = "engage"
+target_priority = ["base", "unit", "resource"]
+[[profiles.unit_weights]]
+unit = "kouhei"
+weight = 1.2
+[[profiles.unit_weights]]
+unit = "archer"
+weight = 0.55

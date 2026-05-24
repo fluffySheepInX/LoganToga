@@ -2,7 +2,7 @@
 
 # kind: missile / sword / heal / summon / charge / status
 
-# projectile_motion: direct / parabola / orbit
+# movetype: direct / static / arc / throw / drop / circle / swing
 
 
 [[skills]]
@@ -11,23 +11,43 @@ tag = "worker_hit"
 
 name = "Tool Strike"
 
-icon = "_num5.png"
+description = ""
 
-icons = ["_num5.png", "f_attack.png", "we_gun060.png"]
+icon = "we_gun060.png"
 
-kind = "sword"
+icons = ["we_gun060.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
-range = 70
+kind = "missile"
 
-cooldown_sec = 0.75
+range = 810
+
+cooldown_sec = 1.05
 
 mp_cost = 0
 
 damage = 4
 
-projectile_speed = 380
+image = "a_bulletN.png"
 
-projectile_motion = "direct"
+image_diagonal = "a_bulletNW.png"
+
+projectile_speed = 110
+
+speed = 110
+
+movetype = "swing"
+
+projectile_motion = "swing"
+
+center = "end"
+
+homing = "off"
+
+d360 = "on"
+
+start_degree = -45
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -35,13 +55,21 @@ burst_interval_sec = 0
 
 spread_deg = 0
 
-arc_height = 72
+arc_height = 0
 
-orbit_radius = 54
+orbit_radius = 1
 
-orbit_angular_speed_deg = 220
+orbit_angular_speed_deg = 0
 
-orbit_duration_sec = 1.2
+orbit_duration_sec = 0.05
+
+projectile_width = 10
+
+projectile_height = 100
+
+swing_radius = 0
+
+swing_angle_deg = 90
 
 color_r = 0.94118
 
@@ -58,23 +86,43 @@ tag = "sword"
 
 name = "Sword"
 
+description = ""
+
 icon = "we_gun050.png"
 
-icons = ["we_gun050.png"]
+icons = ["we_gun050.png", "w_0_attack.png", "w_5_k.png"]
 
-kind = "sword"
+kind = "missile"
 
-range = 82
+range = 342
 
-cooldown_sec = 0.65
+cooldown_sec = 1.05
 
 mp_cost = 0
 
-damage = 9
+damage = 20
+
+image = "sword.png"
+
+image_diagonal = "sword.png"
 
 projectile_speed = 380
 
-projectile_motion = "direct"
+speed = 380
+
+movetype = "swing"
+
+projectile_motion = "swing"
+
+center = "end"
+
+homing = "off"
+
+d360 = "on"
+
+start_degree = -45
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -82,13 +130,21 @@ burst_interval_sec = 0
 
 spread_deg = 0
 
-arc_height = 72
+arc_height = 0
 
-orbit_radius = 54
+orbit_radius = 1
 
-orbit_angular_speed_deg = 220
+orbit_angular_speed_deg = 0
 
-orbit_duration_sec = 1.2
+orbit_duration_sec = 0.05
+
+projectile_width = 20
+
+projectile_height = 190
+
+swing_radius = 0
+
+swing_angle_deg = 90
 
 color_r = 1
 
@@ -105,6 +161,8 @@ tag = "arrow"
 
 name = "Arrow"
 
+description = ""
+
 icon = ""
 
 icons = []
@@ -119,9 +177,27 @@ mp_cost = 0
 
 damage = 7
 
+image = ""
+
+image_diagonal = ""
+
 projectile_speed = 380
 
+speed = 380
+
+movetype = "direct"
+
 projectile_motion = "direct"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -136,6 +212,14 @@ orbit_radius = 54
 orbit_angular_speed_deg = 220
 
 orbit_duration_sec = 1.2
+
+projectile_width = 54
+
+projectile_height = 72
+
+swing_radius = 54
+
+swing_angle_deg = 90
 
 color_r = 0.52941
 
@@ -152,6 +236,8 @@ tag = "base_shot"
 
 name = "Base Shot"
 
+description = ""
+
 icon = ""
 
 icons = []
@@ -166,9 +252,27 @@ mp_cost = 0
 
 damage = 10
 
+image = ""
+
+image_diagonal = ""
+
 projectile_speed = 340
 
+speed = 340
+
+movetype = "direct"
+
 projectile_motion = "direct"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -183,6 +287,14 @@ orbit_radius = 54
 orbit_angular_speed_deg = 220
 
 orbit_duration_sec = 1.2
+
+projectile_width = 54
+
+projectile_height = 72
+
+swing_radius = 54
+
+swing_angle_deg = 90
 
 color_r = 0.93333
 
@@ -199,6 +311,8 @@ tag = "machine_gun"
 
 name = "Machine Gun"
 
+description = ""
+
 icon = ""
 
 icons = []
@@ -213,9 +327,27 @@ mp_cost = 0
 
 damage = 3
 
+image = ""
+
+image_diagonal = ""
+
 projectile_speed = 520
 
+speed = 520
+
+movetype = "direct"
+
 projectile_motion = "direct"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
 
 burst_count = 5
 
@@ -230,6 +362,14 @@ orbit_radius = 54
 orbit_angular_speed_deg = 220
 
 orbit_duration_sec = 1.2
+
+projectile_width = 54
+
+projectile_height = 72
+
+swing_radius = 54
+
+swing_angle_deg = 90
 
 color_r = 1
 
@@ -246,6 +386,8 @@ tag = "cannon"
 
 name = "Cannon"
 
+description = ""
+
 icon = ""
 
 icons = []
@@ -260,9 +402,27 @@ mp_cost = 0
 
 damage = 18
 
+image = ""
+
+image_diagonal = ""
+
 projectile_speed = 260
 
-projectile_motion = "parabola"
+speed = 260
+
+movetype = "throw"
+
+projectile_motion = "throw"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -277,6 +437,14 @@ orbit_radius = 54
 orbit_angular_speed_deg = 220
 
 orbit_duration_sec = 1.2
+
+projectile_width = 54
+
+projectile_height = 110
+
+swing_radius = 54
+
+swing_angle_deg = 90
 
 color_r = 1
 
@@ -293,6 +461,8 @@ tag = "chakram"
 
 name = "Chakram"
 
+description = ""
+
 icon = ""
 
 icons = []
@@ -307,9 +477,27 @@ mp_cost = 0
 
 damage = 6
 
+image = ""
+
+image_diagonal = ""
+
 projectile_speed = 380
 
-projectile_motion = "orbit"
+speed = 380
+
+movetype = "circle"
+
+projectile_motion = "circle"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
 
 burst_count = 1
 
@@ -324,6 +512,14 @@ orbit_radius = 58
 orbit_angular_speed_deg = 360
 
 orbit_duration_sec = 1.5
+
+projectile_width = 58
+
+projectile_height = 72
+
+swing_radius = 58
+
+swing_angle_deg = 90
 
 color_r = 0
 

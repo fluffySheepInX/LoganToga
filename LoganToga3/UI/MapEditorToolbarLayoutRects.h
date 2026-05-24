@@ -66,7 +66,7 @@ namespace LT3
 
 	inline RectF EditorToolbarButtonRect(int32 index)
 	{
-		return RectF{ 24.0 + index * 112.0, 18.0, 104.0, 32.0 };
+		return RectF{ 18.0 + index * 104.0, 18.0, 96.0, 32.0 };
 	}
 
 	inline RectF EditorToolbarPreviewHideButtonRect()
@@ -99,6 +99,8 @@ namespace LT3
 			return 6;
 		case 12:
 			return 7;
+		case 13:
+			return 8;
 		default:
 			return none;
 		}

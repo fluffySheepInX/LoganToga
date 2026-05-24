@@ -118,6 +118,53 @@ namespace LT3
         });
     }
 
+    inline AiProfileDefId ResolveDefaultAiProfileDefId(const DefinitionStores& defs)
+    {
+        if (defs.aiProfileByTag.contains(U"balanced"))
+        {
+            return defs.aiProfileByTag.at(U"balanced");
+        }
+
+        if (!defs.aiProfiles.isEmpty())
+        {
+            return 0;
+        }
+
+        return InvalidAiProfileDefId;
+    }
+
+    inline String LoadSelectedAiProfileTagFromMapEditorToml()
+    {
+        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        if (!toml)
+        {
+            return U"";
+        }
+
+        return toml[U"ai.selected_profile"].getOr<String>(U"").lowercased();
+    }
+
+    inline AiProfileDefId ResolveSelectedAiProfileDefId(const DefinitionStores& defs)
+    {
+        const String selectedTag = LoadSelectedAiProfileTagFromMapEditorToml();
+        if (!selectedTag.isEmpty() && defs.aiProfileByTag.contains(selectedTag))
+        {
+            return defs.aiProfileByTag.at(selectedTag);
+        }
+
+        return ResolveDefaultAiProfileDefId(defs);
+    }
+
+    inline void InitializeAiRuntime(BattleWorld& world, const DefinitionStores& defs)
+    {
+        const AiProfileDefId profileId = ResolveSelectedAiProfileDefId(defs);
+        const String profileTag = (profileId != InvalidAiProfileDefId && profileId < defs.aiProfiles.size())
+            ? defs.aiProfiles[profileId].tag
+            : U"";
+        world.aiRuntime.resetForProfile(profileId, profileTag);
+        world.enemySpawnTimerSec = world.aiRuntime.spawnTimerSec;
+    }
+
     inline void LoadDefaultBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs)
     {
         const TOMLReader toml{ ResolveResourceNodeTomlPath() };
@@ -181,6 +228,7 @@ namespace LT3
         ApplyDecalPassabilityFromMapEditorToml(world);
 
         world.resources = MakeResourceRuntimeStore(defs);
+        InitializeAiRuntime(world, defs);
 
         const UnitDefId home = ResolveCommandBaseUnitDefId(defs);
         if (home != InvalidUnitDefId)

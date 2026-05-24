@@ -19,6 +19,7 @@ namespace LT3
 		ToggleBattleGrid,
 		ToggleCommandEditor,
 		ToggleSkillEditor,
+		ToggleAiEditor,
 		HideBarPreview,
 	};
 
@@ -45,6 +46,7 @@ namespace LT3
 			{ 10, MapEditorToolbarAction::ToggleBattleGrid, U"Battle Grid" },
 			{ 11, MapEditorToolbarAction::ToggleCommandEditor, U"Command" },
 			{ 12, MapEditorToolbarAction::ToggleSkillEditor, U"Skill" },
+			{ 13, MapEditorToolbarAction::ToggleAiEditor, U"AI" },
 		};
 		return specs;
 	}
@@ -89,6 +91,8 @@ namespace LT3
 			return editor.showCommandEditor;
 		case MapEditorToolbarAction::ToggleSkillEditor:
 			return editor.showSkillEditor;
+		case MapEditorToolbarAction::ToggleAiEditor:
+			return editor.showAiEditor;
 		default:
 			return false;
 		}

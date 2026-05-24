@@ -45,6 +45,7 @@ namespace LT3
 		Array<UnitId> attackTarget;
 		Array<int32> hp;
 		Array<int32> resourceTargetNode;
+		Array<bool> ignoreCombatWhileMoving;
 		Array<String> iconOverride;
 
 		UnitId add(UnitDefId unitDef, Faction unitFaction, const Vec2& pos, const DefinitionStores& defs)
@@ -59,6 +60,7 @@ namespace LT3
 			attackTarget << InvalidUnitId;
 			hp << defs.units[unitDef].hp;
 			resourceTargetNode << -1;
+			ignoreCombatWhileMoving << false;
 			iconOverride << U"";
 			return id;
 		}
@@ -197,6 +199,7 @@ namespace LT3
 		Array<double> maxLifeSec;
 		Array<double> height;
 		Array<double> angleRad;
+		Array<double> baseAngleRad;
 
 		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction ownerFaction, SkillDefId skillDef)
 		{
@@ -219,6 +222,7 @@ namespace LT3
 			maxLifeSec << maxLife;
 			height << 0.0;
 			angleRad << initialAngleRad;
+			baseAngleRad << initialAngleRad;
 		}
 
 		void removeAt(size_t index)
@@ -240,6 +244,7 @@ namespace LT3
 				maxLifeSec[index]    = maxLifeSec[last];
 				height[index]        = height[last];
 				angleRad[index]      = angleRad[last];
+				baseAngleRad[index]  = baseAngleRad[last];
 			}
 			position.pop_back();
 			velocity.pop_back();
@@ -255,6 +260,7 @@ namespace LT3
 			maxLifeSec.pop_back();
 			height.pop_back();
 			angleRad.pop_back();
+			baseAngleRad.pop_back();
 		}
 	};
 
@@ -263,6 +269,52 @@ namespace LT3
 		Array<int32> playerAmounts;
 		Array<int32> enemyAmounts;
 		double incomeTickAccumSec = 0.0;
+	};
+
+	enum class AiRuntimePhase : uint8
+	{
+		Opening,
+		BuildUp,
+		AttackWave,
+		Recover,
+	};
+
+	struct AiRuntimeStore
+	{
+		AiProfileDefId profileId = InvalidAiProfileDefId;
+		String profileTag = U"balanced";
+		AiRuntimePhase phase = AiRuntimePhase::Opening;
+		double phaseTimerSec = 0.0;
+		double spawnTimerSec = 0.0;
+		double productionTimerSec = 0.0;
+		double attackWaveTimerSec = 0.0;
+		double tacticalTimerSec = 0.0;
+		int32 attackWaveIndex = 0;
+		Array<UnitId> attackWaveUnits;
+		Vec2 rallyPosition{ 0.0, 0.0 };
+		Vec2 attackTargetPosition{ 0.0, 0.0 };
+		UnitId attackTargetUnit = InvalidUnitId;
+		bool hasRallyPosition = false;
+		bool hasAttackTargetPosition = false;
+
+		void resetForProfile(AiProfileDefId id, const String& tag)
+		{
+			profileId = id;
+			profileTag = tag;
+			phase = AiRuntimePhase::Opening;
+			phaseTimerSec = 0.0;
+			spawnTimerSec = 0.0;
+			productionTimerSec = 0.0;
+			attackWaveTimerSec = 0.0;
+			tacticalTimerSec = 0.0;
+			attackWaveIndex = 0;
+			attackWaveUnits.clear();
+			rallyPosition = Vec2{ 0.0, 0.0 };
+			attackTargetPosition = Vec2{ 0.0, 0.0 };
+			attackTargetUnit = InvalidUnitId;
+			hasRallyPosition = false;
+			hasAttackTargetPosition = false;
+		}
 	};
 
 	inline ResourceRuntimeStore MakeResourceRuntimeStore(const DefinitionStores& defs)
@@ -314,6 +366,7 @@ namespace LT3
 		CarrierStore carriers;
 		PathRuntimeStore pathing;
 		ResourceRuntimeStore resources;
+		AiRuntimeStore aiRuntime;
 		SelectionStore    selection;
 		BattleMapStore    map;
 		bool enemyDirectorPaused = false;

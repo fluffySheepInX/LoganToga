@@ -3,6 +3,7 @@
 # include "MapEditorMapLayersDraw.h"
 # include "MapEditorPerlinNoise.h"
 # include "MapEditorDescriptionEditor.h"
+# include "AiEditor.h"
 
 namespace LT3
 {
@@ -19,6 +20,7 @@ namespace LT3
 		DrawUnitCatalogList(editor, unitCatalog, uiFont);
 		DrawCommandEditor(editor, unitCatalog, defs, uiFont);
 		DrawSkillEditor(editor, unitCatalog, defs, uiFont);
+		DrawAiEditor(editor, defs, uiFont);
 		DrawUnitBuildingEditorTabBar(editor, uiFont);
 		DrawUnitParameterEditor(editor, unitCatalog, uiFont);
 		DrawBuildingEditor(editor, unitCatalog, defs, uiFont);

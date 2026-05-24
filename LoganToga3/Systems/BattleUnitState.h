@@ -59,6 +59,16 @@ namespace LT3
 		world.units.resourceTargetNode[unit] = -1;
 	}
 
+	inline void SetUnitIgnoreCombatWhileMoving(BattleWorld& world, UnitId unit, bool ignoreCombat)
+	{
+		if (!UnitSlotExists(world, unit) || unit >= world.units.ignoreCombatWhileMoving.size())
+		{
+			return;
+		}
+
+		world.units.ignoreCombatWhileMoving[unit] = ignoreCombat;
+	}
+
 	inline void SetUnitResourceTarget(BattleWorld& world, UnitId unit, int32 resourceNode)
 	{
 		if (!UnitSlotExists(world, unit))
@@ -114,7 +124,7 @@ namespace LT3
 		SetUnitTask(world, unit, UnitTask::Idle);
 	}
 
-	inline void SetUnitMoving(BattleWorld& world, UnitId unit, const Vec2& destination, bool clearResourceTarget)
+	inline void SetUnitMoving(BattleWorld& world, UnitId unit, const Vec2& destination, bool clearResourceTarget, bool ignoreCombatWhileMoving = false)
 	{
 		if (!UnitSlotExists(world, unit))
 		{
@@ -127,6 +137,7 @@ namespace LT3
 		{
 			ClearUnitResourceTarget(world, unit);
 		}
+		SetUnitIgnoreCombatWhileMoving(world, unit, ignoreCombatWhileMoving);
 		SetUnitTask(world, unit, UnitTask::Moving);
 	}
 
@@ -142,6 +153,7 @@ namespace LT3
 
 	inline void SetUnitAttacking(BattleWorld& world, UnitId unit)
 	{
+		SetUnitIgnoreCombatWhileMoving(world, unit, false);
 		SetUnitTask(world, unit, UnitTask::Attacking);
 	}
 

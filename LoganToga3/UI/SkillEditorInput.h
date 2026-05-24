@@ -13,15 +13,78 @@ namespace LT3
 		}
 
 		const RectF panel = SkillEditorPanelRect();
-		if (!panel.mouseOver())
+		const RectF sandboxPreview = SkillEditorSandboxPreviewRect();
+		if (!panel.mouseOver() && !(editor.showSkillSandboxPreview && sandboxPreview.mouseOver()))
 		{
 			return false;
+		}
+
+		if (editor.showSkillSandboxPreview && sandboxPreview.mouseOver())
+		{
+			EnsureSkillSandboxReady(editor);
+			ResetSkillSandboxForSkill(editor);
+			if (HasSelectedSkill(editor, defs))
+			{
+				SkillDef& skill = defs.skills[editor.selectedSkillIndex];
+				UpdateSkillSandbox(editor, skill, Scene::DeltaTime());
+
+				if (HandleRectButtonClick(SkillEditorSandboxButtonRect(0)))
+				{
+					FireSkillSandbox(editor, skill);
+					return true;
+				}
+				if (HandleRectButtonClick(SkillEditorSandboxButtonRect(1)))
+				{
+					editor.skillSandboxAutoFire = !editor.skillSandboxAutoFire;
+					editor.statusText = editor.skillSandboxAutoFire ? U"Skill sandbox auto fire ON" : U"Skill sandbox auto fire OFF";
+					return true;
+				}
+				if (HandleRectButtonClick(SkillEditorSandboxButtonRect(2)))
+				{
+					ResetSkillSandbox(editor);
+					editor.statusText = U"Skill sandbox reset";
+					return true;
+				}
+
+				const RectF arena = SkillEditorSandboxArenaRect();
+				if (MouseL.down() && Circle{ editor.skillSandboxTargetPos, 34.0 }.mouseOver())
+				{
+					editor.skillSandboxDraggingTarget = true;
+					return true;
+				}
+				if (!MouseL.pressed())
+				{
+					editor.skillSandboxDraggingTarget = false;
+				}
+				if (editor.skillSandboxDraggingTarget)
+				{
+					const Vec2 mouse = Cursor::PosF();
+					editor.skillSandboxTargetPos = Vec2{
+						Clamp(mouse.x, arena.x + 34.0, arena.x + arena.w - 34.0),
+						Clamp(mouse.y, arena.y + 34.0, arena.y + arena.h - 34.0)
+					};
+					return true;
+				}
+			}
+			return true;
 		}
 
 		if (HandleRectButtonClick(SkillEditorCloseRect()))
 		{
 			editor.showSkillEditor = false;
 			editor.statusText = U"SkillEditor OFF";
+			return true;
+		}
+
+		if (HandleRectButtonClick(SkillEditorSandboxToggleRect()))
+		{
+			editor.showSkillSandboxPreview = !editor.showSkillSandboxPreview;
+			if (editor.showSkillSandboxPreview)
+			{
+				EnsureSkillSandboxReady(editor);
+				ResetSkillSandboxForSkill(editor);
+			}
+			editor.statusText = editor.showSkillSandboxPreview ? U"Skill sandbox preview ON" : U"Skill sandbox preview OFF";
 			return true;
 		}
 
@@ -101,13 +164,23 @@ namespace LT3
 				if (HandleRectButtonClick(SkillEditorUnitIconRect(visible)) && HasSelectedSkill(editor, defs))
 				{
 					UnitCatalogEntry& entry = catalog.entries[unitIndex];
-					editor.selectedUnitCatalogIndex = unitIndex;
 					const String skillTag = defs.skills[editor.selectedSkillIndex].tag;
-					entry.skills.clear();
-					entry.skills << skillTag;
+					if (UnitHasSkill(entry, skillTag))
+					{
+						entry.skills.remove_if([&](const String& tag)
+						{
+							return tag == skillTag;
+						});
+						editor.statusText = U"Unlinked {} -> {}"_fmt(entry.unit_id, skillTag);
+					}
+					else
+					{
+						entry.skills.clear();
+						entry.skills << skillTag;
+						editor.statusText = U"Linked {} -> {}"_fmt(entry.unit_id, skillTag);
+					}
 					SaveUnitCatalogToml(catalog, editor.statusText);
 					editor.unitCatalogDirty = true;
-					editor.statusText = U"Linked {} -> {}"_fmt(entry.unit_id, skillTag);
 					return true;
 				}
 			}
@@ -167,11 +240,49 @@ namespace LT3
 					BuildingEditorTextureCache().erase(ResolveBuildIconPath(fileName));
 				}
 
-				skill.iconLayers = iconLayers;
+				skill.iconLayers = NormalizeSkillIconLayerOrder(iconLayers);
 				skill.icon = skill.iconLayers.isEmpty() ? U"" : skill.iconLayers.front();
+				const Array<String> warnings = ValidateSkillIconLayers(skill);
+				if (warnings.isEmpty())
+				{
+					defs.skillIconWarningsByTag.erase(skill.tag);
+				}
+				else
+				{
+					defs.skillIconWarningsByTag[skill.tag] = warnings;
+					editor.statusText = U"Skill icon warning: {}"_fmt(warnings.front());
+				}
 				SaveSkillEditorDefinitions(editor, defs);
 			}
 			return true;
+		}
+
+		for (int32 imageIndex = 0; imageIndex < 2; ++imageIndex)
+		{
+			if (HandleRectButtonClick(SkillEditorProjectileImageBrowseRect(imageIndex, scroll)))
+			{
+				const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::JPEG(), FileFilter::BMP(), FileFilter::GIF(), FileFilter::AllFiles() };
+				const Optional<FilePath> sourcePath = Dialog::OpenFile(imageFilters);
+				if (sourcePath)
+				{
+					String fileName;
+					if (!CopySkillEditorImageToBuildIcons(*sourcePath, fileName, editor.statusText))
+					{
+						return true;
+					}
+
+					if (imageIndex == 0)
+					{
+						skill.projectileImage = fileName;
+					}
+					else
+					{
+						skill.projectileDiagonalImage = fileName;
+					}
+					SaveSkillEditorDefinitions(editor, defs);
+				}
+				return true;
+			}
 		}
 
 		for (int32 i = 0; i < static_cast<int32>(SkillKindLabels().size()); ++i)
@@ -194,9 +305,36 @@ namespace LT3
 			}
 		}
 
-		const double deltas[4] = { -10.0, -1.0, 1.0, 10.0 };
-		for (int32 row = 0; row < 10; ++row)
+		for (int32 i = 0; i < static_cast<int32>(SkillCenterLabels().size()); ++i)
 		{
+			if (HandleRectButtonClick(SkillEditorCenterButtonRect(i, scroll)))
+			{
+				skill.projectileCenter = static_cast<SkillProjectileCenter>(i);
+				SaveSkillEditorDefinitions(editor, defs);
+				return true;
+			}
+		}
+
+		if (HandleRectButtonClick(SkillEditorToggleButtonRect(0, scroll)))
+		{
+			skill.projectileHoming = !skill.projectileHoming;
+			SaveSkillEditorDefinitions(editor, defs);
+			return true;
+		}
+		if (HandleRectButtonClick(SkillEditorToggleButtonRect(1, scroll)))
+		{
+			skill.projectileD360 = !skill.projectileD360;
+			SaveSkillEditorDefinitions(editor, defs);
+			return true;
+		}
+
+		const double deltas[4] = { -10.0, -1.0, 1.0, 10.0 };
+		for (int32 row = 0; row < 16; ++row)
+		{
+			if (IsSkillEditorValueRowLocked(skill, row))
+			{
+				continue;
+			}
 			for (int32 button = 0; button < 4; ++button)
 			{
 				if (HandleRectButtonClick(SkillEditorValueButtonRect(row, button, scroll)))

@@ -86,7 +86,9 @@ namespace LT3
             editor.showBuildingEditor = toml[U"toolbar.building_editor"].getOr<bool>(editor.showBuildingEditor);
             editor.showCommandEditor = toml[U"toolbar.command_editor"].getOr<bool>(editor.showCommandEditor);
             editor.showSkillEditor = toml[U"toolbar.skill_editor"].getOr<bool>(editor.showSkillEditor);
+            editor.showAiEditor = toml[U"toolbar.ai_editor"].getOr<bool>(editor.showAiEditor);
             editor.showDebugInfo = toml[U"toolbar.debug_info"].getOr<bool>(editor.showDebugInfo);
+            editor.showEnemyMoveMarkers = toml[U"toolbar.enemy_move_markers"].getOr<bool>(editor.showEnemyMoveMarkers);
             editor.showBattleGrid = toml[U"toolbar.battle_grid"].getOr<bool>(editor.showBattleGrid);
             editor.uiLayoutEditEnabled = toml[U"toolbar.ui_layout_edit"].getOr<bool>(editor.uiLayoutEditEnabled);
             editor.paletteTabIndex = Clamp(toml[U"toolbar.map_assets_tab"].getOr<int32>(editor.paletteTabIndex), 0, 1);
@@ -106,6 +108,7 @@ namespace LT3
             editor.playerHomePosition.y = toml[U"home.player_y"].getOr<double>(editor.playerHomePosition.y);
             editor.enemyHomePosition.x = toml[U"home.enemy_x"].getOr<double>(editor.enemyHomePosition.x);
             editor.enemyHomePosition.y = toml[U"home.enemy_y"].getOr<double>(editor.enemyHomePosition.y);
+            editor.selectedAiProfileTag = toml[U"ai.selected_profile"].getOr<String>(editor.selectedAiProfileTag).lowercased();
 
             const TOMLValue tilesValue = toml[U"tiles"];
             if (tilesValue.isTableArray())
@@ -229,7 +232,9 @@ namespace LT3
         writer << U"building_editor = " << (editor.showBuildingEditor ? U"true" : U"false") << U"\n";
         writer << U"command_editor = " << (editor.showCommandEditor ? U"true" : U"false") << U"\n";
         writer << U"skill_editor = " << (editor.showSkillEditor ? U"true" : U"false") << U"\n";
+        writer << U"ai_editor = " << (editor.showAiEditor ? U"true" : U"false") << U"\n";
         writer << U"debug_info = " << (editor.showDebugInfo ? U"true" : U"false") << U"\n";
+        writer << U"enemy_move_markers = " << (editor.showEnemyMoveMarkers ? U"true" : U"false") << U"\n";
         writer << U"battle_grid = " << (editor.showBattleGrid ? U"true" : U"false") << U"\n";
         writer << U"ui_layout_edit = " << (editor.uiLayoutEditEnabled ? U"true" : U"false") << U"\n";
         writer << U"map_assets_tab = " << Clamp(editor.paletteTabIndex, 0, 1) << U"\n";
@@ -248,6 +253,9 @@ namespace LT3
         writer << U"player_y = " << editor.playerHomePosition.y << U"\n";
         writer << U"enemy_x = " << editor.enemyHomePosition.x << U"\n";
         writer << U"enemy_y = " << editor.enemyHomePosition.y << U"\n\n";
+
+        writer << U"[ai]\n";
+        writer << U"selected_profile = \"" << TomlEscape(editor.selectedAiProfileTag.lowercased()) << U"\"\n\n";
 
         writer << U"[map]\n";
         writer << U"width = " << editor.mapWidth << U"\n";

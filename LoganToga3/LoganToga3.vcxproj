@@ -172,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoAI\AiProfiles.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
@@ -351,10 +352,16 @@
     <ClInclude Include="Data\DefinitionLoaders.h" />
     <ClInclude Include="Data\DefinitionStores.h" />
     <ClInclude Include="Data\IdTypes.h" />
+    <ClInclude Include="Data\Loaders\AiProfileDefLoader.h" />
     <ClInclude Include="Data\Loaders\BuildActionDefLoader.h" />
     <ClInclude Include="Data\Loaders\BuildActionDefTomlHelpers.h" />
     <ClInclude Include="Data\Loaders\ResourceDefLoader.h" />
+    <ClInclude Include="Data\Loaders\SkillDefIconRules.h" />
     <ClInclude Include="Data\Loaders\SkillDefLoader.h" />
+    <ClInclude Include="Data\Loaders\SkillDefLoaderCommon.h" />
+    <ClInclude Include="Data\Loaders\SkillDefLoading.h" />
+    <ClInclude Include="Data\Loaders\SkillDefPersistence.h" />
+    <ClInclude Include="Data\Loaders\SkillDefValueParsing.h" />
     <ClInclude Include="Data\Loaders\UnitDefLoader.h" />
     <ClInclude Include="Data\TomlTextUtils.h" />
     <ClInclude Include="Data\UnitCatalog.h" />
@@ -378,7 +385,11 @@
     <ClInclude Include="Systems\CombatSystem.h" />
     <ClInclude Include="Systems\DamageSystem.h" />
     <ClInclude Include="Systems\EditorInputSystem.h" />
+    <ClInclude Include="Systems\EnemyDirectorAttackWave.h" />
+    <ClInclude Include="Systems\EnemyDirectorCommon.h" />
+    <ClInclude Include="Systems\EnemyDirectorSpawn.h" />
     <ClInclude Include="Systems\EnemyDirectorSystem.h" />
+    <ClInclude Include="Systems\EnemyDirectorTactics.h" />
     <ClInclude Include="Systems\MovementSystem.h" />
     <ClInclude Include="Systems\PathfindingSystem.h" />
     <ClInclude Include="Systems\ProjectileSystem.h" />
@@ -386,16 +397,23 @@
     <ClInclude Include="Systems\SelectionSystem.h" />
     <ClInclude Include="Systems\TargetingSystem.h" />
     <ClInclude Include="Systems\WinLoseSystem.h" />
+    <ClInclude Include="UI\AiEditor.h" />
+    <ClInclude Include="UI\AiEditorCommon.h" />
+    <ClInclude Include="UI\AiEditorDraw.h" />
+    <ClInclude Include="UI\AiEditorInput.h" />
     <ClInclude Include="UI\BattleDebugOverlay.h" />
     <ClInclude Include="UI\BattleMapRenderer.h" />
     <ClInclude Include="UI\BattleNineSlice.h" />
+    <ClInclude Include="UI\BattleProjectileRendererOps.h" />
     <ClInclude Include="UI\BattleRenderer.h" />
     <ClInclude Include="UI\BattleResourceRenderer.h" />
     <ClInclude Include="UI\BattleSelectionRenderer.h" />
     <ClInclude Include="UI\BattleUiPanels.h" />
     <ClInclude Include="UI\BattleUnitRenderer.h" />
     <ClInclude Include="UI\BattleUnitRendererAssetOps.h" />
+    <ClInclude Include="UI\BattleUnitRendererDebugOps.h" />
     <ClInclude Include="UI\BattleUnitRendererDrawOps.h" />
+    <ClInclude Include="UI\BattleUnitRendererUnitOps.h" />
     <ClInclude Include="UI\BuildingEditor.h" />
     <ClInclude Include="UI\BuildingEditorCommon.h" />
     <ClInclude Include="UI\BuildingEditorDraw.h" />
@@ -403,10 +421,19 @@
     <ClInclude Include="UI\MapEditor.h" />
     <ClInclude Include="UI\MapEditorAssetUtils.h" />
     <ClInclude Include="UI\MapEditorBattleLayoutRects.h" />
+    <ClInclude Include="UI\MapEditorCanvasInput.Core.h" />
+    <ClInclude Include="UI\MapEditorCanvasInput.DecalEditor.h" />
     <ClInclude Include="UI\MapEditorCanvasInput.h" />
+    <ClInclude Include="UI\MapEditorCanvasInput.Palette.h" />
+    <ClInclude Include="UI\MapEditorCanvasInput.ZOrder.h" />
+    <ClInclude Include="UI\MapEditorCanvasInputCommon.h" />
     <ClInclude Include="UI\MapEditorCellOps.h" />
     <ClInclude Include="UI\MapEditorCommandEditorHelpers.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorInput.DetailInput.h" />
     <ClInclude Include="UI\MapEditorCommandEditorInput.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorInput.ImageOps.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorInput.RenameContextMenu.h" />
+    <ClInclude Include="UI\MapEditorCommandEditorInputCommon.h" />
     <ClInclude Include="UI\MapEditorCoreTypes.h" />
     <ClInclude Include="UI\MapEditorDecalLayoutRects.h" />
     <ClInclude Include="UI\MapEditorDescriptionEditor.h" />
@@ -439,6 +466,11 @@
     <ClInclude Include="UI\MapEditorUiLayout.h" />
     <ClInclude Include="UI\MapEditorUiLayoutInput.h" />
     <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.IdOps.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.ListInput.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.ParamEditor.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInput.RenameContextMenu.h" />
+    <ClInclude Include="UI\MapEditorUnitCatalogEditorInputCommon.h" />
     <ClInclude Include="UI\MapEditorUnitCatalogFileOps.h" />
     <ClInclude Include="UI\MapEditorUnitCatalogInput.h" />
     <ClInclude Include="UI\MapEditorUnitCatalogLayoutInput.h" />
@@ -446,9 +478,13 @@
     <ClInclude Include="UI\QuarterView.h" />
     <ClInclude Include="UI\RectUiHelpers.h" />
     <ClInclude Include="UI\SkillEditor.h" />
+    <ClInclude Include="UI\SkillEditorAssets.h" />
     <ClInclude Include="UI\SkillEditorCommon.h" />
     <ClInclude Include="UI\SkillEditorDraw.h" />
     <ClInclude Include="UI\SkillEditorInput.h" />
+    <ClInclude Include="UI\SkillEditorLayout.h" />
+    <ClInclude Include="UI\SkillEditorSandbox.h" />
+    <ClInclude Include="UI\SkillEditorState.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">

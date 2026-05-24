@@ -184,7 +184,7 @@ namespace LT3
 
 		if (showDebugInfo)
 		{
-			DrawBattleDebugOverlay(world, defs, uiFont, info);
+			DrawBattleDebugOverlay(world, defs, mapEditor, uiFont, info);
 		}
 	}
 

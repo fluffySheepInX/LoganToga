@@ -30,6 +30,11 @@ namespace LT3
 			return;
 		}
 
+		if (HandleDebugEnemyMoveMarkersToggle(ui))
+		{
+			return;
+		}
+
 		UpdateQuarterViewCamera(ui.mapEditor, runtime.world, definitions.defs);
 
 		const Vec2 screenMouse = Cursor::PosF();

@@ -9,6 +9,7 @@
 # include "MapEditorUnitCatalogInput.h"
 # include "BuildingEditor.h"
 # include "SkillEditor.h"
+# include "AiEditor.h"
 # include "MapEditorDescriptionEditor.h"
 # include "RectUiHelpers.h"
 
@@ -91,6 +92,11 @@ namespace LT3
         }
 
         if (ProcessSkillEditorInput(editor, defs, catalog))
+        {
+            consumed = true;
+        }
+
+        if (ProcessAiEditorInput(editor, defs))
         {
             consumed = true;
         }

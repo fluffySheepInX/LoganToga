@@ -44,6 +44,11 @@ namespace LT3
         return RectF{ Scene::Width() - 244.0, 116.0, 156.0, 30.0 };
     }
 
+    inline RectF DebugEnemyMoveMarkersAnchorRect()
+    {
+        return RectF{ Scene::Width() - 244.0, 152.0, 18.0, 18.0 };
+    }
+
     inline void ShowDebugClipboardCaptureToast(const String& title, const String& message, const FilePath& imagePath)
     {
 # if SIV3D_PLATFORM(WINDOWS)
@@ -206,6 +211,31 @@ namespace LT3
         return false;
     }
 
+    inline bool HandleDebugEnemyMoveMarkersToggle(AppUiState& ui)
+    {
+        if (!ui.mapEditor.showDebugInfo)
+        {
+            return false;
+        }
+
+        const RectF anchorRect = DebugEnemyMoveMarkersAnchorRect();
+        const RectF rowRect = DebugEnemyMoveMarkersRowRect(anchorRect);
+        const RectF checkRect = DebugEnemyMoveMarkersCheckboxRect(anchorRect);
+        if (rowRect.mouseOver() || checkRect.mouseOver())
+        {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
+
+        if (!(rowRect.leftClicked() || checkRect.leftClicked()))
+        {
+            return false;
+        }
+
+        ui.mapEditor.showEnemyMoveMarkers = !ui.mapEditor.showEnemyMoveMarkers;
+        SaveMapEditorToml(ui.mapEditor, false);
+        return true;
+    }
+
     inline void DrawDebugClipboardCaptureButton(const AppUiState& ui, const Font& uiFont)
     {
         if (!ui.mapEditor.showDebugInfo)
@@ -264,6 +294,7 @@ namespace LT3
 
         uiFont(U"NewGame").drawAt(14, normalRect.center(), Palette::White);
         uiFont(U"NewGame (AI Stop)").drawAt(12, enemyStopRect.center(), Palette::White);
+        DrawDebugEnemyMoveMarkersToggle(ui.mapEditor, uiFont, DebugEnemyMoveMarkersAnchorRect());
     }
 
     inline void SubmitDebugClipboardCaptureRequest(AppUiState& ui)

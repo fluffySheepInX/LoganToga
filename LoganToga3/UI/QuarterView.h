@@ -11,11 +11,13 @@ namespace LT3
     inline constexpr Vec2 QuarterBattleMapOrigin{ 200.0, 90.0 };
     inline constexpr double QuarterViewZoomMin = 0.5;
     inline constexpr double QuarterViewZoomMax = 2.5;
+    inline constexpr double QuarterViewKeyboardPanPixelsPerSec = 600.0;
     inline Camera2D QuarterViewCamera2D{ Vec2{ 0.0, 0.0 }, 1.0, CameraControl::None_ };
 
     inline Vec2 ToQuarterIso(const Vec2& worldPos);
     inline Vec2 ToQuarterWorld(const Vec2& screenPos);
     inline void DragQuarterViewCamera(const Vec2& screenDelta);
+    inline void MoveQuarterViewCamera(const Vec2& screenDelta);
 
     inline const Camera2DParameters& QuarterViewCameraParametersEnabled()
     {
@@ -43,6 +45,35 @@ namespace LT3
         return params;
     }
 
+    inline Vec2 GetQuarterViewKeyboardPanDirection()
+    {
+        Vec2 direction{ 0.0, 0.0 };
+
+        if (KeyA.pressed())
+        {
+            direction.x -= 1.0;
+        }
+        if (KeyD.pressed())
+        {
+            direction.x += 1.0;
+        }
+        if (KeyW.pressed())
+        {
+            direction.y -= 1.0;
+        }
+        if (KeyS.pressed())
+        {
+            direction.y += 1.0;
+        }
+
+        if (direction.isZero())
+        {
+            return direction;
+        }
+
+        return direction.normalized();
+    }
+
     inline void UpdateQuarterViewCamera2D(const bool enableControl, const bool allowWheelZoom = false)
     {
         QuarterViewCamera2D.setParameters(QuarterViewCameraParametersDisabled());
@@ -61,6 +92,16 @@ namespace LT3
         else
         {
             previousMiddleDragScreen.reset();
+        }
+
+        if (enableControl)
+        {
+            const Vec2 keyboardPanDirection = GetQuarterViewKeyboardPanDirection();
+            if (!keyboardPanDirection.isZero())
+            {
+                const Vec2 screenDelta = keyboardPanDirection * QuarterViewKeyboardPanPixelsPerSec * Scene::DeltaTime();
+                MoveQuarterViewCamera(screenDelta);
+            }
         }
 
         if (enableControl || allowWheelZoom)

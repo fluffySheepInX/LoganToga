@@ -6,6 +6,7 @@
 # include "Loaders/UnitDefLoader.h"
 # include "Loaders/ResourceDefLoader.h"
 # include "Loaders/BuildActionDefLoader.h"
+# include "Loaders/AiProfileDefLoader.h"
 
 namespace LT3
 {
@@ -16,6 +17,7 @@ namespace LT3
         LoadUnitDefinitions(defs, unitCatalog);
         LoadResourceDefinitions(defs);
         LoadBuildActionDefinitions(defs);
+        LoadAiProfileDefinitions(defs);
         return defs;
     }
 

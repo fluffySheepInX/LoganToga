@@ -8,6 +8,7 @@ namespace LT3
     using SkillDefId = uint32;
     using BuildActionDefId = uint32;
     using ResourceDefId = uint32;
+    using AiProfileDefId = uint32;
     using TileIndex = uint32;
 
     inline constexpr UnitId InvalidUnitId = UINT32_MAX;
@@ -15,6 +16,7 @@ namespace LT3
     inline constexpr SkillDefId InvalidSkillDefId = UINT32_MAX;
     inline constexpr BuildActionDefId InvalidBuildActionDefId = UINT32_MAX;
     inline constexpr ResourceDefId InvalidResourceDefId = UINT32_MAX;
+    inline constexpr AiProfileDefId InvalidAiProfileDefId = UINT32_MAX;
 
     enum class Faction : uint8
     {
@@ -61,8 +63,19 @@ namespace LT3
     enum class SkillProjectileMotion : uint8
     {
         Direct,
+        Static,
+        Arc,
         Parabola,
+        Drop,
         Orbit,
+        Swing,
+    };
+
+    enum class SkillProjectileCenter : uint8
+    {
+        Off,
+        On,
+        End,
     };
 
     enum class BuildActionResultType : uint8
