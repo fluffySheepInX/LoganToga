@@ -30,7 +30,7 @@ namespace LT3
 		def.range = Max(0.0, skillValue[U"range"].getOr<double>(def.range));
 		def.cooldownSec = Max(0.05, skillValue[U"cooldown_sec"].getOr<double>(def.cooldownSec));
 		def.mpCost = Max(0, skillValue[U"mp_cost"].getOr<int32>(def.mpCost));
-		def.damage = skillValue[U"damage"].getOr<int32>(def.damage);
+		def.damage = Clamp(skillValue[U"damage"].getOr<double>(def.damage), 0.01, 100.0);
 		def.projectileSpeed = skillValue[U"speed"].getOr<double>(skillValue[U"projectile_speed"].getOr<double>(def.projectileSpeed));
 		const bool hasMoveType = skillValue[U"movetype"].getOpt<String>().has_value();
 		def.projectileMotion = ParseSkillProjectileMotion(hasMoveType ? skillValue[U"movetype"].getOr<String>(U"direct") : skillValue[U"projectile_motion"].getOr<String>(U"direct"));

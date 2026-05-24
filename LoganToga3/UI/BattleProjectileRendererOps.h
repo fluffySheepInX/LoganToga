@@ -12,10 +12,29 @@ namespace LT3
 		return (nearest % 2) == 1;
 	}
 
-	inline FilePath ResolveProjectileImagePath(const SkillDef& skill, double angleRad)
+	inline double ResolveProjectileScreenAngle(double angleRad)
+	{
+		const Vec2 worldDirection{ Cos(angleRad), Sin(angleRad) };
+		const Vec2 screenDirection = ToQuarterIso(worldDirection);
+		if (screenDirection.lengthSq() <= 0.0001)
+		{
+			return angleRad;
+		}
+
+		return Math::Atan2(screenDirection.y, screenDirection.x);
+	}
+
+	inline bool ShouldUseDiagonalProjectileImage(const SkillDef& skill, double angleRad, bool quarterViewProjected)
+	{
+		const double imageAngle = quarterViewProjected ? ResolveProjectileScreenAngle(angleRad) : angleRad;
+		return !skill.projectileDiagonalImage.isEmpty()
+			&& IsDiagonalProjectileAngle(imageAngle);
+	}
+
+	inline FilePath ResolveProjectileImagePath(const SkillDef& skill, double angleRad, bool quarterViewProjected = true)
 	{
 		String imageName = skill.projectileImage;
-		if (!skill.projectileDiagonalImage.isEmpty() && IsDiagonalProjectileAngle(angleRad))
+		if (ShouldUseDiagonalProjectileImage(skill, angleRad, quarterViewProjected))
 		{
 			imageName = skill.projectileDiagonalImage;
 		}
@@ -106,9 +125,11 @@ namespace LT3
 		return true;
 	}
 
-	inline bool DrawProjectileTexture(const BattleRenderAssets& assets, const SkillDef& skill, const Vec2& drawPos, double angleRad)
+	inline bool DrawProjectileTexture(const BattleRenderAssets& assets, const SkillDef& skill, const Vec2& drawPos, double angleRad, bool quarterViewProjected = true)
 	{
-		const FilePath imagePath = ResolveProjectileImagePath(skill, angleRad);
+		const double screenAngle = quarterViewProjected ? ResolveProjectileScreenAngle(angleRad) : angleRad;
+		const bool useDiagonalImage = ShouldUseDiagonalProjectileImage(skill, angleRad, quarterViewProjected);
+		const FilePath imagePath = ResolveProjectileImagePath(skill, angleRad, quarterViewProjected);
 		if (imagePath.isEmpty())
 		{
 			return false;
@@ -123,7 +144,8 @@ namespace LT3
 		const double width = Max(1.0, skill.projectileWidth);
 		const double height = Max(1.0, skill.projectileHeight);
 		const SizeF drawSize{ width, height };
-		const double drawAngle = skill.projectileD360 ? angleRad + Math::HalfPi : 0.0;
+		const double assetForwardOffset = useDiagonalImage ? (Math::HalfPi + Math::QuarterPi) : Math::HalfPi;
+		const double drawAngle = skill.projectileD360 ? (screenAngle + assetForwardOffset) : 0.0;
 		const TextureRegion region = texture.resized(drawSize.x, drawSize.y);
 		if (skill.projectileCenter == SkillProjectileCenter::End)
 		{

@@ -12,6 +12,8 @@ namespace LT3
 			return false;
 		}
 
+		EnsureSkillEditorValueSteps(editor);
+
 		const RectF panel = SkillEditorPanelRect();
 		const RectF sandboxPreview = SkillEditorSandboxPreviewRect();
 		if (!panel.mouseOver() && !(editor.showSkillSandboxPreview && sandboxPreview.mouseOver()))
@@ -194,12 +196,81 @@ namespace LT3
 		SkillDef& skill = defs.skills[editor.selectedSkillIndex];
 		const RectF detailViewport = SkillEditorDetailViewportRect();
 		const double detailMaxScroll = Max(0.0, SkillEditorDetailContentHeight() - detailViewport.h);
+
+		if (editor.skillValueEditingRow >= 0)
+		{
+			TextInput::UpdateText(editor.skillValueEditingText);
+			if (KeyEscape.down())
+			{
+				editor.skillValueEditingRow = -1;
+				editor.skillValueEditingText.clear();
+				return true;
+			}
+			if (KeyEnter.down())
+			{
+				if (TryCommitSkillEditorValueText(skill, editor.skillValueEditingRow, editor.skillValueEditingText))
+				{
+					SaveSkillEditorDefinitions(editor, defs);
+				}
+				else
+				{
+					editor.statusText = U"Invalid skill value: {}"_fmt(editor.skillValueEditingText);
+				}
+				editor.skillValueEditingRow = -1;
+				editor.skillValueEditingText.clear();
+				return true;
+			}
+		}
+
 		if (detailViewport.mouseOver())
 		{
 			editor.skillDetailScroll = Clamp(editor.skillDetailScroll - Mouse::Wheel() * 42.0, 0.0, detailMaxScroll);
 		}
 
 		const double scroll = editor.skillDetailScroll;
+		if (editor.skillValueStepMenuRow)
+		{
+			const Array<double>& steps = SkillEditorDefaultValueSteps();
+			const RectF menuRect = SkillEditorValueStepMenuRect(editor.skillValueStepMenuPos, static_cast<int32>(steps.size()));
+			for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+			{
+				if (SkillEditorValueStepMenuItemRect(editor.skillValueStepMenuPos, i).leftClicked())
+				{
+					SetSkillEditorValueStep(editor, *editor.skillValueStepMenuRow, steps[i]);
+					editor.skillValueStepMenuRow = none;
+					editor.statusText = U"Skill value step set to {}"_fmt(steps[i]);
+					return true;
+				}
+			}
+
+			if (!menuRect.mouseOver() && (MouseL.down() || MouseR.down()))
+			{
+				editor.skillValueStepMenuRow = none;
+				return true;
+			}
+
+			return true;
+		}
+
+		if (editor.skillValueEditingRow >= 0 && MouseL.down())
+		{
+			const RectF editingRect = SkillEditorValueFieldRect(editor.skillValueEditingRow, scroll);
+			if (!editingRect.mouseOver())
+			{
+				if (TryCommitSkillEditorValueText(skill, editor.skillValueEditingRow, editor.skillValueEditingText))
+				{
+					SaveSkillEditorDefinitions(editor, defs);
+				}
+				else
+				{
+					editor.statusText = U"Invalid skill value: {}"_fmt(editor.skillValueEditingText);
+				}
+				editor.skillValueEditingRow = -1;
+				editor.skillValueEditingText.clear();
+				return true;
+			}
+		}
+
 		if (HandleRectButtonClick(SkillEditorIconBrowseRect(scroll)))
 		{
 			const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::JPEG(), FileFilter::BMP(), FileFilter::GIF(), FileFilter::AllFiles() };
@@ -328,21 +399,55 @@ namespace LT3
 			return true;
 		}
 
-		const double deltas[4] = { -10.0, -1.0, 1.0, 10.0 };
 		for (int32 row = 0; row < 16; ++row)
 		{
 			if (IsSkillEditorValueRowLocked(skill, row))
 			{
 				continue;
 			}
-			for (int32 button = 0; button < 4; ++button)
+
+			const RectNumberStepperRects rects = SkillEditorValueStepperRects(row, scroll);
+			if (rects.value.leftClicked())
 			{
-				if (HandleRectButtonClick(SkillEditorValueButtonRect(row, button, scroll)))
-				{
-					ChangeSkillValue(skill, row, deltas[button]);
-					SaveSkillEditorDefinitions(editor, defs);
-					return true;
-				}
+				editor.skillValueEditingRow = row;
+				editor.skillValueEditingText = U"{}"_fmt(GetSkillEditorValue(skill, row));
+				editor.skillValueStepMenuRow = none;
+				return true;
+			}
+			if (rects.step.leftClicked())
+			{
+				CycleSkillEditorValueStep(editor, row);
+				editor.statusText = U"Skill value step set to {}"_fmt(SkillEditorValueStep(editor, row));
+				return true;
+			}
+			if (rects.step.rightClicked() || rects.minus.rightClicked() || rects.plus.rightClicked())
+			{
+				editor.skillValueStepMenuRow = row;
+				editor.skillValueStepMenuPos = Cursor::PosF();
+				return true;
+			}
+
+			double step = SkillEditorValueStep(editor, row);
+			if (KeyShift.pressed())
+			{
+				step *= 10.0;
+			}
+			if (KeyControl.pressed())
+			{
+				step *= 0.1;
+			}
+
+			if (rects.minus.leftClicked())
+			{
+				ChangeSkillValue(skill, row, -step);
+				SaveSkillEditorDefinitions(editor, defs);
+				return true;
+			}
+			if (rects.plus.leftClicked())
+			{
+				ChangeSkillValue(skill, row, step);
+				SaveSkillEditorDefinitions(editor, defs);
+				return true;
 			}
 		}
 

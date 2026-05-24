@@ -101,7 +101,16 @@ namespace LT3
 
 	inline void ApplySkillSandboxHit(MapEditorState& editor, const SkillDef& skill)
 	{
-		editor.skillSandboxTargetHp = Max(0, editor.skillSandboxTargetHp - Max(1, skill.damage));
+		int32 sandboxDamage = static_cast<int32>(Math::Round(skill.damage));
+		if (sandboxDamage < 1)
+		{
+			sandboxDamage = 1;
+		}
+		editor.skillSandboxTargetHp -= sandboxDamage;
+		if (editor.skillSandboxTargetHp < 0)
+		{
+			editor.skillSandboxTargetHp = 0;
+		}
 	}
 
 	inline void UpdateSkillSandbox(MapEditorState& editor, const SkillDef& skill, double dt)

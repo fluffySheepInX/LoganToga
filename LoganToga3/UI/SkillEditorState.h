@@ -85,6 +85,180 @@ namespace LT3
 		return U"";
 	}
 
+	inline const Array<double>& SkillEditorDefaultValueSteps()
+	{
+		static const Array<double> steps = { 0.1, 0.5, 1.0, 5.0, 10.0 };
+		return steps;
+	}
+
+	inline double SkillEditorDefaultValueStep(int32 row)
+	{
+		switch (row)
+		{
+		case 1:
+		case 9:
+			return 0.1;
+		case 4:
+		case 11:
+			return 1.0;
+		default:
+			return 1.0;
+		}
+	}
+
+	inline void EnsureSkillEditorValueSteps(MapEditorState& editor)
+	{
+		if (editor.skillValueSteps.size() == 16)
+		{
+			return;
+		}
+
+		editor.skillValueSteps.resize(16);
+		for (int32 row = 0; row < 16; ++row)
+		{
+			editor.skillValueSteps[row] = SkillEditorDefaultValueStep(row);
+		}
+	}
+
+	inline double SkillEditorValueStep(const MapEditorState& editor, int32 row)
+	{
+		if (0 <= row && row < static_cast<int32>(editor.skillValueSteps.size()))
+		{
+			return editor.skillValueSteps[row];
+		}
+
+		return SkillEditorDefaultValueStep(row);
+	}
+
+	inline void SetSkillEditorValueStep(MapEditorState& editor, int32 row, double step)
+	{
+		EnsureSkillEditorValueSteps(editor);
+		if (0 <= row && row < static_cast<int32>(editor.skillValueSteps.size()))
+		{
+			editor.skillValueSteps[row] = step;
+		}
+	}
+
+	inline void CycleSkillEditorValueStep(MapEditorState& editor, int32 row)
+	{
+		const Array<double>& steps = SkillEditorDefaultValueSteps();
+		const double current = SkillEditorValueStep(editor, row);
+		int32 nextIndex = 0;
+		for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+		{
+			if (Math::Abs(steps[i] - current) < 0.0001)
+			{
+				nextIndex = (i + 1) % static_cast<int32>(steps.size());
+				break;
+			}
+		}
+
+		SetSkillEditorValueStep(editor, row, steps[nextIndex]);
+	}
+
+	inline double ApplySkillEditorValueBounds(int32 row, double value)
+	{
+		switch (row)
+		{
+		case 0:
+			return Max(0.0, value);
+		case 1:
+			return Max(0.05, value);
+		case 2:
+			return Clamp(value, 0.01, 100.0);
+		case 3:
+			return Max(1.0, value);
+		case 4:
+			return static_cast<double>(Clamp(static_cast<int32>(value), 1, 32));
+		case 5:
+			return Clamp(value, 0.0, 180.0);
+		case 6:
+			return Max(0.0, value);
+		case 7:
+			return Max(1.0, value);
+		case 9:
+			return Max(0.05, value);
+		case 10:
+			return Clamp(value, -360.0, 360.0);
+		case 11:
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 9));
+		case 12:
+		case 13:
+			return Max(1.0, value);
+		case 14:
+			return Max(0.0, value);
+		case 15:
+			return Clamp(value, -720.0, 720.0);
+		default:
+			return value;
+		}
+	}
+
+	inline double GetSkillEditorValue(const SkillDef& skill, int32 row)
+	{
+		switch (row)
+		{
+		case 0: return skill.range;
+		case 1: return skill.cooldownSec;
+		case 2: return skill.damage;
+		case 3: return skill.projectileSpeed;
+		case 4: return static_cast<double>(skill.burstCount);
+		case 5: return skill.spreadDeg;
+		case 6: return skill.arcHeight;
+		case 7: return skill.orbitRadius;
+		case 8: return skill.orbitAngularSpeedDeg;
+		case 9: return skill.orbitDurationSec;
+		case 10: return skill.projectileStartDegree;
+		case 11: return static_cast<double>(skill.projectileStartDegreeType);
+		case 12: return skill.projectileWidth;
+		case 13: return skill.projectileHeight;
+		case 14: return skill.swingRadius;
+		case 15: return skill.swingAngleDeg;
+		default: return 0.0;
+		}
+	}
+
+	inline void SetSkillEditorValue(SkillDef& skill, int32 row, double value)
+	{
+		const double bounded = ApplySkillEditorValueBounds(row, value);
+		switch (row)
+		{
+		case 0: skill.range = bounded; break;
+		case 1: skill.cooldownSec = bounded; break;
+		case 2: skill.damage = bounded; break;
+		case 3: skill.projectileSpeed = bounded; break;
+		case 4: skill.burstCount = static_cast<int32>(bounded); break;
+		case 5: skill.spreadDeg = bounded; break;
+		case 6: skill.arcHeight = bounded; break;
+		case 7: skill.orbitRadius = bounded; break;
+		case 8: skill.orbitAngularSpeedDeg = bounded; break;
+		case 9: skill.orbitDurationSec = bounded; break;
+		case 10: skill.projectileStartDegree = bounded; break;
+		case 11: skill.projectileStartDegreeType = static_cast<int32>(bounded); break;
+		case 12: skill.projectileWidth = bounded; break;
+		case 13: skill.projectileHeight = bounded; break;
+		case 14: skill.swingRadius = bounded; break;
+		case 15: skill.swingAngleDeg = bounded; break;
+		default: break;
+		}
+	}
+
+	inline bool TryCommitSkillEditorValueText(SkillDef& skill, int32 row, const String& text)
+	{
+		if (text.isEmpty())
+		{
+			return false;
+		}
+
+		if (const Optional<double> value = ParseOpt<double>(text))
+		{
+			SetSkillEditorValue(skill, row, *value);
+			return true;
+		}
+
+		return false;
+	}
+
 	inline const Array<String>* FindSkillIconWarnings(const DefinitionStores& defs, StringView skillTag)
 	{
 		if (defs.skillIconWarningsByTag.contains(String{ skillTag }))
@@ -107,58 +281,6 @@ namespace LT3
 
 	inline void ChangeSkillValue(SkillDef& skill, int32 row, double delta)
 	{
-		switch (row)
-		{
-		case 0:
-			skill.range = Max(0.0, skill.range + delta);
-			break;
-		case 1:
-			skill.cooldownSec = Max(0.05, skill.cooldownSec + delta);
-			break;
-		case 2:
-			skill.damage = Clamp(skill.damage + static_cast<int32>(delta), -999, 999);
-			break;
-		case 3:
-			skill.projectileSpeed = Max(1.0, skill.projectileSpeed + delta);
-			break;
-		case 4:
-			skill.burstCount = Clamp(skill.burstCount + static_cast<int32>(delta), 1, 32);
-			break;
-		case 5:
-			skill.spreadDeg = Clamp(skill.spreadDeg + delta, 0.0, 180.0);
-			break;
-		case 6:
-			skill.arcHeight = Max(0.0, skill.arcHeight + delta);
-			break;
-		case 7:
-			skill.orbitRadius = Max(1.0, skill.orbitRadius + delta);
-			break;
-		case 8:
-			skill.orbitAngularSpeedDeg += delta;
-			break;
-		case 9:
-			skill.orbitDurationSec = Max(0.05, skill.orbitDurationSec + delta);
-			break;
-		case 10:
-			skill.projectileStartDegree = Clamp(skill.projectileStartDegree + delta, -360.0, 360.0);
-			break;
-		case 11:
-			skill.projectileStartDegreeType = Clamp(skill.projectileStartDegreeType + static_cast<int32>(delta), 0, 9);
-			break;
-		case 12:
-			skill.projectileWidth = Max(1.0, skill.projectileWidth + delta);
-			break;
-		case 13:
-			skill.projectileHeight = Max(1.0, skill.projectileHeight + delta);
-			break;
-		case 14:
-			skill.swingRadius = Max(0.0, skill.swingRadius + delta);
-			break;
-		case 15:
-			skill.swingAngleDeg = Clamp(skill.swingAngleDeg + delta, -720.0, 720.0);
-			break;
-		default:
-			break;
-		}
+		SetSkillEditorValue(skill, row, GetSkillEditorValue(skill, row) + delta);
 	}
 }

@@ -135,13 +135,47 @@ namespace LT3
 	inline RectF SkillEditorValueButtonRect(int32 row, int32 buttonIndex, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 128.0 + buttonIndex * 42.0, detail.y + 358.0 + row * 38.0 - scroll, 36.0, 24.0 };
+		return RectF{ detail.x + 128.0 + buttonIndex * 36.0, detail.y + 358.0 + row * 38.0 - scroll, 30.0, 24.0 };
+	}
+
+	inline RectF SkillEditorValueFieldRect(int32 row, double scroll = 0.0)
+	{
+		const RectF detail = SkillEditorDetailRect();
+		return RectF{ detail.x + 164.0, detail.y + 358.0 + row * 38.0 - scroll, 82.0, 24.0 };
+	}
+
+	inline RectF SkillEditorValueStepRect(int32 row, double scroll = 0.0)
+	{
+		const RectF detail = SkillEditorDetailRect();
+		return RectF{ detail.x + 288.0, detail.y + 358.0 + row * 38.0 - scroll, 54.0, 24.0 };
+	}
+
+	inline RectNumberStepperRects SkillEditorValueStepperRects(int32 row, double scroll = 0.0)
+	{
+		const RectF minusRect = SkillEditorValueButtonRect(row, 0, scroll);
+		const RectF valueRect = SkillEditorValueFieldRect(row, scroll);
+		return RectNumberStepperRects{
+			.minus = minusRect,
+			.value = valueRect,
+			.plus = RectF{ valueRect.x + valueRect.w + 6.0, valueRect.y, 30.0, 24.0 },
+			.step = SkillEditorValueStepRect(row, scroll),
+		};
+	}
+
+	inline RectF SkillEditorValueStepMenuRect(const Vec2& pos, int32 itemCount)
+	{
+		return RectF{ pos.x, pos.y, 86.0, 8.0 + itemCount * 24.0 };
+	}
+
+	inline RectF SkillEditorValueStepMenuItemRect(const Vec2& pos, int32 index)
+	{
+		return RectF{ pos.x + 4.0, pos.y + 4.0 + index * 24.0, 78.0, 20.0 };
 	}
 
 	inline RectF SkillEditorValueHelpIconRect(int32 row, double scroll = 0.0)
 	{
-		const RectF lastButton = SkillEditorValueButtonRect(row, 3, scroll);
-		return RectF{ lastButton.x + lastButton.w + 8.0, lastButton.y + 2.0, 20.0, 20.0 };
+		const RectF stepRect = SkillEditorValueStepRect(row, scroll);
+		return RectF{ stepRect.x + stepRect.w + 8.0, stepRect.y + 2.0, 20.0, 20.0 };
 	}
 
 	inline RectF SkillEditorValueNoteIconRect(int32 row, double scroll = 0.0)

@@ -9,7 +9,7 @@ namespace LT3
 		SkillKind kind,
 		double range,
 		double cooldownSec,
-		int32 damage,
+		double damage,
 		double projectileSpeed,
 		SkillProjectileMotion projectileMotion,
 		int32 burstCount,

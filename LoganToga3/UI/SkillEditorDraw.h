@@ -44,7 +44,7 @@ namespace LT3
 		}
 	}
 
-	inline void DrawSkillEditorValueRow(const Font& uiFont, const SkillDef& skill, int32 row, StringView label, StringView value, double scroll, String& hoverHelpText, String& hoverNoteText)
+	inline void DrawSkillEditorValueRow(const Font& uiFont, const MapEditorState& editor, const SkillDef& skill, int32 row, StringView label, StringView value, double scroll, String& hoverHelpText, String& hoverNoteText)
 	{
 		const RectF detail = SkillEditorDetailRect();
 		const RectF viewport = SkillEditorDetailViewportRect();
@@ -55,22 +55,9 @@ namespace LT3
 		}
 		const bool locked = IsSkillEditorValueRowLocked(skill, row);
 		uiFont(label).draw(11, detail.x + 8.0, y + 4.0, locked ? ColorF{ 0.62, 0.66, 0.72 } : ColorF{ Palette::Aqua });
-		uiFont(value).draw(12, detail.x + 64.0, y + 4.0, locked ? ColorF{ 0.72, 0.76, 0.80 } : ColorF{ Palette::Gold });
-		const RectButtonStyle enabledStyle{ .fontSize = 10 };
-		const RectButtonStyle disabledStyle{
-			.normalBack = ColorF{ 0.05, 0.06, 0.08, 0.70 },
-			.activeBack = ColorF{ 0.05, 0.06, 0.08, 0.70 },
-			.normalFrame = ColorF{ 1, 1, 1, 0.08 },
-			.hoverFrame = ColorF{ 1, 1, 1, 0.08 },
-			.normalText = ColorF{ 0.52, 0.56, 0.60 },
-			.activeText = ColorF{ 0.52, 0.56, 0.60 },
-			.frameThickness = 1.0,
-			.fontSize = 10,
-		};
-		DrawRectButton(SkillEditorValueButtonRect(row, 0, scroll), U"-10", false, uiFont, locked ? disabledStyle : enabledStyle);
-		DrawRectButton(SkillEditorValueButtonRect(row, 1, scroll), U"-1", false, uiFont, locked ? disabledStyle : enabledStyle);
-		DrawRectButton(SkillEditorValueButtonRect(row, 2, scroll), U"+1", false, uiFont, locked ? disabledStyle : enabledStyle);
-		DrawRectButton(SkillEditorValueButtonRect(row, 3, scroll), U"+10", false, uiFont, locked ? disabledStyle : enabledStyle);
+		const String shownValue = (editor.skillValueEditingRow == row) ? editor.skillValueEditingText : String{ value };
+		const String stepText = U"x{}"_fmt(SkillEditorValueStep(editor, row));
+		DrawRectNumberStepper(SkillEditorValueStepperRects(row, scroll), shownValue, stepText, editor.skillValueEditingRow == row, editor.skillValueStepMenuRow && *editor.skillValueStepMenuRow == row, !locked, uiFont);
 		const RectF helpRect = SkillEditorValueHelpIconRect(row, scroll);
 		DrawSkillEditorInfoIcon(helpRect, SkillEditorHelpIconPath(), U"?", uiFont);
 		if (helpRect.mouseOver() && row < static_cast<int32>(SkillEditorValueHelpTexts().size()))
@@ -140,7 +127,7 @@ namespace LT3
 					continue;
 				}
 			}
-			if (!DrawProjectileTexture(sandboxAssets, skill, drawPos, projectile.angleRad))
+			if (!DrawProjectileTexture(sandboxAssets, skill, drawPos, projectile.angleRad, false))
 			{
 				if (projectile.motion == SkillProjectileMotion::Parabola && projectile.height > 1.0)
 				{
@@ -339,22 +326,35 @@ namespace LT3
 		DrawRectButton(SkillEditorToggleButtonRect(0, scroll), U"homing {}"_fmt(skill.projectileHoming ? U"on" : U"off"), skill.projectileHoming, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorToggleButtonRect(1, scroll), U"d360 {}"_fmt(skill.projectileD360 ? U"on" : U"off"), skill.projectileD360, uiFont, RectButtonStyle{ .fontSize = 10 });
 
-		DrawSkillEditorValueRow(uiFont, skill, 0, U"range", U"{:.1f}"_fmt(skill.range), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 1, U"cool", U"{:.2f}"_fmt(skill.cooldownSec), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 2, U"dmg", U"{}"_fmt(skill.damage), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 3, U"speed", U"{:.1f}"_fmt(skill.projectileSpeed), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 4, U"burst", U"{}"_fmt(skill.burstCount), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 5, U"spread", U"{:.1f}"_fmt(skill.spreadDeg), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 6, U"arc", U"{:.1f}"_fmt(skill.arcHeight), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 7, U"radius", U"{:.1f}"_fmt(skill.orbitRadius), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 8, U"circleV", U"{:.1f}"_fmt(skill.orbitAngularSpeedDeg), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 9, U"life", U"{:.2f}"_fmt(skill.orbitDurationSec), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 10, U"stDeg", U"{:.1f}"_fmt(skill.projectileStartDegree), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 11, U"degType", U"{}"_fmt(skill.projectileStartDegreeType), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 12, U"w", U"{:.1f}"_fmt(skill.projectileWidth), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 13, U"h", U"{:.1f}"_fmt(skill.projectileHeight), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 14, U"swingR", U"{:.1f}"_fmt(skill.swingRadius), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, skill, 15, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 0, U"range", U"{:.1f}"_fmt(skill.range), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 1, U"cool", U"{:.2f}"_fmt(skill.cooldownSec), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 2, U"dmg", U"{}"_fmt(skill.damage), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 3, U"speed", U"{:.1f}"_fmt(skill.projectileSpeed), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 4, U"burst", U"{}"_fmt(skill.burstCount), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 5, U"spread", U"{:.1f}"_fmt(skill.spreadDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 6, U"arc", U"{:.1f}"_fmt(skill.arcHeight), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 7, U"radius", U"{:.1f}"_fmt(skill.orbitRadius), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 8, U"circleV", U"{:.1f}"_fmt(skill.orbitAngularSpeedDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 9, U"life", U"{:.2f}"_fmt(skill.orbitDurationSec), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 10, U"stDeg", U"{:.1f}"_fmt(skill.projectileStartDegree), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 11, U"degType", U"{}"_fmt(skill.projectileStartDegreeType), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 12, U"w", U"{:.1f}"_fmt(skill.projectileWidth), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 13, U"h", U"{:.1f}"_fmt(skill.projectileHeight), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 14, U"swingR", U"{:.1f}"_fmt(skill.swingRadius), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 15, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverNoteText);
+
+		if (editor.skillValueStepMenuRow)
+		{
+			const Array<double>& steps = SkillEditorDefaultValueSteps();
+			const RectF menuRect = SkillEditorValueStepMenuRect(editor.skillValueStepMenuPos, static_cast<int32>(steps.size()));
+			menuRect.draw(ColorF{ 0.06, 0.08, 0.14, 0.97 }).drawFrame(1, ColorF{ 1, 1, 1, 0.30 });
+			for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+			{
+				const RectF item = SkillEditorValueStepMenuItemRect(editor.skillValueStepMenuPos, i);
+				item.draw(item.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
+				uiFont(U"step {}"_fmt(steps[i])).draw(11, item.x + 6.0, item.y + 3.0, Palette::White);
+			}
+		}
 
 		if (!hoverHelpText.isEmpty())
 		{

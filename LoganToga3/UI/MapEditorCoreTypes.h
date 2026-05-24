@@ -140,6 +140,11 @@ namespace LT3
 		double skillDetailScroll = 0.0;
 		int32 selectedSkillIndex = 0;
 		bool showSkillSandboxPreview = false;
+		int32 skillValueEditingRow = -1;
+		String skillValueEditingText;
+		Array<double> skillValueSteps;
+		Optional<int32> skillValueStepMenuRow;
+		Vec2 skillValueStepMenuPos{ 0.0, 0.0 };
 		Vec2 skillSandboxCasterPos{ 136.0, 404.0 };
 		Vec2 skillSandboxTargetPos{ 512.0, 404.0 };
 		int32 skillSandboxTargetHp = 100;

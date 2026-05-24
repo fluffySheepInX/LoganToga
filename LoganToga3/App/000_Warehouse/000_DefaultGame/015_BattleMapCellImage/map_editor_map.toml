@@ -8,11 +8,11 @@ building_editor = false
 
 command_editor = false
 
-skill_editor = true
+skill_editor = false
 
 ai_editor = false
 
-debug_info = false
+debug_info = true
 
 enemy_move_markers = true
 
@@ -27,7 +27,7 @@ resource_panels = false
 
 [fog]
 
-enabled = false
+enabled = true
 
 color_r = 0.02
 
@@ -75,7 +75,7 @@ y = 0
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -87,7 +87,7 @@ y = 0
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -135,7 +135,7 @@ y = 0
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -147,7 +147,7 @@ y = 0
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -159,7 +159,7 @@ y = 0
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -243,7 +243,7 @@ y = 0
 
 terrain = "mud1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -1231,7 +1231,7 @@ y = 1
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -1423,7 +1423,7 @@ y = 1
 
 terrain = "flower1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -1435,7 +1435,7 @@ y = 1
 
 terrain = "mud1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -1447,7 +1447,7 @@ y = 1
 
 terrain = "mud1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -4673,7 +4673,7 @@ y = 4
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -4685,7 +4685,7 @@ y = 4
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -6751,7 +6751,7 @@ y = 6
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -7099,7 +7099,7 @@ y = 6
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -7335,7 +7335,7 @@ y = 7
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -7801,7 +7801,7 @@ y = 7
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -7813,7 +7813,7 @@ y = 7
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -17875,7 +17875,7 @@ y = 10
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -17887,7 +17887,7 @@ y = 11
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -17995,7 +17995,7 @@ y = 11
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -18007,7 +18007,7 @@ y = 11
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -18367,7 +18367,7 @@ y = 12
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -18463,7 +18463,7 @@ y = 12
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -18475,7 +18475,7 @@ y = 12
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -18487,7 +18487,7 @@ y = 12
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -23663,7 +23663,7 @@ y = 20
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -24325,7 +24325,7 @@ y = 21
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -24857,7 +24857,7 @@ y = 22
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -30927,7 +30927,7 @@ y = 29
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -33851,7 +33851,7 @@ y = 30
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -33863,7 +33863,7 @@ y = 30
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -36695,7 +36695,7 @@ y = 31
 
 terrain = "mud1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -36707,7 +36707,7 @@ y = 31
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -39389,7 +39389,7 @@ y = 37
 
 terrain = "flower1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -39869,7 +39869,7 @@ y = 38
 
 terrain = "flower1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -40349,7 +40349,7 @@ y = 39
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -40361,7 +40361,7 @@ y = 39
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -40373,7 +40373,7 @@ y = 39
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 
@@ -40385,7 +40385,7 @@ y = 39
 
 terrain = "grass1.png"
 
-object = ""
+object = "tree3.png"
 
 
 

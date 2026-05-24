@@ -19,33 +19,33 @@ icons = ["we_gun060.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
 
-range = 810
+range = 850
 
-cooldown_sec = 1.05
+cooldown_sec = 0.35
 
 mp_cost = 0
 
-damage = 14
+damage = 0.31
 
 image = "a_bulletN.png"
 
 image_diagonal = "a_bulletNW.png"
 
-projectile_speed = 110
+projectile_speed = 355
 
-speed = 110
+speed = 355
 
-movetype = "swing"
+movetype = "direct"
 
-projectile_motion = "swing"
+projectile_motion = "direct"
 
-center = "end"
+center = "on"
 
 homing = "off"
 
 d360 = "on"
 
-start_degree = -45
+start_degree = 0
 
 start_degree_type = 0
 
@@ -63,13 +63,13 @@ orbit_angular_speed_deg = 0
 
 orbit_duration_sec = 0.05
 
-projectile_width = 10
+projectile_width = 20
 
-projectile_height = 100
+projectile_height = 20
 
 swing_radius = 0
 
-swing_angle_deg = 90
+swing_angle_deg = 0
 
 color_r = 0.94118
 
@@ -96,11 +96,11 @@ kind = "missile"
 
 range = 342
 
-cooldown_sec = 1.05
+cooldown_sec = 1.55
 
 mp_cost = 0
 
-damage = 50
+damage = 1
 
 image = "sword.png"
 
@@ -136,7 +136,7 @@ orbit_radius = 1
 
 orbit_angular_speed_deg = 0
 
-orbit_duration_sec = 0.05
+orbit_duration_sec = 1.05
 
 projectile_width = 20
 
@@ -313,23 +313,23 @@ name = "Machine Gun"
 
 description = ""
 
-icon = ""
+icon = "we_gun080.png"
 
-icons = []
+icons = ["we_gun080.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
 
-range = 240
+range = 650
 
-cooldown_sec = 1.4
+cooldown_sec = 0.3
 
 mp_cost = 0
 
-damage = 3
+damage = 0.31
 
-image = ""
+image = "a_bulletN.png"
 
-image_diagonal = ""
+image_diagonal = "a_bulletNW.png"
 
 projectile_speed = 520
 
@@ -339,21 +339,21 @@ movetype = "direct"
 
 projectile_motion = "direct"
 
-center = "off"
+center = "on"
 
 homing = "off"
 
-d360 = "off"
+d360 = "on"
 
 start_degree = 0
 
 start_degree_type = 0
 
-burst_count = 5
+burst_count = 15
 
 burst_interval_sec = 0.06
 
-spread_deg = 8
+spread_deg = 105
 
 arc_height = 72
 
@@ -363,9 +363,9 @@ orbit_angular_speed_deg = 220
 
 orbit_duration_sec = 1.2
 
-projectile_width = 54
+projectile_width = 24
 
-projectile_height = 72
+projectile_height = 24
 
 swing_radius = 54
 

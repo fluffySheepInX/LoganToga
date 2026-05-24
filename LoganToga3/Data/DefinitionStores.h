@@ -15,7 +15,7 @@ namespace LT3
         double range = 120.0;
         double cooldownSec = 0.8;
         int32 mpCost = 0;
-        int32 damage = 8;
+        double damage = 1.0;
         double projectileSpeed = 380.0;
         SkillProjectileMotion projectileMotion = SkillProjectileMotion::Direct;
         int32 burstCount = 1;
