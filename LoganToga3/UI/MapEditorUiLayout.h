@@ -31,6 +31,16 @@ namespace LT3
         return RectF{ editor.uiSelectedInfoAnchor.x, editor.uiSelectedInfoAnchor.y - 340.0 + EditorBarTopAnchorOffset(editor, editor.uiSelectedInfoTopAnchor), 282.0, 340.0 };
     }
 
+    inline RectF BattleInfoPanelMultiRect(const MapEditorState& editor, size_t selectedCount)
+    {
+        constexpr double rowHeight = 28.0;
+        const size_t visibleCount = Min<size_t>(12, selectedCount);
+        const bool hasOmitted = (selectedCount > visibleCount);
+        const double panelHeight = 42.0 + static_cast<double>(visibleCount) * rowHeight + (hasOmitted ? 26.0 : 12.0);
+        const RectF compact = BattleInfoPanelCompactRect(editor);
+        return RectF{ compact.x, compact.y, compact.w, panelHeight };
+    }
+
     inline double BattleUiBottomSafeInset()
     {
         return 40.0;

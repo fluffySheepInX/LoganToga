@@ -60,7 +60,12 @@ namespace LT3
 			const RectF rect = MakeDragSelectionRect(world.selection.areaDragStartScreen, world.selection.areaDragCurrentScreen);
 			if (rect.size.lengthSq() >= 36.0)
 			{
-				intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, PickUnitsInScreenRect(world, defs, rect, Faction::Player), Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, {}, false, false };
+				Array<UnitId> pickedUnits = PickUnitsInScreenRect(world, defs, rect, Faction::Player);
+				if (pickedUnits.isEmpty())
+				{
+					pickedUnits = PickUnitsInScreenRect(world, defs, rect, Faction::Enemy);
+				}
+				intent.commands << BattleInputCommand{ BattleInputCommandType::SelectUnit, InvalidUnitId, pickedUnits, Vec2{ 0, 0 }, Vec2{ 0, 0 }, InvalidBuildActionDefId, {}, false, false };
 			}
 			world.selection.areaDragging = false;
 		}

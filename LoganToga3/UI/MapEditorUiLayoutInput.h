@@ -30,9 +30,12 @@ namespace LT3
         }
 
         const bool showDetail = KeyControl.pressed();
+        const bool showMultiUnitList = (GetSelectedUnits(world).size() >= 2);
         const Array<BuildActionUiState> visibleActions = CollectVisibleBuildActionsForSelectedUnit(world, defs);
         const int32 commandRows = Max(1, (static_cast<int32>(visibleActions.size()) + 2) / 3);
-        const RectF infoRect = showDetail ? BattleInfoPanelDetailRect(editor) : BattleInfoPanelCompactRect(editor);
+        const RectF infoRect = showMultiUnitList
+            ? BattleInfoPanelMultiRect(editor, GetSelectedUnits(world).size())
+            : (showDetail ? BattleInfoPanelDetailRect(editor) : BattleInfoPanelCompactRect(editor));
         const RectF commandRect = BattleCommandPanelRect(editor, commandRows);
         const RectF resourceRect = BattleResourcePanelRect(editor, defs.resources.size());
 

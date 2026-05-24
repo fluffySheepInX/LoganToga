@@ -179,7 +179,9 @@ namespace LT3
 		const Array<Vec2> targets = BuildFormationMoveTargets(world, defs, validUnits, destination, facingDirection);
 		for (size_t i = 0; i < validUnits.size() && i < targets.size(); ++i)
 		{
-			IssueMove(world, validUnits[i], targets[i]);
+			SetUnitMoving(world, validUnits[i], destination, true, false);
+			SetUnitFormationFinalTarget(world, validUnits[i], targets[i]);
+			EnqueuePathRequest(world, validUnits[i], destination);
 		}
 	}
 }

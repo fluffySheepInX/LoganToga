@@ -181,7 +181,9 @@ namespace LT3
 				projectile.height = 0.0;
 			}
 
-			if (projectile.position.distanceFrom(editor.skillSandboxTargetPos) <= 34.0)
+			const bool hit = IsSwingEndProjectileHit(skill, projectile.position, projectile.angleRad, editor.skillSandboxTargetPos, 34.0)
+				|| (projectile.position.distanceFrom(editor.skillSandboxTargetPos) <= 34.0);
+			if (hit)
 			{
 				ApplySkillSandboxHit(editor, skill);
 				editor.skillSandboxProjectiles.remove_at(i);

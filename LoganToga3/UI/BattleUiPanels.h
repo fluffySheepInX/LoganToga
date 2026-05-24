@@ -103,6 +103,59 @@ namespace LT3
 			return;
 		}
 
+		const Array<UnitId>& selectedUnits = GetSelectedUnits(world);
+		const bool showMultiUnitList = (selectedUnits.size() >= 2);
+		if (showMultiUnitList)
+		{
+			const double rowHeight = 28.0;
+			const RectF info = BattleInfoPanelMultiRect(mapEditor, selectedUnits.size());
+			info.draw(ColorF{ 0.02, 0.03, 0.045, 0.78 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
+			DrawUiLayoutDragHandle(info, mapEditor.uiLayoutEditEnabled);
+			DrawUiLayoutTopAnchorToggle(info, mapEditor.uiLayoutEditEnabled, mapEditor.uiSelectedInfoTopAnchor);
+
+			uiFont(U"選択ユニット {}体"_fmt(selectedUnits.size())).draw(info.x + 18.0, info.y + 14.0, Palette::White);
+
+			const RectF listArea{ info.x + 12.0, info.y + 42.0, info.w - 24.0, info.h - 54.0 };
+			const size_t visibleCount = Min<size_t>(12, selectedUnits.size());
+
+			for (size_t i = 0; i < visibleCount; ++i)
+			{
+				const UnitId unit = selectedUnits[i];
+				if (!IsValidUnit(world, unit) || world.units.defId[unit] >= defs.units.size())
+				{
+					continue;
+				}
+
+				const UnitDef& rowDef = defs.units[world.units.defId[unit]];
+				const double rowY = listArea.y + static_cast<double>(i) * rowHeight;
+				const RectF rowRect{ listArea.x, rowY, listArea.w, rowHeight - 4.0 };
+				const bool isEnemy = (world.units.faction[unit] == Faction::Enemy);
+				rowRect.draw(isEnemy ? ColorF{ 0.18, 0.07, 0.07, 0.86 } : ColorF{ 0.07, 0.10, 0.16, 0.86 });
+				rowRect.drawFrame(1.0, ColorF{ 1, 1, 1, 0.10 });
+
+				uiFont(rowDef.name).draw(12, rowRect.x + 8.0, rowRect.y + 4.0, Palette::White);
+
+				const int32 rowMaxHp = Max(1, rowDef.hp);
+				const double hpRate = Clamp(static_cast<double>(world.units.hp[unit]) / rowMaxHp, 0.0, 1.0);
+				const RectF hpBack{ rowRect.x + 120.0, rowRect.y + 7.0, rowRect.w - 168.0, 12.0 };
+				hpBack.draw(ColorF{ 0.08, 0.08, 0.08, 0.82 });
+				ColorF hpColor{ 1.0, 0.25, 0.20 };
+				if (hpRate > 0.35)
+				{
+					hpColor = ColorF{ 0.20, 0.80, 0.20 };
+				}
+				RectF{ hpBack.pos, hpBack.w * hpRate, hpBack.h }.draw(hpColor);
+				hpBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.18 });
+				uiFont(U"{}/{}"_fmt(world.units.hp[unit], rowDef.hp)).draw(11, rowRect.x + rowRect.w - 44.0, rowRect.y + 2.0, Palette::Lightgray);
+			}
+
+			if (visibleCount < selectedUnits.size())
+			{
+				uiFont(U"他 {} 体..."_fmt(selectedUnits.size() - visibleCount)).draw(info.x + 18.0, info.y + info.h - 20.0, ColorF{ 0.70, 0.80, 0.95 });
+			}
+			return;
+		}
+
 		const UnitDef& def = defs.units[world.units.defId[selected]];
 		const bool showDetail = KeyControl.pressed();
 		const double lineStep = 24.0;

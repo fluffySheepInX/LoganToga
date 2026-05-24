@@ -4,6 +4,37 @@
 
 namespace LT3
 {
+    inline Vec2 ResolveSwingEndProjectileTipWorld(const SkillDef& skill, const Vec2& rootPos, double angleRad)
+    {
+        const double length = Max(1.0, skill.projectileHeight);
+        return rootPos + Vec2{ Cos(angleRad), Sin(angleRad) } * length;
+    }
+
+    inline bool IntersectsCircleWithSegment(const Vec2& point, double radius, const Vec2& segmentStart, const Vec2& segmentEnd)
+    {
+        const Vec2 segment = segmentEnd - segmentStart;
+        const double segmentLengthSq = segment.lengthSq();
+        if (segmentLengthSq <= 0.0001)
+        {
+            return point.distanceFrom(segmentStart) <= radius;
+        }
+
+        const double t = Clamp(((point - segmentStart).dot(segment)) / segmentLengthSq, 0.0, 1.0);
+        const Vec2 closest = segmentStart + segment * t;
+        return point.distanceFrom(closest) <= radius;
+    }
+
+    inline bool IsSwingEndProjectileHit(const SkillDef& skill, const Vec2& rootPos, double angleRad, const Vec2& targetPos, double hitRadius)
+    {
+        if (skill.projectileMotion != SkillProjectileMotion::Swing || skill.projectileCenter != SkillProjectileCenter::End)
+        {
+            return false;
+        }
+
+        const Vec2 tipPos = ResolveSwingEndProjectileTipWorld(skill, rootPos, angleRad);
+        return IntersectsCircleWithSegment(targetPos, hitRadius, rootPos, tipPos);
+    }
+
     inline Vec2 RotateVector(const Vec2& value, double angleRad)
     {
         const double c = Cos(angleRad);
@@ -189,7 +220,10 @@ namespace LT3
             }
 
             const UnitDef& targetDef = defs.units[world.units.defId[target]];
-            if (world.projectiles.position[i].distanceFrom(world.units.position[target]) <= targetDef.radius + 5.0)
+            const double hitRadius = targetDef.radius + 5.0;
+            const bool hit = IsSwingEndProjectileHit(skill, world.projectiles.position[i], world.projectiles.angleRad[i], world.units.position[target], hitRadius)
+                || (world.projectiles.position[i].distanceFrom(world.units.position[target]) <= hitRadius);
+            if (hit)
             {
                 ApplyProjectileHit(world, defs, i, target);
                 world.projectiles.removeAt(i);

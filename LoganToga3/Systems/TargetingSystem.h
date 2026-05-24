@@ -5,6 +5,12 @@
 
 namespace LT3
 {
+    inline bool IsSwingEndSkill(const SkillDef& skill)
+    {
+        return skill.projectileMotion == SkillProjectileMotion::Swing
+            && skill.projectileCenter == SkillProjectileCenter::End;
+    }
+
     inline double ResolveEffectiveAttackRange(const UnitDef& unitDef, const SkillDef& skill)
     {
         if (skill.projectileMotion == SkillProjectileMotion::Swing)
@@ -15,10 +21,35 @@ namespace LT3
                 : ((skill.swingRadius > 0.0)
                     ? skill.swingRadius
                     : (swingLength * 0.5));
-            return Min(skill.range, unitDef.radius + swingReach + 8.0);
+            return Min(skill.range, swingReach);
         }
 
         return skill.range;
+    }
+
+    inline double ResolveAttackStopDistance(const UnitDef& attackerDef, const UnitDef& targetDef, const SkillDef& skill)
+    {
+        if (IsSwingEndSkill(skill))
+        {
+            const double swingLength = Max(1.0, skill.projectileHeight);
+            const double reach = skill.swingRadius + swingLength;
+            const double hitRadius = targetDef.radius + 5.0;
+            const double conservativeStop = reach - hitRadius;
+            return Clamp(conservativeStop, 10.0, reach);
+        }
+
+        return ResolveEffectiveAttackRange(attackerDef, skill);
+    }
+
+    inline Vec2 ResolveAttackApproachDestination(const Vec2& attackerPos, const Vec2& targetPos, double stopDistance)
+    {
+        Vec2 away = attackerPos - targetPos;
+        if (away.lengthSq() < 1.0)
+        {
+            away = Vec2{ -1.0, 0.0 };
+        }
+
+        return targetPos + away.normalized() * Max(0.0, stopDistance);
     }
 
     inline UnitId ResolveAttackTarget(BattleWorld& world, const DefinitionStores& defs, UnitId unit)

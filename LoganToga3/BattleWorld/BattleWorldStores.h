@@ -46,6 +46,8 @@ namespace LT3
 		Array<int32> hp;
 		Array<int32> resourceTargetNode;
 		Array<bool> ignoreCombatWhileMoving;
+		Array<Vec2> formationFinalTarget;
+		Array<bool> hasFormationFinalTarget;
 		Array<String> iconOverride;
 
 		UnitId add(UnitDefId unitDef, Faction unitFaction, const Vec2& pos, const DefinitionStores& defs)
@@ -61,6 +63,8 @@ namespace LT3
 			hp << defs.units[unitDef].hp;
 			resourceTargetNode << -1;
 			ignoreCombatWhileMoving << false;
+			formationFinalTarget << pos;
+			hasFormationFinalTarget << false;
 			iconOverride << U"";
 			return id;
 		}

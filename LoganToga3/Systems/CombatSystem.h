@@ -16,6 +16,7 @@ namespace LT3
             world.cooldowns.attackLeftSec[unit] = Max(0.0, world.cooldowns.attackLeftSec[unit] - dt);
             const UnitDef& unitDef = defs.units[world.units.defId[unit]];
             if (unitDef.skill == InvalidSkillDefId) continue;
+            if (HasUnitFormationFinalTarget(world, unit)) continue;
             if (world.units.task[unit] == UnitTask::Moving
                 && unit < world.units.ignoreCombatWhileMoving.size()
                 && world.units.ignoreCombatWhileMoving[unit])
@@ -37,6 +38,19 @@ namespace LT3
                     SetUnitMoving(world, unit, world.units.targetPosition[unit], true, false);
                     EnqueuePathRequest(world, unit, world.units.targetPosition[unit]);
                 }
+                continue;
+            }
+
+            const UnitDef& targetDef = defs.units[world.units.defId[target]];
+            const double stopDistance = ResolveAttackStopDistance(unitDef, targetDef, skill);
+            const double distanceToTarget = world.units.position[unit].distanceFrom(world.units.position[target]);
+            if (distanceToTarget > stopDistance)
+            {
+                const Vec2 approach = ResolveAttackApproachDestination(world.units.position[unit], world.units.position[target], stopDistance);
+                SetUnitTargetPosition(world, unit, approach);
+                SetUnitTask(world, unit, UnitTask::Moving);
+                SetUnitIgnoreCombatWhileMoving(world, unit, false);
+                EnqueuePathRequest(world, unit, approach);
                 continue;
             }
 

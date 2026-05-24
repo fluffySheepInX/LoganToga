@@ -69,6 +69,39 @@ namespace LT3
 		world.units.ignoreCombatWhileMoving[unit] = ignoreCombat;
 	}
 
+	inline bool HasUnitFormationFinalTarget(const BattleWorld& world, UnitId unit)
+	{
+		return UnitSlotExists(world, unit)
+			&& unit < world.units.hasFormationFinalTarget.size()
+			&& world.units.hasFormationFinalTarget[unit];
+	}
+
+	inline Vec2 GetUnitFormationFinalTarget(const BattleWorld& world, UnitId unit)
+	{
+		return HasUnitFormationFinalTarget(world, unit) ? world.units.formationFinalTarget[unit] : world.units.targetPosition[unit];
+	}
+
+	inline void SetUnitFormationFinalTarget(BattleWorld& world, UnitId unit, const Vec2& target)
+	{
+		if (!UnitSlotExists(world, unit) || unit >= world.units.formationFinalTarget.size() || unit >= world.units.hasFormationFinalTarget.size())
+		{
+			return;
+		}
+
+		world.units.formationFinalTarget[unit] = target;
+		world.units.hasFormationFinalTarget[unit] = true;
+	}
+
+	inline void ClearUnitFormationFinalTarget(BattleWorld& world, UnitId unit)
+	{
+		if (!UnitSlotExists(world, unit) || unit >= world.units.hasFormationFinalTarget.size())
+		{
+			return;
+		}
+
+		world.units.hasFormationFinalTarget[unit] = false;
+	}
+
 	inline void SetUnitResourceTarget(BattleWorld& world, UnitId unit, int32 resourceNode)
 	{
 		if (!UnitSlotExists(world, unit))
@@ -121,6 +154,7 @@ namespace LT3
 
 	inline void SetUnitIdle(BattleWorld& world, UnitId unit)
 	{
+		ClearUnitFormationFinalTarget(world, unit);
 		SetUnitTask(world, unit, UnitTask::Idle);
 	}
 
@@ -132,6 +166,7 @@ namespace LT3
 		}
 
 		SetUnitTargetPosition(world, unit, destination);
+		ClearUnitFormationFinalTarget(world, unit);
 		ClearUnitAttackTarget(world, unit);
 		if (clearResourceTarget)
 		{
@@ -148,11 +183,13 @@ namespace LT3
 
 	inline void SetUnitGathering(BattleWorld& world, UnitId unit)
 	{
+		ClearUnitFormationFinalTarget(world, unit);
 		SetUnitTask(world, unit, UnitTask::Gathering);
 	}
 
 	inline void SetUnitAttacking(BattleWorld& world, UnitId unit)
 	{
+		ClearUnitFormationFinalTarget(world, unit);
 		SetUnitIgnoreCombatWhileMoving(world, unit, false);
 		SetUnitTask(world, unit, UnitTask::Attacking);
 	}

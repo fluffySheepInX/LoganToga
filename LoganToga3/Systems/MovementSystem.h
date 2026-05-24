@@ -20,6 +20,66 @@ namespace LT3
         return false;
     }
 
+    inline bool CanMoveDirectlyToPosition(const BattleWorld& world, const Vec2& position)
+    {
+        const Point cell = PathWorldToBattleCell(world, position);
+        return IsPathCellPassable(world, cell);
+    }
+
+    inline bool MoveUnitTowardFormationFinalTarget(BattleWorld& world, UnitId unit, const UnitDef& def, double dt)
+    {
+        const Vec2 destination = GetUnitFormationFinalTarget(world, unit);
+        SetUnitTargetPosition(world, unit, destination);
+
+        const Vec2 toTarget = destination - world.units.position[unit];
+        const double distance = toTarget.length();
+        if (distance <= Max(3.0, def.speed * dt))
+        {
+            if (CanMoveDirectlyToPosition(world, destination))
+            {
+                world.units.position[unit] = destination;
+            }
+            ClearUnitFormationFinalTarget(world, unit);
+            SetUnitTargetPosition(world, unit, world.units.position[unit]);
+            return true;
+        }
+
+        const Vec2 nextPosition = world.units.position[unit] + (toTarget.normalized() * def.speed * dt);
+        if (!CanMoveDirectlyToPosition(world, nextPosition))
+        {
+            ClearUnitFormationFinalTarget(world, unit);
+            SetUnitTargetPosition(world, unit, world.units.position[unit]);
+            return true;
+        }
+
+        world.units.position[unit] = nextPosition;
+        return false;
+    }
+
+    inline bool TryContinueFormationFinalMove(BattleWorld& world, UnitId unit, const UnitDef& def, double dt)
+    {
+        if (!HasUnitFormationFinalTarget(world, unit))
+        {
+            return false;
+        }
+
+        if (unit < world.pathing.requestPending.size() && world.pathing.requestPending[unit])
+        {
+            return true;
+        }
+
+        const bool reachedFinalTarget = MoveUnitTowardFormationFinalTarget(world, unit, def, dt);
+        if (reachedFinalTarget)
+        {
+            SetUnitIdle(world, unit);
+        }
+        else
+        {
+            SetUnitTask(world, unit, UnitTask::Moving);
+        }
+        return true;
+    }
+
     inline void UpdateMovement(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
         for (UnitId unit = 0; unit < world.units.size(); ++unit)
@@ -32,6 +92,7 @@ namespace LT3
             {
                 if (world.units.task[unit] == UnitTask::Moving || world.units.task[unit] == UnitTask::Gathering)
                 {
+                    ClearUnitFormationFinalTarget(world, unit);
                     SetUnitIdle(world, unit);
                     SetUnitTargetPosition(world, unit, world.units.position[unit]);
                     ClearUnitResourceTarget(world, unit);
@@ -51,6 +112,7 @@ namespace LT3
 
             const bool needsPath = (unit < world.pathing.hasPath.size())
                 && !world.pathing.hasPath[unit]
+                && !HasUnitFormationFinalTarget(world, unit)
                 && world.units.position[unit].distanceFromSq(world.units.targetPosition[unit]) > Square(12.0);
             if (needsPath)
             {
@@ -82,6 +144,10 @@ namespace LT3
                 if (reachedPathEnd)
                 {
                     ClearUnitPath(world, unit);
+                    if (TryContinueFormationFinalMove(world, unit, def, dt))
+                    {
+                        continue;
+                    }
                     if (world.units.resourceTargetNode[unit] >= 0)
                     {
                         SetUnitGathering(world, unit);
@@ -92,6 +158,11 @@ namespace LT3
                     }
                 }
 
+                continue;
+            }
+
+            if (TryContinueFormationFinalMove(world, unit, def, dt))
+            {
                 continue;
             }
 
