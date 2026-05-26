@@ -20,6 +20,8 @@ namespace LT3
         SkillProjectileMotion projectileMotion = SkillProjectileMotion::Direct;
         int32 burstCount = 1;
         double burstIntervalSec = 0.0;
+        SkillBurstFireMode burstFireMode = SkillBurstFireMode::Simultaneous;
+        SkillBurstOrderMode burstOrderMode = SkillBurstOrderMode::Sequential;
         double spreadDeg = 0.0;
         double arcHeight = 72.0;
         double orbitRadius = 54.0;
@@ -54,6 +56,8 @@ namespace LT3
         SkillDefId skill = InvalidSkillDefId;
         ColorF color = Palette::White;
         double visualScale = 1.0;
+        bool unique = false;
+        bool uniqueRespawnAllowed = false;
         String building_category;
         String unit_family;
         bool blocksTileMovement = false;
@@ -91,6 +95,7 @@ namespace LT3
         int32 lineThicknessCells = 1;
         int32 maxLineCells = 12;
         bool useRightDragPlacement = false;
+        bool enemyCanProduce = true;
     };
 
     struct ResourceDef

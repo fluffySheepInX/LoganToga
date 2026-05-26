@@ -118,10 +118,18 @@ namespace LT3
 	struct CooldownStore
 	{
 		Array<double> attackLeftSec;
+		Array<int32> burstShotsLeft;
+		Array<double> burstShotTimerSec;
+		Array<UnitId> burstTarget;
+		Array<Array<int32>> burstOrder;
 
 		void addUnit()
 		{
 			attackLeftSec << Random(0.0, 0.25);
+			burstShotsLeft << 0;
+			burstShotTimerSec << 0.0;
+			burstTarget << InvalidUnitId;
+			burstOrder << Array<int32>{};
 		}
 	};
 

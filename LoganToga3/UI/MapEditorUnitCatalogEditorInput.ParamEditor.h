@@ -1,5 +1,8 @@
 ﻿#pragma once
 # include "MapEditorUnitCatalogEditorInput.ListInput.h"
+# include "MapEditorUnitParamEditorCommon.h"
+# include "EditorMutationHelpers.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -10,6 +13,7 @@ namespace LT3
 			return false;
 		}
 
+		EnsureUnitParamSteps(editor);
 		consumed = true;
 		if (EditorUnitParameterCloseRect(editor).leftClicked() || EditorUnitBuildingCloseRect(editor).leftClicked())
 		{
@@ -32,86 +36,81 @@ namespace LT3
 		}
 
 		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		auto commit = [&]()
+
+		const Array<UnitParamRowSpec> rows = UnitParamRowSpecs(editor.unitParamEditorTab);
+		auto commitEditingText = [&]()
 			{
-				SaveUnitCatalogToml(catalog, editor.statusText);
-				editor.unitCatalogDirty = true;
+				if (!MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
+				{
+					return TryCommitUnitParamText(selected, rows[editor.unitParamEditingRow].kind, editor.unitParamEditingText);
+				}))
+				{
+					editor.statusText = U"Invalid unit param value: {}"_fmt(editor.unitParamEditingText);
+				}
 			};
 
-		enum class UnitParamRowKind
+		if (editor.unitParamEditingRow >= 0)
 		{
-			Hp,
-			BuildingHp,
-			Mp,
-			Attack,
-			Defense,
-			Speed,
-			Magic,
-			MagicDefense,
-			Move,
-			Vision,
-			VisualScale,
-			MaintainRange,
-		};
-
-		struct UnitParamRowSpec
-		{
-			UnitParamRowKind kind;
-			String helpText;
-		};
-
-		Array<UnitParamRowSpec> rows;
-		switch (editor.unitParamEditorTab)
-		{
-		case 0:
-			rows = {
-				{ UnitParamRowKind::Hp, U"HP を増減します" },
-				{ UnitParamRowKind::BuildingHp, U"Building HP を増減します" },
-				{ UnitParamRowKind::Mp, U"MP を増減します" }
-			};
-			break;
-		case 1:
-			rows = {
-				{ UnitParamRowKind::Attack, U"攻撃力を増減します" },
-				{ UnitParamRowKind::Defense, U"防御力を増減します" },
-				{ UnitParamRowKind::Speed, U"速度を増減します" },
-				{ UnitParamRowKind::Magic, U"魔力を増減します" },
-				{ UnitParamRowKind::MagicDefense, U"魔法防御を増減します" }
-			};
-			break;
-		case 2:
-			rows = {
-				{ UnitParamRowKind::Move, U"移動力。Uで move=0（Use SPD）" },
-				{ UnitParamRowKind::Vision, U"視界半径（セル）" },
-				{ UnitParamRowKind::VisualScale, U"見た目サイズ" }
-			};
-			break;
-		default:
-			rows = {
-				{ UnitParamRowKind::MaintainRange, U"maintain_range を増減します" }
-			};
-			break;
+			TextInput::UpdateText(editor.unitParamEditingText);
+			if (KeyEscape.down())
+			{
+				editor.unitParamEditingRow = -1;
+				editor.unitParamEditingText.clear();
+				return true;
+			}
+			if (KeyEnter.down())
+			{
+				if (0 <= editor.unitParamEditingRow && editor.unitParamEditingRow < static_cast<int32>(rows.size()))
+				{
+					commitEditingText();
+				}
+				editor.unitParamEditingRow = -1;
+				editor.unitParamEditingText.clear();
+				return true;
+			}
 		}
 
-		auto adjustInt = [&](int32 UnitCatalogEntry::* field, int32 delta, int32 minValue, int32 maxValue)
+		if (editor.unitParamStepMenuRow)
+		{
+			const Array<double>& steps = UnitParamDefaultSteps();
+			const RectF menuRect = EditorUnitParamStepMenuRect(editor.unitParamStepMenuPos, static_cast<int32>(steps.size()));
+			for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
 			{
-				entry.*field = Clamp((entry.*field) + delta, minValue, maxValue);
-				commit();
-			};
+				if (EditorUnitParamStepMenuItemRect(editor.unitParamStepMenuPos, i).leftClicked())
+				{
+					SetUnitParamStep(editor, editor.unitParamEditorTab, *editor.unitParamStepMenuRow, steps[i]);
+					editor.unitParamStepMenuRow = none;
+					editor.statusText = U"Unit param step set to {}"_fmt(steps[i]);
+					return true;
+				}
+			}
 
-		auto resetInt = [&](int32 UnitCatalogEntry::* field, int32 value)
+			if (!menuRect.mouseOver() && (MouseL.down() || MouseR.down()))
 			{
-				entry.*field = value;
-				commit();
-			};
+				editor.unitParamStepMenuRow = none;
+				return true;
+			}
 
-		auto adjustScale = [&](double delta)
-			{
-				entry.visualScale = Math::Round(Clamp(entry.visualScale + delta, 0.25, 3.0) * 100.0) / 100.0;
-				commit();
-			};
+			return true;
+		}
 
 		const RectF viewport = EditorUnitParamListViewportRect(editor);
+		if (editor.unitParamEditingRow >= 0 && MouseL.down())
+		{
+			const RectF editingRow = EditorUnitParamRowRect(viewport, editor.unitParamEditingRow);
+			const RectF editingRect = EditorUnitParamRowValueRect(editingRow);
+			if (!editingRect.mouseOver())
+			{
+				if (0 <= editor.unitParamEditingRow && editor.unitParamEditingRow < static_cast<int32>(rows.size()))
+				{
+					commitEditingText();
+				}
+				editor.unitParamEditingRow = -1;
+				editor.unitParamEditingText.clear();
+				return true;
+			}
+		}
+
 		for (int32 rowIndex = 0; rowIndex < static_cast<int32>(rows.size()); ++rowIndex)
 		{
 			const RectF row = EditorUnitParamRowRect(viewport, rowIndex);
@@ -120,7 +119,45 @@ namespace LT3
 				continue;
 			}
 
-			for (int32 buttonIndex = 0; buttonIndex < 5; ++buttonIndex)
+			const RectNumberStepperRects rects = EditorUnitParamRowStepperRects(row);
+			switch (DetectRectNumberStepperInput(rects))
+			{
+			case RectNumberStepperInputAction::StartValueEdit:
+				editor.unitParamEditingRow = rowIndex;
+				editor.unitParamEditingText = UnitParamEditValueText(entry, rows[rowIndex].kind);
+				editor.unitParamStepMenuRow = none;
+				return true;
+			case RectNumberStepperInputAction::CycleStep:
+				CycleUnitParamStep(editor, editor.unitParamEditorTab, rowIndex);
+				editor.statusText = U"Unit param step set to {}"_fmt(UnitParamStep(editor, editor.unitParamEditorTab, rowIndex));
+				return true;
+			case RectNumberStepperInputAction::OpenStepMenu:
+				editor.unitParamStepMenuRow = rowIndex;
+				editor.unitParamStepMenuPos = Cursor::PosF();
+				return true;
+			case RectNumberStepperInputAction::Decrement:
+			{
+				const double step = ApplyTemporaryStepModifier(UnitParamStep(editor, editor.unitParamEditorTab, rowIndex));
+				MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
+				{
+					return AdjustUnitParamValue(selected, rows[rowIndex].kind, -step);
+				});
+				return true;
+			}
+			case RectNumberStepperInputAction::Increment:
+			{
+				const double step = ApplyTemporaryStepModifier(UnitParamStep(editor, editor.unitParamEditorTab, rowIndex));
+				MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
+				{
+					return AdjustUnitParamValue(selected, rows[rowIndex].kind, step);
+				});
+				return true;
+			}
+			default:
+				break;
+			}
+
+			for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
 			{
 				const RectF buttonRect = EditorUnitParamRowButtonRect(row, buttonIndex);
 				if (!buttonRect.leftClicked())
@@ -128,87 +165,28 @@ namespace LT3
 					continue;
 				}
 
-				if (buttonIndex == 4)
+				if (buttonIndex == 2)
 				{
 					editor.statusText = rows[rowIndex].helpText;
 					return true;
 				}
 
-				switch (rows[rowIndex].kind)
+				if (buttonIndex == 0)
 				{
-				case UnitParamRowKind::Hp:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::hp, -10, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::hp, 10, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::hp, 0);
-					break;
-				case UnitParamRowKind::BuildingHp:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::buildingHp, -10, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::buildingHp, 10, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::buildingHp, 0);
-					break;
-				case UnitParamRowKind::Mp:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::mp, -10, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::mp, 10, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::mp, 0);
-					break;
-				case UnitParamRowKind::Attack:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::attack, -5, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::attack, 5, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::attack, 0);
-					break;
-				case UnitParamRowKind::Defense:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::defense, -5, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::defense, 5, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::defense, 0);
-					break;
-				case UnitParamRowKind::Speed:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::speed, -5, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::speed, 5, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::speed, 0);
-					break;
-				case UnitParamRowKind::Magic:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::magic, -5, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::magic, 5, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::magic, 0);
-					break;
-				case UnitParamRowKind::MagicDefense:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::magicDefense, -5, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::magicDefense, 5, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::magicDefense, 0);
-					break;
-				case UnitParamRowKind::Move:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::move, -25, 0, 2000);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::move, 25, 0, 2000);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::move, 0);
-					else if (buttonIndex == 3)
+					MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
 					{
-						entry.move = 0;
-						commit();
-						editor.statusText = U"MOVE: Use SPD (move=0)";
-					}
-					break;
-				case UnitParamRowKind::Vision:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::visionRadius, -1, 0, 40);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::visionRadius, 1, 0, 40);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::visionRadius, 6);
-					break;
-				case UnitParamRowKind::VisualScale:
-					if (buttonIndex == 0) adjustScale(-0.05);
-					else if (buttonIndex == 1) adjustScale(0.05);
-					else if (buttonIndex == 2)
-					{
-						entry.visualScale = 1.0;
-						commit();
-					}
-					break;
-				case UnitParamRowKind::MaintainRange:
-					if (buttonIndex == 0) adjustInt(&UnitCatalogEntry::maintainRange, -1, 0, 99999);
-					else if (buttonIndex == 1) adjustInt(&UnitCatalogEntry::maintainRange, 1, 0, 99999);
-					else if (buttonIndex == 2) resetInt(&UnitCatalogEntry::maintainRange, 0);
-					break;
+						return SetUnitParamValueIfChanged(selected, rows[rowIndex].kind, UnitParamResetValue(rows[rowIndex].kind));
+					});
 				}
-
-				if (buttonIndex == 3 && rows[rowIndex].kind != UnitParamRowKind::Move)
+				else if (buttonIndex == 1 && UnitParamHasSpecialAction(rows[rowIndex].kind))
+				{
+					MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
+					{
+						return ApplyUnitParamSpecialAction(selected, rows[rowIndex].kind);
+					});
+					editor.statusText = U"MOVE: Use SPD (move=0)";
+				}
+				else if (buttonIndex == 1)
 				{
 					editor.statusText = U"U action はこの項目では未割当です";
 				}

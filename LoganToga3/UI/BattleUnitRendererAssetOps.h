@@ -11,6 +11,13 @@ namespace LT3
 	{
 		String image;
 		String kind;
+		bool unique = false;
+		String portraitImage;
+		double uniqueSpeechIntervalSec = 6.0;
+		double uniqueSpeechVisibleSec = 2.2;
+		double uniqueSpeechBubbleWidth = 180.0;
+		double uniqueSpeechBubbleHeight = 54.0;
+		Array<String> uniqueSpeechLines;
 		double visualScale = 1.0;
 		Point visualOffset{ 0, 0 };
 		Point shadowOffset{ 0, 0 };
@@ -38,6 +45,7 @@ namespace LT3
 		mutable HashTable<String, Array<Texture>> unitGifFrameCache;
 		mutable HashTable<String, Array<int32>> unitGifFrameDelaysMillisecCache;
 		mutable HashTable<String, int32> unitGifDurationMillisecCache;
+		mutable HashTable<String, Texture> portraitTextureCache;
 		mutable HashTable<String, Texture> iconTextureCache;
 		mutable HashTable<String, Texture> resourceTextureCache;
 	};
@@ -52,6 +60,13 @@ namespace LT3
 				UnitVisualInfo info{
 					entry.image,
 					entry.kind,
+					entry.unique,
+					entry.portraitImage,
+					entry.uniqueSpeechIntervalSec,
+					entry.uniqueSpeechVisibleSec,
+					entry.uniqueSpeechBubbleWidth,
+					entry.uniqueSpeechBubbleHeight,
+					entry.uniqueSpeechLines,
 					entry.visualScale,
 					entry.visualOffset,
 					entry.shadowOffset,

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "AiEditorCommon.h"
+# include "EditorMutationHelpers.h"
 
 namespace LT3
 {
@@ -91,25 +92,33 @@ namespace LT3
 						return AiEditorValueButtonRect(row, index);
 					}))
 				{
-					ApplyAiEditorDelta(profile, rowIndex, *delta);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						ApplyAiEditorDelta(selected, rowIndex, *delta);
+						return true;
+					});
 					return true;
 				}
 			}
 
 			const RectF freeSpawnRect = AiEditorValueRowRect(11, editor.aiProfileDetailScroll);
 			const RectF toggleRect{ freeSpawnRect.x + freeSpawnRect.w - 112.0, freeSpawnRect.y + 4.0, 98.0, 26.0 };
-			if (HandleToggleRectButton(toggleRect, profile.freeSpawnEnabled))
+			if (HandleRectButtonClick(toggleRect))
 			{
-				editor.aiProfilesDirty = true;
+				MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+				{
+					return ToggleField(selected.freeSpawnEnabled);
+				});
 				return true;
 			}
 
 			const RectF contactBehaviorRect = AiEditorValueRowRect(12, editor.aiProfileDetailScroll);
 			if (HandleRectButtonClick(RectF{ contactBehaviorRect.x + contactBehaviorRect.w - 112.0, contactBehaviorRect.y + 4.0, 98.0, 26.0 }))
 			{
-				profile.contactBehavior = NextAiContactBehavior(profile.contactBehavior);
-				editor.aiProfilesDirty = true;
+				MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+				{
+					return SetFieldIfChanged(selected.contactBehavior, NextAiContactBehavior(selected.contactBehavior));
+				});
 				return true;
 			}
 
@@ -117,8 +126,11 @@ namespace LT3
 			const RectF addWeightRow = AiEditorValueRowRect(rowIndex++, editor.aiProfileDetailScroll);
 			if (HandleRectButtonClick(RectF{ addWeightRow.x + addWeightRow.w - 124.0, addWeightRow.y + 4.0, 110.0, 26.0 }))
 			{
-				profile.unitWeights << AiUnitWeightDef{ FindNextAiUnitWeightTag(profile, defs), 1.0 };
-				editor.aiProfilesDirty = true;
+				MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+				{
+					selected.unitWeights << AiUnitWeightDef{ FindNextAiUnitWeightTag(selected, defs), 1.0 };
+					return true;
+				});
 				return true;
 			}
 
@@ -136,15 +148,31 @@ namespace LT3
 						return AiEditorInlineButtonRect(row, index, 5);
 					}))
 				{
-					profile.unitWeights[weightIndex].weight = Max(0.0, profile.unitWeights[weightIndex].weight + *delta);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						if (!(0 <= weightIndex && weightIndex < static_cast<int32>(selected.unitWeights.size())))
+						{
+							return false;
+						}
+						return AdjustField(selected.unitWeights[weightIndex].weight, *delta, [](double value)
+						{
+							return Max(0.0, value);
+						});
+					});
 					return true;
 				}
 
 				if (HandleRectButtonClick(AiEditorInlineButtonRect(row, 4, 5)))
 				{
-					profile.unitWeights.erase(profile.unitWeights.begin() + weightIndex);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						if (!(0 <= weightIndex && weightIndex < static_cast<int32>(selected.unitWeights.size())))
+						{
+							return false;
+						}
+						selected.unitWeights.erase(selected.unitWeights.begin() + weightIndex);
+						return true;
+					});
 					return true;
 				}
 			}
@@ -152,8 +180,11 @@ namespace LT3
 			const RectF addTargetRow = AiEditorValueRowRect(rowIndex++, editor.aiProfileDetailScroll);
 			if (HandleRectButtonClick(RectF{ addTargetRow.x + addTargetRow.w - 124.0, addTargetRow.y + 4.0, 110.0, 26.0 }))
 			{
-				profile.targetPriority << U"base";
-				editor.aiProfilesDirty = true;
+				MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+				{
+					selected.targetPriority << U"base";
+					return true;
+				});
 				return true;
 			}
 
@@ -167,20 +198,39 @@ namespace LT3
 
 				if (HandleRectButtonClick(AiEditorInlineButtonRect(row, 0, 3)))
 				{
-					profile.targetPriority[targetIndex] = PreviousAiTargetPriority(profile.targetPriority[targetIndex]);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						if (!(0 <= targetIndex && targetIndex < static_cast<int32>(selected.targetPriority.size())))
+						{
+							return false;
+						}
+						return SetFieldIfChanged(selected.targetPriority[targetIndex], PreviousAiTargetPriority(selected.targetPriority[targetIndex]));
+					});
 					return true;
 				}
 				if (HandleRectButtonClick(AiEditorInlineButtonRect(row, 1, 3)))
 				{
-					profile.targetPriority[targetIndex] = NextAiTargetPriority(profile.targetPriority[targetIndex]);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						if (!(0 <= targetIndex && targetIndex < static_cast<int32>(selected.targetPriority.size())))
+						{
+							return false;
+						}
+						return SetFieldIfChanged(selected.targetPriority[targetIndex], NextAiTargetPriority(selected.targetPriority[targetIndex]));
+					});
 					return true;
 				}
 				if (HandleRectButtonClick(AiEditorInlineButtonRect(row, 2, 3)))
 				{
-					profile.targetPriority.erase(profile.targetPriority.begin() + targetIndex);
-					editor.aiProfilesDirty = true;
+					MutateSelectedAiProfile(editor, defs, [&](AiProfileDef& selected)
+					{
+						if (!(0 <= targetIndex && targetIndex < static_cast<int32>(selected.targetPriority.size())))
+						{
+							return false;
+						}
+						selected.targetPriority.erase(selected.targetPriority.begin() + targetIndex);
+						return true;
+					});
 					return true;
 				}
 			}

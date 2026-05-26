@@ -255,6 +255,7 @@ namespace LT3
 	inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Optional<Vec2>& targetPosition = none)
 	{
 		if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
+		if (IsUniqueBuildActionBlocked(world, defs, actionId)) return false;
 
 		const BuildActionDef& action = defs.buildActions[actionId];
 		if (IsBuilderBusyWithBuildQueue(world, builder))
@@ -328,6 +329,7 @@ namespace LT3
 	inline bool TryStartBuildLine(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Array<Vec2>& targetPositions)
 	{
 		if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
+		if (IsUniqueBuildActionBlocked(world, defs, actionId)) return false;
 		if (targetPositions.isEmpty()) return false;
 
 		const BuildActionDef& action = defs.buildActions[actionId];

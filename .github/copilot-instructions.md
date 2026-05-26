@@ -20,3 +20,4 @@
 - For LoganToga3 SkillIcon assets, require canvas width/height to be multiples of 32, require the main image and frame image layers to use the same canvas size, and treat icon alignment as center-origin based.
 - LoganToga3 の SkillIcon 命名規約は `w_xx_name` を枠画像、`n_name` を主画像とし、`w` は最後に自動整列、`xx` は最大2桁のソート順として扱う。
 - LoganToga3 の Editor 数値調整 UI は、共通化・直接入力・step 値表示/変更・Shift/Ctrl による一時的な粗/細調整・右クリックメニュー補助を基本方針とする。
+- For LoganToga3, design the music editor as a foundational music management system for all scenes, including title, combat, and future options or achievement screens, rather than being limited to specific screens.

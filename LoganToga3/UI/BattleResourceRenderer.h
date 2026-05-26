@@ -6,9 +6,12 @@
 # include "QuarterView.h"
 # include "MapEditorTypes.h"
 # include "MapEditorLayoutRects.h"
+# include "../App/AppRuntimeState.h"
 
 namespace LT3
 {
+    inline constexpr double ResourceFlagRaiseDurationRenderSec = 1.2;
+
     inline void DrawResourcePanelUiLayoutDragHandle(const RectF& panelRect, bool active)
     {
         if (!active)
@@ -58,7 +61,191 @@ namespace LT3
         return true;
     }
 
-    inline void DrawResourceNodes(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont)
+    inline FilePath ResolveResourceFlagPolePath()
+    {
+        return ResolveSystemImagePath(U"flagP.png");
+    }
+
+    inline FilePath ResolveResourceFlagGifPath(Faction faction)
+    {
+        switch (faction)
+        {
+        case Faction::Player:
+            return ResolveSystemImagePath(U"flagP.gif");
+        case Faction::Enemy:
+            return ResolveSystemImagePath(U"enemy_flagP.gif");
+        default:
+            return FilePath{};
+        }
+    }
+
+    inline bool HasResourceFlagAnimationAsset(Faction faction)
+    {
+        const FilePath gifPath = ResolveResourceFlagGifPath(faction);
+        return (!gifPath.isEmpty() && FileSystem::Exists(gifPath));
+    }
+
+    inline const Texture* ResolveResourceFlagPoleTexture(const BattleRenderAssets& assets)
+    {
+        const FilePath polePath = ResolveResourceFlagPolePath();
+        if (polePath.isEmpty() || !FileSystem::Exists(polePath))
+        {
+            return nullptr;
+        }
+
+        if (!assets.resourceTextureCache.contains(polePath))
+        {
+            assets.resourceTextureCache.emplace(polePath, Texture{ polePath });
+        }
+
+        return &assets.resourceTextureCache.at(polePath);
+    }
+
+    inline const Texture* ResolveResourceFlagGifFrame(const BattleRenderAssets& assets, Faction faction, bool animateGif)
+    {
+        const FilePath gifPath = ResolveResourceFlagGifPath(faction);
+        if (gifPath.isEmpty() || !FileSystem::Exists(gifPath))
+        {
+            return nullptr;
+        }
+
+        if (!assets.unitGifDurationMillisecCache.contains(gifPath))
+        {
+            Array<Texture> frames;
+            Array<int32> delaysMillisec;
+            int32 durationMillisec = 0;
+            AnimatedGIFReader reader{ gifPath };
+            Array<Image> images;
+            if (reader && reader.read(images, delaysMillisec, durationMillisec) && !images.isEmpty())
+            {
+                frames.reserve(images.size());
+                for (const auto& image : images)
+                {
+                    frames << Texture{ image };
+                }
+            }
+
+            assets.unitGifFrameCache.emplace(gifPath, std::move(frames));
+            assets.unitGifFrameDelaysMillisecCache.emplace(gifPath, std::move(delaysMillisec));
+            assets.unitGifDurationMillisecCache.emplace(gifPath, Max(durationMillisec, 1));
+        }
+
+        if (!assets.unitGifFrameCache.contains(gifPath))
+        {
+            return nullptr;
+        }
+
+        const Array<Texture>& frames = assets.unitGifFrameCache.at(gifPath);
+        if (frames.isEmpty())
+        {
+            return nullptr;
+        }
+
+        if (!animateGif)
+        {
+            return &frames.front();
+        }
+
+        if (assets.unitGifFrameDelaysMillisecCache.contains(gifPath)
+            && assets.unitGifDurationMillisecCache.contains(gifPath))
+        {
+            const Array<int32>& delaysMillisec = assets.unitGifFrameDelaysMillisecCache.at(gifPath);
+            const int32 durationMillisec = assets.unitGifDurationMillisecCache.at(gifPath);
+            if (!delaysMillisec.isEmpty() && durationMillisec > 0)
+            {
+                const size_t frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delaysMillisec, durationMillisec);
+                return &frames[Min(frameIndex, frames.size() - 1)];
+            }
+        }
+
+        return &frames.front();
+    }
+
+    inline void DrawResourceNodeFlag(const Vec2& pos, const ResourceNodeFlagState& flagState, const BattleRenderAssets& assets)
+    {
+        if (flagState.displayFaction == Faction::Neutral || !HasResourceFlagAnimationAsset(flagState.displayFaction))
+        {
+            return;
+        }
+
+        const Texture* poleTexture = ResolveResourceFlagPoleTexture(assets);
+        const Texture* flagTexture = ResolveResourceFlagGifFrame(assets, flagState.displayFaction, true);
+        if (!poleTexture || !flagTexture)
+        {
+            return;
+        }
+
+        const double poleHeight = poleTexture->height() * 3.0;
+        const double poleWidth = static_cast<double>(poleTexture->width());
+        const Vec2 poleBottom{ pos.x + 20.0, pos.y + 18.0 };
+        const Vec2 poleCenter{ poleBottom.x, poleBottom.y - (poleHeight * 0.5) };
+        poleTexture->resized(poleWidth, poleHeight).drawAt(poleCenter);
+
+        const double flagScale = 1.0;
+        const double flagWidth = Max(1.0, static_cast<double>(flagTexture->width()) * flagScale);
+        const double flagHeight = Max(1.0, static_cast<double>(flagTexture->height()) * flagScale);
+        const double topY = poleBottom.y - poleHeight + (flagHeight * 0.62);
+        const double bottomY = poleBottom.y - flagHeight * 0.35;
+        const double t = flagState.raising
+            ? Clamp(flagState.raiseTimerSec / ResourceFlagRaiseDurationRenderSec, 0.0, 1.0)
+            : 1.0;
+        const double currentY = Math::Lerp(bottomY, topY, t);
+        const Vec2 flagCenter{ poleCenter.x, currentY };
+        flagTexture->resized(flagWidth, flagHeight).drawAt(flagCenter);
+    }
+
+    inline void DrawResourceNodeOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, size_t index, const ResourceFlagRuntimeState* resourceFlags = nullptr)
+    {
+        const Vec2 pos = QuarterTileFaceCenterScreen(world.resourceNodes.position[index]);
+        const bool depleted = world.resourceNodes.amount[index] <= 0;
+        const ResourceDef& def = defs.resources[world.resourceNodes.defId[index]];
+        ColorF textColor{ 1.0, 1.0, 1.0 };
+        if (depleted)
+        {
+            textColor = ColorF{ 0.5, 0.5, 0.5 };
+        }
+
+        if (!depleted)
+        {
+            DrawResourceIcon(def, assets, pos, 30.0);
+        }
+
+        if (resourceFlags && index < resourceFlags->nodes.size())
+        {
+            const ResourceNodeFlagState& flagState = resourceFlags->nodes[index];
+            if (flagState.raising || flagState.visible)
+            {
+                DrawResourceNodeFlag(pos, flagState, assets);
+            }
+        }
+
+        const double captureRate = Clamp(world.resourceNodes.captureProgress[index], 0.0, 1.0);
+        if (!depleted && captureRate > 0.0 && captureRate < 1.0)
+        {
+            const RectF gaugeBack{ Arg::center = pos + Vec2{ 0, -32 }, 44.0, 6.0 };
+            gaugeBack.draw(ColorF{ 0.04, 0.04, 0.04, 0.85 });
+
+            ColorF gaugeColor{ 0.78, 0.78, 0.78 };
+            if (world.resourceNodes.owner[index] == Faction::Player)
+            {
+                gaugeColor = ColorF{ 0.30, 0.80, 1.0 };
+            }
+            else if (world.resourceNodes.owner[index] == Faction::Enemy)
+            {
+                gaugeColor = ColorF{ 1.0, 0.42, 0.42 };
+            }
+
+            RectF{ gaugeBack.pos, gaugeBack.w * captureRate, gaugeBack.h }.draw(gaugeColor);
+            gaugeBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.22 });
+
+            const double remainSec = Max(0.0, (1.0 - captureRate) * 1.5);
+            uiFont(U"{:.1f}s"_fmt(remainSec)).drawAt(11, pos + Vec2{ 0, -44 }, Palette::White);
+        }
+
+        uiFont(U"{}"_fmt(world.resourceNodes.amount[index])).drawAt(13, pos + Vec2{ 0, 34 }, textColor);
+    }
+
+    inline void DrawResourceNodes(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, const ResourceFlagRuntimeState* resourceFlags = nullptr)
     {
         for (size_t i = 0; i < world.resourceNodes.position.size(); ++i)
         {
@@ -75,35 +262,14 @@ namespace LT3
             Ellipse{ pos + Vec2{ 0, 6 }, 30, 15 }.draw(ColorF{ 0, 0, 0, 0.25 });
             Circle{ pos, 22 }.draw(color);
             Circle{ pos, 22 }.drawFrame(2, ColorF{ 0.25, 0.18, 0.02 });
-            if (!depleted)
-            {
-                DrawResourceIcon(def, assets, pos, 30.0);
-            }
+        }
+    }
 
-            const double captureRate = Clamp(world.resourceNodes.captureProgress[i], 0.0, 1.0);
-            if (!depleted && captureRate > 0.0 && captureRate < 1.0)
-            {
-                const RectF gaugeBack{ Arg::center = pos + Vec2{ 0, -32 }, 44.0, 6.0 };
-                gaugeBack.draw(ColorF{ 0.04, 0.04, 0.04, 0.85 });
-
-                ColorF gaugeColor{ 0.78, 0.78, 0.78 };
-                if (world.resourceNodes.owner[i] == Faction::Player)
-                {
-                    gaugeColor = ColorF{ 0.30, 0.80, 1.0 };
-                }
-                else if (world.resourceNodes.owner[i] == Faction::Enemy)
-                {
-                    gaugeColor = ColorF{ 1.0, 0.42, 0.42 };
-                }
-
-                RectF{ gaugeBack.pos, gaugeBack.w * captureRate, gaugeBack.h }.draw(gaugeColor);
-                gaugeBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.22 });
-
-                const double remainSec = Max(0.0, (1.0 - captureRate) * 1.5);
-                uiFont(U"{:.1f}s"_fmt(remainSec)).drawAt(11, pos + Vec2{ 0, -44 }, Palette::White);
-            }
-
-            uiFont(U"{}"_fmt(world.resourceNodes.amount[i])).drawAt(13, pos + Vec2{ 0, 34 }, textColor);
+    inline void DrawResourceNodeOverlays(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, const ResourceFlagRuntimeState* resourceFlags = nullptr)
+    {
+        for (size_t i = 0; i < world.resourceNodes.position.size(); ++i)
+        {
+            DrawResourceNodeOverlay(world, defs, assets, uiFont, i, resourceFlags);
         }
     }
 

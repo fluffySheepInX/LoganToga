@@ -338,6 +338,7 @@ namespace LT3
 			const BuildActionDef& action = defs.buildActions[actionState.actionId];
 			const RectF rect = BattleCommandIconRect(mapEditor, visibleIndex, rows);
 			const bool affordable = actionState.affordable;
+			const bool blockedByUnique = actionState.blockedByUnique;
 
 			ColorF backColor{ 0.08, 0.08, 0.10, 0.92 };
 			if (affordable)
@@ -358,6 +359,13 @@ namespace LT3
 			if (!hasIcon)
 			{
 				uiFont(U"{}"_fmt(visibleIndex + 1)).drawAt(16, rect.center().movedBy(0, -4), Palette::White);
+			}
+
+			if (blockedByUnique)
+			{
+				Line{ rect.tl().movedBy(8.0, 8.0), rect.br().movedBy(-8.0, -8.0) }.draw(4.0, ColorF{ 1.0, 0.20, 0.20, 0.92 });
+				Line{ rect.tr().movedBy(-8.0, 8.0), rect.bl().movedBy(8.0, -8.0) }.draw(4.0, ColorF{ 1.0, 0.20, 0.20, 0.92 });
+				uiFont(U"UNIQ").drawAt(10, rect.center().movedBy(0, -30), Palette::White);
 			}
 
 			const ColorF costColor = affordable ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1.0, 0.25, 0.20 };

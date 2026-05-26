@@ -31,6 +31,9 @@ namespace LT3
 			U"ダメージ量。負数は回復などの特殊用途に使えます。",
 			U"弾や効果の移動速度です。motion によっては影響が小さい場合があります。",
 			U"1回の発動で出す弾や効果の数です。",
+			U"burst発射方式。simulは同時発射、staggerは時間差発射です。",
+			U"burstの発射順。seqは左端から順、randomは毎burstで順序をシャッフルします。",
+			U"burstを時間差発射する時の弾間隔（秒）です。0なら同時相当です。",
 			U"複数発射時の広がり角度です。",
 			U"arc / throw / drop 系の山なり高さです。画像サイズには使いません。",
 			U"circle 系の回転半径です。swing の半径は swingR を使います。",
@@ -77,7 +80,7 @@ namespace LT3
 		{
 			return U"Swingではrangeは直接編集せず、実効射程はswingRとHのワールド長から決まります。center=endでは到達長はおおむねswingR+Hです。";
 		}
-		if (row == 14 && skill.projectileMotion == SkillProjectileMotion::Swing)
+		if (row == 17 && skill.projectileMotion == SkillProjectileMotion::Swing)
 		{
 			return U"swingRは射程ではなく、画像の根元をユニット中心から離す距離です。射程ではなく根元オフセットとして扱われます。";
 		}
@@ -96,10 +99,13 @@ namespace LT3
 		switch (row)
 		{
 		case 1:
-		case 9:
+		case 7:
+		case 12:
 			return 0.1;
 		case 4:
-		case 11:
+		case 5:
+		case 6:
+		case 14:
 			return 1.0;
 		default:
 			return 1.0;
@@ -108,13 +114,13 @@ namespace LT3
 
 	inline void EnsureSkillEditorValueSteps(MapEditorState& editor)
 	{
-		if (editor.skillValueSteps.size() == 16)
+		if (editor.skillValueSteps.size() == 19)
 		{
 			return;
 		}
 
-		editor.skillValueSteps.resize(16);
-		for (int32 row = 0; row < 16; ++row)
+		editor.skillValueSteps.resize(19);
+		for (int32 row = 0; row < 19; ++row)
 		{
 			editor.skillValueSteps[row] = SkillEditorDefaultValueStep(row);
 		}
@@ -142,18 +148,7 @@ namespace LT3
 	inline void CycleSkillEditorValueStep(MapEditorState& editor, int32 row)
 	{
 		const Array<double>& steps = SkillEditorDefaultValueSteps();
-		const double current = SkillEditorValueStep(editor, row);
-		int32 nextIndex = 0;
-		for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
-		{
-			if (Math::Abs(steps[i] - current) < 0.0001)
-			{
-				nextIndex = (i + 1) % static_cast<int32>(steps.size());
-				break;
-			}
-		}
-
-		SetSkillEditorValueStep(editor, row, steps[nextIndex]);
+		SetSkillEditorValueStep(editor, row, NextCycledStepValue(steps, SkillEditorValueStep(editor, row)));
 	}
 
 	inline double ApplySkillEditorValueBounds(int32 row, double value)
@@ -171,23 +166,29 @@ namespace LT3
 		case 4:
 			return static_cast<double>(Clamp(static_cast<int32>(value), 1, 32));
 		case 5:
-			return Clamp(value, 0.0, 180.0);
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 1));
 		case 6:
-			return Max(0.0, value);
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 1));
 		case 7:
-			return Max(1.0, value);
-		case 9:
-			return Max(0.05, value);
-		case 10:
-			return Clamp(value, -360.0, 360.0);
-		case 11:
-			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 9));
-		case 12:
-		case 13:
-			return Max(1.0, value);
-		case 14:
 			return Max(0.0, value);
+		case 8:
+			return Clamp(value, 0.0, 180.0);
+		case 9:
+			return Max(0.0, value);
+		case 10:
+			return Max(1.0, value);
+		case 12:
+			return Max(0.05, value);
+		case 13:
+			return Clamp(value, -360.0, 360.0);
+		case 14:
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 9));
 		case 15:
+		case 16:
+			return Max(1.0, value);
+		case 17:
+			return Max(0.0, value);
+		case 18:
 			return Clamp(value, -720.0, 720.0);
 		default:
 			return value;
@@ -203,17 +204,20 @@ namespace LT3
 		case 2: return skill.damage;
 		case 3: return skill.projectileSpeed;
 		case 4: return static_cast<double>(skill.burstCount);
-		case 5: return skill.spreadDeg;
-		case 6: return skill.arcHeight;
-		case 7: return skill.orbitRadius;
-		case 8: return skill.orbitAngularSpeedDeg;
-		case 9: return skill.orbitDurationSec;
-		case 10: return skill.projectileStartDegree;
-		case 11: return static_cast<double>(skill.projectileStartDegreeType);
-		case 12: return skill.projectileWidth;
-		case 13: return skill.projectileHeight;
-		case 14: return skill.swingRadius;
-		case 15: return skill.swingAngleDeg;
+		case 5: return static_cast<double>(skill.burstFireMode == SkillBurstFireMode::Staggered ? 1 : 0);
+		case 6: return static_cast<double>(skill.burstOrderMode == SkillBurstOrderMode::Random ? 1 : 0);
+		case 7: return skill.burstIntervalSec;
+		case 8: return skill.spreadDeg;
+		case 9: return skill.arcHeight;
+		case 10: return skill.orbitRadius;
+		case 11: return skill.orbitAngularSpeedDeg;
+		case 12: return skill.orbitDurationSec;
+		case 13: return skill.projectileStartDegree;
+		case 14: return static_cast<double>(skill.projectileStartDegreeType);
+		case 15: return skill.projectileWidth;
+		case 16: return skill.projectileHeight;
+		case 17: return skill.swingRadius;
+		case 18: return skill.swingAngleDeg;
 		default: return 0.0;
 		}
 	}
@@ -228,17 +232,20 @@ namespace LT3
 		case 2: skill.damage = bounded; break;
 		case 3: skill.projectileSpeed = bounded; break;
 		case 4: skill.burstCount = static_cast<int32>(bounded); break;
-		case 5: skill.spreadDeg = bounded; break;
-		case 6: skill.arcHeight = bounded; break;
-		case 7: skill.orbitRadius = bounded; break;
-		case 8: skill.orbitAngularSpeedDeg = bounded; break;
-		case 9: skill.orbitDurationSec = bounded; break;
-		case 10: skill.projectileStartDegree = bounded; break;
-		case 11: skill.projectileStartDegreeType = static_cast<int32>(bounded); break;
-		case 12: skill.projectileWidth = bounded; break;
-		case 13: skill.projectileHeight = bounded; break;
-		case 14: skill.swingRadius = bounded; break;
-		case 15: skill.swingAngleDeg = bounded; break;
+		case 5: skill.burstFireMode = (static_cast<int32>(bounded) == 1) ? SkillBurstFireMode::Staggered : SkillBurstFireMode::Simultaneous; break;
+		case 6: skill.burstOrderMode = (static_cast<int32>(bounded) == 1) ? SkillBurstOrderMode::Random : SkillBurstOrderMode::Sequential; break;
+		case 7: skill.burstIntervalSec = bounded; break;
+		case 8: skill.spreadDeg = bounded; break;
+		case 9: skill.arcHeight = bounded; break;
+		case 10: skill.orbitRadius = bounded; break;
+		case 11: skill.orbitAngularSpeedDeg = bounded; break;
+		case 12: skill.orbitDurationSec = bounded; break;
+		case 13: skill.projectileStartDegree = bounded; break;
+		case 14: skill.projectileStartDegreeType = static_cast<int32>(bounded); break;
+		case 15: skill.projectileWidth = bounded; break;
+		case 16: skill.projectileHeight = bounded; break;
+		case 17: skill.swingRadius = bounded; break;
+		case 18: skill.swingAngleDeg = bounded; break;
 		default: break;
 		}
 	}

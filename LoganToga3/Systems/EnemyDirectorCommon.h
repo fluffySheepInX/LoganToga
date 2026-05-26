@@ -93,8 +93,52 @@ namespace LT3
 		return Vec2{ 1325, 450.0 };
 	}
 
-	inline bool IsEnemySpawnCandidate(const UnitDef& def)
+	inline bool CanEnemyProduceUnit(const DefinitionStores& defs, UnitDefId unitDefId)
 	{
+		if (!(0 <= unitDefId && unitDefId < defs.units.size()))
+		{
+			return false;
+		}
+
+		const String unitTag = defs.units[unitDefId].unit_id;
+		for (const auto& action : defs.buildActions)
+		{
+			if (!action.enemyCanProduce || action.resultType != BuildActionResultType::Unit)
+			{
+				continue;
+			}
+
+			if (action.spawnUnit == unitDefId)
+			{
+				return true;
+			}
+
+			for (const auto spawnUnit : action.spawnUnits)
+			{
+				if (spawnUnit == unitDefId)
+				{
+					return true;
+				}
+			}
+
+			if ((!action.spawnTag.isEmpty() && action.spawnTag.lowercased() == unitTag.lowercased())
+				|| action.spawnTags.any([&](const String& spawnTag) { return !spawnTag.isEmpty() && spawnTag.lowercased() == unitTag.lowercased(); }))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	inline bool IsEnemySpawnCandidate(const DefinitionStores& defs, UnitDefId unitDefId)
+	{
+		if (!(0 <= unitDefId && unitDefId < defs.units.size()))
+		{
+			return false;
+		}
+
+		const UnitDef& def = defs.units[unitDefId];
 		if (def.role == UnitRole::Base || def.role == UnitRole::Barrier)
 		{
 			return false;
@@ -104,7 +148,7 @@ namespace LT3
 			return false;
 		}
 
-		return true;
+		return CanEnemyProduceUnit(defs, unitDefId);
 	}
 
 	inline Array<UnitDefId> CollectEnemySpawnCandidates(const DefinitionStores& defs)
@@ -112,7 +156,7 @@ namespace LT3
 		Array<UnitDefId> candidates;
 		for (UnitDefId unitDefId = 0; unitDefId < defs.units.size(); ++unitDefId)
 		{
-			if (IsEnemySpawnCandidate(defs.units[unitDefId]))
+			if (IsEnemySpawnCandidate(defs, unitDefId))
 			{
 				candidates << unitDefId;
 			}
@@ -135,7 +179,7 @@ namespace LT3
 				continue;
 			}
 
-			if (IsEnemySpawnCandidate(defs.units[world.units.defId[unit]]))
+			if (IsEnemySpawnCandidate(defs, world.units.defId[unit]))
 			{
 				++count;
 			}
@@ -155,8 +199,8 @@ namespace LT3
 			return false;
 		}
 
-		const UnitDef& def = defs.units[world.units.defId[unit]];
-		return IsEnemySpawnCandidate(def) && def.skill != InvalidSkillDefId && def.skill < defs.skills.size();
+			const UnitDef& def = defs.units[world.units.defId[unit]];
+			return IsEnemySpawnCandidate(defs, world.units.defId[unit]) && def.skill != InvalidSkillDefId && def.skill < defs.skills.size();
 	}
 
 	inline Array<UnitId> CollectEnemyAttackWaveCandidates(const BattleWorld& world, const DefinitionStores& defs)

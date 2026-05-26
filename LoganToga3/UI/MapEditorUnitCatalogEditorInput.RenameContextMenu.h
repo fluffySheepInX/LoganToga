@@ -34,11 +34,13 @@ namespace LT3
 			const int32 idx = *editor.unitRenameTargetIndex;
 			if (0 <= idx && idx < static_cast<int32>(catalog.entries.size()))
 			{
-				catalog.entries[idx].name = editor.unitRenameEditText.isEmpty()
-					? catalog.entries[idx].name
-					: editor.unitRenameEditText;
-				SaveUnitCatalogToml(catalog, editor.statusText);
-				editor.unitCatalogDirty = true;
+				ApplyUnitCatalogMutation(editor, catalog, [&]()
+				{
+					catalog.entries[idx].name = editor.unitRenameEditText.isEmpty()
+						? catalog.entries[idx].name
+						: editor.unitRenameEditText;
+					return true;
+				});
 				editor.statusText = U"Renamed unit: {}"_fmt(catalog.entries[idx].unit_id);
 			}
 			editor.unitRenameTargetIndex = none;
@@ -51,9 +53,11 @@ namespace LT3
 				const int32 idx = *editor.unitRenameTargetIndex;
 				if (0 <= idx && idx < static_cast<int32>(catalog.entries.size()))
 				{
-					catalog.entries.remove_at(idx);
-					SaveUnitCatalogToml(catalog, editor.statusText);
-					editor.unitCatalogDirty = true;
+					ApplyUnitCatalogMutation(editor, catalog, [&]()
+					{
+						catalog.entries.remove_at(idx);
+						return true;
+					});
 					if (editor.selectedUnitCatalogIndex >= static_cast<int32>(catalog.entries.size()))
 					{
 						editor.selectedUnitCatalogIndex = static_cast<int32>(catalog.entries.size()) - 1;

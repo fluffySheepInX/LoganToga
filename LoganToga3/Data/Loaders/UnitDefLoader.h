@@ -67,28 +67,49 @@ namespace LT3
             if (entry.unit_id.lowercased() == U"home")
             {
                 const int32 hp = (entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);
-                return UnitDef{
-                    entry.unit_id,
-                    entry.name.isEmpty() ? U"Command Base" : entry.name,
-                    UnitRole::Base,
-                    hp,
-                    entry.attack,
-                    entry.defense,
-                    0.0,
-                    26.0,
-                    0,
-                    Max(0, entry.visionRadius),
-                    baseSkill,
-                    Palette::Slategray,
-                    entry.visualScale,
-                    entry.building_category,
-                    entry.unit_family,
-                    false
-                };
+                UnitDef def;
+                def.unit_id = entry.unit_id;
+                def.name = entry.name.isEmpty() ? U"Command Base" : entry.name;
+                def.role = UnitRole::Base;
+                def.hp = hp;
+                def.attack = entry.attack;
+                def.defense = entry.defense;
+                def.speed = 0.0;
+                def.radius = 26.0;
+                def.gatherPower = 0;
+                def.visionRadiusCells = Max(0, entry.visionRadius);
+                def.skill = baseSkill;
+                def.color = Palette::Slategray;
+                def.visualScale = entry.visualScale;
+                def.unique = entry.unique;
+                def.uniqueRespawnAllowed = entry.uniqueRespawnAllowed;
+                def.building_category = entry.building_category;
+                def.unit_family = entry.unit_family;
+                def.blocksTileMovement = false;
+                return def;
             }
         }
 
-        return UnitDef{ U"Home", U"Command Base", UnitRole::Base, 260, 10, 2, 0.0, 26.0, 0, 6, baseSkill, Palette::Slategray, 1.0, U"home", U"", false };
+        UnitDef fallback;
+        fallback.unit_id = U"Home";
+        fallback.name = U"Command Base";
+        fallback.role = UnitRole::Base;
+        fallback.hp = 260;
+        fallback.attack = 10;
+        fallback.defense = 2;
+        fallback.speed = 0.0;
+        fallback.radius = 26.0;
+        fallback.gatherPower = 0;
+        fallback.visionRadiusCells = 6;
+        fallback.skill = baseSkill;
+        fallback.color = Palette::Slategray;
+        fallback.visualScale = 1.0;
+        fallback.unique = false;
+        fallback.uniqueRespawnAllowed = false;
+        fallback.building_category = U"home";
+        fallback.unit_family = U"";
+        fallback.blocksTileMovement = false;
+        return fallback;
     }
 
     inline void LoadUnitDefinitions(DefinitionStores& defs, const UnitCatalog& unitCatalog)
@@ -130,6 +151,8 @@ namespace LT3
                 skill,
                 (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
                 entry.visualScale,
+                entry.unique,
+                entry.uniqueRespawnAllowed,
                 entry.building_category,
                 entry.unit_family,
                 blocksTileMovement

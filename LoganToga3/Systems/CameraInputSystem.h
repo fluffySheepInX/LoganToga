@@ -62,6 +62,10 @@ namespace LT3
         {
             return false;
         }
+        if (mapEditor.showUniqueEditor && EditorUniquePanelRect(mapEditor).mouseOver())
+        {
+            return false;
+        }
         if (mapEditor.showAiEditor && AiEditorPanelRect().mouseOver())
         {
             return false;

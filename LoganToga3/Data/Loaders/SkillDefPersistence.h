@@ -32,6 +32,8 @@ namespace LT3
 		def.projectileMotion = projectileMotion;
 		def.burstCount = burstCount;
 		def.burstIntervalSec = burstIntervalSec;
+		def.burstFireMode = (burstIntervalSec > 0.0) ? SkillBurstFireMode::Staggered : SkillBurstFireMode::Simultaneous;
+		def.burstOrderMode = SkillBurstOrderMode::Sequential;
 		def.spreadDeg = spreadDeg;
 		def.arcHeight = arcHeight;
 		def.orbitRadius = orbitRadius;
@@ -55,6 +57,13 @@ namespace LT3
 		skills << MakeDefaultSkillDefinition(U"machine_gun", U"Machine Gun", SkillKind::Missile, 240.0, 1.40, 3, 520.0, SkillProjectileMotion::Direct, 5, 0.06, 8.0, 72.0, 54.0, 220.0, 1.2, Palette::Yellow);
 		skills << MakeDefaultSkillDefinition(U"cannon", U"Cannon", SkillKind::Missile, 300.0, 2.20, 18, 260.0, SkillProjectileMotion::Parabola, 1, 0.0, 0.0, 110.0, 54.0, 220.0, 1.2, ColorF{ 1.0, 0.27, 0.0 });
 		skills << MakeDefaultSkillDefinition(U"chakram", U"Chakram", SkillKind::Missile, 170.0, 1.80, 6, 380.0, SkillProjectileMotion::Orbit, 1, 0.0, 0.0, 72.0, 58.0, 360.0, 1.5, Palette::Aqua);
+		for (SkillDef& skill : skills)
+		{
+			if (skill.tag == U"machine_gun")
+			{
+				skill.burstFireMode = SkillBurstFireMode::Staggered;
+			}
+		}
 		return skills;
 	}
 
@@ -102,6 +111,8 @@ namespace LT3
 			writer << U"start_degree_type = " << skill.projectileStartDegreeType << U"\n";
 			writer << U"burst_count = " << skill.burstCount << U"\n";
 			writer << U"burst_interval_sec = " << skill.burstIntervalSec << U"\n";
+			writer << U"burst_fire_mode = \"" << SkillBurstFireModeToTag(skill.burstFireMode) << U"\"\n";
+			writer << U"burst_order_mode = \"" << SkillBurstOrderModeToTag(skill.burstOrderMode) << U"\"\n";
 			writer << U"spread_deg = " << skill.spreadDeg << U"\n";
 			writer << U"arc_height = " << skill.arcHeight << U"\n";
 			writer << U"orbit_radius = " << skill.orbitRadius << U"\n";

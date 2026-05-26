@@ -78,6 +78,18 @@ namespace LT3
         End,
     };
 
+    enum class SkillBurstFireMode : uint8
+    {
+        Simultaneous,
+        Staggered,
+    };
+
+    enum class SkillBurstOrderMode : uint8
+    {
+        Sequential,
+        Random,
+    };
+
     enum class BuildActionResultType : uint8
     {
         None,

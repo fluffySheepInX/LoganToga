@@ -35,23 +35,27 @@ namespace LT3
 				const RectF moveDownRect = EditorUnitRowMoveDownRect(row);
 				if ((i > 0) && moveUpRect.leftClicked())
 				{
-					const UnitCatalogEntry movedEntry = catalog.entries[i];
-					catalog.entries[i] = catalog.entries[i - 1];
-					catalog.entries[i - 1] = movedEntry;
+					ApplyUnitCatalogMutation(editor, catalog, [&]()
+					{
+						const UnitCatalogEntry movedEntry = catalog.entries[i];
+						catalog.entries[i] = catalog.entries[i - 1];
+						catalog.entries[i - 1] = movedEntry;
+						return true;
+					});
 					editor.selectedUnitCatalogIndex = i - 1;
-					SaveUnitCatalogToml(catalog, editor.statusText);
-					editor.unitCatalogDirty = true;
 					editor.statusText = U"Moved unit up: {}"_fmt(catalog.entries[i - 1].unit_id);
 					return true;
 				}
 				if ((i + 1 < static_cast<int32>(catalog.entries.size())) && moveDownRect.leftClicked())
 				{
-					const UnitCatalogEntry movedEntry = catalog.entries[i];
-					catalog.entries[i] = catalog.entries[i + 1];
-					catalog.entries[i + 1] = movedEntry;
+					ApplyUnitCatalogMutation(editor, catalog, [&]()
+					{
+						const UnitCatalogEntry movedEntry = catalog.entries[i];
+						catalog.entries[i] = catalog.entries[i + 1];
+						catalog.entries[i + 1] = movedEntry;
+						return true;
+					});
 					editor.selectedUnitCatalogIndex = i + 1;
-					SaveUnitCatalogToml(catalog, editor.statusText);
-					editor.unitCatalogDirty = true;
 					editor.statusText = U"Moved unit down: {}"_fmt(catalog.entries[i + 1].unit_id);
 					return true;
 				}

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorInput.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -28,7 +29,7 @@ namespace LT3
 
         const RectF panel = EditorResourcePalettePanelRect();
         const RectF clearAllRect = EditorResourceClearAllRect();
-        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
+        DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.92 }, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Resource Place").draw(panel.x + 10.0, panel.y + 6.0, Palette::White);
         clearAllRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, clearAllRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Clear All").drawAt(11, clearAllRect.center(), Palette::White);
@@ -104,7 +105,7 @@ namespace LT3
 
         const RectF panel = EditorResourceNodeListPanelRect();
         const RectF viewport = EditorResourceNodeListViewportRect();
-        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
+        DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.92 }, ColorF{ 1, 1, 1, 0.16 });
         uiFont(U"Resource Nodes").draw(panel.x + 12.0, panel.y + 8.0, Palette::White);
         const String nodeCountText = U"{}"_fmt(editor.resourceNodes.size());
         const RectF nodeCountRegion{ panel.x + 120.0, panel.y + 8.0, panel.w - 132.0, 20.0 };
@@ -128,30 +129,21 @@ namespace LT3
             }
 
             const bool selected = editor.selectedResourceNodeIndex == i;
-            row.draw(selected ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
-                .drawFrame(1, row.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.14 });
+            DrawRectListRow(row, selected);
             DrawResourceKindIcon(editor, node.kind, Vec2{ row.x + 18.0, row.y + 23.0 }, 18.0);
             uiFont(U"{} ({}, {})"_fmt(ResourceKindLabel(node.kind), node.cell.x, node.cell.y)).draw(12, row.x + 30.0, row.y + 6.0, Palette::White);
             uiFont(U"amount:{}  income:{}"_fmt(node.amount, node.incomePerSec)).draw(11, row.x + 30.0, row.y + 24.0, Palette::Lightgray);
         }
 
         const double contentHeight = EditorResourceNodeListContentHeight(editor);
-        if (contentHeight > viewport.h)
-        {
-            const double scrollRate = editor.resourceNodeListScroll / (contentHeight - viewport.h);
-            const double handleHeight = Max(32.0, viewport.h * viewport.h / contentHeight);
-            const double handleY = viewport.y + (viewport.h - handleHeight) * scrollRate;
-            RectF{ viewport.x + viewport.w + 4.0, viewport.y, 6.0, viewport.h }.draw(ColorF{ 1, 1, 1, 0.08 });
-            RectF{ viewport.x + viewport.w + 4.0, handleY, 6.0, handleHeight }.draw(ColorF{ 1.0, 0.84, 0.0, 0.70 });
-        }
+        DrawRectVerticalScrollbar(viewport, contentHeight, editor.resourceNodeListScroll, ColorF{ 1, 1, 1, 0.08 }, ColorF{ 1.0, 0.84, 0.0, 0.70 }, 6.0, 4.0, 32.0);
 
         const Array<String> filterLabels = { U"All", U"Gold", U"Trust", U"Food" };
         for (int32 i = 0; i < 4; ++i)
         {
             const RectF filterRect = EditorResourceNodeFilterRect(i);
             const bool active = (i == 0) ? (editor.resourceNodeFilterKind < 0) : (editor.resourceNodeFilterKind == (i - 1));
-            filterRect.draw(active ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
-                .drawFrame(1, filterRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.14 });
+            DrawRectListRow(filterRect, active);
             uiFont(filterLabels[i]).drawAt(11, filterRect.center(), active ? Palette::White : Palette::Lightgray);
         }
     }
@@ -167,10 +159,9 @@ namespace LT3
         const RectF panel = EditorResourceNodePanelRect();
         const RectF closeRect = EditorResourceNodeCloseRect();
         const RectF removeRect = EditorResourceNodeRemoveRect();
-        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
-        uiFont(U"Resource Node Editor").draw(panel.x + 24.0, panel.y + 16.0, Palette::White);
-        closeRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, closeRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        uiFont(U"×").drawAt(18, closeRect.center(), Palette::White);
+        DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
+        DrawRectPanelTitle(panel, U"Resource Node Editor", uiFont);
+        DrawRectPanelCloseButton(closeRect, uiFont, 18);
 
         uiFont(U"Cell: ({}, {})"_fmt(node.cell.x, node.cell.y)).draw(13, panel.x + 24.0, panel.y + 48.0, Palette::Lightgray);
         uiFont(U"Type").draw(13, panel.x + 24.0, panel.y + 74.0, Palette::Gold);
@@ -180,32 +171,22 @@ namespace LT3
             const ResourceKind kind = static_cast<ResourceKind>(i);
             const RectF kindRect = EditorResourceNodeKindRect(i);
             const bool active = node.kind == kind;
-            kindRect.draw(active ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
-                .drawFrame(2, kindRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+            DrawRectTabButton(kindRect, ResourceKindLabel(kind), active, uiFont, 13);
             const ColorF textColor = active ? ColorF{ Palette::White } : ResourceKindColor(kind);
             uiFont(ResourceKindLabel(kind)).drawAt(13, kindRect.center(), textColor);
         }
 
         const RectF amountDecRect = EditorResourceNodeAmountDecRect();
         const RectF amountIncRect = EditorResourceNodeAmountIncRect();
-        amountDecRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, amountDecRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        amountIncRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, amountIncRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        uiFont(U"Amount").draw(13, panel.x + 24.0, panel.y + 138.0, Palette::Gold);
-        uiFont(U"-").drawAt(24, amountDecRect.center(), Palette::White);
-        uiFont(U"+").drawAt(24, amountIncRect.center(), Palette::White);
-        uiFont(U"{}"_fmt(node.amount)).drawAt(26, Vec2{ panel.x + panel.w * 0.5, amountDecRect.center().y }, Palette::White);
+        const RectF amountRowRect{ amountDecRect.x, amountDecRect.y - 2.0, amountIncRect.x + amountIncRect.w - amountDecRect.x, amountDecRect.h + 4.0 };
+        DrawRectValueAdjustRow(amountRowRect, U"Amount", U"{}"_fmt(node.amount), amountDecRect, amountIncRect, uiFont);
 
         const RectF incomeDecRect = EditorResourceNodeIncomeDecRect();
         const RectF incomeIncRect = EditorResourceNodeIncomeIncRect();
-        incomeDecRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, incomeDecRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        incomeIncRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, incomeIncRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        uiFont(U"Income / sec").draw(13, panel.x + 24.0, panel.y + 186.0, Palette::Gold);
-        uiFont(U"-").drawAt(24, incomeDecRect.center(), Palette::White);
-        uiFont(U"+").drawAt(24, incomeIncRect.center(), Palette::White);
-        uiFont(U"{}"_fmt(node.incomePerSec)).drawAt(26, Vec2{ panel.x + panel.w * 0.5, incomeDecRect.center().y }, Palette::White);
+        const RectF incomeRowRect{ incomeDecRect.x, incomeDecRect.y - 2.0, incomeIncRect.x + incomeIncRect.w - incomeDecRect.x, incomeDecRect.h + 4.0 };
+        DrawRectValueAdjustRow(incomeRowRect, U"Income / sec", U"{}"_fmt(node.incomePerSec), incomeDecRect, incomeIncRect, uiFont);
 
-        removeRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, removeRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-        uiFont(U"Remove").drawAt(13, removeRect.center(), Palette::White);
+        DrawRectIconButton(removeRect, U"Remove", uiFont, 13, ColorF{ 0.12, 0.05, 0.05, 0.95 }, 1.0, Palette::White);
     }
 
     inline void DrawMapEditorResourceValidation(const MapEditorState& editor, const Font& uiFont)
@@ -217,8 +198,8 @@ namespace LT3
 
         const Array<String> issues = ValidateMapEditorResourceNodes(editor);
         const RectF panel = EditorResourceValidationPanelRect();
-        panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
-        uiFont(U"Resource Validation").draw(panel.x + 12.0, panel.y + 8.0, Palette::White);
+        DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.92 }, ColorF{ 1, 1, 1, 0.16 });
+        DrawRectPanelTitle(panel, U"Resource Validation", uiFont, 12.0, 8.0);
         if (issues.isEmpty())
         {
             uiFont(U"No issues").draw(panel.x + 12.0, panel.y + 36.0, Palette::Lime);

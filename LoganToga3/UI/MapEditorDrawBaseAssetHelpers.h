@@ -4,6 +4,63 @@
 
 namespace LT3
 {
+	inline const Texture* GetMapEditorAssetDisplayTexture(const MapEditorAsset& asset, double timeSec);
+
+	inline Vec2 DecalShadowDirectionVector(DecalShadowDirection direction)
+	{
+		switch (direction)
+		{
+		case DecalShadowDirection::North: return Vec2{ 0.0, -1.0 };
+		case DecalShadowDirection::NorthEast: return Vec2{ 1.0, -1.0 }.normalized();
+		case DecalShadowDirection::East: return Vec2{ 1.0, 0.0 };
+		case DecalShadowDirection::SouthEast: return Vec2{ 1.0, 1.0 }.normalized();
+		case DecalShadowDirection::South: return Vec2{ 0.0, 1.0 };
+		case DecalShadowDirection::SouthWest: return Vec2{ -1.0, 1.0 }.normalized();
+		case DecalShadowDirection::West: return Vec2{ -1.0, 0.0 };
+		case DecalShadowDirection::NorthWest: return Vec2{ -1.0, -1.0 }.normalized();
+		default: return Vec2{ 1.0, 1.0 }.normalized();
+		}
+	}
+
+	inline void DrawDecalShadow(const MapEditorAsset& asset, const Vec2& bottomCenter, double scale, double opacity, double animationTimeSec)
+	{
+		if (!asset.useDecalShadow)
+		{
+			return;
+		}
+
+		const Vec2 direction = DecalShadowDirectionVector(asset.decalShadowDirection);
+		const double clampedScale = Clamp(scale, 0.1, 4.0);
+		const double shadowOpacity = Clamp(asset.decalShadowOpacity * opacity, 0.0, 1.0);
+		const double shadowLength = Max(0.0, asset.decalShadowLength) * clampedScale;
+		const double softness = Max(0.0, asset.decalShadowBlur);
+		const Vec2 shadowOffset = direction * shadowLength;
+
+		if (asset.decalShadowMode == DecalShadowMode::Circle)
+		{
+			const double radiusX = 18.0 * clampedScale + shadowLength * 0.35;
+			const double radiusY = 9.0 * clampedScale + shadowLength * 0.18;
+			Ellipse{ bottomCenter + shadowOffset.movedBy(0.0, 8.0 * clampedScale), radiusX, radiusY }
+				.draw(ColorF{ 0.0, 0.0, 0.0, shadowOpacity * 0.65 });
+			if (softness > 0.0)
+			{
+				Ellipse{ bottomCenter + shadowOffset.movedBy(0.0, 8.0 * clampedScale), radiusX + softness, radiusY + softness * 0.5 }
+					.draw(ColorF{ 0.0, 0.0, 0.0, shadowOpacity * 0.20 });
+			}
+			return;
+		}
+
+		if (const Texture* texture = GetMapEditorAssetDisplayTexture(asset, animationTimeSec))
+		{
+			const ScopedRenderStates2D blend{ BlendState::Premultiplied };
+			texture->scaled(clampedScale).draw(Arg::bottomCenter = bottomCenter + shadowOffset, ColorF{ 0.0, 0.0, 0.0, shadowOpacity * 0.75 });
+			if (softness > 0.0)
+			{
+				texture->scaled(clampedScale * (1.0 + softness * 0.01)).draw(Arg::bottomCenter = bottomCenter + shadowOffset.movedBy(softness * 0.3, softness * 0.25), ColorF{ 0.0, 0.0, 0.0, shadowOpacity * 0.20 });
+			}
+		}
+	}
+
 	inline void DrawAssetPreview(const MapEditorAsset& asset, const Vec2& center, const SizeF& size)
 	{
 		const auto getDisplayTexture = [&](double timeSec) -> const Texture*
@@ -66,6 +123,7 @@ namespace LT3
 
 	inline void DrawPlacedMapAsset(const MapEditorAsset& asset, const Vec2& bottomCenter, double scale, double opacity, double animationTimeSec)
 	{
+		DrawDecalShadow(asset, bottomCenter, scale, opacity, animationTimeSec);
 		if (const Texture* texture = GetMapEditorAssetDisplayTexture(asset, animationTimeSec))
 		{
 			const ScopedRenderStates2D blend{ BlendState::Premultiplied };

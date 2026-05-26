@@ -7,7 +7,7 @@ namespace LT3
 	{
 		bool consumed = false;
 		const bool showLineSettings = (action.placementMode == BuildPlacementMode::Line);
-		const double inspectContentHeight = showLineSettings ? 576.0 : 492.0;
+		const double inspectContentHeight = showLineSettings ? 604.0 : 520.0;
 		const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 		editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 		if (inspectTopViewport.mouseOver())
@@ -18,6 +18,7 @@ namespace LT3
 
 		const double scroll = editor.commandInspectScroll;
 		const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
+		const RectF enemyCanProduceRect = EditorCommandEnemyCanProduceRect(scroll);
 		const RectF spawnCountRow = EditorCommandSpawnCountRowRect(scroll);
 		const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 		const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
@@ -32,6 +33,13 @@ namespace LT3
 			action.isMove = !action.isMove;
 			editor.commandBindingsDirty = true;
 			editor.statusText = U"Command placement toggled: {} -> {}"_fmt(action.name, action.isMove ? U"ON" : U"OFF");
+			consumed = true;
+		}
+		if (enemyCanProduceRect.leftClicked())
+		{
+			action.enemyCanProduce = !action.enemyCanProduce;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Enemy production toggled: {} -> {}"_fmt(action.name, action.enemyCanProduce ? U"ON" : U"OFF");
 			consumed = true;
 		}
 		if (action.resultType == BuildActionResultType::Unit)

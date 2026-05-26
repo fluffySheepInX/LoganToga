@@ -23,6 +23,7 @@ namespace LT3
 		DrawAiEditor(editor, defs, uiFont);
 		DrawUnitBuildingEditorTabBar(editor, uiFont);
 		DrawUnitParameterEditor(editor, unitCatalog, uiFont);
+		DrawUniqueEditor(editor, unitCatalog, uiFont);
 		DrawBuildingEditor(editor, unitCatalog, defs, uiFont);
 		if (editor.showResourcePanels)
 		{

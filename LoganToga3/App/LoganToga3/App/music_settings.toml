@@ -1,0 +1,19 @@
+﻿[editor]
+open = true
+
+[music.title]
+path = ""
+volume = 0.18
+
+[music.battle]
+path = "C:/Users/aband/source/repos/fluffySheepInX/LoganToga/LoganToga3/App/000_Warehouse/000_DefaultGame/045_BGM/British_grenadiers_march.mp3"
+volume = 0.22
+
+[music.options]
+path = ""
+volume = 0.16
+
+[music.achievements]
+path = ""
+volume = 0.18
+

@@ -56,6 +56,80 @@ namespace LT3
 		}
 	}
 
+	inline String UniqueUnitPopupText(const UnitDef& def)
+	{
+		return def.name.isEmpty() ? def.unit_id : def.name;
+	}
+
+	inline const Texture* ResolveUniquePortraitTexture(const BattleRenderAssets& assets, const UnitVisualInfo& visual)
+	{
+		if (visual.portraitImage.isEmpty())
+		{
+			return nullptr;
+		}
+
+		const FilePath portraitPath = ResolveUnitPortraitPath(visual.portraitImage);
+		if (portraitPath.isEmpty() || !FileSystem::Exists(portraitPath))
+		{
+			return nullptr;
+		}
+
+		if (!assets.portraitTextureCache.contains(portraitPath))
+		{
+			assets.portraitTextureCache.emplace(portraitPath, Texture{ portraitPath });
+		}
+		return &assets.portraitTextureCache.at(portraitPath);
+	}
+
+	inline bool ShouldShowUniqueUnitPopup(const UnitVisualInfo& visual, double timeSec, UnitId unit)
+	{
+		const double intervalSec = Max(0.5, visual.uniqueSpeechIntervalSec);
+		const double visibleSec = Min(Max(0.2, visual.uniqueSpeechVisibleSec), intervalSec);
+		const double phase = Fmod(timeSec + static_cast<double>((unit * 17) % 23) * 0.19, intervalSec);
+		return phase < visibleSec;
+	}
+
+	inline void DrawUniqueUnitPopup(const BattleRenderAssets& assets, const UnitDef& def, UnitId unit, const Vec2& unitPos, double timeSec, const Font& uiFont)
+	{
+		const UnitVisualInfo visual = FindUnitVisualInfoByTag(assets, def.unit_id);
+		if (!visual.unique || !ShouldShowUniqueUnitPopup(visual, timeSec, unit))
+		{
+			return;
+		}
+
+		const Texture* portrait = ResolveUniquePortraitTexture(assets, visual);
+		const String speech = visual.uniqueSpeechLines.isEmpty() ? UniqueUnitPopupText(def) : visual.uniqueSpeechLines[static_cast<size_t>((static_cast<int32>(timeSec / Max(0.5, visual.uniqueSpeechIntervalSec)) + unit) % static_cast<int32>(visual.uniqueSpeechLines.size()))];
+		const Vec2 popupCenter = unitPos + Vec2{ 0.0, -def.radius - 76.0 };
+		const double portraitSize = portrait ? 44.0 : 0.0;
+		const double textWidth = Min(visual.uniqueSpeechBubbleWidth, Max(72.0, uiFont(speech).region(12).w + 18.0));
+		const double bubbleWidth = portraitSize + textWidth + (portrait ? 18.0 : 0.0);
+		RectF bubble{ Arg::center = popupCenter, bubbleWidth, visual.uniqueSpeechBubbleHeight };
+		const Vec2 screenTopLeft = ToQuarterPreCameraScreen(Vec2{ 0.0, 0.0 });
+		const Vec2 screenBottomRight = ToQuarterPreCameraScreen(Vec2{ static_cast<double>(Scene::Width()), static_cast<double>(Scene::Height()) });
+		const double visibleLeft = Min(screenTopLeft.x, screenBottomRight.x) + 4.0;
+		const double visibleTop = Min(screenTopLeft.y, screenBottomRight.y) + 4.0;
+		const double visibleRight = Max(screenTopLeft.x, screenBottomRight.x) - 4.0;
+		const double visibleBottom = Max(screenTopLeft.y, screenBottomRight.y) - 4.0;
+		bubble.x = Clamp(bubble.x, visibleLeft, Max(visibleLeft, visibleRight - bubble.w));
+		bubble.y = Clamp(bubble.y, visibleTop, Max(visibleTop, visibleBottom - bubble.h));
+
+		bubble.rounded(8).draw(ColorF{ 0.02, 0.03, 0.045, 0.88 }).drawFrame(1.5, ColorF{ 1.0, 0.84, 0.0, 0.75 });
+		Triangle{ bubble.bottomCenter() + Vec2{ -8.0, 0.0 }, bubble.bottomCenter() + Vec2{ 8.0, 0.0 }, unitPos + Vec2{ 0.0, -def.radius - 8.0 } }.draw(ColorF{ 0.02, 0.03, 0.045, 0.88 });
+
+		double textX = bubble.x + 10.0;
+		if (portrait)
+		{
+			const RectF portraitRect{ bubble.x + 7.0, bubble.y + 5.0, portraitSize, portraitSize };
+			portraitRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
+			const double fitScale = Min((portraitRect.w - 4.0) / Max(1.0, static_cast<double>(portrait->width())), (portraitRect.h - 4.0) / Max(1.0, static_cast<double>(portrait->height())));
+			portrait->scaled(fitScale).drawAt(portraitRect.center());
+			textX = portraitRect.x + portraitRect.w + 9.0;
+		}
+
+		uiFont(speech).draw(12, textX, bubble.y + 12.0, Palette::White);
+		uiFont(U"...").draw(10, textX, bubble.y + 32.0, Palette::Aqua);
+	}
+
 	inline void DrawUnitShape(const UnitDef& def, const Vec2& pos, bool selected, const ColorF& outline)
 	{
 		Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
@@ -108,39 +182,80 @@ namespace LT3
 		}
 	}
 
-	inline void DrawUnits(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont, const BattleRenderAssets* assets = nullptr, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0, bool showEnemyMoveMarkers = false)
+	inline bool IsUnitVisibleForRender(const BattleWorld& world, UnitId unit, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0)
+	{
+		if (!world.units.alive[unit])
+		{
+			return false;
+		}
+
+		if (visibleMask && world.units.faction[unit] == Faction::Enemy)
+		{
+			const Point unitCell = QuarterWorldToBattleCell(world.units.position[unit], maskWidth, maskHeight);
+			const size_t maskIndex = static_cast<size_t>(unitCell.y * maskWidth + unitCell.x);
+			if (maskIndex >= visibleMask->size() || !(*visibleMask)[maskIndex])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	inline void DrawUnitRenderContent(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const Font& uiFont, const BattleRenderAssets* assets = nullptr, bool showEnemyMoveMarkers = false)
+	{
+		const UnitDef& def = defs.units[world.units.defId[unit]];
+		const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
+		const bool selected = IsUnitSelected(world, unit);
+		const bool isMoving = (world.units.task[unit] == UnitTask::Moving);
+		const ColorF outline = GetUnitOutlineColor(world, unit);
+
+		DrawUnitMovePath(world, unit, outline, showEnemyMoveMarkers);
+		const String iconOverride = (unit < world.units.iconOverride.size()) ? world.units.iconOverride[unit] : U"";
+		DrawUnitVisual(def, pos, selected, isMoving, outline, assets, iconOverride);
+
+		if (assets)
+		{
+			DrawUniqueUnitPopup(*assets, def, unit, pos, world.elapsedSec, uiFont);
+		}
+	}
+
+	inline void DrawUnitHealthBarOverlay(const BattleWorld& world, const DefinitionStores& defs, UnitId unit)
 	{
 		const Vec2 mouse = Cursor::PosF();
+		const UnitDef& def = defs.units[world.units.defId[unit]];
+		const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
+		const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
+		const bool hovered = (mouse.distanceFrom(pos) <= (def.radius + 16.0));
+		if (!isStaticStructure || hovered)
+		{
+			DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp);
+		}
+	}
+
+	inline void DrawUnitHealthBarsOverlay(const BattleWorld& world, const DefinitionStores& defs, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0)
+	{
 		for (UnitId unit = 0; unit < world.units.size(); ++unit)
 		{
-			if (!world.units.alive[unit]) continue;
-
-			if (visibleMask && world.units.faction[unit] == Faction::Enemy)
+			if (!IsUnitVisibleForRender(world, unit, visibleMask, maskWidth, maskHeight))
 			{
-				const Point unitCell = QuarterWorldToBattleCell(world.units.position[unit], maskWidth, maskHeight);
-				const size_t maskIndex = static_cast<size_t>(unitCell.y * maskWidth + unitCell.x);
-				if (maskIndex >= visibleMask->size() || !(*visibleMask)[maskIndex])
-				{
-					continue;
-				}
+				continue;
 			}
 
-			const UnitDef& def = defs.units[world.units.defId[unit]];
-			const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
-			const bool selected = IsUnitSelected(world, unit);
-			const bool isMoving = (world.units.task[unit] == UnitTask::Moving);
-			const ColorF outline = GetUnitOutlineColor(world, unit);
+			DrawUnitHealthBarOverlay(world, defs, unit);
+		}
+	}
 
-			DrawUnitMovePath(world, unit, outline, showEnemyMoveMarkers);
-			const String iconOverride = (unit < world.units.iconOverride.size()) ? world.units.iconOverride[unit] : U"";
-			DrawUnitVisual(def, pos, selected, isMoving, outline, assets, iconOverride);
-
-			const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
-			const bool hovered = (mouse.distanceFrom(pos) <= (def.radius + 16.0));
-			if (!isStaticStructure || hovered)
+	inline void DrawUnits(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont, const BattleRenderAssets* assets = nullptr, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0, bool showEnemyMoveMarkers = false)
+	{
+		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		{
+			if (!IsUnitVisibleForRender(world, unit, visibleMask, maskWidth, maskHeight))
 			{
-				DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp);
+				continue;
 			}
+
+			DrawUnitRenderContent(world, defs, unit, uiFont, assets, showEnemyMoveMarkers);
 		}
 
 		static_cast<void>(uiFont);

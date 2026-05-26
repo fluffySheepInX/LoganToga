@@ -55,7 +55,13 @@ namespace LT3
 	inline bool IsUnitCatalogSelectableImageFile(const FilePath& path)
 	{
 		const String extension = FileSystem::Extension(path).lowercased();
-		return extension == U"png" || extension == U"gif";
+		return extension == U"png" || extension == U"gif" || extension == U"jpg" || extension == U"jpeg";
+	}
+
+	inline FilePath ResolveUnitPortraitDirectory()
+	{
+		const FilePath existingPath = ResolveUnitPortraitPath(U"__lt3_directory_probe__.png");
+		return FileSystem::ParentPath(existingPath);
 	}
 
 	inline bool ChangeSelectedUnitImageFromDialog(MapEditorState& editor, UnitCatalog& catalog)
@@ -104,6 +110,56 @@ namespace LT3
 		SaveUnitCatalogToml(catalog, editor.statusText);
 		editor.unitCatalogDirty = true;
 		editor.statusText = U"Unit image changed: {} -> {}"_fmt(entry.unit_id, fileName);
+		return true;
+	}
+
+	inline bool ChangeSelectedUnitPortraitFromDialog(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		if (editor.selectedUnitCatalogIndex < 0 || static_cast<int32>(catalog.entries.size()) <= editor.selectedUnitCatalogIndex)
+		{
+			return false;
+		}
+
+		const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::JPEG(), FileFilter::GIF(), FileFilter::AllFiles() };
+		const Optional<FilePath> sourcePath = Dialog::OpenFile(imageFilters);
+		if (!sourcePath)
+		{
+			return false;
+		}
+
+		if (!IsUnitCatalogSelectableImageFile(*sourcePath))
+		{
+			editor.statusText = U"Unit portrait must be png, jpg, jpeg or gif: {}"_fmt(*sourcePath);
+			return true;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		const FilePath targetDirectory = ResolveUnitPortraitDirectory();
+		FileSystem::CreateDirectories(targetDirectory);
+
+		const String fileName = FileSystem::FileName(*sourcePath);
+		const FilePath targetPath = targetDirectory + fileName;
+		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
+		{
+			if (FileSystem::Exists(targetPath))
+			{
+				FileSystem::Remove(targetPath);
+			}
+
+			if (!FileSystem::Copy(*sourcePath, targetPath))
+			{
+				editor.statusText = U"Unit portrait copy failed: {}"_fmt(targetPath);
+				return true;
+			}
+		}
+
+		entry.portraitImage = fileName;
+		entry.unique = true;
+		BuildingEditorTextureCache().erase(targetPath);
+		BuildingEditorTextureCache().erase(ResolveUnitPortraitPath(fileName));
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+		editor.statusText = U"Unit portrait changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}
 }

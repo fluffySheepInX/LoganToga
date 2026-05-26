@@ -1,5 +1,8 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "RectLayoutPrimitives.h"
+# include "RectNumberStepperTypes.h"
+# include "RectValueRowPrimitives.h"
 
 namespace LT3
 {
@@ -11,7 +14,7 @@ namespace LT3
 	inline RectF SkillEditorCloseRect()
 	{
 		const RectF panel = SkillEditorPanelRect();
-		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+		return RectCloseButton(panel);
 	}
 
 	inline RectF SkillEditorSandboxToggleRect()
@@ -23,7 +26,7 @@ namespace LT3
 	inline RectF SkillEditorSaveRect()
 	{
 		const RectF panel = SkillEditorPanelRect();
-		return RectF{ panel.x + panel.w - 138.0, panel.y + panel.h - 38.0, 118.0, 26.0 };
+		return RectFromPanelBottomRight(panel, 138.0, 38.0, 118.0, 26.0);
 	}
 
 	inline RectF SkillEditorSandboxPreviewRect()
@@ -47,47 +50,47 @@ namespace LT3
 	inline RectF SkillEditorListViewportRect()
 	{
 		const RectF panel = SkillEditorPanelRect();
-		return RectF{ panel.x + 106.0, panel.y + 54.0, 188.0, panel.h - 82.0 };
+		return RectFromPanel(panel, 106.0, 54.0, 188.0, panel.h - 82.0);
 	}
 
 	inline RectF SkillEditorUnitViewportRect()
 	{
 		const RectF panel = SkillEditorPanelRect();
-		return RectF{ panel.x + 18.0, panel.y + 54.0, 76.0, panel.h - 82.0 };
+		return RectFromPanel(panel, 18.0, 54.0, 76.0, panel.h - 82.0);
 	}
 
 	inline RectF SkillEditorDetailRect()
 	{
 		const RectF panel = SkillEditorPanelRect();
-		return RectF{ panel.x + 310.0, panel.y + 54.0, panel.w - 328.0, panel.h - 82.0 };
+		return RectFromPanel(panel, 310.0, 54.0, panel.w - 328.0, panel.h - 82.0);
 	}
 
 	inline RectF SkillEditorDetailViewportRect()
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 8.0, detail.y + 8.0, detail.w - 16.0, detail.h - 52.0 };
+		return RectInset(detail, 8.0, 8.0, 8.0, 44.0);
 	}
 
 	inline RectF SkillEditorSkillRowRect(int32 visibleIndex)
 	{
 		const RectF viewport = SkillEditorListViewportRect();
-		return RectF{ viewport.x + 4.0, viewport.y + 4.0 + visibleIndex * 48.0, viewport.w - 8.0, 42.0 };
+		return RectRow(viewport, visibleIndex, 42.0, 48.0, 0.0, 4.0, 4.0);
 	}
 
 	inline RectF SkillEditorContextMenuRect(const Vec2& pos)
 	{
-		return RectF{ pos.x, pos.y, 156.0, 30.0 };
+		return RectStepMenu(pos, 1, 156.0, 2.0, 28.0);
 	}
 
 	inline RectF SkillEditorContextMenuItemRect(const Vec2& pos, int32 index)
 	{
-		return RectF{ pos.x + 4.0, pos.y + 4.0 + index * 28.0, 148.0, 22.0 };
+		return RectStepMenuItem(pos, index, 4.0, 4.0, SizeF{ 148.0, 22.0 }, 28.0);
 	}
 
 	inline RectF SkillEditorUnitIconRect(int32 visibleIndex)
 	{
 		const RectF viewport = SkillEditorUnitViewportRect();
-		return RectF{ viewport.x + 10.0, viewport.y + 8.0 + visibleIndex * 58.0, 52.0, 52.0 };
+		return RectLinearItem(viewport.pos + Vec2{ 10.0, 8.0 }, visibleIndex, SizeF{ 52.0, 52.0 }, 0.0, 58.0);
 	}
 
 	inline RectF SkillEditorIconPreviewRect(double scroll)
@@ -123,53 +126,69 @@ namespace LT3
 	inline RectF SkillEditorKindButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 8.0 + (index % 3) * 86.0, detail.y + 150.0 + (index / 3) * 30.0 - scroll, 78.0, 24.0 };
+		return RectGridItem(detail.pos + Vec2{ 8.0, 150.0 - scroll }, index, 3, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
 	}
 
 	inline RectF SkillEditorMotionButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 8.0 + (index % 4) * 86.0, detail.y + 228.0 + (index / 4) * 30.0 - scroll, 78.0, 24.0 };
+		return RectGridItem(detail.pos + Vec2{ 8.0, 228.0 - scroll }, index, 4, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
+	}
+
+	inline RectValueRowLayoutSpec SkillEditorValueRowLayoutSpec()
+	{
+		RectValueRowLayoutSpec spec;
+		spec.rowHeight = 24.0;
+		spec.rowStride = 38.0;
+		spec.fieldY = 0.0;
+		spec.fieldHeightInset = 0.0;
+		spec.valueX = 164.0;
+		spec.valueW = 82.0;
+		spec.minusX = 128.0;
+		spec.plusX = 252.0;
+		spec.stepX = 288.0;
+		spec.stepW = 54.0;
+		spec.buttonX = 128.0;
+		spec.buttonW = 30.0;
+		spec.buttonStride = 36.0;
+		spec.stepperButtonW = 30.0;
+		return spec;
+	}
+
+	inline RectF SkillEditorValueRowRect(int32 row, double scroll = 0.0)
+	{
+		const RectF detail = SkillEditorDetailRect();
+		return RectValueRow(RectF{ detail.x, detail.y + 358.0 - scroll, detail.w, 24.0 }, row, SkillEditorValueRowLayoutSpec());
 	}
 
 	inline RectF SkillEditorValueButtonRect(int32 row, int32 buttonIndex, double scroll = 0.0)
 	{
-		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 128.0 + buttonIndex * 36.0, detail.y + 358.0 + row * 38.0 - scroll, 30.0, 24.0 };
+		return RectValueRowButton(SkillEditorValueRowRect(row, scroll), buttonIndex, SkillEditorValueRowLayoutSpec());
 	}
 
 	inline RectF SkillEditorValueFieldRect(int32 row, double scroll = 0.0)
 	{
-		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 164.0, detail.y + 358.0 + row * 38.0 - scroll, 82.0, 24.0 };
+		return RectValueRowValue(SkillEditorValueRowRect(row, scroll), SkillEditorValueRowLayoutSpec());
 	}
 
 	inline RectF SkillEditorValueStepRect(int32 row, double scroll = 0.0)
 	{
-		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 288.0, detail.y + 358.0 + row * 38.0 - scroll, 54.0, 24.0 };
+		return RectValueRowStepper(SkillEditorValueRowRect(row, scroll), SkillEditorValueRowLayoutSpec()).step;
 	}
 
 	inline RectNumberStepperRects SkillEditorValueStepperRects(int32 row, double scroll = 0.0)
 	{
-		const RectF minusRect = SkillEditorValueButtonRect(row, 0, scroll);
-		const RectF valueRect = SkillEditorValueFieldRect(row, scroll);
-		return RectNumberStepperRects{
-			.minus = minusRect,
-			.value = valueRect,
-			.plus = RectF{ valueRect.x + valueRect.w + 6.0, valueRect.y, 30.0, 24.0 },
-			.step = SkillEditorValueStepRect(row, scroll),
-		};
+		return RectValueRowStepper(SkillEditorValueRowRect(row, scroll), SkillEditorValueRowLayoutSpec());
 	}
 
 	inline RectF SkillEditorValueStepMenuRect(const Vec2& pos, int32 itemCount)
 	{
-		return RectF{ pos.x, pos.y, 86.0, 8.0 + itemCount * 24.0 };
+		return RectValueRowStepMenu(pos, itemCount);
 	}
 
 	inline RectF SkillEditorValueStepMenuItemRect(const Vec2& pos, int32 index)
 	{
-		return RectF{ pos.x + 4.0, pos.y + 4.0 + index * 24.0, 78.0, 20.0 };
+		return RectValueRowStepMenuItem(pos, index);
 	}
 
 	inline RectF SkillEditorValueHelpIconRect(int32 row, double scroll = 0.0)
@@ -192,6 +211,6 @@ namespace LT3
 
 	inline double SkillEditorDetailContentHeight()
 	{
-		return 980.0;
+		return 1100.0;
 	}
 }

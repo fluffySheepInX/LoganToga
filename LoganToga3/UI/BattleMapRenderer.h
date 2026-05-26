@@ -80,17 +80,10 @@ namespace LT3
 		return visible;
 	}
 
-	inline void DrawFogOfWarOverlay(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor)
+	inline void DrawFogOfWarCells(const BattleWorld& world, const Array<bool>& visible, const ColorF& fogColor)
 	{
-		if (!mapEditor.fogEnabled)
-		{
-			return;
-		}
-
 		const int32 width = Max(1, world.mapWidth);
 		const int32 height = Max(1, world.mapHeight);
-		const Array<bool> visible = BuildFogVisibleCellMask(world, defs);
-		const ColorF fogColor{ mapEditor.fogColor.r, mapEditor.fogColor.g, mapEditor.fogColor.b, mapEditor.fogOpacity };
 
 		for (int32 diagonal = 0; diagonal < (width + height - 1); ++diagonal)
 		{
@@ -109,6 +102,21 @@ namespace LT3
 				tile.draw(fogColor);
 			}
 		}
+	}
+
+	inline void DrawFogOfWarOverlay(const BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor)
+	{
+		if (!mapEditor.fogEnabled)
+		{
+			return;
+		}
+
+		const int32 width = Max(1, world.mapWidth);
+		const int32 height = Max(1, world.mapHeight);
+		const Array<bool> visible = BuildFogVisibleCellMask(world, defs);
+		const ColorF fogColor{ mapEditor.fogColor.r, mapEditor.fogColor.g, mapEditor.fogColor.b, mapEditor.fogOpacity };
+
+		DrawFogOfWarCells(world, visible, fogColor);
 
 		if (!mapEditor.fogPreviewVision)
 		{

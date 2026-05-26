@@ -27,6 +27,9 @@ namespace LT3
 		editor.skillSandboxTargetHp = editor.skillSandboxTargetMaxHp;
 		editor.skillSandboxCooldownLeftSec = 0.0;
 		editor.skillSandboxDraggingTarget = false;
+		editor.skillSandboxBurstShotsLeft = 0;
+		editor.skillSandboxBurstShotTimerSec = 0.0;
+		editor.skillSandboxBurstOrder.clear();
 		editor.skillSandboxProjectiles.clear();
 	}
 
@@ -92,9 +95,30 @@ namespace LT3
 			editor.skillSandboxTargetHp = editor.skillSandboxTargetMaxHp;
 		}
 		const int32 burstCount = Max(1, skill.burstCount);
-		for (int32 burstIndex = 0; burstIndex < burstCount; ++burstIndex)
+		editor.skillSandboxBurstOrder.clear();
+		editor.skillSandboxBurstOrder.reserve(burstCount);
+		for (int32 i = 0; i < burstCount; ++i)
 		{
-			SpawnSkillSandboxProjectile(editor, skill, burstIndex);
+			editor.skillSandboxBurstOrder << i;
+		}
+		if (skill.burstOrderMode == SkillBurstOrderMode::Random)
+		{
+			editor.skillSandboxBurstOrder.shuffle();
+		}
+		if (skill.burstFireMode == SkillBurstFireMode::Simultaneous)
+		{
+			for (int32 shotIndex = 0; shotIndex < burstCount; ++shotIndex)
+			{
+				SpawnSkillSandboxProjectile(editor, skill, editor.skillSandboxBurstOrder[shotIndex]);
+			}
+			editor.skillSandboxBurstShotsLeft = 0;
+			editor.skillSandboxBurstShotTimerSec = 0.0;
+		}
+		else
+		{
+			SpawnSkillSandboxProjectile(editor, skill, editor.skillSandboxBurstOrder[0]);
+			editor.skillSandboxBurstShotsLeft = burstCount - 1;
+			editor.skillSandboxBurstShotTimerSec = Max(0.0, skill.burstIntervalSec);
 		}
 		editor.skillSandboxCooldownLeftSec = Max(0.05, skill.cooldownSec);
 	}
@@ -116,6 +140,23 @@ namespace LT3
 	inline void UpdateSkillSandbox(MapEditorState& editor, const SkillDef& skill, double dt)
 	{
 		editor.skillSandboxCooldownLeftSec = Max(0.0, editor.skillSandboxCooldownLeftSec - dt);
+		if (editor.skillSandboxBurstShotsLeft > 0)
+		{
+			editor.skillSandboxBurstShotTimerSec -= dt;
+			while (editor.skillSandboxBurstShotsLeft > 0 && editor.skillSandboxBurstShotTimerSec <= 0.0)
+			{
+				const int32 burstCount = Max(1, skill.burstCount);
+				const int32 shotIndex = burstCount - editor.skillSandboxBurstShotsLeft;
+				const int32 burstIndex = (shotIndex < static_cast<int32>(editor.skillSandboxBurstOrder.size())) ? editor.skillSandboxBurstOrder[shotIndex] : shotIndex;
+				SpawnSkillSandboxProjectile(editor, skill, burstIndex);
+				--editor.skillSandboxBurstShotsLeft;
+				editor.skillSandboxBurstShotTimerSec += Max(0.0, skill.burstIntervalSec);
+				if (skill.burstIntervalSec <= 0.0)
+				{
+					editor.skillSandboxBurstShotTimerSec = 0.0;
+				}
+			}
+		}
 		if (editor.skillSandboxAutoFire && editor.skillSandboxCooldownLeftSec <= 0.0)
 		{
 			FireSkillSandbox(editor, skill);

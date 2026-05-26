@@ -258,7 +258,7 @@ namespace LT3
 		if (editor.commandEditorMode == 2)
 		{
 			const bool showLineSettings = (selectedAction.placementMode == BuildPlacementMode::Line);
-			const double inspectContentHeight = showLineSettings ? 576.0 : 492.0;
+			const double inspectContentHeight = showLineSettings ? 604.0 : 520.0;
 			const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 			editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 
@@ -308,7 +308,12 @@ namespace LT3
 			const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
 			drawToggleButton(placementToggleRect, selectedAction.isMove, selectedAction.isMove ? U"[ON] 場所指定して実行" : U"[OFF] 場所指定して実行");
 
-			uiFont(U"Placement Mode").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 206.0 - scroll, Palette::Lightgray);
+			uiFont(U"Enemy Production").draw(12, inspectTopViewport.x + 12.0, placementToggleRect.y + placementToggleRect.h + 6.0, Palette::Lightgray);
+			const RectF enemyCanProduceRect = EditorCommandEnemyCanProduceRect(scroll);
+			drawToggleButton(enemyCanProduceRect, selectedAction.enemyCanProduce,
+				selectedAction.enemyCanProduce ? U"[ON] 敵陣営も生産可能" : U"[OFF] 敵陣営は生産不可");
+
+			uiFont(U"Placement Mode").draw(12, inspectTopViewport.x + 12.0, enemyCanProduceRect.y + enemyCanProduceRect.h + 6.0, Palette::Lightgray);
 			const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 			const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
 			drawToggleButton(placementModePointRect, selectedAction.placementMode == BuildPlacementMode::Point, U"Point");

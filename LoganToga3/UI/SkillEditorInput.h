@@ -1,10 +1,84 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "EditorMutationHelpers.h"
 # include "SkillEditorCommon.h"
 # include "MapEditorDescriptionEditor.h"
 
 namespace LT3
 {
+	template <class Mutator>
+	inline bool MutateSelectedSkillDefinition(MapEditorState& editor, DefinitionStores& defs, Mutator&& mutator)
+	{
+		if (!HasSelectedSkill(editor, defs))
+		{
+			return false;
+		}
+
+		SkillDef& skill = defs.skills[editor.selectedSkillIndex];
+		return ApplyEditorMutation([&]()
+		{
+			return mutator(skill);
+		}, [&]()
+		{
+			SaveSkillEditorDefinitions(editor, defs);
+		});
+	}
+
+		inline bool CommitSelectedSkillEditorValueText(MapEditorState& editor, DefinitionStores& defs, int32 row, const String& text)
+		{
+			const bool committed = MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+				return TryCommitSkillEditorValueText(selected, row, text);
+			});
+
+			if (!committed)
+			{
+				editor.statusText = U"Invalid skill value: {}"_fmt(text);
+			}
+
+			return committed;
+		}
+
+		inline bool HandleSkillEditorValueStepperAction(MapEditorState& editor, DefinitionStores& defs, int32 row, RectNumberStepperRects rects)
+	{
+		switch (DetectRectNumberStepperInput(rects))
+		{
+		case RectNumberStepperInputAction::StartValueEdit:
+			editor.skillValueEditingRow = row;
+				editor.skillValueEditingText = U"{}"_fmt(GetSkillEditorValue(defs.skills[editor.selectedSkillIndex], row));
+			editor.skillValueStepMenuRow = none;
+			return true;
+		case RectNumberStepperInputAction::CycleStep:
+			CycleSkillEditorValueStep(editor, row);
+			editor.statusText = U"Skill value step set to {}"_fmt(SkillEditorValueStep(editor, row));
+			return true;
+		case RectNumberStepperInputAction::OpenStepMenu:
+			editor.skillValueStepMenuRow = row;
+			editor.skillValueStepMenuPos = Cursor::PosF();
+			return true;
+		case RectNumberStepperInputAction::Decrement:
+		{
+			const double step = ApplyTemporaryStepModifier(SkillEditorValueStep(editor, row));
+				return MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+					ChangeSkillValue(selected, row, -step);
+				return true;
+			});
+		}
+		case RectNumberStepperInputAction::Increment:
+		{
+			const double step = ApplyTemporaryStepModifier(SkillEditorValueStep(editor, row));
+				return MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+					ChangeSkillValue(selected, row, step);
+				return true;
+			});
+		}
+		default:
+			return false;
+		}
+	}
+
 	inline bool ProcessSkillEditorInput(MapEditorState& editor, DefinitionStores& defs, UnitCatalog& catalog)
 	{
 		if (!editor.showSkillEditor)
@@ -208,14 +282,7 @@ namespace LT3
 			}
 			if (KeyEnter.down())
 			{
-				if (TryCommitSkillEditorValueText(skill, editor.skillValueEditingRow, editor.skillValueEditingText))
-				{
-					SaveSkillEditorDefinitions(editor, defs);
-				}
-				else
-				{
-					editor.statusText = U"Invalid skill value: {}"_fmt(editor.skillValueEditingText);
-				}
+				CommitSelectedSkillEditorValueText(editor, defs, editor.skillValueEditingRow, editor.skillValueEditingText);
 				editor.skillValueEditingRow = -1;
 				editor.skillValueEditingText.clear();
 				return true;
@@ -257,14 +324,7 @@ namespace LT3
 			const RectF editingRect = SkillEditorValueFieldRect(editor.skillValueEditingRow, scroll);
 			if (!editingRect.mouseOver())
 			{
-				if (TryCommitSkillEditorValueText(skill, editor.skillValueEditingRow, editor.skillValueEditingText))
-				{
-					SaveSkillEditorDefinitions(editor, defs);
-				}
-				else
-				{
-					editor.statusText = U"Invalid skill value: {}"_fmt(editor.skillValueEditingText);
-				}
+				CommitSelectedSkillEditorValueText(editor, defs, editor.skillValueEditingRow, editor.skillValueEditingText);
 				editor.skillValueEditingRow = -1;
 				editor.skillValueEditingText.clear();
 				return true;
@@ -311,19 +371,31 @@ namespace LT3
 					BuildingEditorTextureCache().erase(ResolveBuildIconPath(fileName));
 				}
 
-				skill.iconLayers = NormalizeSkillIconLayerOrder(iconLayers);
-				skill.icon = skill.iconLayers.isEmpty() ? U"" : skill.iconLayers.front();
-				const Array<String> warnings = ValidateSkillIconLayers(skill);
-				if (warnings.isEmpty())
+				const Array<String> normalizedIconLayers = NormalizeSkillIconLayerOrder(iconLayers);
+				String skillTag;
+				Array<String> warnings;
+				ApplyEditorMutation([&]()
 				{
-					defs.skillIconWarningsByTag.erase(skill.tag);
-				}
-				else
+					return MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+					{
+						skillTag = selected.tag;
+						selected.iconLayers = normalizedIconLayers;
+						selected.icon = selected.iconLayers.isEmpty() ? U"" : selected.iconLayers.front();
+						warnings = ValidateSkillIconLayers(selected);
+						return true;
+					});
+				}, [&]()
 				{
-					defs.skillIconWarningsByTag[skill.tag] = warnings;
-					editor.statusText = U"Skill icon warning: {}"_fmt(warnings.front());
-				}
-				SaveSkillEditorDefinitions(editor, defs);
+					if (warnings.isEmpty())
+					{
+						defs.skillIconWarningsByTag.erase(skillTag);
+					}
+					else
+					{
+						defs.skillIconWarningsByTag[skillTag] = warnings;
+						editor.statusText = U"Skill icon warning: {}"_fmt(warnings.front());
+					}
+				});
 			}
 			return true;
 		}
@@ -342,15 +414,15 @@ namespace LT3
 						return true;
 					}
 
-					if (imageIndex == 0)
+					MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
 					{
-						skill.projectileImage = fileName;
-					}
-					else
-					{
-						skill.projectileDiagonalImage = fileName;
-					}
-					SaveSkillEditorDefinitions(editor, defs);
+						if (imageIndex == 0)
+						{
+							return SetFieldIfChanged(selected.projectileImage, fileName);
+						}
+
+						return SetFieldIfChanged(selected.projectileDiagonalImage, fileName);
+					});
 				}
 				return true;
 			}
@@ -360,8 +432,10 @@ namespace LT3
 		{
 			if (HandleRectButtonClick(SkillEditorKindButtonRect(i, scroll)))
 			{
-				skill.kind = static_cast<SkillKind>(i);
-				SaveSkillEditorDefinitions(editor, defs);
+				MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+				{
+					return SetFieldIfChanged(selected.kind, static_cast<SkillKind>(i));
+				});
 				return true;
 			}
 		}
@@ -370,8 +444,10 @@ namespace LT3
 		{
 			if (HandleRectButtonClick(SkillEditorMotionButtonRect(i, scroll)))
 			{
-				skill.projectileMotion = static_cast<SkillProjectileMotion>(i);
-				SaveSkillEditorDefinitions(editor, defs);
+				MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+				{
+					return SetFieldIfChanged(selected.projectileMotion, static_cast<SkillProjectileMotion>(i));
+				});
 				return true;
 			}
 		}
@@ -380,26 +456,32 @@ namespace LT3
 		{
 			if (HandleRectButtonClick(SkillEditorCenterButtonRect(i, scroll)))
 			{
-				skill.projectileCenter = static_cast<SkillProjectileCenter>(i);
-				SaveSkillEditorDefinitions(editor, defs);
+				MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+				{
+					return SetFieldIfChanged(selected.projectileCenter, static_cast<SkillProjectileCenter>(i));
+				});
 				return true;
 			}
 		}
 
 		if (HandleRectButtonClick(SkillEditorToggleButtonRect(0, scroll)))
 		{
-			skill.projectileHoming = !skill.projectileHoming;
-			SaveSkillEditorDefinitions(editor, defs);
+			MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+				return ToggleField(selected.projectileHoming);
+			});
 			return true;
 		}
 		if (HandleRectButtonClick(SkillEditorToggleButtonRect(1, scroll)))
 		{
-			skill.projectileD360 = !skill.projectileD360;
-			SaveSkillEditorDefinitions(editor, defs);
+			MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+				return ToggleField(selected.projectileD360);
+			});
 			return true;
 		}
 
-		for (int32 row = 0; row < 16; ++row)
+		for (int32 row = 0; row < 19; ++row)
 		{
 			if (IsSkillEditorValueRowLocked(skill, row))
 			{
@@ -407,46 +489,8 @@ namespace LT3
 			}
 
 			const RectNumberStepperRects rects = SkillEditorValueStepperRects(row, scroll);
-			if (rects.value.leftClicked())
+			if (HandleSkillEditorValueStepperAction(editor, defs, row, rects))
 			{
-				editor.skillValueEditingRow = row;
-				editor.skillValueEditingText = U"{}"_fmt(GetSkillEditorValue(skill, row));
-				editor.skillValueStepMenuRow = none;
-				return true;
-			}
-			if (rects.step.leftClicked())
-			{
-				CycleSkillEditorValueStep(editor, row);
-				editor.statusText = U"Skill value step set to {}"_fmt(SkillEditorValueStep(editor, row));
-				return true;
-			}
-			if (rects.step.rightClicked() || rects.minus.rightClicked() || rects.plus.rightClicked())
-			{
-				editor.skillValueStepMenuRow = row;
-				editor.skillValueStepMenuPos = Cursor::PosF();
-				return true;
-			}
-
-			double step = SkillEditorValueStep(editor, row);
-			if (KeyShift.pressed())
-			{
-				step *= 10.0;
-			}
-			if (KeyControl.pressed())
-			{
-				step *= 0.1;
-			}
-
-			if (rects.minus.leftClicked())
-			{
-				ChangeSkillValue(skill, row, -step);
-				SaveSkillEditorDefinitions(editor, defs);
-				return true;
-			}
-			if (rects.plus.leftClicked())
-			{
-				ChangeSkillValue(skill, row, step);
-				SaveSkillEditorDefinitions(editor, defs);
 				return true;
 			}
 		}

@@ -53,6 +53,10 @@ burst_count = 1
 
 burst_interval_sec = 0
 
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
+
 spread_deg = 0
 
 arc_height = 0
@@ -127,6 +131,10 @@ start_degree_type = 0
 burst_count = 1
 
 burst_interval_sec = 0
+
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
 
 spread_deg = 0
 
@@ -203,6 +211,10 @@ burst_count = 1
 
 burst_interval_sec = 0
 
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
+
 spread_deg = 0
 
 arc_height = 72
@@ -278,6 +290,10 @@ burst_count = 1
 
 burst_interval_sec = 0
 
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
+
 spread_deg = 0
 
 arc_height = 72
@@ -331,9 +347,9 @@ image = "a_bulletN.png"
 
 image_diagonal = "a_bulletNW.png"
 
-projectile_speed = 520
+projectile_speed = 1001
 
-speed = 520
+speed = 1001
 
 movetype = "direct"
 
@@ -349,11 +365,15 @@ start_degree = 0
 
 start_degree_type = 0
 
-burst_count = 15
+burst_count = 9
 
-burst_interval_sec = 0.06
+burst_interval_sec = 0.03
 
-spread_deg = 105
+burst_fire_mode = "staggered"
+
+burst_order_mode = "random"
+
+spread_deg = 100
 
 arc_height = 72
 
@@ -427,6 +447,10 @@ start_degree_type = 0
 burst_count = 1
 
 burst_interval_sec = 0
+
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
 
 spread_deg = 0
 
@@ -502,6 +526,10 @@ start_degree_type = 0
 burst_count = 1
 
 burst_interval_sec = 0
+
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
 
 spread_deg = 0
 

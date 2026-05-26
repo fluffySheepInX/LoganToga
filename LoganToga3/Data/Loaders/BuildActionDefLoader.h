@@ -76,6 +76,7 @@ namespace LT3
             action.lineThicknessCells = Max<int32>(1, commandValue[BuildActionToml::KeyLineThicknessCells].getOr<int32>(1));
             action.maxLineCells = Max<int32>(1, commandValue[BuildActionToml::KeyMaxLineCells].getOr<int32>(12));
             action.useRightDragPlacement = commandValue[BuildActionToml::KeyUseRightDragPlacement].getOr<bool>(action.placementMode == BuildPlacementMode::Line);
+            action.enemyCanProduce = commandValue[BuildActionToml::KeyEnemyCanProduce].getOr<bool>(true);
 
             if (action.resultType == BuildActionResultType::Unit)
             {
@@ -186,6 +187,7 @@ namespace LT3
             tomlText += U"line_thickness_cells = {}\n"_fmt(Max(1, action.lineThicknessCells));
             tomlText += U"max_line_cells = {}\n"_fmt(Max(1, action.maxLineCells));
             tomlText += U"use_right_drag_placement = {}\n"_fmt(action.useRightDragPlacement ? U"true" : U"false");
+            tomlText += U"enemy_can_produce = {}\n"_fmt(action.enemyCanProduce ? U"true" : U"false");
             tomlText += U"[[commands.result]]\n";
             tomlText += U"type = \"" + BuildActionResultTypeToTomlValue(action.resultType) + U"\"\n";
             if (!spawnTags.isEmpty())

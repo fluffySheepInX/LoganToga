@@ -24,6 +24,31 @@ namespace LT3
 		Object,
 	};
 
+	enum class DecalShadowMode
+	{
+		Circle,
+		Silhouette,
+	};
+
+	enum class DecalShadowDirection
+	{
+		North,
+		NorthEast,
+		East,
+		SouthEast,
+		South,
+		SouthWest,
+		West,
+		NorthWest,
+	};
+
+	enum class DecalRenderKind
+	{
+		Ground,
+		Tall,
+		Overlay,
+	};
+
 	struct MapEditorAsset
 	{
 		FilePath path;
@@ -44,6 +69,13 @@ namespace LT3
 		double decalScaleMin = 1.0;
 		double decalScaleMax = 1.0;
 		bool decalBlocksPassage = false;
+		bool useDecalShadow = false;
+		DecalShadowMode decalShadowMode = DecalShadowMode::Circle;
+		DecalShadowDirection decalShadowDirection = DecalShadowDirection::SouthEast;
+		double decalShadowLength = 28.0;
+		double decalShadowOpacity = 0.35;
+		double decalShadowBlur = 6.0;
+		DecalRenderKind decalRenderKind = DecalRenderKind::Ground;
 	};
 
 	struct MapEditorDecalPlacement
@@ -114,6 +146,7 @@ namespace LT3
 		bool showResourcePanels = true;
 		bool showUnitList = false;
 		bool showBuildingEditor = false;
+		bool showUniqueEditor = false;
 		bool showCommandEditor = false;
 		bool showSkillEditor = false;
 		bool showAiEditor = false;
@@ -153,6 +186,9 @@ namespace LT3
 		bool skillSandboxAutoFire = true;
 		bool skillSandboxDraggingTarget = false;
 		int32 skillSandboxSkillIndex = -1;
+		int32 skillSandboxBurstShotsLeft = 0;
+		double skillSandboxBurstShotTimerSec = 0.0;
+		Array<int32> skillSandboxBurstOrder;
 		Array<SkillSandboxProjectile> skillSandboxProjectiles;
 		bool skillDefsDirty = false;
 		Optional<int32> skillContextMenuTargetIndex;
@@ -161,6 +197,19 @@ namespace LT3
 		int32 selectedUnitCatalogIndex = -1;
 		bool showUnitParameterEditor = false;
 		int32 unitParamEditorTab = 0;
+		int32 unitParamEditingRow = -1;
+		String unitParamEditingText;
+		Array<double> unitParamSteps;
+		Optional<int32> unitParamStepMenuRow;
+		Vec2 unitParamStepMenuPos{ 0.0, 0.0 };
+		int32 uniqueEditorValueEditingRow = -1;
+		String uniqueEditorValueEditingText;
+		Array<double> uniqueEditorValueSteps;
+		Optional<int32> uniqueEditorValueStepMenuRow;
+		Vec2 uniqueEditorValueStepMenuPos{ 0.0, 0.0 };
+		int32 uniqueSpeechEditingIndex = -1;
+		String uniqueSpeechEditingText;
+		double uniqueSpeechScroll = 0.0;
 		bool unitCatalogDirty = false;
 		bool uiLayoutEditEnabled = false;
 		double editorBarHiddenUntilSec = 0.0;
@@ -211,6 +260,8 @@ namespace LT3
 		Optional<Point> lastEraseCell;
 		bool showDecalEditor = false;
 		int32 decalEditorAssetIndex = InvalidMapEditorAsset;
+		int32 decalEditorTabIndex = 0;
+		double decalShadowEditorScroll = 0.0;
 		bool zOrderMode = false;
 		Optional<Point> zOrderDragStartCell;
 		Optional<Rect> zOrderSelectionRect;

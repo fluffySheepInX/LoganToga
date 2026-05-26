@@ -45,6 +45,15 @@ namespace LT3
 		def.projectileStartDegreeType = skillValue[U"start_degree_type"].getOr<int32>(def.projectileStartDegreeType);
 		def.burstCount = Clamp(skillValue[U"burst_count"].getOr<int32>(def.burstCount), 1, 32);
 		def.burstIntervalSec = Max(0.0, skillValue[U"burst_interval_sec"].getOr<double>(def.burstIntervalSec));
+		if (const Optional<String> fireMode = skillValue[U"burst_fire_mode"].getOpt<String>())
+		{
+			def.burstFireMode = ParseSkillBurstFireMode(*fireMode);
+		}
+		else
+		{
+			def.burstFireMode = (def.burstIntervalSec > 0.0) ? SkillBurstFireMode::Staggered : SkillBurstFireMode::Simultaneous;
+		}
+		def.burstOrderMode = ParseSkillBurstOrderMode(skillValue[U"burst_order_mode"].getOr<String>(U"sequential"));
 		def.spreadDeg = Clamp(skillValue[U"spread_deg"].getOr<double>(def.spreadDeg), 0.0, 180.0);
 		def.arcHeight = Max(0.0, skillValue[U"arc_height"].getOr<double>(def.arcHeight));
 		def.orbitRadius = Max(1.0, skillValue[U"orbit_radius"].getOr<double>(def.orbitRadius));

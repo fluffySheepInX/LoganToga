@@ -17,7 +17,7 @@ namespace LT3
 {
     inline bool HandleUnitBuildingEditorTabBar(MapEditorState& editor)
     {
-        const bool show = editor.showUnitParameterEditor || editor.showBuildingEditor;
+        const bool show = editor.showUnitParameterEditor || editor.showBuildingEditor || editor.showUniqueEditor;
         if (!show)
         {
             return false;
@@ -30,18 +30,20 @@ namespace LT3
         {
             editor.showUnitParameterEditor = false;
             editor.showBuildingEditor = false;
+            editor.showUniqueEditor = false;
             editor.statusText = U"Editor closed";
             return true;
         }
 
-        int32 selectedTab = editor.showBuildingEditor ? 1 : 0;
-        if (HandleIntTabButtons(selectedTab, 2, [&](int32 index)
+        int32 selectedTab = editor.showBuildingEditor ? 1 : (editor.showUniqueEditor ? 2 : 0);
+        if (HandleIntTabButtons(selectedTab, 3, [&](int32 index)
             {
                 return EditorUnitBuildingTabRect(editor, index);
             }))
         {
             editor.showUnitParameterEditor = (selectedTab == 0);
             editor.showBuildingEditor = (selectedTab == 1);
+            editor.showUniqueEditor = (selectedTab == 2);
             return true;
         }
 

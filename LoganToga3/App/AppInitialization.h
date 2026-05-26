@@ -1,8 +1,10 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../libs/AddonGaussian.h"
+# include "../Data/MusicSettings.h"
 # include "../Systems/EditorInputSystem.h"
 # include "App/AppStateData.h"
+# include "App/AppSceneSharedData.h"
 
 namespace LT3
 {
@@ -30,5 +32,11 @@ namespace LT3
 		InitializeAppUiState(app.ui);
 		InitializeAppRuntimeState(app.runtime, app.definitions);
 		SyncBattleWorldMapFromEditor(app.ui.mapEditor, app.runtime.world, app.definitions.defs);
+	}
+
+	inline void InitializeAppSharedData(AppSharedData& data)
+	{
+		Scene::SetBackground(ColorF{ 0.08, 0.14, 0.11 });
+		LoadMusicSettingsToml(data.musicSettings, data.musicEditor.statusText);
 	}
 }

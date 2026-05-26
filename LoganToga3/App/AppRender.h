@@ -6,7 +6,7 @@ namespace LT3
 {
 	inline void DrawAppRuntime(const AppRuntimeState& runtime, const AppDefinitionState& definitions, const AppUiState& ui, const Font& uiFont, const Font& titleFont)
 	{
-		DrawBattleWorld(runtime.world, definitions.defs, definitions.renderAssets, ui.mapEditor, ui.clickDebug, ui.mapEditor.showDebugInfo, uiFont, titleFont);
+		DrawBattleWorld(runtime.world, definitions.defs, definitions.renderAssets, runtime.resourceFlags, ui.mapEditor, ui.clickDebug, ui.mapEditor.showDebugInfo, uiFont, titleFont);
 	}
 
 	inline void DrawAppUi(const AppDefinitionState& definitions, AppUiState& ui, const Font& uiFont)

@@ -66,6 +66,18 @@ namespace LT3
         return ResolveBuildingChipPath(imageName);
     }
 
+    inline FilePath ResolveUnitPortraitPath(const String& imageName)
+    {
+        if (imageName.isEmpty())
+        {
+            return FilePath{};
+        }
+
+        return ResolveAssetPath(
+            U"000_Warehouse/000_DefaultGame/044_PortraitImage/" + imageName,
+            U"App/000_Warehouse/000_DefaultGame/044_PortraitImage/" + imageName);
+    }
+
     inline FilePath ResolveSystemImagePath(const String& imageName)
     {
         return ResolveAssetPath(

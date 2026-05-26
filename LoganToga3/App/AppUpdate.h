@@ -8,6 +8,51 @@
 
 namespace LT3
 {
+	inline constexpr double ResourceFlagRaiseDurationSec = 1.2;
+
+	inline void UpdateResourceFlagRuntimeState(AppRuntimeState& runtime)
+	{
+		SyncResourceFlagRuntimeState(runtime);
+
+		const size_t nodeCount = runtime.resourceFlags.nodes.size();
+		for (size_t i = 0; i < nodeCount; ++i)
+		{
+			auto& flagState = runtime.resourceFlags.nodes[i];
+			const Faction owner = (i < runtime.world.resourceNodes.owner.size())
+				? runtime.world.resourceNodes.owner[i]
+				: Faction::Neutral;
+			const double captureProgress = (i < runtime.world.resourceNodes.captureProgress.size())
+				? runtime.world.resourceNodes.captureProgress[i]
+				: 0.0;
+
+			if (owner != flagState.lastOwner)
+			{
+				flagState.lastOwner = owner;
+				flagState.displayFaction = owner;
+				flagState.raiseTimerSec = 0.0;
+				flagState.raising = (owner != Faction::Neutral && captureProgress >= 1.0);
+				flagState.visible = (owner != Faction::Neutral && captureProgress >= 1.0 && !flagState.raising);
+			}
+
+			if (flagState.raising)
+			{
+				flagState.raiseTimerSec = Min(ResourceFlagRaiseDurationSec, flagState.raiseTimerSec + Scene::DeltaTime());
+				if (flagState.raiseTimerSec >= ResourceFlagRaiseDurationSec)
+				{
+					flagState.raiseTimerSec = ResourceFlagRaiseDurationSec;
+					flagState.raising = false;
+					flagState.visible = true;
+				}
+			}
+			else if (owner == Faction::Neutral || captureProgress < 1.0)
+			{
+				flagState.visible = false;
+				flagState.displayFaction = owner;
+				flagState.raiseTimerSec = 0.0;
+			}
+		}
+	}
+
 	inline void ProcessInput(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
 	{
 		if (GaussianFSAddon::IsModalActive())
@@ -66,6 +111,7 @@ namespace LT3
 			const bool enemyAiStopped = (ui.debugNewGameRequest == DebugNewGameRequest::EnemyAiStopped);
 			ResetBattleRuntimeState(runtime, definitions.defs, enemyAiStopped);
 			SyncBattleWorldMapFromEditor(ui.mapEditor, runtime.world, definitions.defs);
+			SyncResourceFlagRuntimeState(runtime);
 			ui.debugNewGameRequest = DebugNewGameRequest::None;
 		}
 
@@ -74,6 +120,8 @@ namespace LT3
 		{
 			UpdateBattleWorld(runtime.world, definitions.defs, Scene::DeltaTime());
 		}
+
+		UpdateResourceFlagRuntimeState(runtime);
 	}
 
 	inline void UpdateApp(AppState& app)

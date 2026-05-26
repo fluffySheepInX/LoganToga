@@ -64,7 +64,7 @@ namespace LT3
 		{
 			hoverHelpText = SkillEditorValueHelpTexts()[row];
 		}
-		const bool showNoteIcon = locked || (row == 14 && skill.projectileMotion == SkillProjectileMotion::Swing);
+		const bool showNoteIcon = locked || (row == 17 && skill.projectileMotion == SkillProjectileMotion::Swing);
 		if (showNoteIcon)
 		{
 			const RectF noteRect = SkillEditorValueNoteIconRect(row, scroll);
@@ -145,8 +145,13 @@ namespace LT3
 			}
 		}
 
-		uiFont(U"cool {:.2f}s  shots {}"_fmt(editor.skillSandboxCooldownLeftSec, editor.skillSandboxProjectiles.size()))
+		uiFont(U"cool {:.2f}s  shots {}  {}"_fmt(
+			editor.skillSandboxCooldownLeftSec,
+			editor.skillSandboxProjectiles.size(),
+			skill.burstFireMode == SkillBurstFireMode::Staggered ? U"stagger" : U"simul"))
 			.draw(11, arena.x + 12.0, arena.y + 10.0, ColorF{ 1, 1, 1, 0.62 });
+		uiFont(U"order {}"_fmt(skill.burstOrderMode == SkillBurstOrderMode::Random ? U"random" : U"seq"))
+			.draw(11, arena.x + 12.0, arena.y + 26.0, ColorF{ 1, 1, 1, 0.52 });
 		uiFont(U"Sandbagはドラッグで移動できます").draw(11, arena.x + 12.0, arena.y + arena.h - 24.0, ColorF{ 1, 1, 1, 0.56 });
 	}
 
@@ -331,17 +336,20 @@ namespace LT3
 		DrawSkillEditorValueRow(uiFont, editor, skill, 2, U"dmg", U"{}"_fmt(skill.damage), scroll, hoverHelpText, hoverNoteText);
 		DrawSkillEditorValueRow(uiFont, editor, skill, 3, U"speed", U"{:.1f}"_fmt(skill.projectileSpeed), scroll, hoverHelpText, hoverNoteText);
 		DrawSkillEditorValueRow(uiFont, editor, skill, 4, U"burst", U"{}"_fmt(skill.burstCount), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 5, U"spread", U"{:.1f}"_fmt(skill.spreadDeg), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 6, U"arc", U"{:.1f}"_fmt(skill.arcHeight), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 7, U"radius", U"{:.1f}"_fmt(skill.orbitRadius), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 8, U"circleV", U"{:.1f}"_fmt(skill.orbitAngularSpeedDeg), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 9, U"life", U"{:.2f}"_fmt(skill.orbitDurationSec), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 10, U"stDeg", U"{:.1f}"_fmt(skill.projectileStartDegree), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 11, U"degType", U"{}"_fmt(skill.projectileStartDegreeType), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 12, U"w", U"{:.1f}"_fmt(skill.projectileWidth), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 13, U"h", U"{:.1f}"_fmt(skill.projectileHeight), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 14, U"swingR", U"{:.1f}"_fmt(skill.swingRadius), scroll, hoverHelpText, hoverNoteText);
-		DrawSkillEditorValueRow(uiFont, editor, skill, 15, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 5, U"burstMode", (skill.burstFireMode == SkillBurstFireMode::Staggered ? U"stagger" : U"simul"), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 6, U"burstOrd", (skill.burstOrderMode == SkillBurstOrderMode::Random ? U"random" : U"seq"), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 7, U"burstInt", U"{:.2f}"_fmt(skill.burstIntervalSec), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 8, U"spread", U"{:.1f}"_fmt(skill.spreadDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 9, U"arc", U"{:.1f}"_fmt(skill.arcHeight), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 10, U"radius", U"{:.1f}"_fmt(skill.orbitRadius), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 11, U"circleV", U"{:.1f}"_fmt(skill.orbitAngularSpeedDeg), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 12, U"life", U"{:.2f}"_fmt(skill.orbitDurationSec), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 13, U"stDeg", U"{:.1f}"_fmt(skill.projectileStartDegree), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 14, U"degType", U"{}"_fmt(skill.projectileStartDegreeType), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 15, U"w", U"{:.1f}"_fmt(skill.projectileWidth), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 16, U"h", U"{:.1f}"_fmt(skill.projectileHeight), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 17, U"swingR", U"{:.1f}"_fmt(skill.swingRadius), scroll, hoverHelpText, hoverNoteText);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 18, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverNoteText);
 
 		if (editor.skillValueStepMenuRow)
 		{

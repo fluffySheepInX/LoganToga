@@ -10,6 +10,65 @@
 
 namespace LT3
 {
+    inline String DecalShadowModeToTomlValue(DecalShadowMode mode)
+    {
+        return (mode == DecalShadowMode::Silhouette) ? U"silhouette" : U"circle";
+    }
+
+    inline DecalShadowMode ParseDecalShadowMode(const String& value)
+    {
+        return (value.lowercased() == U"silhouette") ? DecalShadowMode::Silhouette : DecalShadowMode::Circle;
+    }
+
+    inline String DecalShadowDirectionToTomlValue(DecalShadowDirection direction)
+    {
+        switch (direction)
+        {
+        case DecalShadowDirection::North: return U"north";
+        case DecalShadowDirection::NorthEast: return U"north_east";
+        case DecalShadowDirection::East: return U"east";
+        case DecalShadowDirection::SouthEast: return U"south_east";
+        case DecalShadowDirection::South: return U"south";
+        case DecalShadowDirection::SouthWest: return U"south_west";
+        case DecalShadowDirection::West: return U"west";
+        case DecalShadowDirection::NorthWest: return U"north_west";
+        default: return U"south_east";
+        }
+    }
+
+    inline DecalShadowDirection ParseDecalShadowDirection(const String& value)
+    {
+        const String lowered = value.lowercased();
+        if (lowered == U"north") return DecalShadowDirection::North;
+        if (lowered == U"north_east" || lowered == U"northeast") return DecalShadowDirection::NorthEast;
+        if (lowered == U"east") return DecalShadowDirection::East;
+        if (lowered == U"south_east" || lowered == U"southeast") return DecalShadowDirection::SouthEast;
+        if (lowered == U"south") return DecalShadowDirection::South;
+        if (lowered == U"south_west" || lowered == U"southwest") return DecalShadowDirection::SouthWest;
+        if (lowered == U"west") return DecalShadowDirection::West;
+        if (lowered == U"north_west" || lowered == U"northwest") return DecalShadowDirection::NorthWest;
+        return DecalShadowDirection::SouthEast;
+    }
+
+    inline String DecalRenderKindToTomlValue(DecalRenderKind kind)
+    {
+        switch (kind)
+        {
+        case DecalRenderKind::Tall: return U"tall";
+        case DecalRenderKind::Overlay: return U"overlay";
+        case DecalRenderKind::Ground:
+        default: return U"ground";
+        }
+    }
+
+    inline DecalRenderKind ParseDecalRenderKind(const String& value)
+    {
+        const String lowered = value.lowercased();
+        if (lowered == U"tall") return DecalRenderKind::Tall;
+        if (lowered == U"overlay") return DecalRenderKind::Overlay;
+        return DecalRenderKind::Ground;
+    }
+
     inline void LoadMapEditorAssets(MapEditorState& editor)
     {
         editor.assetDirectory = ResolveMapEditorAssetDirectory();
@@ -164,6 +223,13 @@ namespace LT3
                             asset.useRandomDecalScale = decalValue[U"decal_scale_random"].getOr<bool>(asset.useRandomDecalScale);
                             asset.decalScaleMin = decalValue[U"decal_scale_min"].getOr<double>(asset.decalScaleMin);
                             asset.decalScaleMax = decalValue[U"decal_scale_max"].getOr<double>(asset.decalScaleMax);
+                            asset.useDecalShadow = decalValue[U"decal_shadow_enabled"].getOr<bool>(asset.useDecalShadow);
+                            asset.decalShadowMode = ParseDecalShadowMode(decalValue[U"decal_shadow_mode"].getOr<String>(DecalShadowModeToTomlValue(asset.decalShadowMode)));
+                            asset.decalShadowDirection = ParseDecalShadowDirection(decalValue[U"decal_shadow_direction"].getOr<String>(DecalShadowDirectionToTomlValue(asset.decalShadowDirection)));
+                            asset.decalShadowLength = decalValue[U"decal_shadow_length"].getOr<double>(asset.decalShadowLength);
+                            asset.decalShadowOpacity = decalValue[U"decal_shadow_opacity"].getOr<double>(asset.decalShadowOpacity);
+                            asset.decalShadowBlur = decalValue[U"decal_shadow_blur"].getOr<double>(asset.decalShadowBlur);
+                            asset.decalRenderKind = ParseDecalRenderKind(decalValue[U"decal_render_kind"].getOr<String>(DecalRenderKindToTomlValue(asset.decalRenderKind)));
                             NormalizeDecalSettings(asset);
                             cell.decals << MapEditorDecalPlacement{
                                 decalAssetIndex,
@@ -296,6 +362,13 @@ namespace LT3
                     writer << U"decal_scale_random = " << (asset.useRandomDecalScale ? U"true" : U"false") << U"\n";
                     writer << U"decal_scale_min = " << asset.decalScaleMin << U"\n";
                     writer << U"decal_scale_max = " << asset.decalScaleMax << U"\n";
+                    writer << U"decal_shadow_enabled = " << (asset.useDecalShadow ? U"true" : U"false") << U"\n";
+                    writer << U"decal_shadow_mode = \"" << TomlEscape(DecalShadowModeToTomlValue(asset.decalShadowMode)) << U"\"\n";
+                    writer << U"decal_shadow_direction = \"" << TomlEscape(DecalShadowDirectionToTomlValue(asset.decalShadowDirection)) << U"\"\n";
+                    writer << U"decal_shadow_length = " << asset.decalShadowLength << U"\n";
+                    writer << U"decal_shadow_opacity = " << asset.decalShadowOpacity << U"\n";
+                    writer << U"decal_shadow_blur = " << asset.decalShadowBlur << U"\n";
+                    writer << U"decal_render_kind = \"" << TomlEscape(DecalRenderKindToTomlValue(asset.decalRenderKind)) << U"\"\n";
                     writer << U"decal_applied_opacity = " << decal.opacity << U"\n";
                     writer << U"decal_applied_scale = " << decal.scale << U"\n";
                 }

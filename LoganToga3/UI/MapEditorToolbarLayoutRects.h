@@ -335,6 +335,12 @@ namespace LT3
 		return RectF{ viewport.x + 12.0, viewport.y + 168.0 - scroll, Min(340.0, viewport.w - 24.0), 30.0 };
 	}
 
+	inline RectF EditorCommandEnemyCanProduceRect(double scroll = 0.0)
+	{
+		const RectF placementRect = EditorCommandPlacementToggleRect(scroll);
+		return RectF{ placementRect.x, placementRect.y + placementRect.h + 26.0, placementRect.w, 28.0 };
+	}
+
 	inline RectF EditorCommandSpawnCountRowRect(double scroll = 0.0)
 	{
 		const RectF viewport = EditorCommandInspectTopViewportRect();
@@ -358,8 +364,9 @@ namespace LT3
 
 	inline RectF EditorCommandPlacementModePointRect(double scroll = 0.0)
 	{
+		const RectF enemyCanProduceRect = EditorCommandEnemyCanProduceRect(scroll);
 		const RectF viewport = EditorCommandInspectTopViewportRect();
-		return RectF{ viewport.x + 12.0, viewport.y + 224.0 - scroll, Min(164.0, (viewport.w - 36.0) * 0.5), 28.0 };
+		return RectF{ viewport.x + 12.0, enemyCanProduceRect.y + enemyCanProduceRect.h + 26.0, Min(164.0, (viewport.w - 36.0) * 0.5), 28.0 };
 	}
 
 	inline RectF EditorCommandPlacementModeLineRect(double scroll = 0.0)
@@ -374,8 +381,9 @@ namespace LT3
 
 	inline RectF EditorCommandLineDragPlacementToggleRect(double scroll = 0.0)
 	{
+		const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 		const RectF viewport = EditorCommandInspectTopViewportRect();
-		return RectF{ viewport.x + 12.0, viewport.y + 278.0 - scroll, Min(340.0, viewport.w - 24.0), 28.0 };
+		return RectF{ viewport.x + 12.0, placementModePointRect.y + placementModePointRect.h + 26.0, Min(340.0, viewport.w - 24.0), 28.0 };
 	}
 
 	inline RectF EditorCommandLineAxisAutoRect(double scroll = 0.0)
@@ -383,7 +391,8 @@ namespace LT3
 		const RectF viewport = EditorCommandInspectTopViewportRect();
 		const double available = Max(120.0, viewport.w - 24.0);
 		const double width = Min(108.0, (available - 16.0) / 3.0);
-		return RectF{ viewport.x + 12.0, viewport.y + 332.0 - scroll, width, 28.0 };
+		const RectF lineDragRect = EditorCommandLineDragPlacementToggleRect(scroll);
+		return RectF{ viewport.x + 12.0, lineDragRect.y + lineDragRect.h + 26.0, width, 28.0 };
 	}
 
 	inline RectF EditorCommandLineAxisHorizontalRect(double scroll = 0.0)
@@ -401,7 +410,9 @@ namespace LT3
 	inline RectF EditorCommandCostRowRect(int32 index, double scroll = 0.0)
 	{
 		const RectF viewport = EditorCommandInspectTopViewportRect();
-		return RectF{ viewport.x + 12.0, viewport.y + 380.0 + index * 30.0 - scroll, Min(340.0, viewport.w - 24.0), 26.0 };
+		const RectF lineAxisBaseRect = EditorCommandLineAxisAutoRect(scroll);
+		const double baseY = lineAxisBaseRect.y + lineAxisBaseRect.h + 20.0;
+		return RectF{ viewport.x + 12.0, baseY + index * 30.0, Min(340.0, viewport.w - 24.0), 26.0 };
 	}
 
 	inline RectF EditorCommandCostButtonRect(const RectF& row, int32 buttonIndex)

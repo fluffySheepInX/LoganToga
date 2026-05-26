@@ -37,6 +37,7 @@ namespace LT3
 		inline constexpr auto KeyLineThicknessCells = U"line_thickness_cells";
 		inline constexpr auto KeyMaxLineCells = U"max_line_cells";
 		inline constexpr auto KeyUseRightDragPlacement = U"use_right_drag_placement";
+		inline constexpr auto KeyEnemyCanProduce = U"enemy_can_produce";
 	}
 
 	inline bool EqualsIgnoreCaseOwnerTag(const String& a, const String& b)

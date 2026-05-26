@@ -126,6 +126,50 @@ namespace LT3
 		return SkillProjectileCenter::Off;
 	}
 
+	inline String SkillBurstFireModeToTag(SkillBurstFireMode mode)
+	{
+		switch (mode)
+		{
+		case SkillBurstFireMode::Staggered:
+			return U"staggered";
+		default:
+			return U"simultaneous";
+		}
+	}
+
+	inline SkillBurstFireMode ParseSkillBurstFireMode(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"staggered" || lowered == U"interval" || lowered == U"sequential")
+		{
+			return SkillBurstFireMode::Staggered;
+		}
+
+		return SkillBurstFireMode::Simultaneous;
+	}
+
+	inline String SkillBurstOrderModeToTag(SkillBurstOrderMode mode)
+	{
+		switch (mode)
+		{
+		case SkillBurstOrderMode::Random:
+			return U"random";
+		default:
+			return U"sequential";
+		}
+	}
+
+	inline SkillBurstOrderMode ParseSkillBurstOrderMode(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"random" || lowered == U"shuffle")
+		{
+			return SkillBurstOrderMode::Random;
+		}
+
+		return SkillBurstOrderMode::Sequential;
+	}
+
 	inline bool ReadSkillBoolSwitch(const TOMLValue& value, bool fallback)
 	{
 		if (const Optional<bool> boolValue = value.getOpt<bool>())

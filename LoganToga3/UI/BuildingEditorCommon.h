@@ -4,6 +4,7 @@
 # include "../Data/BattleAssetPaths.h"
 # include "../Data/UnitCatalog.h"
 # include "../Data/BuildLineIconOverrides.h"
+# include "EditorMutationHelpers.h"
 # include "RectUiHelpers.h"
 
 namespace LT3
@@ -126,30 +127,23 @@ namespace LT3
 
 	inline void ChangeSelectedUnitPointOffset(MapEditorState& editor, UnitCatalog& catalog, Point UnitCatalogEntry::* field, const Point& delta)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		Point& offset = entry.*field;
-		offset.x = Clamp(offset.x + delta.x, -128, 128);
-		offset.y = Clamp(offset.y + delta.y, -128, 128);
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			Point& offset = entry.*field;
+			const Point next{
+				Clamp(offset.x + delta.x, -128, 128),
+				Clamp(offset.y + delta.y, -128, 128)
+			};
+			return SetFieldIfChanged(offset, next);
+		});
 	}
 
 	inline void ResetSelectedUnitPointOffset(MapEditorState& editor, UnitCatalog& catalog, Point UnitCatalogEntry::* field)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		entry.*field = Point{ 0, 0 };
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return SetFieldIfChanged(entry.*field, Point{ 0, 0 });
+		});
 	}
 
 	inline void ChangeSelectedUnitVisualOffset(MapEditorState& editor, UnitCatalog& catalog, const Point& delta)
@@ -252,69 +246,37 @@ namespace LT3
 
 	inline void SetSelectedUnitPlacementAnchor(MapEditorState& editor, UnitCatalog& catalog, UnitPlacementAnchor anchor)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		if (entry.placementAnchor == anchor)
-		{
-			return;
-		}
-
-		entry.placementAnchor = anchor;
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return SetFieldIfChanged(entry.placementAnchor, anchor);
+		});
 	}
 
 	inline void SetSelectedUnitRenderSizeMode(MapEditorState& editor, UnitCatalog& catalog, UnitRenderSizeMode mode)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		if (entry.renderSizeMode == mode)
-		{
-			return;
-		}
-
-		entry.renderSizeMode = mode;
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return SetFieldIfChanged(entry.renderSizeMode, mode);
+		});
 	}
 
 	inline void SetSelectedUnitArtWidthReference(MapEditorState& editor, UnitCatalog& catalog, UnitArtWidthReference reference)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		if (entry.artWidthReference == reference)
-		{
-			return;
-		}
-
-		entry.artWidthReference = reference;
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return SetFieldIfChanged(entry.artWidthReference, reference);
+		});
 	}
 
 	inline void ChangeSelectedUnitArtWidthValue(MapEditorState& editor, UnitCatalog& catalog, double delta)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		entry.artWidthValue = Clamp(entry.artWidthValue + delta, 0.1, 8.0);
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return AdjustField(entry.artWidthValue, delta, [](double value)
+			{
+				return Clamp(value, 0.1, 8.0);
+			});
+		});
 	}
 
 	inline double GetSelectedUnitArtWidthValueForTab(const UnitCatalogEntry& entry, int32 tab)
@@ -337,57 +299,50 @@ namespace LT3
 
 	inline void ChangeSelectedUnitArtWidthValueForTab(MapEditorState& editor, UnitCatalog& catalog, int32 tab, double delta)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
+			auto adjust = [&](double& value)
+			{
+				return AdjustField(value, delta, [](double raw)
+				{
+					return Clamp(raw, 0.1, 8.0);
+				});
+			};
 
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		if (tab == 2)
-		{
-			entry.artWidthValueLineHorizontal = Clamp(entry.artWidthValueLineHorizontal + delta, 0.1, 8.0);
-		}
-		else if (tab == 3)
-		{
-			entry.artWidthValueLineDiagUpRight = Clamp(entry.artWidthValueLineDiagUpRight + delta, 0.1, 8.0);
-		}
-		else if (tab == 4)
-		{
-			entry.artWidthValueLineDiagUpLeft = Clamp(entry.artWidthValueLineDiagUpLeft + delta, 0.1, 8.0);
-		}
-		else
-		{
-			entry.artWidthValue = Clamp(entry.artWidthValue + delta, 0.1, 8.0);
-		}
+			if (tab == 2)
+			{
+				return adjust(entry.artWidthValueLineHorizontal);
+			}
+			if (tab == 3)
+			{
+				return adjust(entry.artWidthValueLineDiagUpRight);
+			}
+			if (tab == 4)
+			{
+				return adjust(entry.artWidthValueLineDiagUpLeft);
+			}
 
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return adjust(entry.artWidthValue);
+		});
 	}
 
 	inline void ChangeSelectedUnitGameplaySizeMul(MapEditorState& editor, UnitCatalog& catalog, double delta)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		entry.gameplaySizeMul = Clamp(entry.gameplaySizeMul + delta, 0.2, 8.0);
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return AdjustField(entry.gameplaySizeMul, delta, [](double value)
+			{
+				return Clamp(value, 0.2, 8.0);
+			});
+		});
 	}
 
 	inline void ToggleSelectedUnitArtKeepAspect(MapEditorState& editor, UnitCatalog& catalog)
 	{
-		if (!HasSelectedCatalogEntry(editor, catalog))
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
 		{
-			return;
-		}
-
-		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
-		entry.artKeepAspect = !entry.artKeepAspect;
-		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+			return ToggleField(entry.artKeepAspect);
+		});
 	}
 
 	inline void DrawBuildingEditorButton(const RectF& rect, StringView text, const Font& uiFont)

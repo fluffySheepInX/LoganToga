@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include "MapEditorUnitCatalogEditorInput.ParamEditor.h"
+# include "MapEditorUnitCatalogEditorInput.UniqueEditor.h"
 
 namespace LT3
 {
@@ -33,6 +34,11 @@ namespace LT3
 		}
 
 		if (ProcessUnitCatalogParamEditorInput(editor, catalog, consumed))
+		{
+			return true;
+		}
+
+		if (ProcessUnitCatalogUniqueEditorInput(editor, catalog, consumed))
 		{
 			return true;
 		}

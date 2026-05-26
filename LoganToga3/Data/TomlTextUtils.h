@@ -16,6 +16,18 @@ namespace LT3
 			{
 				result += U"\\\"";
 			}
+			else if (ch == U'\n')
+			{
+				result += U"\\n";
+			}
+			else if (ch == U'\r')
+			{
+				result += U"\\r";
+			}
+			else if (ch == U'\t')
+			{
+				result += U"\\t";
+			}
 			else
 			{
 				result += ch;

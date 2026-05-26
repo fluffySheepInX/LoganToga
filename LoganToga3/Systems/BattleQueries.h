@@ -9,6 +9,7 @@ namespace LT3
     {
         BuildActionDefId actionId = InvalidBuildActionDefId;
         bool affordable = false;
+        bool blockedByUnique = false;
     };
 
     inline bool IsValidUnit(const BattleWorld& world, UnitId unit)
@@ -215,6 +216,126 @@ namespace LT3
             && CanAffordBuildAction(world, defs, action);
     }
 
+    inline UnitDefId ResolvePrimarySpawnUnitForQuery(const BuildActionDef& action, const DefinitionStores& defs)
+    {
+        if (action.spawnUnit != InvalidUnitDefId)
+        {
+            return action.spawnUnit;
+        }
+
+        for (const auto spawnUnit : action.spawnUnits)
+        {
+            if (spawnUnit < defs.units.size())
+            {
+                return spawnUnit;
+            }
+        }
+
+        for (const auto& spawnTag : action.spawnTags)
+        {
+            if (defs.unitByTag.contains(spawnTag))
+            {
+                return defs.unitByTag.at(spawnTag);
+            }
+        }
+
+        if (!action.spawnTag.isEmpty() && defs.unitByTag.contains(action.spawnTag))
+        {
+            return defs.unitByTag.at(action.spawnTag);
+        }
+
+        return InvalidUnitDefId;
+    }
+
+    inline bool HasUnitDefEverSpawnedInBattle(const BattleWorld& world, UnitDefId unitDef)
+    {
+        if (unitDef == InvalidUnitDefId)
+        {
+            return false;
+        }
+
+        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        {
+            if (unit < world.units.defId.size() && world.units.defId[unit] == unitDef)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    inline bool HasAliveUnitDefInBattle(const BattleWorld& world, UnitDefId unitDef)
+    {
+        if (unitDef == InvalidUnitDefId)
+        {
+            return false;
+        }
+
+        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        {
+            if (IsValidUnit(world, unit) && unit < world.units.defId.size() && world.units.defId[unit] == unitDef)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    inline bool IsUniqueUnitQueuedOrPending(const BattleWorld& world, BuildActionDefId actionId, UnitDefId unitDef)
+    {
+        if (unitDef == InvalidUnitDefId)
+        {
+            return false;
+        }
+
+        for (UnitId builder = 0; builder < world.buildQueues.entries.size(); ++builder)
+        {
+            if (builder < world.buildQueues.hasPendingEntry.size() && world.buildQueues.hasPendingEntry[builder] && world.buildQueues.pendingEntry[builder].actionId == actionId)
+            {
+                return true;
+            }
+
+            for (const auto& queued : world.buildQueues.entries[builder])
+            {
+                if (queued.actionId == actionId)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    inline bool IsUniqueBuildActionBlocked(const BattleWorld& world, const DefinitionStores& defs, BuildActionDefId actionId)
+    {
+        if (actionId == InvalidBuildActionDefId || actionId >= defs.buildActions.size())
+        {
+            return false;
+        }
+
+        const UnitDefId unitDef = ResolvePrimarySpawnUnitForQuery(defs.buildActions[actionId], defs);
+        if (unitDef == InvalidUnitDefId || unitDef >= defs.units.size())
+        {
+            return false;
+        }
+
+        const UnitDef& def = defs.units[unitDef];
+        if (!def.unique)
+        {
+            return false;
+        }
+
+        if (HasAliveUnitDefInBattle(world, unitDef) || IsUniqueUnitQueuedOrPending(world, actionId, unitDef))
+        {
+            return true;
+        }
+
+        return !def.uniqueRespawnAllowed && HasUnitDefEverSpawnedInBattle(world, unitDef);
+    }
+
     inline const Array<QueuedBuildAction>& GetQueuedBuildActionEntries(const BattleWorld& world, UnitId unit)
     {
         static const Array<QueuedBuildAction> empty;
@@ -236,7 +357,9 @@ namespace LT3
             const BuildActionDef& action = defs.buildActions[i];
             if (CanUseBuildAction(world, defs, unit, action))
             {
-                visibleActions << BuildActionUiState{ static_cast<BuildActionDefId>(i), CanAffordBuildAction(world, defs, action) };
+                const BuildActionDefId actionId = static_cast<BuildActionDefId>(i);
+                const bool blockedByUnique = IsUniqueBuildActionBlocked(world, defs, actionId);
+                visibleActions << BuildActionUiState{ actionId, CanAffordBuildAction(world, defs, action) && !blockedByUnique, blockedByUnique };
             }
         }
 
