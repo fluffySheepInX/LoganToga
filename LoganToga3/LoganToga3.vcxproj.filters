@@ -1302,5 +1302,11 @@
     <ClInclude Include="Data\MusicManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="App\BattleNotificationState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleNotifications.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

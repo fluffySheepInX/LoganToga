@@ -78,6 +78,18 @@ namespace LT3
             U"App/000_Warehouse/000_DefaultGame/044_PortraitImage/" + imageName);
     }
 
+    inline FilePath ResolveUnitVoicePath(const String& fileName)
+    {
+        if (fileName.isEmpty())
+        {
+            return FilePath{};
+        }
+
+        return ResolveAssetPath(
+            U"000_Warehouse/000_DefaultGame/045_Voice/" + fileName,
+            U"App/000_Warehouse/000_DefaultGame/045_Voice/" + fileName);
+    }
+
     inline FilePath ResolveSystemImagePath(const String& imageName)
     {
         return ResolveAssetPath(

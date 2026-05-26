@@ -132,7 +132,8 @@ namespace LT3
             DrawRectListRow(row, selected);
             DrawResourceKindIcon(editor, node.kind, Vec2{ row.x + 18.0, row.y + 23.0 }, 18.0);
             uiFont(U"{} ({}, {})"_fmt(ResourceKindLabel(node.kind), node.cell.x, node.cell.y)).draw(12, row.x + 30.0, row.y + 6.0, Palette::White);
-            uiFont(U"amount:{}  income:{}"_fmt(node.amount, node.incomePerSec)).draw(11, row.x + 30.0, row.y + 24.0, Palette::Lightgray);
+            const String nodeMode = node.oneShot ? U"one-shot" : U"income";
+            uiFont(U"amount:{}  {}:{}  cap:{:.1f}s"_fmt(node.amount, nodeMode, node.incomePerSec, node.captureTimeSec)).draw(11, row.x + 30.0, row.y + 24.0, Palette::Lightgray);
         }
 
         const double contentHeight = EditorResourceNodeListContentHeight(editor);
@@ -186,7 +187,35 @@ namespace LT3
         const RectF incomeRowRect{ incomeDecRect.x, incomeDecRect.y - 2.0, incomeIncRect.x + incomeIncRect.w - incomeDecRect.x, incomeDecRect.h + 4.0 };
         DrawRectValueAdjustRow(incomeRowRect, U"Income / sec", U"{}"_fmt(node.incomePerSec), incomeDecRect, incomeIncRect, uiFont);
 
+        DrawRectCheckRow(EditorResourceNodeOneShotRect(), U"一回だけ", node.oneShot, uiFont, 12);
+
+        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects();
+        uiFont(U"占領時間").draw(13, panel.x + 24.0, captureTimeStepper.value.y - 18.0, Palette::Gold);
+        DrawRectNumberStepper(captureTimeStepper,
+            (editor.resourceCaptureTimeEditingIndex == editor.selectedResourceNodeIndex)
+                ? editor.resourceCaptureTimeEditingText
+                : U"{:.1f}s"_fmt(node.captureTimeSec),
+            U"{}"_fmt(ResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex)),
+            editor.resourceCaptureTimeEditingIndex == editor.selectedResourceNodeIndex,
+            editor.resourceCaptureTimeStepMenuIndex && *editor.resourceCaptureTimeStepMenuIndex == editor.selectedResourceNodeIndex,
+            true,
+            uiFont);
+
         DrawRectIconButton(removeRect, U"Remove", uiFont, 13, ColorF{ 0.12, 0.05, 0.05, 0.95 }, 1.0, Palette::White);
+
+        if (editor.resourceCaptureTimeStepMenuIndex && *editor.resourceCaptureTimeStepMenuIndex == editor.selectedResourceNodeIndex)
+        {
+            const Array<double>& steps = ResourceCaptureTimeStepOptions();
+            const Vec2 menuPos = editor.resourceCaptureTimeStepMenuPos;
+            const RectF menuRect{ menuPos.x, menuPos.y, 88.0, 8.0 + static_cast<double>(steps.size()) * 22.0 };
+            menuRect.draw(ColorF{ 0.06, 0.08, 0.14, 0.97 }).drawFrame(1, ColorF{ 1, 1, 1, 0.30 });
+            for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+            {
+                const RectF item{ menuRect.x + 4.0, menuRect.y + 4.0 + i * 22.0, menuRect.w - 8.0, 20.0 };
+                item.draw(item.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
+                uiFont(U"step {}"_fmt(steps[i])).draw(11, item.x + 6.0, item.y + 2.0, Palette::White);
+            }
+        }
     }
 
     inline void DrawMapEditorResourceValidation(const MapEditorState& editor, const Font& uiFont)

@@ -106,6 +106,8 @@ namespace LT3
 		Point cell{ 0, 0 };
 		int32 amount = 700;
 		int32 incomePerSec = 5;
+		bool oneShot = false;
+		double captureTimeSec = 1.5;
 	};
 
 	struct MapEditorPerlinStackItem
@@ -239,6 +241,11 @@ namespace LT3
 		double resourceNodeListScroll = 0.0;
 		bool resourceNodeDragging = false;
 		int32 resourceNodeFilterKind = -1;
+		int32 resourceCaptureTimeEditingIndex = -1;
+		String resourceCaptureTimeEditingText;
+		Array<double> resourceCaptureTimeSteps;
+		Optional<int32> resourceCaptureTimeStepMenuIndex;
+		Vec2 resourceCaptureTimeStepMenuPos{ 0.0, 0.0 };
 		Optional<ResourceKind> resourcePlacementDragKind;
 		HashTable<String, Texture> resourceIconTextures;
 		bool showStarToolMenu = false;

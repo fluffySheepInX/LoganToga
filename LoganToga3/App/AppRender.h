@@ -1,12 +1,14 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "App/AppStateData.h"
+# include "../UI/BattleNotifications.h"
 
 namespace LT3
 {
 	inline void DrawAppRuntime(const AppRuntimeState& runtime, const AppDefinitionState& definitions, const AppUiState& ui, const Font& uiFont, const Font& titleFont)
 	{
 		DrawBattleWorld(runtime.world, definitions.defs, definitions.renderAssets, runtime.resourceFlags, ui.mapEditor, ui.clickDebug, ui.mapEditor.showDebugInfo, uiFont, titleFont);
+		DrawBattleNotifications(runtime.notifications, uiFont);
 	}
 
 	inline void DrawAppUi(const AppDefinitionState& definitions, AppUiState& ui, const Font& uiFont)

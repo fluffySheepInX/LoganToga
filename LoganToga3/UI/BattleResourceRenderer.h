@@ -198,6 +198,8 @@ namespace LT3
     {
         const Vec2 pos = QuarterTileFaceCenterScreen(world.resourceNodes.position[index]);
         const bool depleted = world.resourceNodes.amount[index] <= 0;
+        const bool oneShot = index < world.resourceNodes.oneShot.size() && world.resourceNodes.oneShot[index];
+        const bool collected = index < world.resourceNodes.collected.size() && world.resourceNodes.collected[index];
         const ResourceDef& def = defs.resources[world.resourceNodes.defId[index]];
         ColorF textColor{ 1.0, 1.0, 1.0 };
         if (depleted)
@@ -208,6 +210,13 @@ namespace LT3
         if (!depleted)
         {
             DrawResourceIcon(def, assets, pos, 30.0);
+            if (oneShot && collected)
+            {
+                const Vec2 crossOffset{ 12.0, -12.0 };
+                Line{ pos + Vec2{ -12.0, -12.0 } + crossOffset, pos + Vec2{ 12.0, 12.0 } + crossOffset }.draw(4.0, Palette::Red);
+                Line{ pos + Vec2{ -12.0, 12.0 } + crossOffset, pos + Vec2{ 12.0, -12.0 } + crossOffset }.draw(4.0, Palette::Red);
+                Circle{ pos + crossOffset, 15.0 }.drawFrame(2.0, ColorF{ 0.15, 0.0, 0.0, 0.75 });
+            }
         }
 
         if (resourceFlags && index < resourceFlags->nodes.size())
@@ -238,11 +247,15 @@ namespace LT3
             RectF{ gaugeBack.pos, gaugeBack.w * captureRate, gaugeBack.h }.draw(gaugeColor);
             gaugeBack.drawFrame(1.0, ColorF{ 1.0, 1.0, 1.0, 0.22 });
 
-            const double remainSec = Max(0.0, (1.0 - captureRate) * 1.5);
+            const double captureTimeSec = (index < world.resourceNodes.captureTimeSec.size())
+                ? Max(0.1, world.resourceNodes.captureTimeSec[index])
+                : 1.5;
+            const double remainSec = Max(0.0, (1.0 - captureRate) * captureTimeSec);
             uiFont(U"{:.1f}s"_fmt(remainSec)).drawAt(11, pos + Vec2{ 0, -44 }, Palette::White);
         }
 
-        uiFont(U"{}"_fmt(world.resourceNodes.amount[index])).drawAt(13, pos + Vec2{ 0, 34 }, textColor);
+        const String amountText = oneShot ? U"+{}"_fmt(world.resourceNodes.amount[index]) : U"{}"_fmt(world.resourceNodes.amount[index]);
+        uiFont(amountText).drawAt(13, pos + Vec2{ 0, 34 }, textColor);
     }
 
     inline void DrawResourceNodes(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, const ResourceFlagRuntimeState* resourceFlags = nullptr)

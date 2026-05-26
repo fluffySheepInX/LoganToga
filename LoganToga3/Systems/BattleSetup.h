@@ -209,7 +209,9 @@ namespace LT3
                         defs.resourceByTag.at(resourceKind),
                         Vec2{ positionValues[0], positionValues[1] },
                         Max(0, nodeValue[U"amount"].getOr<int32>(0)),
-                        Max(0, nodeValue[U"income_per_sec"].getOr<int32>(0)));
+                        Max(0, nodeValue[U"income_per_sec"].getOr<int32>(0)),
+                        nodeValue[U"one_shot"].getOr<bool>(false),
+                        Max(0.1, nodeValue[U"capture_time_sec"].getOr<double>(1.5)));
                 }
             }
             catch (const std::exception&)

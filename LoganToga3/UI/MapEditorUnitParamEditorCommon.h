@@ -19,6 +19,9 @@ namespace LT3
 		Vision,
 		VisualScale,
 		MaintainRange,
+		SpawnVoiceForEnemy,
+		SpawnVoiceVolume,
+		SpawnVoiceCooldownSec,
 	};
 
 	struct UnitParamRowSpec
@@ -53,6 +56,12 @@ namespace LT3
 				{ UnitParamRowKind::Vision, U"VISION", U"視界半径（セル）" },
 				{ UnitParamRowKind::VisualScale, U"SCALE", U"見た目サイズ" },
 			};
+		case 3:
+			return {
+				{ UnitParamRowKind::SpawnVoiceForEnemy, U"ENEMY VOICE", U"敵陣営がスポーンした時もボイスを再生します" },
+				{ UnitParamRowKind::SpawnVoiceVolume, U"VOICE VOL", U"スポーンボイスの再生音量" },
+				{ UnitParamRowKind::SpawnVoiceCooldownSec, U"VOICE CD", U"同一ユニットのスポーンボイス再生クールダウン秒" },
+			};
 		default:
 			return {
 				{ UnitParamRowKind::MaintainRange, U"RANGE", U"maintain_range を増減します" },
@@ -68,7 +77,17 @@ namespace LT3
 
 	inline double UnitParamDefaultStep(UnitParamRowKind kind)
 	{
-		return (kind == UnitParamRowKind::VisualScale) ? 0.05 : 1.0;
+		switch (kind)
+		{
+		case UnitParamRowKind::VisualScale:
+		case UnitParamRowKind::SpawnVoiceVolume:
+		case UnitParamRowKind::SpawnVoiceCooldownSec:
+			return 0.05;
+		case UnitParamRowKind::SpawnVoiceForEnemy:
+			return 1.0;
+		default:
+			return 1.0;
+		}
 	}
 
 	inline int32 UnitParamStepIndex(int32 tab, int32 rowIndex)
@@ -143,15 +162,23 @@ namespace LT3
 		case UnitParamRowKind::Vision: return static_cast<double>(entry.visionRadius);
 		case UnitParamRowKind::VisualScale: return entry.visualScale;
 		case UnitParamRowKind::MaintainRange: return static_cast<double>(entry.maintainRange);
+		case UnitParamRowKind::SpawnVoiceForEnemy: return entry.spawnVoiceForEnemy ? 1.0 : 0.0;
+		case UnitParamRowKind::SpawnVoiceVolume: return entry.spawnVoiceVolume;
+		case UnitParamRowKind::SpawnVoiceCooldownSec: return entry.spawnVoiceCooldownSec;
 		default: return 0.0;
 		}
 	}
 
 	inline String UnitParamValueText(const UnitCatalogEntry& entry, UnitParamRowKind kind)
 	{
-		if (kind == UnitParamRowKind::VisualScale)
+		if (kind == UnitParamRowKind::SpawnVoiceForEnemy)
 		{
-			return U"{:.2f}"_fmt(entry.visualScale);
+			return entry.spawnVoiceForEnemy ? U"ON" : U"OFF";
+		}
+
+		if (kind == UnitParamRowKind::VisualScale || kind == UnitParamRowKind::SpawnVoiceVolume || kind == UnitParamRowKind::SpawnVoiceCooldownSec)
+		{
+			return U"{:.2f}"_fmt(GetUnitParamValue(entry, kind));
 		}
 
 		return U"{}"_fmt(static_cast<int32>(GetUnitParamValue(entry, kind)));
@@ -159,6 +186,11 @@ namespace LT3
 
 	inline String UnitParamEditValueText(const UnitCatalogEntry& entry, UnitParamRowKind kind)
 	{
+		if (kind == UnitParamRowKind::SpawnVoiceForEnemy)
+		{
+			return entry.spawnVoiceForEnemy ? U"ON" : U"OFF";
+		}
+
 		return U"{}"_fmt(GetUnitParamValue(entry, kind));
 	}
 
@@ -170,8 +202,14 @@ namespace LT3
 			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 2000));
 		case UnitParamRowKind::Vision:
 			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 40));
+		case UnitParamRowKind::SpawnVoiceForEnemy:
+			return (value >= 0.5) ? 1.0 : 0.0;
 		case UnitParamRowKind::VisualScale:
 			return Math::Round(Clamp(value, 0.25, 3.0) * 100.0) / 100.0;
+		case UnitParamRowKind::SpawnVoiceVolume:
+			return Math::Round(Clamp(value, 0.0, 1.0) * 100.0) / 100.0;
+		case UnitParamRowKind::SpawnVoiceCooldownSec:
+			return Math::Round(Clamp(value, 0.0, 60.0) * 100.0) / 100.0;
 		default:
 			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 99999));
 		}
@@ -194,6 +232,9 @@ namespace LT3
 		case UnitParamRowKind::Vision: entry.visionRadius = static_cast<int32>(bounded); break;
 		case UnitParamRowKind::VisualScale: entry.visualScale = bounded; break;
 		case UnitParamRowKind::MaintainRange: entry.maintainRange = static_cast<int32>(bounded); break;
+		case UnitParamRowKind::SpawnVoiceForEnemy: entry.spawnVoiceForEnemy = (bounded >= 0.5); break;
+		case UnitParamRowKind::SpawnVoiceVolume: entry.spawnVoiceVolume = bounded; break;
+		case UnitParamRowKind::SpawnVoiceCooldownSec: entry.spawnVoiceCooldownSec = bounded; break;
 		default: break;
 		}
 	}
@@ -217,6 +258,18 @@ namespace LT3
 
 	inline bool AdjustUnitParamValue(UnitCatalogEntry& entry, UnitParamRowKind kind, double delta)
 	{
+		if (kind == UnitParamRowKind::SpawnVoiceForEnemy)
+		{
+			const bool next = (delta > 0.0);
+			if (entry.spawnVoiceForEnemy == next)
+			{
+				return false;
+			}
+
+			entry.spawnVoiceForEnemy = next;
+			return true;
+		}
+
 		return SetUnitParamValueIfChanged(entry, kind, GetUnitParamValue(entry, kind) + delta);
 	}
 
@@ -228,6 +281,12 @@ namespace LT3
 			return 6.0;
 		case UnitParamRowKind::VisualScale:
 			return 1.0;
+		case UnitParamRowKind::SpawnVoiceForEnemy:
+			return 1.0;
+		case UnitParamRowKind::SpawnVoiceVolume:
+			return 1.0;
+		case UnitParamRowKind::SpawnVoiceCooldownSec:
+			return 0.0;
 		default:
 			return 0.0;
 		}
@@ -235,11 +294,17 @@ namespace LT3
 
 	inline bool UnitParamHasSpecialAction(UnitParamRowKind kind)
 	{
-		return (kind == UnitParamRowKind::Move);
+		return (kind == UnitParamRowKind::Move || kind == UnitParamRowKind::SpawnVoiceForEnemy);
 	}
 
 	inline bool ApplyUnitParamSpecialAction(UnitCatalogEntry& entry, UnitParamRowKind kind)
 	{
+		if (kind == UnitParamRowKind::SpawnVoiceForEnemy)
+		{
+			entry.spawnVoiceForEnemy = !entry.spawnVoiceForEnemy;
+			return true;
+		}
+
 		if (kind != UnitParamRowKind::Move)
 		{
 			return false;
@@ -258,6 +323,22 @@ namespace LT3
 	{
 		if (text.isEmpty())
 		{
+			return false;
+		}
+
+		if (kind == UnitParamRowKind::SpawnVoiceForEnemy)
+		{
+			const String lowered = text.trimmed().lowercased();
+			if (lowered == U"on" || lowered == U"true" || lowered == U"1")
+			{
+				entry.spawnVoiceForEnemy = true;
+				return true;
+			}
+			if (lowered == U"off" || lowered == U"false" || lowered == U"0")
+			{
+				entry.spawnVoiceForEnemy = false;
+				return true;
+			}
 			return false;
 		}
 

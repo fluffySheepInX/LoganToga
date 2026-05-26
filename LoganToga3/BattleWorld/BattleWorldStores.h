@@ -181,15 +181,21 @@ namespace LT3
 		Array<Vec2> position;
 		Array<int32> amount;
 		Array<int32> incomePerSec;
+		Array<bool> oneShot;
+		Array<bool> collected;
+		Array<double> captureTimeSec;
 		Array<Faction> owner;
 		Array<double> captureProgress;
 
-		void add(ResourceDefId resourceDef, const Vec2& pos, int32 value, int32 income)
+		void add(ResourceDefId resourceDef, const Vec2& pos, int32 value, int32 income, bool isOneShot, double captureTime)
 		{
 			defId << resourceDef;
 			position << pos;
 			amount << value;
 			incomePerSec << income;
+			oneShot << isOneShot;
+			collected << false;
+			captureTimeSec << Max(0.1, captureTime);
 			owner << Faction::Neutral;
 			captureProgress << 0.0;
 		}

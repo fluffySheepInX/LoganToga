@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "AppDefinitionState.h"
+# include "BattleNotificationState.h"
 # include "../Systems/BattleSystems.h"
 
 namespace LT3
@@ -23,7 +24,18 @@ namespace LT3
     {
         BattleWorld world;
         ResourceFlagRuntimeState resourceFlags;
+        BattleNotificationRuntimeState notifications;
     };
+
+    inline void ClearBattleNotifications(AppRuntimeState& runtime)
+    {
+        ClearBattleNotifications(runtime.notifications);
+    }
+
+    inline void PushBattleNotification(AppRuntimeState& runtime, const String& message, BattleNotificationType type = BattleNotificationType::Normal)
+    {
+        PushBattleNotification(runtime.notifications, message, type);
+    }
 
     inline void SyncResourceFlagRuntimeState(AppRuntimeState& runtime)
     {
@@ -54,6 +66,7 @@ namespace LT3
         runtime.world = BattleWorld{};
         SpawnDefaultBattle(runtime.world, defs);
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;
+        ClearBattleNotifications(runtime);
         SyncResourceFlagRuntimeState(runtime);
     }
 

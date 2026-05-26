@@ -22,6 +22,9 @@ namespace LT3
         world.resourceNodes.position.clear();
         world.resourceNodes.amount.clear();
         world.resourceNodes.incomePerSec.clear();
+        world.resourceNodes.oneShot.clear();
+        world.resourceNodes.collected.clear();
+        world.resourceNodes.captureTimeSec.clear();
         world.resourceNodes.owner.clear();
         world.resourceNodes.captureProgress.clear();
 
@@ -37,7 +40,9 @@ namespace LT3
                 resourceDefId,
                 MapEditorCellCenter(node.cell.x, node.cell.y),
                 Max(0, node.amount),
-                Max(0, node.incomePerSec));
+                Max(0, node.incomePerSec),
+                node.oneShot,
+                ClampResourceCaptureTimeSec(node.captureTimeSec));
         }
     }
 

@@ -83,6 +83,10 @@ namespace LT3
                 def.visualScale = entry.visualScale;
                 def.unique = entry.unique;
                 def.uniqueRespawnAllowed = entry.uniqueRespawnAllowed;
+                def.spawnVoice = entry.spawnVoice;
+                def.spawnVoiceVolume = entry.spawnVoiceVolume;
+                def.spawnVoiceCooldownSec = entry.spawnVoiceCooldownSec;
+                def.spawnVoiceForEnemy = entry.spawnVoiceForEnemy;
                 def.building_category = entry.building_category;
                 def.unit_family = entry.unit_family;
                 def.blocksTileMovement = false;
@@ -106,6 +110,10 @@ namespace LT3
         fallback.visualScale = 1.0;
         fallback.unique = false;
         fallback.uniqueRespawnAllowed = false;
+        fallback.spawnVoice = U"";
+        fallback.spawnVoiceVolume = 1.0;
+        fallback.spawnVoiceCooldownSec = 0.0;
+        fallback.spawnVoiceForEnemy = true;
         fallback.building_category = U"home";
         fallback.unit_family = U"";
         fallback.blocksTileMovement = false;
@@ -153,6 +161,10 @@ namespace LT3
                 entry.visualScale,
                 entry.unique,
                 entry.uniqueRespawnAllowed,
+                entry.spawnVoice,
+                entry.spawnVoiceVolume,
+                entry.spawnVoiceCooldownSec,
+                entry.spawnVoiceForEnemy,
                 entry.building_category,
                 entry.unit_family,
                 blocksTileMovement

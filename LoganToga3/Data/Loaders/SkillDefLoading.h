@@ -10,7 +10,8 @@ namespace LT3
 		def.name = skillValue[U"name"].getOr<String>(def.tag);
 		def.description = skillValue[U"description"].getOr<String>(U"");
 		def.icon = skillValue[U"icon"].getOr<String>(U"");
-		def.projectileImage = skillValue[U"image"].getOr<String>(U"");
+		const Optional<String> projectileImageValue = skillValue[U"image"].getOpt<String>();
+		def.projectileImage = projectileImageValue ? *projectileImageValue : U"";
 		def.projectileDiagonalImage = skillValue[U"image_diagonal"].getOr<String>(U"");
 		def.iconLayers = NormalizeSkillIconLayerOrder(ReadTomlStringArrayValue(skillValue[U"icons"]));
 		if (def.iconLayers.isEmpty() && !def.icon.isEmpty())
@@ -22,7 +23,7 @@ namespace LT3
 		{
 			def.icon = def.iconLayers.front();
 		}
-		if (def.projectileImage.isEmpty())
+		if (!projectileImageValue && def.projectileImage.isEmpty())
 		{
 			def.projectileImage = def.icon;
 		}
@@ -54,6 +55,9 @@ namespace LT3
 			def.burstFireMode = (def.burstIntervalSec > 0.0) ? SkillBurstFireMode::Staggered : SkillBurstFireMode::Simultaneous;
 		}
 		def.burstOrderMode = ParseSkillBurstOrderMode(skillValue[U"burst_order_mode"].getOr<String>(U"sequential"));
+		def.rayMode = ParseSkillRayMode(skillValue[U"ray"].getOr<String>(U"none"));
+		def.rayLength = Max(0.1, skillValue[U"ray_length"].getOr<double>(def.rayLength));
+		def.rayLockToCaster = ReadSkillBoolSwitch(skillValue[U"ray_lock_to_caster"], def.rayLockToCaster);
 		def.spreadDeg = Clamp(skillValue[U"spread_deg"].getOr<double>(def.spreadDeg), 0.0, 180.0);
 		def.arcHeight = Max(0.0, skillValue[U"arc_height"].getOr<double>(def.arcHeight));
 		def.orbitRadius = Max(1.0, skillValue[U"orbit_radius"].getOr<double>(def.orbitRadius));

@@ -90,6 +90,13 @@ namespace LT3
         Random,
     };
 
+    enum class SkillRayMode : uint8
+    {
+        None,
+        Image,
+        Line,
+    };
+
     enum class BuildActionResultType : uint8
     {
         None,

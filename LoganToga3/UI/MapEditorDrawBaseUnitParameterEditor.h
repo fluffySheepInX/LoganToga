@@ -49,7 +49,7 @@ namespace LT3
 		DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
 		EditorUnitParamHeaderDividerRect(editor).draw(ColorF{ 1, 1, 1, 0.22 });
 
-		const Array<String> tabLabels = { U"Basic", U"Combat", U"MoveVis", U"Economy" };
+		const Array<String> tabLabels = { U"Basic", U"Combat", U"MoveVis", U"Audio", U"Economy" };
 		for (int32 i = 0; i < static_cast<int32>(tabLabels.size()); ++i)
 		{
 			const RectF tabRect = EditorUnitParamInnerTabRect(editor, i);
@@ -59,6 +59,14 @@ namespace LT3
 
 		uiFont(entry.name).draw(14, panel.x + 18.0, panel.y + 52.0, Palette::White);
 		uiFont(U"unit_id:{}  image:{}"_fmt(entry.unit_id, entry.image)).draw(11, panel.x + 18.0, panel.y + 72.0, Palette::Lightgray);
+		const RectF voiceButton = EditorUnitParamVoiceButtonRect(editor);
+		voiceButton.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, voiceButton.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+		uiFont(U"Voice...").drawAt(11, voiceButton.center(), Palette::White);
+
+		const RectF voiceClear = EditorUnitParamVoiceClearRect(editor);
+		DrawRectIconButton(voiceClear, U"clr", uiFont, 9, ColorF{ 0.12, 0.05, 0.05, 0.90 }, 1.0, Palette::White);
+		const String voiceLabel = entry.spawnVoice.isEmpty() ? U"voice:(none)" : U"voice:{}"_fmt(entry.spawnVoice);
+		uiFont(voiceLabel).draw(10, panel.x + 18.0, panel.y + 94.0, entry.spawnVoice.isEmpty() ? Palette::Gray : Palette::Aqua);
 
 		const RectF listHeader = EditorUnitParamListHeaderRect(editor);
 		listHeader.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
@@ -89,6 +97,10 @@ namespace LT3
 			const RectF nameRect = EditorUnitParamRowNameRect(row);
 			row.draw(ColorF{ 0.07, 0.08, 0.10, 0.94 }).drawFrame(1, row.mouseOver() ? ColorF{ 0.0, 0.75, 1.0 } : ColorF{ 1, 1, 1, 0.10 });
 			uiFont(rows[i].label).draw(12, nameRect.x + 6.0, nameRect.y + 7.0, Palette::White);
+			if (rows[i].kind == UnitParamRowKind::SpawnVoiceForEnemy)
+			{
+				DrawRectCheckRow(EditorUnitParamRowValueRect(row), U"", entry.spawnVoiceForEnemy, uiFont, 10, 18.0, 18.0, false);
+			}
 			const String valueText = (editor.unitParamEditingRow == i) ? editor.unitParamEditingText : UnitParamValueText(entry, rows[i].kind);
 			DrawRectNumberStepper(EditorUnitParamRowStepperRects(row), valueText, U"x{}"_fmt(UnitParamStep(editor, editor.unitParamEditorTab, i)), editor.unitParamEditingRow == i, editor.unitParamStepMenuRow && *editor.unitParamStepMenuRow == i, true, uiFont, RectNumberStepperStyle{ .buttonStyle = RectButtonStyle{ .fontSize = 9 }, .valueFontSize = 10 });
 

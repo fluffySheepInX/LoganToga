@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include "MapEditorToolbarLayoutRects.h"
+# include "RectNumberStepperTypes.h"
 
 namespace LT3
 {
@@ -28,7 +29,7 @@ namespace LT3
 
 	inline RectF EditorResourceNodePanelRect()
 	{
-		return RectF{ 700, 404, 360, 248 };
+		return RectF{ 700, 404, 360, 336 };
 	}
 
 	inline RectF EditorResourceNodeCloseRect()
@@ -41,6 +42,24 @@ namespace LT3
 	{
 		const RectF panel = EditorResourceNodePanelRect();
 		return RectF{ panel.x + panel.w - 128.0, panel.y + panel.h - 42.0, 104.0, 28.0 };
+	}
+
+	inline RectF EditorResourceNodeOneShotRect()
+	{
+		const RectF panel = EditorResourceNodePanelRect();
+		return RectF{ panel.x + 24.0, panel.y + 206.0, panel.w - 48.0, 32.0 };
+	}
+
+	inline RectNumberStepperRects EditorResourceNodeCaptureTimeStepperRects()
+	{
+		const RectF panel = EditorResourceNodePanelRect();
+		const double rowY = panel.y + 250.0;
+		return RectNumberStepperRects{
+			.minus = RectF{ panel.x + 24.0, rowY, 34.0, 28.0 },
+			.value = RectF{ panel.x + 64.0, rowY, 196.0, 28.0 },
+			.plus = RectF{ panel.x + 266.0, rowY, 34.0, 28.0 },
+			.step = RectF{ panel.x + 306.0, rowY, 30.0, 28.0 },
+		};
 	}
 
 	inline RectF EditorResourceNodeListPanelRect()
@@ -158,12 +177,12 @@ namespace LT3
 	inline RectF EditorResourceNodeIncomeDecRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
-		return RectF{ panel.x + 24.0, panel.y + 206.0, 48.0, 40.0 };
+		return RectF{ panel.x + 24.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
 	}
 
 	inline RectF EditorResourceNodeIncomeIncRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
-		return RectF{ panel.x + 288.0, panel.y + 206.0, 48.0, 40.0 };
+		return RectF{ panel.x + 288.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
 	}
 }

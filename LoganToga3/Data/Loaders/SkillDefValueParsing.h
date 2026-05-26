@@ -170,6 +170,34 @@ namespace LT3
 		return SkillBurstOrderMode::Sequential;
 	}
 
+	inline String SkillRayModeToTag(SkillRayMode mode)
+	{
+		switch (mode)
+		{
+		case SkillRayMode::Image:
+			return U"image";
+		case SkillRayMode::Line:
+			return U"line";
+		default:
+			return U"none";
+		}
+	}
+
+	inline SkillRayMode ParseSkillRayMode(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"image")
+		{
+			return SkillRayMode::Image;
+		}
+		if (lowered == U"line")
+		{
+			return SkillRayMode::Line;
+		}
+
+		return SkillRayMode::None;
+	}
+
 	inline bool ReadSkillBoolSwitch(const TOMLValue& value, bool fallback)
 	{
 		if (const Optional<bool> boolValue = value.getOpt<bool>())

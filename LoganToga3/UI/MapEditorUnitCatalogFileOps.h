@@ -64,6 +64,18 @@ namespace LT3
 		return FileSystem::ParentPath(existingPath);
 	}
 
+	inline FilePath ResolveUnitVoiceDirectory()
+	{
+		const FilePath existingPath = ResolveUnitVoicePath(U"__lt3_directory_probe__.ogg");
+		return FileSystem::ParentPath(existingPath);
+	}
+
+	inline bool IsUnitCatalogSelectableAudioFile(const FilePath& path)
+	{
+		const String extension = FileSystem::Extension(path).lowercased();
+		return extension == U"wav" || extension == U"mp3" || extension == U"ogg" || extension == U"flac" || extension == U"aac" || extension == U"m4a";
+	}
+
 	inline bool ChangeSelectedUnitImageFromDialog(MapEditorState& editor, UnitCatalog& catalog)
 	{
 		if (editor.selectedUnitCatalogIndex < 0 || static_cast<int32>(catalog.entries.size()) <= editor.selectedUnitCatalogIndex)
@@ -160,6 +172,53 @@ namespace LT3
 		SaveUnitCatalogToml(catalog, editor.statusText);
 		editor.unitCatalogDirty = true;
 		editor.statusText = U"Unit portrait changed: {} -> {}"_fmt(entry.unit_id, fileName);
+		return true;
+	}
+
+	inline bool ChangeSelectedUnitVoiceFromDialog(MapEditorState& editor, UnitCatalog& catalog)
+	{
+		if (editor.selectedUnitCatalogIndex < 0 || static_cast<int32>(catalog.entries.size()) <= editor.selectedUnitCatalogIndex)
+		{
+			return false;
+		}
+
+		const Array<FileFilter> audioFilters = { FileFilter::AllAudioFiles(), FileFilter::AllFiles() };
+		const Optional<FilePath> sourcePath = Dialog::OpenFile(audioFilters);
+		if (!sourcePath)
+		{
+			return false;
+		}
+
+		if (!IsUnitCatalogSelectableAudioFile(*sourcePath))
+		{
+			editor.statusText = U"Unit voice must be audio file: {}"_fmt(*sourcePath);
+			return true;
+		}
+
+		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		const FilePath targetDirectory = ResolveUnitVoiceDirectory();
+		FileSystem::CreateDirectories(targetDirectory);
+
+		const String fileName = FileSystem::FileName(*sourcePath);
+		const FilePath targetPath = targetDirectory + fileName;
+		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
+		{
+			if (FileSystem::Exists(targetPath))
+			{
+				FileSystem::Remove(targetPath);
+			}
+
+			if (!FileSystem::Copy(*sourcePath, targetPath))
+			{
+				editor.statusText = U"Unit voice copy failed: {}"_fmt(targetPath);
+				return true;
+			}
+		}
+
+		entry.spawnVoice = fileName;
+		SaveUnitCatalogToml(catalog, editor.statusText);
+		editor.unitCatalogDirty = true;
+		editor.statusText = U"Unit voice changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}
 }

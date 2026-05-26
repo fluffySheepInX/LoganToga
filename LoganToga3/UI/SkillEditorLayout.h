@@ -111,6 +111,12 @@ namespace LT3
 		return RectF{ detail.x + 72.0, detail.y + 104.0 + index * 30.0 - scroll, 82.0, 24.0 };
 	}
 
+	inline RectF SkillEditorProjectileImageClearRect(int32 index, double scroll)
+	{
+		const RectF browse = SkillEditorProjectileImageBrowseRect(index, scroll);
+		return RectF{ browse.x + browse.w + 8.0, browse.y, 56.0, 24.0 };
+	}
+
 	inline RectF SkillEditorCenterButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
@@ -211,6 +217,6 @@ namespace LT3
 
 	inline double SkillEditorDetailContentHeight()
 	{
-		return 1100.0;
+		return 1220.0;
 	}
 }

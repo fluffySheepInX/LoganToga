@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../App/BattleNotificationState.h"
 # include "BuildSystem.h"
 # include "CombatSystem.h"
 # include "EnemyDirectorSystem.h"
@@ -21,7 +22,7 @@ namespace LT3
         world.elapsedSec += dt;
     }
 
-    inline void UpdateBattleSimulation(BattleWorld& world, const DefinitionStores& defs, double dt)
+    inline void UpdateBattleSimulation(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
         if (!world.enemyDirectorPaused)
         {
@@ -29,18 +30,18 @@ namespace LT3
         }
         UpdatePathfinding(world, defs, dt);
         UpdateMovement(world, defs, dt);
-        UpdateGathering(world, defs, dt);
+        UpdateGathering(world, defs, dt, notifications);
         UpdateCombat(world, defs, dt);
         UpdateProjectiles(world, defs, dt);
-        UpdateBuildQueues(world, defs, dt);
+        UpdateBuildQueues(world, defs, dt, notifications);
         UpdateWinLose(world, defs);
     }
 
-    inline void UpdateBattleWorld(BattleWorld& world, const DefinitionStores& defs, double dt)
+    inline void UpdateBattleWorld(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
       if (IsBattleFinished(world)) return;
 
      AdvanceBattleClock(world, dt);
-        UpdateBattleSimulation(world, defs, dt);
+        UpdateBattleSimulation(world, defs, dt, notifications);
     }
 }

@@ -345,6 +345,7 @@
     <ClInclude Include="App\AppStateData.h" />
     <ClInclude Include="App\AppUiState.h" />
     <ClInclude Include="App\AppUpdate.h" />
+    <ClInclude Include="App\BattleNotificationState.h" />
     <ClInclude Include="BattleWorld\BattleWorld.h" />
     <ClInclude Include="BattleWorld\BattleWorldMap.h" />
     <ClInclude Include="BattleWorld\BattleWorldOps.h" />
@@ -411,6 +412,7 @@
     <ClInclude Include="UI\BattleDebugOverlay.h" />
     <ClInclude Include="UI\BattleMapRenderer.h" />
     <ClInclude Include="UI\BattleNineSlice.h" />
+    <ClInclude Include="UI\BattleNotifications.h" />
     <ClInclude Include="UI\BattleProjectileRendererOps.h" />
     <ClInclude Include="UI\BattleRenderer.h" />
     <ClInclude Include="UI\BattleResourceRenderer.h" />

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorMapData.h"
+# include "RectUiHelpers.h"
 
 namespace LT3
 {
@@ -37,6 +38,13 @@ namespace LT3
         }
 
         editor.resourceNodes.remove_at(editor.selectedResourceNodeIndex);
+        if (0 <= editor.selectedResourceNodeIndex && editor.selectedResourceNodeIndex < static_cast<int32>(editor.resourceCaptureTimeSteps.size()))
+        {
+            editor.resourceCaptureTimeSteps.remove_at(editor.selectedResourceNodeIndex);
+        }
+        editor.resourceCaptureTimeEditingIndex = -1;
+        editor.resourceCaptureTimeEditingText.clear();
+        editor.resourceCaptureTimeStepMenuIndex = none;
         editor.selectedResourceNodeIndex = -1;
         editor.statusText = U"Resource node removed";
     }
@@ -76,6 +84,7 @@ namespace LT3
                 {
                     copy.cell = candidate;
                     editor.resourceNodes << copy;
+                    EnsureResourceCaptureTimeSteps(editor);
                     SortMapEditorResourceNodes(editor);
                     if (const Optional<size_t> index = FindResourceNodeAtCell(editor, candidate))
                     {
@@ -95,6 +104,10 @@ namespace LT3
         editor.resourceNodes.clear();
         editor.selectedResourceNodeIndex = -1;
         editor.resourceNodeDragging = false;
+        editor.resourceCaptureTimeEditingIndex = -1;
+        editor.resourceCaptureTimeEditingText.clear();
+        editor.resourceCaptureTimeStepMenuIndex = none;
+        editor.resourceCaptureTimeSteps.clear();
         editor.statusText = U"All resource nodes cleared";
     }
 
@@ -119,7 +132,8 @@ namespace LT3
         }
         else
         {
-            editor.resourceNodes << ResourceNodeEditData{ *editor.resourcePlacementDragKind, cell, 700, 5 };
+            editor.resourceNodes << ResourceNodeEditData{ *editor.resourcePlacementDragKind, cell, 700, 5, false, 1.5 };
+            EnsureResourceCaptureTimeSteps(editor);
             SortMapEditorResourceNodes(editor);
             if (const Optional<size_t> index = FindResourceNodeAtCell(editor, cell))
             {
@@ -170,8 +184,64 @@ namespace LT3
 
         bool consumed = false;
         ResourceNodeEditData& node = editor.resourceNodes[editor.selectedResourceNodeIndex];
+        EnsureResourceCaptureTimeSteps(editor);
+
+        if (editor.resourceCaptureTimeEditingIndex == editor.selectedResourceNodeIndex)
+        {
+            TextInput::UpdateText(editor.resourceCaptureTimeEditingText);
+            if (KeyEscape.down())
+            {
+                editor.resourceCaptureTimeEditingIndex = -1;
+                editor.resourceCaptureTimeEditingText.clear();
+                return true;
+            }
+            if (KeyEnter.down())
+            {
+                if (TryCommitResourceCaptureTimeText(node, editor.resourceCaptureTimeEditingText))
+                {
+                    editor.statusText = U"Capture time: {:.1f}s"_fmt(node.captureTimeSec);
+                }
+                else
+                {
+                    editor.statusText = U"Invalid capture time: {}"_fmt(editor.resourceCaptureTimeEditingText);
+                }
+                editor.resourceCaptureTimeEditingIndex = -1;
+                editor.resourceCaptureTimeEditingText.clear();
+                return true;
+            }
+        }
+
+        if (editor.resourceCaptureTimeStepMenuIndex && *editor.resourceCaptureTimeStepMenuIndex == editor.selectedResourceNodeIndex)
+        {
+            const Array<double>& steps = ResourceCaptureTimeStepOptions();
+            const Vec2 menuPos = editor.resourceCaptureTimeStepMenuPos;
+            const RectF menuRect{ menuPos.x, menuPos.y, 88.0, 8.0 + static_cast<double>(steps.size()) * 22.0 };
+            for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+            {
+                const RectF item{ menuRect.x + 4.0, menuRect.y + 4.0 + i * 22.0, menuRect.w - 8.0, 20.0 };
+                if (item.leftClicked())
+                {
+                    SetResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex, steps[i]);
+                    editor.resourceCaptureTimeStepMenuIndex = none;
+                    editor.statusText = U"Capture step set to {}"_fmt(steps[i]);
+                    return true;
+                }
+            }
+
+            if (!menuRect.mouseOver() && (MouseL.down() || MouseR.down()))
+            {
+                editor.resourceCaptureTimeStepMenuIndex = none;
+                return true;
+            }
+
+            return true;
+        }
+
         if (EditorResourceNodeCloseRect().leftClicked())
         {
+            editor.resourceCaptureTimeEditingIndex = -1;
+            editor.resourceCaptureTimeEditingText.clear();
+            editor.resourceCaptureTimeStepMenuIndex = none;
             editor.selectedResourceNodeIndex = -1;
             return true;
         }
@@ -210,6 +280,66 @@ namespace LT3
             editor.statusText = U"Resource income: {}"_fmt(node.incomePerSec);
             consumed = true;
         }
+
+        if (EditorResourceNodeOneShotRect().leftClicked())
+        {
+            node.oneShot = !node.oneShot;
+            editor.statusText = node.oneShot ? U"Resource mode: one-shot" : U"Resource mode: income";
+            consumed = true;
+        }
+
+        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects();
+        switch (DetectRectNumberStepperInput(captureTimeStepper))
+        {
+        case RectNumberStepperInputAction::StartValueEdit:
+            editor.resourceCaptureTimeEditingIndex = editor.selectedResourceNodeIndex;
+            editor.resourceCaptureTimeEditingText = U"{:.1f}"_fmt(node.captureTimeSec);
+            editor.resourceCaptureTimeStepMenuIndex = none;
+            return true;
+        case RectNumberStepperInputAction::CycleStep:
+            CycleResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex);
+            editor.statusText = U"Capture step set to {}"_fmt(ResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex));
+            return true;
+        case RectNumberStepperInputAction::OpenStepMenu:
+            editor.resourceCaptureTimeStepMenuIndex = editor.selectedResourceNodeIndex;
+            editor.resourceCaptureTimeStepMenuPos = Cursor::PosF();
+            return true;
+        case RectNumberStepperInputAction::Decrement:
+        {
+            const double step = ApplyTemporaryStepModifier(ResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex));
+            node.captureTimeSec = ClampResourceCaptureTimeSec(node.captureTimeSec - step);
+            editor.statusText = U"Capture time: {:.1f}s"_fmt(node.captureTimeSec);
+            return true;
+        }
+        case RectNumberStepperInputAction::Increment:
+        {
+            const double step = ApplyTemporaryStepModifier(ResourceCaptureTimeStep(editor, editor.selectedResourceNodeIndex));
+            node.captureTimeSec = ClampResourceCaptureTimeSec(node.captureTimeSec + step);
+            editor.statusText = U"Capture time: {:.1f}s"_fmt(node.captureTimeSec);
+            return true;
+        }
+        default:
+            break;
+        }
+
+        if (editor.resourceCaptureTimeEditingIndex == editor.selectedResourceNodeIndex && MouseL.down())
+        {
+            if (!captureTimeStepper.value.mouseOver())
+            {
+                if (TryCommitResourceCaptureTimeText(node, editor.resourceCaptureTimeEditingText))
+                {
+                    editor.statusText = U"Capture time: {:.1f}s"_fmt(node.captureTimeSec);
+                }
+                else
+                {
+                    editor.statusText = U"Invalid capture time: {}"_fmt(editor.resourceCaptureTimeEditingText);
+                }
+                editor.resourceCaptureTimeEditingIndex = -1;
+                editor.resourceCaptureTimeEditingText.clear();
+                return true;
+            }
+        }
+
         if (EditorResourceNodeRemoveRect().leftClicked())
         {
             RemoveSelectedResourceNode(editor);

@@ -14,7 +14,7 @@ ai_editor = false
 
 debug_info = false
 
-enemy_move_markers = true
+enemy_move_markers = false
 
 battle_grid = false
 
@@ -533,7 +533,7 @@ x = 15
 
 y = 0
 
-terrain = "mud1.png"
+terrain = "grass1.png"
 
 object = ""
 
@@ -2185,7 +2185,7 @@ x = 6
 
 y = 1
 
-terrain = "grass1.png"
+terrain = "mud1.png"
 
 object = ""
 

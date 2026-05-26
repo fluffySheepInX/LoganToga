@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../App/BattleNotificationState.h"
 # include "BattleQueries.h"
 # include "BattleUnitState.h"
 
@@ -36,7 +37,22 @@ namespace LT3
         return InvalidUnitDefId;
     }
 
-    inline void UpdateBuildQueues(BattleWorld& world, const DefinitionStores& defs, double dt)
+    inline String BuildCompletionNotificationMessage(const BuildActionDef& action, const DefinitionStores& defs, UnitDefId primarySpawnUnit)
+    {
+        if (action.resultType == BuildActionResultType::Unit && primarySpawnUnit < defs.units.size())
+        {
+            return U"生産完了: {}"_fmt(defs.units[primarySpawnUnit].name);
+        }
+
+        if (!action.name.isEmpty())
+        {
+            return U"生産完了: {}"_fmt(action.name);
+        }
+
+        return U"生産完了";
+    }
+
+    inline void UpdateBuildQueues(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
         const UnitId unitCount = static_cast<UnitId>(world.units.size());
         for (UnitId unit = 0; unit < unitCount; ++unit)
@@ -160,6 +176,13 @@ namespace LT3
                         world.map.setBarrierReservation(cell.y, cell.x, true);
                         ++world.map.revision;
                     }
+                }
+
+                if (notifications && world.units.faction[unit] == Faction::Player)
+                {
+                    PushBattleNotification(*notifications,
+                        BuildCompletionNotificationMessage(action, defs, primarySpawnUnit),
+                        BattleNotificationType::Success);
                 }
 
                 if (queue.isEmpty())

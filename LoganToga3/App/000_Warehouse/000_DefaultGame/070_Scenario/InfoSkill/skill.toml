@@ -27,9 +27,9 @@ mp_cost = 0
 
 damage = 0.31
 
-image = "a_bulletN.png"
+image = "b_bulletN.png"
 
-image_diagonal = "a_bulletNW.png"
+image_diagonal = "b_bulletNW.png"
 
 projectile_speed = 355
 
@@ -56,6 +56,12 @@ burst_interval_sec = 0
 burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
+
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
 
 spread_deg = 0
 
@@ -100,7 +106,7 @@ kind = "missile"
 
 range = 342
 
-cooldown_sec = 1.55
+cooldown_sec = 1.25
 
 mp_cost = 0
 
@@ -135,6 +141,12 @@ burst_interval_sec = 0
 burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
+
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
 
 spread_deg = 0
 
@@ -215,6 +227,12 @@ burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
 
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
+
 spread_deg = 0
 
 arc_height = 72
@@ -294,6 +312,12 @@ burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
 
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
+
 spread_deg = 0
 
 arc_height = 72
@@ -337,19 +361,19 @@ kind = "missile"
 
 range = 650
 
-cooldown_sec = 0.3
+cooldown_sec = 0.2
 
 mp_cost = 0
 
 damage = 0.31
 
-image = "a_bulletN.png"
+image = ""
 
-image_diagonal = "a_bulletNW.png"
+image_diagonal = ""
 
-projectile_speed = 1001
+projectile_speed = 1101
 
-speed = 1001
+speed = 1101
 
 movetype = "direct"
 
@@ -357,7 +381,7 @@ projectile_motion = "direct"
 
 center = "on"
 
-homing = "off"
+homing = "on"
 
 d360 = "on"
 
@@ -365,7 +389,7 @@ start_degree = 0
 
 start_degree_type = 0
 
-burst_count = 9
+burst_count = 16
 
 burst_interval_sec = 0.03
 
@@ -373,7 +397,13 @@ burst_fire_mode = "staggered"
 
 burst_order_mode = "random"
 
-spread_deg = 100
+ray = "line"
+
+ray_length = 1
+
+ray_lock_to_caster = "on"
+
+spread_deg = 80
 
 arc_height = 72
 
@@ -451,6 +481,12 @@ burst_interval_sec = 0
 burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
+
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
 
 spread_deg = 0
 
@@ -530,6 +566,12 @@ burst_interval_sec = 0
 burst_fire_mode = "simultaneous"
 
 burst_order_mode = "sequential"
+
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
 
 spread_deg = 0
 

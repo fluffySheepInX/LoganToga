@@ -22,6 +22,9 @@ namespace LT3
         double burstIntervalSec = 0.0;
         SkillBurstFireMode burstFireMode = SkillBurstFireMode::Simultaneous;
         SkillBurstOrderMode burstOrderMode = SkillBurstOrderMode::Sequential;
+        SkillRayMode rayMode = SkillRayMode::None;
+        double rayLength = 1.0;
+        bool rayLockToCaster = false;
         double spreadDeg = 0.0;
         double arcHeight = 72.0;
         double orbitRadius = 54.0;
@@ -58,6 +61,10 @@ namespace LT3
         double visualScale = 1.0;
         bool unique = false;
         bool uniqueRespawnAllowed = false;
+        String spawnVoice;
+        double spawnVoiceVolume = 1.0;
+        double spawnVoiceCooldownSec = 0.0;
+        bool spawnVoiceForEnemy = true;
         String building_category;
         String unit_family;
         bool blocksTileMovement = false;

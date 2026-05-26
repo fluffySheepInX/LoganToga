@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../libs/AddonGaussian.h"
+# include "../UI/BattleNotifications.h"
 # include "../Systems/BattleInputSystem.h"
 # include "../Systems/CameraInputSystem.h"
 # include "../Systems/EditorInputSystem.h"
@@ -118,10 +119,11 @@ namespace LT3
 		ProcessInput(runtime, definitions, ui);
 		if (!ui.mapEditor.enabled)
 		{
-			UpdateBattleWorld(runtime.world, definitions.defs, Scene::DeltaTime());
+			UpdateBattleWorld(runtime.world, definitions.defs, Scene::DeltaTime(), &runtime.notifications);
 		}
 
 		UpdateResourceFlagRuntimeState(runtime);
+		UpdateBattleNotifications(runtime.notifications, Scene::DeltaTime());
 	}
 
 	inline void UpdateApp(AppState& app)

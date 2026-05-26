@@ -6,7 +6,11 @@ position = [4280, 450]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -17,7 +21,11 @@ position = [1280, 570]
 
 amount = 700
 
+one_shot = true
+
 income_per_sec = 5
+
+capture_time_sec = 12.9
 
 
 [[resource_nodes]]
@@ -28,7 +36,11 @@ position = [2600, 570]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -39,7 +51,11 @@ position = [560, 1410]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -50,7 +66,11 @@ position = [2240, 2130]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -61,7 +81,11 @@ position = [4040, 2130]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -72,7 +96,11 @@ position = [2600, 2370]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -83,7 +111,11 @@ position = [680, 2490]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -94,7 +126,11 @@ position = [2360, 2490]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -105,7 +141,11 @@ position = [2000, 4170]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -116,7 +156,11 @@ position = [560, 4290]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 
 [[resource_nodes]]
@@ -127,6 +171,10 @@ position = [2960, 4290]
 
 amount = 700
 
+one_shot = false
+
 income_per_sec = 5
+
+capture_time_sec = 1.5
 
 

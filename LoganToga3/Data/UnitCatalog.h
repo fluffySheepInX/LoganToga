@@ -25,6 +25,10 @@ namespace LT3
         inline constexpr const char32* KeyUniqueSpeechBubbleHeight = U"unique_speech_bubble_height";
         inline constexpr const char32* KeyUniqueSpeechLines = U"unique_speech_lines";
         inline constexpr const char32* KeyUniqueRespawnAllowed = U"unique_respawn_allowed";
+        inline constexpr const char32* KeySpawnVoice = U"spawn_voice";
+        inline constexpr const char32* KeySpawnVoiceVolume = U"spawn_voice_volume";
+        inline constexpr const char32* KeySpawnVoiceCooldownSec = U"spawn_voice_cooldown_sec";
+        inline constexpr const char32* KeySpawnVoiceForEnemy = U"spawn_voice_for_enemy";
         inline constexpr const char32* KeyBuildingCategory = U"building_category";
         inline constexpr const char32* KeyUnitFamily = U"unit_family";
         inline constexpr const char32* KeySkills = U"skills";
@@ -134,6 +138,10 @@ namespace LT3
         double uniqueSpeechBubbleHeight = 54.0;
         Array<String> uniqueSpeechLines;
         bool uniqueRespawnAllowed = false;
+        String spawnVoice;
+        double spawnVoiceVolume = 1.0;
+        double spawnVoiceCooldownSec = 0.0;
+        bool spawnVoiceForEnemy = true;
         String building_category;
         String unit_family;
         Array<String> skills;
@@ -318,6 +326,10 @@ namespace LT3
             entry.uniqueSpeechBubbleHeight = Clamp(unitValue[UnitCatalogToml::KeyUniqueSpeechBubbleHeight].getOr<double>(54.0), 36.0, 220.0);
             entry.uniqueSpeechLines = ReadTomlStringArray(unitValue[UnitCatalogToml::KeyUniqueSpeechLines]);
             entry.uniqueRespawnAllowed = unitValue[UnitCatalogToml::KeyUniqueRespawnAllowed].getOr<bool>(false);
+            entry.spawnVoice = unitValue[UnitCatalogToml::KeySpawnVoice].getOr<String>(U"");
+            entry.spawnVoiceVolume = Clamp(unitValue[UnitCatalogToml::KeySpawnVoiceVolume].getOr<double>(1.0), 0.0, 1.0);
+            entry.spawnVoiceCooldownSec = Clamp(unitValue[UnitCatalogToml::KeySpawnVoiceCooldownSec].getOr<double>(0.0), 0.0, 60.0);
+            entry.spawnVoiceForEnemy = unitValue[UnitCatalogToml::KeySpawnVoiceForEnemy].getOr<bool>(true);
             entry.building_category = unitValue[UnitCatalogToml::KeyBuildingCategory].getOr<String>(U"");
             entry.unit_family = unitValue[UnitCatalogToml::KeyUnitFamily].getOr<String>(U"");
             entry.skills = ReadTomlStringArray(unitValue[UnitCatalogToml::KeySkills]);
@@ -398,6 +410,10 @@ namespace LT3
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyUniqueSpeechBubbleHeight, entry.uniqueSpeechBubbleHeight);
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyUniqueSpeechLines, BuildTomlStringArray(entry.uniqueSpeechLines));
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyUniqueRespawnAllowed, entry.uniqueRespawnAllowed ? U"true" : U"false");
+            block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeySpawnVoice, UnitCatalogTomlEscape(entry.spawnVoice));
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySpawnVoiceVolume, entry.spawnVoiceVolume);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySpawnVoiceCooldownSec, entry.spawnVoiceCooldownSec);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySpawnVoiceForEnemy, entry.spawnVoiceForEnemy ? U"true" : U"false");
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyBuildingCategory, UnitCatalogTomlEscape(entry.building_category));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyUnitFamily, UnitCatalogTomlEscape(entry.unit_family));
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeySkills, BuildTomlStringArray(entry.skills));

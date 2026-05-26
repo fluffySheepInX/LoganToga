@@ -4,6 +4,83 @@
 
 namespace LT3
 {
+    inline const Array<double>& ResourceCaptureTimeStepOptions()
+    {
+        static const Array<double> steps = { 0.1, 0.5, 1.0, 2.0, 5.0 };
+        return steps;
+    }
+
+    inline void EnsureResourceCaptureTimeSteps(MapEditorState& editor)
+    {
+        if (editor.resourceCaptureTimeSteps.size() == editor.resourceNodes.size())
+        {
+            return;
+        }
+
+        const size_t oldSize = editor.resourceCaptureTimeSteps.size();
+        editor.resourceCaptureTimeSteps.resize(editor.resourceNodes.size(), 0.1);
+        for (size_t i = oldSize; i < editor.resourceCaptureTimeSteps.size(); ++i)
+        {
+            editor.resourceCaptureTimeSteps[i] = 0.1;
+        }
+    }
+
+    inline double ResourceCaptureTimeStep(const MapEditorState& editor, int32 index)
+    {
+        if (0 <= index && index < static_cast<int32>(editor.resourceCaptureTimeSteps.size()))
+        {
+            return editor.resourceCaptureTimeSteps[index];
+        }
+
+        return 0.1;
+    }
+
+    inline void SetResourceCaptureTimeStep(MapEditorState& editor, int32 index, double step)
+    {
+        EnsureResourceCaptureTimeSteps(editor);
+        if (0 <= index && index < static_cast<int32>(editor.resourceCaptureTimeSteps.size()))
+        {
+            editor.resourceCaptureTimeSteps[index] = step;
+        }
+    }
+
+    inline void CycleResourceCaptureTimeStep(MapEditorState& editor, int32 index)
+    {
+        const Array<double>& steps = ResourceCaptureTimeStepOptions();
+        const double current = ResourceCaptureTimeStep(editor, index);
+        int32 currentIndex = 0;
+        for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+        {
+            if (Math::Abs(steps[i] - current) < 0.0001)
+            {
+                currentIndex = i;
+                break;
+            }
+        }
+        SetResourceCaptureTimeStep(editor, index, steps[(currentIndex + 1) % steps.size()]);
+    }
+
+    inline double ClampResourceCaptureTimeSec(double seconds)
+    {
+        return Max(0.1, seconds);
+    }
+
+    inline bool TryCommitResourceCaptureTimeText(ResourceNodeEditData& node, const String& text)
+    {
+        if (text.isEmpty())
+        {
+            return false;
+        }
+
+        if (const Optional<double> value = ParseOpt<double>(text))
+        {
+            node.captureTimeSec = ClampResourceCaptureTimeSec(*value);
+            return true;
+        }
+
+        return false;
+    }
+
     inline FilePath ResolveResourceNodeTomlPath();
 
     inline String ResourceKindToTag(ResourceKind kind)
@@ -82,6 +159,7 @@ namespace LT3
     inline void LoadMapEditorResourceNodes(MapEditorState& editor)
     {
         editor.resourceNodes.clear();
+        editor.resourceCaptureTimeSteps.clear();
         editor.selectedResourceNodeIndex = -1;
         const TOMLReader toml{ editor.resourceNodeSavePath };
         if (!toml)
@@ -128,7 +206,9 @@ namespace LT3
                     kind,
                     cell,
                     Max(0, nodeValue[U"amount"].getOr<int32>(700)),
-                    Max(0, nodeValue[U"income_per_sec"].getOr<int32>(5))
+                    Max(0, nodeValue[U"income_per_sec"].getOr<int32>(5)),
+                    nodeValue[U"one_shot"].getOr<bool>(false),
+                    Max(0.1, nodeValue[U"capture_time_sec"].getOr<double>(1.5))
                 };
             }
         }
@@ -137,6 +217,7 @@ namespace LT3
         }
 
         SortMapEditorResourceNodes(editor);
+        EnsureResourceCaptureTimeSteps(editor);
     }
 
     inline Array<String> ValidateMapEditorResourceNodes(const MapEditorState& editor)
@@ -158,9 +239,13 @@ namespace LT3
             {
                 issues << U"Node at ({}, {}) has zero amount"_fmt(node.cell.x, node.cell.y);
             }
-            if (node.incomePerSec <= 0)
+            if (!node.oneShot && node.incomePerSec <= 0)
             {
                 issues << U"Node at ({}, {}) has zero income"_fmt(node.cell.x, node.cell.y);
+            }
+            if (node.captureTimeSec <= 0.0)
+            {
+                issues << U"Node at ({}, {}) has invalid capture time"_fmt(node.cell.x, node.cell.y);
             }
         }
         return issues;
@@ -182,7 +267,9 @@ namespace LT3
             resourceWriter << U"resource_kind = \"" << ResourceKindToTag(resourceNode.kind) << U"\"\n";
             resourceWriter << U"position = [" << world.x << U", " << world.y << U"]\n";
             resourceWriter << U"amount = " << resourceNode.amount << U"\n";
-            resourceWriter << U"income_per_sec = " << resourceNode.incomePerSec << U"\n\n";
+            resourceWriter << U"one_shot = " << (resourceNode.oneShot ? U"true" : U"false") << U"\n";
+            resourceWriter << U"income_per_sec = " << resourceNode.incomePerSec << U"\n";
+            resourceWriter << U"capture_time_sec = " << resourceNode.captureTimeSec << U"\n\n";
         }
     }
 }

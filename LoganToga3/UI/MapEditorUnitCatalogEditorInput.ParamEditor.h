@@ -21,7 +21,7 @@ namespace LT3
 			editor.showBuildingEditor = false;
 		}
 
-		for (int32 tabIndex = 0; tabIndex < 4; ++tabIndex)
+		for (int32 tabIndex = 0; tabIndex < 5; ++tabIndex)
 		{
 			if (EditorUnitParamInnerTabRect(editor, tabIndex).leftClicked())
 			{
@@ -36,6 +36,19 @@ namespace LT3
 		}
 
 		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+
+		if (EditorUnitParamVoiceButtonRect(editor).leftClicked())
+		{
+			return ChangeSelectedUnitVoiceFromDialog(editor, catalog);
+		}
+		if (EditorUnitParamVoiceClearRect(editor).leftClicked())
+		{
+			MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& selected)
+			{
+				return SetFieldIfChanged(selected.spawnVoice, String{});
+			});
+			return true;
+		}
 
 		const Array<UnitParamRowSpec> rows = UnitParamRowSpecs(editor.unitParamEditorTab);
 		auto commitEditingText = [&]()

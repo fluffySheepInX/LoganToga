@@ -402,6 +402,22 @@ namespace LT3
 
 		for (int32 imageIndex = 0; imageIndex < 2; ++imageIndex)
 		{
+			if (HandleRectButtonClick(SkillEditorProjectileImageClearRect(imageIndex, scroll)))
+			{
+				MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+				{
+					const String empty;
+					if (imageIndex == 0)
+					{
+						return SetFieldIfChanged(selected.projectileImage, empty);
+					}
+
+					return SetFieldIfChanged(selected.projectileDiagonalImage, empty);
+				});
+				editor.statusText = (imageIndex == 0) ? U"Skill projectile image cleared" : U"Skill projectile diagonal image cleared";
+				return true;
+			}
+
 			if (HandleRectButtonClick(SkillEditorProjectileImageBrowseRect(imageIndex, scroll)))
 			{
 				const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::JPEG(), FileFilter::BMP(), FileFilter::GIF(), FileFilter::AllFiles() };
@@ -481,7 +497,7 @@ namespace LT3
 			return true;
 		}
 
-		for (int32 row = 0; row < 19; ++row)
+		for (int32 row = 0; row < 22; ++row)
 		{
 			if (IsSkillEditorValueRowLocked(skill, row))
 			{

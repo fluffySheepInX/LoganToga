@@ -58,7 +58,7 @@ namespace LT3
 	inline RectF EditorUnitParamInnerTabRect(const MapEditorState& editor, int32 index)
 	{
 		const RectF panel = EditorUnitParameterPanelRect(editor);
-		return RectF{ panel.x + 16.0 + index * 96.0, panel.y + 12.0, 88.0, 26.0 };
+		return RectF{ panel.x + 12.0 + index * 78.0, panel.y + 12.0, 72.0, 26.0 };
 	}
 
 	inline RectF EditorUnitParamHeaderDividerRect(const MapEditorState& editor)
@@ -212,6 +212,18 @@ namespace LT3
 	{
 		const RectF panel = EditorUnitParameterPanelRect(editor);
 		return RectF{ panel.x + 310.0, panel.y + 48.0, 88.0, 24.0 };
+	}
+
+	inline RectF EditorUnitParamVoiceButtonRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorUnitParameterPanelRect(editor);
+		return RectF{ panel.x + 282.0, panel.y + 74.0, 76.0, 24.0 };
+	}
+
+	inline RectF EditorUnitParamVoiceClearRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorUnitParameterPanelRect(editor);
+		return RectF{ panel.x + 364.0, panel.y + 76.0, 34.0, 20.0 };
 	}
 
 	inline RectF EditorUnitParamPortraitPreviewRect(const MapEditorState& editor)

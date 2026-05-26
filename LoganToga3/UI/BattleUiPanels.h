@@ -10,6 +10,158 @@
 
 namespace LT3
 {
+		struct BuildActionTooltipTextSections
+		{
+			String bodyText;
+			String redText;
+		};
+
+		inline BuildActionTooltipTextSections SplitBuildActionTooltipText(const String& description)
+		{
+			BuildActionTooltipTextSections sections;
+			const String normalized = description.replaced(U"\r", U"");
+			constexpr StringView redOpen = U"<red>";
+			constexpr StringView redClose = U"</red>";
+			size_t searchPos = 0;
+
+			while (searchPos < normalized.size())
+			{
+				const size_t start = normalized.indexOf(redOpen, searchPos);
+				if (start == String::npos)
+				{
+					sections.bodyText += normalized.substr(searchPos);
+					break;
+				}
+
+				sections.bodyText += normalized.substr(searchPos, start - searchPos);
+				const size_t redStart = start + redOpen.size();
+				const size_t end = normalized.indexOf(redClose, redStart);
+				const String redSegment = (end == String::npos)
+					? normalized.substr(redStart)
+					: normalized.substr(redStart, end - redStart);
+
+				if (!redSegment.isEmpty())
+				{
+					if (!sections.redText.isEmpty())
+					{
+						sections.redText += U"\n";
+					}
+					sections.redText += redSegment;
+				}
+
+				if (end == String::npos)
+				{
+					break;
+				}
+
+				searchPos = end + redClose.size();
+			}
+
+			return sections;
+		}
+
+		inline Array<String> WrapBuildActionTooltipText(const String& text, const Font& uiFont, int32 fontSize, double maxWidth)
+		{
+			Array<String> lines;
+			const String normalized = text.replaced(U"\r", U"");
+			const Array<String> paragraphs = normalized.split(U'\n');
+
+			for (const String& paragraph : paragraphs)
+			{
+				if (paragraph.isEmpty())
+				{
+					lines << U"";
+					continue;
+				}
+
+				String current;
+				for (const auto ch : paragraph)
+				{
+					const String candidate = current + String{ ch };
+					if (!current.isEmpty() && uiFont(candidate).region(fontSize).w > maxWidth)
+					{
+						lines << current;
+						current = String{ ch };
+					}
+					else
+					{
+						current = candidate;
+					}
+				}
+
+				lines << current;
+			}
+
+			while (!lines.isEmpty() && lines.back().isEmpty())
+			{
+				lines.pop_back();
+			}
+
+			return lines;
+		}
+
+		inline void DrawBuildActionTooltip(const BuildActionDef& action, const RectF& commandPanel, const RectF& iconRect, bool affordable, bool blockedByUnique, const Font& uiFont)
+		{
+			(void)iconRect;
+			const BuildActionTooltipTextSections sections = SplitBuildActionTooltipText(action.description);
+			const double panelWidth = commandPanel.w;
+			const double textWidth = Max(0.0, panelWidth - 24.0);
+			const Array<String> bodyLines = WrapBuildActionTooltipText(sections.bodyText, uiFont, 12, textWidth);
+			const Array<String> redLines = WrapBuildActionTooltipText(sections.redText, uiFont, 12, textWidth);
+			constexpr double panelOffset = 10.0;
+			constexpr double topPadding = 12.0;
+			constexpr double bottomPadding = 12.0;
+			constexpr double lineHeight = 18.0;
+			constexpr double sectionGap = 8.0;
+			constexpr double titleBlockHeight = 40.0;
+			const double bodyHeight = static_cast<double>(bodyLines.size()) * lineHeight;
+			const double redHeight = static_cast<double>(redLines.size()) * lineHeight;
+			const double extraGap = (!bodyLines.isEmpty() && !redLines.isEmpty()) ? sectionGap : 0.0;
+			const double tooltipHeight = titleBlockHeight + topPadding + bottomPadding + bodyHeight + redHeight + extraGap;
+
+			const RectF tooltipRect{
+				commandPanel.x,
+				Max(8.0, commandPanel.y - tooltipHeight - panelOffset),
+				panelWidth,
+				tooltipHeight
+			};
+
+			ColorF accentColor{ 1.0, 0.35, 0.30 };
+			if (affordable)
+			{
+				accentColor = ColorF{ 1.0, 0.84, 0.0 };
+			}
+			if (blockedByUnique)
+			{
+				accentColor = ColorF{ 1.0, 0.20, 0.20 };
+			}
+
+			RoundRect{ tooltipRect, 8.0 }.draw(ColorF{ 0.03, 0.05, 0.08, 0.96 });
+			RoundRect{ tooltipRect, 8.0 }.drawFrame(2.0, 0.0, accentColor);
+			uiFont(action.name).draw(15, tooltipRect.x + 12.0, tooltipRect.y + 10.0, Palette::White);
+			const ColorF costTextColor{ affordable ? 1.0 : 1.0, affordable ? 0.84 : 0.60, affordable ? 0.0 : 0.55, 1.0 };
+			uiFont(U"G{} T{} F{}"_fmt(action.costGold, action.costTrust, action.costFood)).draw(11, tooltipRect.x + 12.0, tooltipRect.y + 30.0, costTextColor);
+
+			double lineY = tooltipRect.y + titleBlockHeight;
+			for (const String& line : bodyLines)
+			{
+				uiFont(line).draw(12, tooltipRect.x + 12.0, lineY, ColorF{ 0.96, 0.97, 0.99 });
+				lineY += lineHeight;
+			}
+
+			if (!bodyLines.isEmpty() && !redLines.isEmpty())
+			{
+				lineY += sectionGap;
+			}
+
+			double redY = tooltipRect.y + tooltipRect.h - bottomPadding - redHeight;
+			for (const String& line : redLines)
+			{
+				uiFont(line).draw(12, tooltipRect.x + 12.0, redY, ColorF{ 1.0, 0.34, 0.34 });
+				redY += lineHeight;
+			}
+		}
+
 	struct ClickDebugState
 	{
 		Vec2 currentScreen{ 0, 0 };
@@ -332,6 +484,11 @@ namespace LT3
 		DrawUiLayoutDragHandle(panel, mapEditor.uiLayoutEditEnabled);
 		DrawUiLayoutTopAnchorToggle(panel, mapEditor.uiLayoutEditEnabled, mapEditor.uiCommandPanelTopAnchor);
 
+		const BuildActionDef* hoveredAction = nullptr;
+		RectF hoveredRect;
+		bool hoveredAffordable = false;
+		bool hoveredBlockedByUnique = false;
+
 		for (int32 visibleIndex = 0; visibleIndex < static_cast<int32>(visibleActions.size()); ++visibleIndex)
 		{
 			const BuildActionUiState& actionState = visibleActions[visibleIndex];
@@ -351,6 +508,10 @@ namespace LT3
 			if (rect.mouseOver())
 			{
 				frameColor = ColorF{ 1.0, 0.84, 0.0 };
+				hoveredAction = &action;
+				hoveredRect = rect;
+				hoveredAffordable = affordable;
+				hoveredBlockedByUnique = blockedByUnique;
 			}
 			rect.drawFrame(2, frameColor);
 
@@ -373,5 +534,9 @@ namespace LT3
 		}
 
 		DrawSelectedBuildQueuePanel(world, defs, mapEditor, assets, uiFont, rows);
+		if (hoveredAction)
+		{
+			DrawBuildActionTooltip(*hoveredAction, panel, hoveredRect, hoveredAffordable, hoveredBlockedByUnique, uiFont);
+		}
 	}
 }

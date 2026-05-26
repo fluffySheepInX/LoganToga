@@ -158,6 +158,102 @@ namespace LT3
 		return true;
 	}
 
+	inline bool ShouldDrawSkillRay(const SkillDef& skill)
+	{
+		if (skill.kind != SkillKind::Missile || skill.rayMode == SkillRayMode::None)
+		{
+			return false;
+		}
+
+		return skill.projectileMotion == SkillProjectileMotion::Direct
+			|| skill.projectileMotion == SkillProjectileMotion::Arc
+			|| skill.projectileMotion == SkillProjectileMotion::Parabola;
+	}
+
+	inline ColorF ResolveSkillRayColor(const SkillDef& skill, double alphaScale = 1.0)
+	{
+		const ColorF base = skill.color;
+		const ColorF tinted{
+			Clamp(base.r * 0.40 + 0.15, 0.0, 1.0),
+			Clamp(base.g * 0.55 + 0.30, 0.0, 1.0),
+			Clamp(base.b * 0.85 + 0.60, 0.0, 1.0),
+			Clamp(0.36 * alphaScale, 0.0, 1.0)
+		};
+		return tinted;
+	}
+
+	inline void DrawSkillRayLine(const SkillDef& skill, const Vec2& drawPos, double angleRad, bool quarterViewProjected = true, const Optional<Vec2>& rayTailPos = none)
+	{
+		const double screenAngle = quarterViewProjected ? ResolveProjectileScreenAngle(angleRad) : angleRad;
+		const Vec2 dir{ Cos(screenAngle), Sin(screenAngle) };
+		const double lineLen = Max(12.0, skill.projectileHeight * 1.8 * Max(0.1, skill.rayLength));
+		const double lineWidth = Max(1.2, skill.projectileWidth * 0.18);
+		const Vec2 tail = rayTailPos.value_or(drawPos - dir * lineLen);
+		Line{ drawPos, tail }.draw(lineWidth, ResolveSkillRayColor(skill));
+	}
+
+	inline void DrawSkillRayImage(const BattleRenderAssets& assets, const SkillDef& skill, const Vec2& drawPos, double angleRad, bool quarterViewProjected = true)
+	{
+		const FilePath imagePath = ResolveProjectileImagePath(skill, angleRad, quarterViewProjected);
+		if (imagePath.isEmpty())
+		{
+			DrawSkillRayLine(skill, drawPos, angleRad, quarterViewProjected);
+			return;
+		}
+
+		if (!assets.iconTextureCache.contains(imagePath))
+		{
+			assets.iconTextureCache.emplace(imagePath, Texture{ imagePath });
+		}
+
+		const Texture& texture = assets.iconTextureCache.at(imagePath);
+		const double width = Max(1.0, skill.projectileWidth);
+		const double height = Max(1.0, skill.projectileHeight);
+		const SizeF drawSize{ width, height };
+		const bool useDiagonalImage = ShouldUseDiagonalProjectileImage(skill, angleRad, quarterViewProjected);
+		const double screenAngle = quarterViewProjected ? ResolveProjectileScreenAngle(angleRad) : angleRad;
+		const double assetForwardOffset = useDiagonalImage ? (Math::HalfPi + Math::QuarterPi) : Math::HalfPi;
+		const double drawAngle = skill.projectileD360 ? (screenAngle + assetForwardOffset) : 0.0;
+		const Vec2 backDir{ Cos(screenAngle), Sin(screenAngle) };
+
+		constexpr int32 rayCopies = 3;
+		const double spacing = Max(8.0, skill.projectileHeight * 0.34 * Max(0.1, skill.rayLength));
+		for (int32 i = 0; i < rayCopies; ++i)
+		{
+			const Vec2 tailPos = drawPos - backDir * spacing * (i + 1);
+			const double fade = 1.0 - i * 0.27;
+			const TextureRegion region = texture.resized(drawSize.x, drawSize.y);
+			if (skill.projectileCenter == SkillProjectileCenter::End)
+			{
+				region.rotatedAt(region.region().bottomCenter(), drawAngle).drawAt(tailPos, ResolveSkillRayColor(skill, fade));
+			}
+			else
+			{
+				const Vec2 centerOffset = ResolveProjectileDrawCenter(skill, drawSize, drawAngle);
+				region.rotated(drawAngle).drawAt(tailPos + centerOffset, ResolveSkillRayColor(skill, fade));
+			}
+		}
+	}
+
+	inline void DrawSkillRay(const BattleRenderAssets& assets, const SkillDef& skill, const Vec2& drawPos, double angleRad, bool quarterViewProjected = true, const Optional<Vec2>& rayTailPos = none)
+	{
+		if (!ShouldDrawSkillRay(skill))
+		{
+			return;
+		}
+
+		if (skill.rayMode == SkillRayMode::Line)
+		{
+			DrawSkillRayLine(skill, drawPos, angleRad, quarterViewProjected, rayTailPos);
+			return;
+		}
+
+		if (skill.rayMode == SkillRayMode::Image)
+		{
+			DrawSkillRayImage(assets, skill, drawPos, angleRad, quarterViewProjected);
+		}
+	}
+
 	inline void DrawProjectiles(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets* assets = nullptr)
 	{
 		for (size_t i = 0; i < world.projectiles.position.size(); ++i)
@@ -165,6 +261,18 @@ namespace LT3
 			const SkillDef& skill = defs.skills[world.projectiles.skill[i]];
 			const Vec2 base = ToQuarterScreen(world.projectiles.position[i]);
 			const Vec2 drawPos = base + Vec2{ 0.0, -world.projectiles.height[i] };
+			if (assets)
+			{
+				Optional<Vec2> rayTailPos = none;
+				if (skill.rayLockToCaster
+					&& world.projectiles.owner[i] != InvalidUnitId
+					&& world.projectiles.owner[i] < world.units.position.size()
+					&& IsValidUnit(world, world.projectiles.owner[i]))
+				{
+					rayTailPos = ToQuarterScreen(world.units.position[world.projectiles.owner[i]]);
+				}
+				DrawSkillRay(*assets, skill, drawPos, world.projectiles.angleRad[i], true, rayTailPos);
+			}
 			if (assets)
 			{
 				if (const Optional<Vec2> tipScreen = ResolveSwingEndProjectileTipScreen(skill, world.projectiles.position[i], world.projectiles.angleRad[i]))

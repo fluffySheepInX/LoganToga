@@ -34,6 +34,9 @@ namespace LT3
 		def.burstIntervalSec = burstIntervalSec;
 		def.burstFireMode = (burstIntervalSec > 0.0) ? SkillBurstFireMode::Staggered : SkillBurstFireMode::Simultaneous;
 		def.burstOrderMode = SkillBurstOrderMode::Sequential;
+		def.rayMode = SkillRayMode::None;
+		def.rayLength = 1.0;
+		def.rayLockToCaster = false;
 		def.spreadDeg = spreadDeg;
 		def.arcHeight = arcHeight;
 		def.orbitRadius = orbitRadius;
@@ -113,6 +116,9 @@ namespace LT3
 			writer << U"burst_interval_sec = " << skill.burstIntervalSec << U"\n";
 			writer << U"burst_fire_mode = \"" << SkillBurstFireModeToTag(skill.burstFireMode) << U"\"\n";
 			writer << U"burst_order_mode = \"" << SkillBurstOrderModeToTag(skill.burstOrderMode) << U"\"\n";
+			writer << U"ray = \"" << SkillRayModeToTag(skill.rayMode) << U"\"\n";
+			writer << U"ray_length = " << skill.rayLength << U"\n";
+			writer << U"ray_lock_to_caster = \"" << (skill.rayLockToCaster ? U"on" : U"off") << U"\"\n";
 			writer << U"spread_deg = " << skill.spreadDeg << U"\n";
 			writer << U"arc_height = " << skill.arcHeight << U"\n";
 			writer << U"orbit_radius = " << skill.orbitRadius << U"\n";

@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../App/BattleNotificationState.h"
 # include "BattleQueries.h"
 # include "BattleUnitState.h"
 
@@ -21,11 +22,77 @@ namespace LT3
         return world.resourceNodes.amount[nodeIndex] > 0 && world.resourceNodes.owner[nodeIndex] == faction;
     }
 
-    inline void UpdateResourceNodeControl(BattleWorld& world, const DefinitionStores& defs, double dt)
+    inline double GetResourceNodeCaptureTimeSec(const BattleWorld& world, size_t nodeIndex)
+    {
+        if (nodeIndex < world.resourceNodes.captureTimeSec.size())
+        {
+            return Max(0.1, world.resourceNodes.captureTimeSec[nodeIndex]);
+        }
+
+        return 1.5;
+    }
+
+    inline bool IsOneShotResourceNode(const BattleWorld& world, size_t nodeIndex)
+    {
+        return nodeIndex < world.resourceNodes.oneShot.size() && world.resourceNodes.oneShot[nodeIndex];
+    }
+
+    inline bool IsCollectedResourceNode(const BattleWorld& world, size_t nodeIndex)
+    {
+        return nodeIndex < world.resourceNodes.collected.size() && world.resourceNodes.collected[nodeIndex];
+    }
+
+    inline void MarkResourceNodeCollected(BattleWorld& world, size_t nodeIndex)
+    {
+        if (nodeIndex < world.resourceNodes.collected.size())
+        {
+            world.resourceNodes.collected[nodeIndex] = true;
+        }
+    }
+
+    inline void GrantOneShotResourceNode(BattleWorld& world, size_t nodeIndex, Faction faction)
+    {
+        if (nodeIndex >= world.resourceNodes.defId.size() || nodeIndex >= world.resourceNodes.amount.size())
+        {
+            return;
+        }
+
+        const ResourceDefId resourceId = world.resourceNodes.defId[nodeIndex];
+        if (faction == Faction::Player)
+        {
+            if (resourceId < world.resources.playerAmounts.size())
+            {
+                world.resources.playerAmounts[resourceId] += world.resourceNodes.amount[nodeIndex];
+            }
+        }
+        else if (faction == Faction::Enemy)
+        {
+            if (resourceId < world.resources.enemyAmounts.size())
+            {
+                world.resources.enemyAmounts[resourceId] += world.resourceNodes.amount[nodeIndex];
+            }
+        }
+
+        MarkResourceNodeCollected(world, nodeIndex);
+    }
+
+    inline String BuildResourceCaptureNotificationMessage(const BattleWorld& world, const DefinitionStores& defs, size_t nodeIndex)
+    {
+        if (nodeIndex < world.resourceNodes.defId.size())
+        {
+            const ResourceDefId resourceId = world.resourceNodes.defId[nodeIndex];
+            if (resourceId < defs.resources.size())
+            {
+                return U"資源占領: {}"_fmt(defs.resources[resourceId].name);
+            }
+        }
+
+        return U"資源を占領しました";
+    }
+
+    inline void UpdateResourceNodeControl(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
         constexpr double captureRadius = 60.0;
-        constexpr double captureTimeSec = 1.5;
-        constexpr double captureRatePerSec = 1.0 / captureTimeSec;
 
         for (size_t node = 0; node < world.resourceNodes.amount.size(); ++node)
         {
@@ -64,6 +131,12 @@ namespace LT3
                 continue;
             }
 
+            if (IsOneShotResourceNode(world, node) && IsCollectedResourceNode(world, node))
+            {
+                world.resourceNodes.captureProgress[node] = 1.0;
+                continue;
+            }
+
             const Faction capturingFaction = (playerNearbyCount > enemyNearbyCount) ? Faction::Player : Faction::Enemy;
             if (world.resourceNodes.owner[node] == capturingFaction)
             {
@@ -71,11 +144,23 @@ namespace LT3
                 continue;
             }
 
+            const double captureRatePerSec = 1.0 / GetResourceNodeCaptureTimeSec(world, node);
             world.resourceNodes.captureProgress[node] += dt * captureRatePerSec;
             if (world.resourceNodes.captureProgress[node] >= 1.0)
             {
+                const Faction previousOwner = world.resourceNodes.owner[node];
                 world.resourceNodes.owner[node] = capturingFaction;
                 world.resourceNodes.captureProgress[node] = 1.0;
+                if (IsOneShotResourceNode(world, node) && !IsCollectedResourceNode(world, node))
+                {
+                    GrantOneShotResourceNode(world, node, capturingFaction);
+                }
+                if (notifications && capturingFaction == Faction::Player && previousOwner != Faction::Player)
+                {
+                    PushBattleNotification(*notifications,
+                        BuildResourceCaptureNotificationMessage(world, defs, node),
+                        BattleNotificationType::Success);
+                }
             }
         }
     }
@@ -110,6 +195,10 @@ namespace LT3
             {
                 continue;
             }
+            if (IsOneShotResourceNode(world, node))
+            {
+                continue;
+            }
 
             const int32 incomePerSec = (node < world.resourceNodes.incomePerSec.size())
                 ? world.resourceNodes.incomePerSec[node]
@@ -141,9 +230,9 @@ namespace LT3
         }
     }
 
-    inline void UpdateGathering(BattleWorld& world, const DefinitionStores& defs, double dt)
+    inline void UpdateGathering(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
-        UpdateResourceNodeControl(world, defs, dt);
+        UpdateResourceNodeControl(world, defs, dt, notifications);
         UpdateResourceIncome(world, defs, dt);
 
         for (UnitId unit = 0; unit < world.units.size(); ++unit)
