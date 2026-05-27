@@ -90,6 +90,18 @@ namespace LT3
             U"App/000_Warehouse/000_DefaultGame/045_Voice/" + fileName);
     }
 
+    inline FilePath ResolveDecalAmbientSoundPath(const String& fileName)
+    {
+        if (fileName.isEmpty())
+        {
+            return FilePath{};
+        }
+
+        return ResolveAssetPath(
+            U"000_Warehouse/000_DefaultGame/046_AmbientSound/" + fileName,
+            U"App/000_Warehouse/000_DefaultGame/046_AmbientSound/" + fileName);
+    }
+
     inline FilePath ResolveSystemImagePath(const String& imageName)
     {
         return ResolveAssetPath(

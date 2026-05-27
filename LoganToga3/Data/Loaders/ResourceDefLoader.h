@@ -7,19 +7,33 @@ namespace LT3
 {
     namespace ResourceToml
     {
-        inline constexpr auto KeyResources = U"Map001";
+        inline constexpr auto KeyResources = U"resources";
+        inline constexpr auto KeyLegacyResources = U"Map001";
+        inline constexpr auto KeyTag = U"tag";
         inline constexpr auto KeyKind = U"kind";
         inline constexpr auto KeyId = U"id";
         inline constexpr auto KeyName = U"name";
         inline constexpr auto KeyIcon = U"icon";
+        inline constexpr auto KeyInitialAmount = U"initial_amount";
+        inline constexpr auto KeyPassiveIncomePerSec = U"passive_income_per_sec";
     }
 
     inline FilePath ResolveResourceTomlPath()
     {
         return ResolveFirstExistingPath({
-            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml",
-            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/aaa.toml",
+            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Resources.toml",
+            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoResource/Resources.toml",
         });
+    }
+
+    inline int32 DefaultInitialResourceAmount(ResourceKind kind)
+    {
+        return (kind == ResourceKind::Gold) ? 110 : 0;
+    }
+
+    inline int32 DefaultPassiveIncomePerSec(ResourceKind kind)
+    {
+        return (kind == ResourceKind::Gold) ? 10 : 0;
     }
 
     inline ResourceKind ParseResourceKind(const String& value)
@@ -82,17 +96,23 @@ namespace LT3
             return;
         }
 
+        const TOMLValue resourcesValue = toml[ResourceToml::KeyResources].isEmpty()
+            ? toml[ResourceToml::KeyLegacyResources]
+            : toml[ResourceToml::KeyResources];
+
         HashSet<String> loadedTags;
-        for (const auto resourceValue : toml[ResourceToml::KeyResources].tableArrayView())
+        for (const auto resourceValue : resourcesValue.tableArrayView())
         {
-            const String tag = resourceValue[ResourceToml::KeyKind].getOr<String>(U"").lowercased();
+            const String tag = resourceValue[ResourceToml::KeyTag].getOr<String>(
+                resourceValue[ResourceToml::KeyKind].getOr<String>(U""))
+                .lowercased();
             if (tag.isEmpty() || loadedTags.contains(tag))
             {
                 continue;
             }
 
-            const ResourceKind kind = ParseResourceKind(tag);
-            const int32 passiveIncomePerSec = (kind == ResourceKind::Gold) ? 10 : 0;
+            const String kindText = resourceValue[ResourceToml::KeyKind].getOr<String>(tag).lowercased();
+            const ResourceKind kind = ParseResourceKind(kindText);
             defs.addResource({
                 tag,
                 resourceValue[ResourceToml::KeyId].getOr<String>(U""),
@@ -100,8 +120,8 @@ namespace LT3
                 ResolveResourceIcon(kind, resourceValue[ResourceToml::KeyIcon].getOr<String>(U"")),
                 kind,
                 ResolveResourceColor(kind),
-                (kind == ResourceKind::Gold) ? 110 : 0,
-                passiveIncomePerSec,
+                Max(0, resourceValue[ResourceToml::KeyInitialAmount].getOr<int32>(DefaultInitialResourceAmount(kind))),
+                Max(0, resourceValue[ResourceToml::KeyPassiveIncomePerSec].getOr<int32>(DefaultPassiveIncomePerSec(kind))),
             });
             loadedTags.insert(tag);
         }

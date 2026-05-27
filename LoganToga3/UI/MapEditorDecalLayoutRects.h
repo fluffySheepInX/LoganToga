@@ -1,11 +1,26 @@
 ﻿#pragma once
 # include "MapEditorCoreTypes.h"
+# include "RectLayoutPrimitives.h"
 
 namespace LT3
 {
 	inline RectF EditorDecalEditorPanelRect()
 	{
 		return RectF{ 680, 260, 420, 628 };
+	}
+
+	inline RectF EditorDecalEditorPanelRect(const MapEditorState& editor)
+	{
+		return RectF{ editor.uiDecalEditorPos.x, editor.uiDecalEditorPos.y, 420.0, 628.0 };
+	}
+
+	inline RectF EditorDecalEditorDragHandleRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorDecalEditorPanelRect(editor);
+		const RectF closeRect = RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+		constexpr double handleSize = 18.0;
+		constexpr double handleOffset = 6.0;
+		return RectF{ closeRect.x - handleSize - handleOffset, closeRect.y + (closeRect.h - handleSize) * 0.5, handleSize, handleSize };
 	}
 
 	inline RectF EditorDecalEditorTabBarRect()
@@ -77,6 +92,49 @@ namespace LT3
 	{
 		const RectF opacityRandomRow = EditorDecalOpacityRandomRowRect();
 		return RectF{ opacityRandomRow.x, opacityRandomRow.y + opacityRandomRow.h + 18.0, opacityRandomRow.w, 96.0 };
+	}
+
+	inline RectF EditorDecalAmbientSoundRowRect()
+	{
+		const RectF scaleRandomRow = EditorDecalScaleRandomRowRect();
+		return RectF{ scaleRandomRow.x, scaleRandomRow.y + scaleRandomRow.h + 18.0, scaleRandomRow.w, 108.0 };
+	}
+
+	inline RectF EditorDecalAmbientSoundBrowseRect()
+	{
+		const RectF row = EditorDecalAmbientSoundRowRect();
+		return RectF{ row.x, row.y, 94.0, 30.0 };
+	}
+
+	inline RectF EditorDecalAmbientSoundClearRect()
+	{
+		const RectF browse = EditorDecalAmbientSoundBrowseRect();
+		return RectF{ browse.x + browse.w + 8.0, browse.y, 44.0, browse.h };
+	}
+
+	inline RectF EditorDecalAmbientSoundNameRect()
+	{
+		const RectF clear = EditorDecalAmbientSoundClearRect();
+		const RectF row = EditorDecalAmbientSoundRowRect();
+		return RectF{ clear.x + clear.w + 10.0, clear.y + 2.0, Max(0.0, row.x + row.w - (clear.x + clear.w + 14.0)), 24.0 };
+	}
+
+	inline RectF EditorDecalAmbientVolumeRowRect()
+	{
+		const RectF row = EditorDecalAmbientSoundRowRect();
+		return RectF{ row.x, row.y + 44.0, row.w, 40.0 };
+	}
+
+	inline RectF EditorDecalAmbientVolumeDecRect()
+	{
+		const RectF row = EditorDecalAmbientVolumeRowRect();
+		return RectF{ row.x, row.y + 2.0, 52.0, row.h - 4.0 };
+	}
+
+	inline RectF EditorDecalAmbientVolumeIncRect()
+	{
+		const RectF row = EditorDecalAmbientVolumeRowRect();
+		return RectF{ row.x + row.w - 52.0, row.y + 2.0, 52.0, row.h - 4.0 };
 	}
 
 	inline RectF EditorDecalEditorCloseRect()
@@ -292,6 +350,13 @@ namespace LT3
 		return RectF{ 700, panelY, 360, panelH };
 	}
 
+	inline RectF EditorZOrderPanelRect(const MapEditorState& editor, int32 maxStackSize = 1)
+	{
+		const int32 visibleRows = Clamp(maxStackSize, 1, EditorZOrderMaxVisibleLayers);
+		const double panelH = EditorZOrderHeaderHeight + visibleRows * EditorZOrderLayerRowHeight + EditorZOrderFooterHeight;
+		return RectF{ editor.uiZOrderPanelPos.x, editor.uiZOrderPanelPos.y, 360.0, panelH };
+	}
+
 	// layerRowRect: i 番目レイヤー行の Rect
 	inline RectF EditorZOrderLayerRowRect(const RectF& panel, int32 rowIndex)
 	{
@@ -322,6 +387,15 @@ namespace LT3
 	inline RectF EditorZOrderCloseRect(const RectF& panel)
 	{
 		return RectF{ panel.x + panel.w - 38.0, panel.y + 10.0, 28.0, 28.0 };
+	}
+
+	inline RectF EditorZOrderDragHandleRect(const MapEditorState& editor, int32 maxStackSize = 1)
+	{
+		const RectF panel = EditorZOrderPanelRect(editor, maxStackSize);
+		const RectF closeRect = EditorZOrderCloseRect(panel);
+		constexpr double handleSize = 18.0;
+		constexpr double handleOffset = 6.0;
+		return RectF{ closeRect.x - handleSize - handleOffset, closeRect.y + (closeRect.h - handleSize) * 0.5, handleSize, handleSize };
 	}
 
 	// 旧シグネチャ互換（パネルサイズ不明時のフォールバック用、input側で使用）

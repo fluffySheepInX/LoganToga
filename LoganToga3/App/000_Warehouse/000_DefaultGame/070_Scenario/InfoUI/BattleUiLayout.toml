@@ -1,6 +1,6 @@
 ﻿[layout]
 
-grid = 16
+grid = 8
 
 info_x = 1296
 
@@ -14,13 +14,29 @@ resource_x = 1296
 
 resource_y = 112
 
-param_editor_x = 678
+param_editor_x = 672
 
-param_editor_y = 106
+param_editor_y = 112
 
-building_editor_x = 678
+building_editor_x = 672
 
-building_editor_y = 106
+building_editor_y = 112
+
+resource_node_editor_x = 528
+
+resource_node_editor_y = 64
+
+decal_editor_x = 720
+
+decal_editor_y = 64
+
+perlin_panel_x = 816
+
+perlin_panel_y = 64
+
+z_order_panel_x = 776
+
+z_order_panel_y = 64
 
 info_top_anchor = true
 

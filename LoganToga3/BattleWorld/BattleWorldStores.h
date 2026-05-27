@@ -122,6 +122,7 @@ namespace LT3
 		Array<double> burstShotTimerSec;
 		Array<UnitId> burstTarget;
 		Array<Array<int32>> burstOrder;
+		Array<double> skillCastFailureDisplayLeftSec;
 
 		void addUnit()
 		{
@@ -130,6 +131,7 @@ namespace LT3
 			burstShotTimerSec << 0.0;
 			burstTarget << InvalidUnitId;
 			burstOrder << Array<int32>{};
+			skillCastFailureDisplayLeftSec << 0.0;
 		}
 	};
 

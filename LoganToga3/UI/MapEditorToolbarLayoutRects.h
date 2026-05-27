@@ -53,9 +53,14 @@ namespace LT3
 		return Scene::Time() < editor.editorBarHiddenUntilSec;
 	}
 
+	inline bool IsEditorBarLayoutHidden(const MapEditorState& editor)
+	{
+		return (!editor.editorToolbarAllowed) || IsEditorBarPreviewHidden(editor);
+	}
+
 	inline double EditorBarTopAnchorOffset(const MapEditorState& editor, bool topAnchor)
 	{
-		return (topAnchor && IsEditorBarPreviewHidden(editor)) ? -96.0 : 0.0;
+		return (topAnchor && IsEditorBarLayoutHidden(editor)) ? -96.0 : 0.0;
 	}
 
 	inline RectF EditorStatusBarRect()

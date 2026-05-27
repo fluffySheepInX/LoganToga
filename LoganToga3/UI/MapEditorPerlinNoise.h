@@ -266,14 +266,18 @@ namespace LT3
 			return;
 		}
 
-		const RectF panel = EditorPerlinNoisePanelRect();
-		const RectF closeRect = EditorPerlinNoiseCloseRect();
-		const RectF fileRect = EditorPerlinNoiseFileDialogRect();
-		const RectF runRect = EditorPerlinNoiseRunRect();
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
+		const RectF closeRect = EditorPerlinNoiseCloseRect(editor);
+		const RectF fileRect = EditorPerlinNoiseFileDialogRect(editor);
+		const RectF runRect = EditorPerlinNoiseRunRect(editor);
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.94 }).drawFrame(1, ColorF{ 1, 1, 1, 0.18 });
 		uiFont(U"Perlin Noise Terrain").draw(panel.x + 18.0, panel.y + 14.0, Palette::White);
 		closeRect.draw(ColorF{ 0.12, 0.05, 0.05, 0.95 }).drawFrame(1, closeRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
 		uiFont(U"×").drawAt(18, closeRect.center(), Palette::White);
+		if (editor.uiLayoutEditEnabled)
+		{
+			DrawUiLayoutDragHandleOnly(EditorPerlinNoiseDragHandleRect(editor), editor.uiLayoutDraggingPerlinNoisePanel, uiFont, 11);
+		}
 
 		fileRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, fileRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
 		uiFont(U"Add Image").drawAt(12, fileRect.center(), Palette::White);
@@ -282,8 +286,8 @@ namespace LT3
 		for (int32 axis = 0; axis < 2; ++axis)
 		{
 			const bool widthAxis = (axis == 0);
-			const RectF decRect = EditorPerlinNoiseSizeDecRect(widthAxis);
-			const RectF incRect = EditorPerlinNoiseSizeIncRect(widthAxis);
+			const RectF decRect = EditorPerlinNoiseSizeDecRect(editor, widthAxis);
+			const RectF incRect = EditorPerlinNoiseSizeIncRect(editor, widthAxis);
 			decRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, decRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
 			incRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, incRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
 			uiFont(U"-").drawAt(22, decRect.center(), Palette::White);
@@ -292,7 +296,7 @@ namespace LT3
 			uiFont(U"{}"_fmt(widthAxis ? editor.perlinMapWidth : editor.perlinMapHeight)).drawAt(18, Vec2{ decRect.x + 154.0, decRect.center().y }, Palette::White);
 		}
 
-		const RectF stackViewport = EditorPerlinNoiseStackViewportRect();
+		const RectF stackViewport = EditorPerlinNoiseStackViewportRect(editor);
 		stackViewport.draw(ColorF{ 0, 0, 0, 0.12 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 		if (editor.perlinStack.isEmpty())
 		{
@@ -478,14 +482,14 @@ namespace LT3
 		}
 
 		bool consumed = false;
-		if (EditorPerlinNoiseCloseRect().leftClicked())
+		if (EditorPerlinNoiseCloseRect(editor).leftClicked())
 		{
 			editor.showPerlinNoisePanel = false;
 			editor.statusText = U"Perlin noise panel OFF";
 			return true;
 		}
 
-		if (EditorPerlinNoiseFileDialogRect().leftClicked())
+		if (EditorPerlinNoiseFileDialogRect(editor).leftClicked())
 		{
 			if (const Optional<FilePath> path = Dialog::OpenFile({ FileFilter::AllFiles() }))
 			{
@@ -494,34 +498,34 @@ namespace LT3
 			consumed = true;
 		}
 
-		if (EditorPerlinNoiseSizeDecRect(true).leftClicked())
+		if (EditorPerlinNoiseSizeDecRect(editor, true).leftClicked())
 		{
 			editor.perlinMapWidth = Clamp(editor.perlinMapWidth - 1, 4, 40);
 			consumed = true;
 		}
-		if (EditorPerlinNoiseSizeIncRect(true).leftClicked())
+		if (EditorPerlinNoiseSizeIncRect(editor, true).leftClicked())
 		{
 			editor.perlinMapWidth = Clamp(editor.perlinMapWidth + 1, 4, 40);
 			consumed = true;
 		}
-		if (EditorPerlinNoiseSizeDecRect(false).leftClicked())
+		if (EditorPerlinNoiseSizeDecRect(editor, false).leftClicked())
 		{
 			editor.perlinMapHeight = Clamp(editor.perlinMapHeight - 1, 4, 40);
 			consumed = true;
 		}
-		if (EditorPerlinNoiseSizeIncRect(false).leftClicked())
+		if (EditorPerlinNoiseSizeIncRect(editor, false).leftClicked())
 		{
 			editor.perlinMapHeight = Clamp(editor.perlinMapHeight + 1, 4, 40);
 			consumed = true;
 		}
 
-		if (EditorPerlinNoiseRunRect().leftClicked())
+		if (EditorPerlinNoiseRunRect(editor).leftClicked())
 		{
 			ApplyPerlinTerrainMap(editor);
 			consumed = true;
 		}
 
-		if (EditorPerlinNoisePanelRect().mouseOver())
+		if (EditorPerlinNoisePanelRect(editor).mouseOver())
 		{
 			consumed = true;
 		}

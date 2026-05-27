@@ -48,6 +48,13 @@ namespace LT3
             editor.uiLayoutEditEnabled = !editor.uiLayoutEditEnabled;
             editor.uiLayoutDraggingSelectedInfo = false;
             editor.uiLayoutDraggingCommandPanel = false;
+            editor.uiLayoutDraggingResourcePanel = false;
+            editor.uiLayoutDraggingParamEditor = false;
+            editor.uiLayoutDraggingBuildingEditor = false;
+            editor.uiLayoutDraggingResourceNodeEditor = false;
+            editor.uiLayoutDraggingDecalEditor = false;
+            editor.uiLayoutDraggingPerlinNoisePanel = false;
+            editor.uiLayoutDraggingZOrderPanel = false;
             if (!editor.uiLayoutEditEnabled)
             {
                 SaveBattleUiLayoutToml(editor);
@@ -75,6 +82,11 @@ namespace LT3
 
     inline bool ProcessMapEditorToolbarInput(MapEditorState& editor)
     {
+        if (!editor.editorToolbarAllowed)
+        {
+            return false;
+        }
+
         if (IsEditorBarPreviewHidden(editor))
         {
             return false;

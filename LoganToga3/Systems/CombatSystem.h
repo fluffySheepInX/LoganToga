@@ -114,6 +114,14 @@ namespace LT3
             SetUnitAttacking(world, unit);
             if (world.cooldowns.attackLeftSec[unit] > 0.0) continue;
             if (unit < world.cooldowns.burstShotsLeft.size() && world.cooldowns.burstShotsLeft[unit] > 0) continue;
+            if (!TryConsumeSkillResourceCosts(world, defs, world.units.faction[unit], skill))
+            {
+                if (unit < world.cooldowns.skillCastFailureDisplayLeftSec.size())
+                {
+                    world.cooldowns.skillCastFailureDisplayLeftSec[unit] = 0.6;
+                }
+                continue;
+            }
 
             const int32 burstCount = Max(1, skill.burstCount);
             if (unit < world.cooldowns.burstOrder.size())
@@ -170,6 +178,15 @@ namespace LT3
                 }
             }
             world.cooldowns.attackLeftSec[unit] = skill.cooldownSec;
+        }
+
+        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        {
+            if (unit >= world.cooldowns.skillCastFailureDisplayLeftSec.size())
+            {
+                break;
+            }
+            world.cooldowns.skillCastFailureDisplayLeftSec[unit] = Max(0.0, world.cooldowns.skillCastFailureDisplayLeftSec[unit] - dt);
         }
     }
 }

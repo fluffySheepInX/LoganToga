@@ -76,6 +76,8 @@ namespace LT3
 		double decalShadowOpacity = 0.35;
 		double decalShadowBlur = 6.0;
 		DecalRenderKind decalRenderKind = DecalRenderKind::Ground;
+		String decalAmbientSound;
+		double decalAmbientVolume = 0.6;
 	};
 
 	struct MapEditorDecalPlacement
@@ -135,6 +137,7 @@ namespace LT3
 	struct MapEditorState
 	{
 		bool enabled = false;
+		bool editorToolbarAllowed = false;
 		bool showDebugInfo = true;
 		bool showEnemyMoveMarkers = false;
 		bool showBattleGrid = true;
@@ -180,6 +183,11 @@ namespace LT3
 		Array<double> skillValueSteps;
 		Optional<int32> skillValueStepMenuRow;
 		Vec2 skillValueStepMenuPos{ 0.0, 0.0 };
+		int32 skillResourceCostEditingIndex = -1;
+		String skillResourceCostEditingText;
+		Array<double> skillResourceCostSteps;
+		Optional<int32> skillResourceCostStepMenuIndex;
+		Vec2 skillResourceCostStepMenuPos{ 0.0, 0.0 };
 		Vec2 skillSandboxCasterPos{ 136.0, 404.0 };
 		Vec2 skillSandboxTargetPos{ 512.0, 404.0 };
 		int32 skillSandboxTargetHp = 100;
@@ -232,6 +240,10 @@ namespace LT3
 		Vec2 uiBuildingEditorPos{ 600.0, 92.0 };
 		bool uiLayoutDraggingBuildingEditor = false;
 		Vec2 uiLayoutDragOffset{ 0.0, 0.0 };
+		Vec2 uiResourceNodeEditorPos{ 700.0, 404.0 };
+		bool uiLayoutDraggingResourceNodeEditor = false;
+		Vec2 uiDecalEditorPos{ 680.0, 260.0 };
+		bool uiLayoutDraggingDecalEditor = false;
 		FilePath assetDirectory;
 		FilePath savePath;
 		FilePath uiLayoutPath;
@@ -250,6 +262,8 @@ namespace LT3
 		HashTable<String, Texture> resourceIconTextures;
 		bool showStarToolMenu = false;
 		bool showPerlinNoisePanel = false;
+		Vec2 uiPerlinNoisePanelPos{ 700.0, 132.0 };
+		bool uiLayoutDraggingPerlinNoisePanel = false;
 		bool showFogPanel = false;
 		bool fogEnabled = true;
 		ColorF fogColor{ 0.02, 0.025, 0.035 };
@@ -273,6 +287,8 @@ namespace LT3
 		Optional<Point> zOrderDragStartCell;
 		Optional<Rect> zOrderSelectionRect;
 		int32 zOrderSelectedStackIndex = 0;
+		Vec2 uiZOrderPanelPos{ 700.0, 602.0 };
+		bool uiLayoutDraggingZOrderPanel = false;
 		String statusText = U"Map editor ready";
 
 		// Unit right-click context menu

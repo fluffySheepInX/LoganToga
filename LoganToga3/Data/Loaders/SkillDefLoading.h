@@ -67,6 +67,21 @@ namespace LT3
 		def.projectileHeight = Max(1.0, skillValue[U"projectile_height"].getOr<double>(def.arcHeight));
 		def.swingRadius = Max(0.0, skillValue[U"swing_radius"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? 0.0 : def.orbitRadius));
 		def.swingAngleDeg = skillValue[U"swing_angle_deg"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? def.range : 90.0);
+		const TOMLValue resourceCostsValue = skillValue[U"resource_costs"];
+		if (resourceCostsValue.isTableArray())
+		{
+			for (const auto costValue : resourceCostsValue.tableArrayView())
+			{
+				const String resourceTag = costValue[U"tag"].getOr<String>(U"").lowercased();
+				if (resourceTag.isEmpty())
+				{
+					continue;
+				}
+
+				const int32 amount = Max(1, costValue[U"amount"].getOr<int32>(1));
+				def.resourceCosts << SkillResourceCostDef{ resourceTag, amount };
+			}
+		}
 		def.color = ReadSkillColor(skillValue, def.color);
 		return def;
 	}

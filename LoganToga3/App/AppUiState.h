@@ -76,10 +76,11 @@ namespace LT3
             ui.debugClipboardCaptureIconPath);
     }
 
-    inline void InitializeAppUiState(AppUiState& ui)
+    inline void InitializeAppUiState(AppUiState& ui, const bool editorToolbarAllowed = false)
     {
         ui = AppUiState{};
         LoadMapEditorAssets(ui.mapEditor);
+        ui.mapEditor.editorToolbarAllowed = editorToolbarAllowed;
         ui.debugClipboardCaptureIconPath = ResolveSystemImagePath(U"copy.png");
         if (FileSystem::Exists(ui.debugClipboardCaptureIconPath))
         {

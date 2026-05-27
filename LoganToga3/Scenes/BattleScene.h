@@ -17,7 +17,7 @@ namespace LT3
 			: AppSceneManager::Scene(init)
 		{
 			auto& data = getData();
-			InitializeAppUiState(m_ui);
+			InitializeAppUiState(m_ui, data.modMode);
 			InitializeAppRuntimeState(m_runtime, data.definitions);
 			SyncBattleWorldMapFromEditor(m_ui.mapEditor, m_runtime.world, data.definitions.defs);
 			StopMusicPreview(data.musicEditor);

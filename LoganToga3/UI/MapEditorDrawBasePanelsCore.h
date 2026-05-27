@@ -155,6 +155,11 @@ namespace LT3
 
 	inline void DrawMapEditorToolbar(const MapEditorState& editor, const Font& uiFont)
 	{
+		if (!editor.editorToolbarAllowed)
+		{
+			return;
+		}
+
 		if (IsEditorBarPreviewHidden(editor))
 		{
 			return;
@@ -273,7 +278,7 @@ namespace LT3
 			}
 		}
 
-		const RectF panel = EditorZOrderPanelRect(maxStackSize);
+		const RectF panel = EditorZOrderPanelRect(editor, maxStackSize);
 		const RectF downRect = EditorZOrderDownRect(panel);
 		const RectF upRect = EditorZOrderUpRect(panel);
 		const RectF sendToBackRect = EditorZOrderSendToBackRect(panel);
@@ -284,6 +289,10 @@ namespace LT3
 		uiFont(U"Decal Z-Order").draw(panel.x + 18.0, panel.y + 14.0, Palette::White);
 		uiFont(U"click row to select  |  ⇤ Back … Front ⇥  to reorder").draw(10, panel.x + 18.0, panel.y + 34.0, ColorF{ 0.65, 0.65, 0.65 });
 		DrawEditorIconButton(closeRect, U"×", uiFont, 18, ColorF{ 0.12, 0.05, 0.05, 0.95 });
+		if (editor.uiLayoutEditEnabled)
+		{
+			DrawUiLayoutDragHandleOnly(EditorZOrderDragHandleRect(editor, maxStackSize), editor.uiLayoutDraggingZOrderPanel, uiFont, 11);
+		}
 
 		// レイヤーリスト（index 0 = back, index N-1 = front）
 		for (int32 i = 0; i < visibleRows; ++i)

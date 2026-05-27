@@ -14,16 +14,23 @@ namespace LT3
 			: AppSceneManager::Scene(init)
 		{
 			auto& data = getData();
+			LoadTitleUiLayoutToml(data.titleUiLayout);
 			LoadMusicSettingsToml(data.musicSettings, data.musicEditor.statusText);
-			data.musicEditor.open = data.musicSettings.editorOpen;
+			data.musicEditor.open = false;
 			PlaySceneMusic(data, MusicSceneId::Title);
 		}
 
 		void update() override
 		{
 			auto& data = getData();
-				HandleMusicEditorInput(data);
-			if (SimpleButton(RectF{ 60, 120, 220, 44 }, U"Start Battle", data.uiFont))
+			HandleTitleUiEditorInput(data);
+			if (data.titleUiEditor.open)
+			{
+				return;
+			}
+
+			HandleMusicEditorInput(data);
+			if (SimpleButton(BattleButtonRect(data), U"スカーミッシュ", data.uiFont))
 			{
 				StopMusicPreview(data.musicEditor);
 				changeScene(AppSceneState::Battle, 0.4s);
@@ -34,20 +41,244 @@ namespace LT3
 		void draw() const override
 		{
 			const auto& data = getData();
-			data.titleFont(U"LoganToga3").draw(60, 40, Palette::White);
-			data.uiFont(U"Title Scene").draw(60, 84, Palette::Lightgray);
+			if (data.titleImage)
+			{
+				data.titleImage.draw(6, 6);
+			}
+			DrawTitleUiEditorHotspot(data);
+			DrawTitleUiEditor(data);
 				DrawMusicEditor(data);
 		}
 
 	private:
-		static RectF MusicEditorPanelRect()
+		static RectF BattleButtonRect(const AppSharedData& data)
 		{
-			return RectF{ 320, 40, 560, 380 };
+			return data.titleUiLayout.skirmishButtonRect;
 		}
 
-		static RectF MusicEditorToggleRect()
+		static RectF MusicEditorPanelRect()
 		{
-			return RectF{ 320, 40, 180, 36 };
+			return RectF{ 96, 96, 560, 380 };
+		}
+
+		static RectF MusicEditorToggleRect(const AppSharedData& data)
+		{
+			return data.titleUiLayout.musicEditorToggleRect;
+		}
+
+		static RectF TitleUiEditorHotspotRect()
+		{
+			return RectF{
+				Scene::Width() - TitleEditorHotspotSize,
+				Scene::Height() - TitleUnderBarHeight - TitleEditorHotspotSize,
+				TitleEditorHotspotSize,
+				TitleEditorHotspotSize,
+			};
+		}
+
+		static void DrawTitleUiEditorHotspot(const AppSharedData& data)
+		{
+			const RectF hotspotRect = TitleUiEditorHotspotRect();
+			if (!hotspotRect.mouseOver())
+			{
+				return;
+			}
+
+			hotspotRect.rounded(10).draw(ColorF{ 0.25, 0.55, 0.90, 0.18 }).drawFrame(2.0, ColorF{ 0.70, 0.90, 1.0, 0.65 });
+			data.uiFont(U"UI").drawAt(18, hotspotRect.center(), Palette::White);
+		}
+
+		static void DrawTitleUiEditor(const AppSharedData& data)
+		{
+			if (!data.titleUiEditor.open)
+			{
+				return;
+			}
+
+			const RectF panelRect = TitleUiEditorPanelRect();
+			panelRect.rounded(8).draw(ColorF{ 0.10, 0.12, 0.16, 0.96 }).drawFrame(2.0, ColorF{ 1.0, 1.0, 1.0, 0.18 });
+			data.uiFont(U"Title UI Editor").draw(panelRect.x + 16, panelRect.y + 12, Palette::White);
+			data.uiFont(U"Grid").draw(panelRect.x + 64, panelRect.y + 50, Palette::Lightgray);
+			data.uiFont(U"{} px"_fmt(data.titleUiLayout.gridSize)).draw(panelRect.x + 112, panelRect.y + 50, Palette::Orange);
+
+			const Array<TitleUiEditableElement> elements = { TitleUiEditableElement::SkirmishButton, TitleUiEditableElement::MusicEditorToggle };
+			for (int32 i = 0; i < static_cast<int32>(elements.size()); ++i)
+			{
+				const RectF rowRect = TitleUiEditorElementRect(panelRect, i);
+				const bool selected = (data.titleUiEditor.selectedElement && *data.titleUiEditor.selectedElement == elements[i]);
+				rowRect.draw(selected ? ColorF{ 0.20, 0.28, 0.42, 0.96 } : ColorF{ 0.12, 0.14, 0.20, 0.88 })
+					.drawFrame(2.0, selected ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 1.0, 1.0, 1.0, 0.16 });
+				data.uiFont(EditableTitleLabel(elements[i])).draw(rowRect.x + 10, rowRect.y + 5, Palette::White);
+			}
+
+			data.uiFont(U"Drag button body to move").draw(panelRect.x + 16, panelRect.y + 180, Palette::Skyblue);
+			data.uiFont(U"Drag right edge to resize width").draw(panelRect.x + 16, panelRect.y + 200, Palette::Skyblue);
+			data.uiFont(data.titleUiEditor.statusText).draw(panelRect.x + 16, panelRect.y + 168, Palette::White);
+
+			for (const auto element : elements)
+			{
+				const RectF& targetRect = EditableTitleRect(data, element);
+				const bool selected = (data.titleUiEditor.selectedElement && *data.titleUiEditor.selectedElement == element);
+				targetRect.drawFrame(2.0, selected ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 0.60, 0.80, 1.0, 0.55 });
+				TitleUiEditorResizeHandleRect(targetRect).draw(selected ? ColorF{ 1.0, 0.84, 0.0, 0.60 } : ColorF{ 0.60, 0.80, 1.0, 0.30 });
+			}
+		}
+
+		static RectF TitleUiEditorPanelRect()
+		{
+			return RectF{ TitleEditorPanelX, TitleEditorPanelY, 320, 220 };
+		}
+
+		static RectF TitleUiEditorGridDownRect(const RectF& panelRect)
+		{
+			return RectF{ panelRect.x + 16, panelRect.y + 44, 36, 32 };
+		}
+
+		static RectF TitleUiEditorGridUpRect(const RectF& panelRect)
+		{
+			return RectF{ panelRect.x + 188, panelRect.y + 44, 36, 32 };
+		}
+
+		static RectF TitleUiEditorElementRect(const RectF& panelRect, const int32 index)
+		{
+			return RectF{ panelRect.x + 16, panelRect.y + 92 + index * 40.0, 208, 30 };
+		}
+
+		static RectF TitleUiEditorResizeHandleRect(const RectF& targetRect)
+		{
+			return RectF{ targetRect.x + targetRect.w - 12, targetRect.y, 12, targetRect.h };
+		}
+
+		static RectF& EditableTitleRect(AppSharedData& data, const TitleUiEditableElement element)
+		{
+			switch (element)
+			{
+			case TitleUiEditableElement::MusicEditorToggle:
+				return data.titleUiLayout.musicEditorToggleRect;
+			case TitleUiEditableElement::SkirmishButton:
+			default:
+				return data.titleUiLayout.skirmishButtonRect;
+			}
+		}
+
+		static const RectF& EditableTitleRect(const AppSharedData& data, const TitleUiEditableElement element)
+		{
+			switch (element)
+			{
+			case TitleUiEditableElement::MusicEditorToggle:
+				return data.titleUiLayout.musicEditorToggleRect;
+			case TitleUiEditableElement::SkirmishButton:
+			default:
+				return data.titleUiLayout.skirmishButtonRect;
+			}
+		}
+
+		static StringView EditableTitleLabel(const TitleUiEditableElement element)
+		{
+			switch (element)
+			{
+			case TitleUiEditableElement::MusicEditorToggle:
+				return U"Music Toggle";
+			case TitleUiEditableElement::SkirmishButton:
+			default:
+				return U"Skirmish";
+			}
+		}
+
+		static void HandleTitleUiEditorInput(AppSharedData& data)
+		{
+			TitleUiEditorState& editor = data.titleUiEditor;
+			RepairTitleUiLayout(data.titleUiLayout);
+			const RectF hotspotRect = TitleUiEditorHotspotRect();
+			if (hotspotRect.mouseOver())
+			{
+				Cursor::RequestStyle(CursorStyle::Hand);
+			}
+			if (hotspotRect.leftClicked())
+			{
+				editor.open = !editor.open;
+				editor.statusText = editor.open ? U"Title UI Editor opened" : U"Title UI Editor closed";
+				return;
+			}
+
+			if (!editor.open)
+			{
+				return;
+			}
+
+			const RectF panelRect = TitleUiEditorPanelRect();
+			if (SimpleButton(TitleUiEditorGridDownRect(panelRect), U"-", data.uiFont))
+			{
+				data.titleUiLayout.gridSize = Clamp(data.titleUiLayout.gridSize - 8, 8, 160);
+				SaveTitleUiLayoutToml(data.titleUiLayout);
+				editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				return;
+			}
+			if (SimpleButton(TitleUiEditorGridUpRect(panelRect), U"+", data.uiFont))
+			{
+				data.titleUiLayout.gridSize = Clamp(data.titleUiLayout.gridSize + 8, 8, 160);
+				SaveTitleUiLayoutToml(data.titleUiLayout);
+				editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				return;
+			}
+
+			const Array<TitleUiEditableElement> elements = { TitleUiEditableElement::SkirmishButton, TitleUiEditableElement::MusicEditorToggle };
+			for (int32 i = 0; i < static_cast<int32>(elements.size()); ++i)
+			{
+				const RectF rowRect = TitleUiEditorElementRect(panelRect, i);
+				if (rowRect.leftClicked())
+				{
+					editor.selectedElement = elements[i];
+					editor.statusText = U"Selected: {}"_fmt(EditableTitleLabel(elements[i]));
+					return;
+				}
+			}
+
+			if (!editor.selectedElement)
+			{
+				return;
+			}
+
+			RectF& targetRect = EditableTitleRect(data, *editor.selectedElement);
+			const RectF resizeHandleRect = TitleUiEditorResizeHandleRect(targetRect);
+			if (!editor.dragOffset && !editor.resizing && MouseL.down() && resizeHandleRect.mouseOver())
+			{
+				editor.resizing = true;
+				editor.resizeAnchorLeft = targetRect.x;
+				editor.resizeAnchorY = targetRect.y;
+				return;
+			}
+			if (!editor.resizing && !editor.dragOffset && MouseL.down() && targetRect.mouseOver())
+			{
+				editor.dragOffset = Cursor::PosF() - targetRect.pos;
+				return;
+			}
+
+			if (editor.resizing && MouseL.pressed())
+			{
+				targetRect.w = Max(TitleUiEditorMinButtonWidth, SnapTitleUiScalar(Cursor::PosF().x - editor.resizeAnchorLeft, data.titleUiLayout.gridSize));
+				SaveTitleUiLayoutToml(data.titleUiLayout);
+				editor.statusText = U"Resized: {}"_fmt(EditableTitleLabel(*editor.selectedElement));
+			}
+			else if (editor.dragOffset && MouseL.pressed())
+			{
+				const Vec2 snapped = SnapTitleUiPosition(Cursor::PosF() - *editor.dragOffset, data.titleUiLayout.gridSize);
+				targetRect.x = Clamp(snapped.x, 0.0, Max(0.0, Scene::Width() - targetRect.w));
+				targetRect.y = Clamp(snapped.y, 0.0, Max(0.0, Scene::Height() - TitleUnderBarHeight - targetRect.h));
+				SaveTitleUiLayoutToml(data.titleUiLayout);
+				editor.statusText = U"Moved: {}"_fmt(EditableTitleLabel(*editor.selectedElement));
+			}
+
+			if (MouseL.up())
+			{
+				if (editor.dragOffset || editor.resizing)
+				{
+					RepairTitleUiLayout(data.titleUiLayout);
+					SaveTitleUiLayoutToml(data.titleUiLayout);
+				}
+				editor.dragOffset.reset();
+				editor.resizing = false;
+			}
 		}
 
 		static RectF MusicSceneRowRect(const RectF& panelRect, const int32 index)
@@ -113,7 +344,7 @@ namespace LT3
 
 		static void HandleMusicEditorInput(AppSharedData& data)
 		{
-			if (SimpleButton(MusicEditorToggleRect(), data.musicEditor.open ? U"Hide Music Editor" : U"Show Music Editor", data.uiFont))
+			if (SimpleButton(MusicEditorToggleRect(data), data.musicEditor.open ? U"Hide Music Editor" : U"Show Music Editor", data.uiFont))
 			{
 				data.musicEditor.open = !data.musicEditor.open;
 				data.musicSettings.editorOpen = data.musicEditor.open;

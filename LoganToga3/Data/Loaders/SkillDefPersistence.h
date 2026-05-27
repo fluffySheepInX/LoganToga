@@ -128,6 +128,16 @@ namespace LT3
 			writer << U"projectile_height = " << skill.projectileHeight << U"\n";
 			writer << U"swing_radius = " << skill.swingRadius << U"\n";
 			writer << U"swing_angle_deg = " << skill.swingAngleDeg << U"\n";
+			for (const auto& cost : skill.resourceCosts)
+			{
+				if (cost.resourceTag.isEmpty())
+				{
+					continue;
+				}
+				writer << U"[[skills.resource_costs]]\n";
+				writer << U"tag = \"" << EscapeTomlBasicString(cost.resourceTag) << U"\"\n";
+				writer << U"amount = " << Max(1, cost.amount) << U"\n";
+			}
 			writer << U"color_r = " << skill.color.r << U"\n";
 			writer << U"color_g = " << skill.color.g << U"\n";
 			writer << U"color_b = " << skill.color.b << U"\n";

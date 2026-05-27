@@ -1,0 +1,37 @@
+# Resource definitions loaded by ResourceDefLoader.h
+#
+# Editable keys:
+# - tag: internal unique tag used by the game
+# - id: display / ordering id
+# - name: UI display name
+# - icon: icon file name
+# - kind: resource category (gold / trust / food)
+# - initial_amount: starting amount at battle start
+# - passive_income_per_sec: passive income gained every second
+
+[[resources]]
+tag = "gold"
+id = "000"
+name = "Gold"
+icon = "resource-gold.png"
+kind = "gold"
+initial_amount = 200
+passive_income_per_sec = 10
+
+[[resources]]
+tag = "trust"
+id = "002"
+name = "Trust"
+icon = "resource-trust.png"
+kind = "trust"
+initial_amount = 0
+passive_income_per_sec = 0
+
+[[resources]]
+tag = "food"
+id = "004"
+name = "Food"
+icon = "resource-food.png"
+kind = "food"
+initial_amount = 0
+passive_income_per_sec = 0

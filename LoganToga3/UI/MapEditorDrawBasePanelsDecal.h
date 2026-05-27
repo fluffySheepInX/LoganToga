@@ -15,38 +15,54 @@ namespace LT3
 		}
 
 		const MapEditorAsset& asset = editor.assets[editor.decalEditorAssetIndex];
-		const RectF panel = EditorDecalEditorPanelRect();
-		const RectF closeRect = EditorDecalEditorCloseRect();
-		const RectF tabBarRect = EditorDecalEditorTabBarRect();
-		const RectF decalTabRect = EditorDecalEditorTabRect(0);
-		const RectF shadowTabRect = EditorDecalEditorTabRect(1);
-		const RectF previewRect = EditorDecalEditorPreviewRect();
-		const RectF opacityDecRect = EditorDecalOpacityDecRect();
-		const RectF opacityIncRect = EditorDecalOpacityIncRect();
-		const RectF scaleDecRect = EditorDecalScaleDecRect();
-		const RectF scaleIncRect = EditorDecalScaleIncRect();
-		const RectF applyRect = EditorDecalApplyRect();
-		const RectF opacityRowRect = EditorDecalOpacityRowRect();
-		const RectF scaleRowRect = EditorDecalScaleRowRect();
-		const RectF renderKindRowRect = EditorDecalRenderKindRowRect();
-		const RectF opacityRandomRowRect = EditorDecalOpacityRandomRowRect();
-		const RectF scaleRandomRowRect = EditorDecalScaleRandomRowRect();
-		const RectF opacityRandomRect = EditorDecalOpacityRandomToggleRect();
-		const RectF opacityRandomValueRect = EditorDecalOpacityRandomValueRect();
-		const RectF opacityMinDecRect = EditorDecalOpacityMinDecRect();
-		const RectF opacityMinIncRect = EditorDecalOpacityMinIncRect();
-		const RectF opacityMaxDecRect = EditorDecalOpacityMaxDecRect();
-		const RectF opacityMaxIncRect = EditorDecalOpacityMaxIncRect();
-		const RectF scaleRandomRect = EditorDecalScaleRandomToggleRect();
-		const RectF scaleRandomValueRect = EditorDecalScaleRandomValueRect();
-		const RectF scaleMinDecRect = EditorDecalScaleMinDecRect();
-		const RectF scaleMinIncRect = EditorDecalScaleMinIncRect();
-		const RectF scaleMaxDecRect = EditorDecalScaleMaxDecRect();
-		const RectF scaleMaxIncRect = EditorDecalScaleMaxIncRect();
+		const RectF panel = EditorDecalEditorPanelRect(editor);
+		const Vec2 panelOffset = panel.pos - EditorDecalEditorPanelRect().pos;
+		const auto decalRect = [&](const RectF& rect)
+		{
+			return rect.movedBy(panelOffset);
+		};
+		const RectF closeRect = decalRect(EditorDecalEditorCloseRect());
+		const RectF tabBarRect = decalRect(EditorDecalEditorTabBarRect());
+		const RectF decalTabRect = decalRect(EditorDecalEditorTabRect(0));
+		const RectF shadowTabRect = decalRect(EditorDecalEditorTabRect(1));
+		const RectF previewRect = decalRect(EditorDecalEditorPreviewRect());
+		const RectF opacityDecRect = decalRect(EditorDecalOpacityDecRect());
+		const RectF opacityIncRect = decalRect(EditorDecalOpacityIncRect());
+		const RectF scaleDecRect = decalRect(EditorDecalScaleDecRect());
+		const RectF scaleIncRect = decalRect(EditorDecalScaleIncRect());
+		const RectF applyRect = decalRect(EditorDecalApplyRect());
+		const RectF opacityRowRect = decalRect(EditorDecalOpacityRowRect());
+		const RectF scaleRowRect = decalRect(EditorDecalScaleRowRect());
+		const RectF renderKindRowRect = decalRect(EditorDecalRenderKindRowRect());
+		const RectF opacityRandomRowRect = decalRect(EditorDecalOpacityRandomRowRect());
+		const RectF scaleRandomRowRect = decalRect(EditorDecalScaleRandomRowRect());
+		const RectF opacityRandomRect = decalRect(EditorDecalOpacityRandomToggleRect());
+		const RectF opacityRandomValueRect = decalRect(EditorDecalOpacityRandomValueRect());
+		const RectF opacityMinDecRect = decalRect(EditorDecalOpacityMinDecRect());
+		const RectF opacityMinIncRect = decalRect(EditorDecalOpacityMinIncRect());
+		const RectF opacityMaxDecRect = decalRect(EditorDecalOpacityMaxDecRect());
+		const RectF opacityMaxIncRect = decalRect(EditorDecalOpacityMaxIncRect());
+		const RectF scaleRandomRect = decalRect(EditorDecalScaleRandomToggleRect());
+		const RectF scaleRandomValueRect = decalRect(EditorDecalScaleRandomValueRect());
+		const RectF scaleMinDecRect = decalRect(EditorDecalScaleMinDecRect());
+		const RectF scaleMinIncRect = decalRect(EditorDecalScaleMinIncRect());
+		const RectF scaleMaxDecRect = decalRect(EditorDecalScaleMaxDecRect());
+		const RectF scaleMaxIncRect = decalRect(EditorDecalScaleMaxIncRect());
+		const RectF ambientSoundRowRect = decalRect(EditorDecalAmbientSoundRowRect());
+		const RectF ambientSoundBrowseRect = decalRect(EditorDecalAmbientSoundBrowseRect());
+		const RectF ambientSoundClearRect = decalRect(EditorDecalAmbientSoundClearRect());
+		const RectF ambientSoundNameRect = decalRect(EditorDecalAmbientSoundNameRect());
+		const RectF ambientVolumeRowRect = decalRect(EditorDecalAmbientVolumeRowRect());
+		const RectF ambientVolumeDecRect = decalRect(EditorDecalAmbientVolumeDecRect());
+		const RectF ambientVolumeIncRect = decalRect(EditorDecalAmbientVolumeIncRect());
 
 		DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
 		DrawRectPanelTitle(panel, U"Decal Editor", uiFont);
 		DrawRectPanelCloseButton(closeRect, uiFont, 18);
+		if (editor.uiLayoutEditEnabled)
+		{
+			DrawUiLayoutDragHandleOnly(EditorDecalEditorDragHandleRect(editor), editor.uiLayoutDraggingDecalEditor, uiFont, 11);
+		}
 
 		tabBarRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.90 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 		DrawRectTabButton(decalTabRect, U"Decal Editor", editor.decalEditorTabIndex == 0, uiFont, 11);
@@ -54,18 +70,18 @@ namespace LT3
 
 		if (editor.decalEditorTabIndex == 1)
 		{
-			const RectF viewport = EditorDecalShadowViewportRect();
+			const RectF viewport = decalRect(EditorDecalShadowViewportRect());
 			const double contentHeight = EditorDecalShadowContentHeight();
 			const double maxScroll = Max(0.0, contentHeight - viewport.h);
 			const double scroll = Clamp(editor.decalShadowEditorScroll, 0.0, maxScroll);
-			const RectF previewShadowRect = EditorDecalShadowPreviewRect(scroll);
-			const RectF enabledRect = EditorDecalShadowEnabledRect(scroll);
-			const RectF circleModeRect = EditorDecalShadowModeRect(0, scroll);
-			const RectF silhouetteModeRect = EditorDecalShadowModeRect(1, scroll);
-			const RectF directionGridRect = EditorDecalShadowDirectionGridRect(scroll);
-			const RectF lengthRowRect = EditorDecalShadowLengthRowRect(scroll);
-			const RectF opacityRowRect = EditorDecalShadowOpacityRowRect(scroll);
-			const RectF blurRowRect = EditorDecalShadowBlurRowRect(scroll);
+			const RectF previewShadowRect = decalRect(EditorDecalShadowPreviewRect(scroll));
+			const RectF enabledRect = decalRect(EditorDecalShadowEnabledRect(scroll));
+			const RectF circleModeRect = decalRect(EditorDecalShadowModeRect(0, scroll));
+			const RectF silhouetteModeRect = decalRect(EditorDecalShadowModeRect(1, scroll));
+			const RectF directionGridRect = decalRect(EditorDecalShadowDirectionGridRect(scroll));
+			const RectF lengthRowRect = decalRect(EditorDecalShadowLengthRowRect(scroll));
+			const RectF opacityRowRect = decalRect(EditorDecalShadowOpacityRowRect(scroll));
+			const RectF blurRowRect = decalRect(EditorDecalShadowBlurRowRect(scroll));
 			viewport.draw(ColorF{ 0.04, 0.05, 0.07, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 
 			previewShadowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
@@ -100,7 +116,7 @@ namespace LT3
 			const Array<String> directionLabels = { U"N", U"NE", U"E", U"SE", U"S", U"SW", U"W", U"NW" };
 			for (int32 i = 0; i < 8; ++i)
 			{
-				const RectF rect = EditorDecalShadowDirectionButtonRect(i, scroll);
+				const RectF rect = decalRect(EditorDecalShadowDirectionButtonRect(i, scroll));
 				const bool active = (static_cast<int32>(asset.decalShadowDirection) == i);
 				rect.draw(active ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
 				uiFont(directionLabels[i]).drawAt(11, rect.center(), active ? Palette::White : Palette::Lightgray);
@@ -170,6 +186,15 @@ namespace LT3
 		uiFont(U"+").drawAt(18, scaleMaxIncRect.center(), Palette::White);
 		uiFont(U"Min").drawAt(11, Vec2{ (scaleMinDecRect.x + scaleMinIncRect.x + scaleMinIncRect.w) * 0.5, scaleMinDecRect.y - 10.0 }, Palette::Gold);
 		uiFont(U"Max").drawAt(11, Vec2{ (scaleMaxDecRect.x + scaleMaxIncRect.x + scaleMaxIncRect.w) * 0.5, scaleMaxDecRect.y - 10.0 }, Palette::Gold);
+
+		ambientSoundRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+		uiFont(U"Ambient Sound").draw(13, ambientSoundRowRect.x, ambientSoundRowRect.y - 18.0, Palette::Gold);
+		DrawRectTabButton(ambientSoundBrowseRect, U"Sound...", false, uiFont, 11);
+		DrawRectIconButton(ambientSoundClearRect, U"clr", uiFont, 10, ColorF{ 0.12, 0.05, 0.05, 0.90 }, 1.0, Palette::White);
+		const String ambientSoundName = asset.decalAmbientSound.isEmpty() ? U"(none)" : asset.decalAmbientSound;
+		uiFont(ambientSoundName).draw(11, ambientSoundNameRect.x, ambientSoundNameRect.y, asset.decalAmbientSound.isEmpty() ? Palette::Gray : Palette::Aqua);
+
+		DrawRectValueAdjustRow(ambientVolumeRowRect, U"Ambient Volume", U"{:.2f}"_fmt(asset.decalAmbientVolume), ambientVolumeDecRect, ambientVolumeIncRect, uiFont);
 	}
 
 	inline void DrawHomeMarker(const Vec2& worldPos, const String& label, const ColorF& color, const Font& uiFont)

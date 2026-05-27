@@ -157,12 +157,16 @@ namespace LT3
         }
 
         const ResourceNodeEditData& node = editor.resourceNodes[editor.selectedResourceNodeIndex];
-        const RectF panel = EditorResourceNodePanelRect();
-        const RectF closeRect = EditorResourceNodeCloseRect();
-        const RectF removeRect = EditorResourceNodeRemoveRect();
+        const RectF panel = EditorResourceNodePanelRect(editor);
+        const RectF closeRect = EditorResourceNodeCloseRect(editor);
+        const RectF removeRect = EditorResourceNodeRemoveRect(editor);
         DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
         DrawRectPanelTitle(panel, U"Resource Node Editor", uiFont);
         DrawRectPanelCloseButton(closeRect, uiFont, 18);
+        if (editor.uiLayoutEditEnabled)
+        {
+            DrawUiLayoutDragHandleOnly(EditorResourceNodeDragHandleRect(editor), editor.uiLayoutDraggingResourceNodeEditor, uiFont, 11);
+        }
 
         uiFont(U"Cell: ({}, {})"_fmt(node.cell.x, node.cell.y)).draw(13, panel.x + 24.0, panel.y + 48.0, Palette::Lightgray);
         uiFont(U"Type").draw(13, panel.x + 24.0, panel.y + 74.0, Palette::Gold);
@@ -170,26 +174,26 @@ namespace LT3
         for (int32 i = 0; i < 3; ++i)
         {
             const ResourceKind kind = static_cast<ResourceKind>(i);
-            const RectF kindRect = EditorResourceNodeKindRect(i);
+            const RectF kindRect = EditorResourceNodeKindRect(editor, i);
             const bool active = node.kind == kind;
             DrawRectTabButton(kindRect, ResourceKindLabel(kind), active, uiFont, 13);
             const ColorF textColor = active ? ColorF{ Palette::White } : ResourceKindColor(kind);
             uiFont(ResourceKindLabel(kind)).drawAt(13, kindRect.center(), textColor);
         }
 
-        const RectF amountDecRect = EditorResourceNodeAmountDecRect();
-        const RectF amountIncRect = EditorResourceNodeAmountIncRect();
+        const RectF amountDecRect = EditorResourceNodeAmountDecRect(editor);
+        const RectF amountIncRect = EditorResourceNodeAmountIncRect(editor);
         const RectF amountRowRect{ amountDecRect.x, amountDecRect.y - 2.0, amountIncRect.x + amountIncRect.w - amountDecRect.x, amountDecRect.h + 4.0 };
         DrawRectValueAdjustRow(amountRowRect, U"Amount", U"{}"_fmt(node.amount), amountDecRect, amountIncRect, uiFont);
 
-        const RectF incomeDecRect = EditorResourceNodeIncomeDecRect();
-        const RectF incomeIncRect = EditorResourceNodeIncomeIncRect();
+        const RectF incomeDecRect = EditorResourceNodeIncomeDecRect(editor);
+        const RectF incomeIncRect = EditorResourceNodeIncomeIncRect(editor);
         const RectF incomeRowRect{ incomeDecRect.x, incomeDecRect.y - 2.0, incomeIncRect.x + incomeIncRect.w - incomeDecRect.x, incomeDecRect.h + 4.0 };
         DrawRectValueAdjustRow(incomeRowRect, U"Income / sec", U"{}"_fmt(node.incomePerSec), incomeDecRect, incomeIncRect, uiFont);
 
-        DrawRectCheckRow(EditorResourceNodeOneShotRect(), U"一回だけ", node.oneShot, uiFont, 12);
+        DrawRectCheckRow(EditorResourceNodeOneShotRect(editor), U"一回だけ", node.oneShot, uiFont, 12);
 
-        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects();
+        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects(editor);
         uiFont(U"占領時間").draw(13, panel.x + 24.0, captureTimeStepper.value.y - 18.0, Palette::Gold);
         DrawRectNumberStepper(captureTimeStepper,
             (editor.resourceCaptureTimeEditingIndex == editor.selectedResourceNodeIndex)

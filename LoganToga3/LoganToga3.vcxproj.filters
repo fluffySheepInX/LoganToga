@@ -772,9 +772,18 @@
     <None Include="Docs\DataOrientedDesign_LoganToga2.html" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitSample.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
-    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoAI\AiProfiles.toml" />
+    <None Include="App\LaunchBattleDirect.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="App\LaunchModMode.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="App\LaunchModQuickBattle.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\Resources.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1306,6 +1315,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\BattleNotifications.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\TitleUiLayout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorAmbientSound.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\RectLayoutPrimitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\RectValueRowPrimitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

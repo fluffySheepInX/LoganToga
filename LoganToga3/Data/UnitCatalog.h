@@ -49,6 +49,8 @@ namespace LT3
         inline constexpr const char32* KeyScale = U"scale";
         inline constexpr const char32* KeyVisualOffset = U"visual_offset";
         inline constexpr const char32* KeyShadowOffset = U"shadow_offset";
+        inline constexpr const char32* KeyShadowScale = U"shadow_scale";
+        inline constexpr const char32* KeyShadowOpacity = U"shadow_opacity";
         inline constexpr const char32* KeyPlacementAnchor = U"placement_anchor";
         inline constexpr const char32* KeyRenderSizeMode = U"render_size_mode";
         inline constexpr const char32* KeyGameplaySizeMul = U"gameplay_size_mul";
@@ -161,6 +163,8 @@ namespace LT3
         double visualScale = 1.0;
         Point visualOffset{ 0, 0 };
         Point shadowOffset{ 0, 0 };
+        double shadowScale = 1.0;
+        double shadowOpacity = 0.28;
         UnitPlacementAnchor placementAnchor = UnitPlacementAnchor::Center;
         UnitRenderSizeMode renderSizeMode = UnitRenderSizeMode::Gameplay;
         double gameplaySizeMul = 2.2;
@@ -185,9 +189,9 @@ namespace LT3
     inline FilePath ResolveUnitCatalogTomlPath()
     {
         return ResolveFirstExistingPath({
-            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
-            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
-            U"LoganToga3/App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitSample.toml",
+            U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitCatalog.toml",
+            U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitCatalog.toml",
+            U"LoganToga3/App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUnit/UnitCatalog.toml",
         });
     }
 
@@ -349,6 +353,8 @@ namespace LT3
             entry.visualScale = Clamp(unitValue[UnitCatalogToml::KeyVisualScale].getOr<double>(unitValue[UnitCatalogToml::KeyScale].getOr<double>(1.0)), 0.25, 3.0);
             entry.visualOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyVisualOffset]);
             entry.shadowOffset = ReadTomlPointArray(unitValue[UnitCatalogToml::KeyShadowOffset]);
+            entry.shadowScale = Clamp(unitValue[UnitCatalogToml::KeyShadowScale].getOr<double>(1.0), 0.1, 8.0);
+            entry.shadowOpacity = Clamp(unitValue[UnitCatalogToml::KeyShadowOpacity].getOr<double>(0.28), 0.0, 1.0);
             entry.placementAnchor = ParseUnitPlacementAnchor(unitValue[UnitCatalogToml::KeyPlacementAnchor].getOr<String>(U""), entry.kind);
             entry.renderSizeMode = ParseUnitRenderSizeMode(unitValue[UnitCatalogToml::KeyRenderSizeMode].getOr<String>(U"gameplay"));
             if (const Optional<double> gameplaySizeMul = unitValue[UnitCatalogToml::KeyGameplaySizeMul].getOpt<double>())
@@ -433,6 +439,8 @@ namespace LT3
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyVisualScale, entry.visualScale);
             block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyVisualOffset, entry.visualOffset.x, entry.visualOffset.y);
             block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyShadowOffset, entry.shadowOffset.x, entry.shadowOffset.y);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyShadowScale, entry.shadowScale);
+            block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyShadowOpacity, entry.shadowOpacity);
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyPlacementAnchor, UnitPlacementAnchorToTomlValue(entry.placementAnchor));
             block += U"{} = \"{}\"\n"_fmt(UnitCatalogToml::KeyRenderSizeMode, UnitRenderSizeModeToTomlValue(entry.renderSizeMode));
             block += U"{} = {}\n"_fmt(UnitCatalogToml::KeyGameplaySizeMul, entry.gameplaySizeMul);

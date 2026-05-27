@@ -25,6 +25,8 @@ namespace LT3
         BattleWorld world;
         ResourceFlagRuntimeState resourceFlags;
         BattleNotificationRuntimeState notifications;
+        double decalAmbientCooldownSec = 0.0;
+        HashTable<FilePath, Audio> decalAmbientAudioCache;
     };
 
     inline void ClearBattleNotifications(AppRuntimeState& runtime)
@@ -68,6 +70,8 @@ namespace LT3
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;
         ClearBattleNotifications(runtime);
         SyncResourceFlagRuntimeState(runtime);
+        runtime.decalAmbientCooldownSec = 0.0;
+        runtime.decalAmbientAudioCache.clear();
     }
 
     inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions)

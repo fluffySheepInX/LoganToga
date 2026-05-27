@@ -5,9 +5,10 @@
 
 namespace LT3
 {
-	inline void DrawHealthBar(const Vec2& pos, double radius, int32 hp, int32 maxHp)
+	inline void DrawHealthBar(const Vec2& pos, double radius, int32 hp, int32 maxHp, bool selected = false)
 	{
-		const RectF back{ Arg::center = pos + Vec2{ 0, -radius - 12 }, radius * 2.2, 5 };
+		const Vec2 barCenter = pos + Vec2{ 0, -radius - (selected ? 14.0 : 12.0) };
+		const RectF back{ Arg::center = barCenter, radius * (selected ? 2.6 : 2.2), selected ? 8.0 : 5.0 };
 		back.draw(ColorF{ 0.08, 0.08, 0.08, 0.75 });
 		const double rate = maxHp > 0 ? Clamp(static_cast<double>(hp) / maxHp, 0.0, 1.0) : 0.0;
 		ColorF barColor{ 1.0, 0.25, 0.20 };
@@ -16,6 +17,11 @@ namespace LT3
 			barColor = ColorF{ 0.20, 0.80, 0.20 };
 		}
 		RectF{ back.pos, back.w * rate, back.h }.draw(barColor);
+		back.drawFrame(selected ? 2.0 : 1.0, selected ? ColorF{ 1.0, 0.92, 0.48, 0.95 } : ColorF{ 1.0, 1.0, 1.0, 0.14 });
+		if (selected)
+		{
+			back.stretched(2.0).drawFrame(1.5, ColorF{ 1.0, 1.0, 1.0, 0.70 });
+		}
 	}
 
 	inline ColorF GetUnitOutlineColor(const BattleWorld& world, UnitId unit)
@@ -133,7 +139,7 @@ namespace LT3
 	inline void DrawUnitShape(const UnitDef& def, const Vec2& pos, bool selected, const ColorF& outline)
 	{
 		Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
-		Circle{ pos, def.radius + (selected ? 6.0 : 2.0) }.drawFrame(selected ? 4.0 : 2.0, outline);
+		Circle{ pos, def.radius + 2.0 }.drawFrame(2.0, outline);
 		DrawUnitShape(def, pos, outline);
 	}
 
@@ -141,9 +147,13 @@ namespace LT3
 	{
 		const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
 		Vec2 shadowCenter = pos;
+		double shadowScale = 1.0;
+		double shadowOpacity = 0.28;
 		if (assets)
 		{
 			const UnitVisualInfo visual = FindUnitVisualInfoByTag(*assets, def.unit_id);
+			shadowScale = Max(0.1, visual.shadowScale);
+			shadowOpacity = Clamp(visual.shadowOpacity, 0.0, 1.0);
 			if (!visual.image.isEmpty())
 			{
 				const Vec2 shadowOffset = Vec2{ static_cast<double>(visual.shadowOffset.x), static_cast<double>(visual.shadowOffset.y) } * visual.visualScale;
@@ -151,10 +161,10 @@ namespace LT3
 			}
 		}
 
-		Ellipse{ shadowCenter + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
+		Ellipse{ shadowCenter + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15 * shadowScale, def.radius * 0.45 * shadowScale }.draw(ColorF{ 0, 0, 0, shadowOpacity });
 		if (!isStaticStructure)
 		{
-			Circle{ pos, def.radius + (selected ? 6.0 : 2.0) }.drawFrame(selected ? 4.0 : 2.0, outline);
+			Circle{ pos, def.radius + 2.0 }.drawFrame(2.0, outline);
 		}
 
 		Vec2 iconOffset{ 0, 0 };
@@ -227,9 +237,19 @@ namespace LT3
 		const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
 		const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
 		const bool hovered = (mouse.distanceFrom(pos) <= (def.radius + 16.0));
-		if (!isStaticStructure || hovered)
+		const bool selected = IsUnitSelected(world, unit);
+		if (!isStaticStructure || hovered || selected)
 		{
-			DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp);
+			DrawHealthBar(pos, def.radius, world.units.hp[unit], def.hp, selected);
+		}
+		if (unit < world.cooldowns.skillCastFailureDisplayLeftSec.size()
+			&& world.cooldowns.skillCastFailureDisplayLeftSec[unit] > 0.0)
+		{
+			static const Font failureFont{ 11 };
+			const Vec2 labelCenter = pos + Vec2{ 0.0, -def.radius - (selected ? 30.0 : 24.0) };
+			const RectF labelRect{ Arg::center = labelCenter, 72.0, 16.0 };
+			labelRect.rounded(3.0).draw(ColorF{ 0.0, 0.0, 0.0, 0.82 }).drawFrame(1.0, ColorF{ 0.85, 0.0, 0.0, 0.92 });
+			failureFont(U"failure!").drawAt(labelRect.center(), ColorF{ 1.0, 0.18, 0.18, 0.98 });
 		}
 	}
 

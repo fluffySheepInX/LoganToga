@@ -165,6 +165,10 @@ namespace LT3
             }
             DrawUnitHealthBarsOverlay(world, defs, visibleMask, world.mapWidth, world.mapHeight);
             DrawResourceNodeOverlays(world, defs, assets, uiFont, &resourceFlags);
+            if (showDebugInfo)
+            {
+                DrawBuildingUnitClickDebugOverlay(world, defs);
+            }
         }
 
         DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);

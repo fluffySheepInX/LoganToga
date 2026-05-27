@@ -21,6 +21,8 @@ namespace LT3
 		double visualScale = 1.0;
 		Point visualOffset{ 0, 0 };
 		Point shadowOffset{ 0, 0 };
+		double shadowScale = 1.0;
+		double shadowOpacity = 0.28;
 		UnitPlacementAnchor placementAnchor = UnitPlacementAnchor::Center;
 		UnitRenderSizeMode renderSizeMode = UnitRenderSizeMode::Gameplay;
 		double gameplaySizeMul = 2.2;
@@ -70,6 +72,8 @@ namespace LT3
 					entry.visualScale,
 					entry.visualOffset,
 					entry.shadowOffset,
+					entry.shadowScale,
+					entry.shadowOpacity,
 					entry.placementAnchor,
 					entry.renderSizeMode,
 					entry.gameplaySizeMul,

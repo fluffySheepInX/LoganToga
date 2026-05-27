@@ -5,6 +5,7 @@
 # include "../Systems/BattleInputSystem.h"
 # include "../Systems/CameraInputSystem.h"
 # include "../Systems/EditorInputSystem.h"
+# include "../UI/MapEditorAmbientSound.h"
 # include "App/AppStateData.h"
 
 namespace LT3
@@ -105,6 +106,67 @@ namespace LT3
 		HandleBattleInput(runtime.world, definitions.defs, ui.mapEditor, screenMouse, worldMouse);
 	}
 
+	inline void UpdateDecalAmbientSound(AppRuntimeState& runtime, const AppUiState& ui)
+	{
+		if (ui.mapEditor.enabled)
+		{
+			runtime.decalAmbientCooldownSec = 0.0;
+			return;
+		}
+
+		runtime.decalAmbientCooldownSec = Max(0.0, runtime.decalAmbientCooldownSec - Scene::DeltaTime());
+		if (runtime.decalAmbientCooldownSec > 0.0)
+		{
+			return;
+		}
+
+		const Array<DecalAmbientSoundCandidate> candidates = CollectDecalAmbientSoundCandidatesNearMouseOrCenter(ui.mapEditor);
+		if (candidates.isEmpty())
+		{
+			runtime.decalAmbientCooldownSec = 0.8;
+			return;
+		}
+
+		double totalWeight = 0.0;
+		for (const auto& candidate : candidates)
+		{
+			totalWeight += Max(0.0, candidate.weight);
+		}
+		if (totalWeight <= 0.0)
+		{
+			runtime.decalAmbientCooldownSec = 1.0;
+			return;
+		}
+
+		double roll = Random(0.0, totalWeight);
+		const DecalAmbientSoundCandidate* selected = nullptr;
+		for (const auto& candidate : candidates)
+		{
+			roll -= Max(0.0, candidate.weight);
+			if (roll <= 0.0)
+			{
+				selected = &candidate;
+				break;
+			}
+		}
+		if (!selected)
+		{
+			selected = &candidates.back();
+		}
+
+		auto cacheIt = runtime.decalAmbientAudioCache.find(selected->path);
+		if (cacheIt == runtime.decalAmbientAudioCache.end())
+		{
+			cacheIt = runtime.decalAmbientAudioCache.emplace(selected->path, Audio{ selected->path }).first;
+		}
+		if (cacheIt->second)
+		{
+			cacheIt->second.playOneShot(Clamp(selected->volume, 0.0, 1.0));
+		}
+
+		runtime.decalAmbientCooldownSec = Random(1.2, 2.6);
+	}
+
 	inline void UpdateAppRuntimeState(AppRuntimeState& runtime, AppDefinitionState& definitions, AppUiState& ui)
 	{
 		if (ui.debugNewGameRequest != DebugNewGameRequest::None)
@@ -123,6 +185,7 @@ namespace LT3
 		}
 
 		UpdateResourceFlagRuntimeState(runtime);
+		UpdateDecalAmbientSound(runtime, ui);
 		UpdateBattleNotifications(runtime.notifications, Scene::DeltaTime());
 	}
 

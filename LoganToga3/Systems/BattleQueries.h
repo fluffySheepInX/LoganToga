@@ -172,6 +172,76 @@ namespace LT3
         return GetFactionResourceAmount(world, Faction::Player, resourceId);
     }
 
+    inline ResourceDefId FindResourceDefByTag(const DefinitionStores& defs, const String& tag)
+    {
+        if (tag.isEmpty())
+        {
+            return InvalidResourceDefId;
+        }
+
+        const String lowered = tag.lowercased();
+        if (!defs.resourceByTag.contains(lowered))
+        {
+            return InvalidResourceDefId;
+        }
+
+        return defs.resourceByTag.at(lowered);
+    }
+
+    inline bool CanAffordSkillResourceCosts(const BattleWorld& world, const DefinitionStores& defs, Faction faction, const SkillDef& skill)
+    {
+        for (const auto& cost : skill.resourceCosts)
+        {
+            if (cost.resourceTag.isEmpty())
+            {
+                continue;
+            }
+
+            const ResourceDefId resourceId = FindResourceDefByTag(defs, cost.resourceTag);
+            if (resourceId == InvalidResourceDefId)
+            {
+                continue;
+            }
+
+            if (GetFactionResourceAmount(world, faction, resourceId) < Max(1, cost.amount))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    inline bool TryConsumeSkillResourceCosts(BattleWorld& world, const DefinitionStores& defs, Faction faction, const SkillDef& skill)
+    {
+        if (!CanAffordSkillResourceCosts(world, defs, faction, skill))
+        {
+            return false;
+        }
+
+        Array<int32>& values = (faction == Faction::Enemy)
+            ? world.resources.enemyAmounts
+            : world.resources.playerAmounts;
+
+        for (const auto& cost : skill.resourceCosts)
+        {
+            if (cost.resourceTag.isEmpty())
+            {
+                continue;
+            }
+
+            const ResourceDefId resourceId = FindResourceDefByTag(defs, cost.resourceTag);
+            if (resourceId == InvalidResourceDefId || resourceId >= values.size())
+            {
+                continue;
+            }
+
+            values[resourceId] = Max(0, values[resourceId] - Max(1, cost.amount));
+        }
+
+        return true;
+    }
+
     inline Optional<size_t> FindHoveredResourceNode(const BattleWorld& world, const Vec2& screenPos, double radius = 42.0)
     {
         size_t bestIndex = 0;

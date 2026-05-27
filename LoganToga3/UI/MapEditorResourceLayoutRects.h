@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include "MapEditorToolbarLayoutRects.h"
+# include "RectLayoutPrimitives.h"
 # include "RectNumberStepperTypes.h"
 
 namespace LT3
@@ -32,15 +33,40 @@ namespace LT3
 		return RectF{ 700, 404, 360, 336 };
 	}
 
+	inline RectF EditorResourceNodePanelRect(const MapEditorState& editor)
+	{
+		return RectF{ editor.uiResourceNodeEditorPos.x, editor.uiResourceNodeEditorPos.y, 360.0, 336.0 };
+	}
+
 	inline RectF EditorResourceNodeCloseRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
 		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
 	}
 
+	inline RectF EditorResourceNodeCloseRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
+		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+	}
+
+	inline RectF EditorResourceNodeDragHandleRect(const MapEditorState& editor)
+	{
+		const RectF closeRect = EditorResourceNodeCloseRect(editor);
+		constexpr double handleSize = 18.0;
+		constexpr double handleOffset = 6.0;
+		return RectF{ closeRect.x - handleSize - handleOffset, closeRect.y + (closeRect.h - handleSize) * 0.5, handleSize, handleSize };
+	}
+
 	inline RectF EditorResourceNodeRemoveRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
+		return RectF{ panel.x + panel.w - 128.0, panel.y + panel.h - 42.0, 104.0, 28.0 };
+	}
+
+	inline RectF EditorResourceNodeRemoveRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
 		return RectF{ panel.x + panel.w - 128.0, panel.y + panel.h - 42.0, 104.0, 28.0 };
 	}
 
@@ -50,9 +76,27 @@ namespace LT3
 		return RectF{ panel.x + 24.0, panel.y + 206.0, panel.w - 48.0, 32.0 };
 	}
 
+	inline RectF EditorResourceNodeOneShotRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
+		return RectF{ panel.x + 24.0, panel.y + 206.0, panel.w - 48.0, 32.0 };
+	}
+
 	inline RectNumberStepperRects EditorResourceNodeCaptureTimeStepperRects()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
+		const double rowY = panel.y + 250.0;
+		return RectNumberStepperRects{
+			.minus = RectF{ panel.x + 24.0, rowY, 34.0, 28.0 },
+			.value = RectF{ panel.x + 64.0, rowY, 196.0, 28.0 },
+			.plus = RectF{ panel.x + 266.0, rowY, 34.0, 28.0 },
+			.step = RectF{ panel.x + 306.0, rowY, 30.0, 28.0 },
+		};
+	}
+
+	inline RectNumberStepperRects EditorResourceNodeCaptureTimeStepperRects(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
 		const double rowY = panel.y + 250.0;
 		return RectNumberStepperRects{
 			.minus = RectF{ panel.x + 24.0, rowY, 34.0, 28.0 },
@@ -120,15 +164,40 @@ namespace LT3
 		return RectF{ 700, 132, 320, 284 };
 	}
 
+	inline RectF EditorPerlinNoisePanelRect(const MapEditorState& editor)
+	{
+		return RectF{ editor.uiPerlinNoisePanelPos.x, editor.uiPerlinNoisePanelPos.y, 320.0, 284.0 };
+	}
+
 	inline RectF EditorPerlinNoiseCloseRect()
 	{
 		const RectF panel = EditorPerlinNoisePanelRect();
 		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
 	}
 
+	inline RectF EditorPerlinNoiseCloseRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
+		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
+	}
+
+	inline RectF EditorPerlinNoiseDragHandleRect(const MapEditorState& editor)
+	{
+		const RectF closeRect = EditorPerlinNoiseCloseRect(editor);
+		constexpr double handleSize = 18.0;
+		constexpr double handleOffset = 6.0;
+		return RectF{ closeRect.x - handleSize - handleOffset, closeRect.y + (closeRect.h - handleSize) * 0.5, handleSize, handleSize };
+	}
+
 	inline RectF EditorPerlinNoiseFileDialogRect()
 	{
 		const RectF panel = EditorPerlinNoisePanelRect();
+		return RectF{ panel.x + 18.0, panel.y + 48.0, 132.0, 32.0 };
+	}
+
+	inline RectF EditorPerlinNoiseFileDialogRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
 		return RectF{ panel.x + 18.0, panel.y + 48.0, 132.0, 32.0 };
 	}
 
@@ -138,9 +207,21 @@ namespace LT3
 		return RectF{ panel.x + panel.w - 116.0, panel.y + panel.h - 42.0, 98.0, 30.0 };
 	}
 
+	inline RectF EditorPerlinNoiseRunRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
+		return RectF{ panel.x + panel.w - 116.0, panel.y + panel.h - 42.0, 98.0, 30.0 };
+	}
+
 	inline RectF EditorPerlinNoiseSizeDecRect(bool widthAxis)
 	{
 		const RectF panel = EditorPerlinNoisePanelRect();
+		return RectF{ panel.x + 18.0, panel.y + (widthAxis ? 100.0 : 142.0), 42.0, 30.0 };
+	}
+
+	inline RectF EditorPerlinNoiseSizeDecRect(const MapEditorState& editor, bool widthAxis)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
 		return RectF{ panel.x + 18.0, panel.y + (widthAxis ? 100.0 : 142.0), 42.0, 30.0 };
 	}
 
@@ -150,9 +231,21 @@ namespace LT3
 		return RectF{ panel.x + 202.0, panel.y + (widthAxis ? 100.0 : 142.0), 42.0, 30.0 };
 	}
 
+	inline RectF EditorPerlinNoiseSizeIncRect(const MapEditorState& editor, bool widthAxis)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
+		return RectF{ panel.x + 202.0, panel.y + (widthAxis ? 100.0 : 142.0), 42.0, 30.0 };
+	}
+
 	inline RectF EditorPerlinNoiseStackViewportRect()
 	{
 		const RectF panel = EditorPerlinNoisePanelRect();
+		return RectF{ panel.x + 18.0, panel.y + 188.0, panel.w - 36.0, 42.0 };
+	}
+
+	inline RectF EditorPerlinNoiseStackViewportRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorPerlinNoisePanelRect(editor);
 		return RectF{ panel.x + 18.0, panel.y + 188.0, panel.w - 36.0, 42.0 };
 	}
 
@@ -162,9 +255,21 @@ namespace LT3
 		return RectF{ panel.x + 24.0 + index * 104.0, panel.y + 96.0, 92.0, 32.0 };
 	}
 
+	inline RectF EditorResourceNodeKindRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
+		return RectF{ panel.x + 24.0 + index * 104.0, panel.y + 96.0, 92.0, 32.0 };
+	}
+
 	inline RectF EditorResourceNodeAmountDecRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
+		return RectF{ panel.x + 24.0, panel.y + 158.0, 48.0, 40.0 };
+	}
+
+	inline RectF EditorResourceNodeAmountDecRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
 		return RectF{ panel.x + 24.0, panel.y + 158.0, 48.0, 40.0 };
 	}
 
@@ -174,15 +279,33 @@ namespace LT3
 		return RectF{ panel.x + 288.0, panel.y + 158.0, 48.0, 40.0 };
 	}
 
+	inline RectF EditorResourceNodeAmountIncRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
+		return RectF{ panel.x + 288.0, panel.y + 158.0, 48.0, 40.0 };
+	}
+
 	inline RectF EditorResourceNodeIncomeDecRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
 		return RectF{ panel.x + 24.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
 	}
 
+	inline RectF EditorResourceNodeIncomeDecRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
+		return RectF{ panel.x + 24.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
+	}
+
 	inline RectF EditorResourceNodeIncomeIncRect()
 	{
 		const RectF panel = EditorResourceNodePanelRect();
+		return RectF{ panel.x + 288.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
+	}
+
+	inline RectF EditorResourceNodeIncomeIncRect(const MapEditorState& editor)
+	{
+		const RectF panel = EditorResourceNodePanelRect(editor);
 		return RectF{ panel.x + 288.0, panel.y + 158.0 + 48.0, 48.0, 40.0 };
 	}
 }

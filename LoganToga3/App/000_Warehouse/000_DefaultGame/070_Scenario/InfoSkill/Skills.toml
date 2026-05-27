@@ -81,11 +81,11 @@ swing_radius = 0
 
 swing_angle_deg = 0
 
-color_r = 0.94118
+color_r = 1
 
-color_g = 0.90196
+color_g = 1
 
-color_b = 0.54902
+color_b = 1
 
 color_a = 1
 
@@ -168,9 +168,9 @@ swing_angle_deg = 90
 
 color_r = 1
 
-color_g = 0.64706
+color_g = 1
 
-color_b = 0
+color_b = 1
 
 color_a = 1
 
@@ -381,7 +381,7 @@ projectile_motion = "direct"
 
 center = "on"
 
-homing = "on"
+homing = "off"
 
 d360 = "on"
 

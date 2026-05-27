@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "App/AppDefinitionState.h"
 # include "App/AppSceneTypes.h"
+# include "../UI/TitleUiLayout.h"
 
 namespace LT3
 {
@@ -53,6 +54,23 @@ namespace LT3
 		FilePath activePath;
 	};
 
+	enum class TitleUiEditableElement
+	{
+		SkirmishButton,
+		MusicEditorToggle,
+	};
+
+	struct TitleUiEditorState
+	{
+		bool open = false;
+		Optional<TitleUiEditableElement> selectedElement = TitleUiEditableElement::SkirmishButton;
+		Optional<Vec2> dragOffset;
+		bool resizing = false;
+		double resizeAnchorLeft = 0.0;
+		double resizeAnchorY = 0.0;
+		String statusText = U"Title UI Editor ready";
+	};
+
 	struct MusicSettings
 	{
 		HashTable<MusicSceneId, MusicTrackSetting> tracks;
@@ -97,6 +115,12 @@ namespace LT3
 		Font titleFont{ FontMethod::MSDF, 38, Typeface::Bold };
 		Font uiFont{ FontMethod::MSDF, 20, Typeface::Medium };
 		AppDefinitionState definitions = CreateAppDefinitionState();
+		bool modMode = false;
+		bool quickBattleRequested = false;
+		String quickBattleArgument;
+		Texture titleImage{ U"000_Warehouse/000_DefaultGame/000_SystemImage/title.png" };
+		TitleUiLayout titleUiLayout = CreateDefaultTitleUiLayout();
+		TitleUiEditorState titleUiEditor;
 		MusicSettings musicSettings = CreateDefaultMusicSettings();
 		MusicEditorState musicEditor;
 		MusicPlaybackState musicPlayback;

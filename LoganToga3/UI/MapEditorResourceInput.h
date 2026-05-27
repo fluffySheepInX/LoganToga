@@ -237,7 +237,7 @@ namespace LT3
             return true;
         }
 
-        if (EditorResourceNodeCloseRect().leftClicked())
+        if (EditorResourceNodeCloseRect(editor).leftClicked())
         {
             editor.resourceCaptureTimeEditingIndex = -1;
             editor.resourceCaptureTimeEditingText.clear();
@@ -248,7 +248,7 @@ namespace LT3
 
         for (int32 i = 0; i < 3; ++i)
         {
-            if (EditorResourceNodeKindRect(i).leftClicked())
+            if (EditorResourceNodeKindRect(editor, i).leftClicked())
             {
                 node.kind = static_cast<ResourceKind>(i);
                 editor.statusText = U"Resource kind: {}"_fmt(ResourceKindLabel(node.kind));
@@ -256,39 +256,39 @@ namespace LT3
             }
         }
 
-        if (EditorResourceNodeAmountDecRect().leftClicked())
+        if (EditorResourceNodeAmountDecRect(editor).leftClicked())
         {
             node.amount = Max(0, node.amount - 100);
             editor.statusText = U"Resource amount: {}"_fmt(node.amount);
             consumed = true;
         }
-        if (EditorResourceNodeAmountIncRect().leftClicked())
+        if (EditorResourceNodeAmountIncRect(editor).leftClicked())
         {
             node.amount += 100;
             editor.statusText = U"Resource amount: {}"_fmt(node.amount);
             consumed = true;
         }
-        if (EditorResourceNodeIncomeDecRect().leftClicked())
+        if (EditorResourceNodeIncomeDecRect(editor).leftClicked())
         {
             node.incomePerSec = Max(0, node.incomePerSec - 1);
             editor.statusText = U"Resource income: {}"_fmt(node.incomePerSec);
             consumed = true;
         }
-        if (EditorResourceNodeIncomeIncRect().leftClicked())
+        if (EditorResourceNodeIncomeIncRect(editor).leftClicked())
         {
             node.incomePerSec += 1;
             editor.statusText = U"Resource income: {}"_fmt(node.incomePerSec);
             consumed = true;
         }
 
-        if (EditorResourceNodeOneShotRect().leftClicked())
+        if (EditorResourceNodeOneShotRect(editor).leftClicked())
         {
             node.oneShot = !node.oneShot;
             editor.statusText = node.oneShot ? U"Resource mode: one-shot" : U"Resource mode: income";
             consumed = true;
         }
 
-        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects();
+        const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects(editor);
         switch (DetectRectNumberStepperInput(captureTimeStepper))
         {
         case RectNumberStepperInputAction::StartValueEdit:
@@ -340,13 +340,13 @@ namespace LT3
             }
         }
 
-        if (EditorResourceNodeRemoveRect().leftClicked())
+        if (EditorResourceNodeRemoveRect(editor).leftClicked())
         {
             RemoveSelectedResourceNode(editor);
             return true;
         }
 
-        if (EditorResourceNodePanelRect().mouseOver())
+        if (EditorResourceNodePanelRect(editor).mouseOver())
         {
             consumed = true;
         }

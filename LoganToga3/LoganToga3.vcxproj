@@ -174,7 +174,7 @@
     <None Include=".editorconfig" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoAI\AiProfiles.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
-    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\aaa.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\Resources.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitSample.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
@@ -313,6 +313,9 @@
     <None Include="App\example\toml\config.toml" />
     <None Include="App\example\toml\test.toml" />
     <None Include="App\example\zip\zip_test.zip" />
+    <None Include="App\LaunchBattleDirect.bat" />
+    <None Include="App\LaunchModMode.bat" />
+    <None Include="App\LaunchModQuickBattle.bat" />
     <None Include="Docs\DataOrientedDesign_LoganToga2.html" />
   </ItemGroup>
   <ItemGroup>
@@ -428,6 +431,7 @@
     <ClInclude Include="UI\BuildingEditorDraw.h" />
     <ClInclude Include="UI\BuildingEditorInput.h" />
     <ClInclude Include="UI\MapEditor.h" />
+    <ClInclude Include="UI\MapEditorAmbientSound.h" />
     <ClInclude Include="UI\MapEditorAssetUtils.h" />
     <ClInclude Include="UI\MapEditorBattleLayoutRects.h" />
     <ClInclude Include="UI\MapEditorCanvasInput.Core.h" />
@@ -487,8 +491,10 @@
     <ClInclude Include="UI\MapEditorUnitLayoutRects.h" />
     <ClInclude Include="UI\MapEditorUnitParamEditorCommon.h" />
     <ClInclude Include="UI\QuarterView.h" />
+    <ClInclude Include="UI\RectLayoutPrimitives.h" />
     <ClInclude Include="UI\RectNumberStepperTypes.h" />
     <ClInclude Include="UI\RectUiHelpers.h" />
+    <ClInclude Include="UI\RectValueRowPrimitives.h" />
     <ClInclude Include="UI\SkillEditor.h" />
     <ClInclude Include="UI\SkillEditorAssets.h" />
     <ClInclude Include="UI\SkillEditorCommon.h" />
@@ -497,6 +503,7 @@
     <ClInclude Include="UI\SkillEditorLayout.h" />
     <ClInclude Include="UI\SkillEditorSandbox.h" />
     <ClInclude Include="UI\SkillEditorState.h" />
+    <ClInclude Include="UI\TitleUiLayout.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">

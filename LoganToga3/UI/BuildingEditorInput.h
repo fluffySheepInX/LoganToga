@@ -40,6 +40,26 @@ namespace LT3
 		}
 
 		const UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
+		if (editor.buildingEditorTab == 1)
+		{
+			if (const Optional<double> delta = FindClickedDeltaButton({ -0.4, -0.1, 0.1, 0.4 }, [&](int32 index)
+				{
+					return BuildingEditorShadowSizeValueButtonRect(editor, index);
+				}))
+			{
+				ChangeSelectedUnitShadowScale(editor, catalog, *delta);
+				return true;
+			}
+			if (const Optional<double> delta = FindClickedDeltaButton({ -0.4, -0.1, 0.1, 0.4 }, [&](int32 index)
+				{
+					return BuildingEditorShadowOpacityValueButtonRect(editor, index);
+				}))
+			{
+				ChangeSelectedUnitShadowOpacity(editor, catalog, *delta);
+				return true;
+			}
+		}
+
 		if (HandleRectButtonClick(BuildingEditorAnchorButtonRect(editor, 0)))
 		{
 			SetSelectedUnitPlacementAnchor(editor, catalog, UnitPlacementAnchor::Center);

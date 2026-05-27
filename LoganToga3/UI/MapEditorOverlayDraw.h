@@ -10,7 +10,10 @@ namespace LT3
 	inline void DrawMapEditorOverlay(MapEditorState& editor, const UnitCatalog& unitCatalog, const DefinitionStores& defs, const Vec2& screenMouse, const Font& uiFont)
 	{
 		DrawMapEditorToolbar(editor, uiFont);
-		DrawUiLayoutGridControl(editor, uiFont);
+		if (editor.editorToolbarAllowed)
+		{
+			DrawUiLayoutGridControl(editor, uiFont);
+		}
 		if (editor.showResourcePanels)
 		{
 			DrawMapEditorResourceNodeList(editor, uiFont);

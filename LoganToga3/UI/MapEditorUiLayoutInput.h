@@ -38,13 +38,33 @@ namespace LT3
             : (showDetail ? BattleInfoPanelDetailRect(editor) : BattleInfoPanelCompactRect(editor));
         const RectF commandRect = BattleCommandPanelRect(editor, commandRows);
         const RectF resourceRect = BattleResourcePanelRect(editor, defs.resources.size());
+        const bool showResourceNodeEditor = IsValidSelectedResourceNodeIndex(editor);
+        const RectF resourceNodeRect = EditorResourceNodePanelRect(editor);
+        const bool showDecalEditor = HasOpenDecalEditorTarget(editor);
+        const RectF decalEditorRect = EditorDecalEditorPanelRect(editor);
+        const bool showPerlinNoisePanel = editor.enabled && editor.showPerlinNoisePanel;
+        const RectF perlinNoiseRect = EditorPerlinNoisePanelRect(editor);
+        const bool showZOrderPanel = editor.zOrderMode && editor.zOrderSelectionRect.has_value();
+        const int32 zOrderMaxStackSize = showZOrderPanel ? MaxDecalStackSizeInRect(editor, *editor.zOrderSelectionRect) : 1;
+        const RectF zOrderPanelRect = EditorZOrderPanelRect(editor, zOrderMaxStackSize);
 
         const RectF infoHandle = UiLayoutDragHandleRect(infoRect);
         const RectF commandHandle = UiLayoutDragHandleRect(commandRect);
         const RectF resourceHandle = UiLayoutDragHandleRect(resourceRect);
+        const RectF resourceNodeHandle = EditorResourceNodeDragHandleRect(editor);
+        const RectF decalEditorHandle = EditorDecalEditorDragHandleRect(editor);
+        const RectF perlinNoiseHandle = EditorPerlinNoiseDragHandleRect(editor);
+        const RectF zOrderPanelHandle = EditorZOrderDragHandleRect(editor, zOrderMaxStackSize);
         const RectF infoTopAnchorRect = UiLayoutTopAnchorToggleRect(infoHandle);
         const RectF commandTopAnchorRect = UiLayoutTopAnchorToggleRect(commandHandle);
         const RectF resourceTopAnchorRect = UiLayoutTopAnchorToggleRect(resourceHandle);
+        const bool draggingAny = editor.uiLayoutDraggingSelectedInfo
+            || editor.uiLayoutDraggingCommandPanel
+            || editor.uiLayoutDraggingResourcePanel
+            || editor.uiLayoutDraggingResourceNodeEditor
+            || editor.uiLayoutDraggingDecalEditor
+            || editor.uiLayoutDraggingPerlinNoisePanel
+            || editor.uiLayoutDraggingZOrderPanel;
 
         if (infoTopAnchorRect.leftClicked())
         {
@@ -65,22 +85,46 @@ namespace LT3
             consumed = true;
         }
 
-        if (!editor.uiLayoutDraggingCommandPanel && !editor.uiLayoutDraggingResourcePanel && MouseL.down() && infoHandle.mouseOver())
+        if (!draggingAny && MouseL.down() && infoHandle.mouseOver())
         {
             editor.uiLayoutDraggingSelectedInfo = true;
             editor.uiLayoutDragOffset = screenMouse - editor.uiSelectedInfoAnchor;
             consumed = true;
         }
-        if (!editor.uiLayoutDraggingSelectedInfo && !editor.uiLayoutDraggingResourcePanel && MouseL.down() && commandHandle.mouseOver())
+        if (!draggingAny && MouseL.down() && commandHandle.mouseOver())
         {
             editor.uiLayoutDraggingCommandPanel = true;
             editor.uiLayoutDragOffset = screenMouse - editor.uiCommandPanelPos;
             consumed = true;
         }
-        if (!editor.uiLayoutDraggingSelectedInfo && !editor.uiLayoutDraggingCommandPanel && MouseL.down() && resourceHandle.mouseOver())
+        if (!draggingAny && MouseL.down() && resourceHandle.mouseOver())
         {
             editor.uiLayoutDraggingResourcePanel = true;
             editor.uiLayoutDragOffset = screenMouse - editor.uiResourcePanelPos;
+            consumed = true;
+        }
+        if (showResourceNodeEditor && !draggingAny && MouseL.down() && resourceNodeHandle.mouseOver())
+        {
+            editor.uiLayoutDraggingResourceNodeEditor = true;
+            editor.uiLayoutDragOffset = screenMouse - editor.uiResourceNodeEditorPos;
+            consumed = true;
+        }
+        if (showDecalEditor && !draggingAny && MouseL.down() && decalEditorHandle.mouseOver())
+        {
+            editor.uiLayoutDraggingDecalEditor = true;
+            editor.uiLayoutDragOffset = screenMouse - editor.uiDecalEditorPos;
+            consumed = true;
+        }
+        if (showPerlinNoisePanel && !draggingAny && MouseL.down() && perlinNoiseHandle.mouseOver())
+        {
+            editor.uiLayoutDraggingPerlinNoisePanel = true;
+            editor.uiLayoutDragOffset = screenMouse - editor.uiPerlinNoisePanelPos;
+            consumed = true;
+        }
+        if (showZOrderPanel && !draggingAny && MouseL.down() && zOrderPanelHandle.mouseOver())
+        {
+            editor.uiLayoutDraggingZOrderPanel = true;
+            editor.uiLayoutDragOffset = screenMouse - editor.uiZOrderPanelPos;
             consumed = true;
         }
 
@@ -105,13 +149,51 @@ namespace LT3
             editor.uiResourcePanelPos.y = Clamp(snapped.y, 0.0, 900.0 - resourceRect.h);
             consumed = true;
         }
+        if (editor.uiLayoutDraggingResourceNodeEditor && MouseL.pressed())
+        {
+            const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
+            editor.uiResourceNodeEditorPos.x = Clamp(snapped.x, 0.0, 1600.0 - resourceNodeRect.w);
+            editor.uiResourceNodeEditorPos.y = Clamp(snapped.y, 0.0, 900.0 - resourceNodeRect.h);
+            consumed = true;
+        }
+        if (editor.uiLayoutDraggingDecalEditor && MouseL.pressed())
+        {
+            const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
+            editor.uiDecalEditorPos.x = Clamp(snapped.x, 0.0, 1600.0 - decalEditorRect.w);
+            editor.uiDecalEditorPos.y = Clamp(snapped.y, 0.0, 900.0 - decalEditorRect.h);
+            consumed = true;
+        }
+        if (editor.uiLayoutDraggingPerlinNoisePanel && MouseL.pressed())
+        {
+            const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
+            editor.uiPerlinNoisePanelPos.x = Clamp(snapped.x, 0.0, 1600.0 - perlinNoiseRect.w);
+            editor.uiPerlinNoisePanelPos.y = Clamp(snapped.y, 0.0, 900.0 - perlinNoiseRect.h);
+            consumed = true;
+        }
+        if (editor.uiLayoutDraggingZOrderPanel && MouseL.pressed())
+        {
+            const Vec2 snapped = SnapUiLayoutPosition(screenMouse - editor.uiLayoutDragOffset, editor.uiLayoutGridSize);
+            editor.uiZOrderPanelPos.x = Clamp(snapped.x, 0.0, 1600.0 - zOrderPanelRect.w);
+            editor.uiZOrderPanelPos.y = Clamp(snapped.y, 0.0, 900.0 - zOrderPanelRect.h);
+            consumed = true;
+        }
 
         if (MouseL.up())
         {
-            const bool wasDragging = editor.uiLayoutDraggingSelectedInfo || editor.uiLayoutDraggingCommandPanel || editor.uiLayoutDraggingResourcePanel;
+            const bool wasDragging = editor.uiLayoutDraggingSelectedInfo
+                || editor.uiLayoutDraggingCommandPanel
+                || editor.uiLayoutDraggingResourcePanel
+                || editor.uiLayoutDraggingResourceNodeEditor
+                || editor.uiLayoutDraggingDecalEditor
+                || editor.uiLayoutDraggingPerlinNoisePanel
+                || editor.uiLayoutDraggingZOrderPanel;
             editor.uiLayoutDraggingSelectedInfo = false;
             editor.uiLayoutDraggingCommandPanel = false;
             editor.uiLayoutDraggingResourcePanel = false;
+            editor.uiLayoutDraggingResourceNodeEditor = false;
+            editor.uiLayoutDraggingDecalEditor = false;
+            editor.uiLayoutDraggingPerlinNoisePanel = false;
+            editor.uiLayoutDraggingZOrderPanel = false;
             if (wasDragging)
             {
                 SaveBattleUiLayoutToml(editor, false);
@@ -120,6 +202,14 @@ namespace LT3
         }
 
         if (infoRect.mouseOver() || commandRect.mouseOver() || resourceRect.mouseOver())
+        {
+            consumed = true;
+        }
+        if ((showResourceNodeEditor && resourceNodeRect.mouseOver()) || (showDecalEditor && decalEditorRect.mouseOver()))
+        {
+            consumed = true;
+        }
+        if ((showPerlinNoisePanel && perlinNoiseRect.mouseOver()) || (showZOrderPanel && zOrderPanelRect.mouseOver()))
         {
             consumed = true;
         }

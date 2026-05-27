@@ -14,8 +14,8 @@ namespace LT3
 	inline FilePath ResolveSkillTomlPath()
 	{
 		return ResolveFirstExistingPath({
-			U"000_Warehouse/000_DefaultGame/070_Scenario/InfoSkill/skill.toml",
-			U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoSkill/skill.toml",
+			U"000_Warehouse/000_DefaultGame/070_Scenario/InfoSkill/Skills.toml",
+			U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoSkill/Skills.toml",
 		});
 	}
 }

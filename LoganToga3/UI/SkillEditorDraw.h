@@ -358,6 +358,40 @@ namespace LT3
 		DrawSkillEditorValueRow(uiFont, editor, skill, 20, U"swingR", U"{:.1f}"_fmt(skill.swingRadius), scroll, hoverHelpText, hoverNoteText);
 		DrawSkillEditorValueRow(uiFont, editor, skill, 21, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverNoteText);
 
+		uiFont(U"Resource Costs").draw(12, detail.x + 8.0, contentTop + 1198.0, Palette::Aqua);
+		if (skill.resourceCosts.isEmpty())
+		{
+			uiFont(U"<none>").draw(10, detail.x + 8.0, contentTop + 1226.0, Palette::Lightgray);
+		}
+		for (int32 i = 0; i < static_cast<int32>(skill.resourceCosts.size()); ++i)
+		{
+			const SkillResourceCostDef& cost = skill.resourceCosts[i];
+			String resourceLabel = cost.resourceTag;
+			const String lowerTag = cost.resourceTag.lowercased();
+			if (defs.resourceByTag.contains(lowerTag))
+			{
+				const ResourceDefId resourceId = defs.resourceByTag.at(lowerTag);
+				if (resourceId < defs.resources.size())
+				{
+					resourceLabel = defs.resources[resourceId].name;
+				}
+			}
+			DrawRectButton(SkillEditorResourceCostTagRect(i, scroll), resourceLabel, false, uiFont, RectButtonStyle{ .fontSize = 10 });
+			const String amountText = (editor.skillResourceCostEditingIndex == i)
+				? editor.skillResourceCostEditingText
+				: U"{}"_fmt(cost.amount);
+			DrawRectNumberStepper(
+				SkillEditorResourceCostAmountStepperRects(i, scroll),
+				amountText,
+				U"x{}"_fmt(SkillEditorResourceCostStep(editor, i)),
+				editor.skillResourceCostEditingIndex == i,
+				editor.skillResourceCostStepMenuIndex && *editor.skillResourceCostStepMenuIndex == i,
+				true,
+				uiFont);
+			DrawRectButton(SkillEditorResourceCostRemoveRect(i, scroll), U"del", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		}
+		DrawRectButton(SkillEditorResourceCostAddRect(static_cast<int32>(skill.resourceCosts.size()), scroll), U"+ cost", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+
 		if (editor.skillValueStepMenuRow)
 		{
 			const Array<double>& steps = SkillEditorDefaultValueSteps();
@@ -366,6 +400,19 @@ namespace LT3
 			for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
 			{
 				const RectF item = SkillEditorValueStepMenuItemRect(editor.skillValueStepMenuPos, i);
+				item.draw(item.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
+				uiFont(U"step {}"_fmt(steps[i])).draw(11, item.x + 6.0, item.y + 3.0, Palette::White);
+			}
+		}
+
+		if (editor.skillResourceCostStepMenuIndex)
+		{
+			const Array<double>& steps = SkillEditorResourceCostStepOptions();
+			const RectF menuRect = SkillEditorResourceCostStepMenuRect(editor.skillResourceCostStepMenuPos, static_cast<int32>(steps.size()));
+			menuRect.draw(ColorF{ 0.06, 0.08, 0.14, 0.97 }).drawFrame(1, ColorF{ 1, 1, 1, 0.30 });
+			for (int32 i = 0; i < static_cast<int32>(steps.size()); ++i)
+			{
+				const RectF item = SkillEditorResourceCostStepMenuItemRect(editor.skillResourceCostStepMenuPos, i);
 				item.draw(item.mouseOver() ? ColorF{ 0.16, 0.22, 0.18, 0.96 } : ColorF{ 0.0, 0.0, 0.0, 0.0 });
 				uiFont(U"step {}"_fmt(steps[i])).draw(11, item.x + 6.0, item.y + 3.0, Palette::White);
 			}

@@ -77,6 +77,18 @@ namespace LT3
 		return RectF{ panel.x + 142.0 + index * 54.0, panel.y + 508.0, 48.0, 34.0 };
 	}
 
+	inline RectF BuildingEditorShadowSizeValueButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 142.0 + index * 54.0, panel.y + 378.0, 48.0, 34.0 };
+	}
+
+	inline RectF BuildingEditorShadowOpacityValueButtonRect(const MapEditorState& editor, int32 index)
+	{
+		const RectF panel = BuildingEditorPanelWithPosRect(editor);
+		return RectF{ panel.x + 142.0 + index * 54.0, panel.y + 438.0, 48.0, 34.0 };
+	}
+
 	inline RectF BuildingEditorKeepAspectButtonRect(const MapEditorState& editor)
 	{
 		const RectF panel = BuildingEditorPanelWithPosRect(editor);
@@ -135,6 +147,28 @@ namespace LT3
 				Clamp(offset.y + delta.y, -128, 128)
 			};
 			return SetFieldIfChanged(offset, next);
+		});
+	}
+
+	inline void ChangeSelectedUnitShadowOpacity(MapEditorState& editor, UnitCatalog& catalog, double delta)
+	{
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
+		{
+			return AdjustField(entry.shadowOpacity, delta, [](double value)
+			{
+				return Clamp(value, 0.0, 1.0);
+			});
+		});
+	}
+
+	inline void ChangeSelectedUnitShadowScale(MapEditorState& editor, UnitCatalog& catalog, double delta)
+	{
+		MutateSelectedCatalogEntry(editor, catalog, [&](UnitCatalogEntry& entry)
+		{
+			return AdjustField(entry.shadowScale, delta, [](double value)
+			{
+				return Clamp(value, 0.1, 8.0);
+			});
 		});
 	}
 

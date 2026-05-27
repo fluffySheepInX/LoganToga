@@ -134,6 +134,14 @@ namespace LT3
 		uiFont(U"↑").drawAt(fontSize, topAnchorToggle.center(), topAnchored ? Palette::White : Palette::Lightgray);
 	}
 
+	inline void DrawUiLayoutDragHandleOnly(const RectF& dragHandle, bool dragging, const Font& uiFont,
+		int32 fontSize = 11)
+	{
+		dragHandle.draw(dragging ? ColorF{ 1.0, 0.84, 0.0, 0.9 } : ColorF{ 1.0, 0.84, 0.0, 0.4 })
+			.drawFrame(1, ColorF{ 1, 1, 1, 0.2 });
+		uiFont(U"↕").drawAt(fontSize, dragHandle.center(), Palette::White);
+	}
+
 	inline void DrawRectCheckRow(const RectF& rect, StringView label, bool checked, const Font& uiFont,
 		int32 fontSize = 11,
 		double checkOffsetX = 4.0,

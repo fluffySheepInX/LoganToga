@@ -11,7 +11,7 @@ namespace LT3
 		}
 
 		const int32 maxStackSize = MaxDecalStackSizeInRect(editor, *editor.zOrderSelectionRect);
-		const RectF panel = EditorZOrderPanelRect(maxStackSize);
+		const RectF panel = EditorZOrderPanelRect(editor, maxStackSize);
 		const RectF downRect = EditorZOrderDownRect(panel);
 		const RectF upRect = EditorZOrderUpRect(panel);
 		const RectF sendToBackRect = EditorZOrderSendToBackRect(panel);

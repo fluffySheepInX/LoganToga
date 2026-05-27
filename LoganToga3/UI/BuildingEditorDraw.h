@@ -83,60 +83,77 @@ namespace LT3
 		uiFont(U"unit_id:{}  image:{}"_fmt(entry.unit_id, entry.image)).draw(11, panel.x + 24.0, panel.y + 196.0, Palette::Lightgray);
 		uiFont(offsetLabel).draw(13, panel.x + 24.0, panel.y + 212.0, Palette::Gold);
 
-		uiFont(U"Anchor").draw(12, panel.x + 24.0, panel.y + 360.0, Palette::Aqua);
-		const bool anchorCenter = (entry.placementAnchor == UnitPlacementAnchor::Center);
-		const RectF anchorCenterRect = BuildingEditorAnchorButtonRect(editor, 0);
-		const RectF anchorBottomRect = BuildingEditorAnchorButtonRect(editor, 1);
-		anchorCenterRect.draw(anchorCenter ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, anchorCenterRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		anchorBottomRect.draw(!anchorCenter ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, anchorBottomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"Center").drawAt(12, anchorCenterRect.center(), Palette::White);
-		uiFont(U"Bottom").drawAt(12, anchorBottomRect.center(), Palette::White);
-
-		uiFont(U"Size Mode").draw(12, panel.x + 24.0, panel.y + 404.0, Palette::Aqua);
-		const bool gameplayMode = (entry.renderSizeMode == UnitRenderSizeMode::Gameplay);
-		const RectF gameplayRect = BuildingEditorRenderSizeModeButtonRect(editor, 0);
-		const RectF artRect = BuildingEditorRenderSizeModeButtonRect(editor, 1);
-		gameplayRect.draw(gameplayMode ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, gameplayRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		artRect.draw(!gameplayMode ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, artRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"Gameplay").drawAt(11, gameplayRect.center(), Palette::White);
-		uiFont(U"Art").drawAt(12, artRect.center(), Palette::White);
-
-		const RectF refCellRect = BuildingEditorArtWidthRefButtonRect(editor, 0);
-		const RectF refPixelRect = BuildingEditorArtWidthRefButtonRect(editor, 1);
-		const bool cellRef = (entry.artWidthReference == UnitArtWidthReference::Cell);
-		const double uiAlpha = gameplayMode ? 0.35 : 1.0;
-		uiFont(U"Art Ref").draw(12, panel.x + 24.0, panel.y + 448.0, ColorF{ Palette::Aqua, uiAlpha });
-		refCellRect.draw(cellRef ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, refCellRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
-		refPixelRect.draw(!cellRef ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, refPixelRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
-		uiFont(U"Cell").drawAt(12, refCellRect.center(), ColorF{ Palette::White, uiAlpha });
-		uiFont(U"Pixel").drawAt(12, refPixelRect.center(), ColorF{ Palette::White, uiAlpha });
-
-		const RectF keepAspectRect = BuildingEditorKeepAspectButtonRect(editor);
-		const String keepAspectText = entry.artKeepAspect ? U"Aspect ON" : U"Aspect OFF";
-		keepAspectRect.draw(entry.artKeepAspect ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, keepAspectRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
-		uiFont(keepAspectText).drawAt(11, keepAspectRect.center(), ColorF{ Palette::White, uiAlpha });
-
-		const bool showGameplayValue = gameplayMode;
-		const double artWidthValueForTab = GetSelectedUnitArtWidthValueForTab(entry, editor.buildingEditorTab);
-		const String artWidthLabel = lineHorizontalTab
-			? U"Art Width(H): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
-			: (lineRightTab
-				? U"Art Width(R): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
-				: (lineLeftTab
-					? U"Art Width(L): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
-					: U"Art Width: {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")));
-		const String sizeValueText = showGameplayValue
-			? U"Gameplay Mul: {:.2f}"_fmt(entry.gameplaySizeMul)
-			: artWidthLabel;
-		uiFont(sizeValueText).draw(12, panel.x + 142.0, panel.y + 492.0, ColorF{ Palette::Gold, gameplayMode ? 1.0 : uiAlpha });
-		if (!showGameplayValue)
+		if (shadowTab)
 		{
-			uiFont(sizeValueText).draw(12, panel.x + 142.0, panel.y + 492.0, Palette::Gold);
+			uiFont(U"Shadow Size: {:.2f}"_fmt(entry.shadowScale)).draw(12, panel.x + 142.0, panel.y + 362.0, Palette::Gold);
+			DrawBuildingEditorButton(BuildingEditorShadowSizeValueButtonRect(editor, 0), U"-4", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowSizeValueButtonRect(editor, 1), U"-1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowSizeValueButtonRect(editor, 2), U"+1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowSizeValueButtonRect(editor, 3), U"+4", uiFont);
+			uiFont(U"Shadow Opacity: {:.2f}"_fmt(entry.shadowOpacity)).draw(12, panel.x + 142.0, panel.y + 422.0, Palette::Gold);
+			DrawBuildingEditorButton(BuildingEditorShadowOpacityValueButtonRect(editor, 0), U"-4", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowOpacityValueButtonRect(editor, 1), U"-1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowOpacityValueButtonRect(editor, 2), U"+1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorShadowOpacityValueButtonRect(editor, 3), U"+4", uiFont);
 		}
-		DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 0), U"-4", uiFont);
-		DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 1), U"-1", uiFont);
-		DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 2), U"+1", uiFont);
-		DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 3), U"+4", uiFont);
+
+		if (!shadowTab)
+		{
+			uiFont(U"Anchor").draw(12, panel.x + 24.0, panel.y + 360.0, Palette::Aqua);
+			const bool anchorCenter = (entry.placementAnchor == UnitPlacementAnchor::Center);
+			const RectF anchorCenterRect = BuildingEditorAnchorButtonRect(editor, 0);
+			const RectF anchorBottomRect = BuildingEditorAnchorButtonRect(editor, 1);
+			anchorCenterRect.draw(anchorCenter ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, anchorCenterRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			anchorBottomRect.draw(!anchorCenter ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, anchorBottomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			uiFont(U"Center").drawAt(12, anchorCenterRect.center(), Palette::White);
+			uiFont(U"Bottom").drawAt(12, anchorBottomRect.center(), Palette::White);
+
+			uiFont(U"Size Mode").draw(12, panel.x + 24.0, panel.y + 404.0, Palette::Aqua);
+			const bool gameplayMode = (entry.renderSizeMode == UnitRenderSizeMode::Gameplay);
+			const RectF gameplayRect = BuildingEditorRenderSizeModeButtonRect(editor, 0);
+			const RectF artRect = BuildingEditorRenderSizeModeButtonRect(editor, 1);
+			gameplayRect.draw(gameplayMode ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, gameplayRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			artRect.draw(!gameplayMode ? ColorF{ 0.12, 0.22, 0.18, 0.96 } : ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, artRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			uiFont(U"Gameplay").drawAt(11, gameplayRect.center(), Palette::White);
+			uiFont(U"Art").drawAt(12, artRect.center(), Palette::White);
+
+			const RectF refCellRect = BuildingEditorArtWidthRefButtonRect(editor, 0);
+			const RectF refPixelRect = BuildingEditorArtWidthRefButtonRect(editor, 1);
+			const bool cellRef = (entry.artWidthReference == UnitArtWidthReference::Cell);
+			const double uiAlpha = gameplayMode ? 0.35 : 1.0;
+			uiFont(U"Art Ref").draw(12, panel.x + 24.0, panel.y + 448.0, ColorF{ Palette::Aqua, uiAlpha });
+			refCellRect.draw(cellRef ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, refCellRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
+			refPixelRect.draw(!cellRef ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, refPixelRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
+			uiFont(U"Cell").drawAt(12, refCellRect.center(), ColorF{ Palette::White, uiAlpha });
+			uiFont(U"Pixel").drawAt(12, refPixelRect.center(), ColorF{ Palette::White, uiAlpha });
+
+			const RectF keepAspectRect = BuildingEditorKeepAspectButtonRect(editor);
+			const String keepAspectText = entry.artKeepAspect ? U"Aspect ON" : U"Aspect OFF";
+			keepAspectRect.draw(entry.artKeepAspect ? ColorF{ 0.12, 0.22, 0.18, 0.96 * uiAlpha } : ColorF{ 0.08, 0.09, 0.11, 0.92 * uiAlpha }).drawFrame(2, keepAspectRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0, uiAlpha } : ColorF{ 1, 1, 1, 0.16 * uiAlpha });
+			uiFont(keepAspectText).drawAt(11, keepAspectRect.center(), ColorF{ Palette::White, uiAlpha });
+
+			const bool showGameplayValue = gameplayMode;
+			const double artWidthValueForTab = GetSelectedUnitArtWidthValueForTab(entry, editor.buildingEditorTab);
+			const String artWidthLabel = lineHorizontalTab
+				? U"Art Width(H): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
+				: (lineRightTab
+					? U"Art Width(R): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
+					: (lineLeftTab
+						? U"Art Width(L): {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")
+						: U"Art Width: {:.2f} {}"_fmt(artWidthValueForTab, cellRef ? U"cell" : U"px")));
+			const String sizeValueText = showGameplayValue
+				? U"Gameplay Mul: {:.2f}"_fmt(entry.gameplaySizeMul)
+				: artWidthLabel;
+			uiFont(sizeValueText).draw(12, panel.x + 142.0, panel.y + 492.0, ColorF{ Palette::Gold, gameplayMode ? 1.0 : uiAlpha });
+			if (!showGameplayValue)
+			{
+				uiFont(sizeValueText).draw(12, panel.x + 142.0, panel.y + 492.0, Palette::Gold);
+			}
+			DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 0), U"-4", uiFont);
+			DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 1), U"-1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 2), U"+1", uiFont);
+			DrawBuildingEditorButton(BuildingEditorSizeValueButtonRect(editor, 3), U"+4", uiFont);
+		}
 
 		const Optional<const BuildActionDef*> lineAction = FindLineBuildActionForCatalogEntry(entry, defs);
 		if (lineAction)
@@ -210,7 +227,22 @@ namespace LT3
 			const double fitScale = Min((previewRect.w - 48.0) / Max(1.0, static_cast<double>(texture.width())), (previewRect.h - 28.0) / Max(1.0, static_cast<double>(texture.height())));
 			const double drawScale = Min(fitScale, 2.0 * entry.visualScale);
 			const Vec2 previewOffset = Vec2{ static_cast<double>(offset.x), static_cast<double>(offset.y) } * drawScale;
+			const Point previewShadowOffsetPoint = shadowTab ? entry.shadowOffset : Point{ 0, 0 };
+			const Vec2 previewShadowOffset = Vec2{ static_cast<double>(previewShadowOffsetPoint.x), static_cast<double>(previewShadowOffsetPoint.y) } * drawScale;
 			const TextureRegion previewTexture = texture.scaled(drawScale);
+			if (shadowTab)
+			{
+				const double shadowPreviewScale = Max(0.1, entry.shadowScale);
+				const TextureRegion shadowTexture = texture.scaled(drawScale * shadowPreviewScale);
+				if (drawAsBuilding)
+				{
+					shadowTexture.draw(Arg::bottomCenter = anchor + previewShadowOffset, ColorF{ 0.0, 0.0, 0.0, entry.shadowOpacity });
+				}
+				else
+				{
+					shadowTexture.drawAt(anchor + previewShadowOffset, ColorF{ 0.0, 0.0, 0.0, entry.shadowOpacity });
+				}
+			}
 			if (drawAsBuilding)
 			{
 				previewTexture.draw(Arg::bottomCenter = anchor + previewOffset);

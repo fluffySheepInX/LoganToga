@@ -4,6 +4,12 @@
 
 namespace LT3
 {
+    struct SkillResourceCostDef
+    {
+        String resourceTag;
+        int32 amount = 1;
+    };
+
     struct SkillDef
     {
         String tag;
@@ -42,6 +48,7 @@ namespace LT3
         int32 projectileStartDegreeType = 0;
         String projectileImage;
         String projectileDiagonalImage;
+        Array<SkillResourceCostDef> resourceCosts;
     };
 
     struct UnitDef
@@ -107,13 +114,21 @@ namespace LT3
 
     struct ResourceDef
     {
+        // 内部参照用の一意タグ
         String tag;
+        // シナリオや表示順で使う外部ID
         String id;
+        // UI表示用の資源名
         String name;
+        // UI表示に使うアイコンファイル名
         String icon;
+        // 資源種別（Gold / Trust / Food など）
         ResourceKind kind = ResourceKind::Gold;
+        // UI上の基本表示色
         ColorF color = Palette::Gold;
+        // 戦闘開始時の初期保有量
         int32 initialAmount = 0;
+        // 時間経過で毎秒増加する基本収入量
         int32 passiveIncomePerSec = 0;
     };
 

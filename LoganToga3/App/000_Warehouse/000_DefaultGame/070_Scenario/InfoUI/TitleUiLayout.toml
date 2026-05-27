@@ -1,0 +1,14 @@
+﻿[layout]
+grid = 24
+
+[skirmish_button]
+x = 1224
+y = 24
+w = 216
+h = 44
+
+[music_editor_toggle]
+x = 1224
+y = 96
+w = 216
+h = 36
