@@ -252,9 +252,34 @@ namespace LT3
 		return ResolveLinePlacementIconByDelta(action, direction);
 	}
 
-	inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Optional<Vec2>& targetPosition = none)
+	inline Array<int32>& GetMutableFactionResourceAmounts(BattleWorld& world, Faction faction)
 	{
-		if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
+		return (faction == Faction::Enemy) ? world.resources.enemyAmounts : world.resources.playerAmounts;
+	}
+
+	inline void ConsumeBuildActionCostForFaction(BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action, Faction faction, int32 count = 1)
+	{
+		Array<int32>& amounts = GetMutableFactionResourceAmounts(world, faction);
+		const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
+		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
+		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+		if (goldResource != InvalidResourceDefId && goldResource < amounts.size())
+		{
+			amounts[goldResource] -= action.costGold * count;
+		}
+		if (trustResource != InvalidResourceDefId && trustResource < amounts.size())
+		{
+			amounts[trustResource] -= action.costTrust * count;
+		}
+		if (foodResource != InvalidResourceDefId && foodResource < amounts.size())
+		{
+			amounts[foodResource] -= action.costFood * count;
+		}
+	}
+
+	inline bool TryStartBuildForFaction(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, Faction faction, const Optional<Vec2>& targetPosition = none)
+	{
+		if (!CanStartBuildActionForFaction(world, defs, builder, actionId, faction)) return false;
 		if (IsUniqueBuildActionBlocked(world, defs, actionId)) return false;
 
 		const BuildActionDef& action = defs.buildActions[actionId];
@@ -263,36 +288,15 @@ namespace LT3
 			return false;
 		}
 
-		auto consumeBuildActionCost = [&]()
-		{
-			const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
-			const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
-			const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
-			if (goldResource != InvalidResourceDefId && goldResource < world.resources.playerAmounts.size())
-			{
-				world.resources.playerAmounts[goldResource] -= action.costGold;
-			}
-			if (trustResource != InvalidResourceDefId && trustResource < world.resources.playerAmounts.size())
-			{
-				world.resources.playerAmounts[trustResource] -= action.costTrust;
-			}
-			if (foodResource != InvalidResourceDefId && foodResource < world.resources.playerAmounts.size())
-			{
-				world.resources.playerAmounts[foodResource] -= action.costFood;
-			}
-		};
-
 		if (action.resultType == BuildActionResultType::Carrier)
 		{
 			if (!TryExecuteCarrierAction(world, defs, builder, action))
 			{
 				return false;
 			}
-			consumeBuildActionCost();
+			ConsumeBuildActionCostForFaction(world, defs, action, faction);
 			return true;
 		}
-
-		consumeBuildActionCost();
 
 		const Optional<Vec2> resolvedTargetPosition = targetPosition.has_value()
 			? Optional<Vec2>{ SnapWorldToBattleCellCenter(world, *targetPosition) }
@@ -305,6 +309,7 @@ namespace LT3
 				return false;
 			}
 
+			ConsumeBuildActionCostForFaction(world, defs, action, faction);
 			world.buildQueues.pendingEntry[builder] = QueuedBuildAction{ actionId, *resolvedTargetPosition, true };
 			world.buildQueues.hasPendingEntry[builder] = true;
 			SetBuildQueueLocked(world, builder, true);
@@ -314,6 +319,7 @@ namespace LT3
 			return true;
 		}
 
+		ConsumeBuildActionCostForFaction(world, defs, action, faction);
 		Array<QueuedBuildAction>& queue = world.buildQueues.entries[builder];
 		const bool wasEmpty = queue.isEmpty();
 		queue << QueuedBuildAction{ actionId, resolvedTargetPosition.value_or(Vec2{ 0, 0 }), resolvedTargetPosition.has_value() };
@@ -326,9 +332,39 @@ namespace LT3
 		return true;
 	}
 
-	inline bool TryStartBuildLine(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Array<Vec2>& targetPositions)
+	inline bool TryStartBuild(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Optional<Vec2>& targetPosition = none)
 	{
-		if (!CanStartBuildAction(world, defs, builder, actionId)) return false;
+		return TryStartBuildForFaction(world, defs, builder, actionId, Faction::Player, targetPosition);
+	}
+
+	inline bool CanAffordBuildActionForFactionCount(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action, Faction faction, int32 count)
+	{
+		const Array<int32>& amounts = (faction == Faction::Enemy)
+			? world.resources.enemyAmounts
+			: world.resources.playerAmounts;
+		const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
+		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
+		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+
+		if (goldResource != InvalidResourceDefId && (goldResource >= amounts.size() || amounts[goldResource] < action.costGold * count))
+		{
+			return false;
+		}
+		if (trustResource != InvalidResourceDefId && (trustResource >= amounts.size() || amounts[trustResource] < action.costTrust * count))
+		{
+			return false;
+		}
+		if (foodResource != InvalidResourceDefId && (foodResource >= amounts.size() || amounts[foodResource] < action.costFood * count))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	inline bool TryStartBuildLineForFaction(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, Faction faction, const Array<Vec2>& targetPositions)
+	{
+		if (!CanStartBuildActionForFaction(world, defs, builder, actionId, faction)) return false;
 		if (IsUniqueBuildActionBlocked(world, defs, actionId)) return false;
 		if (targetPositions.isEmpty()) return false;
 
@@ -354,38 +390,12 @@ namespace LT3
 			return false;
 		}
 
-		const int32 totalCostGold = action.costGold * static_cast<int32>(validTargets.size());
-		const int32 totalCostTrust = action.costTrust * static_cast<int32>(validTargets.size());
-		const int32 totalCostFood = action.costFood * static_cast<int32>(validTargets.size());
-		const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
-		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
-		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
-
-		if (goldResource != InvalidResourceDefId && (goldResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[goldResource] < totalCostGold))
-		{
-			return false;
-		}
-		if (trustResource != InvalidResourceDefId && (trustResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[trustResource] < totalCostTrust))
-		{
-			return false;
-		}
-		if (foodResource != InvalidResourceDefId && (foodResource >= world.resources.playerAmounts.size() || world.resources.playerAmounts[foodResource] < totalCostFood))
+		if (!CanAffordBuildActionForFactionCount(world, defs, action, faction, static_cast<int32>(validTargets.size())))
 		{
 			return false;
 		}
 
-		if (goldResource != InvalidResourceDefId && goldResource < world.resources.playerAmounts.size())
-		{
-			world.resources.playerAmounts[goldResource] -= totalCostGold;
-		}
-		if (trustResource != InvalidResourceDefId && trustResource < world.resources.playerAmounts.size())
-		{
-			world.resources.playerAmounts[trustResource] -= totalCostTrust;
-		}
-		if (foodResource != InvalidResourceDefId && foodResource < world.resources.playerAmounts.size())
-		{
-			world.resources.playerAmounts[foodResource] -= totalCostFood;
-		}
+		ConsumeBuildActionCostForFaction(world, defs, action, faction, static_cast<int32>(validTargets.size()));
 
 		const Vec2 firstTarget = validTargets.front();
 		const Point firstCell = WorldToBattleCell(world, firstTarget);
@@ -423,5 +433,10 @@ namespace LT3
 			ResetBuildQueueProgress(world, builder);
 		}
 		return true;
+	}
+
+	inline bool TryStartBuildLine(BattleWorld& world, const DefinitionStores& defs, UnitId builder, BuildActionDefId actionId, const Array<Vec2>& targetPositions)
+	{
+		return TryStartBuildLineForFaction(world, defs, builder, actionId, Faction::Player, targetPositions);
 	}
 }

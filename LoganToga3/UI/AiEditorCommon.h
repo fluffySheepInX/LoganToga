@@ -55,6 +55,28 @@ namespace LT3
 		return RectF{ detail.x + 16.0, detail.y + 126.0 + row * 42.0 - scroll, detail.w - 32.0, 34.0 };
 	}
 
+	inline double AiEditorDetailContentTop()
+	{
+		return AiEditorDetailRect().y + 118.0;
+	}
+
+	inline bool AiEditorRowVisible(const RectF& row)
+	{
+		const RectF detail = AiEditorDetailRect();
+		const double top = AiEditorDetailContentTop();
+		return top <= row.y && row.y + row.h <= detail.y + detail.h;
+	}
+
+	inline double AiEditorRowValueX(const RectF& row)
+	{
+		return row.x + 130.0;
+	}
+
+	inline double AiEditorRowHelpX(const RectF& row)
+	{
+		return row.x + row.w - 342.0;
+	}
+
 	inline RectF AiEditorValueButtonRect(const RectF& row, int32 index)
 	{
 		const double w = 44.0;
@@ -65,7 +87,18 @@ namespace LT3
 
 	inline RectF AiEditorHelpIconRect(const RectF& row)
 	{
-		return RectF{ row.x + 166.0, row.y + 6.0, 18.0, 18.0 };
+		return RectF{ AiEditorRowHelpX(row), row.y + 6.0, 18.0, 18.0 };
+	}
+
+	inline RectF AiEditorHelpPopupRect(const RectF& iconRect)
+	{
+		const double w = 300.0;
+		const double h = 42.0;
+		const double offset = 8.0;
+		const RectF detail = AiEditorDetailRect();
+		const double x = Max(detail.x + 8.0, iconRect.x - w - offset);
+		const double y = Clamp(iconRect.y - 10.0, detail.y + 8.0, detail.y + detail.h - h - 8.0);
+		return RectF{ x, y, w, h };
 	}
 
 	inline Texture& AiEditorHelpIconTexture()
@@ -103,6 +136,12 @@ namespace LT3
 		}
 	}
 
+	inline Optional<RectF> ResolveAiEditorHoveredHelpRect()
+	{
+		const RectF row{ Cursor::PosF().x - 9.0, Cursor::PosF().y - 9.0, 18.0, 18.0 };
+		return AiEditorHelpPopupRect(row);
+	}
+
 	inline String AiEditorRowHelpText(int32 rowIndex)
 	{
 		switch (rowIndex)
@@ -124,14 +163,16 @@ namespace LT3
 		case 7:
 			return U"同時に保持したい最大軍勢規模です。";
 		case 8:
-			return U"技術・上位戦力への比重です。今後の拡張を見据えた調整値です。";
+			return U"戦闘の制限時間です。0 にはならず、時間切れでプレイヤー敗北になります。";
 		case 9:
-			return U"このHP割合を下回ると退却判断に使う値です。";
+			return U"技術・上位戦力への比重です。今後の拡張を見据えた調整値です。";
 		case 10:
-			return U"AI側の資源獲得倍率です。高いほど展開が速くなります。";
+			return U"このHP割合を下回ると退却判断に使う値です。";
 		case 11:
-			return U"資源消費なしで敵ユニットを生成できるかを切り替えます。";
+			return U"AI側の資源獲得倍率です。高いほど展開が速くなります。";
 		case 12:
+			return U"資源消費なしで敵ユニットを生成できるかを切り替えます。";
+		case 13:
 			return U"会敵時に移動を優先して無視するか、移動を止めて戦闘後に目的地へ戻るかを選びます。";
 		default:
 			return U"";
@@ -144,6 +185,33 @@ namespace LT3
 		const double gap = 6.0;
 		const double x = row.x + row.w - (w * count + gap * (count - 1));
 		return RectF{ x + index * (w + gap), row.y + 4.0, w, 26.0 };
+	}
+
+	inline RectF AiEditorTinyInlineButtonRect(const RectF& row, int32 index, int32 count)
+	{
+		const double w = 32.0;
+		const double gap = 4.0;
+		const double x = row.x + row.w - (w * count + gap * (count - 1));
+		return RectF{ x + index * (w + gap), row.y + 4.0, w, 26.0 };
+	}
+
+	inline double AiEditorTinyButtonStartX(const RectF& row, int32 count)
+	{
+		return AiEditorTinyInlineButtonRect(row, 0, count).x;
+	}
+
+	inline RectF AiEditorCompactInlineButtonRect(const RectF& row, int32 index, int32 count)
+	{
+		const double w = 38.0;
+		const double gap = 4.0;
+		const double x = row.x + row.w - (w * count + gap * (count - 1));
+		return RectF{ x + index * (w + gap), row.y + 4.0, w, 26.0 };
+	}
+
+	inline double AiEditorCompactButtonStartX(const RectF& row, int32 count)
+	{
+		const RectF firstButton = AiEditorCompactInlineButtonRect(row, 0, count);
+		return firstButton.x;
 	}
 
 	inline String NextAiTargetPriority(StringView value)
@@ -179,16 +247,119 @@ namespace LT3
 		return U"base";
 	}
 
-	inline String FindNextAiUnitWeightTag(const AiProfileDef& profile, const DefinitionStores& defs)
+	inline bool CanAiEditorSelectInitialUnit(const DefinitionStores& defs, UnitDefId unitDefId)
 	{
-		for (const auto& unit : defs.units)
+		if (!(0 <= unitDefId && unitDefId < defs.units.size()))
 		{
-			const String unitTag = unit.unit_id.lowercased();
-			if (unitTag.isEmpty())
+			return false;
+		}
+		const UnitDef& def = defs.units[unitDefId];
+		if (def.unit_id.isEmpty() || def.role == UnitRole::Base || def.role == UnitRole::Barrier || def.speed <= 0.0)
+		{
+			return false;
+		}
+
+		const String unitTag = def.unit_id.lowercased();
+		for (const auto& action : defs.buildActions)
+		{
+			if (!action.enemyCanProduce || action.resultType != BuildActionResultType::Unit)
 			{
 				continue;
 			}
+			if (action.spawnUnit == unitDefId || action.spawnUnits.any([&](UnitDefId spawnUnit) { return spawnUnit == unitDefId; }))
+			{
+				return true;
+			}
+			if ((!action.spawnTag.isEmpty() && action.spawnTag.lowercased() == unitTag)
+				|| action.spawnTags.any([&](const String& spawnTag) { return !spawnTag.isEmpty() && spawnTag.lowercased() == unitTag; }))
+			{
+				return true;
+			}
+		}
 
+		return false;
+	}
+
+	inline String ResolveAiEditorUnitDisplayName(const DefinitionStores& defs, StringView unitTag)
+	{
+		const String lower = String{ unitTag }.lowercased();
+		if (lower.isEmpty())
+		{
+			return U"<none>";
+		}
+
+		if (defs.unitByTag.contains(lower))
+		{
+			const UnitDef& def = defs.units[defs.unitByTag.at(lower)];
+			return U"{} {}"_fmt(def.unit_id, def.name.isEmpty() ? def.unit_id : def.name);
+		}
+
+		return U"{} (?)"_fmt(lower);
+	}
+
+	inline Array<String> CollectAiEditorInitialUnitTags(const DefinitionStores& defs)
+	{
+		Array<String> tags;
+		for (UnitDefId unitDefId = 0; unitDefId < defs.units.size(); ++unitDefId)
+		{
+			if (CanAiEditorSelectInitialUnit(defs, unitDefId))
+			{
+				tags << defs.units[unitDefId].unit_id.lowercased();
+			}
+		}
+
+		return tags;
+	}
+
+	inline String NextAiInitialUnitTag(StringView value, const DefinitionStores& defs, int32 direction)
+	{
+		const Array<String> tags = CollectAiEditorInitialUnitTags(defs);
+		if (tags.isEmpty())
+		{
+			return String{ value }.lowercased();
+		}
+
+		const String lower = String{ value }.lowercased();
+		int32 currentIndex = -1;
+		for (int32 index = 0; index < static_cast<int32>(tags.size()); ++index)
+		{
+			if (tags[index] == lower)
+			{
+				currentIndex = index;
+				break;
+			}
+		}
+		if (currentIndex < 0)
+		{
+			currentIndex = 0;
+		}
+		else
+		{
+			currentIndex = (currentIndex + direction + static_cast<int32>(tags.size())) % static_cast<int32>(tags.size());
+		}
+
+		return tags[currentIndex];
+	}
+
+	inline String FindNextAiInitialUnitTag(const AiProfileDef& profile, const DefinitionStores& defs)
+	{
+		const Array<String> tags = CollectAiEditorInitialUnitTags(defs);
+		for (const String& tag : tags)
+		{
+			if (!profile.initialUnits.any([&](const String& initialUnit) { return initialUnit.lowercased() == tag; }))
+			{
+				return tag;
+			}
+		}
+
+		return tags.isEmpty() ? U"" : tags.front();
+	}
+
+	inline String FindNextAiUnitWeightTag(const AiProfileDef& profile, const DefinitionStores& defs)
+	{
+		const Array<String> tags = CollectAiEditorInitialUnitTags(defs);
+		for (const String& unitTag : tags)
+		{
 			bool used = false;
 			for (const auto& weight : profile.unitWeights)
 			{
@@ -205,7 +376,41 @@ namespace LT3
 			}
 		}
 
-		return U"kouhei";
+		return tags.isEmpty() ? U"" : tags.front();
+	}
+
+	inline String NextAiUnitWeightTag(StringView value, const DefinitionStores& defs, int32 direction)
+	{
+		return NextAiInitialUnitTag(value, defs, direction);
+	}
+
+	inline String FindNextAiBuildPriorityTag(const AiProfileDef& profile, const DefinitionStores& defs)
+	{
+		for (const auto& action : defs.buildActions)
+		{
+			const String actionTag = action.tag.lowercased();
+			if (actionTag.isEmpty())
+			{
+				continue;
+			}
+
+			bool used = false;
+			for (const auto& buildPriority : profile.buildPriorities)
+			{
+				if (buildPriority.actionTag.lowercased() == actionTag)
+				{
+					used = true;
+					break;
+				}
+			}
+
+			if (!used)
+			{
+				return actionTag;
+			}
+		}
+
+		return defs.buildActions.isEmpty() ? U"" : defs.buildActions.front().tag.lowercased();
 	}
 
 	inline bool HasSelectedAiProfile(const MapEditorState& editor, const DefinitionStores& defs)
@@ -290,12 +495,15 @@ namespace LT3
 			profile.maxArmySize = Max(1, profile.maxArmySize + static_cast<int32>(delta));
 			break;
 		case 8:
-			profile.techFocus = Clamp(profile.techFocus + delta * 0.01, 0.0, 1.0);
+			profile.battleTimeLimitSec = Max(60.0, profile.battleTimeLimitSec + delta * 60.0);
 			break;
 		case 9:
-			profile.retreatHpRatio = Clamp(profile.retreatHpRatio + delta * 0.01, 0.0, 1.0);
+			profile.techFocus = Clamp(profile.techFocus + delta * 0.01, 0.0, 1.0);
 			break;
 		case 10:
+			profile.retreatHpRatio = Clamp(profile.retreatHpRatio + delta * 0.01, 0.0, 1.0);
+			break;
+		case 11:
 			profile.resourceMultiplier = Max(0.0, profile.resourceMultiplier + delta * 0.01);
 			break;
 		}
@@ -307,7 +515,11 @@ namespace LT3
 
 	inline double AiEditorDetailMaxScroll(const AiProfileDef& profile)
 	{
-		const int32 rowCount = 15 + static_cast<int32>(profile.unitWeights.size()) + static_cast<int32>(profile.targetPriority.size());
+		const int32 rowCount = 18
+			+ static_cast<int32>(profile.initialUnits.size())
+			+ static_cast<int32>(profile.unitWeights.size())
+			+ static_cast<int32>(profile.buildPriorities.size())
+			+ static_cast<int32>(profile.targetPriority.size());
 		return Max(0.0, rowCount * 42.0 - AiEditorDetailRect().h + 126.0);
 	}
 }

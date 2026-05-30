@@ -12,20 +12,25 @@ defense_focus = 0.45
 tech_focus = 0.35
 attack_group_size = 4
 max_army_size = 24
+battle_time_limit_sec = 1500
 retreat_hp_ratio = 0.1
 free_spawn_enabled = true
 resource_multiplier = 1
 contact_behavior = "ignore"
+initial_units = ["1", "2", "4"]
 target_priority = ["base", "resource", "unit"]
 [[profiles.unit_weights]]
-unit = "kouhei"
+unit = "1"
 weight = 1
+desired_count = 0
 [[profiles.unit_weights]]
-unit = "archer"
+unit = "2"
 weight = 0.7
+desired_count = 0
 [[profiles.unit_weights]]
-unit = "worker"
+unit = "4"
 weight = 0.25
+desired_count = 0
 
 [[profiles]]
 tag = "long_war"
@@ -41,20 +46,25 @@ defense_focus = 0.65
 tech_focus = 0.55
 attack_group_size = 7
 max_army_size = 36
+battle_time_limit_sec = 1500
 retreat_hp_ratio = 0.22
 free_spawn_enabled = true
 resource_multiplier = 1.1
 contact_behavior = "ignore"
+initial_units = ["1", "2", "4"]
 target_priority = ["resource", "base", "unit"]
 [[profiles.unit_weights]]
-unit = "kouhei"
+unit = "1"
 weight = 0.9
+desired_count = 0
 [[profiles.unit_weights]]
-unit = "archer"
+unit = "2"
 weight = 1
+desired_count = 0
 [[profiles.unit_weights]]
-unit = "worker"
+unit = "4"
 weight = 0.35
+desired_count = 0
 
 [[profiles]]
 tag = "blitz"
@@ -63,21 +73,25 @@ description = "序盤から小規模部隊を頻繁に送り込む電撃戦 AI"
 preset_type = "blitz"
 opening_delay_sec = 4
 spawn_interval_sec = 5
-attack_wave_interval_sec = 18
-aggression = 0.9
+attack_wave_interval_sec = 8
+aggression = 1
 economy_focus = 0.25
 defense_focus = 0.2
 tech_focus = 0.2
-attack_group_size = 3
-max_army_size = 18
+attack_group_size = 9
+max_army_size = 58
+battle_time_limit_sec = 1500
 retreat_hp_ratio = 0
 free_spawn_enabled = true
 resource_multiplier = 0.9
 contact_behavior = "engage"
-target_priority = ["base", "unit", "resource"]
+initial_units = ["1", "2"]
+target_priority = ["resource", "unit", "base"]
 [[profiles.unit_weights]]
-unit = "kouhei"
+unit = "1"
 weight = 1.2
+desired_count = 0
 [[profiles.unit_weights]]
-unit = "archer"
+unit = "2"
 weight = 0.55
+desired_count = 0

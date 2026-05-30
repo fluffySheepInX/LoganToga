@@ -54,7 +54,15 @@ namespace LT3
         {
             return false;
         }
+        if (mapEditor.showBuildingEditor && BuildingEditorPanelWithPosRect(mapEditor).mouseOver())
+        {
+            return false;
+        }
         if (mapEditor.showCommandEditor && EditorCommandPanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (mapEditor.showDecalEditor && EditorDecalEditorPanelRect(mapEditor).mouseOver())
         {
             return false;
         }
@@ -67,6 +75,22 @@ namespace LT3
             return false;
         }
         if (mapEditor.showAiEditor && AiEditorPanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (mapEditor.enabled && EditorResourceNodeListPanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (mapEditor.enabled && EditorResourceValidationPanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (mapEditor.enabled && EditorResourcePalettePanelRect().mouseOver())
+        {
+            return false;
+        }
+        if (IsValidSelectedResourceNodeIndex(mapEditor) && EditorResourceNodePanelRect(mapEditor).mouseOver())
         {
             return false;
         }

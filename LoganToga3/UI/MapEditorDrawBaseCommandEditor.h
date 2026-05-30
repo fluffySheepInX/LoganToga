@@ -257,8 +257,9 @@ namespace LT3
 
 		if (editor.commandEditorMode == 2)
 		{
+			const bool showCarrierSettings = (selectedAction.resultType == BuildActionResultType::Carrier);
 			const bool showLineSettings = (selectedAction.placementMode == BuildPlacementMode::Line);
-			const double inspectContentHeight = showLineSettings ? 604.0 : 520.0;
+			const double inspectContentHeight = showLineSettings ? 654.0 : 570.0;
 			const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 			editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 
@@ -304,7 +305,15 @@ namespace LT3
 					uiFont(U"R").drawAt(14, buttonRect.center(), spawnCountEditable ? Palette::White : Palette::Gray);
 				}
 			}
-			uiFont(U"Placement").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 156.0 - scroll, Palette::Lightgray);
+			uiFont(U"Result Type").draw(12, inspectTopViewport.x + 12.0, inspectTopViewport.y + 156.0 - scroll, Palette::Lightgray);
+			const RectF resultTypeUnitRect = EditorCommandResultTypeUnitRect(scroll);
+			const RectF resultTypeObjectRect = EditorCommandResultTypeObjectRect(scroll);
+			const RectF resultTypeCarrierRect = EditorCommandResultTypeCarrierRect(scroll);
+			drawToggleButton(resultTypeUnitRect, selectedAction.resultType == BuildActionResultType::Unit, U"Unit");
+			drawToggleButton(resultTypeObjectRect, selectedAction.resultType == BuildActionResultType::Object, U"Object");
+			drawToggleButton(resultTypeCarrierRect, selectedAction.resultType == BuildActionResultType::Carrier, U"Carrier");
+
+			uiFont(U"Placement").draw(12, inspectTopViewport.x + 12.0, resultTypeUnitRect.y + resultTypeUnitRect.h + 6.0, Palette::Lightgray);
 			const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
 			drawToggleButton(placementToggleRect, selectedAction.isMove, selectedAction.isMove ? U"[ON] 場所指定して実行" : U"[OFF] 場所指定して実行");
 
@@ -313,7 +322,16 @@ namespace LT3
 			drawToggleButton(enemyCanProduceRect, selectedAction.enemyCanProduce,
 				selectedAction.enemyCanProduce ? U"[ON] 敵陣営も生産可能" : U"[OFF] 敵陣営は生産不可");
 
-			uiFont(U"Placement Mode").draw(12, inspectTopViewport.x + 12.0, enemyCanProduceRect.y + enemyCanProduceRect.h + 6.0, Palette::Lightgray);
+			if (showCarrierSettings)
+			{
+				uiFont(U"Carrier Action").draw(12, inspectTopViewport.x + 12.0, enemyCanProduceRect.y + enemyCanProduceRect.h + 6.0, Palette::Lightgray);
+				const RectF carrierStoreRect = EditorCommandCarrierStoreRect(scroll);
+				const RectF carrierReleaseRect = EditorCommandCarrierReleaseRect(scroll);
+				drawToggleButton(carrierStoreRect, selectedAction.carrierAction == CarrierActionKind::Store, U"Store");
+				drawToggleButton(carrierReleaseRect, selectedAction.carrierAction == CarrierActionKind::Release, U"Release");
+			}
+
+			uiFont(U"Placement Mode").draw(12, inspectTopViewport.x + 12.0, EditorCommandPlacementModePointRect(scroll).y - 20.0, Palette::Lightgray);
 			const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 			const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
 			drawToggleButton(placementModePointRect, selectedAction.placementMode == BuildPlacementMode::Point, U"Point");
@@ -435,10 +453,14 @@ namespace LT3
 
 			if (editor.commandEditorMode == 1)
 			{
+				const RectF clearSpawnRect = EditorCommandSpawnClearRect();
+				clearSpawnRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 })
+					.drawFrame(2, clearSpawnRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+				uiFont(U"Clear Spawn").drawAt(12, clearSpawnRect.center(), Palette::White);
 				uiFont(U"Spawn target: {}"_fmt(selectedSpawnTags.isEmpty() ? U"(none)" : selectedSpawnTags.join(U", "))).draw(12, unitViewport.x + 12.0, unitViewport.y + unitViewport.h - 40.0, Palette::Aqua);
 				if (missingSpawnForUnitResult)
 				{
-					uiFont(U"WARN: spawn未設定のため保存・表示不可").draw(11, unitViewport.x + 12.0, unitViewport.y + unitViewport.h - 60.0, Palette::Orange);
+					uiFont(U"WARN: Unit result だが spawn 未設定").draw(11, clearSpawnRect.x + clearSpawnRect.w + 12.0, clearSpawnRect.y + 5.0, Palette::Orange);
 				}
 				uiFont(allowMultipleSpawns ? U"施設owner: 複数選択可 / ×: 他ユニットをspawnしない" : U"通常owner: 単一選択 / ×: 他ユニットをspawnしない").draw(11, unitViewport.x + 12.0, unitViewport.y + unitViewport.h - 20.0, Palette::Lightgray);
 			}

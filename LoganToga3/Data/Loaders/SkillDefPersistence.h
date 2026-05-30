@@ -26,8 +26,10 @@ namespace LT3
 		def.name = name;
 		def.kind = kind;
 		def.range = range;
+		def.rangeMin = 0.0;
 		def.cooldownSec = cooldownSec;
 		def.damage = damage;
+		def.selfDamageOnHit = 0.0;
 		def.projectileSpeed = projectileSpeed;
 		def.projectileMotion = projectileMotion;
 		def.burstCount = burstCount;
@@ -46,6 +48,12 @@ namespace LT3
 		def.projectileHeight = arcHeight;
 		def.swingRadius = 0.0;
 		def.swingAngleDeg = 90.0;
+		def.soundEffectVolume = 1.0;
+		def.bom = false;
+		def.bomRadius = 0.0;
+		def.bomFriendlyFire = false;
+		def.bomSelfDamageScale = 0.0;
+		def.allfunc = false;
 		def.color = color;
 		return def;
 	}
@@ -60,6 +68,9 @@ namespace LT3
 		skills << MakeDefaultSkillDefinition(U"machine_gun", U"Machine Gun", SkillKind::Missile, 240.0, 1.40, 3, 520.0, SkillProjectileMotion::Direct, 5, 0.06, 8.0, 72.0, 54.0, 220.0, 1.2, Palette::Yellow);
 		skills << MakeDefaultSkillDefinition(U"cannon", U"Cannon", SkillKind::Missile, 300.0, 2.20, 18, 260.0, SkillProjectileMotion::Parabola, 1, 0.0, 0.0, 110.0, 54.0, 220.0, 1.2, ColorF{ 1.0, 0.27, 0.0 });
 		skills << MakeDefaultSkillDefinition(U"chakram", U"Chakram", SkillKind::Missile, 170.0, 1.80, 6, 380.0, SkillProjectileMotion::Orbit, 1, 0.0, 0.0, 72.0, 58.0, 360.0, 1.5, Palette::Aqua);
+		SkillDef landmine = MakeDefaultSkillDefinition(U"landmine_blast", U"Landmine Blast", SkillKind::Missile, 34.0, 0.8, 40, 0.0, SkillProjectileMotion::Static, 1, 0.0, 0.0, 32.0, 34.0, 0.0, 0.2, ColorF{ 1.0, 0.35, 0.15 });
+		landmine.selfDamageOnHit = 999.0;
+		skills << landmine;
 		for (SkillDef& skill : skills)
 		{
 			if (skill.tag == U"machine_gun")
@@ -98,15 +109,24 @@ namespace LT3
 			writer << U"icons = " << BuildTomlStringArrayValue(skill.iconLayers) << U"\n";
 			writer << U"kind = \"" << SkillKindToTag(skill.kind) << U"\"\n";
 			writer << U"range = " << skill.range << U"\n";
+			writer << U"range_min = " << skill.rangeMin << U"\n";
 			writer << U"cooldown_sec = " << skill.cooldownSec << U"\n";
 			writer << U"mp_cost = " << skill.mpCost << U"\n";
 			writer << U"damage = " << skill.damage << U"\n";
+			writer << U"self_damage_on_hit = " << skill.selfDamageOnHit << U"\n";
+			writer << U"se = \"" << EscapeTomlBasicString(skill.soundEffect) << U"\"\n";
+			writer << U"se_volume = " << skill.soundEffectVolume << U"\n";
 			writer << U"image = \"" << EscapeTomlBasicString(skill.projectileImage) << U"\"\n";
 			writer << U"image_diagonal = \"" << EscapeTomlBasicString(skill.projectileDiagonalImage) << U"\"\n";
 			writer << U"projectile_speed = " << skill.projectileSpeed << U"\n";
 			writer << U"speed = " << skill.projectileSpeed << U"\n";
 			writer << U"movetype = \"" << SkillProjectileMotionToTag(skill.projectileMotion) << U"\"\n";
 			writer << U"projectile_motion = \"" << SkillProjectileMotionToTag(skill.projectileMotion) << U"\"\n";
+			writer << U"bom = \"" << (skill.bom ? U"on" : U"off") << U"\"\n";
+			writer << U"bom_radius = " << skill.bomRadius << U"\n";
+			writer << U"bom_friendly_fire = \"" << (skill.bomFriendlyFire ? U"on" : U"off") << U"\"\n";
+			writer << U"bom_self_damage_scale = " << skill.bomSelfDamageScale << U"\n";
+			writer << U"allfunc = \"" << (skill.allfunc ? U"on" : U"off") << U"\"\n";
 			writer << U"center = \"" << SkillProjectileCenterToTag(skill.projectileCenter) << U"\"\n";
 			writer << U"homing = \"" << (skill.projectileHoming ? U"on" : U"off") << U"\"\n";
 			writer << U"d360 = \"" << (skill.projectileD360 ? U"on" : U"off") << U"\"\n";

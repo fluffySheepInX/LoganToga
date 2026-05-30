@@ -110,6 +110,15 @@ namespace LT3
 		action.spawnUnit = action.spawnUnits.isEmpty() ? InvalidUnitDefId : action.spawnUnits.front();
 	}
 
+	inline void ClearActionSpawnSelection(BuildActionDef& action)
+	{
+		action.spawnTag.clear();
+		action.resultTag.clear();
+		action.spawnTags.clear();
+		action.spawnUnits.clear();
+		action.spawnUnit = InvalidUnitDefId;
+	}
+
 	inline bool NormalizeCommandIdsForOwnerTags(MapEditorState& editor, DefinitionStores& defs, const Array<String>& targetOwnerTags)
 	{
 		Array<String> normalizedOwnerTags = NormalizeCommandIdsOwnerTags(targetOwnerTags);

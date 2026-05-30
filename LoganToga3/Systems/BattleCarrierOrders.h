@@ -13,7 +13,7 @@ namespace LT3
 		}
 	}
 
-	inline int32 StoreNearbyUnitsInCarrier(BattleWorld& world, const DefinitionStores& defs, UnitId carrier)
+	inline int32 StoreNearbyUnitsInCarrier(BattleWorld& world, const DefinitionStores& defs, UnitId carrier, double storeRadiusPx, int32 maxStoreUnits)
 	{
 		if (!IsValidUnit(world, carrier) || carrier >= world.carriers.storedUnits.size())
 		{
@@ -21,12 +21,23 @@ namespace LT3
 		}
 
 		Array<UnitId>& stored = world.carriers.storedUnits[carrier];
+		const int32 capacityLeft = (maxStoreUnits > 0) ? Max(0, maxStoreUnits - static_cast<int32>(stored.size())) : INT32_MAX;
+		if (capacityLeft <= 0)
+		{
+			return 0;
+		}
+
 		const Vec2 carrierPos = world.units.position[carrier];
 		const Faction faction = world.units.faction[carrier];
+		const double radiusSq = Square(Max(0.0, storeRadiusPx));
 		int32 storedCount = 0;
 
 		for (UnitId unit = 0; unit < world.units.size(); ++unit)
 		{
+			if (storedCount >= capacityLeft)
+			{
+				break;
+			}
 			if (unit == carrier || !IsValidUnit(world, unit))
 			{
 				continue;
@@ -35,13 +46,17 @@ namespace LT3
 			{
 				continue;
 			}
-
-			const UnitDef& unitDef = defs.units[world.units.defId[unit]];
-			if (unitDef.role == UnitRole::Base)
+			if (world.units.defId[unit] >= defs.units.size())
 			{
 				continue;
 			}
-			if (carrierPos.distanceFromSq(world.units.position[unit]) > Square(84.0))
+
+			const UnitDef& unitDef = defs.units[world.units.defId[unit]];
+			if (unitDef.role == UnitRole::Base || unitDef.role == UnitRole::Barrier)
+			{
+				continue;
+			}
+			if (carrierPos.distanceFromSq(world.units.position[unit]) > radiusSq)
 			{
 				continue;
 			}
@@ -62,7 +77,7 @@ namespace LT3
 		return storedCount;
 	}
 
-	inline bool ReleaseStoredUnitsFromCarrier(BattleWorld& world, UnitId carrier)
+	inline bool ReleaseStoredUnitsFromCarrier(BattleWorld& world, UnitId carrier, double releaseRadiusPx)
 	{
 		if (!IsValidUnit(world, carrier) || carrier >= world.carriers.storedUnits.size())
 		{
@@ -76,6 +91,7 @@ namespace LT3
 		}
 
 		const Vec2 carrierPos = world.units.position[carrier];
+		const double radius = Max(24.0, releaseRadiusPx);
 		for (size_t i = 0; i < stored.size(); ++i)
 		{
 			const UnitId unit = stored[i];
@@ -84,8 +100,9 @@ namespace LT3
 				continue;
 			}
 
-			const double angle = (Math::TwoPi * static_cast<double>(i)) / Max(1.0, static_cast<double>(stored.size()));
-			const Vec2 offset = Circular{ 42.0 + 10.0 * static_cast<double>(i / 6), angle };
+			const double angle = Random(0.0, Math::TwoPi);
+			const double distance = Random(24.0, radius);
+			const Vec2 offset = Circular{ distance, angle };
 			SetUnitAlive(world, unit, true);
 			world.units.position[unit] = carrierPos + offset;
 			SetUnitTargetPosition(world, unit, carrierPos + offset);
@@ -99,14 +116,19 @@ namespace LT3
 
 	inline bool TryExecuteCarrierAction(BattleWorld& world, const DefinitionStores& defs, UnitId builder, const BuildActionDef& action)
 	{
+		if (action.carrierAction == CarrierActionKind::Release)
+		{
+			return ReleaseStoredUnitsFromCarrier(world, builder, action.carrierRadiusPx);
+		}
+
 		const String actionId = action.id.isEmpty() ? action.tag.lowercased() : action.id.lowercased();
 		const String category = action.category.lowercased();
 		if (category == U"releaseall" || actionId.includes(U"releaseall"))
 		{
-			return ReleaseStoredUnitsFromCarrier(world, builder);
+			return ReleaseStoredUnitsFromCarrier(world, builder, action.carrierRadiusPx);
 		}
 
-		StoreNearbyUnitsInCarrier(world, defs, builder);
+		StoreNearbyUnitsInCarrier(world, defs, builder, action.carrierRadiusPx, action.carrierMaxUnits);
 		return true;
 	}
 }

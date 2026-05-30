@@ -36,105 +36,183 @@ namespace LT3
 		return RectF{ bar.x + index * (tabWidth + 8.0), bar.y, tabWidth, bar.h };
 	}
 
-	inline RectF EditorDecalEditorPreviewRect()
+	struct EditorDecalBasicLayoutRects
 	{
-		const RectF tabBar = EditorDecalEditorTabBarRect();
-		return RectF{ tabBar.x, tabBar.y + tabBar.h + 14.0, 64.0, 64.0 };
-	}
+		RectF viewport;
+		RectF preview;
+		RectF apply;
+		RectF opacityRow;
+		RectF scaleRow;
+		RectF renderKindRow;
+		RectF opacityRandomRow;
+		RectF opacityRandomToggle;
+		RectF opacityRandomValue;
+		RectF opacityRandomButtonBand;
+		RectF opacityMinDec;
+		RectF opacityMinInc;
+		RectF opacityMaxDec;
+		RectF opacityMaxInc;
+		RectF scaleRandomRow;
+		RectF scaleRandomToggle;
+		RectF scaleRandomValue;
+		RectF scaleRandomButtonBand;
+		RectF scaleMinDec;
+		RectF scaleMinInc;
+		RectF scaleMaxDec;
+		RectF scaleMaxInc;
+		RectF ambientSoundRow;
+		RectF ambientSoundBrowse;
+		RectF ambientSoundClear;
+		RectF ambientSoundName;
+		RectF ambientVolumeRow;
+		RectF ambientVolumeDec;
+		RectF ambientVolumeInc;
+		double contentHeight = 0.0;
+	};
 
-	inline RectF EditorDecalEditorApplyRect()
-	{
-		const RectF tabBar = EditorDecalEditorTabBarRect();
-		return RectF{ tabBar.x + tabBar.w - 134.0, tabBar.y + tabBar.h + 10.0, 134.0, 30.0 };
-	}
-
-	inline double EditorDecalEditorPreviewBottomY()
-	{
-		const RectF preview = EditorDecalEditorPreviewRect();
-		const RectF apply = EditorDecalEditorApplyRect();
-		return Max(preview.y + preview.h, apply.y + apply.h);
-	}
-
-	inline RectF EditorDecalOpacityRowRect()
+	inline EditorDecalBasicLayoutRects BuildEditorDecalBasicLayoutRects(double scroll = 0.0)
 	{
 		const RectF panel = EditorDecalEditorPanelRect();
-		const double y = EditorDecalEditorPreviewBottomY() + 18.0;
-		return RectF{ panel.x + 24.0, y, panel.w - 48.0, 44.0 };
+		const RectF tabBar = EditorDecalEditorTabBarRect();
+		EditorDecalBasicLayoutRects layout;
+		layout.viewport = RectF{ panel.x + 20.0, tabBar.y + tabBar.h + 16.0, panel.w - 40.0, panel.h - (tabBar.y + tabBar.h + 28.0 - panel.y) };
+
+		const double contentX = layout.viewport.x + 4.0;
+		const double contentW = layout.viewport.w - 8.0;
+		double currentY = layout.viewport.y + 4.0 - scroll;
+
+		layout.preview = RectF{ contentX, currentY, 64.0, 64.0 };
+		layout.apply = RectF{ contentX + contentW - 134.0, currentY + 2.0, 134.0, 30.0 };
+		currentY = Max(layout.preview.y + layout.preview.h, layout.apply.y + layout.apply.h) + 18.0;
+
+		layout.opacityRow = RectF{ contentX, currentY, contentW, 44.0 };
+		currentY += layout.opacityRow.h + 12.0;
+
+		layout.scaleRow = RectF{ contentX, currentY, contentW, 44.0 };
+		currentY += layout.scaleRow.h + 18.0;
+
+		layout.renderKindRow = RectF{ contentX, currentY, contentW, 44.0 };
+		currentY += layout.renderKindRow.h + 18.0;
+
+		layout.opacityRandomRow = RectF{ contentX, currentY, contentW, 96.0 };
+		layout.opacityRandomToggle = RectF{ layout.opacityRandomRow.x, layout.opacityRandomRow.y, layout.opacityRandomRow.w, 28.0 };
+		layout.opacityRandomValue = RectF{ layout.opacityRandomToggle.x, layout.opacityRandomToggle.y + layout.opacityRandomToggle.h + 6.0, layout.opacityRandomToggle.w, 16.0 };
+		layout.opacityRandomButtonBand = RectF{ layout.opacityRandomValue.x, layout.opacityRandomValue.y + layout.opacityRandomValue.h + 8.0, layout.opacityRandomValue.w, 34.0 };
+		layout.opacityMinDec = RectF{ layout.opacityRandomButtonBand.x, layout.opacityRandomButtonBand.y, 52.0, layout.opacityRandomButtonBand.h };
+		layout.opacityMinInc = RectF{ layout.opacityMinDec.x + layout.opacityMinDec.w + 18.0, layout.opacityMinDec.y, layout.opacityMinDec.w, layout.opacityMinDec.h };
+		layout.opacityMaxDec = RectF{ layout.opacityRandomButtonBand.x + layout.opacityRandomButtonBand.w - 122.0, layout.opacityRandomButtonBand.y, 52.0, layout.opacityRandomButtonBand.h };
+		layout.opacityMaxInc = RectF{ layout.opacityMaxDec.x + layout.opacityMaxDec.w + 18.0, layout.opacityMaxDec.y, layout.opacityMaxDec.w, layout.opacityMaxDec.h };
+		currentY += layout.opacityRandomRow.h + 18.0;
+
+		layout.scaleRandomRow = RectF{ contentX, currentY, contentW, 96.0 };
+		layout.scaleRandomToggle = RectF{ layout.scaleRandomRow.x, layout.scaleRandomRow.y, layout.scaleRandomRow.w, 28.0 };
+		layout.scaleRandomValue = RectF{ layout.scaleRandomToggle.x, layout.scaleRandomToggle.y + layout.scaleRandomToggle.h + 6.0, layout.scaleRandomToggle.w, 16.0 };
+		layout.scaleRandomButtonBand = RectF{ layout.scaleRandomValue.x, layout.scaleRandomValue.y + layout.scaleRandomValue.h + 8.0, layout.scaleRandomValue.w, 34.0 };
+		layout.scaleMinDec = RectF{ layout.scaleRandomButtonBand.x, layout.scaleRandomButtonBand.y, 52.0, layout.scaleRandomButtonBand.h };
+		layout.scaleMinInc = RectF{ layout.scaleMinDec.x + layout.scaleMinDec.w + 18.0, layout.scaleMinDec.y, layout.scaleMinDec.w, layout.scaleMinDec.h };
+		layout.scaleMaxDec = RectF{ layout.scaleRandomButtonBand.x + layout.scaleRandomButtonBand.w - 122.0, layout.scaleRandomButtonBand.y, 52.0, layout.scaleRandomButtonBand.h };
+		layout.scaleMaxInc = RectF{ layout.scaleMaxDec.x + layout.scaleMaxDec.w + 18.0, layout.scaleMaxDec.y, layout.scaleMaxDec.w, layout.scaleMaxDec.h };
+		currentY += layout.scaleRandomRow.h + 18.0;
+
+		layout.ambientSoundRow = RectF{ contentX, currentY, contentW, 108.0 };
+		layout.ambientSoundBrowse = RectF{ layout.ambientSoundRow.x, layout.ambientSoundRow.y, 94.0, 30.0 };
+		layout.ambientSoundClear = RectF{ layout.ambientSoundBrowse.x + layout.ambientSoundBrowse.w + 8.0, layout.ambientSoundBrowse.y, 44.0, layout.ambientSoundBrowse.h };
+		layout.ambientSoundName = RectF{ layout.ambientSoundClear.x + layout.ambientSoundClear.w + 10.0, layout.ambientSoundClear.y + 2.0, Max(0.0, layout.ambientSoundRow.x + layout.ambientSoundRow.w - (layout.ambientSoundClear.x + layout.ambientSoundClear.w + 14.0)), 24.0 };
+		layout.ambientVolumeRow = RectF{ layout.ambientSoundRow.x, layout.ambientSoundRow.y + 44.0, layout.ambientSoundRow.w, 40.0 };
+		layout.ambientVolumeDec = RectF{ layout.ambientVolumeRow.x, layout.ambientVolumeRow.y + 2.0, 52.0, layout.ambientVolumeRow.h - 4.0 };
+		layout.ambientVolumeInc = RectF{ layout.ambientVolumeRow.x + layout.ambientVolumeRow.w - 52.0, layout.ambientVolumeRow.y + 2.0, 52.0, layout.ambientVolumeRow.h - 4.0 };
+
+		layout.contentHeight = (layout.ambientSoundRow.y + scroll + layout.ambientSoundRow.h + 12.0) - layout.viewport.y;
+		return layout;
 	}
 
-	inline RectF EditorDecalScaleRowRect()
+	inline RectF EditorDecalBasicViewportRect()
 	{
-		const RectF opacityRow = EditorDecalOpacityRowRect();
-		return RectF{ opacityRow.x, opacityRow.y + opacityRow.h + 12.0, opacityRow.w, opacityRow.h };
+		return BuildEditorDecalBasicLayoutRects().viewport;
 	}
 
-	inline RectF EditorDecalRenderKindRowRect()
+	inline RectF EditorDecalEditorApplyRect(double scroll = 0.0)
 	{
-		const RectF scaleRow = EditorDecalScaleRowRect();
-		return RectF{ scaleRow.x, scaleRow.y + scaleRow.h + 18.0, scaleRow.w, 44.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).apply;
 	}
 
-	inline RectF EditorDecalRenderKindButtonRect(int32 index)
+	inline double EditorDecalEditorPreviewBottomY(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalRenderKindRowRect();
+		const auto layout = BuildEditorDecalBasicLayoutRects(scroll);
+		return Max(layout.preview.y + layout.preview.h, layout.apply.y + layout.apply.h);
+	}
+
+	inline RectF EditorDecalEditorPreviewRect(double scroll = 0.0)
+	{
+		return BuildEditorDecalBasicLayoutRects(scroll).preview;
+	}
+
+	inline RectF EditorDecalOpacityRowRect(double scroll = 0.0)
+	{
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityRow;
+	}
+
+	inline RectF EditorDecalScaleRowRect(double scroll = 0.0)
+	{
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleRow;
+	}
+
+	inline RectF EditorDecalRenderKindRowRect(double scroll = 0.0)
+	{
+		return BuildEditorDecalBasicLayoutRects(scroll).renderKindRow;
+	}
+
+	inline RectF EditorDecalRenderKindButtonRect(int32 index, double scroll = 0.0)
+	{
+		const RectF row = EditorDecalRenderKindRowRect(scroll);
 		const double gap = 8.0;
 		const double width = (row.w - gap * 2.0) / 3.0;
 		return RectF{ row.x + index * (width + gap), row.y + 8.0, width, 30.0 };
 	}
 
-	inline RectF EditorDecalOpacityRandomRowRect()
+	inline RectF EditorDecalOpacityRandomRowRect(double scroll = 0.0)
 	{
-		const RectF kindRow = EditorDecalRenderKindRowRect();
-		return RectF{ kindRow.x, kindRow.y + kindRow.h + 18.0, kindRow.w, 96.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityRandomRow;
 	}
 
-	inline RectF EditorDecalScaleRandomRowRect()
+	inline RectF EditorDecalScaleRandomRowRect(double scroll = 0.0)
 	{
-		const RectF opacityRandomRow = EditorDecalOpacityRandomRowRect();
-		return RectF{ opacityRandomRow.x, opacityRandomRow.y + opacityRandomRow.h + 18.0, opacityRandomRow.w, 96.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleRandomRow;
 	}
 
-	inline RectF EditorDecalAmbientSoundRowRect()
+	inline RectF EditorDecalAmbientSoundRowRect(double scroll = 0.0)
 	{
-		const RectF scaleRandomRow = EditorDecalScaleRandomRowRect();
-		return RectF{ scaleRandomRow.x, scaleRandomRow.y + scaleRandomRow.h + 18.0, scaleRandomRow.w, 108.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientSoundRow;
 	}
 
-	inline RectF EditorDecalAmbientSoundBrowseRect()
+	inline RectF EditorDecalAmbientSoundBrowseRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalAmbientSoundRowRect();
-		return RectF{ row.x, row.y, 94.0, 30.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientSoundBrowse;
 	}
 
-	inline RectF EditorDecalAmbientSoundClearRect()
+	inline RectF EditorDecalAmbientSoundClearRect(double scroll = 0.0)
 	{
-		const RectF browse = EditorDecalAmbientSoundBrowseRect();
-		return RectF{ browse.x + browse.w + 8.0, browse.y, 44.0, browse.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientSoundClear;
 	}
 
-	inline RectF EditorDecalAmbientSoundNameRect()
+	inline RectF EditorDecalAmbientSoundNameRect(double scroll = 0.0)
 	{
-		const RectF clear = EditorDecalAmbientSoundClearRect();
-		const RectF row = EditorDecalAmbientSoundRowRect();
-		return RectF{ clear.x + clear.w + 10.0, clear.y + 2.0, Max(0.0, row.x + row.w - (clear.x + clear.w + 14.0)), 24.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientSoundName;
 	}
 
-	inline RectF EditorDecalAmbientVolumeRowRect()
+	inline RectF EditorDecalAmbientVolumeRowRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalAmbientSoundRowRect();
-		return RectF{ row.x, row.y + 44.0, row.w, 40.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientVolumeRow;
 	}
 
-	inline RectF EditorDecalAmbientVolumeDecRect()
+	inline RectF EditorDecalAmbientVolumeDecRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalAmbientVolumeRowRect();
-		return RectF{ row.x, row.y + 2.0, 52.0, row.h - 4.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientVolumeDec;
 	}
 
-	inline RectF EditorDecalAmbientVolumeIncRect()
+	inline RectF EditorDecalAmbientVolumeIncRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalAmbientVolumeRowRect();
-		return RectF{ row.x + row.w - 52.0, row.y + 2.0, 52.0, row.h - 4.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).ambientVolumeInc;
 	}
 
 	inline RectF EditorDecalEditorCloseRect()
@@ -143,119 +221,108 @@ namespace LT3
 		return RectF{ panel.x + panel.w - 42.0, panel.y + 10.0, 28.0, 28.0 };
 	}
 
-	inline RectF EditorDecalOpacityDecRect()
+	inline RectF EditorDecalOpacityDecRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalOpacityRowRect();
+		const RectF row = EditorDecalOpacityRowRect(scroll);
 		return RectF{ row.x, row.y + 2.0, 52.0, row.h - 4.0 };
 	}
 
-	inline RectF EditorDecalOpacityIncRect()
+	inline RectF EditorDecalOpacityIncRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalOpacityRowRect();
+		const RectF row = EditorDecalOpacityRowRect(scroll);
 		return RectF{ row.x + row.w - 52.0, row.y + 2.0, 52.0, row.h - 4.0 };
 	}
 
-	inline RectF EditorDecalScaleDecRect()
+	inline RectF EditorDecalScaleDecRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalScaleRowRect();
+		const RectF row = EditorDecalScaleRowRect(scroll);
 		return RectF{ row.x, row.y + 2.0, 52.0, row.h - 4.0 };
 	}
 
-	inline RectF EditorDecalScaleIncRect()
+	inline RectF EditorDecalScaleIncRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalScaleRowRect();
+		const RectF row = EditorDecalScaleRowRect(scroll);
 		return RectF{ row.x + row.w - 52.0, row.y + 2.0, 52.0, row.h - 4.0 };
 	}
 
-	inline RectF EditorDecalApplyRect()
+	inline RectF EditorDecalApplyRect(double scroll = 0.0)
 	{
-		return EditorDecalEditorApplyRect();
+		return EditorDecalEditorApplyRect(scroll);
 	}
 
-	inline RectF EditorDecalOpacityRandomToggleRect()
+	inline RectF EditorDecalOpacityRandomToggleRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalOpacityRandomRowRect();
-		return RectF{ row.x, row.y, row.w, 28.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityRandomToggle;
 	}
 
-	inline RectF EditorDecalOpacityRandomValueRect()
+	inline RectF EditorDecalOpacityRandomValueRect(double scroll = 0.0)
 	{
-		const RectF toggle = EditorDecalOpacityRandomToggleRect();
-		return RectF{ toggle.x, toggle.y + toggle.h + 6.0, toggle.w, 16.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityRandomValue;
 	}
 
-	inline RectF EditorDecalOpacityRandomButtonBandRect()
+	inline RectF EditorDecalOpacityRandomButtonBandRect(double scroll = 0.0)
 	{
-		const RectF valueRect = EditorDecalOpacityRandomValueRect();
-		return RectF{ valueRect.x, valueRect.y + valueRect.h + 8.0, valueRect.w, 34.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityRandomButtonBand;
 	}
 
-	inline RectF EditorDecalOpacityMinDecRect()
+	inline RectF EditorDecalOpacityMinDecRect(double scroll = 0.0)
 	{
-		const RectF band = EditorDecalOpacityRandomButtonBandRect();
-		return RectF{ band.x, band.y, 52.0, band.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityMinDec;
 	}
 
-	inline RectF EditorDecalOpacityMinIncRect()
+	inline RectF EditorDecalOpacityMinIncRect(double scroll = 0.0)
 	{
-		const RectF minDec = EditorDecalOpacityMinDecRect();
-		return RectF{ minDec.x + minDec.w + 18.0, minDec.y, minDec.w, minDec.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityMinInc;
 	}
 
-	inline RectF EditorDecalOpacityMaxDecRect()
+	inline RectF EditorDecalOpacityMaxDecRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalOpacityRandomButtonBandRect();
-		const double width = 52.0;
-		return RectF{ row.x + row.w - width * 2.0 - 18.0, row.y, width, row.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityMaxDec;
 	}
 
-	inline RectF EditorDecalOpacityMaxIncRect()
+	inline RectF EditorDecalOpacityMaxIncRect(double scroll = 0.0)
 	{
-		const RectF maxDec = EditorDecalOpacityMaxDecRect();
-		return RectF{ maxDec.x + maxDec.w + 18.0, maxDec.y, maxDec.w, maxDec.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).opacityMaxInc;
 	}
 
-	inline RectF EditorDecalScaleRandomToggleRect()
+	inline RectF EditorDecalScaleRandomToggleRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalScaleRandomRowRect();
-		return RectF{ row.x, row.y, row.w, 28.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleRandomToggle;
 	}
 
-	inline RectF EditorDecalScaleRandomValueRect()
+	inline RectF EditorDecalScaleRandomValueRect(double scroll = 0.0)
 	{
-		const RectF toggle = EditorDecalScaleRandomToggleRect();
-		return RectF{ toggle.x, toggle.y + toggle.h + 6.0, toggle.w, 16.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleRandomValue;
 	}
 
-	inline RectF EditorDecalScaleRandomButtonBandRect()
+	inline RectF EditorDecalScaleRandomButtonBandRect(double scroll = 0.0)
 	{
-		const RectF valueRect = EditorDecalScaleRandomValueRect();
-		return RectF{ valueRect.x, valueRect.y + valueRect.h + 8.0, valueRect.w, 34.0 };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleRandomButtonBand;
 	}
 
-	inline RectF EditorDecalScaleMinDecRect()
+	inline RectF EditorDecalScaleMinDecRect(double scroll = 0.0)
 	{
-		const RectF band = EditorDecalScaleRandomButtonBandRect();
-		return RectF{ band.x, band.y, 52.0, band.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleMinDec;
 	}
 
-	inline RectF EditorDecalScaleMinIncRect()
+	inline RectF EditorDecalScaleMinIncRect(double scroll = 0.0)
 	{
-		const RectF minDec = EditorDecalScaleMinDecRect();
-		return RectF{ minDec.x + minDec.w + 18.0, minDec.y, minDec.w, minDec.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleMinInc;
 	}
 
-	inline RectF EditorDecalScaleMaxDecRect()
+	inline RectF EditorDecalScaleMaxDecRect(double scroll = 0.0)
 	{
-		const RectF row = EditorDecalScaleRandomButtonBandRect();
-		const double width = 52.0;
-		return RectF{ row.x + row.w - width * 2.0 - 18.0, row.y, width, row.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleMaxDec;
 	}
 
-	inline RectF EditorDecalScaleMaxIncRect()
+	inline RectF EditorDecalScaleMaxIncRect(double scroll = 0.0)
 	{
-		const RectF maxDec = EditorDecalScaleMaxDecRect();
-		return RectF{ maxDec.x + maxDec.w + 18.0, maxDec.y, maxDec.w, maxDec.h };
+		return BuildEditorDecalBasicLayoutRects(scroll).scaleMaxInc;
+	}
+
+	inline double EditorDecalBasicContentHeight()
+	{
+		return BuildEditorDecalBasicLayoutRects().contentHeight;
 	}
 
 	inline RectF EditorDecalShadowViewportRect()

@@ -416,3 +416,28 @@ enemy_can_produce = false
 type = "unit"
 spawn = "NewbieMercenary"
 spawns = ["NewbieMercenary", "17_copy", "18"]
+
+[[commands]]
+owner_tags = ["10"]
+id = "cmd_005_copy"
+name = "kakunou"
+description = "汎用部隊傭兵-若人"
+icon = "unicarri.png"
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 3
+cost = { wood = 0, trust = 0, food = 0 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+enemy_can_produce = true
+[[commands.result]]
+type = "unit"
+spawn = "10"

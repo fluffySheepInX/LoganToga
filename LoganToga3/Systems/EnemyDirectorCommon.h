@@ -28,6 +28,7 @@ namespace LT3
 		world.aiRuntime.productionTimerSec += dt;
 		world.aiRuntime.attackWaveTimerSec += dt;
 		world.aiRuntime.tacticalTimerSec += dt;
+		world.aiRuntime.nonWaveRoleReassignmentTimerSec += dt;
 		world.enemySpawnTimerSec = world.aiRuntime.spawnTimerSec;
 	}
 
@@ -199,8 +200,8 @@ namespace LT3
 			return false;
 		}
 
-			const UnitDef& def = defs.units[world.units.defId[unit]];
-			return IsEnemySpawnCandidate(defs, world.units.defId[unit]) && def.skill != InvalidSkillDefId && def.skill < defs.skills.size();
+		const UnitDef& def = defs.units[world.units.defId[unit]];
+		return IsEnemySpawnCandidate(defs, world.units.defId[unit]) && !ResolveUnitSkillIds(def, defs).isEmpty();
 	}
 
 	inline Array<UnitId> CollectEnemyAttackWaveCandidates(const BattleWorld& world, const DefinitionStores& defs)
@@ -220,5 +221,122 @@ namespace LT3
 	inline bool IsEnemyAttackWaveUnit(const BattleWorld& world, UnitId unit)
 	{
 		return world.aiRuntime.attackWaveUnits.contains(unit);
+	}
+
+	inline bool IsEnemyResourceReclaimUnit(const BattleWorld& world, UnitId unit)
+	{
+		return world.aiRuntime.resourceReclaimUnits.contains(unit);
+	}
+
+	inline bool IsEnemyGuardUnit(const BattleWorld& world, UnitId unit)
+	{
+		return world.aiRuntime.guardUnits.contains(unit);
+	}
+
+	inline bool IsEnemySkirmishUnit(const BattleWorld& world, UnitId unit)
+	{
+		return world.aiRuntime.skirmishUnits.contains(unit);
+	}
+
+	inline bool IsEnemyAssignedNonWaveRoleUnit(const BattleWorld& world, UnitId unit)
+	{
+		return IsEnemyResourceReclaimUnit(world, unit)
+			|| IsEnemyGuardUnit(world, unit)
+			|| IsEnemySkirmishUnit(world, unit);
+	}
+
+	inline void ClearEnemyAiNonWaveRoleAssignments(BattleWorld& world)
+	{
+		world.aiRuntime.resourceReclaimUnits.clear();
+		world.aiRuntime.guardUnits.clear();
+		world.aiRuntime.skirmishUnits.clear();
+		world.aiRuntime.hasResourceTargetPosition = false;
+		world.aiRuntime.hasGuardAnchorPosition = false;
+		world.aiRuntime.hasSkirmishAnchorPosition = false;
+	}
+
+	inline void RemoveInvalidEnemyAiNonWaveRoleUnits(BattleWorld& world, const DefinitionStores& defs)
+	{
+		auto isInvalid = [&](UnitId unit)
+		{
+			return !IsEnemyAttackWaveCandidate(world, defs, unit) || IsEnemyAttackWaveUnit(world, unit);
+		};
+
+		world.aiRuntime.resourceReclaimUnits.remove_if(isInvalid);
+		world.aiRuntime.guardUnits.remove_if(isInvalid);
+		world.aiRuntime.skirmishUnits.remove_if(isInvalid);
+	}
+
+	inline double ResolveEnemyAiNonWaveRoleReassignmentIntervalSec(const AiProfileDef* aiProfile)
+	{
+		const double aggression = aiProfile ? Clamp(aiProfile->aggression, 0.0, 1.0) : 0.55;
+		return 7.5 - aggression * 2.5;
+	}
+
+	inline bool CanAssignEnemyAiNonWaveRoleUnit(const BattleWorld& world, UnitId unit)
+	{
+		return !IsEnemyAttackWaveUnit(world, unit) && !IsEnemyAssignedNonWaveRoleUnit(world, unit);
+	}
+
+	inline void FillEnemyAiNonWaveRoleUnits(Array<UnitId>& destination, const Array<UnitId>& candidates, const BattleWorld& world, int32 desiredCount)
+	{
+		if (desiredCount <= 0)
+		{
+			return;
+		}
+
+		for (const UnitId unit : candidates)
+		{
+			if (static_cast<int32>(destination.size()) >= desiredCount)
+			{
+				break;
+			}
+			if (!CanAssignEnemyAiNonWaveRoleUnit(world, unit))
+			{
+				continue;
+			}
+
+			destination << unit;
+		}
+	}
+
+	inline Vec2 ResolveEnemyAiGuardAnchor(const BattleWorld& world, const DefinitionStores& defs)
+	{
+		Optional<Vec2> resourceAnchor;
+		for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
+		{
+			if (node < world.resourceNodes.owner.size()
+				&& node < world.resourceNodes.amount.size()
+				&& world.resourceNodes.owner[node] == Faction::Enemy
+				&& world.resourceNodes.amount[node] > 0)
+			{
+				resourceAnchor = world.resourceNodes.position[node];
+				break;
+			}
+		}
+
+		if (resourceAnchor)
+		{
+			return *resourceAnchor;
+		}
+
+		return ResolveEnemySpawnOrigin(world, defs);
+	}
+
+	inline Vec2 ResolveEnemyAiSkirmishAnchor(const BattleWorld& world, const DefinitionStores& defs)
+	{
+		const Vec2 home = ResolveEnemySpawnOrigin(world, defs);
+		if (world.aiRuntime.hasResourceTargetPosition)
+		{
+			return home.lerp(world.aiRuntime.resourceTargetPosition, 0.45);
+		}
+
+		return home;
+	}
+
+	inline double ResolveEnemyAiSkirmishLeashRadius(const AiProfileDef* aiProfile)
+	{
+		const double aggression = aiProfile ? Clamp(aiProfile->aggression, 0.0, 1.0) : 0.55;
+		return 220.0 + aggression * 180.0;
 	}
 }

@@ -134,6 +134,21 @@ namespace LT3
         {
             uiFont(buildMenuDebugLines[i]).draw(11, panelRect.x + 18, panelRect.y + 118 + static_cast<int32>(i) * 16, Palette::Lightgray);
         }
+
+        const Array<String> activeSeNames = GetActiveBattleSoundEffectNames();
+        const double seHeaderY = panelRect.y + 118 + static_cast<int32>(buildMenuDebugLines.size()) * 16 + 12.0;
+        uiFont(U"Active SE: {}"_fmt(activeSeNames.size())).draw(11, panelRect.x + 18, seHeaderY, Palette::Skyblue);
+        if (activeSeNames.isEmpty())
+        {
+            uiFont(U"<none>").draw(11, panelRect.x + 36, seHeaderY + 16.0, Palette::Lightgray);
+            return;
+        }
+
+        const int32 visibleCount = Min<int32>(6, static_cast<int32>(activeSeNames.size()));
+        for (int32 i = 0; i < visibleCount; ++i)
+        {
+            uiFont(U"- {}"_fmt(activeSeNames[i])).draw(11, panelRect.x + 36, seHeaderY + 16.0 + i * 16.0, Palette::Lightgray);
+        }
     }
 
     inline void DrawDebugEnemyMoveMarkersToggle(const MapEditorState& mapEditor, const Font& uiFont, const RectF& anchorRect)

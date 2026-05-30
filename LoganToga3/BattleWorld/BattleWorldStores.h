@@ -5,6 +5,13 @@
 
 namespace LT3
 {
+		enum class BattleSkillFilterKind : uint8
+		{
+			All,
+			Heal,
+			ResourceCost,
+		};
+
 	inline constexpr int32 DefaultBattleMapWidth = 12;
 	inline constexpr int32 DefaultBattleMapHeight = 8;
 
@@ -121,6 +128,7 @@ namespace LT3
 		Array<int32> burstShotsLeft;
 		Array<double> burstShotTimerSec;
 		Array<UnitId> burstTarget;
+		Array<SkillDefId> burstSkill;
 		Array<Array<int32>> burstOrder;
 		Array<double> skillCastFailureDisplayLeftSec;
 
@@ -130,6 +138,7 @@ namespace LT3
 			burstShotsLeft << 0;
 			burstShotTimerSec << 0.0;
 			burstTarget << InvalidUnitId;
+			burstSkill << InvalidSkillDefId;
 			burstOrder << Array<int32>{};
 			skillCastFailureDisplayLeftSec << 0.0;
 		}
@@ -309,13 +318,24 @@ namespace LT3
 		double productionTimerSec = 0.0;
 		double attackWaveTimerSec = 0.0;
 		double tacticalTimerSec = 0.0;
+		double nonWaveRoleReassignmentTimerSec = 0.0;
 		int32 attackWaveIndex = 0;
 		Array<UnitId> attackWaveUnits;
+		Array<UnitId> resourceReclaimUnits;
+		Array<UnitId> guardUnits;
+		Array<UnitId> skirmishUnits;
 		Vec2 rallyPosition{ 0.0, 0.0 };
 		Vec2 attackTargetPosition{ 0.0, 0.0 };
+		Vec2 resourceTargetPosition{ 0.0, 0.0 };
+		Vec2 guardAnchorPosition{ 0.0, 0.0 };
+		Vec2 skirmishAnchorPosition{ 0.0, 0.0 };
 		UnitId attackTargetUnit = InvalidUnitId;
 		bool hasRallyPosition = false;
 		bool hasAttackTargetPosition = false;
+		bool hasResourceTargetPosition = false;
+		bool hasGuardAnchorPosition = false;
+		bool hasSkirmishAnchorPosition = false;
+		double battleTimeLimitSec = 25.0 * 60.0;
 
 		void resetForProfile(AiProfileDefId id, const String& tag)
 		{
@@ -327,13 +347,24 @@ namespace LT3
 			productionTimerSec = 0.0;
 			attackWaveTimerSec = 0.0;
 			tacticalTimerSec = 0.0;
+			nonWaveRoleReassignmentTimerSec = 0.0;
 			attackWaveIndex = 0;
 			attackWaveUnits.clear();
+			resourceReclaimUnits.clear();
+			guardUnits.clear();
+			skirmishUnits.clear();
 			rallyPosition = Vec2{ 0.0, 0.0 };
 			attackTargetPosition = Vec2{ 0.0, 0.0 };
+			resourceTargetPosition = Vec2{ 0.0, 0.0 };
+			guardAnchorPosition = Vec2{ 0.0, 0.0 };
+			skirmishAnchorPosition = Vec2{ 0.0, 0.0 };
 			attackTargetUnit = InvalidUnitId;
 			hasRallyPosition = false;
 			hasAttackTargetPosition = false;
+			hasResourceTargetPosition = false;
+			hasGuardAnchorPosition = false;
+			hasSkirmishAnchorPosition = false;
+			battleTimeLimitSec = 25.0 * 60.0;
 		}
 	};
 
@@ -371,6 +402,8 @@ namespace LT3
 		Vec2 actionLineStartWorld{ 0, 0 };
 		Array<Vec2> actionLineTargets;
 		int32 hoveredResourceNode = -1;
+		BattleSkillFilterKind skillFilter = BattleSkillFilterKind::All;
+		SkillDefId selectedSkill = InvalidSkillDefId;
 	};
 
 	struct BattleWorld

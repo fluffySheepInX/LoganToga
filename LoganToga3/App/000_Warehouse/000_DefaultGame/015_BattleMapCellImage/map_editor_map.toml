@@ -6,9 +6,9 @@ unit_list = false
 
 building_editor = false
 
-command_editor = false
+command_editor = true
 
-skill_editor = true
+skill_editor = false
 
 ai_editor = false
 

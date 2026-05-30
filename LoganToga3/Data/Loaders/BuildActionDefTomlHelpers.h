@@ -38,6 +38,9 @@ namespace LT3
 		inline constexpr auto KeyMaxLineCells = U"max_line_cells";
 		inline constexpr auto KeyUseRightDragPlacement = U"use_right_drag_placement";
 		inline constexpr auto KeyEnemyCanProduce = U"enemy_can_produce";
+		inline constexpr auto KeyCarrierAction = U"carrier_action";
+		inline constexpr auto KeyCarrierRadiusPx = U"carrier_radius_px";
+		inline constexpr auto KeyCarrierMaxUnits = U"carrier_max_units";
 	}
 
 	inline bool EqualsIgnoreCaseOwnerTag(const String& a, const String& b)
@@ -152,6 +155,17 @@ namespace LT3
 		return BuildActionResultType::None;
 	}
 
+	inline CarrierActionKind ParseCarrierActionKind(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"release" || lowered == U"deploy")
+		{
+			return CarrierActionKind::Release;
+		}
+
+		return CarrierActionKind::Store;
+	}
+
 	inline BuildPlacementMode ParseBuildPlacementMode(const String& value)
 	{
 		const String lowered = value.lowercased();
@@ -232,6 +246,11 @@ namespace LT3
 		default:
 			return U"none";
 		}
+	}
+
+	inline String CarrierActionKindToTomlValue(CarrierActionKind kind)
+	{
+		return (kind == CarrierActionKind::Release) ? U"release" : U"store";
 	}
 
 	inline String BuildPlacementModeToTomlValue(BuildPlacementMode mode)

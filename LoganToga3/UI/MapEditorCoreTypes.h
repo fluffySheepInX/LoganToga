@@ -49,6 +49,12 @@ namespace LT3
 		Overlay,
 	};
 
+	enum class SkillSandboxMode : uint8
+	{
+		Skill,
+		Unit,
+	};
+
 	struct MapEditorAsset
 	{
 		FilePath path;
@@ -131,7 +137,17 @@ namespace LT3
 		double height = 0.0;
 		double angleRad = 0.0;
 		double baseAngleRad = 0.0;
+		SkillDefId skillId = InvalidSkillDefId;
 		SkillProjectileMotion motion = SkillProjectileMotion::Direct;
+		bool targetIsAlly = false;
+		int32 targetIndex = -1;
+	};
+
+	struct SkillSandboxDummyTarget
+	{
+		Vec2 pos{ 0.0, 0.0 };
+		int32 hp = 100;
+		int32 maxHp = 100;
 	};
 
 	struct MapEditorState
@@ -177,6 +193,9 @@ namespace LT3
 		double skillUnitListScroll = 0.0;
 		double skillDetailScroll = 0.0;
 		int32 selectedSkillIndex = 0;
+		int32 selectedSkillUnitIndex = -1;
+		Optional<int32> skillUnitContextMenuTargetIndex;
+		Vec2 skillUnitContextMenuPos{ 0.0, 0.0 };
 		bool showSkillSandboxPreview = false;
 		int32 skillValueEditingRow = -1;
 		String skillValueEditingText;
@@ -189,20 +208,41 @@ namespace LT3
 		Optional<int32> skillResourceCostStepMenuIndex;
 		Vec2 skillResourceCostStepMenuPos{ 0.0, 0.0 };
 		Vec2 skillSandboxCasterPos{ 136.0, 404.0 };
+		Vec2 skillSandboxAllyPos{ 248.0, 344.0 };
 		Vec2 skillSandboxTargetPos{ 512.0, 404.0 };
+		int32 skillSandboxCasterHp = 100;
+		int32 skillSandboxCasterMaxHp = 100;
+		int32 skillSandboxAllyHp = 55;
+		int32 skillSandboxAllyMaxHp = 100;
 		int32 skillSandboxTargetHp = 100;
 		int32 skillSandboxTargetMaxHp = 100;
 		double skillSandboxCooldownLeftSec = 0.0;
 		bool skillSandboxAutoFire = true;
+		SkillSandboxMode skillSandboxMode = SkillSandboxMode::Skill;
+		bool skillSandboxDraggingAlly = false;
 		bool skillSandboxDraggingTarget = false;
+		Optional<int32> skillSandboxDraggingExtraAllyIndex;
+		Optional<int32> skillSandboxDraggingExtraTargetIndex;
 		int32 skillSandboxSkillIndex = -1;
 		int32 skillSandboxBurstShotsLeft = 0;
 		double skillSandboxBurstShotTimerSec = 0.0;
 		Array<int32> skillSandboxBurstOrder;
+		SkillDefId skillSandboxActiveSkillId = InvalidSkillDefId;
+		int32 skillSandboxUnitCatalogIndex = -1;
 		Array<SkillSandboxProjectile> skillSandboxProjectiles;
+		Array<SkillSandboxDummyTarget> skillSandboxExtraAllies;
+		Array<SkillSandboxDummyTarget> skillSandboxExtraTargets;
+		Vec2 skillSandboxLastBomCenter{ 0.0, 0.0 };
+		double skillSandboxLastBomRadius = 0.0;
+		double skillSandboxLastBomDisplaySec = 0.0;
+		String skillSoundPreviewUnitHint;
 		bool skillDefsDirty = false;
 		Optional<int32> skillContextMenuTargetIndex;
 		Vec2 skillContextMenuPos{ 0.0, 0.0 };
+		Optional<int32> skillRenameTargetIndex;
+		String skillRenameEditText;
+		Optional<int32> skillNameEditTargetIndex;
+		String skillNameEditText;
 		double unitListScroll = 0.0;
 		int32 selectedUnitCatalogIndex = -1;
 		bool showUnitParameterEditor = false;
@@ -282,6 +322,7 @@ namespace LT3
 		bool showDecalEditor = false;
 		int32 decalEditorAssetIndex = InvalidMapEditorAsset;
 		int32 decalEditorTabIndex = 0;
+		double decalBasicEditorScroll = 0.0;
 		double decalShadowEditorScroll = 0.0;
 		bool zOrderMode = false;
 		Optional<Point> zOrderDragStartCell;

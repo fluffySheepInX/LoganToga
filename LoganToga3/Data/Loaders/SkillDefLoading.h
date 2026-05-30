@@ -29,9 +29,13 @@ namespace LT3
 		}
 		def.kind = ParseSkillKind(skillValue[U"kind"].getOr<String>(U"missile"));
 		def.range = Max(0.0, skillValue[U"range"].getOr<double>(def.range));
+		def.rangeMin = Clamp(skillValue[U"range_min"].getOr<double>(def.rangeMin), 0.0, def.range);
 		def.cooldownSec = Max(0.05, skillValue[U"cooldown_sec"].getOr<double>(def.cooldownSec));
 		def.mpCost = Max(0, skillValue[U"mp_cost"].getOr<int32>(def.mpCost));
 		def.damage = Clamp(skillValue[U"damage"].getOr<double>(def.damage), 0.01, 100.0);
+		def.selfDamageOnHit = Max(0.0, skillValue[U"self_damage_on_hit"].getOr<double>(def.selfDamageOnHit));
+		def.soundEffect = skillValue[U"se"].getOr<String>(skillValue[U"sound_effect"].getOr<String>(U""));
+		def.soundEffectVolume = Clamp(skillValue[U"se_volume"].getOr<double>(skillValue[U"sound_effect_volume"].getOr<double>(def.soundEffectVolume)), 0.0, 1.0);
 		def.projectileSpeed = skillValue[U"speed"].getOr<double>(skillValue[U"projectile_speed"].getOr<double>(def.projectileSpeed));
 		const bool hasMoveType = skillValue[U"movetype"].getOpt<String>().has_value();
 		def.projectileMotion = ParseSkillProjectileMotion(hasMoveType ? skillValue[U"movetype"].getOr<String>(U"direct") : skillValue[U"projectile_motion"].getOr<String>(U"direct"));
@@ -39,6 +43,11 @@ namespace LT3
 		{
 			def.projectileMotion = SkillProjectileMotion::Static;
 		}
+		def.bom = ReadSkillBoolSwitch(skillValue[U"bom"], def.bom);
+		def.bomRadius = Max(0.0, skillValue[U"bom_radius"].getOr<double>(def.bomRadius));
+		def.bomFriendlyFire = ReadSkillBoolSwitch(skillValue[U"bom_friendly_fire"], def.bomFriendlyFire);
+		def.bomSelfDamageScale = Max(0.0, skillValue[U"bom_self_damage_scale"].getOr<double>(def.bomSelfDamageScale));
+		def.allfunc = ReadSkillBoolSwitch(skillValue[U"allfunc"], def.allfunc);
 		def.projectileCenter = ParseSkillProjectileCenter(skillValue[U"center"].getOr<String>(U"off"));
 		def.projectileHoming = ReadSkillBoolSwitch(skillValue[U"homing"], def.projectileHoming);
 		def.projectileD360 = ReadSkillBoolSwitch(skillValue[U"d360"], def.projectileD360);

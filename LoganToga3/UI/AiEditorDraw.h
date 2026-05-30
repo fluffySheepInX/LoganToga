@@ -7,8 +7,7 @@ namespace LT3
 	inline void DrawAiEditorValueRow(const Font& uiFont, int32 rowIndex, StringView label, StringView value, double scroll, String& hoverHelp)
 	{
 		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
-		const RectF detail = AiEditorDetailRect();
-		if (row.y + row.h < detail.y || detail.y + detail.h < row.y)
+		if (!AiEditorRowVisible(row))
 		{
 			return;
 		}
@@ -16,38 +15,43 @@ namespace LT3
 		row.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 		uiFont(label).draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
 		DrawAiEditorHelpIcon(uiFont, row, AiEditorRowHelpText(rowIndex), hoverHelp);
-		uiFont(value).draw(12, row.x + 210.0, row.y + 8.0, Palette::Gold);
+		uiFont(value).draw(12, AiEditorRowValueX(row), row.y + 8.0, Palette::Gold);
 		DrawRectButton(AiEditorValueButtonRect(row, 0), U"-10", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(AiEditorValueButtonRect(row, 1), U"-1", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(AiEditorValueButtonRect(row, 2), U"+1", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(AiEditorValueButtonRect(row, 3), U"+10", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 	}
 
-	inline void DrawAiEditorUnitWeightRow(const Font& uiFont, int32 rowIndex, const AiUnitWeightDef& weight, double scroll, String& hoverHelp)
+	inline void DrawAiEditorUnitWeightRow(const DefinitionStores& defs, const Font& uiFont, int32 rowIndex, const AiUnitWeightDef& weight, double scroll, String& hoverHelp)
 	{
 		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
-		const RectF detail = AiEditorDetailRect();
-		if (row.y + row.h < detail.y || detail.y + detail.h < row.y)
+		if (!AiEditorRowVisible(row))
 		{
 			return;
 		}
 
 		row.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
-		uiFont(U"Unit Weight").draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
-		DrawAiEditorHelpIcon(uiFont, row, U"各ユニット種をどれだけ優先的に生成するかの重みです。", hoverHelp);
-		uiFont(U"{}  {:.2f}"_fmt(weight.unitTag, weight.weight)).draw(12, row.x + 130.0, row.y + 8.0, Palette::Gold);
-		DrawRectButton(AiEditorInlineButtonRect(row, 0, 5), U"-0.5", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		DrawRectButton(AiEditorInlineButtonRect(row, 1, 5), U"-0.1", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		DrawRectButton(AiEditorInlineButtonRect(row, 2, 5), U"+0.1", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		DrawRectButton(AiEditorInlineButtonRect(row, 3, 5), U"+0.5", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		DrawRectButton(AiEditorInlineButtonRect(row, 4, 5), U"Del", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		uiFont(U"Unit Priority").draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
+		DrawAiEditorHelpIcon(uiFont, row, U"各ユニット種の生成重みと目標数です。weight が高いほど出やすく、desired が目標数です。", hoverHelp);
+		uiFont(U"{} w{:.1f} n{}"_fmt(weight.unitTag, weight.weight, weight.desiredCount)).draw(11, AiEditorRowValueX(row), row.y + 8.0, Palette::Gold);
+		if (RectF{ AiEditorRowValueX(row), row.y, AiEditorTinyButtonStartX(row, 8) - AiEditorRowValueX(row) - 8.0, row.h }.mouseOver())
+		{
+			hoverHelp = ResolveAiEditorUnitDisplayName(defs, weight.unitTag);
+		}
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 0, 8), U"<", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 1, 8), U">", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 2, 8), U"-.5", false, uiFont, RectButtonStyle{ .fontSize = 8 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 3, 8), U"-.1", false, uiFont, RectButtonStyle{ .fontSize = 8 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 4, 8), U"+.1", false, uiFont, RectButtonStyle{ .fontSize = 8 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 5, 8), U"+.5", false, uiFont, RectButtonStyle{ .fontSize = 8 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 6, 8), U"N+", false, uiFont, RectButtonStyle{ .fontSize = 8 });
+		DrawRectButton(AiEditorTinyInlineButtonRect(row, 7, 8), U"Del", false, uiFont, RectButtonStyle{ .fontSize = 8 });
 	}
 
 	inline void DrawAiEditorTargetPriorityRow(const Font& uiFont, int32 rowIndex, int32 priorityIndex, StringView target, double scroll, String& hoverHelp)
 	{
 		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
-		const RectF detail = AiEditorDetailRect();
-		if (row.y + row.h < detail.y || detail.y + detail.h < row.y)
+		if (!AiEditorRowVisible(row))
 		{
 			return;
 		}
@@ -55,17 +59,53 @@ namespace LT3
 		row.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 		uiFont(U"Target #{}"_fmt(priorityIndex + 1)).draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
 		DrawAiEditorHelpIcon(uiFont, row, U"AI が攻撃対象として優先する種類です。< > で切替します。", hoverHelp);
-		uiFont(target).draw(12, row.x + 130.0, row.y + 8.0, Palette::Gold);
+		uiFont(target).draw(12, AiEditorRowValueX(row), row.y + 8.0, Palette::Gold);
 		DrawRectButton(AiEditorInlineButtonRect(row, 0, 3), U"<", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(AiEditorInlineButtonRect(row, 1, 3), U">", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(AiEditorInlineButtonRect(row, 2, 3), U"Del", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 	}
 
+	inline void DrawAiEditorInitialUnitRow(const DefinitionStores& defs, const Font& uiFont, int32 rowIndex, int32 unitIndex, StringView unitTag, double scroll, String& hoverHelp)
+	{
+		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
+		if (!AiEditorRowVisible(row))
+		{
+			return;
+		}
+
+		row.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
+		uiFont(U"Initial #{}"_fmt(unitIndex + 1)).draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
+		DrawAiEditorHelpIcon(uiFont, row, U"AI が戦闘開始時点で使用できるユニットです。施設生産導入後はここを初期解禁リストとして扱います。", hoverHelp);
+		uiFont(ResolveAiEditorUnitDisplayName(defs, unitTag)).draw(12, AiEditorRowValueX(row), row.y + 8.0, Palette::Gold);
+		DrawRectButton(AiEditorInlineButtonRect(row, 0, 3), U"<", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(AiEditorInlineButtonRect(row, 1, 3), U">", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(AiEditorInlineButtonRect(row, 2, 3), U"Del", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+	}
+
+	inline void DrawAiEditorBuildPriorityRow(const Font& uiFont, int32 rowIndex, const AiBuildPriorityDef& buildPriority, double scroll, String& hoverHelp)
+	{
+		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
+		if (!AiEditorRowVisible(row))
+		{
+			return;
+		}
+
+		row.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
+		uiFont(U"Build Priority").draw(12, row.x + 10.0, row.y + 8.0, Palette::Aqua);
+		DrawAiEditorHelpIcon(uiFont, row, U"建設 action ごとの重みと目標棟数です。weight が高いほど選ばれやすく、desired が目標数です。", hoverHelp);
+		uiFont(U"{} w{:.1f} n{}"_fmt(buildPriority.actionTag, buildPriority.weight, buildPriority.desiredCount)).draw(11, AiEditorRowValueX(row), row.y + 8.0, Palette::Gold);
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 0, 6), U"-.5", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 1, 6), U"-.1", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 2, 6), U"+.1", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 3, 6), U"+.5", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 4, 6), U"N+", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+		DrawRectButton(AiEditorCompactInlineButtonRect(row, 5, 6), U"Del", false, uiFont, RectButtonStyle{ .fontSize = 9 });
+	}
+
 	inline void DrawAiEditorAddRow(const Font& uiFont, int32 rowIndex, StringView label, StringView buttonText, double scroll, StringView helpText, String& hoverHelp)
 	{
 		const RectF row = AiEditorValueRowRect(rowIndex, scroll);
-		const RectF detail = AiEditorDetailRect();
-		if (row.y + row.h < detail.y || detail.y + detail.h < row.y)
+		if (!AiEditorRowVisible(row))
 		{
 			return;
 		}
@@ -126,7 +166,7 @@ namespace LT3
 		const AiProfileDef& profile = defs.aiProfiles[Clamp(editor.selectedAiProfileIndex, 0, static_cast<int32>(defs.aiProfiles.size()) - 1)];
 		uiFont(profile.name.isEmpty() ? profile.tag : profile.name).draw(18, detail.x + 18.0, detail.y + 14.0, Palette::White);
 		uiFont(profile.description).draw(11, detail.x + 18.0, detail.y + 44.0, ColorF{ 1, 1, 1, 0.70 });
-		uiFont(U"preset: {}  weights: {}  targets: {}"_fmt(profile.presetType, profile.unitWeights.size(), profile.targetPriority.size()))
+		uiFont(U"preset: {}  initial: {}  weights: {}  builds: {}  targets: {}"_fmt(profile.presetType, profile.initialUnits.size(), profile.unitWeights.size(), profile.buildPriorities.size(), profile.targetPriority.size()))
 			.draw(11, detail.x + 18.0, detail.y + 72.0, Palette::Lightgray);
 		const bool applied = (profile.tag.lowercased() == editor.selectedAiProfileTag.lowercased());
 		uiFont(applied
@@ -144,34 +184,47 @@ namespace LT3
 		DrawAiEditorValueRow(uiFont, 5, U"Defense Focus", U"{:.2f}"_fmt(profile.defenseFocus), scroll, hoverHelp);
 		DrawAiEditorValueRow(uiFont, 6, U"Attack Group", U"{}"_fmt(profile.attackGroupSize), scroll, hoverHelp);
 		DrawAiEditorValueRow(uiFont, 7, U"Max Army", U"{}"_fmt(profile.maxArmySize), scroll, hoverHelp);
-		DrawAiEditorValueRow(uiFont, 8, U"Tech Focus", U"{:.2f}"_fmt(profile.techFocus), scroll, hoverHelp);
-		DrawAiEditorValueRow(uiFont, 9, U"Retreat HP", U"{:.2f}"_fmt(profile.retreatHpRatio), scroll, hoverHelp);
-		DrawAiEditorValueRow(uiFont, 10, U"Resource Mul", U"{:.2f}"_fmt(profile.resourceMultiplier), scroll, hoverHelp);
+		DrawAiEditorValueRow(uiFont, 8, U"Time Limit", U"{} min"_fmt(Max(1, static_cast<int32>(Round(profile.battleTimeLimitSec / 60.0)))), scroll, hoverHelp);
+		DrawAiEditorValueRow(uiFont, 9, U"Tech Focus", U"{:.2f}"_fmt(profile.techFocus), scroll, hoverHelp);
+		DrawAiEditorValueRow(uiFont, 10, U"Retreat HP", U"{:.2f}"_fmt(profile.retreatHpRatio), scroll, hoverHelp);
+		DrawAiEditorValueRow(uiFont, 11, U"Resource Mul", U"{:.2f}"_fmt(profile.resourceMultiplier), scroll, hoverHelp);
 
-		const RectF freeSpawnRect = AiEditorValueRowRect(11, scroll);
-		if (detail.y <= freeSpawnRect.y + freeSpawnRect.h && freeSpawnRect.y <= detail.y + detail.h)
+		const RectF freeSpawnRect = AiEditorValueRowRect(12, scroll);
+		if (AiEditorRowVisible(freeSpawnRect))
 		{
 			freeSpawnRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 			uiFont(U"Free Spawn").draw(12, freeSpawnRect.x + 10.0, freeSpawnRect.y + 8.0, Palette::Aqua);
-			DrawAiEditorHelpIcon(uiFont, freeSpawnRect, AiEditorRowHelpText(11), hoverHelp);
+			DrawAiEditorHelpIcon(uiFont, freeSpawnRect, AiEditorRowHelpText(12), hoverHelp);
 			DrawRectButton(RectF{ freeSpawnRect.x + freeSpawnRect.w - 112.0, freeSpawnRect.y + 4.0, 98.0, 26.0 }, profile.freeSpawnEnabled ? U"ON" : U"OFF", profile.freeSpawnEnabled, uiFont, RectButtonStyle{ .fontSize = 11 });
 		}
 
-		const RectF contactBehaviorRect = AiEditorValueRowRect(12, scroll);
-		if (detail.y <= contactBehaviorRect.y + contactBehaviorRect.h && contactBehaviorRect.y <= detail.y + detail.h)
+		const RectF contactBehaviorRect = AiEditorValueRowRect(13, scroll);
+		if (AiEditorRowVisible(contactBehaviorRect))
 		{
 			contactBehaviorRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.72 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 			uiFont(U"Contact").draw(12, contactBehaviorRect.x + 10.0, contactBehaviorRect.y + 8.0, Palette::Aqua);
-			DrawAiEditorHelpIcon(uiFont, contactBehaviorRect, AiEditorRowHelpText(12), hoverHelp);
-			uiFont(profile.contactBehavior).draw(12, contactBehaviorRect.x + 130.0, contactBehaviorRect.y + 8.0, Palette::Gold);
+			DrawAiEditorHelpIcon(uiFont, contactBehaviorRect, AiEditorRowHelpText(13), hoverHelp);
+			uiFont(profile.contactBehavior).draw(12, AiEditorRowValueX(contactBehaviorRect), contactBehaviorRect.y + 8.0, Palette::Gold);
 			DrawRectButton(RectF{ contactBehaviorRect.x + contactBehaviorRect.w - 112.0, contactBehaviorRect.y + 4.0, 98.0, 26.0 }, U"Toggle", false, uiFont, RectButtonStyle{ .fontSize = 11 });
 		}
 
-		int32 rowIndex = 13;
-		DrawAiEditorAddRow(uiFont, rowIndex++, U"Unit Weights", U"Add Unit", scroll, U"生成候補ユニットとその出現比率を追加します。", hoverHelp);
+		int32 rowIndex = 14;
+		DrawAiEditorAddRow(uiFont, rowIndex++, U"Initial Units", U"Add Initial", scroll, U"AI が初期状態で使用できるユニットを追加します。", hoverHelp);
+		for (int32 unitIndex = 0; unitIndex < static_cast<int32>(profile.initialUnits.size()); ++unitIndex)
+		{
+			DrawAiEditorInitialUnitRow(defs, uiFont, rowIndex++, unitIndex, profile.initialUnits[unitIndex], scroll, hoverHelp);
+		}
+
+		DrawAiEditorAddRow(uiFont, rowIndex++, U"Unit Priorities", U"Add Unit", scroll, U"生成候補ユニットとその出現比率を追加します。", hoverHelp);
 		for (const auto& weight : profile.unitWeights)
 		{
-			DrawAiEditorUnitWeightRow(uiFont, rowIndex++, weight, scroll, hoverHelp);
+			DrawAiEditorUnitWeightRow(defs, uiFont, rowIndex++, weight, scroll, hoverHelp);
+		}
+
+		DrawAiEditorAddRow(uiFont, rowIndex++, U"Build Priorities", U"Add Build", scroll, U"建設 action ごとの重みと目標棟数を追加します。", hoverHelp);
+		for (const auto& buildPriority : profile.buildPriorities)
+		{
+			DrawAiEditorBuildPriorityRow(uiFont, rowIndex++, buildPriority, scroll, hoverHelp);
 		}
 
 		DrawAiEditorAddRow(uiFont, rowIndex++, U"Target Priority", U"Add Target", scroll, U"攻撃優先対象の候補を追加します。", hoverHelp);
@@ -182,7 +235,7 @@ namespace LT3
 
 		if (!hoverHelp.isEmpty())
 		{
-			const RectF helpRect{ detail.x + 16.0, detail.y + detail.h - 52.0, detail.w - 32.0, 36.0 };
+			const RectF helpRect = AiEditorHelpPopupRect(RectF{ Cursor::PosF().x - 9.0, Cursor::PosF().y - 9.0, 18.0, 18.0 });
 			helpRect.draw(ColorF{ 0.02, 0.03, 0.045, 0.96 }).drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
 			uiFont(hoverHelp).draw(11, helpRect.x + 10.0, helpRect.y + 10.0, Palette::Aqua);
 		}

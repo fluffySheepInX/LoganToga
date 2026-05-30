@@ -6,6 +6,32 @@
 
 namespace LT3
 {
+    inline bool SpawnProjectilesForSkillTargets(BattleWorld& world, const DefinitionStores& defs, UnitId attacker, const SkillDef& skill, SkillDefId skillId, int32 burstIndex, UnitId fallbackTarget)
+    {
+        if (skill.allfunc)
+        {
+            const Array<UnitId> targets = CollectSkillTargets(world, defs, attacker, skill);
+            if (targets.isEmpty())
+            {
+                return false;
+            }
+
+            for (const UnitId target : targets)
+            {
+                SpawnProjectile(world, defs, attacker, target, skillId, burstIndex);
+            }
+            return true;
+        }
+
+        if (!IsValidUnit(world, fallbackTarget))
+        {
+            return false;
+        }
+
+        SpawnProjectile(world, defs, attacker, fallbackTarget, skillId, burstIndex);
+        return true;
+    }
+
     inline void FirePendingBurstShots(BattleWorld& world, const DefinitionStores& defs, UnitId unit, const SkillDef& skill, SkillDefId skillId, double dt)
     {
         if (unit >= world.cooldowns.burstShotsLeft.size())
@@ -24,7 +50,7 @@ namespace LT3
             UnitId burstTarget = world.cooldowns.burstTarget[unit];
             if (!IsValidUnit(world, burstTarget))
             {
-                burstTarget = ResolveAttackTarget(world, defs, unit);
+                burstTarget = ResolveAttackTargetForSkill(world, defs, unit, skillId, true);
             }
             if (!IsValidUnit(world, burstTarget))
             {
@@ -40,7 +66,13 @@ namespace LT3
                 && shotIndex < static_cast<int32>(world.cooldowns.burstOrder[unit].size()))
                 ? world.cooldowns.burstOrder[unit][shotIndex]
                 : shotIndex;
-            SpawnProjectile(world, defs, unit, burstTarget, skillId, burstIndex);
+            if (!SpawnProjectilesForSkillTargets(world, defs, unit, skill, skillId, burstIndex, burstTarget))
+            {
+                world.cooldowns.burstShotsLeft[unit] = 0;
+                world.cooldowns.burstShotTimerSec[unit] = 0.0;
+                world.cooldowns.burstTarget[unit] = InvalidUnitId;
+                break;
+            }
             --world.cooldowns.burstShotsLeft[unit];
             world.cooldowns.burstTarget[unit] = burstTarget;
             world.cooldowns.burstShotTimerSec[unit] += Max(0.0, skill.burstIntervalSec);
@@ -55,6 +87,10 @@ namespace LT3
             world.cooldowns.burstShotsLeft[unit] = 0;
             world.cooldowns.burstShotTimerSec[unit] = 0.0;
             world.cooldowns.burstTarget[unit] = InvalidUnitId;
+            if (unit < world.cooldowns.burstSkill.size())
+            {
+                world.cooldowns.burstSkill[unit] = InvalidSkillDefId;
+            }
             if (unit < world.cooldowns.burstOrder.size())
             {
                 world.cooldowns.burstOrder[unit].clear();
@@ -71,9 +107,13 @@ namespace LT3
 
             world.cooldowns.attackLeftSec[unit] = Max(0.0, world.cooldowns.attackLeftSec[unit] - dt);
             const UnitDef& unitDef = defs.units[world.units.defId[unit]];
-            if (unitDef.skill == InvalidSkillDefId) continue;
-            const SkillDef& skill = defs.skills[unitDef.skill];
-            FirePendingBurstShots(world, defs, unit, skill, unitDef.skill, dt);
+            const Array<SkillDefId> unitSkillIds = ResolveUnitSkillIds(unitDef, defs);
+            if (unitSkillIds.isEmpty()) continue;
+            const SkillDefId pendingBurstSkillId = (unit < world.cooldowns.burstSkill.size()) ? world.cooldowns.burstSkill[unit] : InvalidSkillDefId;
+            if (pendingBurstSkillId != InvalidSkillDefId && pendingBurstSkillId < defs.skills.size())
+            {
+                FirePendingBurstShots(world, defs, unit, defs.skills[pendingBurstSkillId], pendingBurstSkillId, dt);
+            }
             if (HasUnitFormationFinalTarget(world, unit)) continue;
             if (world.units.task[unit] == UnitTask::Moving
                 && unit < world.units.ignoreCombatWhileMoving.size()
@@ -86,7 +126,8 @@ namespace LT3
                 }
             }
 
-            const UnitId target = ResolveAttackTarget(world, defs, unit);
+            UnitId target = InvalidUnitId;
+            const SkillDefId selectedSkillId = ResolveExecutableAttackSkill(world, defs, unit, target);
             if (!IsValidUnit(world, target))
             {
                 if (world.units.task[unit] == UnitTask::Attacking
@@ -97,10 +138,13 @@ namespace LT3
                 }
                 continue;
             }
+            if (selectedSkillId == InvalidSkillDefId || selectedSkillId >= defs.skills.size()) continue;
+            const SkillDef& skill = defs.skills[selectedSkillId];
 
             const UnitDef& targetDef = defs.units[world.units.defId[target]];
             const double stopDistance = ResolveAttackStopDistance(unitDef, targetDef, skill);
             const double distanceToTarget = world.units.position[unit].distanceFrom(world.units.position[target]);
+            const double minRange = ResolveEffectiveAttackRangeMin(unitDef, skill);
             if (distanceToTarget > stopDistance)
             {
                 const Vec2 approach = ResolveAttackApproachDestination(world.units.position[unit], world.units.position[target], stopDistance);
@@ -110,10 +154,23 @@ namespace LT3
                 EnqueuePathRequest(world, unit, approach);
                 continue;
             }
+            if (distanceToTarget < minRange)
+            {
+                SetUnitAttacking(world, unit);
+                continue;
+            }
 
             SetUnitAttacking(world, unit);
             if (world.cooldowns.attackLeftSec[unit] > 0.0) continue;
             if (unit < world.cooldowns.burstShotsLeft.size() && world.cooldowns.burstShotsLeft[unit] > 0) continue;
+            if (!CanAffordSkillResourceCosts(world, defs, world.units.faction[unit], skill))
+            {
+                if (unit < world.cooldowns.skillCastFailureDisplayLeftSec.size())
+                {
+                    world.cooldowns.skillCastFailureDisplayLeftSec[unit] = 0.6;
+                }
+                continue;
+            }
             if (!TryConsumeSkillResourceCosts(world, defs, world.units.faction[unit], skill))
             {
                 if (unit < world.cooldowns.skillCastFailureDisplayLeftSec.size())
@@ -146,13 +203,20 @@ namespace LT3
                         && shotIndex < static_cast<int32>(world.cooldowns.burstOrder[unit].size()))
                         ? world.cooldowns.burstOrder[unit][shotIndex]
                         : shotIndex;
-                    SpawnProjectile(world, defs, unit, target, unitDef.skill, burstIndex);
+                    if (!SpawnProjectilesForSkillTargets(world, defs, unit, skill, selectedSkillId, burstIndex, target))
+                    {
+                        break;
+                    }
                 }
                 if (unit < world.cooldowns.burstShotsLeft.size())
                 {
                     world.cooldowns.burstShotsLeft[unit] = 0;
                     world.cooldowns.burstShotTimerSec[unit] = 0.0;
                     world.cooldowns.burstTarget[unit] = InvalidUnitId;
+                    if (unit < world.cooldowns.burstSkill.size())
+                    {
+                        world.cooldowns.burstSkill[unit] = InvalidSkillDefId;
+                    }
                     if (unit < world.cooldowns.burstOrder.size())
                     {
                         world.cooldowns.burstOrder[unit].clear();
@@ -165,12 +229,19 @@ namespace LT3
                     && !world.cooldowns.burstOrder[unit].isEmpty())
                     ? world.cooldowns.burstOrder[unit].front()
                     : 0;
-                SpawnProjectile(world, defs, unit, target, unitDef.skill, firstBurstIndex);
+                if (!SpawnProjectilesForSkillTargets(world, defs, unit, skill, selectedSkillId, firstBurstIndex, target))
+                {
+                    continue;
+                }
                 if (unit < world.cooldowns.burstShotsLeft.size())
                 {
                     world.cooldowns.burstShotsLeft[unit] = burstCount - 1;
                     world.cooldowns.burstShotTimerSec[unit] = Max(0.0, skill.burstIntervalSec);
                     world.cooldowns.burstTarget[unit] = target;
+                    if (unit < world.cooldowns.burstSkill.size())
+                    {
+                        world.cooldowns.burstSkill[unit] = (world.cooldowns.burstShotsLeft[unit] > 0) ? selectedSkillId : InvalidSkillDefId;
+                    }
                     if (world.cooldowns.burstShotsLeft[unit] <= 0 && unit < world.cooldowns.burstOrder.size())
                     {
                         world.cooldowns.burstOrder[unit].clear();

@@ -173,6 +173,7 @@ namespace LT3
 
         DrawQuarterCommandBar(world, defs, mapEditor, assets, uiFont);
         DrawResourcePanel(world, defs, assets, uiFont, mapEditor);
+        DrawBattleSkillPanel(world, defs, assets, uiFont);
         DrawAreaSelectionFrame(world, assets);
         DrawFormationPlacementPreview(world, defs);
         DrawBuildActionPlacementPreview(world, defs, assets, uiFont);
@@ -181,6 +182,7 @@ namespace LT3
             DrawClickDebugOverlay(debugState, uiFont);
             DrawSelectionDebugOverlay(world, defs, assets, uiFont);
         }
+        DrawBattleTimerOverlay(world, uiFont);
         DrawSelectedUnitPanel(world, defs, mapEditor, uiFont, showDebugInfo);
         DrawResultOverlay(world, uiFont, titleFont);
     }

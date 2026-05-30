@@ -13,6 +13,13 @@ namespace LT3
             return;
         }
 
+        if (world.aiRuntime.battleTimeLimitSec > 0.0 && world.elapsedSec >= world.aiRuntime.battleTimeLimitSec)
+        {
+            world.victory = false;
+            world.defeat = true;
+            return;
+        }
+
         bool playerBaseAlive = false;
         bool enemyBaseAlive = false;
 

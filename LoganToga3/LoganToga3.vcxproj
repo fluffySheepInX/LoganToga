@@ -398,6 +398,7 @@
     <ClInclude Include="Systems\EditorInputSystem.h" />
     <ClInclude Include="Systems\EnemyDirectorAttackWave.h" />
     <ClInclude Include="Systems\EnemyDirectorCommon.h" />
+    <ClInclude Include="Systems\EnemyDirectorConstruction.h" />
     <ClInclude Include="Systems\EnemyDirectorSpawn.h" />
     <ClInclude Include="Systems\EnemyDirectorSystem.h" />
     <ClInclude Include="Systems\EnemyDirectorTactics.h" />
@@ -430,6 +431,7 @@
     <ClInclude Include="UI\BuildingEditorCommon.h" />
     <ClInclude Include="UI\BuildingEditorDraw.h" />
     <ClInclude Include="UI\BuildingEditorInput.h" />
+    <ClInclude Include="UI\EditorMutationHelpers.h" />
     <ClInclude Include="UI\MapEditor.h" />
     <ClInclude Include="UI\MapEditorAmbientSound.h" />
     <ClInclude Include="UI\MapEditorAssetUtils.h" />
@@ -498,11 +500,29 @@
     <ClInclude Include="UI\SkillEditor.h" />
     <ClInclude Include="UI\SkillEditorAssets.h" />
     <ClInclude Include="UI\SkillEditorCommon.h" />
+    <ClInclude Include="UI\SkillEditorDraw.Common.h" />
+    <ClInclude Include="UI\SkillEditorDraw.DetailPanel.h" />
     <ClInclude Include="UI\SkillEditorDraw.h" />
+    <ClInclude Include="UI\SkillEditorDraw.ListPanel.h" />
+    <ClInclude Include="UI\SkillEditorDraw.Sandbox.h" />
+    <ClInclude Include="UI\SkillEditorInput.AssetInput.h" />
+    <ClInclude Include="UI\SkillEditorInput.Common.h" />
+    <ClInclude Include="UI\SkillEditorInput.DetailInput.h" />
     <ClInclude Include="UI\SkillEditorInput.h" />
+    <ClInclude Include="UI\SkillEditorInput.ListInput.h" />
+    <ClInclude Include="UI\SkillEditorInput.PropertyInput.h" />
+    <ClInclude Include="UI\SkillEditorInput.Sandbox.h" />
     <ClInclude Include="UI\SkillEditorLayout.h" />
+    <ClInclude Include="UI\SkillEditorSandbox.Fire.h" />
     <ClInclude Include="UI\SkillEditorSandbox.h" />
+    <ClInclude Include="UI\SkillEditorSandbox.Hit.h" />
+    <ClInclude Include="UI\SkillEditorSandbox.Setup.h" />
+    <ClInclude Include="UI\SkillEditorSandbox.Update.h" />
+    <ClInclude Include="UI\SkillEditorState.DefinitionOps.h" />
     <ClInclude Include="UI\SkillEditorState.h" />
+    <ClInclude Include="UI\SkillEditorState.Metadata.h" />
+    <ClInclude Include="UI\SkillEditorState.ResourceCosts.h" />
+    <ClInclude Include="UI\SkillEditorState.Values.h" />
     <ClInclude Include="UI\TitleUiLayout.h" />
   </ItemGroup>
   <ItemGroup>

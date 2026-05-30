@@ -44,6 +44,7 @@ namespace LT3
 	{
 		world.selection.selected = IsValidUnit(world, unit) ? unit : InvalidUnitId;
         world.selection.selectedUnits.clear();
+		world.selection.selectedSkill = InvalidSkillDefId;
 		if (world.selection.selected != InvalidUnitId)
 		{
 			world.selection.selectedUnits << world.selection.selected;
@@ -53,6 +54,7 @@ namespace LT3
 	inline void SelectUnits(BattleWorld& world, const Array<UnitId>& units)
 	{
 		world.selection.selectedUnits.clear();
+		world.selection.selectedSkill = InvalidSkillDefId;
 		for (const UnitId unit : units)
 		{
 			if (IsValidUnit(world, unit) && !world.selection.selectedUnits.contains(unit))
@@ -67,6 +69,7 @@ namespace LT3
 	{
 		world.selection.selected = InvalidUnitId;
         world.selection.selectedUnits.clear();
+		world.selection.selectedSkill = InvalidSkillDefId;
        world.selection.formationPlacementActive = false;
 		world.selection.formationUnits.clear();
        world.selection.actionPlacementActive = false;

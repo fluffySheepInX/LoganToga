@@ -93,7 +93,7 @@ namespace LT3
             consumed = true;
         }
 
-        if (ProcessSkillEditorInput(editor, defs, catalog))
+        if (ProcessSkillEditorInput(editor, world, defs, catalog))
         {
             consumed = true;
         }

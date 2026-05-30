@@ -363,6 +363,8 @@ namespace LT3
 
         const RectF panel = EditorResourceNodeListPanelRect();
         const RectF viewport = EditorResourceNodeListViewportRect();
+        const RectF validationPanel = EditorResourceValidationPanelRect();
+        const RectF palettePanel = EditorResourcePalettePanelRect();
         for (int32 i = 0; i < 4; ++i)
         {
             if (EditorResourceNodeFilterRect(i).leftClicked())
@@ -413,13 +415,32 @@ namespace LT3
                 return true;
             }
         }
+
+        if (viewport.mouseOver())
+        {
+            const double wheel = Mouse::Wheel();
+            if (wheel != 0.0)
+            {
+                const double maxScroll = Max(0.0, EditorResourceNodeListContentHeight(editor) - viewport.h);
+                editor.resourceNodeListScroll = Clamp(editor.resourceNodeListScroll - wheel * 42.0, 0.0, maxScroll);
+                return true;
+            }
+        }
+
+        if (validationPanel.mouseOver() && Mouse::Wheel() != 0.0)
+        {
+            return true;
+        }
+
+        if (palettePanel.mouseOver() && Mouse::Wheel() != 0.0)
+        {
+            return true;
+        }
+
         if (!panel.mouseOver())
         {
             return false;
         }
-
-        const double maxScroll = Max(0.0, EditorResourceNodeListContentHeight(editor) - viewport.h);
-        editor.resourceNodeListScroll = Clamp(editor.resourceNodeListScroll - Mouse::Wheel() * 42.0, 0.0, maxScroll);
 
         int32 visibleIndex = 0;
         for (int32 i = 0; i < static_cast<int32>(editor.resourceNodes.size()); ++i)

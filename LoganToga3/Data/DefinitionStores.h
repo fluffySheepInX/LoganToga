@@ -19,9 +19,11 @@ namespace LT3
         Array<String> iconLayers;
         SkillKind kind = SkillKind::Missile;
         double range = 120.0;
+        double rangeMin = 0.0;
         double cooldownSec = 0.8;
         int32 mpCost = 0;
         double damage = 1.0;
+        double selfDamageOnHit = 0.0;
         double projectileSpeed = 380.0;
         SkillProjectileMotion projectileMotion = SkillProjectileMotion::Direct;
         int32 burstCount = 1;
@@ -41,11 +43,18 @@ namespace LT3
         double swingRadius = 0.0;
         double swingAngleDeg = 90.0;
         ColorF color = Palette::White;
+        bool bom = false;
+        double bomRadius = 0.0;
+        bool bomFriendlyFire = false;
+        double bomSelfDamageScale = 0.0;
+        bool allfunc = false;
         SkillProjectileCenter projectileCenter = SkillProjectileCenter::Off;
         bool projectileHoming = false;
         bool projectileD360 = false;
         double projectileStartDegree = 0.0;
         int32 projectileStartDegreeType = 0;
+        String soundEffect;
+        double soundEffectVolume = 1.0;
         String projectileImage;
         String projectileDiagonalImage;
         Array<SkillResourceCostDef> resourceCosts;
@@ -64,6 +73,7 @@ namespace LT3
         int32 gatherPower = 0;
         int32 visionRadiusCells = 6;
         SkillDefId skill = InvalidSkillDefId;
+        Array<SkillDefId> skills;
         ColorF color = Palette::White;
         double visualScale = 1.0;
         bool unique = false;
@@ -110,6 +120,9 @@ namespace LT3
         int32 maxLineCells = 12;
         bool useRightDragPlacement = false;
         bool enemyCanProduce = true;
+        CarrierActionKind carrierAction = CarrierActionKind::Store;
+        double carrierRadiusPx = 84.0;
+        int32 carrierMaxUnits = 0;
     };
 
     struct ResourceDef
@@ -136,6 +149,14 @@ namespace LT3
     {
         String unitTag;
         double weight = 1.0;
+        int32 desiredCount = 0;
+    };
+
+    struct AiBuildPriorityDef
+    {
+        String actionTag;
+        double weight = 1.0;
+        int32 desiredCount = 1;
     };
 
     struct AiProfileDef
@@ -153,11 +174,14 @@ namespace LT3
         double techFocus = 0.3;
         int32 attackGroupSize = 4;
         int32 maxArmySize = 24;
+        double battleTimeLimitSec = 25.0 * 60.0;
         double retreatHpRatio = 0.0;
         bool freeSpawnEnabled = true;
         double resourceMultiplier = 1.0;
         String contactBehavior = U"ignore";
+        Array<String> initialUnits;
         Array<AiUnitWeightDef> unitWeights;
+        Array<AiBuildPriorityDef> buildPriorities;
         Array<String> targetPriority;
     };
 

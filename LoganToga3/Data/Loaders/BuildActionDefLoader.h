@@ -77,6 +77,9 @@ namespace LT3
             action.maxLineCells = Max<int32>(1, commandValue[BuildActionToml::KeyMaxLineCells].getOr<int32>(12));
             action.useRightDragPlacement = commandValue[BuildActionToml::KeyUseRightDragPlacement].getOr<bool>(action.placementMode == BuildPlacementMode::Line);
             action.enemyCanProduce = commandValue[BuildActionToml::KeyEnemyCanProduce].getOr<bool>(true);
+            action.carrierAction = ParseCarrierActionKind(commandValue[BuildActionToml::KeyCarrierAction].getOr<String>(U"store"));
+            action.carrierRadiusPx = Max(0.0, commandValue[BuildActionToml::KeyCarrierRadiusPx].getOr<double>(84.0));
+            action.carrierMaxUnits = Max(0, commandValue[BuildActionToml::KeyCarrierMaxUnits].getOr<int32>(0));
 
             if (action.resultType == BuildActionResultType::Unit)
             {
@@ -149,12 +152,6 @@ namespace LT3
             }
             const String primaryIcon = iconLayers.isEmpty() ? action.icon : iconLayers.front();
 
-            if (action.resultType == BuildActionResultType::Unit && spawnTags.isEmpty())
-            {
-                statusText = U"Build action save failed: spawn not set ({})"_fmt(action.name.isEmpty() ? action.id : action.name);
-                return false;
-            }
-
             if (!firstCommand)
             {
                 tomlText += U"\n";
@@ -188,6 +185,12 @@ namespace LT3
             tomlText += U"max_line_cells = {}\n"_fmt(Max(1, action.maxLineCells));
             tomlText += U"use_right_drag_placement = {}\n"_fmt(action.useRightDragPlacement ? U"true" : U"false");
             tomlText += U"enemy_can_produce = {}\n"_fmt(action.enemyCanProduce ? U"true" : U"false");
+            if (action.resultType == BuildActionResultType::Carrier)
+            {
+                tomlText += U"carrier_action = \"" + CarrierActionKindToTomlValue(action.carrierAction) + U"\"\n";
+                tomlText += U"carrier_radius_px = {}\n"_fmt(Max(0.0, action.carrierRadiusPx));
+                tomlText += U"carrier_max_units = {}\n"_fmt(Max(0, action.carrierMaxUnits));
+            }
             tomlText += U"[[commands.result]]\n";
             tomlText += U"type = \"" + BuildActionResultTypeToTomlValue(action.resultType) + U"\"\n";
             if (!spawnTags.isEmpty())

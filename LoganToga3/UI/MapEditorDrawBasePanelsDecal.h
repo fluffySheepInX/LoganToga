@@ -25,36 +25,6 @@ namespace LT3
 		const RectF tabBarRect = decalRect(EditorDecalEditorTabBarRect());
 		const RectF decalTabRect = decalRect(EditorDecalEditorTabRect(0));
 		const RectF shadowTabRect = decalRect(EditorDecalEditorTabRect(1));
-		const RectF previewRect = decalRect(EditorDecalEditorPreviewRect());
-		const RectF opacityDecRect = decalRect(EditorDecalOpacityDecRect());
-		const RectF opacityIncRect = decalRect(EditorDecalOpacityIncRect());
-		const RectF scaleDecRect = decalRect(EditorDecalScaleDecRect());
-		const RectF scaleIncRect = decalRect(EditorDecalScaleIncRect());
-		const RectF applyRect = decalRect(EditorDecalApplyRect());
-		const RectF opacityRowRect = decalRect(EditorDecalOpacityRowRect());
-		const RectF scaleRowRect = decalRect(EditorDecalScaleRowRect());
-		const RectF renderKindRowRect = decalRect(EditorDecalRenderKindRowRect());
-		const RectF opacityRandomRowRect = decalRect(EditorDecalOpacityRandomRowRect());
-		const RectF scaleRandomRowRect = decalRect(EditorDecalScaleRandomRowRect());
-		const RectF opacityRandomRect = decalRect(EditorDecalOpacityRandomToggleRect());
-		const RectF opacityRandomValueRect = decalRect(EditorDecalOpacityRandomValueRect());
-		const RectF opacityMinDecRect = decalRect(EditorDecalOpacityMinDecRect());
-		const RectF opacityMinIncRect = decalRect(EditorDecalOpacityMinIncRect());
-		const RectF opacityMaxDecRect = decalRect(EditorDecalOpacityMaxDecRect());
-		const RectF opacityMaxIncRect = decalRect(EditorDecalOpacityMaxIncRect());
-		const RectF scaleRandomRect = decalRect(EditorDecalScaleRandomToggleRect());
-		const RectF scaleRandomValueRect = decalRect(EditorDecalScaleRandomValueRect());
-		const RectF scaleMinDecRect = decalRect(EditorDecalScaleMinDecRect());
-		const RectF scaleMinIncRect = decalRect(EditorDecalScaleMinIncRect());
-		const RectF scaleMaxDecRect = decalRect(EditorDecalScaleMaxDecRect());
-		const RectF scaleMaxIncRect = decalRect(EditorDecalScaleMaxIncRect());
-		const RectF ambientSoundRowRect = decalRect(EditorDecalAmbientSoundRowRect());
-		const RectF ambientSoundBrowseRect = decalRect(EditorDecalAmbientSoundBrowseRect());
-		const RectF ambientSoundClearRect = decalRect(EditorDecalAmbientSoundClearRect());
-		const RectF ambientSoundNameRect = decalRect(EditorDecalAmbientSoundNameRect());
-		const RectF ambientVolumeRowRect = decalRect(EditorDecalAmbientVolumeRowRect());
-		const RectF ambientVolumeDecRect = decalRect(EditorDecalAmbientVolumeDecRect());
-		const RectF ambientVolumeIncRect = decalRect(EditorDecalAmbientVolumeIncRect());
 
 		DrawRectPanelFrame(panel, ColorF{ 0.02, 0.03, 0.045, 0.94 }, ColorF{ 1, 1, 1, 0.18 });
 		DrawRectPanelTitle(panel, U"Decal Editor", uiFont);
@@ -137,64 +107,109 @@ namespace LT3
 			return;
 		}
 
-		applyRect.draw(ColorF{ 0.12, 0.22, 0.18, 0.96 }).drawFrame(2, applyRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"Apply / Reroll").drawAt(12, applyRect.center(), Palette::White);
+		const RectF viewport = decalRect(EditorDecalBasicViewportRect());
+		const double contentHeight = EditorDecalBasicContentHeight();
+		const double maxScroll = Max(0.0, contentHeight - viewport.h);
+		const double scroll = Clamp(editor.decalBasicEditorScroll, 0.0, maxScroll);
+		const RectF previewRect = decalRect(EditorDecalEditorPreviewRect(scroll));
+		const RectF opacityDecRect = decalRect(EditorDecalOpacityDecRect(scroll));
+		const RectF opacityIncRect = decalRect(EditorDecalOpacityIncRect(scroll));
+		const RectF scaleDecRect = decalRect(EditorDecalScaleDecRect(scroll));
+		const RectF scaleIncRect = decalRect(EditorDecalScaleIncRect(scroll));
+		const RectF applyRect = decalRect(EditorDecalApplyRect(scroll));
+		const RectF opacityRowRect = decalRect(EditorDecalOpacityRowRect(scroll));
+		const RectF scaleRowRect = decalRect(EditorDecalScaleRowRect(scroll));
+		const RectF renderKindRowRect = decalRect(EditorDecalRenderKindRowRect(scroll));
+		const RectF opacityRandomRowRect = decalRect(EditorDecalOpacityRandomRowRect(scroll));
+		const RectF scaleRandomRowRect = decalRect(EditorDecalScaleRandomRowRect(scroll));
+		const RectF opacityRandomRect = decalRect(EditorDecalOpacityRandomToggleRect(scroll));
+		const RectF opacityRandomValueRect = decalRect(EditorDecalOpacityRandomValueRect(scroll));
+		const RectF opacityMinDecRect = decalRect(EditorDecalOpacityMinDecRect(scroll));
+		const RectF opacityMinIncRect = decalRect(EditorDecalOpacityMinIncRect(scroll));
+		const RectF opacityMaxDecRect = decalRect(EditorDecalOpacityMaxDecRect(scroll));
+		const RectF opacityMaxIncRect = decalRect(EditorDecalOpacityMaxIncRect(scroll));
+		const RectF scaleRandomRect = decalRect(EditorDecalScaleRandomToggleRect(scroll));
+		const RectF scaleRandomValueRect = decalRect(EditorDecalScaleRandomValueRect(scroll));
+		const RectF scaleMinDecRect = decalRect(EditorDecalScaleMinDecRect(scroll));
+		const RectF scaleMinIncRect = decalRect(EditorDecalScaleMinIncRect(scroll));
+		const RectF scaleMaxDecRect = decalRect(EditorDecalScaleMaxDecRect(scroll));
+		const RectF scaleMaxIncRect = decalRect(EditorDecalScaleMaxIncRect(scroll));
+		const RectF ambientSoundRowRect = decalRect(EditorDecalAmbientSoundRowRect(scroll));
+		const RectF ambientSoundBrowseRect = decalRect(EditorDecalAmbientSoundBrowseRect(scroll));
+		const RectF ambientSoundClearRect = decalRect(EditorDecalAmbientSoundClearRect(scroll));
+		const RectF ambientSoundNameRect = decalRect(EditorDecalAmbientSoundNameRect(scroll));
+		const RectF ambientVolumeRowRect = decalRect(EditorDecalAmbientVolumeRowRect(scroll));
+		const RectF ambientVolumeDecRect = decalRect(EditorDecalAmbientVolumeDecRect(scroll));
+		const RectF ambientVolumeIncRect = decalRect(EditorDecalAmbientVolumeIncRect(scroll));
 
-		DrawAssetPreview(asset, previewRect.center(), SizeF{ previewRect.w, previewRect.h });
-		uiFont(asset.fileName).draw(13, previewRect.x + previewRect.w + 16.0, previewRect.y + 6.0, Palette::White);
-		uiFont(U"Palette asset setting / Apply affects all placed decals").draw(11, previewRect.x + previewRect.w + 16.0, previewRect.y + 30.0, Palette::Lightgray);
-
-		DrawRectValueAdjustRow(opacityRowRect, U"Opacity", U"{:.2f}"_fmt(asset.decalOpacity), opacityDecRect, opacityIncRect, uiFont);
-
-		DrawRectValueAdjustRow(scaleRowRect, U"Scale", U"{:.2f}"_fmt(asset.decalScale), scaleDecRect, scaleIncRect, uiFont);
-
-		renderKindRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
-		uiFont(U"Render Kind").draw(13, renderKindRowRect.x, renderKindRowRect.y - 18.0, Palette::Gold);
-		const Array<String> renderKindLabels = { U"Ground", U"Tall", U"Overlay" };
-		for (int32 i = 0; i < 3; ++i)
+		viewport.draw(ColorF{ 0.04, 0.05, 0.07, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.10 });
 		{
-			const RectF rect = EditorDecalRenderKindButtonRect(i);
-			const bool active = (static_cast<int32>(asset.decalRenderKind) == i);
-			DrawRectTabButton(rect, renderKindLabels[i], active, uiFont, 11);
+			const ScopedRenderStates2D scissor{ RasterizerState::SolidCullNoneScissor };
+			const Rect previousScissor = Graphics2D::GetScissorRect();
+			Graphics2D::SetScissorRect(viewport.stretched(-2).asRect());
+
+			applyRect.draw(ColorF{ 0.12, 0.22, 0.18, 0.96 }).drawFrame(2, applyRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			uiFont(U"Apply / Reroll").drawAt(12, applyRect.center(), Palette::White);
+
+			DrawAssetPreview(asset, previewRect.center(), SizeF{ previewRect.w, previewRect.h });
+			uiFont(asset.fileName).draw(13, previewRect.x + previewRect.w + 16.0, previewRect.y + 6.0, Palette::White);
+			uiFont(U"Palette asset setting / Apply affects all placed decals").draw(11, previewRect.x + previewRect.w + 16.0, previewRect.y + 30.0, Palette::Lightgray);
+
+			DrawRectValueAdjustRow(opacityRowRect, U"Opacity", U"{:.2f}"_fmt(asset.decalOpacity), opacityDecRect, opacityIncRect, uiFont);
+			DrawRectValueAdjustRow(scaleRowRect, U"Scale", U"{:.2f}"_fmt(asset.decalScale), scaleDecRect, scaleIncRect, uiFont);
+
+			renderKindRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+			uiFont(U"Render Kind").draw(13, renderKindRowRect.x, renderKindRowRect.y - 18.0, Palette::Gold);
+			const Array<String> renderKindLabels = { U"Ground", U"Tall", U"Overlay" };
+			for (int32 i = 0; i < 3; ++i)
+			{
+				const RectF rect = decalRect(EditorDecalRenderKindButtonRect(i, scroll));
+				const bool active = (static_cast<int32>(asset.decalRenderKind) == i);
+				DrawRectTabButton(rect, renderKindLabels[i], active, uiFont, 11);
+			}
+
+			opacityRandomRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+			opacityRandomRect.draw(asset.useRandomDecalOpacity ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+				.drawFrame(2, opacityRandomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			uiFont(U"Random opacity range").draw(12, opacityRandomRect.x + 12.0, opacityRandomRect.y + 5.0, asset.useRandomDecalOpacity ? Palette::White : Palette::Lightgray);
+			uiFont(U"min {:.2f} / max {:.2f}"_fmt(asset.decalOpacityMin, asset.decalOpacityMax)).draw(11, opacityRandomValueRect.x, opacityRandomValueRect.y, Palette::Lightgray);
+
+			for (const RectF& rect : { opacityMinDecRect, opacityMinIncRect, opacityMaxDecRect, opacityMaxIncRect, scaleMinDecRect, scaleMinIncRect, scaleMaxDecRect, scaleMaxIncRect })
+			{
+				rect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			}
+			uiFont(U"-").drawAt(18, opacityMinDecRect.center(), Palette::White);
+			uiFont(U"+").drawAt(18, opacityMinIncRect.center(), Palette::White);
+			uiFont(U"-").drawAt(18, opacityMaxDecRect.center(), Palette::White);
+			uiFont(U"+").drawAt(18, opacityMaxIncRect.center(), Palette::White);
+			uiFont(U"Min").drawAt(11, Vec2{ (opacityMinDecRect.x + opacityMinIncRect.x + opacityMinIncRect.w) * 0.5, opacityMinDecRect.y - 10.0 }, Palette::Gold);
+			uiFont(U"Max").drawAt(11, Vec2{ (opacityMaxDecRect.x + opacityMaxIncRect.x + opacityMaxIncRect.w) * 0.5, opacityMaxDecRect.y - 10.0 }, Palette::Gold);
+
+			scaleRandomRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+			scaleRandomRect.draw(asset.useRandomDecalScale ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
+				.drawFrame(2, scaleRandomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
+			uiFont(U"Random scale range").draw(12, scaleRandomRect.x + 12.0, scaleRandomRect.y + 5.0, asset.useRandomDecalScale ? Palette::White : Palette::Lightgray);
+			uiFont(U"min {:.2f} / max {:.2f}"_fmt(asset.decalScaleMin, asset.decalScaleMax)).draw(11, scaleRandomValueRect.x, scaleRandomValueRect.y, Palette::Lightgray);
+			uiFont(U"-").drawAt(18, scaleMinDecRect.center(), Palette::White);
+			uiFont(U"+").drawAt(18, scaleMinIncRect.center(), Palette::White);
+			uiFont(U"-").drawAt(18, scaleMaxDecRect.center(), Palette::White);
+			uiFont(U"+").drawAt(18, scaleMaxIncRect.center(), Palette::White);
+			uiFont(U"Min").drawAt(11, Vec2{ (scaleMinDecRect.x + scaleMinIncRect.x + scaleMinIncRect.w) * 0.5, scaleMinDecRect.y - 10.0 }, Palette::Gold);
+			uiFont(U"Max").drawAt(11, Vec2{ (scaleMaxDecRect.x + scaleMaxIncRect.x + scaleMaxIncRect.w) * 0.5, scaleMaxDecRect.y - 10.0 }, Palette::Gold);
+
+			ambientSoundRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
+			uiFont(U"Ambient Sound").draw(13, ambientSoundRowRect.x, ambientSoundRowRect.y - 18.0, Palette::Gold);
+			DrawRectTabButton(ambientSoundBrowseRect, U"Sound...", false, uiFont, 11);
+			DrawRectIconButton(ambientSoundClearRect, U"clr", uiFont, 10, ColorF{ 0.12, 0.05, 0.05, 0.90 }, 1.0, Palette::White);
+			const String ambientSoundName = asset.decalAmbientSound.isEmpty() ? U"(none)" : asset.decalAmbientSound;
+			uiFont(ambientSoundName).draw(11, ambientSoundNameRect.x, ambientSoundNameRect.y, asset.decalAmbientSound.isEmpty() ? Palette::Gray : Palette::Aqua);
+
+			DrawRectValueAdjustRow(ambientVolumeRowRect, U"Ambient Volume", U"{:.2f}"_fmt(asset.decalAmbientVolume), ambientVolumeDecRect, ambientVolumeIncRect, uiFont);
+
+			Graphics2D::SetScissorRect(previousScissor);
 		}
 
-		opacityRandomRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
-		opacityRandomRect.draw(asset.useRandomDecalOpacity ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
-			.drawFrame(2, opacityRandomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"Random opacity range").draw(12, opacityRandomRect.x + 12.0, opacityRandomRect.y + 5.0, asset.useRandomDecalOpacity ? Palette::White : Palette::Lightgray);
-		uiFont(U"min {:.2f} / max {:.2f}"_fmt(asset.decalOpacityMin, asset.decalOpacityMax)).draw(11, opacityRandomValueRect.x, opacityRandomValueRect.y, Palette::Lightgray);
-
-		for (const RectF& rect : { opacityMinDecRect, opacityMinIncRect, opacityMaxDecRect, opacityMaxIncRect, scaleMinDecRect, scaleMinIncRect, scaleMaxDecRect, scaleMaxIncRect })
-		{
-			rect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(2, rect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		}
-		uiFont(U"-").drawAt(18, opacityMinDecRect.center(), Palette::White);
-		uiFont(U"+").drawAt(18, opacityMinIncRect.center(), Palette::White);
-		uiFont(U"-").drawAt(18, opacityMaxDecRect.center(), Palette::White);
-		uiFont(U"+").drawAt(18, opacityMaxIncRect.center(), Palette::White);
-		uiFont(U"Min").drawAt(11, Vec2{ (opacityMinDecRect.x + opacityMinIncRect.x + opacityMinIncRect.w) * 0.5, opacityMinDecRect.y - 10.0 }, Palette::Gold);
-		uiFont(U"Max").drawAt(11, Vec2{ (opacityMaxDecRect.x + opacityMaxIncRect.x + opacityMaxIncRect.w) * 0.5, opacityMaxDecRect.y - 10.0 }, Palette::Gold);
-
-		scaleRandomRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
-		scaleRandomRect.draw(asset.useRandomDecalScale ? ColorF{ 0.16, 0.18, 0.13, 0.95 } : ColorF{ 0.08, 0.09, 0.11, 0.92 })
-			.drawFrame(2, scaleRandomRect.mouseOver() ? ColorF{ 1.0, 0.84, 0.0 } : ColorF{ 1, 1, 1, 0.16 });
-		uiFont(U"Random scale range").draw(12, scaleRandomRect.x + 12.0, scaleRandomRect.y + 5.0, asset.useRandomDecalScale ? Palette::White : Palette::Lightgray);
-		uiFont(U"min {:.2f} / max {:.2f}"_fmt(asset.decalScaleMin, asset.decalScaleMax)).draw(11, scaleRandomValueRect.x, scaleRandomValueRect.y, Palette::Lightgray);
-		uiFont(U"-").drawAt(18, scaleMinDecRect.center(), Palette::White);
-		uiFont(U"+").drawAt(18, scaleMinIncRect.center(), Palette::White);
-		uiFont(U"-").drawAt(18, scaleMaxDecRect.center(), Palette::White);
-		uiFont(U"+").drawAt(18, scaleMaxIncRect.center(), Palette::White);
-		uiFont(U"Min").drawAt(11, Vec2{ (scaleMinDecRect.x + scaleMinIncRect.x + scaleMinIncRect.w) * 0.5, scaleMinDecRect.y - 10.0 }, Palette::Gold);
-		uiFont(U"Max").drawAt(11, Vec2{ (scaleMaxDecRect.x + scaleMaxIncRect.x + scaleMaxIncRect.w) * 0.5, scaleMaxDecRect.y - 10.0 }, Palette::Gold);
-
-		ambientSoundRowRect.draw(ColorF{ 0.05, 0.06, 0.08, 0.70 }).drawFrame(1, ColorF{ 1, 1, 1, 0.08 });
-		uiFont(U"Ambient Sound").draw(13, ambientSoundRowRect.x, ambientSoundRowRect.y - 18.0, Palette::Gold);
-		DrawRectTabButton(ambientSoundBrowseRect, U"Sound...", false, uiFont, 11);
-		DrawRectIconButton(ambientSoundClearRect, U"clr", uiFont, 10, ColorF{ 0.12, 0.05, 0.05, 0.90 }, 1.0, Palette::White);
-		const String ambientSoundName = asset.decalAmbientSound.isEmpty() ? U"(none)" : asset.decalAmbientSound;
-		uiFont(ambientSoundName).draw(11, ambientSoundNameRect.x, ambientSoundNameRect.y, asset.decalAmbientSound.isEmpty() ? Palette::Gray : Palette::Aqua);
-
-		DrawRectValueAdjustRow(ambientVolumeRowRect, U"Ambient Volume", U"{:.2f}"_fmt(asset.decalAmbientVolume), ambientVolumeDecRect, ambientVolumeIncRect, uiFont);
+		DrawRectVerticalScrollbar(viewport, contentHeight, scroll, ColorF{ 1, 1, 1, 0.08 }, ColorF{ 1.0, 0.84, 0.0, 0.70 }, 6.0, -6.0, 32.0);
 	}
 
 	inline void DrawHomeMarker(const Vec2& worldPos, const String& label, const ColorF& color, const Font& uiFont)

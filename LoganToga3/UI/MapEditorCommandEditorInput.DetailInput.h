@@ -7,7 +7,8 @@ namespace LT3
 	{
 		bool consumed = false;
 		const bool showLineSettings = (action.placementMode == BuildPlacementMode::Line);
-		const double inspectContentHeight = showLineSettings ? 604.0 : 520.0;
+		const bool showCarrierSettings = (action.resultType == BuildActionResultType::Carrier);
+		const double inspectContentHeight = showLineSettings ? 654.0 : 570.0;
 		const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 		editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 		if (inspectTopViewport.mouseOver())
@@ -17,9 +18,14 @@ namespace LT3
 		}
 
 		const double scroll = editor.commandInspectScroll;
+		const RectF resultTypeUnitRect = EditorCommandResultTypeUnitRect(scroll);
+		const RectF resultTypeObjectRect = EditorCommandResultTypeObjectRect(scroll);
+		const RectF resultTypeCarrierRect = EditorCommandResultTypeCarrierRect(scroll);
 		const RectF placementToggleRect = EditorCommandPlacementToggleRect(scroll);
 		const RectF enemyCanProduceRect = EditorCommandEnemyCanProduceRect(scroll);
 		const RectF spawnCountRow = EditorCommandSpawnCountRowRect(scroll);
+		const RectF carrierStoreRect = EditorCommandCarrierStoreRect(scroll);
+		const RectF carrierReleaseRect = EditorCommandCarrierReleaseRect(scroll);
 		const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 		const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
 		const RectF lineDragPlacementToggleRect = EditorCommandLineDragPlacementToggleRect(scroll);
@@ -27,6 +33,28 @@ namespace LT3
 		const RectF lineAxisHorizontalRect = EditorCommandLineAxisHorizontalRect(scroll);
 		const RectF lineAxisVerticalRect = EditorCommandLineAxisVerticalRect(scroll);
 		const Array<RectF> costRows = { EditorCommandCostRowRect(0, scroll), EditorCommandCostRowRect(1, scroll), EditorCommandCostRowRect(2, scroll) };
+
+		if (resultTypeUnitRect.leftClicked())
+		{
+			action.resultType = BuildActionResultType::Unit;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Command result type updated: {} -> unit"_fmt(action.name);
+			consumed = true;
+		}
+		if (resultTypeObjectRect.leftClicked())
+		{
+			action.resultType = BuildActionResultType::Object;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Command result type updated: {} -> object"_fmt(action.name);
+			consumed = true;
+		}
+		if (resultTypeCarrierRect.leftClicked())
+		{
+			action.resultType = BuildActionResultType::Carrier;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Command result type updated: {} -> carrier"_fmt(action.name);
+			consumed = true;
+		}
 
 		if (placementToggleRect.leftClicked())
 		{
@@ -74,6 +102,21 @@ namespace LT3
 		else
 		{
 			action.createCount = 1;
+		}
+
+		if (showCarrierSettings && carrierStoreRect.leftClicked())
+		{
+			action.carrierAction = CarrierActionKind::Store;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Carrier action updated: {} -> store"_fmt(action.name);
+			consumed = true;
+		}
+		if (showCarrierSettings && carrierReleaseRect.leftClicked())
+		{
+			action.carrierAction = CarrierActionKind::Release;
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Carrier action updated: {} -> release"_fmt(action.name);
+			consumed = true;
 		}
 
 		if (placementModePointRect.leftClicked())
@@ -173,6 +216,7 @@ namespace LT3
 	inline bool ProcessCommandUnitSelectionInput(MapEditorState& editor, UnitCatalog& catalog, DefinitionStores& defs, BuildActionDef& action, const RectF& unitViewport)
 	{
 		constexpr int32 columns = 5;
+		const RectF clearSpawnRect = EditorCommandSpawnClearRect();
 		const Array<int32> sortedUnitIndices = SortedUnitCatalogEntryIndicesById(catalog);
 		const int32 unitCount = static_cast<int32>(sortedUnitIndices.size());
 		const int32 unitRows = (unitCount + columns - 1) / columns;
@@ -187,6 +231,14 @@ namespace LT3
 		if (editor.commandEditorMode == 2)
 		{
 			return false;
+		}
+
+		if (editor.commandEditorMode == 1 && clearSpawnRect.leftClicked())
+		{
+			ClearActionSpawnSelection(action);
+			editor.commandBindingsDirty = true;
+			editor.statusText = U"Command spawn cleared: {}"_fmt(action.name);
+			return true;
 		}
 
 		for (int32 i = 0; i < unitCount; ++i)

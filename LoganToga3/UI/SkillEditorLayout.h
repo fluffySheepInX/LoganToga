@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../libs/AddonGaussian.h"
 # include "RectLayoutPrimitives.h"
 # include "RectNumberStepperTypes.h"
 # include "RectValueRowPrimitives.h"
@@ -8,7 +9,14 @@ namespace LT3
 {
 	inline RectF SkillEditorPanelRect()
 	{
-		return RectF{ 760.0, 84.0, 800.0, 722.0 };
+		constexpr double panelX = 760.0;
+		constexpr double panelY = 76.0;
+		constexpr double panelW = 800.0;
+		constexpr double bottomBarHeight = 30.0;
+		constexpr double bottomMargin = 8.0;
+		const double underBarY = (Scene::Height() - GaussianFSAddon::GetOFFSET().y - bottomBarHeight);
+		const double panelH = Max(722.0, underBarY - panelY - bottomMargin);
+		return RectF{ panelX, panelY, panelW, panelH };
 	}
 
 	inline RectF SkillEditorCloseRect()
@@ -79,12 +87,23 @@ namespace LT3
 
 	inline RectF SkillEditorContextMenuRect(const Vec2& pos)
 	{
-		return RectStepMenu(pos, 1, 156.0, 2.0, 28.0);
+		return RectStepMenu(pos, 4, 156.0, 2.0, 28.0);
 	}
 
 	inline RectF SkillEditorContextMenuItemRect(const Vec2& pos, int32 index)
 	{
 		return RectStepMenuItem(pos, index, 4.0, 4.0, SizeF{ 148.0, 22.0 }, 28.0);
+	}
+
+	// ユニットコンテキストメニュー (2項目: スキル全解除 / このスキルのみ残す)
+	inline RectF SkillEditorUnitContextMenuRect(const Vec2& pos)
+	{
+		return RectStepMenu(pos, 2, 172.0, 2.0, 28.0);
+	}
+
+	inline RectF SkillEditorUnitContextMenuItemRect(const Vec2& pos, int32 index)
+	{
+		return RectStepMenuItem(pos, index, 4.0, 4.0, SizeF{ 164.0, 22.0 }, 28.0);
 	}
 
 	inline RectF SkillEditorUnitIconRect(int32 visibleIndex)
@@ -117,28 +136,62 @@ namespace LT3
 		return RectF{ browse.x + browse.w + 8.0, browse.y, 56.0, 24.0 };
 	}
 
+	inline RectF SkillEditorSoundEffectBrowseRect(double scroll)
+	{
+		const RectF detail = SkillEditorDetailRect();
+		return RectF{ detail.x + 72.0, detail.y + 166.0 - scroll, 82.0, 24.0 };
+	}
+
+	inline RectF SkillEditorSoundEffectClearRect(double scroll)
+	{
+		const RectF browse = SkillEditorSoundEffectBrowseRect(scroll);
+		return RectF{ browse.x + browse.w + 8.0, browse.y, 56.0, 24.0 };
+	}
+
+	inline RectF SkillEditorSoundEffectPlayRect(double scroll)
+	{
+		const RectF clearRect = SkillEditorSoundEffectClearRect(scroll);
+		return RectF{ clearRect.x + clearRect.w + 8.0, clearRect.y, 56.0, 24.0 };
+	}
+
+	inline RectNumberStepperRects SkillEditorSoundEffectVolumeStepperRects(double scroll)
+	{
+		const RectF detail = SkillEditorDetailRect();
+		const double y = detail.y + 196.0 - scroll;
+		return RectNumberStepperRects{
+			RectF{ detail.x + 72.0, y, 30.0, 24.0 },
+			RectF{ detail.x + 108.0, y, 82.0, 24.0 },
+			RectF{ detail.x + 196.0, y, 30.0, 24.0 },
+			RectF{ detail.x + 232.0, y, 54.0, 24.0 },
+		};
+	}
+
 	inline RectF SkillEditorCenterButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 78.0 + index * 62.0, detail.y + 284.0 - scroll, 56.0, 24.0 };
+		return RectF{ detail.x + 78.0 + index * 62.0, detail.y + 360.0 - scroll, 56.0, 24.0 };
 	}
 
 	inline RectF SkillEditorToggleButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 78.0 + index * 92.0, detail.y + 318.0 - scroll, 84.0, 24.0 };
+		if (index < 4)
+		{
+			return RectF{ detail.x + 78.0 + index * 92.0, detail.y + 394.0 - scroll, 88.0, 24.0 };
+		}
+		return RectF{ detail.x + 78.0, detail.y + 424.0 - scroll, 120.0, 24.0 };
 	}
 
 	inline RectF SkillEditorKindButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectGridItem(detail.pos + Vec2{ 8.0, 150.0 - scroll }, index, 3, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
+		return RectGridItem(detail.pos + Vec2{ 8.0, 226.0 - scroll }, index, 3, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
 	}
 
 	inline RectF SkillEditorMotionButtonRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectGridItem(detail.pos + Vec2{ 8.0, 228.0 - scroll }, index, 4, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
+		return RectGridItem(detail.pos + Vec2{ 8.0, 304.0 - scroll }, index, 4, SizeF{ 78.0, 24.0 }, Vec2{ 86.0, 30.0 });
 	}
 
 	inline RectValueRowLayoutSpec SkillEditorValueRowLayoutSpec()
@@ -164,7 +217,7 @@ namespace LT3
 	inline RectF SkillEditorValueRowRect(int32 row, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectValueRow(RectF{ detail.x, detail.y + 358.0 - scroll, detail.w, 24.0 }, row, SkillEditorValueRowLayoutSpec());
+		return RectValueRow(RectF{ detail.x, detail.y + 434.0 - scroll, detail.w, 24.0 }, row, SkillEditorValueRowLayoutSpec());
 	}
 
 	inline RectF SkillEditorValueButtonRect(int32 row, int32 buttonIndex, double scroll = 0.0)
@@ -212,19 +265,19 @@ namespace LT3
 	inline RectF SkillEditorWarningIconRect(double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 250.0, detail.y + 88.0 - scroll, 24.0, 24.0 };
+		return RectF{ detail.x + 250.0, detail.y + 128.0 - scroll, 24.0, 24.0 };
 	}
 
 	inline RectF SkillEditorResourceCostTagRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 8.0, detail.y + 1222.0 + index * 34.0 - scroll, 116.0, 24.0 };
+		return RectF{ detail.x + 8.0, detail.y + 1412.0 + index * 34.0 - scroll, 116.0, 24.0 };
 	}
 
 	inline RectNumberStepperRects SkillEditorResourceCostAmountStepperRects(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		const double y = detail.y + 1222.0 + index * 34.0 - scroll;
+		const double y = detail.y + 1412.0 + index * 34.0 - scroll;
 		return RectNumberStepperRects{
 			RectF{ detail.x + 128.0, y, 30.0, 24.0 },
 			RectF{ detail.x + 164.0, y, 82.0, 24.0 },
@@ -236,13 +289,13 @@ namespace LT3
 	inline RectF SkillEditorResourceCostRemoveRect(int32 index, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 348.0, detail.y + 1222.0 + index * 34.0 - scroll, 54.0, 24.0 };
+		return RectF{ detail.x + 348.0, detail.y + 1412.0 + index * 34.0 - scroll, 54.0, 24.0 };
 	}
 
 	inline RectF SkillEditorResourceCostAddRect(int32 count, double scroll = 0.0)
 	{
 		const RectF detail = SkillEditorDetailRect();
-		return RectF{ detail.x + 8.0, detail.y + 1222.0 + count * 34.0 + 8.0 - scroll, 154.0, 24.0 };
+		return RectF{ detail.x + 8.0, detail.y + 1412.0 + count * 34.0 + 8.0 - scroll, 154.0, 24.0 };
 	}
 
 	inline RectF SkillEditorResourceCostStepMenuRect(const Vec2& pos, int32 itemCount)
@@ -257,6 +310,6 @@ namespace LT3
 
 	inline double SkillEditorDetailContentHeight()
 	{
-		return 1640.0;
+		return 1830.0;
 	}
 }

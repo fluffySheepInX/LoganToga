@@ -80,17 +80,25 @@ namespace LT3
         return action.isMove || action.resultType == BuildActionResultType::Object;
     }
 
-    inline bool CanUseBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
+    inline bool CanUseBuildActionForFaction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action, Faction faction)
     {
         return IsValidUnit(world, unit)
-            && world.units.faction[unit] == Faction::Player
+            && world.units.faction[unit] == faction
             && IsBuildActionSupported(action)
             && DoesUnitMatchAnyOwnerTag(world, defs, unit, action);
     }
 
-    inline bool CanAffordBuildAction(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action)
+    inline bool CanUseBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, const BuildActionDef& action)
     {
-        if (world.resources.playerAmounts.isEmpty())
+        return CanUseBuildActionForFaction(world, defs, unit, action, Faction::Player);
+    }
+
+    inline bool CanAffordBuildActionForFaction(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action, Faction faction)
+    {
+        const Array<int32>& amounts = (faction == Faction::Enemy)
+            ? world.resources.enemyAmounts
+            : world.resources.playerAmounts;
+        if (amounts.isEmpty())
         {
             return false;
         }
@@ -107,33 +115,38 @@ namespace LT3
             return InvalidResourceDefId;
         };
 
-        auto getPlayerResourceAmount = [&](const ResourceDefId resourceId) -> int32
+        auto getResourceAmount = [&](const ResourceDefId resourceId) -> int32
         {
-            if (resourceId == InvalidResourceDefId || resourceId >= world.resources.playerAmounts.size())
+            if (resourceId == InvalidResourceDefId || resourceId >= amounts.size())
             {
                 return 0;
             }
-            return world.resources.playerAmounts[resourceId];
+            return amounts[resourceId];
         };
 
         const ResourceDefId goldResource = findResourceDefByKind(ResourceKind::Gold);
         const ResourceDefId trustResource = findResourceDefByKind(ResourceKind::Trust);
         const ResourceDefId foodResource = findResourceDefByKind(ResourceKind::Food);
 
-        if (goldResource != InvalidResourceDefId && getPlayerResourceAmount(goldResource) < action.costGold)
+        if (goldResource != InvalidResourceDefId && getResourceAmount(goldResource) < action.costGold)
         {
             return false;
         }
-        if (trustResource != InvalidResourceDefId && getPlayerResourceAmount(trustResource) < action.costTrust)
+        if (trustResource != InvalidResourceDefId && getResourceAmount(trustResource) < action.costTrust)
         {
             return false;
         }
-        if (foodResource != InvalidResourceDefId && getPlayerResourceAmount(foodResource) < action.costFood)
+        if (foodResource != InvalidResourceDefId && getResourceAmount(foodResource) < action.costFood)
         {
             return false;
         }
 
         return true;
+    }
+
+    inline bool CanAffordBuildAction(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action)
+    {
+        return CanAffordBuildActionForFaction(world, defs, action, Faction::Player);
     }
 
     inline ResourceDefId FindResourceDefByKind(const DefinitionStores& defs, ResourceKind kind)
@@ -276,14 +289,19 @@ namespace LT3
         return bestIndex;
     }
 
-    inline bool CanStartBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, BuildActionDefId actionId)
+    inline bool CanStartBuildActionForFaction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, BuildActionDefId actionId, Faction faction)
     {
         if (!IsValidUnit(world, unit)) return false;
         if (actionId >= defs.buildActions.size()) return false;
 
         const BuildActionDef& action = defs.buildActions[actionId];
-        return CanUseBuildAction(world, defs, unit, action)
-            && CanAffordBuildAction(world, defs, action);
+        return CanUseBuildActionForFaction(world, defs, unit, action, faction)
+            && CanAffordBuildActionForFaction(world, defs, action, faction);
+    }
+
+    inline bool CanStartBuildAction(const BattleWorld& world, const DefinitionStores& defs, UnitId unit, BuildActionDefId actionId)
+    {
+        return CanStartBuildActionForFaction(world, defs, unit, actionId, Faction::Player);
     }
 
     inline UnitDefId ResolvePrimarySpawnUnitForQuery(const BuildActionDef& action, const DefinitionStores& defs)

@@ -105,6 +105,12 @@ namespace LT3
         Carrier,
     };
 
+    enum class CarrierActionKind : uint8
+    {
+        Store,
+        Release,
+    };
+
     enum class BuildPlacementMode : uint8
     {
         Point,

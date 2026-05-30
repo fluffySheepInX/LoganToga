@@ -5,6 +5,37 @@
 
 namespace LT3
 {
+    inline SkillDefId ResolveCatalogSkill(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role);
+
+    inline Array<SkillDefId> ResolveCatalogSkills(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role)
+    {
+        Array<SkillDefId> skills;
+        for (const auto& skillTag : entry.skills)
+        {
+            if (defs.skillByTag.contains(skillTag))
+            {
+                const SkillDefId skill = defs.skillByTag.at(skillTag);
+                if (!skills.contains(skill))
+                {
+                    skills << skill;
+                }
+            }
+        }
+
+        if (!entry.skills.isEmpty())
+        {
+            skills.sort();
+            return skills;
+        }
+
+        const SkillDefId fallback = ResolveCatalogSkill(defs, entry, role);
+        if (fallback != InvalidSkillDefId)
+        {
+            skills << fallback;
+        }
+        return skills;
+    }
+
     inline SkillDefId ResolveCatalogSkill(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role)
     {
         for (const auto& skillTag : entry.skills)
@@ -79,6 +110,7 @@ namespace LT3
                 def.gatherPower = 0;
                 def.visionRadiusCells = Max(0, entry.visionRadius);
                 def.skill = baseSkill;
+                def.skills = (baseSkill == InvalidSkillDefId) ? Array<SkillDefId>{} : Array<SkillDefId>{ baseSkill };
                 def.color = Palette::Slategray;
                 def.visualScale = entry.visualScale;
                 def.unique = entry.unique;
@@ -106,6 +138,7 @@ namespace LT3
         fallback.gatherPower = 0;
         fallback.visionRadiusCells = 6;
         fallback.skill = baseSkill;
+        fallback.skills = (baseSkill == InvalidSkillDefId) ? Array<SkillDefId>{} : Array<SkillDefId>{ baseSkill };
         fallback.color = Palette::Slategray;
         fallback.visualScale = 1.0;
         fallback.unique = false;
@@ -137,7 +170,8 @@ namespace LT3
             {
                 role = UnitRole::Barrier;
             }
-            const SkillDefId skill = ResolveCatalogSkill(defs, entry, role);
+            const Array<SkillDefId> skills = ResolveCatalogSkills(defs, entry, role);
+            const SkillDefId skill = skills.isEmpty() ? InvalidSkillDefId : skills.front();
             const int32 hp = (role == UnitRole::Base && entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);
             const double speed = (role == UnitRole::Base || role == UnitRole::Barrier)
                 ? 0.0
@@ -157,6 +191,7 @@ namespace LT3
                 1,
                 Max(0, entry.visionRadius),
                 skill,
+                skills,
                 (role == UnitRole::Base) ? Palette::Slategray : Palette::Seagreen,
                 entry.visualScale,
                 entry.unique,

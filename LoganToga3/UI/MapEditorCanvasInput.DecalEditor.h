@@ -32,6 +32,7 @@ namespace LT3
 			if (decalRect(EditorDecalEditorTabRect(tabIndex)).leftClicked())
 			{
 				editor.decalEditorTabIndex = tabIndex;
+				editor.decalBasicEditorScroll = 0.0;
 				editor.decalShadowEditorScroll = 0.0;
 				editor.statusText = (tabIndex == 0) ? U"Decal editor" : U"Decal shadow editor (preview)";
 				return true;
@@ -104,25 +105,37 @@ namespace LT3
 			return panelRect.mouseOver();
 		}
 
-		if (decalRect(EditorDecalOpacityDecRect()).leftClicked())
+		const RectF viewport = decalRect(EditorDecalBasicViewportRect());
+		const double maxScroll = Max(0.0, EditorDecalBasicContentHeight() - viewport.h);
+		if (viewport.mouseOver())
+		{
+			editor.decalBasicEditorScroll = Clamp(editor.decalBasicEditorScroll - Mouse::Wheel() * 42.0, 0.0, maxScroll);
+			if (Mouse::Wheel() != 0.0)
+			{
+				return true;
+			}
+		}
+
+		const double scroll = Clamp(editor.decalBasicEditorScroll, 0.0, maxScroll);
+		if (decalRect(EditorDecalOpacityDecRect(scroll)).leftClicked())
 		{
 			asset.decalOpacity = Clamp(asset.decalOpacity - 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
 			consumed = true;
 		}
-		if (decalRect(EditorDecalOpacityIncRect()).leftClicked())
+		if (decalRect(EditorDecalOpacityIncRect(scroll)).leftClicked())
 		{
 			asset.decalOpacity = Clamp(asset.decalOpacity + 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
 			consumed = true;
 		}
-		if (decalRect(EditorDecalScaleDecRect()).leftClicked())
+		if (decalRect(EditorDecalScaleDecRect(scroll)).leftClicked())
 		{
 			asset.decalScale = Clamp(asset.decalScale - 0.05, 0.1, 4.0);
 			editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
 			consumed = true;
 		}
-		if (decalRect(EditorDecalScaleIncRect()).leftClicked())
+		if (decalRect(EditorDecalScaleIncRect(scroll)).leftClicked())
 		{
 			asset.decalScale = Clamp(asset.decalScale + 0.05, 0.1, 4.0);
 			editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
@@ -130,26 +143,26 @@ namespace LT3
 		}
 		for (int32 kindIndex = 0; kindIndex < 3; ++kindIndex)
 		{
-			if (decalRect(EditorDecalRenderKindButtonRect(kindIndex)).leftClicked())
+			if (decalRect(EditorDecalRenderKindButtonRect(kindIndex, scroll)).leftClicked())
 			{
 				asset.decalRenderKind = static_cast<DecalRenderKind>(kindIndex);
 				editor.statusText = U"Decal render kind: {}"_fmt(DecalRenderKindToTomlValue(asset.decalRenderKind));
 				consumed = true;
 			}
 		}
-		if (decalRect(EditorDecalOpacityRandomToggleRect()).leftClicked())
+		if (decalRect(EditorDecalOpacityRandomToggleRect(scroll)).leftClicked())
 		{
 			asset.useRandomDecalOpacity = !asset.useRandomDecalOpacity;
 			editor.statusText = asset.useRandomDecalOpacity ? U"Random opacity ON" : U"Random opacity OFF";
 			consumed = true;
 		}
-		if (decalRect(EditorDecalScaleRandomToggleRect()).leftClicked())
+		if (decalRect(EditorDecalScaleRandomToggleRect(scroll)).leftClicked())
 		{
 			asset.useRandomDecalScale = !asset.useRandomDecalScale;
 			editor.statusText = asset.useRandomDecalScale ? U"Random scale ON" : U"Random scale OFF";
 			consumed = true;
 		}
-		if (decalRect(EditorDecalAmbientSoundBrowseRect()).leftClicked())
+		if (decalRect(EditorDecalAmbientSoundBrowseRect(scroll)).leftClicked())
 		{
 			const Array<FileFilter> audioFilters = { FileFilter::AllAudioFiles(), FileFilter::AllFiles() };
 			const Optional<FilePath> sourcePath = Dialog::OpenFile(audioFilters);
@@ -160,25 +173,25 @@ namespace LT3
 			}
 			return true;
 		}
-		if (decalRect(EditorDecalAmbientSoundClearRect()).leftClicked())
+		if (decalRect(EditorDecalAmbientSoundClearRect(scroll)).leftClicked())
 		{
 			asset.decalAmbientSound.clear();
 			editor.statusText = U"Decal ambient sound cleared";
 			return true;
 		}
-		if (decalRect(EditorDecalAmbientVolumeDecRect()).leftClicked())
+		if (decalRect(EditorDecalAmbientVolumeDecRect(scroll)).leftClicked())
 		{
 			asset.decalAmbientVolume = Clamp(asset.decalAmbientVolume - 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal ambient volume: {:.2f}"_fmt(asset.decalAmbientVolume);
 			return true;
 		}
-		if (decalRect(EditorDecalAmbientVolumeIncRect()).leftClicked())
+		if (decalRect(EditorDecalAmbientVolumeIncRect(scroll)).leftClicked())
 		{
 			asset.decalAmbientVolume = Clamp(asset.decalAmbientVolume + 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal ambient volume: {:.2f}"_fmt(asset.decalAmbientVolume);
 			return true;
 		}
-		if (decalRect(EditorDecalApplyRect()).leftClicked())
+		if (decalRect(EditorDecalApplyRect(scroll)).leftClicked())
 		{
 			NormalizeDecalSettings(asset);
 			const int32 appliedCount = ApplyDecalAssetToPlacedCells(editor, editor.decalEditorAssetIndex);
@@ -198,14 +211,14 @@ namespace LT3
 			return true;
 		};
 
-		consumed = stepRange(decalRect(EditorDecalOpacityMinDecRect()), asset.decalOpacityMin, -0.05, 0.0, 1.0, U"Opacity min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMinIncRect()), asset.decalOpacityMin, 0.05, 0.0, 1.0, U"Opacity min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMaxDecRect()), asset.decalOpacityMax, -0.05, 0.0, 1.0, U"Opacity max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMaxIncRect()), asset.decalOpacityMax, 0.05, 0.0, 1.0, U"Opacity max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMinDecRect()), asset.decalScaleMin, -0.05, 0.1, 4.0, U"Scale min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMinIncRect()), asset.decalScaleMin, 0.05, 0.1, 4.0, U"Scale min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMaxDecRect()), asset.decalScaleMax, -0.05, 0.1, 4.0, U"Scale max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMaxIncRect()), asset.decalScaleMax, 0.05, 0.1, 4.0, U"Scale max") || consumed;
+		consumed = stepRange(decalRect(EditorDecalOpacityMinDecRect(scroll)), asset.decalOpacityMin, -0.05, 0.0, 1.0, U"Opacity min") || consumed;
+		consumed = stepRange(decalRect(EditorDecalOpacityMinIncRect(scroll)), asset.decalOpacityMin, 0.05, 0.0, 1.0, U"Opacity min") || consumed;
+		consumed = stepRange(decalRect(EditorDecalOpacityMaxDecRect(scroll)), asset.decalOpacityMax, -0.05, 0.0, 1.0, U"Opacity max") || consumed;
+		consumed = stepRange(decalRect(EditorDecalOpacityMaxIncRect(scroll)), asset.decalOpacityMax, 0.05, 0.0, 1.0, U"Opacity max") || consumed;
+		consumed = stepRange(decalRect(EditorDecalScaleMinDecRect(scroll)), asset.decalScaleMin, -0.05, 0.1, 4.0, U"Scale min") || consumed;
+		consumed = stepRange(decalRect(EditorDecalScaleMinIncRect(scroll)), asset.decalScaleMin, 0.05, 0.1, 4.0, U"Scale min") || consumed;
+		consumed = stepRange(decalRect(EditorDecalScaleMaxDecRect(scroll)), asset.decalScaleMax, -0.05, 0.1, 4.0, U"Scale max") || consumed;
+		consumed = stepRange(decalRect(EditorDecalScaleMaxIncRect(scroll)), asset.decalScaleMax, 0.05, 0.1, 4.0, U"Scale max") || consumed;
 
 		if (consumed)
 		{

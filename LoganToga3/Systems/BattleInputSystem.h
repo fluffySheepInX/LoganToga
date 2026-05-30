@@ -24,6 +24,30 @@ namespace LT3
 		const Optional<size_t> hoveredResourceNode = FindHoveredResourceNode(world, screenMouse);
 		world.selection.hoveredResourceNode = hoveredResourceNode ? static_cast<int32>(*hoveredResourceNode) : -1;
 
+		const Array<BattleSkillFilterKind> skillFilters = CollectBattleSkillFilterKinds();
+		for (int32 filterIndex = 0; filterIndex < static_cast<int32>(skillFilters.size()); ++filterIndex)
+		{
+			if (BattleSkillFilterButtonRect(BattleSkillPanelRect(), filterIndex).leftClicked())
+			{
+				world.selection.skillFilter = skillFilters[filterIndex];
+				world.selection.selectedSkill = InvalidSkillDefId;
+				return intent;
+			}
+		}
+
+		const Array<SkillDefId> visibleSkills = CollectVisibleBattleSkills(world, defs);
+		for (int32 skillIndex = 0; skillIndex < static_cast<int32>(visibleSkills.size()); ++skillIndex)
+		{
+			if (!BattleSkillIconRect(BattleSkillPanelRect(), skillIndex).leftClicked())
+			{
+				continue;
+			}
+
+			const SkillDefId skillId = visibleSkills[skillIndex];
+			world.selection.selectedSkill = (world.selection.selectedSkill == skillId) ? InvalidSkillDefId : skillId;
+			return intent;
+		}
+
 		if (world.selection.actionPlacementActive)
 		{
             if (UpdateLineBuildPlacementInput(world, defs, mapEditor, worldMouse, intent))
@@ -38,7 +62,7 @@ namespace LT3
 				return intent;
 			}
 
-			if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor))
+		if (MouseL.down() && !IsCursorOnBuildCommandUi(world, defs, mapEditor) && !IsCursorOnBattleSkillUi(world, defs))
 			{
 				intent.commands << BattleInputCommand{
 					BattleInputCommandType::StartBuildAction,

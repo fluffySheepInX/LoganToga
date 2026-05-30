@@ -1272,13 +1272,7 @@
     <ClInclude Include="UI\SkillEditorLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\SkillEditorSandbox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UI\SkillEditorAssets.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\SkillEditorState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\MapEditorUnitParamEditorCommon.h">
@@ -1327,6 +1321,72 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\RectValueRowPrimitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.Sandbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.ListInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.DetailInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.AssetInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorInput.PropertyInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.Metadata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.Values.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.DefinitionOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.ResourceCosts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorDraw.Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorDraw.Sandbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorDraw.ListPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorDraw.DetailPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\EditorMutationHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.Setup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.Fire.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.Hit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.Update.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorSandbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\EnemyDirectorConstruction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -108,6 +108,7 @@ namespace LT3
         {
             spawnPos = targetPos;
         }
+        PlayBattleSkillSoundIfRelevant(skill, spawnPos);
         world.projectiles.add(spawnPos, velocity, start, targetPos, target, attacker, world.units.faction[attacker], skillId, skill.projectileMotion, maxLife, startAngleRad);
         if (skill.projectileMotion == SkillProjectileMotion::Drop && !world.projectiles.height.isEmpty())
         {
@@ -225,7 +226,7 @@ namespace LT3
                 || (world.projectiles.position[i].distanceFrom(world.units.position[target]) <= hitRadius);
             if (hit)
             {
-                ApplyProjectileHit(world, defs, i, target);
+                ApplyProjectileHit(world, defs, i, target, world.projectiles.position[i]);
                 world.projectiles.removeAt(i);
                 continue;
             }

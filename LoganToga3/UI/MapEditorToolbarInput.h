@@ -34,6 +34,10 @@ namespace LT3
             break;
         case MapEditorToolbarAction::ToggleUnitList:
             editor.showUnitList = !editor.showUnitList;
+            if (!editor.showUnitList)
+            {
+                editor.showBuildingEditor = false;
+            }
             SaveMapEditorToml(editor, false);
             break;
         case MapEditorToolbarAction::ToggleBuildingEditor:

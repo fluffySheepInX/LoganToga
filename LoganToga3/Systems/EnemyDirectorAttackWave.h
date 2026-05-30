@@ -158,6 +158,12 @@ namespace LT3
 		return 5.0 - aggression * 2.0;
 	}
 
+	inline double ResolveAiAttackWaveReadyRatioThreshold(const AiProfileDef* aiProfile)
+	{
+		const double aggression = aiProfile ? Clamp(aiProfile->aggression, 0.0, 1.0) : 0.55;
+		return 0.78 - aggression * 0.18;
+	}
+
 	inline Vec2 ResolveEnemyAiRallyPosition(const BattleWorld& world, const DefinitionStores& defs)
 	{
 		return ResolveEnemySpawnOrigin(world, defs) + Vec2{ -QuarterTileStep * 0.8, 0.0 };
@@ -183,9 +189,9 @@ namespace LT3
 
 		const double margin = 12.0;
 		double stopDistance = targetDef.radius + attackerDef.radius + margin;
-		if (attackerDef.skill != InvalidSkillDefId && attackerDef.skill < defs.skills.size())
+		for (const SkillDefId skillId : ResolveUnitSkillIds(attackerDef, defs))
 		{
-			const double effectiveRange = ResolveEffectiveAttackRange(attackerDef, defs.skills[attackerDef.skill]);
+			const double effectiveRange = ResolveEffectiveAttackRange(attackerDef, defs.skills[skillId]);
 			stopDistance = Max(stopDistance, effectiveRange - targetDef.radius - margin);
 		}
 
@@ -237,14 +243,8 @@ namespace LT3
 		world.aiRuntime.attackTargetUnit = target.unit;
 		world.aiRuntime.hasRallyPosition = true;
 		world.aiRuntime.hasAttackTargetPosition = true;
-
-		for (const UnitId unit : world.aiRuntime.attackWaveUnits)
-		{
-			if (IsValidUnit(world, unit))
-			{
-				IssueEnemyAiMove(world, unit, world.aiRuntime.rallyPosition, aiProfile);
-			}
-		}
+		const Vec2 facing = target.position - world.aiRuntime.rallyPosition;
+		IssueFormationMove(world, defs, world.aiRuntime.attackWaveUnits, world.aiRuntime.rallyPosition, facing);
 	}
 
 	inline void RemoveInvalidEnemyAiAttackWaveUnits(BattleWorld& world, const DefinitionStores& defs)
@@ -255,9 +255,33 @@ namespace LT3
 		});
 	}
 
+	inline double ResolveEnemyAiAttackWaveReadyRatio(const BattleWorld& world)
+	{
+		if (!world.aiRuntime.hasRallyPosition || world.aiRuntime.attackWaveUnits.isEmpty())
+		{
+			return 0.0;
+		}
+
+		int32 readyCount = 0;
+		for (const UnitId unit : world.aiRuntime.attackWaveUnits)
+		{
+			if (!IsValidUnit(world, unit))
+			{
+				continue;
+			}
+			if (world.units.position[unit].distanceFromSq(world.aiRuntime.rallyPosition) <= Square(72.0))
+			{
+				++readyCount;
+			}
+		}
+
+		return static_cast<double>(readyCount) / Max(1.0, static_cast<double>(world.aiRuntime.attackWaveUnits.size()));
+	}
+
 	inline void UpdateEnemyAiAttackWave(BattleWorld& world, const DefinitionStores& defs, const AiProfileDef* aiProfile)
 	{
 		RemoveInvalidEnemyAiAttackWaveUnits(world, defs);
+		RemoveInvalidEnemyAiNonWaveRoleUnits(world, defs);
 
 		if (world.aiRuntime.phase == AiRuntimePhase::BuildUp)
 		{
@@ -267,16 +291,18 @@ namespace LT3
 				return;
 			}
 
-			if (world.aiRuntime.phaseTimerSec >= ResolveAiAttackWaveRallySec(aiProfile))
+			if (world.aiRuntime.phaseTimerSec >= ResolveAiAttackWaveRallySec(aiProfile)
+				|| ResolveEnemyAiAttackWaveReadyRatio(world) >= ResolveAiAttackWaveReadyRatioThreshold(aiProfile))
 			{
 				world.aiRuntime.phase = AiRuntimePhase::AttackWave;
 				world.aiRuntime.phaseTimerSec = 0.0;
+				const Vec2 facing = world.aiRuntime.attackTargetPosition - world.aiRuntime.rallyPosition;
+				IssueFormationMove(world, defs, world.aiRuntime.attackWaveUnits, world.aiRuntime.attackTargetPosition, facing);
 				for (const UnitId unit : world.aiRuntime.attackWaveUnits)
 				{
-					if (IsValidUnit(world, unit))
+					if (IsValidUnit(world, unit) && world.aiRuntime.attackTargetUnit != InvalidUnitId)
 					{
-						const Vec2 destination = ResolveEnemyAiAttackMoveDestination(world, defs, unit, world.aiRuntime.attackTargetUnit, world.aiRuntime.attackTargetPosition);
-						IssueEnemyAiMove(world, unit, destination, aiProfile);
+						SetUnitAttackTarget(world, unit, world.aiRuntime.attackTargetUnit);
 					}
 				}
 			}

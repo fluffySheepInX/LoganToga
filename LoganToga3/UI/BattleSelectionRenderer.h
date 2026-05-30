@@ -18,13 +18,17 @@ namespace LT3
 		}
 
 		const UnitDef& def = defs.units[world.units.defId[selected]];
-		if (def.skill == InvalidSkillDefId || def.skill >= defs.skills.size())
+		const Array<SkillDefId> skillIds = ResolveUnitSkillIds(def, defs);
+		if (skillIds.isEmpty())
 		{
 			return;
 		}
 
-		const SkillDef& skill = defs.skills[def.skill];
-		const double range = ResolveEffectiveAttackRange(def, skill);
+		double range = 0.0;
+		for (const SkillDefId skillId : skillIds)
+		{
+			range = Max(range, ResolveEffectiveAttackRange(def, defs.skills[skillId]));
+		}
 		if (range <= 1.0)
 		{
 			return;

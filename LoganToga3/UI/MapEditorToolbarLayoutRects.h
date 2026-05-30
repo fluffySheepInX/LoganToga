@@ -303,6 +303,12 @@ namespace LT3
 		return RectF{ origin + Vec2{ col * step.x, row * step.y }, 88.0, 88.0 };
 	}
 
+	inline RectF EditorCommandSpawnClearRect()
+	{
+		const RectF viewport = EditorCommandUnitViewportRect();
+		return RectF{ viewport.x + 12.0, viewport.y + viewport.h - 72.0, 132.0, 28.0 };
+	}
+
 	inline RectF EditorCommandSaveRect()
 	{
 		const RectF panel = EditorCommandPanelRect();
@@ -367,11 +373,48 @@ namespace LT3
 		return RectF{ startX + buttonIndex * (buttonSize + gap), row.y + 1.0, buttonSize, buttonSize };
 	}
 
-	inline RectF EditorCommandPlacementModePointRect(double scroll = 0.0)
+	inline RectF EditorCommandResultTypeUnitRect(double scroll = 0.0)
+	{
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		const double available = Max(180.0, viewport.w - 24.0);
+		const double width = Min(108.0, (available - 16.0) / 3.0);
+		return RectF{ viewport.x + 12.0, viewport.y + 168.0 - scroll, width, 28.0 };
+	}
+
+	inline RectF EditorCommandResultTypeObjectRect(double scroll = 0.0)
+	{
+		const RectF unitRect = EditorCommandResultTypeUnitRect(scroll);
+		return RectF{ unitRect.x + unitRect.w + 8.0, unitRect.y, unitRect.w, unitRect.h };
+	}
+
+	inline RectF EditorCommandResultTypeCarrierRect(double scroll = 0.0)
+	{
+		const RectF objectRect = EditorCommandResultTypeObjectRect(scroll);
+		return RectF{ objectRect.x + objectRect.w + 8.0, objectRect.y, objectRect.w, objectRect.h };
+	}
+
+	inline RectF EditorCommandCarrierStoreRect(double scroll = 0.0)
 	{
 		const RectF enemyCanProduceRect = EditorCommandEnemyCanProduceRect(scroll);
 		const RectF viewport = EditorCommandInspectTopViewportRect();
 		return RectF{ viewport.x + 12.0, enemyCanProduceRect.y + enemyCanProduceRect.h + 26.0, Min(164.0, (viewport.w - 36.0) * 0.5), 28.0 };
+	}
+
+	inline RectF EditorCommandCarrierReleaseRect(double scroll = 0.0)
+	{
+		const RectF storeRect = EditorCommandCarrierStoreRect(scroll);
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		const double rightMargin = 12.0;
+		const double spacing = 12.0;
+		const double width = Min(164.0, Max(80.0, viewport.x + viewport.w - rightMargin - (storeRect.x + storeRect.w + spacing)));
+		return RectF{ storeRect.x + storeRect.w + spacing, storeRect.y, width, storeRect.h };
+	}
+
+	inline RectF EditorCommandPlacementModePointRect(double scroll = 0.0)
+	{
+		const RectF carrierReleaseRect = EditorCommandCarrierReleaseRect(scroll);
+		const RectF viewport = EditorCommandInspectTopViewportRect();
+		return RectF{ viewport.x + 12.0, carrierReleaseRect.y + carrierReleaseRect.h + 26.0, Min(164.0, (viewport.w - 36.0) * 0.5), 28.0 };
 	}
 
 	inline RectF EditorCommandPlacementModeLineRect(double scroll = 0.0)

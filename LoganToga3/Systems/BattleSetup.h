@@ -162,6 +162,10 @@ namespace LT3
             ? defs.aiProfiles[profileId].tag
             : U"";
         world.aiRuntime.resetForProfile(profileId, profileTag);
+        if (profileId != InvalidAiProfileDefId && profileId < defs.aiProfiles.size())
+        {
+            world.aiRuntime.battleTimeLimitSec = defs.aiProfiles[profileId].battleTimeLimitSec;
+        }
         world.enemySpawnTimerSec = world.aiRuntime.spawnTimerSec;
     }
 
