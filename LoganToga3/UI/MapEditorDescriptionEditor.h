@@ -131,7 +131,7 @@ namespace LT3
 			return;
 		}
 
-		RectF{ 0.0, 0.0, static_cast<double>(Scene::Width()), static_cast<double>(Scene::Height()) }.draw(ColorF{ 0.0, 0.0, 0.0, 0.32 });
+		RectF{ 0.0, 0.0, QuarterLogicalSceneWidth(), QuarterLogicalSceneHeight() }.draw(ColorF{ 0.0, 0.0, 0.0, 0.32 });
 		const RectF panel = EditorDescriptionPanelRect();
 		const RectF textRect = EditorDescriptionTextRect();
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.98 }).drawFrame(2, ColorF{ 1.0, 0.84, 0.0, 0.80 });

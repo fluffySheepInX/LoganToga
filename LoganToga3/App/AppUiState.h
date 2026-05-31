@@ -26,7 +26,7 @@ namespace LT3
 
     inline RectF DebugClipboardCaptureButtonRect()
     {
-        return RectF{ Scene::Width() - 76.0, 80.0, 64.0, 64.0 };
+        return RectF{ QuarterLogicalSceneWidth() - 76.0, 80.0, 64.0, 64.0 };
     }
 
     inline String DebugClipboardCaptureShortcutLabel()
@@ -36,17 +36,17 @@ namespace LT3
 
     inline RectF DebugNewGameButtonRect()
     {
-        return RectF{ Scene::Width() - 244.0, 80.0, 156.0, 30.0 };
+        return RectF{ QuarterLogicalSceneWidth() - 244.0, 80.0, 156.0, 30.0 };
     }
 
     inline RectF DebugNewGameEnemyAiStopButtonRect()
     {
-        return RectF{ Scene::Width() - 244.0, 116.0, 156.0, 30.0 };
+        return RectF{ QuarterLogicalSceneWidth() - 244.0, 116.0, 156.0, 30.0 };
     }
 
     inline RectF DebugEnemyMoveMarkersAnchorRect()
     {
-        return RectF{ Scene::Width() - 244.0, 152.0, 18.0, 18.0 };
+        return RectF{ QuarterLogicalSceneWidth() - 244.0, 152.0, 18.0, 18.0 };
     }
 
     inline void ShowDebugClipboardCaptureToast(const String& title, const String& message, const FilePath& imagePath)

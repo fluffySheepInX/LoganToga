@@ -129,7 +129,7 @@ namespace LT3
 		const double bubbleWidth = portraitSize + textWidth + (portrait ? 18.0 : 0.0);
 		RectF bubble{ Arg::center = popupCenter, bubbleWidth, visual.uniqueSpeechBubbleHeight };
 		const Vec2 screenTopLeft = ToQuarterPreCameraScreen(Vec2{ 0.0, 0.0 });
-		const Vec2 screenBottomRight = ToQuarterPreCameraScreen(Vec2{ static_cast<double>(Scene::Width()), static_cast<double>(Scene::Height()) });
+		const Vec2 screenBottomRight = ToQuarterPreCameraScreen(Vec2{ QuarterLogicalSceneWidth(), QuarterLogicalSceneHeight() });
 		const double visibleLeft = Min(screenTopLeft.x, screenBottomRight.x) + 4.0;
 		const double visibleTop = Min(screenTopLeft.y, screenBottomRight.y) + 4.0;
 		const double visibleRight = Max(screenTopLeft.x, screenBottomRight.x) - 4.0;

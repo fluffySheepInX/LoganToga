@@ -29,7 +29,7 @@ namespace LT3
 		return units;
 	}
 
-	inline void UpdateAreaSelectionDrag(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, BattleInputIntent& intent)
+	inline void UpdateAreaSelectionDrag(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& screenMouse, BattleInputIntent& intent)
 	{
 		if (world.selection.actionPlacementActive)
 		{
@@ -43,7 +43,6 @@ namespace LT3
 			return;
 		}
 
-		const Vec2 screenMouse = Cursor::PosF();
 		if (MouseL.down())
 		{
 			world.selection.areaDragging = true;
@@ -77,7 +76,7 @@ namespace LT3
 		world.selection.formationUnits.clear();
 	}
 
-	inline void UpdateFormationPlacementPreview(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& worldMouse, BattleInputIntent& intent)
+	inline void UpdateFormationPlacementPreview(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& screenMouse, const Vec2& worldMouse, BattleInputIntent& intent)
 	{
 		if (world.selection.actionPlacementActive)
 		{
@@ -85,7 +84,7 @@ namespace LT3
 			return;
 		}
 
-		const bool canStart = IsCursorOnMapArea(mapEditor, world, defs)
+		const bool canStart = IsCursorOnMapArea(mapEditor, world, defs, screenMouse)
 			&& !IsCursorOnBuildCommandUi(world, defs, mapEditor)
 			&& !GetSelectedUnits(world).isEmpty();
 

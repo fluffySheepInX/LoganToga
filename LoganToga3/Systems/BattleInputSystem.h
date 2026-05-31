@@ -217,8 +217,8 @@ namespace LT3
 				inline void HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& screenMouse, const Vec2& worldMouse)
 				{
 					BattleInputIntent intent = ReadBattleInput(world, defs, mapEditor, screenMouse, worldMouse);
-					UpdateAreaSelectionDrag(world, defs, mapEditor, intent);
-					UpdateFormationPlacementPreview(world, defs, mapEditor, worldMouse, intent);
+					UpdateAreaSelectionDrag(world, defs, mapEditor, screenMouse, intent);
+					UpdateFormationPlacementPreview(world, defs, mapEditor, screenMouse, worldMouse, intent);
 					ApplyBattleInputIntent(world, defs, intent);
 				}
 			}

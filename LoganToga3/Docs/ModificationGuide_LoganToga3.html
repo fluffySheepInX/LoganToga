@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoganToga3 改修ガイド</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f7fb;
+            --panel: #ffffff;
+            --ink: #1f2937;
+            --muted: #5f6b7a;
+            --accent: #2563eb;
+            --accent-soft: #e8f0ff;
+            --good: #15803d;
+            --warn: #b45309;
+            --danger: #b91c1c;
+            --border: #d9e1ec;
+            --code-bg: #101827;
+            --code-ink: #dbeafe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+            line-height: 1.7;
+        }
+
+        header {
+            background: linear-gradient(135deg, #172554 0%, #2563eb 58%, #60a5fa 100%);
+            color: white;
+            padding: 44px 28px;
+        }
+
+        header .wrap,
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            line-height: 1.15;
+        }
+
+        h2 {
+            margin-top: 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            color: #172554;
+        }
+
+        h3 {
+            margin: 26px 0 10px;
+            color: #1e3a8a;
+        }
+
+        p {
+            margin: 0 0 14px;
+        }
+
+        main {
+            padding: 28px;
+        }
+
+        section,
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            margin-bottom: 24px;
+            padding: 24px;
+        }
+
+        .subtitle {
+            color: #dbeafe;
+            font-size: 1.12rem;
+            max-width: 940px;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.16);
+            color: white;
+            font-size: 0.92rem;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .note {
+            border-left: 5px solid var(--accent);
+            background: var(--accent-soft);
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin: 14px 0;
+        }
+
+        .warning {
+            border-left-color: var(--warn);
+            background: #fff7ed;
+        }
+
+        .status {
+            display: inline-block;
+            border-radius: 8px;
+            padding: 2px 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .status.entry {
+            color: #1e3a8a;
+            background: #dbeafe;
+        }
+
+        .status.data {
+            color: var(--good);
+            background: #dcfce7;
+        }
+
+        .status.ui {
+            color: var(--warn);
+            background: #ffedd5;
+        }
+
+        .status.system {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0 4px;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        th,
+        td {
+            text-align: left;
+            vertical-align: top;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code {
+            font-family: Consolas, "Cascadia Mono", monospace;
+            background: #eef2ff;
+            color: #312e81;
+            border-radius: 5px;
+            padding: 1px 5px;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: var(--code-ink);
+            padding: 18px;
+            border-radius: 14px;
+            overflow-x: auto;
+            line-height: 1.45;
+            border: 1px solid #26344f;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .flow {
+            display: grid;
+            gap: 10px;
+        }
+
+        .flow div {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fbfdff;
+            padding: 12px 14px;
+        }
+
+        .small {
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        a {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="wrap">
+            <h1>LoganToga3 改修ガイド</h1>
+            <p class="subtitle">「どこに何があり、何を変えたい時にどこを見るか」を素早く判断するための案内です。代表的な改修例と、調査・実装の入口をまとめます。</p>
+            <div class="meta">
+                <span class="pill">対象: LoganToga3</span>
+                <span class="pill">形式: C++ / Siv3D / TOML</span>
+                <span class="pill">目的: 改修時の入口確認</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>まず見るべき全体像</h2>
+            <p>LoganToga3 は、起動・シーン・更新・描画・入力・データ定義・エディタ UI が比較的はっきり分かれています。迷った時は、次の流れで追うと位置を特定しやすいです。</p>
+            <div class="flow">
+                <div><strong>1. 起動とシーン遷移:</strong> <code>LoganToga3/Main.cpp</code> から <code>TitleScene</code> / <code>BattleScene</code> が登録されます。</div>
+                <div><strong>2. バトルシーン:</strong> <code>LoganToga3/Scenes/BattleScene.h</code> が更新と描画の大枠を呼びます。</div>
+                <div><strong>3. 更新処理:</strong> <code>LoganToga3/App/AppUpdate.h</code> が入力、ワールド更新、通知、環境音などを束ねます。</div>
+                <div><strong>4. 描画処理:</strong> <code>LoganToga3/App/AppRender.h</code> がバトル描画とエディタ UI 描画を束ねます。</div>
+                <div><strong>5. 実処理:</strong> <code>LoganToga3/Systems</code> がゲームロジック、<code>LoganToga3/UI</code> が表示・操作、<code>LoganToga3/Data</code> が定義読み込みを担当します。</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>主要フォルダ早見表</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>場所</th>
+                        <th>役割</th>
+                        <th>見るタイミング</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>App/</code></td>
+                        <td>アプリ全体の状態、初期化、更新、描画、UI 状態の集約。</td>
+                        <td>処理の呼び出し順、状態の持ち方、毎フレーム処理の入口を確認したい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Scenes/</code></td>
+                        <td>タイトルやバトルなど、Siv3D のシーン単位の入口。</td>
+                        <td>画面遷移、シーン開始時の初期化、シーンごとの update/draw を見たい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Systems/</code></td>
+                        <td>戦闘、移動、建築、資源、AI、入力などのゲームロジック。</td>
+                        <td>ゲーム挙動を変えたい時。例: 攻撃、移動、勝敗、カメラ、入力。</td>
+                    </tr>
+                    <tr>
+                        <td><code>UI/</code></td>
+                        <td>バトル表示、マップエディタ、各種エディタ、Rect ベース UI。</td>
+                        <td>ボタン、パネル、リスト、表示位置、エディタ操作を変えたい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Data/</code></td>
+                        <td>定義型、読み込み、保存、アセットパス、音楽設定など。</td>
+                        <td>TOML の項目追加、ユニット・スキル・AI・資源などの定義を増やしたい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>BattleWorld/</code></td>
+                        <td>ワールド状態、マップ、ストア、基本操作。</td>
+                        <td>ユニットや資源など、ゲーム内の実データ構造を確認したい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>App/000_Warehouse/000_DefaultGame/070_Scenario/</code></td>
+                        <td>ゲーム定義 TOML の実データ。</td>
+                        <td>コードではなくデータ側で調整できるか確認したい時。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Docs/</code></td>
+                        <td>設計メモや作業ガイド。</td>
+                        <td>方針や作業手順を残す時。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>代表的な改修例と対応場所</h2>
+
+            <div class="grid two">
+                <div class="card">
+                    <h3><span class="status data">データ</span> ユニットの性能や種類を変えたい</h3>
+                    <p>まず <code>InfoUnit/UnitSample.toml</code> を確認します。読み込み側は <code>Data/Loaders/UnitDefLoader.h</code>、定義の利用側は <code>Data/UnitCatalog.h</code> と <code>Data/DefinitionStores.h</code> です。</p>
+                    <p><strong>対応の流れ:</strong> TOML に項目が既にあればデータ修正だけで済みます。新しい項目を追加するなら、定義型、ローダ、利用する System/UI の順に追います。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status data">データ</span> スキルを追加・調整したい</h3>
+                    <p>実データは <code>InfoSkill/skill.toml</code>、読み込みと保存は <code>Data/Loaders/SkillDef*.h</code> 系、エディタは <code>UI/SkillEditor*.h</code> 系を見ます。</p>
+                    <p><strong>対応の流れ:</strong> 定義値の追加なら <code>SkillDefLoaderCommon.h</code> や <code>SkillDefValueParsing.h</code>、保存なら <code>SkillDefPersistence.h</code>、エディタ反映なら <code>SkillEditorInput.*</code> と <code>SkillEditorDraw.*</code> を確認します。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status system">ロジック</span> 攻撃・ダメージ・ターゲット挙動を変えたい</h3>
+                    <p>戦闘更新は <code>Systems/CombatSystem.h</code>、ダメージ処理は <code>Systems/DamageSystem.h</code>、対象選択は <code>Systems/TargetingSystem.h</code> を中心に見ます。</p>
+                    <p><strong>対応の流れ:</strong> 「誰を狙うか」は Targeting、「命中や攻撃処理」は Combat、「HP 変化や死亡」は Damage という分担で追うと迷いにくいです。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status system">ロジック</span> 移動や経路探索を変えたい</h3>
+                    <p>移動命令は <code>Systems/BattleMoveOrders.h</code>、移動更新は <code>Systems/MovementSystem.h</code>、経路探索は <code>Systems/PathfindingSystem.h</code> です。</p>
+                    <p><strong>対応の流れ:</strong> 入力で移動先を作る箇所、命令として保存される箇所、毎フレームの移動処理、障害物や地形の扱いを順番に見ます。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status system">ロジック</span> 建築や建築メニューを変えたい</h3>
+                    <p>建築定義は <code>InfoBuildMenu/BuildMenu.toml</code>、読み込みは <code>Data/Loaders/BuildActionDefLoader.h</code>、入力は <code>Systems/BattleBuildInputSystem.h</code>、実処理は <code>Systems/BuildSystem.h</code> です。</p>
+                    <p><strong>対応の流れ:</strong> 表示だけなら <code>UI/BattleUiPanels.Build.h</code>、クリックや配置操作なら BattleBuildInput、建築成立条件なら BuildSystem を確認します。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status ui">UI</span> マップエディタのパネルやボタンを変えたい</h3>
+                    <p>エディタ全体は <code>UI/MapEditor*.h</code> 系です。レイアウトは <code>*LayoutRects.h</code>、描画は <code>*Draw*.h</code>、入力は <code>*Input*.h</code> を優先して探します。</p>
+                    <p><strong>対応の流れ:</strong> Rect ベース UI の方針に合わせ、まず表示矩形を LayoutRects で確認し、描画、入力の順に変更します。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status ui">UI</span> カメラ操作や UI 上での誤操作を変えたい</h3>
+                    <p>カメラ操作は <code>Systems/CameraInputSystem.h</code> と <code>UI/QuarterView.h</code> を見ます。UI 上でカメラやマップ操作を止める判定は <code>IsCursorOnMapArea</code> が入口です。</p>
+                    <p><strong>対応の流れ:</strong> 新しいパネルを追加した場合、そのパネル上でカメラやマップ操作が動かないように、該当 Rect を <code>IsCursorOnMapArea</code> の除外判定へ追加します。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status system">AI</span> 敵 AI や攻撃ウェーブを変えたい</h3>
+                    <p>AI 定義は <code>InfoAI/AiProfiles.toml</code>、読み込みは <code>Data/Loaders/AiProfileDefLoader.h</code>、実行は <code>Systems/EnemyDirector*.h</code> 系です。</p>
+                    <p><strong>対応の流れ:</strong> プロファイル値の調整で済むかを先に確認し、ロジック変更が必要なら Construction、Spawn、AttackWave、Tactics など目的別ファイルを見ます。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status data">データ</span> 資源ノードや資源定義を変えたい</h3>
+                    <p>資源定義は <code>InfoResource/Resources.toml</code>、読み込みは <code>Data/Loaders/ResourceDefLoader.h</code>、ロジックは <code>Systems/ResourceSystem.h</code>、エディタは <code>UI/MapEditorResource*.h</code> です。</p>
+                    <p><strong>対応の流れ:</strong> 資源の種類や表示は Data/UI、占領や取得の挙動は ResourceSystem、旗などの見た目は AppRuntimeState と renderer 側を確認します。</p>
+                </div>
+
+                <div class="card">
+                    <h3><span class="status ui">UI</span> 音楽管理やプレビューを変えたい</h3>
+                    <p>音楽設定は <code>Data/MusicSettings.h</code>、再生制御は <code>Data/MusicManager.h</code>、プレビューは <code>Data/MusicPreview.h</code> を見ます。</p>
+                    <p><strong>対応の流れ:</strong> LoganToga3 では音楽エディタを特定画面専用ではなく、タイトル・戦闘・将来の設定画面など全体向けの基盤として扱います。</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>「何を変えたいか」から探す索引</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>やりたいこと</th>
+                        <th>最初に見る場所</th>
+                        <th>次に見る場所</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ボタンが押せない、表示位置がずれる</td>
+                        <td><code>UI/*LayoutRects.h</code></td>
+                        <td><code>UI/*Draw*.h</code>、<code>UI/*Input*.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>エディタ UI 上でカメラが動いてしまう</td>
+                        <td><code>Systems/CameraInputSystem.h</code></td>
+                        <td>対象パネルの <code>Rect</code> を返す LayoutRects ファイル</td>
+                    </tr>
+                    <tr>
+                        <td>TOML の値を増やしたい</td>
+                        <td><code>App/000_Warehouse/.../Info*</code></td>
+                        <td><code>Data/Loaders/*Loader.h</code>、保存系ファイル</td>
+                    </tr>
+                    <tr>
+                        <td>ユニットの見た目を変えたい</td>
+                        <td><code>UI/BattleUnitRenderer*.h</code></td>
+                        <td><code>Data/BattleAssetPaths.h</code>、<code>Data/UnitCatalog.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>バトル UI の表示を変えたい</td>
+                        <td><code>UI/BattleUiPanels*.h</code></td>
+                        <td><code>UI/BattleRenderer.h</code>、<code>App/AppRender.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>入力の優先順位を変えたい</td>
+                        <td><code>App/AppUpdate.h</code></td>
+                        <td><code>Systems/BattleInputSystem.h</code>、<code>Systems/EditorInputSystem.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>マップ編集の保存・同期を変えたい</td>
+                        <td><code>UI/MapEditorMapData.h</code></td>
+                        <td><code>UI/MapEditorMapLayersDraw.h</code>、<code>BattleWorld/BattleWorldMap.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>勝利・敗北条件を変えたい</td>
+                        <td><code>Systems/WinLoseSystem.h</code></td>
+                        <td><code>Systems/BattleUpdateSystem.h</code></td>
+                    </tr>
+                    <tr>
+                        <td>通知やデバッグ表示を変えたい</td>
+                        <td><code>UI/BattleNotifications.h</code></td>
+                        <td><code>UI/BattleDebugOverlay.h</code>、<code>App/AppRender.h</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>入力・更新・描画の呼び出し順</h2>
+            <p>バトル中の主な流れは次の通りです。改修時は、この順番を意識すると副作用を見つけやすくなります。</p>
+            <pre><code>Main.cpp
+  └─ AppSceneManager.update()
+      └─ BattleScene::update()
+          ├─ UpdateAppUiState(...)
+          └─ UpdateAppRuntimeState(...)
+              ├─ ProcessInput(...)
+              │   ├─ UpdateQuarterViewCamera(...)
+              │   ├─ HandleEditorInput(...)
+              │   └─ HandleBattleInput(...)
+              ├─ UpdateBattleWorld(...)
+              ├─ UpdateResourceFlagRuntimeState(...)
+              └─ UpdateBattleNotifications(...)
+
+BattleScene::draw()
+  ├─ DrawAppRuntime(...)
+  │   ├─ DrawBattleWorld(...)
+  │   └─ DrawBattleNotifications(...)
+  └─ DrawAppUi(...)
+      └─ DrawMapEditorOverlay(...)</code></pre>
+        </section>
+
+        <section>
+            <h2>改修前の確認手順</h2>
+            <ol>
+                <li><strong>データ変更で済むか確認する。</strong> ユニット、スキル、AI、資源、建築はまず TOML を見ます。</li>
+                <li><strong>入口を確認する。</strong> 毎フレーム処理なら <code>AppUpdate.h</code>、描画なら <code>AppRender.h</code>、シーン単位なら <code>Scenes</code> を見ます。</li>
+                <li><strong>責務ごとのファイルを追う。</strong> 入力は <code>*Input*</code>、表示は <code>*Draw*</code>、矩形は <code>*LayoutRects*</code>、保存は <code>*Persistence*</code> が目印です。</li>
+                <li><strong>UI 追加時はマウス除外判定を確認する。</strong> 新しいパネルを作ったら、カメラやマップクリックを止める必要があるか確認します。</li>
+                <li><strong>TOML 保存時は既存方針に合わせる。</strong> LoganToga3 の TOML 書き出しは、全文を組み立てて必要最小限の改行だけを明示的に入れる方針です。</li>
+            </ol>
+            <div class="note warning">
+                <strong>注意:</strong> LoganToga3 のエディタ UI は Rect ベースのボタン・パネルを基本にします。新しいエディタ UI を作る場合は SimpleGUI ではなく、既存の <code>RectUiHelpers.h</code> や LayoutRects 系に寄せてください。
+            </div>
+        </section>
+
+        <section>
+            <h2>ファイル名から役割を推測するコツ</h2>
+            <div class="grid three">
+                <div class="card">
+                    <h3><code>*LayoutRects.h</code></h3>
+                    <p>画面上の矩形、パネル、ボタン位置を返すファイルです。クリック判定と描画の基準になります。</p>
+                </div>
+                <div class="card">
+                    <h3><code>*Draw*.h</code></h3>
+                    <p>描画担当です。表示される文字、色、枠、リスト、アイコンなどを調整します。</p>
+                </div>
+                <div class="card">
+                    <h3><code>*Input*.h</code></h3>
+                    <p>クリック、キー入力、ドラッグ、右クリックメニューなどの操作を処理します。</p>
+                </div>
+                <div class="card">
+                    <h3><code>*Loader.h</code></h3>
+                    <p>TOML など外部データから定義を読み込む処理です。データ項目追加時の入口です。</p>
+                </div>
+                <div class="card">
+                    <h3><code>*Persistence.h</code></h3>
+                    <p>保存担当です。エディタで変更した内容をファイルへ戻す時に確認します。</p>
+                </div>
+                <div class="card">
+                    <h3><code>*System.h</code></h3>
+                    <p>ゲームロジック担当です。毎フレームの挙動、判定、状態更新を扱います。</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>具体例: 新しいエディタパネルを追加する時</h2>
+            <ol>
+                <li><code>UI/MapEditorToolbar*.h</code> でツールバー上の入口ボタンを検討します。</li>
+                <li>パネルの矩形を <code>UI/*LayoutRects.h</code> に追加します。</li>
+                <li>表示処理を <code>UI/*Draw*.h</code> に追加します。</li>
+                <li>クリックや入力処理を <code>UI/*Input*.h</code> に追加します。</li>
+                <li>パネル上でカメラやマップクリックが動かないよう、必要なら <code>Systems/CameraInputSystem.h</code> の <code>IsCursorOnMapArea</code> に除外判定を追加します。</li>
+                <li>保存が必要なら <code>Data</code> または該当 <code>UI/*FileOps*</code> / <code>*Persistence*</code> 系に寄せます。</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>具体例: 新しい定義項目を TOML に追加する時</h2>
+            <ol>
+                <li>対象の実データ TOML を <code>App/000_Warehouse/000_DefaultGame/070_Scenario/Info*</code> から探します。</li>
+                <li>対応する定義型を <code>Data</code> または関連ヘッダで探します。</li>
+                <li>読み込み処理を <code>Data/Loaders/*Loader.h</code> に追加します。</li>
+                <li>エディタで編集するなら <code>UI/*EditorInput*</code> と <code>UI/*EditorDraw*</code> に項目を追加します。</li>
+                <li>保存するなら <code>*Persistence*</code> や <code>*FileOps*</code> 系に追加します。</li>
+                <li>実際の挙動へ反映するなら <code>Systems</code> 側で定義値を参照します。</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>迷った時の判断基準</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>症状</th>
+                        <th>判断</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>画面には出ているが押せない</td>
+                        <td>描画ではなく、Input 側か Rect の不一致を疑います。</td>
+                    </tr>
+                    <tr>
+                        <td>押せるが見た目が違う</td>
+                        <td>Draw 側、アイコンパス、フォント、色定義を疑います。</td>
+                    </tr>
+                    <tr>
+                        <td>TOML を変えても反映されない</td>
+                        <td>Loader が読んでいる項目名、DefinitionStores への格納、再読み込みタイミングを確認します。</td>
+                    </tr>
+                    <tr>
+                        <td>エディタでは変わるがゲームに反映されない</td>
+                        <td>エディタ状態から BattleWorld / DefinitionStores へ同期する処理を確認します。</td>
+                    </tr>
+                    <tr>
+                        <td>UI 上で意図しないマップ操作が起きる</td>
+                        <td>対象パネルの Rect が <code>IsCursorOnMapArea</code> の除外に含まれているか確認します。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

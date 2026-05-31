@@ -68,7 +68,7 @@ namespace LT3
 		}
 
 		const Vec2 cursor = Cursor::PosF();
-		const Vec2 center{ Scene::Width() * 0.5, Scene::Height() * 0.5 };
+		const Vec2 center{ QuarterLogicalSceneWidth() * 0.5, QuarterLogicalSceneHeight() * 0.5 };
 		const bool nearCursor = (screenPos.distanceFrom(cursor) <= BattleSkillSoundCursorRadius);
 		const bool nearCenter = (screenPos.distanceFrom(center) <= BattleSkillSoundCenterRadius);
 		return nearCursor || nearCenter;
@@ -84,7 +84,7 @@ namespace LT3
 		}
 
 		const Vec2 screenPos = ToQuarterViewportScreen(worldPos);
-		if (!RectF{ -96.0, -96.0, Scene::Width() + 192.0, Scene::Height() + 192.0 }.intersects(screenPos))
+		if (!RectF{ -96.0, -96.0, QuarterLogicalSceneWidth() + 192.0, QuarterLogicalSceneHeight() + 192.0 }.intersects(screenPos))
 		{
 			return;
 		}

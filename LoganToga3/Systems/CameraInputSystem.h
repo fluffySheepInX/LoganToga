@@ -40,61 +40,66 @@ namespace LT3
         return false;
     }
 
-    inline bool IsCursorOnMapArea(const MapEditorState& mapEditor, const BattleWorld& world, const DefinitionStores& defs)
+    inline bool IsCursorOnMapArea(const MapEditorState& mapEditor, const BattleWorld& world, const DefinitionStores& defs, const Optional<Vec2>& logicalScreenMouse = none)
     {
-        if (EditorToolbarRect().mouseOver())
+        const auto mouseOver = [&](const RectF& rect)
+        {
+            return logicalScreenMouse ? rect.intersects(*logicalScreenMouse) : rect.mouseOver();
+        };
+
+        if (mouseOver(EditorToolbarRect()))
         {
             return false;
         }
-        if (mapEditor.enabled && EditorPalettePanelRect().mouseOver())
+        if (mapEditor.enabled && mouseOver(EditorPalettePanelRect()))
         {
             return false;
         }
-        if (mapEditor.showUnitList && EditorUnitListPanelRect().mouseOver())
+        if (mapEditor.showUnitList && mouseOver(EditorUnitListPanelRect()))
         {
             return false;
         }
-        if (mapEditor.showBuildingEditor && BuildingEditorPanelWithPosRect(mapEditor).mouseOver())
+        if (mapEditor.showBuildingEditor && mouseOver(BuildingEditorPanelWithPosRect(mapEditor)))
         {
             return false;
         }
-        if (mapEditor.showCommandEditor && EditorCommandPanelRect().mouseOver())
+        if (mapEditor.showCommandEditor && mouseOver(EditorCommandPanelRect()))
         {
             return false;
         }
-        if (mapEditor.showDecalEditor && EditorDecalEditorPanelRect(mapEditor).mouseOver())
+        if (mapEditor.showDecalEditor && mouseOver(EditorDecalEditorPanelRect(mapEditor)))
         {
             return false;
         }
-        if (mapEditor.showSkillEditor && SkillEditorPanelRect().mouseOver())
+        if (mapEditor.showSkillEditor && mouseOver(SkillEditorPanelRect()))
         {
             return false;
         }
-        if (mapEditor.showUniqueEditor && EditorUniquePanelRect(mapEditor).mouseOver())
+        if (mapEditor.showUniqueEditor && mouseOver(EditorUniquePanelRect(mapEditor)))
         {
             return false;
         }
-        if (mapEditor.showAiEditor && AiEditorPanelRect().mouseOver())
+        if (mapEditor.showAiEditor && mouseOver(AiEditorPanelRect()))
         {
             return false;
         }
-        if (mapEditor.enabled && EditorResourceNodeListPanelRect().mouseOver())
+        if (mapEditor.enabled && mouseOver(EditorResourceNodeListPanelRect()))
         {
             return false;
         }
-        if (mapEditor.enabled && EditorResourceValidationPanelRect().mouseOver())
+        if (mapEditor.enabled && mouseOver(EditorResourceValidationPanelRect()))
         {
             return false;
         }
-        if (mapEditor.enabled && EditorResourcePalettePanelRect().mouseOver())
+        if (mapEditor.enabled && mouseOver(EditorResourcePalettePanelRect()))
         {
             return false;
         }
-        if (IsValidSelectedResourceNodeIndex(mapEditor) && EditorResourceNodePanelRect(mapEditor).mouseOver())
+        if (IsValidSelectedResourceNodeIndex(mapEditor) && mouseOver(EditorResourceNodePanelRect(mapEditor)))
         {
             return false;
         }
-        if ((!mapEditor.enabled) && RectF{ 1240, 90, 330, 245 }.mouseOver())
+        if ((!mapEditor.enabled) && mouseOver(RectF{ 1240, 90, 330, 245 }))
         {
             return false;
         }

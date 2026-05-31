@@ -130,6 +130,7 @@ namespace LT3
 
         {
             const auto cameraTransform = CreateQuarterViewTransformer();
+            const BattleDebugCursorState debugCursor = MakeBattleDebugCursorState(debugState.currentScreen);
 
             DrawMapEditorTerrainLayer(mapEditor, mapEditor.enabled || mapEditor.showBattleGrid);
             DrawResourceNodes(world, defs, assets, uiFont, nullptr);
@@ -167,8 +168,8 @@ namespace LT3
             DrawResourceNodeOverlays(world, defs, assets, uiFont, &resourceFlags);
             if (showDebugInfo)
             {
-                DrawBuildingUnitClickDebugOverlay(world, defs);
-                DrawResourceNodeClickDebugOverlay(world);
+                DrawBuildingUnitClickDebugOverlay(world, defs, debugCursor);
+                DrawResourceNodeClickDebugOverlay(world, debugCursor);
             }
         }
 

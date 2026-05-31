@@ -5,15 +5,30 @@
 
 namespace LT3
 {
+	struct BattleDebugCursorState
+	{
+		Vec2 logicalScreen{ 0, 0 };
+		Vec2 world{ 0, 0 };
+		Vec2 preCameraScreen{ 0, 0 };
+	};
+
+	inline BattleDebugCursorState MakeBattleDebugCursorState(const Vec2& logicalScreen)
+	{
+		return BattleDebugCursorState{
+			logicalScreen,
+			ToQuarterWorld(logicalScreen),
+			ToQuarterPreCameraScreen(logicalScreen),
+		};
+	}
+
 	inline bool IsBuildingUnitForClickDebug(const UnitDef& def)
 	{
 		return (def.role == UnitRole::Base)
 			|| !def.building_category.isEmpty();
 	}
 
-	inline void DrawBuildingUnitClickDebugOverlay(const BattleWorld& world, const DefinitionStores& defs)
+	inline void DrawBuildingUnitClickDebugOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleDebugCursorState& cursor)
 	{
-		const Vec2 mouseWorld = ToQuarterWorld(Cursor::PosF());
 		for (int32 i = static_cast<int32>(world.units.size()) - 1; i >= 0; --i)
 		{
 			const UnitId unit = static_cast<UnitId>(i);
@@ -29,7 +44,7 @@ namespace LT3
 			}
 
 			const double pickRadius = UnitSelectionRadius(def) + 6.0;
-			const bool hovered = Circle{ world.units.position[unit], pickRadius }.intersects(mouseWorld);
+			const bool hovered = Circle{ world.units.position[unit], pickRadius }.intersects(cursor.world);
 			const Vec2 screenPos = ToQuarterScreen(world.units.position[unit]);
 			const ColorF fillColor = hovered ? ColorF{ 1.0, 0.80, 0.20, 0.20 } : ColorF{ 0.20, 0.85, 1.0, 0.10 };
 			const ColorF frameColor = hovered ? ColorF{ 1.0, 0.84, 0.0, 0.95 } : ColorF{ 0.30, 0.90, 1.0, 0.55 };
@@ -73,12 +88,11 @@ namespace LT3
 		uiFont(U"Map: {} x {}"_fmt(world.mapWidth, world.mapHeight)).draw(11, 44, 378, ColorF{ 0.76, 0.80, 0.88 });
 	}
 
-	inline void DrawResourceNodeClickDebugOverlay(const BattleWorld& world)
+	inline void DrawResourceNodeClickDebugOverlay(const BattleWorld& world, const BattleDebugCursorState& cursor)
 	{
 		const bool hasSelectedUnits = !GetSelectedUnits(world).isEmpty();
 		const double screenRadius = ResourceNodeHoverScreenRadius(hasSelectedUnits);
 		const double preCameraRadius = ResourceNodeHoverPreCameraRadius(screenRadius);
-		const Vec2 preCameraMousePos = ToQuarterPreCameraScreen(Cursor::PosF());
 
 		for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
 		{
@@ -88,7 +102,7 @@ namespace LT3
 			}
 
 			const Vec2 hoverCenter = ResourceNodeHoverPreCameraCenter(world.resourceNodes.position[node]);
-			const bool hovered = Circle{ hoverCenter, preCameraRadius }.intersects(preCameraMousePos);
+			const bool hovered = Circle{ hoverCenter, preCameraRadius }.intersects(cursor.preCameraScreen);
 			const Vec2 screenCenter = QuarterTileFaceCenterScreen(world.resourceNodes.position[node]);
 			const ColorF fillColor = hovered ? ColorF{ 1.0, 0.82, 0.24, 0.14 } : ColorF{ 0.35, 0.90, 1.0, 0.08 };
 			const ColorF frameColor = hovered ? ColorF{ 1.0, 0.90, 0.25, 0.95 } : ColorF{ 0.35, 0.90, 1.0, 0.55 };

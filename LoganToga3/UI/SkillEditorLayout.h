@@ -14,7 +14,7 @@ namespace LT3
 		constexpr double panelW = 800.0;
 		constexpr double bottomBarHeight = 30.0;
 		constexpr double bottomMargin = 8.0;
-		const double underBarY = (Scene::Height() - GaussianFSAddon::GetOFFSET().y - bottomBarHeight);
+		const double underBarY = (QuarterLogicalSceneHeight() - bottomBarHeight);
 		const double panelH = Max(722.0, underBarY - panelY - bottomMargin);
 		return RectF{ panelX, panelY, panelW, panelH };
 	}

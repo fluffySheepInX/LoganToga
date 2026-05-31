@@ -21,7 +21,7 @@ namespace LT3
 		}
 
 		const Vec2 cursor = Cursor::PosF();
-		const Vec2 center{ Scene::Width() * 0.5, Scene::Height() * 0.5 };
+		const Vec2 center{ QuarterLogicalSceneWidth() * 0.5, QuarterLogicalSceneHeight() * 0.5 };
 		Array<std::pair<UnitId, String>> nearCursor;
 		Array<std::pair<UnitId, String>> nearCenter;
 		nearCursor.reserve(world.units.size());
@@ -51,7 +51,7 @@ namespace LT3
 			}
 
 			const Vec2 screenPos = ToQuarterViewportScreen(world.units.position[unit]);
-			if (!RectF{ -96.0, -96.0, Scene::Width() + 192.0, Scene::Height() + 192.0 }.intersects(screenPos))
+			if (!RectF{ -96.0, -96.0, QuarterLogicalSceneWidth() + 192.0, QuarterLogicalSceneHeight() + 192.0 }.intersects(screenPos))
 			{
 				continue;
 			}

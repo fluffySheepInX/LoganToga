@@ -3,6 +3,7 @@
 
 namespace LT3
 {
+    inline constexpr Point QuarterLogicalSceneSize{ 1600, 900 };
     inline constexpr Vec2 QuarterViewOrigin{ 575.0, 180.0 };
     inline constexpr Vec2 QuarterViewScale{ 50.0 / 120.0, 25.0 / 120.0 };
     inline constexpr double QuarterTileStep = 120.0;
@@ -13,6 +14,16 @@ namespace LT3
     inline constexpr double QuarterViewZoomMax = 2.5;
     inline constexpr double QuarterViewKeyboardPanPixelsPerSec = 600.0;
     inline Camera2D QuarterViewCamera2D{ Vec2{ 0.0, 0.0 }, 1.0, CameraControl::None_ };
+
+    inline double QuarterLogicalSceneWidth()
+    {
+        return static_cast<double>(QuarterLogicalSceneSize.x);
+    }
+
+    inline double QuarterLogicalSceneHeight()
+    {
+        return static_cast<double>(QuarterLogicalSceneSize.y);
+    }
 
     inline Vec2 ToQuarterIso(const Vec2& worldPos);
     inline Vec2 ToQuarterWorld(const Vec2& screenPos);
