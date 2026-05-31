@@ -19,6 +19,8 @@ icons = ["we_gun060.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
 
+func = "missile"
+
 range = 850
 
 range_min = 0
@@ -51,6 +53,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -66,6 +76,16 @@ d360 = "on"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -99,6 +119,8 @@ swing_radius = 0
 
 swing_angle_deg = 0
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -121,6 +143,8 @@ icon = "we_gun050.png"
 icons = ["we_gun050.png", "w_0_attack.png", "w_5_k.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 342
 
@@ -154,6 +178,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -169,6 +201,16 @@ d360 = "on"
 start_degree = -45
 
 start_degree_type = 0
+
+next = "base_shot"
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -202,6 +244,8 @@ swing_radius = 0
 
 swing_angle_deg = 90
 
+swing_hit_mode = "multi_hit_once"
+
 color_r = 1
 
 color_g = 1
@@ -224,6 +268,8 @@ icon = ""
 icons = []
 
 kind = "missile"
+
+func = "missile"
 
 range = 210
 
@@ -257,6 +303,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -272,6 +326,16 @@ d360 = "off"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -305,6 +369,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 0.52941
 
 color_g = 0.80784
@@ -328,9 +394,11 @@ icons = []
 
 kind = "missile"
 
-range = 230
+func = "missile"
 
-range_min = 111
+range = 430
+
+range_min = 0
 
 cooldown_sec = 1.35
 
@@ -360,6 +428,14 @@ bom = "on"
 
 bom_radius = 100
 
+bom_visual = "image"
+
+bom_image = "a_healN.png"
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "on"
 
 bom_self_damage_scale = 0
@@ -375,6 +451,16 @@ d360 = "off"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -408,6 +494,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 0.93333
 
 color_g = 0.5098
@@ -430,6 +518,8 @@ icon = "we_gun080.png"
 icons = ["we_gun080.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 650
 
@@ -463,6 +553,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -478,6 +576,16 @@ d360 = "on"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 16
 
@@ -511,6 +619,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -533,6 +643,8 @@ icon = ""
 icons = []
 
 kind = "missile"
+
+func = "missile"
 
 range = 300
 
@@ -566,6 +678,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -581,6 +701,16 @@ d360 = "off"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -614,6 +744,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 0.27
@@ -636,6 +768,8 @@ icon = ""
 icons = []
 
 kind = "missile"
+
+func = "missile"
 
 range = 170
 
@@ -669,6 +803,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -684,6 +826,16 @@ d360 = "off"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -717,6 +869,8 @@ swing_radius = 58
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 0
 
 color_g = 1
@@ -739,6 +893,8 @@ icon = "we_gun080.png"
 icons = ["we_gun080.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 650
 
@@ -772,6 +928,14 @@ bom = "on"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -787,6 +951,16 @@ d360 = "on"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 16
 
@@ -820,6 +994,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -842,6 +1018,8 @@ icon = ""
 icons = []
 
 kind = "heal"
+
+func = "heal"
 
 range = 440
 
@@ -875,6 +1053,14 @@ bom = "off"
 
 bom_radius = 100
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -890,6 +1076,16 @@ d360 = "off"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -923,6 +1119,8 @@ swing_radius = 54
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 0.93333
 
 color_g = 0.5098
@@ -945,6 +1143,8 @@ icon = "we_gun050.png"
 icons = ["we_gun050.png", "w_0_attack.png", "w_5_k.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 342
 
@@ -978,6 +1178,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -993,6 +1201,16 @@ d360 = "on"
 start_degree = -45
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -1026,6 +1244,8 @@ swing_radius = 0
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -1048,6 +1268,8 @@ icon = "we_gun060.png"
 icons = ["we_gun060.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 850
 
@@ -1081,6 +1303,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -1096,6 +1326,16 @@ d360 = "on"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -1129,6 +1369,8 @@ swing_radius = 0
 
 swing_angle_deg = 0
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -1151,6 +1393,8 @@ icon = "we_gun060.png"
 icons = ["we_gun060.png", "w_0_attack.png", "w_5_k.png", "w_10_num.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 850
 
@@ -1184,6 +1428,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -1199,6 +1451,16 @@ d360 = "on"
 start_degree = 0
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -1232,6 +1494,8 @@ swing_radius = 0
 
 swing_angle_deg = 0
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
@@ -1254,6 +1518,8 @@ icon = "we_gun050.png"
 icons = ["we_gun050.png", "w_0_attack.png", "w_5_k.png"]
 
 kind = "missile"
+
+func = "missile"
 
 range = 342
 
@@ -1287,6 +1553,14 @@ bom = "off"
 
 bom_radius = 0
 
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
 bom_friendly_fire = "off"
 
 bom_self_damage_scale = 0
@@ -1302,6 +1576,16 @@ d360 = "on"
 start_degree = -45
 
 start_degree_type = 0
+
+next = ""
+
+next_last = "off"
+
+joint_skill = "off"
+
+send_target = "off"
+
+send_image_degree = "off"
 
 burst_count = 1
 
@@ -1335,11 +1619,138 @@ swing_radius = 0
 
 swing_angle_deg = 90
 
+swing_hit_mode = "stop"
+
 color_r = 1
 
 color_g = 1
 
 color_b = 1
+
+color_a = 1
+
+
+[[skills]]
+
+tag = "cannon_copy"
+
+name = "Cannon Copy"
+
+description = ""
+
+icon = ""
+
+icons = []
+
+kind = "missile"
+
+func = "missile"
+
+range = 400
+
+range_min = 0
+
+cooldown_sec = 2.2
+
+mp_cost = 0
+
+damage = 18
+
+self_damage_on_hit = 0
+
+se = ""
+
+se_volume = 1
+
+image = ""
+
+image_diagonal = ""
+
+projectile_speed = 260
+
+speed = 260
+
+movetype = "throw"
+
+projectile_motion = "throw"
+
+bom = "off"
+
+bom_radius = 0
+
+bom_visual = "circle"
+
+bom_image = ""
+
+bom_visual_scale = 1
+
+bom_visual_duration_sec = 0.22
+
+bom_friendly_fire = "off"
+
+bom_self_damage_scale = 0
+
+allfunc = "on"
+
+center = "off"
+
+homing = "off"
+
+d360 = "off"
+
+start_degree = 0
+
+start_degree_type = 0
+
+next = "base_shot"
+
+next_last = "on"
+
+joint_skill = "off"
+
+send_target = "on"
+
+send_image_degree = "off"
+
+burst_count = 1
+
+burst_interval_sec = 0
+
+burst_fire_mode = "simultaneous"
+
+burst_order_mode = "sequential"
+
+ray = "none"
+
+ray_length = 1
+
+ray_lock_to_caster = "off"
+
+spread_deg = 0
+
+arc_height = 110
+
+orbit_radius = 54
+
+orbit_angular_speed_deg = 220
+
+orbit_duration_sec = 1.2
+
+projectile_width = 54
+
+projectile_height = 110
+
+swing_radius = 54
+
+swing_angle_deg = 90
+
+swing_hit_mode = "stop"
+
+color_r = 1
+
+color_g = 0.27
+
+color_b = 0
 
 color_a = 1
 

@@ -102,11 +102,11 @@ namespace LT3
 		else if (HasSelectedSkill(editor, defs))
 		{
 			SkillDef& skill = defs.skills[editor.selectedSkillIndex];
-			UpdateSkillSandbox(editor, skill, Scene::DeltaTime());
+			UpdateSkillSandbox(editor, defs, static_cast<SkillDefId>(editor.selectedSkillIndex), Scene::DeltaTime());
 
 			if (HandleRectButtonClick(SkillEditorSandboxButtonRect(0)))
 			{
-				FireSkillSandbox(editor, skill);
+				FireSkillSandbox(editor, defs, static_cast<SkillDefId>(editor.selectedSkillIndex));
 				return true;
 			}
 			if (HandleRectButtonClick(SkillEditorSandboxButtonRect(1)))

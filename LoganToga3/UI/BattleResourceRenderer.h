@@ -200,6 +200,8 @@ namespace LT3
         const bool depleted = world.resourceNodes.amount[index] <= 0;
         const bool oneShot = index < world.resourceNodes.oneShot.size() && world.resourceNodes.oneShot[index];
         const bool collected = index < world.resourceNodes.collected.size() && world.resourceNodes.collected[index];
+        const bool canHighlight = !world.selection.selectedUnits.isEmpty() && !depleted;
+        const bool hovered = canHighlight && world.selection.hoveredResourceNode == static_cast<int32>(index);
         const ResourceDef& def = defs.resources[world.resourceNodes.defId[index]];
         ColorF textColor{ 1.0, 1.0, 1.0 };
         if (depleted)
@@ -210,6 +212,13 @@ namespace LT3
         if (!depleted)
         {
             DrawResourceIcon(def, assets, pos, 30.0);
+            if (hovered)
+            {
+                const double pulse = 0.72 + Periodic::Sine0_1(1.8s) * 0.28;
+                Circle{ pos, 31.0 + pulse * 5.0 }.drawFrame(4.0, ColorF{ 1.0, 0.95, 0.45, 0.95 });
+                Circle{ pos, 25.0 + pulse * 2.0 }.drawFrame(2.0, ColorF{ 1.0, 1.0, 1.0, 0.75 });
+                Ellipse{ pos + Vec2{ 0, 6 }, 39.0 + pulse * 6.0, 19.0 + pulse * 2.0 }.drawFrame(3.0, ColorF{ 1.0, 0.90, 0.30, 0.40 });
+            }
             if (oneShot && collected)
             {
                 const Vec2 crossOffset{ 12.0, -12.0 };
@@ -264,6 +273,9 @@ namespace LT3
         {
             const Vec2 pos = QuarterTileFaceCenterScreen(world.resourceNodes.position[i]);
             const bool depleted = world.resourceNodes.amount[i] <= 0;
+            const bool hovered = !world.selection.selectedUnits.isEmpty()
+                && !depleted
+                && world.selection.hoveredResourceNode == static_cast<int32>(i);
             const ResourceDef& def = defs.resources[world.resourceNodes.defId[i]];
             ColorF color = def.color;
             ColorF textColor{ 1.0, 1.0, 1.0 };
@@ -272,9 +284,12 @@ namespace LT3
                 color = ColorF{ 0.3, 0.25, 0.08 };
                 textColor = ColorF{ 0.5, 0.5, 0.5 };
             }
-            Ellipse{ pos + Vec2{ 0, 6 }, 30, 15 }.draw(ColorF{ 0, 0, 0, 0.25 });
-            Circle{ pos, 22 }.draw(color);
-            Circle{ pos, 22 }.drawFrame(2, ColorF{ 0.25, 0.18, 0.02 });
+            const ColorF baseShadow = hovered ? ColorF{ 1.0, 0.90, 0.30, 0.22 } : ColorF{ 0, 0, 0, 0.25 };
+            const ColorF baseFill = hovered ? color.lerp(ColorF{ 1.0, 0.95, 0.55 }, 0.35) : color;
+            const ColorF baseFrame = hovered ? ColorF{ 1.0, 0.92, 0.35, 0.95 } : ColorF{ 0.25, 0.18, 0.02 };
+            Ellipse{ pos + Vec2{ 0, 6 }, hovered ? 34.0 : 30.0, hovered ? 17.0 : 15.0 }.draw(baseShadow);
+            Circle{ pos, hovered ? 24.0 : 22.0 }.draw(baseFill);
+            Circle{ pos, hovered ? 24.0 : 22.0 }.drawFrame(hovered ? 3.0 : 2.0, baseFrame);
         }
     }
 

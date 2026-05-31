@@ -6,7 +6,7 @@ unit_list = false
 
 building_editor = false
 
-command_editor = true
+command_editor = false
 
 skill_editor = false
 

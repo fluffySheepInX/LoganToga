@@ -48,9 +48,14 @@ namespace LT3
 		def.projectileHeight = arcHeight;
 		def.swingRadius = 0.0;
 		def.swingAngleDeg = 90.0;
+		def.swingHitMode = SkillSwingHitMode::Stop;
 		def.soundEffectVolume = 1.0;
 		def.bom = false;
 		def.bomRadius = 0.0;
+		def.bomVisual = SkillBomVisual::Circle;
+		def.bomImage.clear();
+		def.bomVisualScale = 1.0;
+		def.bomVisualDurationSec = 0.22;
 		def.bomFriendlyFire = false;
 		def.bomSelfDamageScale = 0.0;
 		def.allfunc = false;
@@ -108,6 +113,7 @@ namespace LT3
 			writer << U"icon = \"" << EscapeTomlBasicString(skill.icon) << U"\"\n";
 			writer << U"icons = " << BuildTomlStringArrayValue(skill.iconLayers) << U"\n";
 			writer << U"kind = \"" << SkillKindToTag(skill.kind) << U"\"\n";
+			writer << U"func = \"" << SkillKindToTag(skill.kind) << U"\"\n";
 			writer << U"range = " << skill.range << U"\n";
 			writer << U"range_min = " << skill.rangeMin << U"\n";
 			writer << U"cooldown_sec = " << skill.cooldownSec << U"\n";
@@ -124,6 +130,10 @@ namespace LT3
 			writer << U"projectile_motion = \"" << SkillProjectileMotionToTag(skill.projectileMotion) << U"\"\n";
 			writer << U"bom = \"" << (skill.bom ? U"on" : U"off") << U"\"\n";
 			writer << U"bom_radius = " << skill.bomRadius << U"\n";
+			writer << U"bom_visual = \"" << SkillBomVisualToTag(skill.bomVisual) << U"\"\n";
+			writer << U"bom_image = \"" << EscapeTomlBasicString(skill.bomImage) << U"\"\n";
+			writer << U"bom_visual_scale = " << skill.bomVisualScale << U"\n";
+			writer << U"bom_visual_duration_sec = " << skill.bomVisualDurationSec << U"\n";
 			writer << U"bom_friendly_fire = \"" << (skill.bomFriendlyFire ? U"on" : U"off") << U"\"\n";
 			writer << U"bom_self_damage_scale = " << skill.bomSelfDamageScale << U"\n";
 			writer << U"allfunc = \"" << (skill.allfunc ? U"on" : U"off") << U"\"\n";
@@ -132,6 +142,11 @@ namespace LT3
 			writer << U"d360 = \"" << (skill.projectileD360 ? U"on" : U"off") << U"\"\n";
 			writer << U"start_degree = " << skill.projectileStartDegree << U"\n";
 			writer << U"start_degree_type = " << skill.projectileStartDegreeType << U"\n";
+			writer << U"next = \"" << EscapeTomlBasicString(skill.nextSkillTag) << U"\"\n";
+			writer << U"next_last = \"" << (skill.nextLast ? U"on" : U"off") << U"\"\n";
+			writer << U"joint_skill = \"" << (skill.jointSkill ? U"on" : U"off") << U"\"\n";
+			writer << U"send_target = \"" << (skill.sendTarget ? U"on" : U"off") << U"\"\n";
+			writer << U"send_image_degree = \"" << (skill.sendImageDegree ? U"on" : U"off") << U"\"\n";
 			writer << U"burst_count = " << skill.burstCount << U"\n";
 			writer << U"burst_interval_sec = " << skill.burstIntervalSec << U"\n";
 			writer << U"burst_fire_mode = \"" << SkillBurstFireModeToTag(skill.burstFireMode) << U"\"\n";
@@ -148,6 +163,7 @@ namespace LT3
 			writer << U"projectile_height = " << skill.projectileHeight << U"\n";
 			writer << U"swing_radius = " << skill.swingRadius << U"\n";
 			writer << U"swing_angle_deg = " << skill.swingAngleDeg << U"\n";
+			writer << U"swing_hit_mode = \"" << SkillSwingHitModeToTag(skill.swingHitMode) << U"\"\n";
 			for (const auto& cost : skill.resourceCosts)
 			{
 				if (cost.resourceTag.isEmpty())

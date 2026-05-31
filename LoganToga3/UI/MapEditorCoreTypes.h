@@ -55,6 +55,14 @@ namespace LT3
 		Unit,
 	};
 
+	enum class AiEditorUnitWeightMenuKind : uint8
+	{
+		None,
+		WeightStep,
+		DesiredStep,
+		UnitPicker,
+	};
+
 	struct MapEditorAsset
 	{
 		FilePath path;
@@ -131,12 +139,17 @@ namespace LT3
 		Vec2 velocity{ 0.0, 0.0 };
 		Vec2 startPosition{ 0.0, 0.0 };
 		Vec2 endPosition{ 0.0, 0.0 };
+		Vec2 firedTargetPosition{ 0.0, 0.0 };
 		double lifeSec = 0.0;
 		double ageSec = 0.0;
 		double maxLifeSec = 0.0;
 		double height = 0.0;
 		double angleRad = 0.0;
 		double baseAngleRad = 0.0;
+		bool hasImageAngleOverride = false;
+		double imageAngleOverrideRad = 0.0;
+		int32 chainDepth = 0;
+		Array<int32> swingHitTargetIndices;
 		SkillDefId skillId = InvalidSkillDefId;
 		SkillProjectileMotion motion = SkillProjectileMotion::Direct;
 		bool targetIsAlly = false;
@@ -189,6 +202,12 @@ namespace LT3
 		String selectedAiProfileTag = U"balanced";
 		bool aiProfileSelectionInitialized = false;
 		bool aiProfilesDirty = false;
+		double aiUnitWeightStep = 0.1;
+		int32 aiUnitWeightDesiredStep = 1;
+		Optional<int32> aiUnitWeightMenuRow;
+		AiEditorUnitWeightMenuKind aiUnitWeightMenuKind = AiEditorUnitWeightMenuKind::None;
+		Vec2 aiUnitWeightMenuPos{ 0.0, 0.0 };
+		double aiUnitWeightUnitPickerScroll = 0.0;
 		double skillListScroll = 0.0;
 		double skillUnitListScroll = 0.0;
 		double skillDetailScroll = 0.0;
@@ -202,6 +221,10 @@ namespace LT3
 		Array<double> skillValueSteps;
 		Optional<int32> skillValueStepMenuRow;
 		Vec2 skillValueStepMenuPos{ 0.0, 0.0 };
+		bool skillNextTagEditing = false;
+		String skillNextTagEditingText;
+		String skillNextTagFilterText;
+		Optional<int32> skillNextTagCandidateHoverIndex;
 		int32 skillResourceCostEditingIndex = -1;
 		String skillResourceCostEditingText;
 		Array<double> skillResourceCostSteps;
@@ -235,6 +258,12 @@ namespace LT3
 		Vec2 skillSandboxLastBomCenter{ 0.0, 0.0 };
 		double skillSandboxLastBomRadius = 0.0;
 		double skillSandboxLastBomDisplaySec = 0.0;
+		double skillSandboxLastBomVisualDurationSec = 0.22;
+		double skillSandboxLastBomVisualScale = 1.0;
+		SkillBomVisual skillSandboxLastBomVisual = SkillBomVisual::Circle;
+		SkillKind skillSandboxLastBomKind = SkillKind::Missile;
+		bool skillSandboxLastBomFriendlyFire = false;
+		String skillSandboxLastBomImage;
 		String skillSoundPreviewUnitHint;
 		bool skillDefsDirty = false;
 		Optional<int32> skillContextMenuTargetIndex;

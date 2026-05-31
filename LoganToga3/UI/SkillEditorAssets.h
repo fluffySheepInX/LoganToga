@@ -6,6 +6,12 @@
 
 namespace LT3
 {
+	inline HashTable<FilePath, Texture>& SkillEditorTextureCache()
+	{
+		static HashTable<FilePath, Texture> cache;
+		return cache;
+	}
+
 	inline FilePath SkillEditorHelpIconPath()
 	{
 		return ResolveSystemImagePath(U"hatena.png");
@@ -66,7 +72,7 @@ namespace LT3
 			}
 		}
 
-		BuildingEditorTextureCache().erase(ResolveBuildIconPath(fileName));
+		SkillEditorTextureCache().erase(ResolveBuildIconPath(fileName));
 		statusText = U"Skill image set: {}"_fmt(fileName);
 		return true;
 	}
@@ -111,7 +117,7 @@ namespace LT3
 				continue;
 			}
 
-			auto& cache = BuildingEditorTextureCache();
+			auto& cache = SkillEditorTextureCache();
 			if (!cache.contains(iconPath))
 			{
 				cache.emplace(iconPath, Texture{ iconPath });

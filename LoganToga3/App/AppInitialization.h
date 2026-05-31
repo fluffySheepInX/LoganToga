@@ -21,7 +21,7 @@ namespace LT3
 		GaussianFSAddon::SetLang(U"Japan");
 		GaussianFSAddon::SetSceneSet({
 			{ U"1600*900", U"1600", U"900" },
-			{ U"1200*600", U"1200", U"600" },
+			{ U"1280*720", U"1280", U"720" },
 			});
 		GaussianFSAddon::SetScene(U"1600*900");
 	}

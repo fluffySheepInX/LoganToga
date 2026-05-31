@@ -23,6 +23,12 @@ namespace LT3
 		return labels;
 	}
 
+	inline const Array<String>& SkillBomVisualLabels()
+	{
+		static const Array<String> labels = { U"circle", U"image" };
+		return labels;
+	}
+
 	inline const Array<String>& SkillEditorValueHelpTexts()
 	{
 		static const Array<String> helpTexts = {
@@ -52,6 +58,10 @@ namespace LT3
 			U"swing 専用の旋回角度です。負数にすると逆方向へ振ります。",
 			U"爆風半径です。bom=on の時に着弾地点からこの半径内へ同じダメージを与えます。距離減衰はありません。",
 			U"爆風による自爆倍率です。爆風の基準ダメージへ倍率を掛けて術者自身へ与えます。",
+			U"swing の命中方式です。stop は最初の接触で終了、multi_hit_once は振り切りつつ同一対象への再ヒットを防ぎます。",
+			U"bom の見た目モードです。0=circle, 1=image。ダメージ判定は bom_radius 側で変わりません。",
+			U"bom 画像の描画倍率です。円の代わりに画像/GIF を表示する時の見た目倍率です。",
+			U"bom 画像/GIF の表示秒数です。GIF でもこの秒数を超えたら演出を終了します。",
 		};
 		return helpTexts;
 	}
@@ -70,6 +80,14 @@ namespace LT3
 			return U"ff。bom 時に味方も爆風対象へ含めます。";
 		case 4:
 			return U"allfunc。射程範囲内の有効対象すべてに向けて同時に処理します。heal は味方、通常は敵を対象にします。";
+		case 5:
+			return U"next_last。ヒットしなくても寿命切れや対象喪失で消滅した時に next を発生させます。";
+		case 6:
+			return U"joint_skill。next へのつなぎ用スキルであることを示す編集用フラグです。";
+		case 7:
+			return U"send_target。親スキルの発射時標的位置を next スキルへ渡します。進行方向は next 側で再計算します。";
+		case 8:
+			return U"send_image_degree。親スキル画像の向き角度を next スキルの画像向きへ渡します。";
 		default:
 			return U"";
 		}

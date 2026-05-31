@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorTypes.h"
+# include "../libs/AddonGaussian.h"
 
 namespace LT3
 {
@@ -48,7 +49,8 @@ namespace LT3
 
     inline double BattleUiBottomSafeY()
     {
-        return Max(0.0, Scene::Height() - BattleUiBottomSafeInset());
+        const Point logicalSceneSize = Point{ 1600,900 };
+        return Max(0.0, logicalSceneSize.y - BattleUiBottomSafeInset());
     }
 
     inline RectF BattleCommandPanelRect(const MapEditorState& editor, int32 rows)

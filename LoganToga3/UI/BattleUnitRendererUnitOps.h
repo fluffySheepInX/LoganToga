@@ -34,6 +34,24 @@ namespace LT3
 		return ColorF{ 1.0, 0.15, 0.10 };
 	}
 
+	inline bool CanHoverHighlightSpawnFacilityUnit(const BattleWorld& world, const DefinitionStores& defs, UnitId unit)
+	{
+		if (!IsValidUnit(world, unit))
+		{
+			return false;
+		}
+
+		for (const BuildActionDef& action : defs.buildActions)
+		{
+			if (CanUseBuildAction(world, defs, unit, action))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	inline void DrawUnitMovePath(const BattleWorld& world, UnitId unit, const ColorF& outline, bool showEnemyMoveMarkers)
 	{
 		if (world.units.task[unit] != UnitTask::Moving)
@@ -136,14 +154,21 @@ namespace LT3
 		uiFont(U"...").draw(10, textX, bubble.y + 32.0, Palette::Aqua);
 	}
 
-	inline void DrawUnitShape(const UnitDef& def, const Vec2& pos, bool selected, const ColorF& outline)
+	inline void DrawUnitShape(const UnitDef& def, const Vec2& pos, bool selected, const ColorF& outline, bool hovered = false)
 	{
-		Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, 0.28 });
-		Circle{ pos, def.radius + 2.0 }.drawFrame(2.0, outline);
+		const bool emphasize = selected || hovered;
+		if (hovered)
+		{
+			const double pulse = 0.72 + Periodic::Sine0_1(1.8s) * 0.28;
+			Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * (1.35 + pulse * 0.18), def.radius * (0.58 + pulse * 0.05) }.drawFrame(3.0, ColorF{ 1.0, 0.90, 0.30, 0.40 });
+			Circle{ pos, def.radius + 6.0 + pulse * 2.0 }.drawFrame(4.0, ColorF{ 1.0, 0.95, 0.45, 0.92 });
+		}
+		Ellipse{ pos + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15, def.radius * 0.45 }.draw(ColorF{ 0, 0, 0, hovered ? 0.38 : 0.28 });
+		Circle{ pos, def.radius + 2.0 }.drawFrame(emphasize ? 3.0 : 2.0, emphasize ? ColorF{ 1.0, 0.92, 0.35, 0.95 } : outline);
 		DrawUnitShape(def, pos, outline);
 	}
 
-	inline void DrawUnitVisual(const UnitDef& def, const Vec2& pos, bool selected, bool isMoving, const ColorF& outline, const BattleRenderAssets* assets, StringView iconOverride = U"")
+	inline void DrawUnitVisual(const UnitDef& def, const Vec2& pos, bool selected, bool hovered, bool isMoving, const ColorF& outline, const BattleRenderAssets* assets, StringView iconOverride = U"")
 	{
 		const bool isStaticStructure = (def.role == UnitRole::Base || def.role == UnitRole::Barrier);
 		Vec2 shadowCenter = pos;
@@ -161,10 +186,16 @@ namespace LT3
 			}
 		}
 
-		Ellipse{ shadowCenter + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15 * shadowScale, def.radius * 0.45 * shadowScale }.draw(ColorF{ 0, 0, 0, shadowOpacity });
+		Ellipse{ shadowCenter + Vec2{ 0, def.radius * 0.65 }, def.radius * 1.15 * shadowScale, def.radius * 0.45 * shadowScale }.draw(ColorF{ 0, 0, 0, hovered ? Min(1.0, shadowOpacity + 0.10) : shadowOpacity });
 		if (!isStaticStructure)
 		{
-			Circle{ pos, def.radius + 2.0 }.drawFrame(2.0, outline);
+			const bool emphasize = selected || hovered;
+			if (hovered)
+			{
+				const double pulse = 0.72 + Periodic::Sine0_1(1.8s) * 0.28;
+				Circle{ pos, def.radius + 6.0 + pulse * 2.0 }.drawFrame(4.0, ColorF{ 1.0, 0.95, 0.45, 0.92 });
+			}
+			Circle{ pos, def.radius + 2.0 }.drawFrame(emphasize ? 3.0 : 2.0, emphasize ? ColorF{ 1.0, 0.92, 0.35, 0.95 } : outline);
 		}
 
 		Vec2 iconOffset{ 0, 0 };
@@ -188,7 +219,7 @@ namespace LT3
 
 		if (!(assets && DrawUnitTexture(*assets, def, pos, isMoving, iconOverride, iconOffset)))
 		{
-			DrawUnitShape(def, pos, outline);
+			DrawUnitShape(def, pos, selected, outline, hovered);
 		}
 	}
 
@@ -217,12 +248,15 @@ namespace LT3
 		const UnitDef& def = defs.units[world.units.defId[unit]];
 		const Vec2 pos = ToQuarterScreen(world.units.position[unit]);
 		const bool selected = IsUnitSelected(world, unit);
+		const bool hovered = !selected
+			&& CanHoverHighlightSpawnFacilityUnit(world, defs, unit)
+			&& Cursor::PosF().distanceFrom(pos) <= (UnitSelectionRadius(def) + 16.0);
 		const bool isMoving = (world.units.task[unit] == UnitTask::Moving);
 		const ColorF outline = GetUnitOutlineColor(world, unit);
 
 		DrawUnitMovePath(world, unit, outline, showEnemyMoveMarkers);
 		const String iconOverride = (unit < world.units.iconOverride.size()) ? world.units.iconOverride[unit] : U"";
-		DrawUnitVisual(def, pos, selected, isMoving, outline, assets, iconOverride);
+		DrawUnitVisual(def, pos, selected, hovered, isMoving, outline, assets, iconOverride);
 
 		if (assets)
 		{

@@ -1,6 +1,8 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "BattleUnitRendererAssetOps.h"
+# include "SkillEditorAssets.h"
+# include "MapEditorAssetUtils.h"
 
 namespace LT3
 {
@@ -256,6 +258,90 @@ namespace LT3
 
 	inline void DrawProjectiles(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets* assets = nullptr)
 	{
+		if (assets)
+		{
+			for (size_t effectIndex = 0; effectIndex < world.bomVisualEffects.position.size(); ++effectIndex)
+			{
+				const Vec2 effectPos = ToQuarterScreen(world.bomVisualEffects.position[effectIndex]);
+				const double duration = Max(0.05, world.bomVisualEffects.durationSec[effectIndex]);
+				const double alpha = Clamp(world.bomVisualEffects.leftSec[effectIndex] / duration, 0.0, 1.0);
+				ColorF frameColor{ 1.0, 0.72, 0.24, 0.34 + 0.34 * alpha };
+				if (world.bomVisualEffects.kind[effectIndex] == SkillKind::Heal)
+				{
+					frameColor = ColorF{ 0.56, 1.0, 0.66, 0.38 + 0.34 * alpha };
+				}
+				else if (world.bomVisualEffects.friendlyFire[effectIndex])
+				{
+					frameColor = ColorF{ 1.0, 0.36, 0.36, 0.40 + 0.36 * alpha };
+				}
+
+				bool drewImage = false;
+				if (world.bomVisualEffects.visual[effectIndex] == SkillBomVisual::Image)
+				{
+					const FilePath imagePath = ResolveSkillIconPath(world.bomVisualEffects.image[effectIndex]);
+					if (!imagePath.isEmpty())
+					{
+						const double drawSize = Max(12.0, world.bomVisualEffects.radius[effectIndex] * 2.0 * Max(0.1, world.bomVisualEffects.scale[effectIndex]));
+						const ColorF tint{ 1.0, 1.0, 1.0, 0.32 + 0.68 * alpha };
+						if (FileSystem::Extension(imagePath).lowercased() == U"gif")
+						{
+							if (!assets->unitGifDurationMillisecCache.contains(imagePath))
+							{
+								Array<Texture> frames;
+								Array<int32> delaysMillisec;
+								int32 durationMillisec = 0;
+								AnimatedGIFReader reader{ imagePath };
+								Array<Image> images;
+								if (reader && reader.read(images, delaysMillisec, durationMillisec) && !images.isEmpty())
+								{
+									frames.reserve(images.size());
+									for (auto image : images)
+									{
+										PremultiplyImageAlpha(image);
+										frames << Texture{ image };
+									}
+								}
+
+								assets->unitGifFrameCache.emplace(imagePath, std::move(frames));
+								assets->unitGifFrameDelaysMillisecCache.emplace(imagePath, std::move(delaysMillisec));
+								assets->unitGifDurationMillisecCache.emplace(imagePath, Max(durationMillisec, 1));
+							}
+
+							if (assets->unitGifFrameCache.contains(imagePath))
+							{
+								const Array<Texture>& frames = assets->unitGifFrameCache.at(imagePath);
+								const Array<int32>& delaysMillisec = assets->unitGifFrameDelaysMillisecCache.at(imagePath);
+								const int32 durationMillisec = assets->unitGifDurationMillisecCache.at(imagePath);
+								if (!frames.isEmpty() && !delaysMillisec.isEmpty() && durationMillisec > 0)
+								{
+									const size_t frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delaysMillisec, durationMillisec);
+									frames[Min(frameIndex, frames.size() - 1)].resized(drawSize).drawAt(effectPos, tint);
+									drewImage = true;
+								}
+							}
+						}
+						else
+						{
+							if (!assets->iconTextureCache.contains(imagePath))
+							{
+								assets->iconTextureCache.emplace(imagePath, Texture{ imagePath });
+							}
+							if (assets->iconTextureCache.contains(imagePath))
+							{
+								assets->iconTextureCache.at(imagePath).resized(drawSize).drawAt(effectPos, tint);
+								drewImage = true;
+							}
+						}
+					}
+				}
+
+				if (!drewImage)
+				{
+					Circle{ effectPos, world.bomVisualEffects.radius[effectIndex] }.drawFrame(2.0, frameColor);
+				}
+			}
+		}
+
 		for (size_t i = 0; i < world.projectiles.position.size(); ++i)
 		{
 			const SkillDef& skill = defs.skills[world.projectiles.skill[i]];
@@ -271,11 +357,13 @@ namespace LT3
 				{
 					rayTailPos = ToQuarterScreen(world.units.position[world.projectiles.owner[i]]);
 				}
-				DrawSkillRay(*assets, skill, drawPos, world.projectiles.angleRad[i], true, rayTailPos);
+				const double drawAngleRad = world.projectiles.hasImageAngleOverride[i] ? world.projectiles.imageAngleOverrideRad[i] : world.projectiles.angleRad[i];
+				DrawSkillRay(*assets, skill, drawPos, drawAngleRad, true, rayTailPos);
 			}
 			if (assets)
 			{
-				if (const Optional<Vec2> tipScreen = ResolveSwingEndProjectileTipScreen(skill, world.projectiles.position[i], world.projectiles.angleRad[i]))
+				const double drawAngleRad = world.projectiles.hasImageAngleOverride[i] ? world.projectiles.imageAngleOverrideRad[i] : world.projectiles.angleRad[i];
+				if (const Optional<Vec2> tipScreen = ResolveSwingEndProjectileTipScreen(skill, world.projectiles.position[i], drawAngleRad))
 				{
 					if (DrawSwingEndProjectileTexture(*assets, skill, drawPos, *tipScreen))
 					{
@@ -283,7 +371,8 @@ namespace LT3
 					}
 				}
 			}
-			if (assets && DrawProjectileTexture(*assets, skill, drawPos, world.projectiles.angleRad[i]))
+			const double drawAngleRad = world.projectiles.hasImageAngleOverride[i] ? world.projectiles.imageAngleOverrideRad[i] : world.projectiles.angleRad[i];
+			if (assets && DrawProjectileTexture(*assets, skill, drawPos, drawAngleRad))
 			{
 				continue;
 			}

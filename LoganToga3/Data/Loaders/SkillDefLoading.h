@@ -27,7 +27,7 @@ namespace LT3
 		{
 			def.projectileImage = def.icon;
 		}
-		def.kind = ParseSkillKind(skillValue[U"kind"].getOr<String>(U"missile"));
+		def.kind = ParseSkillKind(skillValue[U"kind"].getOr<String>(skillValue[U"func"].getOr<String>(U"missile")));
 		def.range = Max(0.0, skillValue[U"range"].getOr<double>(def.range));
 		def.rangeMin = Clamp(skillValue[U"range_min"].getOr<double>(def.rangeMin), 0.0, def.range);
 		def.cooldownSec = Max(0.05, skillValue[U"cooldown_sec"].getOr<double>(def.cooldownSec));
@@ -45,6 +45,10 @@ namespace LT3
 		}
 		def.bom = ReadSkillBoolSwitch(skillValue[U"bom"], def.bom);
 		def.bomRadius = Max(0.0, skillValue[U"bom_radius"].getOr<double>(def.bomRadius));
+		def.bomVisual = ParseSkillBomVisual(skillValue[U"bom_visual"].getOr<String>(U"circle"));
+		def.bomImage = skillValue[U"bom_image"].getOr<String>(U"");
+		def.bomVisualScale = Max(0.1, skillValue[U"bom_visual_scale"].getOr<double>(def.bomVisualScale));
+		def.bomVisualDurationSec = Max(0.05, skillValue[U"bom_visual_duration_sec"].getOr<double>(def.bomVisualDurationSec));
 		def.bomFriendlyFire = ReadSkillBoolSwitch(skillValue[U"bom_friendly_fire"], def.bomFriendlyFire);
 		def.bomSelfDamageScale = Max(0.0, skillValue[U"bom_self_damage_scale"].getOr<double>(def.bomSelfDamageScale));
 		def.allfunc = ReadSkillBoolSwitch(skillValue[U"allfunc"], def.allfunc);
@@ -53,6 +57,11 @@ namespace LT3
 		def.projectileD360 = ReadSkillBoolSwitch(skillValue[U"d360"], def.projectileD360);
 		def.projectileStartDegree = skillValue[U"start_degree"].getOr<double>(def.projectileStartDegree);
 		def.projectileStartDegreeType = skillValue[U"start_degree_type"].getOr<int32>(def.projectileStartDegreeType);
+		def.nextSkillTag = skillValue[U"next"].getOr<String>(def.nextSkillTag).lowercased();
+		def.nextLast = ReadSkillBoolSwitch(skillValue[U"next_last"], def.nextLast);
+		def.jointSkill = ReadSkillBoolSwitch(skillValue[U"joint_skill"], def.jointSkill);
+		def.sendTarget = ReadSkillBoolSwitch(skillValue[U"send_target"], def.sendTarget);
+		def.sendImageDegree = ReadSkillBoolSwitch(skillValue[U"send_image_degree"], def.sendImageDegree);
 		def.burstCount = Clamp(skillValue[U"burst_count"].getOr<int32>(def.burstCount), 1, 32);
 		def.burstIntervalSec = Max(0.0, skillValue[U"burst_interval_sec"].getOr<double>(def.burstIntervalSec));
 		if (const Optional<String> fireMode = skillValue[U"burst_fire_mode"].getOpt<String>())
@@ -76,6 +85,7 @@ namespace LT3
 		def.projectileHeight = Max(1.0, skillValue[U"projectile_height"].getOr<double>(def.arcHeight));
 		def.swingRadius = Max(0.0, skillValue[U"swing_radius"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? 0.0 : def.orbitRadius));
 		def.swingAngleDeg = skillValue[U"swing_angle_deg"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? def.range : 90.0);
+		def.swingHitMode = ParseSkillSwingHitMode(skillValue[U"swing_hit_mode"].getOr<String>(U"stop"));
 		const TOMLValue resourceCostsValue = skillValue[U"resource_costs"];
 		if (resourceCostsValue.isTableArray())
 		{
@@ -95,6 +105,23 @@ namespace LT3
 		return def;
 	}
 
+	inline void ResolveSkillNextReferences(DefinitionStores& defs)
+	{
+		for (SkillDef& skill : defs.skills)
+		{
+			skill.nextSkill = InvalidSkillDefId;
+			if (skill.nextSkillTag.isEmpty())
+			{
+				continue;
+			}
+
+			if (const auto it = defs.skillByTag.find(skill.nextSkillTag); it != defs.skillByTag.end())
+			{
+				skill.nextSkill = it->second;
+			}
+		}
+	}
+
 	inline void LoadSkillDefinitions(DefinitionStores& defs)
 	{
 		defs.skills.clear();
@@ -110,6 +137,7 @@ namespace LT3
 			{
 				defs.addSkill(skill);
 			}
+			ResolveSkillNextReferences(defs);
 			return;
 		}
 
@@ -142,6 +170,9 @@ namespace LT3
 					defs.skillIconWarningsByTag[skill.tag] = warnings;
 				}
 			}
+
 		}
+
+		ResolveSkillNextReferences(defs);
 	}
 }

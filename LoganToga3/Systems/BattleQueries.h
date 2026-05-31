@@ -22,6 +22,21 @@ namespace LT3
         return Max(def.radius, def.radius * def.visualScale);
     }
 
+    inline double ResourceNodeHoverScreenRadius(const bool hasSelectedUnits)
+    {
+        return ((hasSelectedUnits ? 58.0 : 42.0) * 2.0);
+    }
+
+    inline Vec2 ResourceNodeHoverPreCameraCenter(const Vec2& nodeWorldPos)
+    {
+        return QuarterTileFaceCenterScreen(nodeWorldPos);
+    }
+
+    inline double ResourceNodeHoverPreCameraRadius(const double screenRadius)
+    {
+        return (screenRadius / Max(GetQuarterViewCameraScale(), 0.001));
+    }
+
     inline bool IsEnemy(Faction a, Faction b)
     {
         return (a == Faction::Player && b == Faction::Enemy) || (a == Faction::Enemy && b == Faction::Player);
@@ -258,10 +273,10 @@ namespace LT3
     inline Optional<size_t> FindHoveredResourceNode(const BattleWorld& world, const Vec2& screenPos, double radius = 42.0)
     {
         size_t bestIndex = 0;
-        double bestDistanceSq = Square(radius);
+        const Vec2 preCameraMousePos = ToQuarterPreCameraScreen(screenPos);
+        const double preCameraRadius = ResourceNodeHoverPreCameraRadius(radius);
+        double bestDistanceSq = Square(preCameraRadius);
         bool found = false;
-        const double scale = QuarterViewCamera2D.getScale();
-        const Vec2 cameraCenter = QuarterViewCamera2D.getCenter();
 
         for (size_t node = 0; node < world.resourceNodes.position.size(); ++node)
         {
@@ -270,9 +285,7 @@ namespace LT3
                 continue;
             }
 
-            const Vec2 faceCenter = QuarterTileFaceCenterScreen(world.resourceNodes.position[node]);
-            const Vec2 nodeScreen = QuarterViewOrigin + ((faceCenter - QuarterViewOrigin) * scale) - (cameraCenter * scale);
-            const double distanceSq = nodeScreen.distanceFromSq(screenPos);
+            const double distanceSq = ResourceNodeHoverPreCameraCenter(world.resourceNodes.position[node]).distanceFromSq(preCameraMousePos);
             if (distanceSq <= bestDistanceSq)
             {
                 bestDistanceSq = distanceSq;

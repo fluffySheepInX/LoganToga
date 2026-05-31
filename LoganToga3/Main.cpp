@@ -44,6 +44,7 @@ void Main()
 	while (System::Update())
 	{
 		{
+			//フルスクリーンの時はこれが原因で資源セル選択判定などが狂う
 			const double scale = GaussianFSAddon::GetSCALE();
 			const Vec2 offset = GaussianFSAddon::GetOFFSET();
 			const Transformer2D screenScaling{ Mat3x2::Scale(scale).translated(offset), TransformCursor::Yes };

@@ -43,7 +43,7 @@ namespace LT3
 		}
 	}
 
-	inline void DrawSkillEditorValueRow(const Font& uiFont, const MapEditorState& editor, const SkillDef& skill, int32 row, StringView label, StringView value, double scroll, String& hoverHelpText, Optional<double>& hoverHelpTooltipX, String& hoverNoteText, Optional<double>& hoverNoteTooltipX)
+	inline void DrawSkillEditorValueRow(const Font& uiFont, const MapEditorState& editor, const SkillDef& skill, int32 row, StringView label, StringView value, double scroll, String& hoverHelpText, Optional<double>& hoverHelpTooltipX, String& hoverNoteText, Optional<double>& hoverNoteTooltipX, bool emphasized = false)
 	{
 		const RectF rowRect = SkillEditorValueRowRect(row, scroll);
 		const RectF viewport = SkillEditorDetailViewportRect();
@@ -52,10 +52,23 @@ namespace LT3
 			return;
 		}
 		const bool locked = IsSkillEditorValueRowLocked(skill, row);
-		uiFont(label).draw(11, rowRect.x + 8.0, rowRect.y + 4.0, locked ? ColorF{ 0.62, 0.66, 0.72 } : ColorF{ Palette::Aqua });
+		if (emphasized)
+		{
+			rowRect.stretched(2.0, 4.0, 2.0, 4.0).draw(ColorF{ 0.20, 0.16, 0.04, 0.18 }).drawFrame(1.0, ColorF{ 1.0, 0.84, 0.0, 0.22 });
+		}
+		uiFont(label).draw(11, rowRect.x + 8.0, rowRect.y + 4.0, locked ? ColorF{ 0.62, 0.66, 0.72 } : (emphasized ? ColorF{ 1.0, 0.88, 0.28 } : ColorF{ Palette::Aqua }));
 		const String shownValue = (editor.skillValueEditingRow == row) ? editor.skillValueEditingText : String{ value };
 		const String stepText = U"x{}"_fmt(SkillEditorValueStep(editor, row));
-		DrawRectNumberStepper(SkillEditorValueStepperRects(row, scroll), shownValue, stepText, editor.skillValueEditingRow == row, editor.skillValueStepMenuRow && *editor.skillValueStepMenuRow == row, !locked, uiFont);
+		RectNumberStepperStyle stepperStyle;
+		if (emphasized)
+		{
+			stepperStyle.buttonStyle.normalFrame = ColorF{ 1.0, 0.84, 0.0, 0.24 };
+			stepperStyle.buttonStyle.hoverFrame = ColorF{ 1.0, 0.84, 0.0, 0.90 };
+			stepperStyle.valueFrame = ColorF{ 1.0, 0.84, 0.0, 0.28 };
+			stepperStyle.valueHoverFrame = ColorF{ 1.0, 0.84, 0.0, 0.90 };
+			stepperStyle.valueText = ColorF{ 1.0, 0.95, 0.72 };
+		}
+		DrawRectNumberStepper(SkillEditorValueStepperRects(row, scroll), shownValue, stepText, editor.skillValueEditingRow == row, editor.skillValueStepMenuRow && *editor.skillValueStepMenuRow == row, !locked, uiFont, stepperStyle);
 		const RectF helpRect = SkillEditorValueHelpIconRect(row, scroll);
 		DrawSkillEditorInfoIcon(helpRect, SkillEditorHelpIconPath(), U"?", uiFont);
 		if (helpRect.mouseOver() && row < static_cast<int32>(SkillEditorValueHelpTexts().size()))

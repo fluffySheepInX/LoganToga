@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../libs/AddonGaussian.h"
 
 namespace LT3
 {
@@ -11,17 +12,23 @@ namespace LT3
 	inline constexpr double TitleUiDefaultOffset = 24.0;
 	inline constexpr double TitleUiEditorMinButtonWidth = 120.0;
 
+	inline Point TitleUiLogicalSceneSize()
+	{
+		const Point logicalSceneSize = Point{ 1600,900 };
+		return ((logicalSceneSize.x > 0) && (logicalSceneSize.y > 0)) ? logicalSceneSize : Point{ 1600, 900 };
+	}
+
 	struct TitleUiLayout
 	{
 		int32 gridSize = 24;
 		RectF skirmishButtonRect{
-			Scene::Width() - TitleOuterFrameWidth - 220.0 - TitleUiDefaultOffset,
+			TitleUiLogicalSceneSize().x - TitleOuterFrameWidth - 220.0 - TitleUiDefaultOffset,
 			120.0,
 			220.0,
 			44.0,
 		};
 		RectF musicEditorToggleRect{
-			Scene::Width() - TitleOuterFrameWidth - 220.0 - TitleUiDefaultOffset,
+			TitleUiLogicalSceneSize().x - TitleOuterFrameWidth - 220.0 - TitleUiDefaultOffset,
 			120.0 + 44.0 + TitleUiDefaultOffset,
 			180.0,
 			36.0,
@@ -68,6 +75,7 @@ namespace LT3
 	inline void RepairTitleUiLayout(TitleUiLayout& layout)
 	{
 		const TitleUiLayout defaults = CreateDefaultTitleUiLayout();
+		const Point logicalSceneSize = TitleUiLogicalSceneSize();
 		layout.gridSize = Clamp(layout.gridSize, 8, 160);
 
 		layout.skirmishButtonRect.w = Max(TitleUiEditorMinButtonWidth, layout.skirmishButtonRect.w);
@@ -75,10 +83,10 @@ namespace LT3
 		layout.musicEditorToggleRect.w = Max(TitleUiEditorMinButtonWidth, layout.musicEditorToggleRect.w);
 		layout.musicEditorToggleRect.h = defaults.musicEditorToggleRect.h;
 
-		layout.skirmishButtonRect.x = Clamp(layout.skirmishButtonRect.x, 0.0, Max(0.0, Scene::Width() - layout.skirmishButtonRect.w));
-		layout.skirmishButtonRect.y = Clamp(layout.skirmishButtonRect.y, 0.0, Max(0.0, Scene::Height() - TitleUnderBarHeight - layout.skirmishButtonRect.h));
-		layout.musicEditorToggleRect.x = Clamp(layout.musicEditorToggleRect.x, 0.0, Max(0.0, Scene::Width() - layout.musicEditorToggleRect.w));
-		layout.musicEditorToggleRect.y = Clamp(layout.musicEditorToggleRect.y, 0.0, Max(0.0, Scene::Height() - TitleUnderBarHeight - layout.musicEditorToggleRect.h));
+		layout.skirmishButtonRect.x = Clamp(layout.skirmishButtonRect.x, 0.0, Max(0.0, logicalSceneSize.x - layout.skirmishButtonRect.w));
+		layout.skirmishButtonRect.y = Clamp(layout.skirmishButtonRect.y, 0.0, Max(0.0, logicalSceneSize.y - TitleUnderBarHeight - layout.skirmishButtonRect.h));
+		layout.musicEditorToggleRect.x = Clamp(layout.musicEditorToggleRect.x, 0.0, Max(0.0, logicalSceneSize.x - layout.musicEditorToggleRect.w));
+		layout.musicEditorToggleRect.y = Clamp(layout.musicEditorToggleRect.y, 0.0, Max(0.0, logicalSceneSize.y - TitleUnderBarHeight - layout.musicEditorToggleRect.h));
 	}
 
 	inline bool SaveTitleUiLayoutToml(const TitleUiLayout& sourceLayout)

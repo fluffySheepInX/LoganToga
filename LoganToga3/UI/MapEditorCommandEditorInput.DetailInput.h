@@ -8,7 +8,8 @@ namespace LT3
 		bool consumed = false;
 		const bool showLineSettings = (action.placementMode == BuildPlacementMode::Line);
 		const bool showCarrierSettings = (action.resultType == BuildActionResultType::Carrier);
-		const double inspectContentHeight = showLineSettings ? 654.0 : 570.0;
+		const bool showCarrierCapacity = IsCommandCarrierCapacityVisible(action);
+		const double inspectContentHeight = GetCommandInspectContentHeight(showCarrierSettings, showCarrierCapacity, showLineSettings);
 		const double inspectMaxScroll = Max(0.0, inspectContentHeight - inspectTopViewport.h + 8.0);
 		editor.commandInspectScroll = Clamp(editor.commandInspectScroll, 0.0, inspectMaxScroll);
 		if (inspectTopViewport.mouseOver())
@@ -26,6 +27,8 @@ namespace LT3
 		const RectF spawnCountRow = EditorCommandSpawnCountRowRect(scroll);
 		const RectF carrierStoreRect = EditorCommandCarrierStoreRect(scroll);
 		const RectF carrierReleaseRect = EditorCommandCarrierReleaseRect(scroll);
+		const RectF carrierRadiusRow = EditorCommandCarrierRadiusRowRect(scroll);
+		const RectF carrierCapacityRow = EditorCommandCarrierCapacityRowRect(scroll);
 		const RectF placementModePointRect = EditorCommandPlacementModePointRect(scroll);
 		const RectF placementModeLineRect = EditorCommandPlacementModeLineRect(scroll);
 		const RectF lineDragPlacementToggleRect = EditorCommandLineDragPlacementToggleRect(scroll);
@@ -117,6 +120,64 @@ namespace LT3
 			editor.commandBindingsDirty = true;
 			editor.statusText = U"Carrier action updated: {} -> release"_fmt(action.name);
 			consumed = true;
+		}
+		if (showCarrierSettings)
+		{
+			for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+			{
+				const RectF buttonRect = EditorCommandCarrierRadiusButtonRect(carrierRadiusRow, buttonIndex);
+				if (!buttonRect.leftClicked())
+				{
+					continue;
+				}
+
+				if (buttonIndex == 0)
+				{
+					action.carrierRadiusPx = Max(16.0, action.carrierRadiusPx - 16.0);
+				}
+				else if (buttonIndex == 1)
+				{
+					action.carrierRadiusPx = Min(999.0, action.carrierRadiusPx + 16.0);
+				}
+				else
+				{
+					action.carrierRadiusPx = 84.0;
+				}
+
+				editor.commandBindingsDirty = true;
+				editor.statusText = U"Carrier radius updated: {} -> {} px"_fmt(action.name, Round(action.carrierRadiusPx));
+				return true;
+			}
+		}
+		if (showCarrierCapacity)
+		{
+			for (int32 buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+			{
+				const RectF buttonRect = EditorCommandCarrierCapacityButtonRect(carrierCapacityRow, buttonIndex);
+				if (!buttonRect.leftClicked())
+				{
+					continue;
+				}
+
+				if (buttonIndex == 0)
+				{
+					action.carrierMaxUnits = Max(0, action.carrierMaxUnits - 1);
+				}
+				else if (buttonIndex == 1)
+				{
+					action.carrierMaxUnits = Min(99, action.carrierMaxUnits + 1);
+				}
+				else
+				{
+					action.carrierMaxUnits = 0;
+				}
+
+				editor.commandBindingsDirty = true;
+				editor.statusText = U"Carrier capacity updated: {} -> {}"_fmt(
+					action.name,
+					(action.carrierMaxUnits <= 0) ? U"unlimited" : Format(action.carrierMaxUnits));
+				return true;
+			}
 		}
 
 		if (placementModePointRect.leftClicked())

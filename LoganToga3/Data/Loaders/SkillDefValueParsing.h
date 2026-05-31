@@ -22,6 +22,28 @@ namespace LT3
 		}
 	}
 
+	inline String SkillBomVisualToTag(SkillBomVisual visual)
+	{
+		switch (visual)
+		{
+		case SkillBomVisual::Image:
+			return U"image";
+		default:
+			return U"circle";
+		}
+	}
+
+	inline String SkillSwingHitModeToTag(SkillSwingHitMode mode)
+	{
+		switch (mode)
+		{
+		case SkillSwingHitMode::MultiHitOnce:
+			return U"multi_hit_once";
+		default:
+			return U"stop";
+		}
+	}
+
 	inline SkillKind ParseSkillKind(const String& value)
 	{
 		const String lowered = value.lowercased();
@@ -124,6 +146,28 @@ namespace LT3
 			return SkillProjectileCenter::End;
 		}
 		return SkillProjectileCenter::Off;
+	}
+
+	inline SkillSwingHitMode ParseSkillSwingHitMode(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"multi_hit_once" || lowered == U"multi" || lowered == U"continue_once")
+		{
+			return SkillSwingHitMode::MultiHitOnce;
+		}
+
+		return SkillSwingHitMode::Stop;
+	}
+
+	inline SkillBomVisual ParseSkillBomVisual(const String& value)
+	{
+		const String lowered = value.lowercased();
+		if (lowered == U"image" || lowered == U"gif")
+		{
+			return SkillBomVisual::Image;
+		}
+
+		return SkillBomVisual::Circle;
 	}
 
 	inline String SkillBurstFireModeToTag(SkillBurstFireMode mode)

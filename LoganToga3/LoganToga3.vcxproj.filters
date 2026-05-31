@@ -984,9 +984,6 @@
     <ClInclude Include="UI\BattleSelectionRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\BattleUiPanels.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Systems\BattleInputTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1248,13 +1245,7 @@
     <ClInclude Include="UI\AiEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\AiEditorCommon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UI\AiEditorDraw.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\AiEditorInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Systems\EnemyDirectorCommon.h">
@@ -1387,6 +1378,75 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Systems\EnemyDirectorConstruction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorDescriptionLayoutRects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorToolbarPanelsLayoutRects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorUnitListLayoutRects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorCommandLayoutRects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorDrawBaseCommandEditorHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorDrawBaseCommandEditorInspect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MapEditorDrawBaseCommandEditorListPanels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\SkillEditorNextInputHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.Skill.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.Build.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.Debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.SelectedUnit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.Overlay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\BattleUiPanels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorInput.UnitWeightMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorInput.DetailRows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorInput.TopLevel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.Layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.Help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.UnitWeight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.ProfileOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\AiEditorCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

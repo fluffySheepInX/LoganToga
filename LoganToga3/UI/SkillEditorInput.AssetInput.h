@@ -335,6 +335,37 @@ namespace LT3
 			}
 		}
 
+		if (HandleRectButtonClick(SkillEditorBomImageClearRect(scroll)))
+		{
+			MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+				const String empty;
+				return SetFieldIfChanged(selected.bomImage, empty);
+			});
+			editor.statusText = U"Skill bom image cleared";
+			return true;
+		}
+
+		if (HandleRectButtonClick(SkillEditorBomImageBrowseRect(scroll)))
+		{
+			const Array<FileFilter> imageFilters = { FileFilter::PNG(), FileFilter::JPEG(), FileFilter::BMP(), FileFilter::GIF(), FileFilter::AllFiles() };
+			const Optional<FilePath> sourcePath = Dialog::OpenFile(imageFilters);
+			if (sourcePath)
+			{
+				String fileName;
+				if (!CopySkillEditorImageToBuildIcons(*sourcePath, fileName, editor.statusText))
+				{
+					return true;
+				}
+
+				MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+				{
+					return SetFieldIfChanged(selected.bomImage, fileName);
+				});
+			}
+			return true;
+		}
+
 		return false;
 	}
 }

@@ -42,9 +42,14 @@ namespace LT3
         double projectileHeight = 72.0;
         double swingRadius = 0.0;
         double swingAngleDeg = 90.0;
+        SkillSwingHitMode swingHitMode = SkillSwingHitMode::Stop;
         ColorF color = Palette::White;
         bool bom = false;
         double bomRadius = 0.0;
+        SkillBomVisual bomVisual = SkillBomVisual::Circle;
+        String bomImage;
+        double bomVisualScale = 1.0;
+        double bomVisualDurationSec = 0.22;
         bool bomFriendlyFire = false;
         double bomSelfDamageScale = 0.0;
         bool allfunc = false;
@@ -53,6 +58,12 @@ namespace LT3
         bool projectileD360 = false;
         double projectileStartDegree = 0.0;
         int32 projectileStartDegreeType = 0;
+        String nextSkillTag;
+        SkillDefId nextSkill = InvalidSkillDefId;
+        bool nextLast = false;
+        bool jointSkill = false;
+        bool sendTarget = false;
+        bool sendImageDegree = false;
         String soundEffect;
         double soundEffectVolume = 1.0;
         String projectileImage;

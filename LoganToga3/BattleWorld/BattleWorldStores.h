@@ -229,13 +229,18 @@ namespace LT3
 		Array<double> height;
 		Array<double> angleRad;
 		Array<double> baseAngleRad;
+		Array<Vec2> firedTargetPosition;
+		Array<bool> hasImageAngleOverride;
+		Array<double> imageAngleOverrideRad;
+		Array<int32> chainDepth;
+		Array<Array<UnitId>> swingHitUnits;
 
 		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction ownerFaction, SkillDefId skillDef)
 		{
 			add(pos, vel, pos, pos + vel, targetUnit, InvalidUnitId, ownerFaction, skillDef, SkillProjectileMotion::Direct, 2.5, 0.0);
 		}
 
-		void add(const Vec2& pos, const Vec2& vel, const Vec2& start, const Vec2& end, UnitId targetUnit, UnitId ownerUnit, Faction ownerFaction, SkillDefId skillDef, SkillProjectileMotion projectileMotion, double maxLife, double initialAngleRad)
+		void add(const Vec2& pos, const Vec2& vel, const Vec2& start, const Vec2& end, UnitId targetUnit, UnitId ownerUnit, Faction ownerFaction, SkillDefId skillDef, SkillProjectileMotion projectileMotion, double maxLife, double initialAngleRad, const Vec2& firedTargetPos = Vec2{ 0.0, 0.0 }, bool imageAngleOverrideEnabled = false, double imageAngleOverride = 0.0, int32 nextChainDepth = 0)
 		{
 			position << pos;
 			velocity << vel;
@@ -252,6 +257,11 @@ namespace LT3
 			height << 0.0;
 			angleRad << initialAngleRad;
 			baseAngleRad << initialAngleRad;
+			firedTargetPosition << firedTargetPos;
+			hasImageAngleOverride << imageAngleOverrideEnabled;
+			imageAngleOverrideRad << imageAngleOverride;
+			chainDepth << nextChainDepth;
+			swingHitUnits << Array<UnitId>{};
 		}
 
 		void removeAt(size_t index)
@@ -274,6 +284,11 @@ namespace LT3
 				height[index]        = height[last];
 				angleRad[index]      = angleRad[last];
 				baseAngleRad[index]  = baseAngleRad[last];
+				firedTargetPosition[index] = firedTargetPosition[last];
+				hasImageAngleOverride[index] = hasImageAngleOverride[last];
+				imageAngleOverrideRad[index] = imageAngleOverrideRad[last];
+				chainDepth[index] = chainDepth[last];
+				swingHitUnits[index] = swingHitUnits[last];
 			}
 			position.pop_back();
 			velocity.pop_back();
@@ -290,6 +305,11 @@ namespace LT3
 			height.pop_back();
 			angleRad.pop_back();
 			baseAngleRad.pop_back();
+			firedTargetPosition.pop_back();
+			hasImageAngleOverride.pop_back();
+			imageAngleOverrideRad.pop_back();
+			chainDepth.pop_back();
+			swingHitUnits.pop_back();
 		}
 	};
 
@@ -298,6 +318,58 @@ namespace LT3
 		Array<int32> playerAmounts;
 		Array<int32> enemyAmounts;
 		double incomeTickAccumSec = 0.0;
+	};
+
+	struct BomVisualEffectStore
+	{
+		Array<Vec2> position;
+		Array<double> leftSec;
+		Array<double> durationSec;
+		Array<double> scale;
+		Array<double> radius;
+		Array<SkillBomVisual> visual;
+		Array<SkillKind> kind;
+		Array<bool> friendlyFire;
+		Array<String> image;
+
+		void add(const Vec2& effectPosition, double effectDurationSec, double effectScale, double effectRadius, SkillBomVisual effectVisual, SkillKind effectKind, bool effectFriendlyFire, const String& effectImage)
+		{
+			position << effectPosition;
+			leftSec << effectDurationSec;
+			durationSec << effectDurationSec;
+			scale << effectScale;
+			radius << effectRadius;
+			visual << effectVisual;
+			kind << effectKind;
+			friendlyFire << effectFriendlyFire;
+			image << effectImage;
+		}
+
+		void removeAt(size_t index)
+		{
+			const size_t last = position.size() - 1;
+			if (index != last)
+			{
+				position[index] = position[last];
+				leftSec[index] = leftSec[last];
+				durationSec[index] = durationSec[last];
+				scale[index] = scale[last];
+				radius[index] = radius[last];
+				visual[index] = visual[last];
+				kind[index] = kind[last];
+				friendlyFire[index] = friendlyFire[last];
+				image[index] = image[last];
+			}
+			position.pop_back();
+			leftSec.pop_back();
+			durationSec.pop_back();
+			scale.pop_back();
+			radius.pop_back();
+			visual.pop_back();
+			kind.pop_back();
+			friendlyFire.pop_back();
+			image.pop_back();
+		}
 	};
 
 	enum class AiRuntimePhase : uint8
@@ -415,6 +487,7 @@ namespace LT3
 		BuildQueueStore buildQueues;
 		ResourceNodeStore resourceNodes;
 		ProjectileStore   projectiles;
+		BomVisualEffectStore bomVisualEffects;
 		PlacedObjectStore placedObjects;
 		CarrierStore carriers;
 		PathRuntimeStore pathing;

@@ -13,7 +13,9 @@ namespace LT3
 
 		const SkillDef& skill = defs.skills[editor.selectedSkillIndex];
 		const double scroll = editor.skillDetailScroll;
-		const double contentTop = detail.y - scroll;
+		const auto layout = BuildSkillEditorDetailLayoutModel(static_cast<int32>(skill.resourceCosts.size()), scroll);
+		const double contentTop = layout.contentTop;
+		const double contentHeight = layout.contentHeight;
 		const Array<String>* iconWarnings = FindSkillIconWarnings(defs, skill.tag);
 		String hoverHelpText;
 		Optional<double> hoverHelpTooltipX;
@@ -22,8 +24,8 @@ namespace LT3
 		String hoverToggleText;
 		Optional<double> hoverToggleTooltipX;
 		Array<String> hoverWarningLines;
-		uiFont(skill.name).draw(16, detail.x + 12.0, contentTop + 12.0, Palette::White);
-		uiFont(U"tag: {}"_fmt(skill.tag)).draw(11, detail.x + 12.0, contentTop + 36.0, Palette::Lightgray);
+		uiFont(skill.name).draw(16, detail.x + 12.0, contentTop + layout.titleY, Palette::White);
+		uiFont(U"tag: {}"_fmt(skill.tag)).draw(11, detail.x + 12.0, contentTop + layout.tagY, Palette::Lightgray);
 		const RectF iconRect = SkillEditorIconPreviewRect(scroll);
 		iconRect.draw(ColorF{ 0.08, 0.09, 0.11, 0.92 }).drawFrame(1, ColorF{ 1, 1, 1, 0.16 });
 		if (!SkillEditorIconPaths(skill).isEmpty())
@@ -34,27 +36,31 @@ namespace LT3
 		{
 			uiFont(U"icon").drawAt(10, iconRect.center(), Palette::Gray);
 		}
-		uiFont(U"icon: {}"_fmt(skill.icon.isEmpty() ? U"<none>" : skill.icon)).draw(10, detail.x + 72.0, contentTop + 58.0, Palette::Lightgray);
+		uiFont(U"icon: {}"_fmt(skill.icon.isEmpty() ? U"<none>" : skill.icon)).draw(10, detail.x + 72.0, contentTop + layout.iconLabelY, Palette::Lightgray);
 		DrawRectButton(SkillEditorIconBrowseRect(scroll), U"参照", false, uiFont, RectButtonStyle{ .fontSize = 11 });
-		uiFont(U"image").draw(10, detail.x + 12.0, contentTop + 108.0, Palette::Lightgray);
+		uiFont(U"image").draw(10, detail.x + 12.0, contentTop + layout.projectileImageLabelY, Palette::Lightgray);
 		DrawRectButton(SkillEditorProjectileImageBrowseRect(0, scroll), U"上下左右", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorProjectileImageClearRect(0, scroll), U"clear", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		uiFont(skill.projectileImage.isEmpty() ? U"未設定" : U"設定完了", 10).draw(detail.x + 162.0, contentTop + 108.0, skill.projectileImage.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
-		uiFont(U"diag").draw(10, detail.x + 12.0, contentTop + 138.0, Palette::Lightgray);
+		uiFont(skill.projectileImage.isEmpty() ? U"未設定" : U"設定完了", 10).draw(detail.x + 162.0, contentTop + layout.projectileImageLabelY, skill.projectileImage.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
+		uiFont(U"diag").draw(10, detail.x + 12.0, contentTop + layout.projectileDiagonalLabelY, Palette::Lightgray);
 		DrawRectButton(SkillEditorProjectileImageBrowseRect(1, scroll), U"斜め", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorProjectileImageClearRect(1, scroll), U"clear", false, uiFont, RectButtonStyle{ .fontSize = 10 });
-		uiFont(skill.projectileDiagonalImage.isEmpty() ? U"未設定" : U"設定完了", 10).draw(detail.x + 162.0, contentTop + 138.0, skill.projectileDiagonalImage.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
-		uiFont(U"SE").draw(10, detail.x + 12.0, contentTop + 168.0, Palette::Lightgray);
+		uiFont(skill.projectileDiagonalImage.isEmpty() ? U"未設定" : U"設定完了", 10).draw(detail.x + 162.0, contentTop + layout.projectileDiagonalLabelY, skill.projectileDiagonalImage.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
+		uiFont(U"bomImg").draw(10, detail.x + 12.0, contentTop + layout.bomImageLabelY, Palette::Lightgray);
+		DrawRectButton(SkillEditorBomImageBrowseRect(scroll), U"参照", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorBomImageClearRect(scroll), U"clear", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		uiFont(skill.bomImage.isEmpty() ? U"未設定" : U"設定完了", 10).draw(detail.x + 162.0, contentTop + layout.bomImageLabelY, skill.bomImage.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
+		uiFont(U"SE").draw(10, detail.x + 12.0, contentTop + layout.soundEffectLabelY, Palette::Lightgray);
 		DrawRectButton(SkillEditorSoundEffectBrowseRect(scroll), U"参照", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorSoundEffectClearRect(scroll), U"clear", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorSoundEffectPlayRect(scroll), U"play", false, uiFont, RectButtonStyle{ .fontSize = 10 });
 		uiFont(skill.soundEffect.isEmpty() ? U"未設定" : FileSystem::BaseName(skill.soundEffect), 10)
-			.draw(detail.x + 270.0, contentTop + 168.0, skill.soundEffect.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
-		uiFont(U"SE vol").draw(10, detail.x + 12.0, contentTop + 200.0, Palette::Lightgray);
+			.draw(detail.x + 270.0, contentTop + layout.soundEffectLabelY, skill.soundEffect.isEmpty() ? Palette::Lightgray : Palette::Lightgreen);
+		uiFont(U"SE vol").draw(10, detail.x + 12.0, contentTop + layout.soundEffectVolumeLabelY, Palette::Lightgray);
 		DrawRectNumberStepper(SkillEditorSoundEffectVolumeStepperRects(scroll), U"{:.2f}"_fmt(skill.soundEffectVolume), U"x0.05", false, false, true, uiFont);
 		if (!editor.skillSoundPreviewUnitHint.isEmpty())
 		{
-			uiFont(editor.skillSoundPreviewUnitHint).draw(9, detail.x + 300.0, contentTop + 200.0, ColorF{ 1, 1, 1, 0.56 });
+			uiFont(editor.skillSoundPreviewUnitHint).draw(9, detail.x + 300.0, contentTop + layout.soundEffectVolumeLabelY, ColorF{ 1, 1, 1, 0.56 });
 		}
 		if (iconWarnings && !iconWarnings->isEmpty())
 		{
@@ -65,30 +71,50 @@ namespace LT3
 				hoverWarningLines = *iconWarnings;
 			}
 		}
-		uiFont(U"Kind").draw(12, detail.x + 8.0, contentTop + 246.0, Palette::Aqua);
+		uiFont(U"Kind").draw(12, detail.x + 8.0, contentTop + layout.kindLabelY, Palette::Aqua);
 		for (int32 i = 0; i < static_cast<int32>(SkillKindLabels().size()); ++i)
 		{
 			DrawRectButton(SkillEditorKindButtonRect(i, scroll), SkillKindLabels()[i], SkillKindIndex(skill.kind) == i, uiFont, RectButtonStyle{ .fontSize = 10 });
 		}
 
-		uiFont(U"Projectile Motion").draw(12, detail.x + 8.0, contentTop + 284.0, Palette::Aqua);
+		uiFont(U"Projectile Motion").draw(12, detail.x + 8.0, contentTop + layout.motionLabelY, Palette::Aqua);
 		for (int32 i = 0; i < static_cast<int32>(SkillMotionLabels().size()); ++i)
 		{
 			DrawRectButton(SkillEditorMotionButtonRect(i, scroll), SkillMotionLabels()[i], SkillMotionIndex(skill.projectileMotion) == i, uiFont, RectButtonStyle{ .fontSize = 10 });
 		}
 
-		uiFont(U"center").draw(11, detail.x + 8.0, contentTop + 364.0, Palette::Aqua);
+		uiFont(U"center").draw(11, detail.x + 8.0, contentTop + layout.centerLabelY, Palette::Aqua);
 		for (int32 i = 0; i < static_cast<int32>(SkillCenterLabels().size()); ++i)
 		{
 			DrawRectButton(SkillEditorCenterButtonRect(i, scroll), SkillCenterLabels()[i], SkillCenterIndex(skill.projectileCenter) == i, uiFont, RectButtonStyle{ .fontSize = 10 });
 		}
-		uiFont(U"flags").draw(11, detail.x + 8.0, contentTop + 398.0, Palette::Aqua);
+		uiFont(U"chain").draw(11, detail.x + 8.0, contentTop + layout.chainLabelY, Palette::Aqua);
+		uiFont(U"左クリックで切替 / 右クリックで解除", 9).draw(SkillEditorNextSkillButtonRect(scroll).x + 250.0, SkillEditorNextSkillButtonRect(scroll).y + 5.0, Palette::Lightgray);
+		uiFont(U"tag入力 / 候補クリックでも指定可", 9).draw(SkillEditorNextSkillInputRect(scroll).x + 250.0, SkillEditorNextSkillInputRect(scroll).y + 5.0, Palette::Lightgray);
+		uiFont(U"flags").draw(11, detail.x + 8.0, contentTop + layout.flagLabelY, Palette::Aqua);
 		DrawRectButton(SkillEditorToggleButtonRect(0, scroll), U"homing {}"_fmt(skill.projectileHoming ? U"on" : U"off"), skill.projectileHoming, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorToggleButtonRect(1, scroll), U"d360 {}"_fmt(skill.projectileD360 ? U"on" : U"off"), skill.projectileD360, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorToggleButtonRect(2, scroll), U"bom {}"_fmt(skill.bom ? U"on" : U"off"), skill.bom, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorToggleButtonRect(3, scroll), U"ff {}"_fmt(skill.bomFriendlyFire ? U"on" : U"off"), skill.bomFriendlyFire, uiFont, RectButtonStyle{ .fontSize = 10 });
 		DrawRectButton(SkillEditorToggleButtonRect(4, scroll), U"allfunc {}"_fmt(skill.allfunc ? U"on" : U"off"), skill.allfunc, uiFont, RectButtonStyle{ .fontSize = 10 });
-		for (int32 i = 0; i < 5; ++i)
+		DrawRectButton(SkillEditorNextSkillButtonRect(scroll), U"next: {}"_fmt(skill.nextSkillTag.isEmpty() ? U"<none>" : skill.nextSkillTag), !skill.nextSkillTag.isEmpty(), uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorNextSkillInputRect(scroll), editor.skillNextTagEditing ? editor.skillNextTagEditingText : (editor.skillNextTagFilterText.isEmpty() ? U"type next tag..." : editor.skillNextTagFilterText), editor.skillNextTagEditing, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorNextSkillClearRect(scroll), U"clear", false, uiFont, RectButtonStyle{ .fontSize = 10 });
+		const Array<int32> nextCandidates = BuildSkillEditorNextSkillCandidateIndices(editor, defs);
+		for (int32 i = 0; i < static_cast<int32>(nextCandidates.size()); ++i)
+		{
+			const SkillDef& candidate = defs.skills[nextCandidates[i]];
+			const RectF candidateRect = SkillEditorNextSkillCandidateRect(i, scroll);
+			candidateRect.draw(candidateRect.mouseOver() ? ColorF{ 0.16, 0.24, 0.20, 0.94 } : ColorF{ 0.08, 0.10, 0.14, 0.88 })
+				.drawFrame(1, ColorF{ 1, 1, 1, 0.14 });
+			uiFont(U"{}  ({})"_fmt(candidate.tag, candidate.name.isEmpty() ? candidate.tag : candidate.name))
+				.draw(10, candidateRect.x + 6.0, candidateRect.y + 3.0, Palette::White);
+		}
+		DrawRectButton(SkillEditorToggleButtonRect(5, scroll), U"last {}"_fmt(skill.nextLast ? U"on" : U"off"), skill.nextLast, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorToggleButtonRect(6, scroll), U"joint {}"_fmt(skill.jointSkill ? U"on" : U"off"), skill.jointSkill, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorToggleButtonRect(7, scroll), U"target {}"_fmt(skill.sendTarget ? U"on" : U"off"), skill.sendTarget, uiFont, RectButtonStyle{ .fontSize = 10 });
+		DrawRectButton(SkillEditorToggleButtonRect(8, scroll), U"imgDeg {}"_fmt(skill.sendImageDegree ? U"on" : U"off"), skill.sendImageDegree, uiFont, RectButtonStyle{ .fontSize = 10 });
+		for (int32 i = 0; i < 9; ++i)
 		{
 			const RectF toggleRect = SkillEditorToggleButtonRect(i, scroll);
 			if (toggleRect.mouseOver())
@@ -125,11 +151,16 @@ namespace LT3
 		DrawSkillEditorValueRow(uiFont, editor, skill, 23, U"swingDeg", U"{:.1f}"_fmt(skill.swingAngleDeg), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX);
 		DrawSkillEditorValueRow(uiFont, editor, skill, 24, U"bomR", U"{:.1f}"_fmt(skill.bomRadius), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX);
 		DrawSkillEditorValueRow(uiFont, editor, skill, 25, U"selfBom", U"{:.2f}"_fmt(skill.bomSelfDamageScale), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 26, U"swingHit", (skill.swingHitMode == SkillSwingHitMode::MultiHitOnce ? U"multi_once" : U"stop"), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX);
+		const bool emphasizeBomVisualRows = (skill.bomVisual == SkillBomVisual::Image);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 27, U"bomVisual", SkillBomVisualLabels()[static_cast<int32>(skill.bomVisual)], scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX, emphasizeBomVisualRows);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 28, U"bomScale", U"{:.2f}"_fmt(skill.bomVisualScale), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX, emphasizeBomVisualRows);
+		DrawSkillEditorValueRow(uiFont, editor, skill, 29, U"bomTime", U"{:.2f}"_fmt(skill.bomVisualDurationSec), scroll, hoverHelpText, hoverHelpTooltipX, hoverNoteText, hoverNoteTooltipX, emphasizeBomVisualRows);
 
-		uiFont(U"Resource Costs").draw(12, detail.x + 8.0, contentTop + 1388.0, Palette::Aqua);
+		uiFont(U"Resource Costs").draw(12, detail.x + 8.0, contentTop + layout.resourceCostsLabelY, Palette::Aqua);
 		if (skill.resourceCosts.isEmpty())
 		{
-			uiFont(U"<none>").draw(10, detail.x + 8.0, contentTop + 1416.0, Palette::Lightgray);
+			uiFont(U"<none>").draw(10, detail.x + 8.0, contentTop + layout.resourceCostsTopY + 4.0, Palette::Lightgray);
 		}
 		for (int32 i = 0; i < static_cast<int32>(skill.resourceCosts.size()); ++i)
 		{
@@ -204,11 +235,11 @@ namespace LT3
 			DrawSkillEditorTooltip(uiFont, U"SkillIcon warning", hoverWarningLines, warningTooltipX);
 		}
 
-		const double maxScroll = Max(0.0, SkillEditorDetailContentHeight() - detailViewport.h);
+		const double maxScroll = Max(0.0, contentHeight - detailViewport.h);
 		if (maxScroll > 0.0)
 		{
 			const double rate = Clamp(editor.skillDetailScroll / maxScroll, 0.0, 1.0);
-			const double handleHeight = Max(32.0, detailViewport.h * detailViewport.h / SkillEditorDetailContentHeight());
+			const double handleHeight = Max(32.0, detailViewport.h * detailViewport.h / contentHeight);
 			RectF{ detail.x + detail.w - 7.0, detailViewport.y, 4.0, detailViewport.h }.draw(ColorF{ 1, 1, 1, 0.08 });
 			RectF{ detail.x + detail.w - 7.0, detailViewport.y + (detailViewport.h - handleHeight) * rate, 4.0, handleHeight }.draw(ColorF{ 1.0, 0.84, 0.0, 0.70 });
 		}

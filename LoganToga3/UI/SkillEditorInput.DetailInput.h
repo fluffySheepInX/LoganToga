@@ -1,8 +1,54 @@
 ﻿#pragma once
 # include "SkillEditorInput.Common.h"
+# include "SkillEditorNextInputHelpers.h"
 
 namespace LT3
 {
+	inline bool CommitSkillEditorNextTagText(MapEditorState& editor, DefinitionStores& defs, const String& text)
+	{
+		String nextTag = text.lowercased().trimmed();
+		if (nextTag.isEmpty())
+		{
+			const bool changed = MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+			{
+				const bool wasChanged = !selected.nextSkillTag.isEmpty() || selected.nextSkill != InvalidSkillDefId;
+				selected.nextSkillTag.clear();
+				selected.nextSkill = InvalidSkillDefId;
+				return wasChanged;
+			});
+			if (changed)
+			{
+				editor.statusText = U"Next cleared";
+			}
+			return changed;
+		}
+
+		if (!defs.skillByTag.contains(nextTag))
+		{
+			editor.statusText = U"Next skill not found: {}"_fmt(nextTag);
+			return false;
+		}
+
+		const SkillDefId nextId = defs.skillByTag.at(nextTag);
+		if (nextId == editor.selectedSkillIndex)
+		{
+			editor.statusText = U"Next cannot target itself";
+			return false;
+		}
+
+		const bool changed = MutateSelectedSkillDefinition(editor, defs, [&](SkillDef& selected)
+		{
+			selected.nextSkillTag = nextTag;
+			selected.nextSkill = nextId;
+			return true;
+		});
+		if (changed)
+		{
+			editor.statusText = U"Next set: {}"_fmt(nextTag);
+		}
+		return changed;
+	}
+
 	/// <summary>
 	/// リソースコスト編集テキストを確定します。
 	/// </summary>
@@ -24,6 +70,25 @@ namespace LT3
 	/// </summary>
 	inline bool ProcessSkillEditorDetailTextInput(MapEditorState& editor, DefinitionStores& defs)
 	{
+		if (editor.skillNextTagEditing)
+		{
+			TextInput::UpdateText(editor.skillNextTagEditingText);
+			editor.skillNextTagFilterText = editor.skillNextTagEditingText.lowercased().trimmed();
+			if (KeyEscape.down())
+			{
+				editor.skillNextTagEditing = false;
+				editor.skillNextTagEditingText.clear();
+				editor.skillNextTagFilterText.clear();
+				return true;
+			}
+			if (KeyEnter.down())
+			{
+				CommitSkillEditorNextTagText(editor, defs, editor.skillNextTagEditingText);
+				editor.skillNextTagEditing = false;
+				return true;
+			}
+		}
+
 		if (editor.skillValueEditingRow >= 0)
 		{
 			TextInput::UpdateText(editor.skillValueEditingText);
@@ -247,7 +312,7 @@ namespace LT3
 	inline bool ProcessSkillEditorDetailInput(MapEditorState& editor, DefinitionStores& defs, SkillDef& skill)
 	{
 		const RectF detailViewport = SkillEditorDetailViewportRect();
-		const double detailMaxScroll = Max(0.0, SkillEditorDetailContentHeight() - detailViewport.h);
+		const double detailMaxScroll = Max(0.0, SkillEditorDetailContentHeight(static_cast<int32>(skill.resourceCosts.size())) - detailViewport.h);
 		if (detailViewport.mouseOver())
 		{
 			editor.skillDetailScroll = Clamp(editor.skillDetailScroll - Mouse::Wheel() * 42.0, 0.0, detailMaxScroll);
@@ -274,7 +339,7 @@ namespace LT3
 			}
 		}
 
-		for (int32 row = 0; row < 26; ++row)
+		for (int32 row = 0; row < 30; ++row)
 		{
 			if (IsSkillEditorValueRowLocked(skill, row))
 			{

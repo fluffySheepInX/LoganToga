@@ -86,6 +86,12 @@ namespace LT3
 		editor.skillSandboxLastBomCenter = editor.skillSandboxTargetPos;
 		editor.skillSandboxLastBomRadius = 0.0;
 		editor.skillSandboxLastBomDisplaySec = 0.0;
+		editor.skillSandboxLastBomVisualDurationSec = 0.22;
+		editor.skillSandboxLastBomVisualScale = 1.0;
+		editor.skillSandboxLastBomVisual = SkillBomVisual::Circle;
+		editor.skillSandboxLastBomKind = SkillKind::Missile;
+		editor.skillSandboxLastBomFriendlyFire = false;
+		editor.skillSandboxLastBomImage.clear();
 	}
 
 	inline void EnsureSkillSandboxReady(MapEditorState& editor)

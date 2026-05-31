@@ -78,6 +78,18 @@ namespace LT3
         End,
     };
 
+    enum class SkillSwingHitMode : uint8
+    {
+        Stop,
+        MultiHitOnce,
+    };
+
+    enum class SkillBomVisual : uint8
+    {
+        Circle,
+        Image,
+    };
+
     enum class SkillBurstFireMode : uint8
     {
         Simultaneous,

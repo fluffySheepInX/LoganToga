@@ -21,7 +21,9 @@ namespace LT3
 	{
 		BattleInputIntent intent;
 		const UnitId selectedBuilder = GetSelectedUnit(world);
-		const Optional<size_t> hoveredResourceNode = FindHoveredResourceNode(world, screenMouse);
+		const bool hasSelectedUnits = !GetSelectedUnits(world).isEmpty();
+		const double resourceHoverRadius = ResourceNodeHoverScreenRadius(hasSelectedUnits);
+		const Optional<size_t> hoveredResourceNode = FindHoveredResourceNode(world, screenMouse, resourceHoverRadius);
 		world.selection.hoveredResourceNode = hoveredResourceNode ? static_cast<int32>(*hoveredResourceNode) : -1;
 
 		const Array<BattleSkillFilterKind> skillFilters = CollectBattleSkillFilterKinds();

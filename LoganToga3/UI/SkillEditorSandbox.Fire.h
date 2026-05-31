@@ -3,6 +3,56 @@
 
 namespace LT3
 {
+	/// <summary>
+	/// 連鎖や継承情報を含めてサンドボックス弾を生成します。
+	/// </summary>
+	inline void SpawnSkillSandboxProjectileCore(MapEditorState& editor, const SkillDef& skill, SkillDefId skillId, int32 burstIndex, const SkillSandboxTargetRef& target, const SkillNextSpawnContext& nextContext, const Optional<Vec2>& originOverride = none)
+	{
+		const Vec2 originPos = originOverride.value_or(editor.skillSandboxCasterPos);
+		const Vec2 resolvedTargetPos = nextContext.targetPosition.value_or(target.pos);
+		const Vec2 toTarget = resolvedTargetPos - originPos;
+		const Vec2 baseDir = (toTarget.lengthSq() > 1.0) ? toTarget.normalized() : Vec2{ 1.0, 0.0 };
+		const double centeredIndex = static_cast<double>(burstIndex) - (Max(1, skill.burstCount) - 1) * 0.5;
+		const double spreadRad = Math::ToRadians(skill.spreadDeg * centeredIndex / Max(1, skill.burstCount));
+		const Vec2 dir = RotateVector(baseDir, spreadRad);
+		const double distance = Max(1.0, toTarget.length());
+		const double maxLife = ResolveProjectileMaxLife(skill, distance);
+		const double startAngleRad = nextContext.imageAngleRad.value_or(ResolveProjectileStartAngleRad(skill, dir));
+		Vec2 spawnPos = ResolveProjectileSpawnPosition(skill, originPos, dir);
+		if (skill.projectileMotion == SkillProjectileMotion::Orbit || skill.projectileMotion == SkillProjectileMotion::Swing)
+		{
+			const double radius = (skill.projectileMotion == SkillProjectileMotion::Swing) ? skill.swingRadius : skill.orbitRadius;
+			spawnPos = originPos + Vec2{ Cos(startAngleRad), Sin(startAngleRad) } * radius;
+		}
+		else if (skill.projectileMotion == SkillProjectileMotion::Drop)
+		{
+			spawnPos = resolvedTargetPos;
+		}
+
+		SkillSandboxProjectile projectile;
+		projectile.position = spawnPos;
+		projectile.velocity = (skill.projectileMotion == SkillProjectileMotion::Static) ? Vec2{ 0.0, 0.0 } : (dir * skill.projectileSpeed);
+		projectile.startPosition = originPos;
+		projectile.endPosition = resolvedTargetPos;
+		projectile.firedTargetPosition = resolvedTargetPos;
+		projectile.lifeSec = maxLife;
+		projectile.maxLifeSec = maxLife;
+		projectile.angleRad = startAngleRad;
+		projectile.baseAngleRad = startAngleRad;
+		projectile.hasImageAngleOverride = nextContext.imageAngleRad.has_value();
+		projectile.imageAngleOverrideRad = startAngleRad;
+		projectile.chainDepth = nextContext.chainDepth;
+		projectile.motion = skill.projectileMotion;
+		projectile.targetIsAlly = target.isAlly;
+		projectile.targetIndex = target.index;
+		projectile.skillId = skillId;
+		if (skill.projectileMotion == SkillProjectileMotion::Drop)
+		{
+			projectile.height = (skill.projectileSpeed >= 0.0) ? Max(1.0, skill.arcHeight) : 0.0;
+		}
+		editor.skillSandboxProjectiles << projectile;
+	}
+
 	inline Vec2 GetSkillSandboxProjectileTargetPosition(const MapEditorState& editor, const SkillSandboxProjectile& projectile)
 	{
 		if (projectile.targetIsAlly)
@@ -30,43 +80,7 @@ namespace LT3
 
 	inline void SpawnSkillSandboxProjectile(MapEditorState& editor, const SkillDef& skill, int32 burstIndex, const SkillSandboxTargetRef& target)
 	{
-		const Vec2 toTarget = target.pos - editor.skillSandboxCasterPos;
-		const Vec2 baseDir = (toTarget.lengthSq() > 1.0) ? toTarget.normalized() : Vec2{ 1.0, 0.0 };
-		const double centeredIndex = static_cast<double>(burstIndex) - (Max(1, skill.burstCount) - 1) * 0.5;
-		const double spreadRad = Math::ToRadians(skill.spreadDeg * centeredIndex / Max(1, skill.burstCount));
-		const Vec2 dir = RotateVector(baseDir, spreadRad);
-		const double distance = Max(1.0, toTarget.length());
-		const double maxLife = ResolveProjectileMaxLife(skill, distance);
-		const double startAngleRad = ResolveProjectileStartAngleRad(skill, dir);
-		Vec2 spawnPos = ResolveProjectileSpawnPosition(skill, editor.skillSandboxCasterPos, dir);
-		if (skill.projectileMotion == SkillProjectileMotion::Orbit || skill.projectileMotion == SkillProjectileMotion::Swing)
-		{
-			const double radius = (skill.projectileMotion == SkillProjectileMotion::Swing) ? skill.swingRadius : skill.orbitRadius;
-			spawnPos = editor.skillSandboxCasterPos + Vec2{ Cos(startAngleRad), Sin(startAngleRad) } * radius;
-		}
-		else if (skill.projectileMotion == SkillProjectileMotion::Drop)
-		{
-			spawnPos = target.pos;
-		}
-
-		SkillSandboxProjectile projectile;
-		projectile.position = spawnPos;
-		projectile.velocity = (skill.projectileMotion == SkillProjectileMotion::Static) ? Vec2{ 0.0, 0.0 } : (dir * skill.projectileSpeed);
-		projectile.startPosition = editor.skillSandboxCasterPos;
-		projectile.endPosition = target.pos;
-		projectile.lifeSec = maxLife;
-		projectile.maxLifeSec = maxLife;
-		projectile.angleRad = startAngleRad;
-		projectile.baseAngleRad = startAngleRad;
-		projectile.motion = skill.projectileMotion;
-		projectile.targetIsAlly = target.isAlly;
-		projectile.targetIndex = target.index;
-		projectile.skillId = InvalidSkillDefId;
-		if (skill.projectileMotion == SkillProjectileMotion::Drop)
-		{
-			projectile.height = (skill.projectileSpeed >= 0.0) ? Max(1.0, skill.arcHeight) : 0.0;
-		}
-		editor.skillSandboxProjectiles << projectile;
+		SpawnSkillSandboxProjectileCore(editor, skill, InvalidSkillDefId, burstIndex, target, SkillNextSpawnContext{});
 	}
 
 	inline Array<SkillSandboxTargetRef> CollectSkillSandboxTargets(const MapEditorState& editor, const SkillDef& skill)
@@ -205,11 +219,15 @@ namespace LT3
 	// Unit Mode 用: skillId を弾に刻印して発射する
 	inline void SpawnSkillSandboxProjectileTagged(MapEditorState& editor, const SkillDef& skill, SkillDefId skillId, int32 burstIndex, const SkillSandboxTargetRef& target)
 	{
-		SpawnSkillSandboxProjectile(editor, skill, burstIndex, target);
-		if (!editor.skillSandboxProjectiles.isEmpty())
-		{
-			editor.skillSandboxProjectiles.back().skillId = skillId;
-		}
+		SpawnSkillSandboxProjectileCore(editor, skill, skillId, burstIndex, target, SkillNextSpawnContext{});
+	}
+
+	/// <summary>
+	/// next 連鎖用に継承コンテキスト付きで弾を生成します。
+	/// </summary>
+	inline void SpawnSkillSandboxProjectileTagged(MapEditorState& editor, const SkillDef& skill, SkillDefId skillId, int32 burstIndex, const SkillSandboxTargetRef& target, const SkillNextSpawnContext& nextContext, const Optional<Vec2>& originOverride = none)
+	{
+		SpawnSkillSandboxProjectileCore(editor, skill, skillId, burstIndex, target, nextContext, originOverride);
 	}
 
 	inline void SpawnSkillSandboxProjectilesForTargetsTagged(MapEditorState& editor, const SkillDef& skill, SkillDefId skillId, int32 burstIndex)
@@ -228,6 +246,14 @@ namespace LT3
 		{
 			SpawnSkillSandboxProjectileTagged(editor, skill, skillId, burstIndex, target);
 		}
+	}
+
+	/// <summary>
+	/// next 連鎖用に継承コンテキスト付きで対象へ発射します。
+	/// </summary>
+	inline void SpawnSkillSandboxProjectilesForTargetsTagged(MapEditorState& editor, const SkillDef& skill, SkillDefId skillId, int32 burstIndex, const SkillSandboxTargetRef& target, const SkillNextSpawnContext& nextContext, const Optional<Vec2>& originOverride = none)
+	{
+		SpawnSkillSandboxProjectileTagged(editor, skill, skillId, burstIndex, target, nextContext, originOverride);
 	}
 
 	// サンドボックス内でのスキル選択ルール (BattleWorld不要版)
@@ -284,6 +310,65 @@ namespace LT3
 		for (auto& dummy : editor.skillSandboxExtraTargets)
 		{
 			if (dummy.hp <= 0) dummy.hp = dummy.maxHp;
+		}
+
+		const int32 burstCount = Max(1, skill.burstCount);
+		editor.skillSandboxBurstOrder.clear();
+		editor.skillSandboxBurstOrder.reserve(burstCount);
+		for (int32 i = 0; i < burstCount; ++i) editor.skillSandboxBurstOrder << i;
+		if (skill.burstOrderMode == SkillBurstOrderMode::Random) editor.skillSandboxBurstOrder.shuffle();
+
+		if (skill.burstFireMode == SkillBurstFireMode::Simultaneous)
+		{
+			for (int32 shotIndex = 0; shotIndex < burstCount; ++shotIndex)
+			{
+				SpawnSkillSandboxProjectilesForTargetsTagged(editor, skill, skillId, editor.skillSandboxBurstOrder[shotIndex]);
+			}
+			editor.skillSandboxBurstShotsLeft = 0;
+			editor.skillSandboxBurstShotTimerSec = 0.0;
+		}
+		else
+		{
+			SpawnSkillSandboxProjectilesForTargetsTagged(editor, skill, skillId, editor.skillSandboxBurstOrder[0]);
+			editor.skillSandboxBurstShotsLeft = burstCount - 1;
+			editor.skillSandboxBurstShotTimerSec = Max(0.0, skill.burstIntervalSec);
+		}
+		editor.skillSandboxCooldownLeftSec = Max(0.05, skill.cooldownSec);
+	}
+
+	/// <summary>
+	/// Skill Mode 用: 選択中 skillId を刻印して発射します。
+	/// </summary>
+	inline void FireSkillSandbox(MapEditorState& editor, const DefinitionStores& defs, SkillDefId skillId)
+	{
+		if (skillId == InvalidSkillDefId || skillId >= static_cast<SkillDefId>(defs.skills.size()))
+		{
+			return;
+		}
+
+		const SkillDef& skill = defs.skills[skillId];
+		if (!CanFireSkillSandbox(editor, skill))
+		{
+			return;
+		}
+
+		editor.skillSandboxActiveSkillId = skillId;
+		if (editor.skillSandboxCasterHp <= 0) editor.skillSandboxCasterHp = editor.skillSandboxCasterMaxHp;
+		if (editor.skillSandboxTargetHp <= 0) editor.skillSandboxTargetHp = editor.skillSandboxTargetMaxHp;
+		if (editor.skillSandboxAllyHp <= 0) editor.skillSandboxAllyHp = Max(1, editor.skillSandboxAllyMaxHp / 2);
+		for (auto& ally : editor.skillSandboxExtraAllies)
+		{
+			if (ally.hp <= 0)
+			{
+				ally.hp = Max(1, ally.maxHp / 2);
+			}
+		}
+		for (auto& dummy : editor.skillSandboxExtraTargets)
+		{
+			if (dummy.hp <= 0)
+			{
+				dummy.hp = dummy.maxHp;
+			}
 		}
 
 		const int32 burstCount = Max(1, skill.burstCount);

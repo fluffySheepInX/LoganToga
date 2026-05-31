@@ -53,13 +53,13 @@ namespace LT3
 
 	inline void EnsureSkillEditorValueSteps(MapEditorState& editor)
 	{
-		if (editor.skillValueSteps.size() == 26)
+		if (editor.skillValueSteps.size() == 30)
 		{
 			return;
 		}
 
-		editor.skillValueSteps.resize(26);
-		for (int32 row = 0; row < 26; ++row)
+		editor.skillValueSteps.resize(30);
+		for (int32 row = 0; row < 30; ++row)
 		{
 			editor.skillValueSteps[row] = SkillEditorDefaultValueStep(row);
 		}
@@ -145,6 +145,14 @@ namespace LT3
 			return Max(0.0, value);
 		case 25:
 			return Max(0.0, value);
+		case 26:
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 1));
+		case 27:
+			return static_cast<double>(Clamp(static_cast<int32>(value), 0, 1));
+		case 28:
+			return Max(0.1, value);
+		case 29:
+			return Max(0.05, value);
 		default:
 			return value;
 		}
@@ -180,6 +188,10 @@ namespace LT3
 		case 23: return skill.swingAngleDeg;
 		case 24: return skill.bomRadius;
 		case 25: return skill.bomSelfDamageScale;
+		case 26: return static_cast<double>(skill.swingHitMode == SkillSwingHitMode::MultiHitOnce ? 1 : 0);
+		case 27: return static_cast<double>(skill.bomVisual == SkillBomVisual::Image ? 1 : 0);
+		case 28: return skill.bomVisualScale;
+		case 29: return skill.bomVisualDurationSec;
 		default: return 0.0;
 		}
 	}
@@ -222,6 +234,10 @@ namespace LT3
 		case 23: skill.swingAngleDeg = bounded; break;
 		case 24: skill.bomRadius = bounded; break;
 		case 25: skill.bomSelfDamageScale = bounded; break;
+		case 26: skill.swingHitMode = (static_cast<int32>(bounded) == 1) ? SkillSwingHitMode::MultiHitOnce : SkillSwingHitMode::Stop; break;
+		case 27: skill.bomVisual = (static_cast<int32>(bounded) == 1) ? SkillBomVisual::Image : SkillBomVisual::Circle; break;
+		case 28: skill.bomVisualScale = bounded; break;
+		case 29: skill.bomVisualDurationSec = bounded; break;
 		default: break;
 		}
 		skill.rangeMin = Min(skill.rangeMin, skill.range);

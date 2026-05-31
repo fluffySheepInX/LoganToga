@@ -68,9 +68,10 @@ namespace LT3
 
 		static RectF TitleUiEditorHotspotRect()
 		{
+			const Point logicalSceneSize = Point{1600,900};
 			return RectF{
-				Scene::Width() - TitleEditorHotspotSize,
-				Scene::Height() - TitleUnderBarHeight - TitleEditorHotspotSize,
+				logicalSceneSize.x - TitleEditorHotspotSize,
+				logicalSceneSize.y - TitleUnderBarHeight - TitleEditorHotspotSize,
 				TitleEditorHotspotSize,
 				TitleEditorHotspotSize,
 			};
@@ -262,9 +263,10 @@ namespace LT3
 			}
 			else if (editor.dragOffset && MouseL.pressed())
 			{
+				const Point logicalSceneSize = Point{ 1600,900 };
 				const Vec2 snapped = SnapTitleUiPosition(Cursor::PosF() - *editor.dragOffset, data.titleUiLayout.gridSize);
-				targetRect.x = Clamp(snapped.x, 0.0, Max(0.0, Scene::Width() - targetRect.w));
-				targetRect.y = Clamp(snapped.y, 0.0, Max(0.0, Scene::Height() - TitleUnderBarHeight - targetRect.h));
+				targetRect.x = Clamp(snapped.x, 0.0, Max(0.0, logicalSceneSize.x - targetRect.w));
+				targetRect.y = Clamp(snapped.y, 0.0, Max(0.0, logicalSceneSize.y - TitleUnderBarHeight - targetRect.h));
 				SaveTitleUiLayoutToml(data.titleUiLayout);
 				editor.statusText = U"Moved: {}"_fmt(EditableTitleLabel(*editor.selectedElement));
 			}

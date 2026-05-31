@@ -168,6 +168,7 @@ namespace LT3
             if (showDebugInfo)
             {
                 DrawBuildingUnitClickDebugOverlay(world, defs);
+                DrawResourceNodeClickDebugOverlay(world);
             }
         }
 

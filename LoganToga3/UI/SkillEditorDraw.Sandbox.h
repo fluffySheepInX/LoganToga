@@ -1,16 +1,90 @@
 ﻿#pragma once
 # include "SkillEditorDraw.Common.h"
+# include "SkillEditorAssets.h"
+# include "MapEditorAssetUtils.h"
 # include "BattleUnitRendererAssetOps.h"
 # include "BattleProjectileRendererOps.h"
 
 namespace LT3
 {
+	inline bool DrawSkillEditorSandboxBomVisual(BattleRenderAssets& assets, const MapEditorState& editor)
+	{
+		if (editor.skillSandboxLastBomDisplaySec <= 0.0)
+		{
+			return false;
+		}
+
+		const FilePath imagePath = ResolveSkillIconPath(editor.skillSandboxLastBomImage);
+		if (imagePath.isEmpty())
+		{
+			return false;
+		}
+
+		const double duration = Max(0.05, editor.skillSandboxLastBomVisualDurationSec);
+		const double alpha = Clamp(editor.skillSandboxLastBomDisplaySec / duration, 0.0, 1.0);
+		const double drawSize = Max(12.0, editor.skillSandboxLastBomRadius * 2.0 * Max(0.1, editor.skillSandboxLastBomVisualScale));
+		const ColorF tint{ 1.0, 1.0, 1.0, 0.32 + 0.68 * alpha };
+
+		if (FileSystem::Extension(imagePath).lowercased() == U"gif")
+		{
+			if (!assets.unitGifDurationMillisecCache.contains(imagePath))
+			{
+				Array<Texture> frames;
+				Array<int32> delaysMillisec;
+				int32 durationMillisec = 0;
+				AnimatedGIFReader reader{ imagePath };
+				Array<Image> images;
+				if (reader && reader.read(images, delaysMillisec, durationMillisec) && !images.isEmpty())
+				{
+					frames.reserve(images.size());
+					for (auto image : images)
+					{
+						PremultiplyImageAlpha(image);
+						frames << Texture{ image };
+					}
+				}
+
+				assets.unitGifFrameCache.emplace(imagePath, std::move(frames));
+				assets.unitGifFrameDelaysMillisecCache.emplace(imagePath, std::move(delaysMillisec));
+				assets.unitGifDurationMillisecCache.emplace(imagePath, Max(durationMillisec, 1));
+			}
+
+			if (assets.unitGifFrameCache.contains(imagePath))
+			{
+				const Array<Texture>& frames = assets.unitGifFrameCache.at(imagePath);
+				const Array<int32>& delaysMillisec = assets.unitGifFrameDelaysMillisecCache.at(imagePath);
+				const int32 durationMillisec = assets.unitGifDurationMillisecCache.at(imagePath);
+				if (!frames.isEmpty() && !delaysMillisec.isEmpty() && durationMillisec > 0)
+				{
+					const size_t frameIndex = AnimatedGIFReader::GetFrameIndex(Scene::Time(), delaysMillisec, durationMillisec);
+					frames[Min(frameIndex, frames.size() - 1)].resized(drawSize).drawAt(editor.skillSandboxLastBomCenter, tint);
+					return true;
+				}
+			}
+		}
+
+		if (!assets.iconTextureCache.contains(imagePath))
+		{
+			assets.iconTextureCache.emplace(imagePath, Texture{ imagePath });
+		}
+
+		if (assets.iconTextureCache.contains(imagePath))
+		{
+			assets.iconTextureCache.at(imagePath).resized(drawSize).drawAt(editor.skillSandboxLastBomCenter, tint);
+			return true;
+		}
+
+		return false;
+	}
+
 	inline void DrawSkillEditorSandboxPreview(const MapEditorState& editor, const DefinitionStores& defs, const UnitCatalog& catalog, const Font& uiFont)
 	{
 		if (!editor.showSkillSandboxPreview)
 		{
 			return;
 		}
+
+		static BattleRenderAssets sandboxAssets;
 
 		const RectF preview = SkillEditorSandboxPreviewRect();
 		preview.draw(ColorF{ 0.015, 0.022, 0.032, 0.96 }).drawFrame(2, ColorF{ 0.25, 0.70, 1.0, 0.55 });
@@ -95,20 +169,25 @@ namespace LT3
 		}
 		if (sandboxSkill && editor.skillSandboxLastBomDisplaySec > 0.0 && editor.skillSandboxLastBomRadius > 0.0)
 		{
-			const double alpha = Clamp(editor.skillSandboxLastBomDisplaySec / 0.22, 0.0, 1.0);
+			const double alpha = Clamp(editor.skillSandboxLastBomDisplaySec / Max(0.05, editor.skillSandboxLastBomVisualDurationSec), 0.0, 1.0);
 			ColorF fillColor{ 1.0, 0.45, 0.12, 0.10 + 0.14 * alpha };
 			ColorF frameColor{ 1.0, 0.72, 0.24, 0.34 + 0.34 * alpha };
-			if (sandboxSkill->kind == SkillKind::Heal)
+			if (editor.skillSandboxLastBomKind == SkillKind::Heal)
 			{
 				fillColor = ColorF{ 0.22, 1.0, 0.42, 0.10 + 0.16 * alpha };
 				frameColor = ColorF{ 0.56, 1.0, 0.66, 0.38 + 0.34 * alpha };
 			}
-			else if (sandboxSkill->bomFriendlyFire)
+			else if (editor.skillSandboxLastBomFriendlyFire)
 			{
 				fillColor = ColorF{ 1.0, 0.18, 0.18, 0.12 + 0.16 * alpha };
 				frameColor = ColorF{ 1.0, 0.36, 0.36, 0.40 + 0.36 * alpha };
 			}
-			Circle{ editor.skillSandboxLastBomCenter, editor.skillSandboxLastBomRadius }.draw(fillColor).drawFrame(2.0, frameColor);
+			const bool drewImage = (editor.skillSandboxLastBomVisual == SkillBomVisual::Image)
+				&& DrawSkillEditorSandboxBomVisual(sandboxAssets, editor);
+			if (!drewImage)
+			{
+				Circle{ editor.skillSandboxLastBomCenter, editor.skillSandboxLastBomRadius }.draw(fillColor).drawFrame(2.0, frameColor);
+			}
 		}
 		Line{ arena.x + 28.0, editor.skillSandboxCasterPos.y, arena.x + arena.w - 28.0, editor.skillSandboxCasterPos.y }.draw(1.5, ColorF{ 0.35, 0.55, 0.80, 0.30 });
 		Circle{ editor.skillSandboxCasterPos, 24.0 }.draw(ColorF{ 0.20, 0.55, 1.0, 0.85 }).drawFrame(2, ColorF{ 0.0, 1.0, 1.0, 0.75 });
@@ -168,7 +247,6 @@ namespace LT3
 			return;
 		}
 
-		static BattleRenderAssets sandboxAssets;
 		for (const auto& projectile : editor.skillSandboxProjectiles)
 		{
 			// 弾ごとのskillIdでSkillDefを解決 (Unit Mode) / fallback to selected skill

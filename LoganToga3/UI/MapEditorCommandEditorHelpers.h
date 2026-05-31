@@ -119,6 +119,13 @@ namespace LT3
 		action.spawnUnit = InvalidUnitDefId;
 	}
 
+	// Carrier の格納数 UI を表示する条件を返す。
+	inline bool IsCommandCarrierCapacityVisible(const BuildActionDef& action)
+	{
+		return (action.resultType == BuildActionResultType::Carrier)
+			&& (action.carrierAction == CarrierActionKind::Store);
+	}
+
 	inline bool NormalizeCommandIdsForOwnerTags(MapEditorState& editor, DefinitionStores& defs, const Array<String>& targetOwnerTags)
 	{
 		Array<String> normalizedOwnerTags = NormalizeCommandIdsOwnerTags(targetOwnerTags);

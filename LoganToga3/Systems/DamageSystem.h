@@ -5,6 +5,12 @@
 
 namespace LT3
 {
+    struct ProjectileHitTargetInfo
+    {
+        UnitId unit = InvalidUnitId;
+        Vec2 position{ 0.0, 0.0 };
+    };
+
     inline void ApplyDirectDamageToUnit(BattleWorld& world, UnitId unit, int32 damage);
 
     /// <summary>
@@ -75,12 +81,23 @@ namespace LT3
     /// <summary>
     /// 爆風半径内の対象へ一定ダメージを適用します。
     /// </summary>
-    inline void ApplyBomDamage(BattleWorld& world, const DefinitionStores& defs, UnitId attacker, const SkillDef& skill, const Vec2& impactPos)
+    inline Array<ProjectileHitTargetInfo> ApplyBomDamage(BattleWorld& world, const DefinitionStores& defs, UnitId attacker, const SkillDef& skill, const Vec2& impactPos)
     {
+        Array<ProjectileHitTargetInfo> hitTargets;
         if (!IsValidUnit(world, attacker))
         {
-            return;
+            return hitTargets;
         }
+
+        world.bomVisualEffects.add(
+            impactPos,
+            Max(0.05, skill.bomVisualDurationSec),
+            Max(0.1, skill.bomVisualScale),
+            skill.bomRadius,
+            skill.bomVisual,
+            skill.kind,
+            skill.bomFriendlyFire,
+            skill.bomImage);
 
         const auto applyDamage = [&](UnitId unit, int32 damage)
         {
@@ -110,43 +127,57 @@ namespace LT3
                 continue;
             }
 
+            hitTargets << ProjectileHitTargetInfo{ unit, world.units.position[unit] };
             const UnitDef& targetDef = defs.units[world.units.defId[unit]];
             applyDamage(unit, ComputeSkillDamageAgainstUnit(attackerDef, targetDef, skill));
         }
 
         const int32 bomSelfDamage = Max(0, static_cast<int32>(Math::Round(static_cast<double>(attackerDef.attack) * skill.damage * skill.bomSelfDamageScale)));
         applyDamage(attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)) + bomSelfDamage);
+        return hitTargets;
     }
 
     /// <summary>
     /// 着弾地点とスキル設定に応じて単体または爆風ダメージを適用します。
     /// </summary>
-    inline void ApplyProjectileHit(BattleWorld& world, const DefinitionStores& defs, size_t projectileIndex, UnitId target, const Vec2& impactPos)
+    inline Array<ProjectileHitTargetInfo> ApplyProjectileHit(BattleWorld& world, const DefinitionStores& defs, size_t projectileIndex, UnitId target, const Vec2& impactPos)
     {
+        Array<ProjectileHitTargetInfo> hitTargets;
         const UnitId attacker = world.projectiles.owner[projectileIndex];
         if (!IsValidUnit(world, attacker))
         {
-            return;
+            return hitTargets;
         }
 
         const UnitDef& attackerDef = defs.units[world.units.defId[attacker]];
         const SkillDef& skill = defs.skills[world.projectiles.skill[projectileIndex]];
         if (skill.kind == SkillKind::Heal)
         {
-            ApplyDirectHealToUnit(world, defs, target, ComputeSkillHealAgainstUnit(attackerDef, skill));
+            if (IsValidUnit(world, target))
+            {
+                hitTargets << ProjectileHitTargetInfo{ target, world.units.position[target] };
+                ApplyDirectHealToUnit(world, defs, target, ComputeSkillHealAgainstUnit(attackerDef, skill));
+            }
             ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
-            return;
+            return hitTargets;
         }
 
         if (skill.bom && skill.bomRadius > 0.0)
         {
-            ApplyBomDamage(world, defs, attacker, skill, impactPos);
-            return;
+            return ApplyBomDamage(world, defs, attacker, skill, impactPos);
+        }
+
+        if (!IsValidUnit(world, target))
+        {
+            ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+            return hitTargets;
         }
 
         const UnitDef& targetDef = defs.units[world.units.defId[target]];
         const int32 finalDamage = ComputeSkillDamageAgainstUnit(attackerDef, targetDef, skill);
+        hitTargets << ProjectileHitTargetInfo{ target, world.units.position[target] };
         ApplyDirectDamageToUnit(world, target, finalDamage);
         ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+        return hitTargets;
     }
 }

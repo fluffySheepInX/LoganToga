@@ -426,7 +426,7 @@ icon = "unicarri.png"
 icon_horizontal = "keisou-chipGene006.png"
 icon_diag_up_right = "keisou-chipGene006.png"
 icon_diag_up_left = "keisou-chipGene006.png"
-create_count = 3
+create_count = 1
 cost = { wood = 0, trust = 0, food = 0 }
 build_time = 0.5
 category = "unit"
@@ -438,6 +438,37 @@ line_thickness_cells = 1
 max_line_cells = 12
 use_right_drag_placement = false
 enemy_can_produce = true
+carrier_action = "store"
+carrier_radius_px = 308
+carrier_max_units = 8
 [[commands.result]]
-type = "unit"
+type = "Carrier"
+spawn = "10"
+
+[[commands]]
+owner_tags = ["10"]
+id = "cmd_005_copy_copy"
+name = "tenkai"
+description = "汎用部隊傭兵-若人"
+icon = "unicarri.png"
+icon_horizontal = "keisou-chipGene006.png"
+icon_diag_up_right = "keisou-chipGene006.png"
+icon_diag_up_left = "keisou-chipGene006.png"
+create_count = 1
+cost = { wood = 0, trust = 0, food = 0 }
+build_time = 0.5
+category = "unit"
+requires = ["none"]
+is_move = false
+placement_mode = "point"
+line_axis_mode = "auto"
+line_thickness_cells = 1
+max_line_cells = 12
+use_right_drag_placement = false
+enemy_can_produce = true
+carrier_action = "release"
+carrier_radius_px = 84
+carrier_max_units = 0
+[[commands.result]]
+type = "Carrier"
 spawn = "10"
