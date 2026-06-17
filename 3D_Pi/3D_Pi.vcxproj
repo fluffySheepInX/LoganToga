@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -287,6 +287,8 @@
     <None Include="App\example\shader\glsl\invert.frag" />
     <None Include="App\example\shader\glsl\mosaic.frag" />
     <None Include="App\example\shader\glsl\scene_fog.frag" />
+    <None Include="App\example\shader\glsl\scene_underwater_distort.frag" />
+    <None Include="App\example\shader\glsl\scene_underwater_fog.frag" />
     <None Include="App\example\shader\glsl\warm_grade.frag" />
     <None Include="App\example\shader\hlsl\dof_combine.hlsl">
       <FileType>Document</FileType>
@@ -356,11 +358,16 @@
     <ClInclude Include="Addons\Pi3D\Effects\PiEffectChainUI.ipp" />
     <ClInclude Include="Addons\Pi3D\Environment\PiGroundMode.hpp" />
     <ClInclude Include="Addons\Pi3D\Environment\PiRain.hpp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiUnderwaterParticles.hpp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.Runtime.ipp" />
+    <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.UI.ipp" />
     <ClInclude Include="Addons\Pi3D\Lighting\PiLighting.hpp" />
     <ClInclude Include="Addons\Pi3D\Pi3D.hpp" />
     <ClInclude Include="Addons\Pi3D\Pi3D.System.inl.hpp" />
     <ClInclude Include="Addons\Pi3D\Pi3D.UI.inl.hpp" />
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
+    <ClInclude Include="Addons\Pi3D\Settings\PiSettingsPersistence.hpp" />
+    <ClInclude Include="Addons\Pi3D\Settings\PiSettingsTypes.hpp" />
     <ClInclude Include="Addons\Pi3D\Shader\PiShaderLoader.hpp" />
     <ClInclude Include="Application\CameraController.hpp" />
     <ClInclude Include="Application\CameraWorkEditorAddon.hpp" />
@@ -506,6 +513,12 @@
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\scene_fog.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\scene_underwater_distort.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="App\example\shader\hlsl\scene_underwater_fog.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="App\example\shader\hlsl\bayer_dither.hlsl">

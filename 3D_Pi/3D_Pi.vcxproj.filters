@@ -558,6 +558,72 @@
     <ClCompile Include="Effects\*.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects\*.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -1126,6 +1192,8 @@
     <None Include="App\example\shader\glsl\*.vert" />
     <None Include="App\example\shader\glsl\*.vert" />
     <None Include="App\example\shader\hlsl\scene_fog.hlsl" />
+    <None Include="App\example\shader\hlsl\scene_underwater_distort.hlsl" />
+    <None Include="App\example\shader\hlsl\scene_underwater_fog.hlsl" />
     <None Include="Road\road_decal_task_list.html" />
     <None Include="Road\road_placement_assets.toml" />
     <None Include="App\example\shader\glsl\glitch.frag" />
@@ -1153,6 +1221,13 @@
     <None Include="App\example\shader\glsl\*.vert" />
     <None Include="App\example\shader\glsl\*.vert" />
     <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\*.vert" />
+    <None Include="App\example\shader\glsl\scene_underwater_distort.frag" />
+    <None Include="App\example\shader\glsl\scene_underwater_fog.frag" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1243,6 +1318,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.Runtime.ipp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Addons\Pi3D\Environment\PiEnvironment.UI.ipp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Effects\*.hpp">
@@ -1378,6 +1459,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Application\CameraWorkEditorAddon.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\*.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Addons\Pi3D\Environment\PiUnderwaterParticles.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Addons\Pi3D\Settings\PiSettingsPersistence.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Addons\Pi3D\Settings\PiSettingsTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

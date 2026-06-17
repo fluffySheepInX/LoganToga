@@ -77,6 +77,11 @@
 
     inline double PiEffectChain::getPresetHeight() const
     {
+        return measurePresetHeight();
+    }
+
+    inline double PiEffectChain::measurePresetHeight() const
+    {
         return (isPresetSectionCollapsed() ? CollapsedSectionHeight : getPresetSectionBodyHeight()) + ui::layout::SectionGap;
     }
 

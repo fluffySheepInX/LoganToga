@@ -91,6 +91,7 @@ namespace Pi3D
 		std::unique_ptr<RenderTexture> m_chainA;
 		std::unique_ptr<RenderTexture> m_chainB;
 		std::unique_ptr<RenderTexture> m_fogTexture;
+		std::unique_ptr<RenderTexture> m_underwaterTexture;
 		std::unique_ptr<RenderTexture> m_sceneDepthTexture;
 		bool m_environmentCollapsed = false;
 		bool m_lightingCollapsed = false;

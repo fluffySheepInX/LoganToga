@@ -211,9 +211,9 @@
         const double environmentSectionHeight = environmentSectionBodyHeight + ui::layout::SectionGap;
         const double lightingSectionBodyHeight = m_lightingCollapsed ? m_lighting.getHeaderHeight() : m_lighting.getUIBodyHeight();
         const double lightingSectionHeight = lightingSectionBodyHeight + ui::layout::SectionGap;
-        const double chainListHeight = m_effectChain.getChainListHeight() + ui::layout::SectionGap;
-        const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getPresetHeight();
-        const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.getParamsHeight();
+        const double chainListHeight = m_effectChain.measureChainListHeight() + ui::layout::SectionGap;
+        const double presetHeight = m_effectPresetCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.measurePresetHeight();
+        const double paramsHeight = m_effectParamsCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : m_effectChain.measureParamsHeight();
         const double performanceHeight = m_performanceCollapsed ? (CollapsedSectionHeight + ui::layout::SectionGap) : (PerformanceSectionHeight + ui::layout::SectionGap);
         return environmentSectionHeight + lightingSectionHeight + chainListHeight + presetHeight + paramsHeight + performanceHeight;
     }

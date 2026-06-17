@@ -6,6 +6,7 @@
         , m_chainA{ std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float) }
         , m_chainB{ std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float) }
         , m_fogTexture{ std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float) }
+        , m_underwaterTexture{ std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float) }
         , m_sceneDepthTexture{ std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R32_Float, HasDepth::Yes) }
         , m_dofDepthVS{ HLSL{ PiShaderLoader::HLSL(U"dof_depth"), U"VS" } | GLSL{ PiShaderLoader::GLSLVertex(U"dof_depth"), m_dofDepthVSBindings } }
         , m_dofDepthPS{ HLSL{ PiShaderLoader::HLSL(U"dof_depth"), U"PS" } | GLSL{ PiShaderLoader::GLSLFragment(U"dof_depth"), m_dofDepthPSBindings } }
@@ -52,9 +53,10 @@
     template <class DrawScene>
     void System::end3D(const DrawScene& drawSceneForDepth)
     {
-        const bool needsFog = m_environment.needsSceneDepth();
+        const bool needsAtmosphere = m_environment.hasAtmospherePass();
+        const bool needsUnderwaterPostProcess = m_environment.hasUnderwaterPostProcess();
         const bool hasActiveEffects = m_effectChain.hasActiveEffects();
-        const bool needsSceneDepth = (needsFog || m_effectChain.needsSceneDepth());
+        const bool needsSceneDepth = (m_environment.needsSceneDepth() || m_effectChain.needsSceneDepth());
         if (needsSceneDepth)
         {
             const ScopedRenderTarget3D target{ m_sceneDepthTexture->clear(ColorF{ 100000.0, 0.0, 0.0, 1.0 }) };
@@ -64,48 +66,52 @@
         }
         m_renderTexture->resolve();
 
-        const auto copyResolvedSceneToFogTexture = [&]()
+        const auto copyToRenderTexture = [](RenderTexture& target, const Texture& source)
+        {
+            const ScopedRenderTarget2D rt{ target };
+            const ScopedRenderStates2D blend{ BlendState::Opaque };
+            target.clear(ColorF{ 0, 0, 0, 1 });
+            source.draw();
+            Graphics2D::Flush();
+        };
+
+        const Texture* currentTexture = m_renderTexture.get();
+
+        if (needsAtmosphere)
         {
             const ScopedRenderTarget2D rt{ *m_fogTexture };
             const ScopedRenderStates2D blend{ BlendState::Opaque };
             m_fogTexture->clear(ColorF{ 0, 0, 0, 1 });
-            m_renderTexture->draw();
+            m_environment.applyAtmosphere(*currentTexture, *m_sceneDepthTexture);
             Graphics2D::Flush();
-        };
+            currentTexture = m_fogTexture.get();
+        }
 
-        const auto renderFogToFogTexture = [&]()
+        if (needsUnderwaterPostProcess)
         {
-            const ScopedRenderTarget2D rt{ *m_fogTexture };
-            const ScopedRenderStates2D blend{ BlendState::Opaque };
-            m_fogTexture->clear(ColorF{ 0, 0, 0, 1 });
-            m_environment.applyFog(*m_renderTexture, *m_sceneDepthTexture);
-            Graphics2D::Flush();
-        };
+            {
+                const ScopedRenderTarget2D rt{ *m_underwaterTexture };
+                const ScopedRenderStates2D blend{ BlendState::Opaque };
+                m_underwaterTexture->clear(ColorF{ 0, 0, 0, 1 });
+                m_environment.applyUnderwaterDistortion(*currentTexture, *m_sceneDepthTexture);
+                m_environment.drawUnderwaterParticles();
+                Graphics2D::Flush();
+            }
+            currentTexture = m_underwaterTexture.get();
+        }
 
-        if (needsFog)
+        if (hasActiveEffects)
         {
-            renderFogToFogTexture();
-
-            if (hasActiveEffects)
+            if (currentTexture == m_renderTexture.get())
             {
-                m_effectChain.apply(*m_fogTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
+                copyToRenderTexture(*m_fogTexture, *currentTexture);
+                currentTexture = m_fogTexture.get();
             }
-            else
-            {
-                m_fogTexture->draw();
-            }
+            m_effectChain.apply(*currentTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
         }
         else
         {
-            if (hasActiveEffects)
-            {
-                copyResolvedSceneToFogTexture();
-                m_effectChain.apply(*m_fogTexture, *m_chainA, *m_chainB, *m_sceneDepthTexture);
-            }
-            else
-            {
-                m_renderTexture->draw();
-            }
+            currentTexture->draw();
         }
     }
 
@@ -137,6 +143,7 @@
         m_chainA = std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float);
         m_chainB = std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float);
         m_fogTexture = std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float);
+        m_underwaterTexture = std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R16G16B16A16_Float);
         m_sceneDepthTexture = std::make_unique<RenderTexture>(m_sceneSize, TextureFormat::R32_Float, HasDepth::Yes);
     }
 

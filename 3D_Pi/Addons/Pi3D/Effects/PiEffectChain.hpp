@@ -21,18 +21,24 @@ namespace Pi3D
 
 		[[nodiscard]] double getControlSectionsHeight() const;
 		[[nodiscard]] double getChainListHeight() const;
+		[[nodiscard]] double measureChainListHeight() const;
        [[nodiscard]] double getChainPanelHeight() const;
 		[[nodiscard]] double getPresetHeight() const;
+		[[nodiscard]] double measurePresetHeight() const;
 		[[nodiscard]] bool isPresetSectionCollapsed() const;
         [[nodiscard]] bool isChainSectionCollapsed() const;
 		[[nodiscard]] Pi3D::EffectChainSettings getSettings() const;
 		void applySettings(const Pi3D::EffectChainSettings& settings);
 		[[nodiscard]] double getParamsHeight() const;
+		[[nodiscard]] double measureParamsHeight() const;
 
 		void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, double& panelScrollY);
 		void drawChainListUI(const Font& uiFont, Vec2& uiPos, const double contentWidth);
+		void drawChainListUI(const Font& uiFont, const RectF& rect);
 		void drawPresetUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, double& panelScrollY);
+		void drawPresetUI(const Font& uiFont, const RectF& rect, double& panelScrollY);
 		void drawParamsUI(const Font& uiFont, Vec2& uiPos, const double contentWidth);
+		void drawParamsUI(const Font& uiFont, const RectF& rect);
 
 	private:
         static constexpr double CollapsedSectionHeight = 42.0;

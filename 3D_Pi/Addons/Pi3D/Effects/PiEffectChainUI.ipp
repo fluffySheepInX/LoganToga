@@ -15,10 +15,20 @@
 
     inline double PiEffectChain::getChainListHeight() const
     {
+        return measureChainListHeight();
+    }
+
+    inline double PiEffectChain::measureChainListHeight() const
+    {
         return getChainPanelHeight();
     }
 
     inline double PiEffectChain::getParamsHeight() const
+    {
+        return measureParamsHeight();
+    }
+
+    inline double PiEffectChain::measureParamsHeight() const
     {
         double paramsHeight = 0.0;
         for (const size_t effectIndex : m_chain)
@@ -42,11 +52,17 @@
 
     inline void PiEffectChain::drawChainListUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)
     {
-        const double panelTopOffset = 4.0;
-        const RectF chainPanelRect{ uiPos.x, uiPos.y + panelTopOffset, contentWidth, getChainPanelHeight() - panelTopOffset };
+        const RectF chainPanelRect{ uiPos, contentWidth, measureChainListHeight() };
+        drawChainListUI(uiFont, chainPanelRect);
+        uiPos.y += chainPanelRect.h + ui::layout::SectionGap;
+    }
+
+    inline void PiEffectChain::drawChainListUI(const Font& uiFont, const RectF& chainPanelRect)
+    {
         ui::Section(chainPanelRect);
         const Vec2 panelPos = chainPanelRect.pos;
         const double iconRowY = panelPos.y + 8.0;
+        const double sectionStartY = chainPanelRect.y + 50.0;
         String hoverTooltip;
 
         const auto drawIconButton = [&](const RectF& rect, const Texture& icon)
@@ -62,14 +78,14 @@
             return rect.leftClicked();
         };
 
-        const RectF helpRect{ panelPos.x + contentWidth - 80, iconRowY, 32, 32 };
+        const RectF helpRect{ panelPos.x + chainPanelRect.w - 80, iconRowY, 32, 32 };
         drawIconButton(helpRect, m_helpIcon);
         if (helpRect.mouseOver())
         {
             hoverTooltip = U"エフェクト設定パネルの説明";
         }
 
-        const RectF openCloseRect{ panelPos.x + contentWidth - 40, iconRowY, 32, 32 };
+        const RectF openCloseRect{ panelPos.x + chainPanelRect.w - 40, iconRowY, 32, 32 };
         if (drawIconButton(openCloseRect, m_openCloseIcon))
         {
             m_chainSectionCollapsed = (not m_chainSectionCollapsed);
@@ -86,21 +102,20 @@
             {
                 ui::Tooltip(uiFont, hoverTooltip, Cursor::PosF().movedBy(18, 20));
             }
-            uiPos.y += getChainPanelHeight() + ui::layout::SectionGap;
             return;
         }
 
-        uiPos = panelPos.movedBy(0, 50);
+        double currentY = sectionStartY;
         for (size_t i = 0; i < m_chain.size(); ++i)
         {
             const auto& descriptor = getDescriptor(m_chain[i]);
             const double sectionHeight = getChainSectionHeight(i);
-            const RectF sectionRect{ uiPos, contentWidth, sectionHeight };
+            const RectF sectionRect{ chainPanelRect.x, currentY, chainPanelRect.w, sectionHeight };
             ui::Section(sectionRect);
 
             uiFont(U"[{}]"_fmt(i + 1)).draw(sectionRect.pos.movedBy(10, 8), ui::GetTheme().text);
 
-            const RectF selectRect{ sectionRect.x + 8, sectionRect.y + 36, contentWidth - 144, ui::layout::ButtonSize };
+            const RectF selectRect{ sectionRect.x + 8, sectionRect.y + 36, sectionRect.w - 144, ui::layout::ButtonSize };
             if (ui::Button(uiFont, U"{} ▾"_fmt(descriptor.name), selectRect))
             {
                 if (m_openEffectSelectIndex && (*m_openEffectSelectIndex == i))
@@ -170,7 +185,7 @@
 
             if (m_openEffectSelectIndex && (*m_openEffectSelectIndex == i))
             {
-                const RectF listRect{ sectionRect.x + 8, sectionRect.y + ChainSectionBaseHeight, contentWidth - 16, m_descriptors.size() * EffectSelectRowHeight };
+                const RectF listRect{ sectionRect.x + 8, sectionRect.y + ChainSectionBaseHeight, sectionRect.w - 16, m_descriptors.size() * EffectSelectRowHeight };
                 for (size_t effectIndex = 0; effectIndex < m_descriptors.size(); ++effectIndex)
                 {
                     const auto& listedDescriptor = getDescriptor(effectIndex);
@@ -198,16 +213,15 @@
                 }
             }
 
-            uiPos.y += sectionHeight + ui::layout::SectionGap;
+            currentY += sectionHeight + ui::layout::SectionGap;
         }
 
-        const RectF addRect{ uiPos, ui::layout::AddButtonWidth, ui::layout::AddButtonHeight };
+        const RectF addRect{ chainPanelRect.x, currentY, ui::layout::AddButtonWidth, ui::layout::AddButtonHeight };
         if ((m_chain.size() < MaxChainLength) && ui::Button(uiFont, U"+ 段を追加", addRect))
         {
             m_chain.push_back(0);
             m_chainEnabled.push_back(true);
         }
-        uiPos.y += ui::layout::AddButtonHeight + ui::layout::SectionGap;
 
         if (not hoverTooltip.isEmpty())
         {
@@ -217,22 +231,26 @@
 
     inline void PiEffectChain::drawPresetUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, double& panelScrollY)
     {
-        const double presetSectionBodyHeight = isPresetSectionCollapsed() ? CollapsedSectionHeight : getPresetSectionBodyHeight();
-        const RectF presetSectionRect{ uiPos, contentWidth, presetSectionBodyHeight };
+        const RectF presetSectionRect{ uiPos, contentWidth, measurePresetHeight() - ui::layout::SectionGap };
+        drawPresetUI(uiFont, presetSectionRect, panelScrollY);
+        uiPos.y += presetSectionRect.h + ui::layout::SectionGap;
+    }
+
+    inline void PiEffectChain::drawPresetUI(const Font& uiFont, const RectF& presetSectionRect, double& panelScrollY)
+    {
         ui::Section(presetSectionRect);
-        uiFont(U"プリセット").draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
+        uiFont(U"プリセット").draw(presetSectionRect.pos.movedBy(8, 0), ui::GetTheme().text);
         if (m_presetSectionCollapsed)
         {
-            uiPos.y += presetSectionRect.h + ui::layout::SectionGap;
             return;
         }
-        uiFont(U"現在: {}"_fmt(getCurrentPresetDisplayName())).draw(uiPos.movedBy(8, 28), Palette::Dimgray);
-        uiFont(getCurrentPresetDescription()).draw(uiPos.movedBy(8, 54), Palette::Gray);
+        uiFont(U"現在: {}"_fmt(getCurrentPresetDisplayName())).draw(presetSectionRect.pos.movedBy(8, 28), Palette::Dimgray);
+        uiFont(getCurrentPresetDescription()).draw(presetSectionRect.pos.movedBy(8, 54), Palette::Gray);
 
         double presetY = 88.0;
         for (const auto& preset : m_presets)
         {
-            const RectF presetRect{ uiPos.x + 8, uiPos.y + presetY, contentWidth - 16, ui::layout::AddButtonHeight };
+            const RectF presetRect{ presetSectionRect.x + 8, presetSectionRect.y + presetY, presetSectionRect.w - 16, ui::layout::AddButtonHeight };
             if (ui::Button(uiFont, preset.displayName, presetRect))
             {
                 m_chain = preset.chain;
@@ -242,19 +260,25 @@
             presetY += (ui::layout::AddButtonHeight + 4.0);
         }
 
-        const RectF noneRect{ uiPos.x + 8, uiPos.y + presetY, contentWidth - 16, ui::layout::AddButtonHeight };
+        const RectF noneRect{ presetSectionRect.x + 8, presetSectionRect.y + presetY, presetSectionRect.w - 16, ui::layout::AddButtonHeight };
         if (ui::Button(uiFont, U"なしに戻す", noneRect))
         {
             m_chain = { 0 };
             m_chainEnabled = { true };
             panelScrollY = 0.0;
         }
-
-        uiPos.y += presetSectionRect.h + ui::layout::SectionGap;
     }
 
     inline void PiEffectChain::drawParamsUI(const Font& uiFont, Vec2& uiPos, const double contentWidth)
     {
+        const RectF paramsRect{ uiPos, contentWidth, measureParamsHeight() };
+        drawParamsUI(uiFont, paramsRect);
+        uiPos.y += paramsRect.h;
+    }
+
+    inline void PiEffectChain::drawParamsUI(const Font& uiFont, const RectF& paramsRect)
+    {
+        double currentY = paramsRect.y;
         for (size_t i = 0; i < m_chain.size(); ++i)
         {
             const pe::Effect& e = m_effects[m_chain[i]];
@@ -262,10 +286,10 @@
             if (e.drawUI)
             {
                 const double paramBlockHeight = getParamBlockHeight(descriptor);
-                const RectF paramSectionRect{ uiPos, contentWidth, 28 + paramBlockHeight };
+                const RectF paramSectionRect{ paramsRect.x, currentY, paramsRect.w, 28 + paramBlockHeight };
                 ui::Section(paramSectionRect);
-              uiFont(U"[{}]"_fmt(i + 1)).draw(uiPos.movedBy(8, 0), ui::GetTheme().text);
-                uiFont(descriptor.name).draw(uiPos.movedBy(44, 0), ui::GetTheme().text);
+                uiFont(U"[{}]"_fmt(i + 1)).draw(paramSectionRect.pos.movedBy(8, 0), ui::GetTheme().text);
+                uiFont(descriptor.name).draw(paramSectionRect.pos.movedBy(44, 0), ui::GetTheme().text);
                 uiFont(descriptor.category).draw(paramSectionRect.rightX() - 220, paramSectionRect.y, Palette::Gray);
                 if (descriptor.requiresSceneDepth)
                 {
@@ -283,8 +307,8 @@
                         e.reset();
                     }
                 }
-                e.drawUI(uiPos.movedBy(8, 28));
-                uiPos.y += paramSectionRect.h + ui::layout::SectionGap;
+                e.drawUI(paramSectionRect.pos.movedBy(8, 28));
+                currentY += paramSectionRect.h + ui::layout::SectionGap;
             }
         }
     }
