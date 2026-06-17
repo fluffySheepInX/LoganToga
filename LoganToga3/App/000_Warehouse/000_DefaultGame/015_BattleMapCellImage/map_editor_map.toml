@@ -2,7 +2,7 @@
 
 map_editor_enabled = false
 
-unit_list = false
+unit_list = true
 
 building_editor = false
 

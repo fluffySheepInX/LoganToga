@@ -85,13 +85,13 @@ retreat_hp_ratio = 0
 free_spawn_enabled = true
 resource_multiplier = 0.9
 contact_behavior = "engage"
-initial_units = ["1", "2"]
+initial_units = ["4", "8"]
 target_priority = ["resource", "unit", "base"]
 [[profiles.unit_weights]]
-unit = "1"
+unit = "4"
 weight = 1.2
 desired_count = 0
 [[profiles.unit_weights]]
-unit = "2"
+unit = "8"
 weight = 0.55
 desired_count = 0
