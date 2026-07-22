@@ -1,12 +1,13 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Pi3DConfig.hpp"
 # include "PiGroundMode.hpp"
 # include "PiRain.hpp"
 # include "PiUnderwaterParticles.hpp"
 # include "../PiSettings.hpp"
 # include "../Shader/PiShaderLoader.hpp"
-# include "../../../UI/RectUI.hpp"
-# include "../../../UI/Layout.hpp"
+# include "../UI/RectUI.hpp"
+# include "../UI/Layout.hpp"
 
 namespace Pi3D
 {
@@ -86,11 +87,13 @@ namespace Pi3D
         bool m_fogEnabled = false;
         bool m_underwaterEnabled = false;
         bool m_environmentPanelOpened = true;
-        Texture m_environmentHelpIcon{ U"texture/hatena.png" };
-        Texture m_environmentOpenCloseIcon{ U"texture/kaihei.png" };
-        Texture m_groundModeIcon{ U"texture/zimenTexture.png" };
-        Texture m_rainToggleIcon{ U"texture/ame.png" };
-        Texture m_rainAmountIcon{ U"texture/ryou.png" };
+# if PI3D_ENABLE_EDITOR_UI
+        Texture m_environmentHelpIcon{ ResolveTexturePath(U"hatena.png") };
+        Texture m_environmentOpenCloseIcon{ ResolveTexturePath(U"kaihei.png") };
+        Texture m_groundModeIcon{ ResolveTexturePath(U"zimenTexture.png") };
+        Texture m_rainToggleIcon{ ResolveTexturePath(U"ame.png") };
+        Texture m_rainAmountIcon{ ResolveTexturePath(U"ryou.png") };
+# endif
         double m_fogStartDistance = 22.0;
         double m_fogEndDistance = 90.0;
         double m_fogDensity = 0.65;
@@ -124,4 +127,6 @@ namespace Pi3D
 }
 
 # include "PiEnvironment.Runtime.ipp"
+# if PI3D_ENABLE_EDITOR_UI
 # include "PiEnvironment.UI.ipp"
+# endif

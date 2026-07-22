@@ -1,8 +1,9 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Pi3DConfig.hpp"
 # include "../PiSettings.hpp"
-# include "../../../UI/Layout.hpp"
-# include "../../../UI/RectUI.hpp"
+# include "../UI/Layout.hpp"
+# include "../UI/RectUI.hpp"
 
 namespace Pi3D
 {
@@ -94,9 +95,10 @@ namespace Pi3D
 				1.0 };
 		}
 
+		# if PI3D_ENABLE_EDITOR_UI
 		[[nodiscard]] double getUIBodyHeight() const
 		{
-            const double contentTop = 48.0;
+			const double contentTop = 48.0;
 			const double radioListHeight = m_presets.size() * ui::layout::RowHeight;
           const double kickerSectionHeight = 28.0 + 38.0 + 38.0 + 38.0 + 38.0 + 38.0 + 8.0 + 30.0;
 			const double resetBottom = contentTop + 50.0 + radioListHeight + 8.0 + 38.0 + 42.0 + 26.0 + 98.0 + 8.0 + 30.0 + 12.0 + kickerSectionHeight;
@@ -105,10 +107,11 @@ namespace Pi3D
 
 		[[nodiscard]] double getHeaderHeight() const
 		{
-            return 50.0;
+			return 50.0;
 		}
+# endif
 
-      [[nodiscard]] ColorF apply(const Optional<Vec3>& cameraEye = none, const Optional<Vec3>& cameraFocus = none)
+	  [[nodiscard]] ColorF apply(const Optional<Vec3>& cameraEye = none, const Optional<Vec3>& cameraFocus = none)
 		{
 			const Preset& p = m_presets[m_lightingPresetIndex];
           const Vec3 dir = getEffectiveSunDirection();
@@ -145,7 +148,8 @@ namespace Pi3D
 			return dir.normalized();
 		}
 
-     void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, bool& collapsed)
+# if PI3D_ENABLE_EDITOR_UI
+	 void drawUI(const Font& uiFont, Vec2& uiPos, const double contentWidth, bool& collapsed)
 		{
 			const Array<String> lightingPresetNames = m_presets.map([](const Preset& p) { return p.name; });
          const double lightingSectionBodyHeight = (collapsed ? getHeaderHeight() : getUIBodyHeight());
@@ -320,6 +324,7 @@ namespace Pi3D
 
 			uiPos.y += lightingSectionRect.h + ui::layout::SectionGap;
 		}
+# endif
 
 	private:
 		inline static constexpr const char32* DirectionLabels[8] = {
@@ -337,19 +342,7 @@ namespace Pi3D
 
 		[[nodiscard]] static FilePath resolveTomlPath()
 		{
-			const Array<FilePath> candidates = {
-				U"Addons/Pi3D/Resources/toml/lighting_presets.toml",
-				U"../Addons/Pi3D/Resources/toml/lighting_presets.toml",
-				U"3D_Pi/Addons/Pi3D/Resources/toml/lighting_presets.toml",
-			};
-			for (const auto& p : candidates)
-			{
-				if (FileSystem::Exists(p))
-				{
-					return p;
-				}
-			}
-			return candidates.front();
+			return ResolvePresetPath(GetConfig().lightingPresetsPath, U"lighting_presets.toml");
 		}
 
 		[[nodiscard]] static ColorF makeKickerColorFromTemp(const double t)
@@ -511,7 +504,9 @@ namespace Pi3D
 		double m_kickerColorTemp = 0.35;
 		ColorF m_kickerColor{ 1.0, 0.95, 0.9, 1.0 };
 		KickerRuntime m_kickerRuntime;
-      Texture m_helpIcon{ U"texture/hatena.png" };
-		Texture m_openCloseIcon{ U"texture/kaihei.png" };
+		# if PI3D_ENABLE_EDITOR_UI
+		Texture m_helpIcon{ ResolveTexturePath(U"hatena.png") };
+		Texture m_openCloseIcon{ ResolveTexturePath(U"kaihei.png") };
+# endif
 	};
 }

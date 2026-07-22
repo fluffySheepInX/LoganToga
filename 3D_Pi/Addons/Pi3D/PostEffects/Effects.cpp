@@ -7,7 +7,7 @@
 //-----------------------------------------------
 
 # include "Effects.hpp"
-# include "../Addons/Pi3D/Shader/PiShaderLoader.hpp"
+# include "../Shader/PiShaderLoader.hpp"
 
 namespace pe
 {

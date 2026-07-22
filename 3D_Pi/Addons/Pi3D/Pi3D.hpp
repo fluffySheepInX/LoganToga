@@ -2,14 +2,17 @@
 # include <Siv3D.hpp>
 # include <chrono>
 # include <thread>
+# include "Pi3DConfig.hpp"
 # include "Environment/PiEnvironment.hpp"
 # include "Effects/PiEffectChain.hpp"
 # include "Lighting/PiLighting.hpp"
 # include "PiSettings.hpp"
 # include "Shader/PiShaderLoader.hpp"
-# include "../../UI/Layout.hpp"
-# include "../../UI/RectUI.hpp"
-# include "../../UI/EditorIconLayout.hpp"
+# include "UI/Layout.hpp"
+# include "UI/RectUI.hpp"
+# if PI3D_ENABLE_EDITOR_UI
+# include "UI/EditorIconLayout.hpp"
+# endif
 
 namespace Pi3D
 {
@@ -41,7 +44,11 @@ namespace Pi3D
 	private:
 		static constexpr double PerformanceSectionHeight = 244.0;
 		static constexpr double CollapsedSectionHeight = 42.0;
-     static constexpr double CollapsedToggleSize = ui::editor_icon::CollapsedIconSize;
+# if PI3D_ENABLE_EDITOR_UI
+	 static constexpr double CollapsedToggleSize = ui::editor_icon::CollapsedIconSize;
+# else
+	 static constexpr double CollapsedToggleSize = 64.0;
+# endif
 
 		[[nodiscard]] double getPanelContentHeight() const;
 		void drawPerformanceUI(const Font& uiFont, Vec2& uiPos, const double contentWidth);
@@ -100,11 +107,17 @@ namespace Pi3D
 		bool m_effectParamsCollapsed = false;
 		bool m_performanceCollapsed = false;
 		bool m_panelCollapsed = false;
-        Vec2 m_panelPos{ ui::editor_icon::GetDockedStackPosition(4) };
+# if PI3D_ENABLE_EDITOR_UI
+		Vec2 m_panelPos{ ui::editor_icon::GetDockedStackPosition(4) };
+# else
+		Vec2 m_panelPos{ 16, 16 };
+# endif
 		bool m_panelDragging = false;
 		Vec2 m_panelDragOffset{ 0, 0 };
-        Texture m_toggleIcon{ U"texture/effectEditor.png" };
-        Texture m_effectHelpIcon{ U"texture/hatena.png" };
+# if PI3D_ENABLE_EDITOR_UI
+		Texture m_toggleIcon{ ResolveTexturePath(U"effectEditor.png") };
+		Texture m_effectHelpIcon{ ResolveTexturePath(U"hatena.png") };
+# endif
 		PersistentSettings m_lastSavedSettings;
 		const VertexShader m_dofDepthVS;
 		const PixelShader m_dofDepthPS;
@@ -119,12 +132,25 @@ namespace Pi3D
 		return s_instance;
 	}
 
+	// 現在の構成で Pi3D System を登録する。
 	inline bool RegisterAddon()
 	{
 		if (not InstanceStorage())
 		{
 			InstanceStorage() = std::make_unique<System>();
 		}
+		return true;
+	}
+
+	// 指定した構成で Pi3D System を登録する。
+	inline bool RegisterAddon(const Config& config)
+	{
+		if (InstanceStorage() || (not SetConfig(config)))
+		{
+			return false;
+		}
+
+		InstanceStorage() = std::make_unique<System>();
 		return true;
 	}
 
@@ -156,12 +182,15 @@ namespace Pi3D
 
 	inline void DrawUI()
 	{
-		Instance().drawUI();
+		if (GetConfig().editorUIEnabled)
+		{
+			Instance().drawUI();
+		}
 	}
 
 	inline bool WantsMouseWheelCapture()
 	{
-		return Instance().wantsMouseWheelCapture();
+		return GetConfig().editorUIEnabled && Instance().wantsMouseWheelCapture();
 	}
 
 	inline Environment& EnvironmentRef()

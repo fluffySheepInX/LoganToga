@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+	<ProjectConfiguration Include="Debug|x64">
+	  <Configuration>Debug</Configuration>
+	  <Platform>x64</Platform>
+	</ProjectConfiguration>
+	<ProjectConfiguration Include="Release|x64">
+	  <Configuration>Release</Configuration>
+	  <Platform>x64</Platform>
+	</ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+	<VCProjectVersion>18.0</VCProjectVersion>
+	<ProjectGuid>{B8E8C75E-7784-4C9B-9C69-7933F5BE59CF}</ProjectGuid>
+	<Keyword>Win32Proj</Keyword>
+	<RootNamespace>Pi3DConsumerSmoke</RootNamespace>
+	<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+	<ConfigurationType>StaticLibrary</ConfigurationType>
+	<UseDebugLibraries>true</UseDebugLibraries>
+	<PlatformToolset>v145</PlatformToolset>
+	<CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+	<ConfigurationType>StaticLibrary</ConfigurationType>
+	<UseDebugLibraries>false</UseDebugLibraries>
+	<PlatformToolset>v145</PlatformToolset>
+	<WholeProgramOptimization>true</WholeProgramOptimization>
+	<CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+	<Pi3DPackageRoot>$(ProjectDir)..\..\Addons\Pi3D</Pi3DPackageRoot>
+	<OutDir>$(ProjectDir)..\..\..\Intermediate\$(ProjectName)\$(Configuration)\</OutDir>
+	<IntDir>$(OutDir)Intermediate\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<ClCompile>
+	  <WarningLevel>Level4</WarningLevel>
+	  <Optimization>Disabled</Optimization>
+	  <SDLCheck>true</SDLCheck>
+	  <PreprocessorDefinitions>_DEBUG;_WINDOWS;_ENABLE_EXTENDED_ALIGNED_STORAGE;_SILENCE_CXX20_CISO646_REMOVED_WARNING;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+	  <AdditionalIncludeDirectories>$(ProjectDir)..\..\Addons;$(SIV3D_0_6_16)\include;$(SIV3D_0_6_16)\include\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+	  <ConformanceMode>true</ConformanceMode>
+	  <MultiProcessorCompilation>true</MultiProcessorCompilation>
+	  <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+	  <LanguageStandard>stdcpplatest</LanguageStandard>
+	  <DisableSpecificWarnings>26451;26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+	  <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+	  <PrecompiledHeader>NotUsing</PrecompiledHeader>
+	  <BuildStlModules>false</BuildStlModules>
+	</ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	<ClCompile>
+	  <WarningLevel>Level4</WarningLevel>
+	  <Optimization>MaxSpeed</Optimization>
+	  <FunctionLevelLinking>true</FunctionLevelLinking>
+	  <IntrinsicFunctions>true</IntrinsicFunctions>
+	  <SDLCheck>true</SDLCheck>
+	  <PreprocessorDefinitions>NDEBUG;_WINDOWS;_ENABLE_EXTENDED_ALIGNED_STORAGE;_SILENCE_CXX20_CISO646_REMOVED_WARNING;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+	  <AdditionalIncludeDirectories>$(ProjectDir)..\..\Addons;$(SIV3D_0_6_16)\include;$(SIV3D_0_6_16)\include\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+	  <ConformanceMode>true</ConformanceMode>
+	  <MultiProcessorCompilation>true</MultiProcessorCompilation>
+	  <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+	  <LanguageStandard>stdcpplatest</LanguageStandard>
+	  <DisableSpecificWarnings>26451;26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+	  <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+	  <PrecompiledHeader>NotUsing</PrecompiledHeader>
+	  <BuildStlModules>false</BuildStlModules>
+	</ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+	<ClCompile Include="ConsumerSmoke.cpp" />
+	<ClCompile Include="..\..\Addons\Pi3D\PostEffects\*.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+	<None Include="README.md" />
+	<None Include="Validate-Pi3DPackage.ps1" />
+  </ItemGroup>
+  <Target Name="ValidatePi3DPackage" BeforeTargets="ClCompile">
+	<Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)Validate-Pi3DPackage.ps1&quot; -PackageRoot &quot;$(Pi3DPackageRoot)&quot;" />
+  </Target>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

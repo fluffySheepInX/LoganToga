@@ -1,5 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Pi3DConfig.hpp"
 # include "PiSettingsTypes.hpp"
 
 namespace Pi3D
@@ -18,12 +19,17 @@ namespace Pi3D
 
 	[[nodiscard]] inline FilePath GetSettingsPath()
 	{
-		return U"save/pi3d_settings.toml";
+		return GetConfig().settingsPath;
 	}
 
 	[[nodiscard]] inline PersistentSettings LoadSettings()
 	{
 		PersistentSettings settings;
+		if (not GetConfig().persistenceEnabled)
+		{
+			return settings;
+		}
+
 		const TOMLReader toml{ GetSettingsPath() };
 		if (not toml)
 		{
@@ -334,6 +340,11 @@ namespace Pi3D
 
 	inline bool SaveSettings(const PersistentSettings& settings)
 	{
+		if (not GetConfig().persistenceEnabled)
+		{
+			return true;
+		}
+
 		const FilePath path = GetSettingsPath();
 		const String directory = FileSystem::ParentPath(path);
 		if (not directory.isEmpty())

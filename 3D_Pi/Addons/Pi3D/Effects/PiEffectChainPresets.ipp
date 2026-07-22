@@ -2,19 +2,7 @@
 {
     inline FilePath PiEffectChain::resolveTomlPath()
     {
-        const Array<FilePath> candidates = {
-            U"Addons/Pi3D/Resources/toml/effect_presets.toml",
-            U"../Addons/Pi3D/Resources/toml/effect_presets.toml",
-            U"3D_Pi/Addons/Pi3D/Resources/toml/effect_presets.toml",
-        };
-        for (const auto& p : candidates)
-        {
-            if (FileSystem::Exists(p))
-            {
-                return p;
-            }
-        }
-        return candidates.front();
+        return ResolvePresetPath(GetConfig().effectPresetsPath, U"effect_presets.toml");
     }
 
     inline Array<PiEffectChain::PresetEntry> PiEffectChain::defaultPresets() const

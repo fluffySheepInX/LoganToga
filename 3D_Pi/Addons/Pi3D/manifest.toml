@@ -1,0 +1,34 @@
+name = "Pi3D"
+version = "0.3.0"
+engine = "OpenSiv3D 0.6.16"
+entrypoint = "Pi3D.hpp"
+
+[package]
+sourceRoot = "Addons/Pi3D"
+selfContained = true
+runtimeEditorCompileSeparated = true
+
+[dependencies]
+# addon 外部へのコード依存はなし。必要なのは OpenSiv3D のみ。
+sourceDirectories = []
+headerFiles = []
+compileFiles = ["PostEffects/*.cpp"]
+
+[resources]
+shaderDirectory = "Addons/Pi3D/Resources/shader"
+textureDirectory = "Addons/Pi3D/Resources/texture"
+effectPresets = "Addons/Pi3D/Resources/toml/effect_presets.toml"
+lightingPresets = "Addons/Pi3D/Resources/toml/lighting_presets.toml"
+
+[integration]
+registration = "Pi3D::RegisterAddon(config)"
+frameOrder = ["Pi3D::Update", "Pi3D::Begin3D", "Pi3D::End3D", "Pi3D::DrawUI"]
+
+[validation]
+smokeProject = "Tests/Pi3DConsumerSmoke/Pi3DConsumerSmoke.vcxproj"
+packageScript = "Tests/Pi3DConsumerSmoke/Validate-Pi3DPackage.ps1"
+
+[next]
+tasks = [
+	"Optionally split PiLighting UI into a dedicated .ipp file",
+]

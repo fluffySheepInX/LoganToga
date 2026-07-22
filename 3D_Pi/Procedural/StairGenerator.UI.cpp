@@ -39,6 +39,11 @@ namespace procedural
                 {
                     expandFromCollapsedIcon();
                 }
+
+                if (collapsedIcon.mouseOver())
+                {
+                    ui::Tooltip(ui::DefaultFont(), U"Expand 3D Generator", Cursor::PosF().movedBy(18, 18));
+                }
                 return;
             }
 

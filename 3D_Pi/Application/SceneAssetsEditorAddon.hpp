@@ -1,8 +1,8 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../Editors/IEditorAddon.hpp"
-# include "../UI/EditorIconLayout.hpp"
-# include "../UI/RectUI.hpp"
+# include "../Addons/Pi3D/UI/EditorIconLayout.hpp"
+# include "../Addons/Pi3D/UI/RectUI.hpp"
 # include "SceneAssets.hpp"
 
 namespace app
@@ -83,6 +83,10 @@ namespace app
                 if (not m_toggleIcon)
                 {
                     m_font(U"H").drawAt(button.center(), ui::GetTheme().text);
+                }
+                if (button.mouseOver())
+                {
+                    ui::Tooltip(m_font, U"Expand Shadow Editor (H to toggle)", Cursor::PosF().movedBy(18, 18));
                 }
                 return;
             }

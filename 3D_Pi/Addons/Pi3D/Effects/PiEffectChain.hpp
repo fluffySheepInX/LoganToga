@@ -1,9 +1,10 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
+# include "../Pi3DConfig.hpp"
 # include "../PiSettings.hpp"
-# include "../../../Effects/Effects.hpp"
-# include "../../../UI/Layout.hpp"
-# include "../../../UI/RectUI.hpp"
+# include "../PostEffects/Effects.hpp"
+# include "../UI/Layout.hpp"
+# include "../UI/RectUI.hpp"
 
 namespace Pi3D
 {
@@ -76,11 +77,15 @@ namespace Pi3D
 		Optional<size_t> m_openEffectSelectIndex;
 		size_t m_prevLightingPresetIndex = 0;
 		bool m_hasPrevLightingPreset = false;
-      Texture m_helpIcon{ U"texture/hatena.png" };
-		Texture m_openCloseIcon{ U"texture/kaihei.png" };
+# if PI3D_ENABLE_EDITOR_UI
+		Texture m_helpIcon{ ResolveTexturePath(U"hatena.png") };
+		Texture m_openCloseIcon{ ResolveTexturePath(U"kaihei.png") };
+# endif
 	};
 }
 
 # include "PiEffectChainRuntime.ipp"
 # include "PiEffectChainPresets.ipp"
+# if PI3D_ENABLE_EDITOR_UI
 # include "PiEffectChainUI.ipp"
+# endif

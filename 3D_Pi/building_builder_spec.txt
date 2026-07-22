@@ -1,0 +1,294 @@
+3D_Pi Building Builder Specification
+====================================
+
+目的
+----
+3D_Pi に、矩形ベースの建物を短時間で配置・調整・保存できる建物ビルダーを追加する。
+完全自由モデリングではなく、ゲーム内背景や探索空間の土台を素早く作るための procedural editor として設計する。
+
+設計方針
+--------
+- EditorAddonHost から扱える editor addon として実装する。
+- UI は既存方針に合わせて Rect ベース custom UI を使う。
+- Document / Renderer / Panel / Serializer / PlacementTool / MeshBuilder を分離する。
+- 保存形式は TOML を基本とする。
+- 初期実装は MVP に限定し、将来の L 字建物・内装・破損表現へ拡張できる形にする。
+
+責務分割
+--------
+
+BuildingEditorAddon
+- IEditorAddon を実装する外側の統合クラス。
+- update / draw3D / drawUI / handleCommand を受ける。
+- document, renderer, panel, serializer, placement tool を束ねる。
+
+BuildingDocument
+- 保存対象データのみを保持する。
+- UI 状態や一時選択状態は持たない。
+- Array<GeneratedBuilding> buildings を中心に構成する。
+
+BuildingPlacementTool
+- 地面レイキャストによる配置、選択、移動、回転、複製、削除を担当する。
+- カメラや cursorBlockedByUI を受け取り、UI と 3D 操作の競合を避ける。
+- 選択中 ID やドラッグ中状態などの一時操作状態を保持する。
+
+BuildingRenderer
+- GeneratedBuilding から 3D 表示を行う。
+- 選択中建物のワイヤーフレーム、配置ゴースト、操作ハンドルも描画する。
+- UI や保存処理を知らない。
+
+BuildingEditorPanel
+- Rect ベース UI の描画と UI 操作を担当する。
+- document 変更は編集 API または command 経由で行う。
+- セクションごとに高さを計測し、スクロールと外枠 rect が一致するようにする。
+
+BuildingSerializer
+- TOML の load / save のみ担当する。
+- 読み込み失敗時は空 document または既存 document 維持を選べるようにする。
+
+BuildingMeshBuilder
+- GeneratedBuilding から壁、屋根、窓、扉などの描画用メッシュ/プリミティブ情報を生成する。
+- 乱数バリエーションは variationSeed によって再現可能にする。
+
+データモデル
+------------
+
+GeneratedBuilding
+- String id
+- String name
+- Vec3 origin
+- double rotation01
+- Vec2 footprintSize
+- int32 floors
+- double floorHeight
+- double wallThickness
+- BuildingRoofType roofType
+- double roofHeight
+- BuildingFacadeStyle facadeStyle
+- BuildingMaterialSet materialSet
+- Array<BuildingOpening> openings
+- uint32 variationSeed
+
+BuildingRoofType
+- Flat
+- Gable
+- Hip
+
+BuildingFacadeStyle
+- Simple
+- OldTown
+- Warehouse
+- Haunted
+
+BuildingMaterialSet
+- ColorF wallColor
+- ColorF roofColor
+- ColorF trimColor
+- String wallMaterialKey
+- String roofMaterialKey
+
+BuildingOpening
+- BuildingWallSide wallSide
+- int32 floorIndex
+- double normalizedX
+- BuildingOpeningType type
+- Vec2 size
+- int32 repeatCount
+- double repeatSpacing
+
+BuildingWallSide
+- Front
+- Back
+- Left
+- Right
+
+BuildingOpeningType
+- Window
+- Door
+
+MVP 機能
+--------
+
+配置・編集
+- 新規建物を地面クリックで配置する。
+- 配置済み建物をクリック選択する。
+- 選択中建物を移動する。
+- 選択中建物を回転する。
+- 選択中建物を複製する。
+- 選択中建物を削除する。
+
+形状
+- 矩形 footprint の幅・奥行きを変更できる。
+- floors を変更できる。
+- floorHeight を変更できる。
+- wallThickness を変更できる。
+
+屋根
+- Flat / Gable / Hip を切り替えられる。
+- roofHeight を変更できる。
+- roofColor を変更できる。
+
+開口部
+- 扉を Front wall に 1 つ配置できる。
+- 窓列を階ごとに自動配置できる。
+- window count / spacing / size を調整できる。
+
+外観
+- wallColor / roofColor / trimColor を調整できる。
+- facadeStyle を切り替えられる。
+- variationSeed で軽い外観差分を再現する。
+
+保存
+- TOML へ保存できる。
+- TOML から読み込める。
+
+UI 仕様
+-------
+
+パネル構成
+1. Header
+- Building Builder タイトル
+- collapse button
+- Save / Load status
+
+2. Building List
+- 配置済み建物一覧
+- 選択中建物のハイライト
+- New / Duplicate / Delete
+
+3. Transform
+- Position X/Z
+- Rotation
+- Snap toggle
+
+4. Shape
+- Width
+- Depth
+- Floors
+- Floor Height
+- Wall Thickness
+
+5. Roof
+- Roof Type
+- Roof Height
+- Roof Color
+
+6. Openings
+- Door ON/OFF
+- Window Rows ON/OFF
+- Window Count
+- Window Size
+- Window Spacing
+
+7. Material
+- Wall Color
+- Trim Color
+- Facade Style
+- Variation Seed reroll
+
+8. Preset
+- Small House
+- Long House
+- Warehouse
+- Haunted House
+
+9. Save / Load
+- Save buildings.toml
+- Load buildings.toml
+
+操作仕様
+--------
+- 左クリック: 配置 / 選択
+- 左ドラッグ: 選択中建物の移動
+- 右ドラッグまたは回転ハンドル: 回転
+- Shift: グリッドスナップを一時有効化
+- Ctrl: 細かい移動・回転
+- Delete command: 選択中建物削除
+- Duplicate command: 選択中建物複製
+- Cancel command: 配置ゴーストまたはドラッグ操作をキャンセル
+
+保存形式案
+----------
+保存先候補:
+- 3D_Pi/Application/buildings.toml
+- または procedural 系へ統合する場合は procedural.toml の [[buildings]]
+
+TOML 例:
+
+[[buildings]]
+id = "building_001"
+name = "Old House"
+origin = [12.0, 0.0, -4.0]
+rotation01 = 0.25
+footprintSize = [6.0, 8.0]
+floors = 2
+floorHeight = 3.0
+wallThickness = 0.18
+roofType = "Gable"
+roofHeight = 1.4
+facadeStyle = "OldTown"
+variationSeed = 12345
+
+[buildings.material]
+wallColor = [0.72, 0.68, 0.60, 1.0]
+roofColor = [0.28, 0.12, 0.10, 1.0]
+trimColor = [0.86, 0.82, 0.72, 1.0]
+wallMaterialKey = "plaster_old"
+roofMaterialKey = "roof_dark"
+
+[[buildings.openings]]
+wallSide = "Front"
+floorIndex = 0
+normalizedX = 0.5
+type = "Door"
+size = [1.0, 2.2]
+repeatCount = 1
+repeatSpacing = 0.0
+
+[[buildings.openings]]
+wallSide = "Front"
+floorIndex = 1
+normalizedX = 0.25
+type = "Window"
+size = [0.8, 1.0]
+repeatCount = 3
+repeatSpacing = 1.6
+
+MVP と将来拡張
+--------------
+
+MVP
+- 矩形建物
+- 階数変更
+- Flat / Gable / Hip 屋根
+- 扉 1 つ
+- 窓列自動配置
+- 色と facade style
+- 配置 / 選択 / 移動 / 回転 / 複製 / 削除
+- TOML 保存読込
+
+将来拡張
+- L 字 / コの字 / 中庭 footprint
+- 道路 editor との入口スナップ
+- 地面傾斜への接地補正
+- 内装部屋生成
+- 階段やドアとの接続
+- 破損、汚れ、傾き、雨染み、板張りなどのホラー劣化パラメータ
+- 窓明かり、看板、外灯、デカール
+- 複数建物をまとめた街区プリセット
+
+実装順序案
+----------
+1. BuildingTypes / BuildingDocument を追加する。
+2. BuildingSerializer で TOML load/save を実装する。
+3. BuildingMeshBuilder で箱 + 屋根 + 簡易開口部を生成する。
+4. BuildingRenderer で生成建物と選択ワイヤーを描画する。
+5. BuildingPlacementTool で配置・選択・移動を実装する。
+6. BuildingEditorPanel で Rect UI を実装する。
+7. BuildingEditorAddon を EditorAddonHost に登録する。
+8. プリセットと facade variation を追加する。
+
+判断メモ
+--------
+建物は procedural 系生成物として扱うのが自然だが、StairGenerator と責務が混ざりすぎる場合は Building/ ディレクトリに独立させる。
+初期は Building/ 独立構成を推奨する。ProceduralDocument とは将来統合できるよう、GeneratedBuilding の純粋データ構造だけを共有可能にする。

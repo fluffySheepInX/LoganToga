@@ -11,6 +11,7 @@
         , m_dofDepthVS{ HLSL{ PiShaderLoader::HLSL(U"dof_depth"), U"VS" } | GLSL{ PiShaderLoader::GLSLVertex(U"dof_depth"), m_dofDepthVSBindings } }
         , m_dofDepthPS{ HLSL{ PiShaderLoader::HLSL(U"dof_depth"), U"PS" } | GLSL{ PiShaderLoader::GLSLFragment(U"dof_depth"), m_dofDepthPSBindings } }
     {
+        LockConfig();
         applySettings(LoadSettings());
     }
 
@@ -180,6 +181,7 @@
         m_effectChain.applySettings(settings.effects);
         m_panelCollapsed = settings.panelCollapsed;
         m_panelPos = Vec2{ settings.panelPosX, settings.panelPosY };
+# if PI3D_ENABLE_EDITOR_UI
         if (m_panelCollapsed)
         {
             m_panelPos = ui::editor_icon::GetDockedStackPosition(4);
@@ -189,6 +191,7 @@
         {
             m_panelPos = ui::editor_icon::GetDockedStackPosition(4);
         }
+# endif
         m_lastSavedSettings = collectSettings();
     }
 

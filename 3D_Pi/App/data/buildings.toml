@@ -1,0 +1,37 @@
+﻿nextSerial = 2
+
+[[buildings]]
+id = "building_001"
+name = "Building 1"
+origin = [23.199, 0.000, -5.203]
+rotation01 = 0.00000
+footprintSize = [5.000, 6.000]
+floors = 2
+floorHeight = 3.0000
+wallThickness = 0.1800
+roofType = "Gable"
+roofHeight = 2.0000
+facadeStyle = "OldTown"
+variationSeed = 26658
+wallColor = [0.7200, 0.6800, 0.6000, 1.0000]
+roofColor = [0.2800, 0.1200, 0.1000, 1.0000]
+trimColor = [0.8600, 0.8200, 0.7200, 1.0000]
+wallMaterialKey = "plaster_old"
+roofMaterialKey = "roof_dark"
+[[buildings.openings]]
+wallSide = "Front"
+floorIndex = 0
+normalizedX = 0.5000
+type = "Door"
+size = [1.000, 2.200]
+repeatCount = 1
+repeatSpacing = 0.0000
+[[buildings.openings]]
+wallSide = "Front"
+floorIndex = 1
+normalizedX = 0.2500
+type = "Window"
+size = [0.800, 1.000]
+repeatCount = 3
+repeatSpacing = 1.6000
+

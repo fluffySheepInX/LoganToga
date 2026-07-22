@@ -10,6 +10,7 @@
 # include "Road/RoadEditorAddon.hpp"
 # include "Ground/TextureEditorAddon.hpp"
 # include "Procedural/ProceduralEditorAddon.hpp"
+# include "Building/BuildingEditorAddon.hpp"
 
 void Main()
 {
@@ -40,6 +41,7 @@ void Main()
     editorHost.registerAddon(std::make_unique<app::RoadEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::TextureEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::ProceduralEditorAddon>());
+    editorHost.registerAddon(std::make_unique<app::BuildingEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::SceneAssetsEditorAddon>(sceneAssets));
     auto cameraWorkEditor = std::make_unique<app::CameraWorkEditorAddon>();
     auto* cameraWorkEditorPtr = cameraWorkEditor.get();

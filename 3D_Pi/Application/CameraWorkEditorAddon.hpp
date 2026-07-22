@@ -2,8 +2,8 @@
 # include <Siv3D.hpp>
 # include <algorithm>
 # include "../Editors/IEditorAddon.hpp"
-# include "../UI/EditorIconLayout.hpp"
-# include "../UI/RectUI.hpp"
+# include "../Addons/Pi3D/UI/EditorIconLayout.hpp"
+# include "../Addons/Pi3D/UI/RectUI.hpp"
 
 namespace app
 {
@@ -366,6 +366,11 @@ namespace app
             if (button.leftClicked())
             {
                 expandFromCollapsedIcon(button);
+            }
+
+            if (button.mouseOver())
+            {
+                ui::Tooltip(m_font, U"Expand Camera Work Editor (C to toggle)", Cursor::PosF().movedBy(18, 18));
             }
         }
 

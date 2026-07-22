@@ -117,6 +117,9 @@
   <ItemGroup>
     <ClCompile Include="Application\CameraController.cpp" />
     <ClCompile Include="Application\SceneAssets.cpp" />
+    <ClCompile Include="Building\BuildingEditorPanel.cpp" />
+    <ClCompile Include="Building\BuildingPlacementTool.cpp" />
+    <ClCompile Include="Building\BuildingRenderer.cpp" />
     <ClCompile Include="Ground\TextureEditor.Layers.cpp" />
     <ClCompile Include="Ground\TextureEditor.Persistence.cpp" />
     <ClCompile Include="Ground\TextureEditor.UI.cpp" />
@@ -128,7 +131,7 @@
     <ClCompile Include="Procedural\StairGenerator.Rendering.cpp" />
     <ClCompile Include="Procedural\StairGenerator.UI.cpp" />
     <ClCompile Include="Road\RoadEditor.cpp" />
-    <ClCompile Include="Effects\*.cpp" />
+    <ClCompile Include="Addons\Pi3D\PostEffects\*.cpp" />
     <ClCompile Include="Road\RoadEditor.Editing.cpp" />
     <ClCompile Include="Road\RoadEditor.Persistence.cpp" />
     <ClCompile Include="Road\RoadEditor.Scatter.cpp" />
@@ -198,8 +201,14 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="Addons\Pi3D\manifest.toml" />
+    <None Include="Addons\Pi3D\README.md" />
     <None Include="Addons\Pi3D\Resources\toml\effect_presets.toml" />
     <None Include="Addons\Pi3D\Resources\toml\lighting_presets.toml" />
+    <None Include="Addons\Pi3D\Resources\shader\hlsl\default3d_forward.hlsl" />
+    <None Include="Addons\Pi3D\Resources\shader\hlsl\projected_shadow.hlsl" />
+    <None Include="Addons\Pi3D\Resources\shader\glsl\default3d_forward.vert" />
+    <None Include="Addons\Pi3D\Resources\shader\glsl\default3d_forward.frag" />
     <None Include="Application\scene_assets.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
@@ -365,6 +374,7 @@
     <ClInclude Include="Addons\Pi3D\Pi3D.hpp" />
     <ClInclude Include="Addons\Pi3D\Pi3D.System.inl.hpp" />
     <ClInclude Include="Addons\Pi3D\Pi3D.UI.inl.hpp" />
+    <ClInclude Include="Addons\Pi3D\Pi3DConfig.hpp" />
     <ClInclude Include="Addons\Pi3D\PiSettings.hpp" />
     <ClInclude Include="Addons\Pi3D\Settings\PiSettingsPersistence.hpp" />
     <ClInclude Include="Addons\Pi3D\Settings\PiSettingsTypes.hpp" />
@@ -375,15 +385,20 @@
     <ClInclude Include="Application\RenderPipeline.hpp" />
     <ClInclude Include="Application\SceneAssets.hpp" />
     <ClInclude Include="Application\SceneAssetsEditorAddon.hpp" />
+    <ClInclude Include="Building\BuildingDocument.hpp" />
+    <ClInclude Include="Building\BuildingEditorAddon.hpp" />
+    <ClInclude Include="Building\BuildingEditorPanel.hpp" />
+    <ClInclude Include="Building\BuildingPlacementTool.hpp" />
+    <ClInclude Include="Building\BuildingRenderer.hpp" />
+    <ClInclude Include="Building\BuildingSerializer.hpp" />
+    <ClInclude Include="Building\BuildingTypes.hpp" />
     <ClInclude Include="Editors\IEditorAddon.hpp" />
-    <ClInclude Include="Effects\*.hpp" />
     <ClInclude Include="Ground\GroundLayer.hpp" />
     <ClInclude Include="Ground\GroundLayerDocument.hpp" />
     <ClInclude Include="Ground\GroundLayerSerializer.hpp" />
     <ClInclude Include="Ground\TextureEditor.hpp" />
     <ClInclude Include="Ground\TextureEditorAddon.hpp" />
     <ClInclude Include="libs\AddonGaussian.h" />
-    <ClInclude Include="Lighting\Lighting.hpp" />
     <ClInclude Include="Procedural\ProceduralDocument.hpp" />
     <ClInclude Include="Procedural\ProceduralEditorAddon.hpp" />
     <ClInclude Include="Procedural\ProceduralTypes.hpp" />
@@ -406,9 +421,6 @@
     <ClInclude Include="Road\RoadSerializer.hpp" />
     <ClInclude Include="Road\RoadTypes.hpp" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="UI\EditorIconLayout.hpp" />
-    <ClInclude Include="UI\Layout.hpp" />
-    <ClInclude Include="UI\RectUI.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">

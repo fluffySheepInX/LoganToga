@@ -1,8 +1,8 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../Editors/IEditorAddon.hpp"
-# include "../UI/RectUI.hpp"
-# include "../UI/EditorIconLayout.hpp"
+# include "../Addons/Pi3D/UI/RectUI.hpp"
+# include "../Addons/Pi3D/UI/EditorIconLayout.hpp"
 # include "ProceduralTypes.hpp"
 # include "ProceduralDocument.hpp"
 # include "StairSerializer.hpp"

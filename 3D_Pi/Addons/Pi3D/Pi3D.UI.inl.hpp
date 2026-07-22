@@ -1,4 +1,5 @@
 ﻿# pragma once
+# if PI3D_ENABLE_EDITOR_UI
 
     template <class DrawBody>
     void System::drawCollapsibleSection(const Font& uiFont, Vec2& uiPos, const double contentWidth, StringView title,
@@ -35,6 +36,12 @@
 
     inline void System::drawUI()
     {
+        if (not GetConfig().editorUIEnabled)
+        {
+            ui::editor_icon::RegisterCollapsedIcon(U"EffectEditor", none);
+            return;
+        }
+
         const Font& uiFont = ui::DefaultFont();
         syncCollapsedIconRegistry();
 
@@ -197,6 +204,11 @@
 
     inline bool System::wantsMouseWheelCapture() const
     {
+        if (not GetConfig().editorUIEnabled)
+        {
+            return false;
+        }
+
         if (m_panelCollapsed)
         {
             return getCollapsedToggleRect().mouseOver();
@@ -323,3 +335,17 @@
         m_panelPos = ui::editor_icon::GetAnchoredTopRightPosition(collapsedIcon, SizeF{ ui::layout::PanelWidth, getExpandedPanelHeight() });
         syncCollapsedIconRegistry();
     }
+
+# else
+
+    // Editor UI 無効時の no-op スタブ。Runtime から呼ばれる公開/内部 API のみ定義する。
+    inline void System::drawUI() {}
+
+    inline bool System::wantsMouseWheelCapture() const
+    {
+        return false;
+    }
+
+    inline void System::syncCollapsedIconRegistry() const {}
+
+# endif
