@@ -37,8 +37,12 @@ bool FormationScene::HandleUtilityActions()
 	if (GetUnitEditButton().leftClicked() && m_editingFormation.selectedUnit)
 	{
 		ApplyFormationEditState(getData(), m_editingFormation);
-		getData().editEnemyDefinitions = false;
-		getData().unitEditorReturnToWaveEditor = false;
+		getData().unitEditorNavigationRequest = ff::UnitEditorNavigationRequest{
+			ff::UnitEditorDefinitionKind::Unit,
+			*m_editingFormation.selectedUnit,
+			ff::EnemyKind::Normal,
+			ff::UnitEditorReturnTarget::Formation,
+		};
 		changeScene(U"UnitEditor");
 		return true;
 	}

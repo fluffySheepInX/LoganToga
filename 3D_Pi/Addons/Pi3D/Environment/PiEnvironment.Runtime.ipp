@@ -63,6 +63,18 @@
 		return m_underwaterEnabled;
 	}
 
+	// 水中表現の有効/無効をランタイムで切り替える
+	inline void PiEnvironment::setUnderwaterEnabled(const bool enabled)
+	{
+		m_underwaterEnabled = enabled;
+	}
+
+	// 水中表現が有効かを返す
+	inline bool PiEnvironment::isUnderwaterEnabled() const
+	{
+		return m_underwaterEnabled;
+	}
+
 	// 状態に応じて通常フォグまたは水中フォグを適用
 	inline void PiEnvironment::applyAtmosphere(const Texture& source, const Texture& depthTexture) const
 	{

@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include "ConfigFilePaths.h"
 # include "WaveDefinitionDefaults.h"
 
 namespace ff
@@ -131,37 +132,22 @@ namespace ff
 		return ParseEnemyStableId(stableId);
 	}
 
+	// 同梱ウェーブ定義の利用可能なパスを取得します。
 	[[nodiscard]] inline String GetBundledWaveDefinitionsPath()
 	{
-		const String runtimeRelativePath = U"waveDefinitions.toml";
-		if (FileSystem::Exists(runtimeRelativePath))
-		{
-			return runtimeRelativePath;
-		}
-
-		const String projectRelativePath = U"App/waveDefinitions.toml";
-		if (FileSystem::Exists(projectRelativePath))
-		{
-			return projectRelativePath;
-		}
-
-		return runtimeRelativePath;
+		return ResolveBundledConfigPath({ U"waveDefinitions.toml", U"App/waveDefinitions.toml", U"save/waveDefinitions.toml" });
 	}
 
+	// ユーザー編集用ウェーブ定義の保存先を取得します。
 	[[nodiscard]] inline String GetUserWaveDefinitionsPath()
 	{
 		return U"save/waveDefinitions.toml";
 	}
 
+	// ユーザー編集を優先したウェーブ定義の読込先を取得します。
 	[[nodiscard]] inline String GetWaveDefinitionsPath()
 	{
-		const String userPath = GetUserWaveDefinitionsPath();
-		if (FileSystem::Exists(userPath))
-		{
-			return userPath;
-		}
-
-		return GetBundledWaveDefinitionsPath();
+		return ResolveConfigPath({ U"waveDefinitions.toml", U"App/waveDefinitions.toml", GetUserWaveDefinitionsPath() });
 	}
 
 	[[nodiscard]] inline String BuildWaveDefinitionsToml(const WaveConfig& sourceConfig)

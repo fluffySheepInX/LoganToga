@@ -85,6 +85,8 @@
     <ClInclude Include="FormationState.h" />
     <ClInclude Include="AppData.h" />
     <ClInclude Include="AppStatePersistence.h" />
+    <ClInclude Include="ConfigFilePaths.h" />
+    <ClInclude Include="EditorNumericAdjustment.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App\Resource.rc" />

@@ -99,7 +99,8 @@ namespace ff
 		}
 	}
 
-	[[nodiscard]] inline String EscapeTomlBasicString(const String& value)
+	// TOML基本文字列に必要なバックスラッシュとダブルクォートをエスケープします。
+	[[nodiscard]] inline String EscapeTomlString(const String& value)
 	{
 		String escaped;
 		escaped.reserve(value.size());
@@ -121,6 +122,12 @@ namespace ff
 		}
 
 		return escaped;
+	}
+
+	// 既存のTOML基本文字列出力との互換性を保つエイリアスです。
+	[[nodiscard]] inline String EscapeTomlBasicString(const String& value)
+	{
+		return EscapeTomlString(value);
 	}
 
 	[[nodiscard]] inline String BuildTomlColorArray(const ColorF& color)

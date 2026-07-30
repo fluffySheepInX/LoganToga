@@ -117,9 +117,10 @@ private:
 	Font m_titleFont;
 	Font m_buttonFont;
 	Font m_infoFont;
-	ff::UnitId m_unitId;
- Optional<ff::EnemyKind> m_enemyKind;
+	ff::UnitEditorNavigationRequest m_navigationRequest;
 	bool m_editingEnemyDefinitions = false;
+	ff::UnitId m_unitId;
+	Optional<ff::EnemyKind> m_enemyKind;
 	ff::UnitDefinition m_editingDefinition;
  ff::EnemyDefinition m_editingEnemyDefinition;
 	mutable TextEditState m_labelEditState;

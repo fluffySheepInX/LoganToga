@@ -82,74 +82,23 @@ namespace ff
 		return config;
 	}
 
-	[[nodiscard]] inline WaveConfig& GetMutableWaveConfig()
-	{
-		static WaveConfig Config = LoadWaveConfig();
-		return Config;
-	}
+	[[nodiscard]] const WaveConfig& GetWaveConfig();
 
-	[[nodiscard]] inline const WaveConfig& GetWaveConfig()
-	{
-		return GetMutableWaveConfig();
-	}
+	void SetWaveConfig(WaveConfig config);
 
-	inline void SetWaveConfig(WaveConfig config)
-	{
-		config.waveStartDelay = Max(0.05, config.waveStartDelay);
-		config.waveClearDelay = Max(0.05, config.waveClearDelay);
-		config.waveBannerDuration = Max(0.05, config.waveBannerDuration);
+	[[nodiscard]] int32 GetWaveCount();
 
-		if (config.waves.isEmpty())
-		{
-			config.waves << MakeDefaultWaveDefinition(1);
-		}
+	[[nodiscard]] bool HasWaveDefinition(int32 wave);
 
-		for (size_t index = 0; index < config.waves.size(); ++index)
-		{
-			config.waves[index].waveNumber = static_cast<int32>(index + 1);
-			NormalizeWaveDefinition(config.waves[index], MakeDefaultWaveDefinition(static_cast<int32>(index + 1)));
-		}
+	[[nodiscard]] const WaveDefinition& GetWaveDefinition(int32 wave);
 
-		GetMutableWaveConfig() = std::move(config);
-	}
+	[[nodiscard]] double GetWaveStartDelay();
 
-	[[nodiscard]] inline int32 GetWaveCount()
-	{
-		return static_cast<int32>(GetWaveConfig().waves.size());
-	}
+	[[nodiscard]] double GetWaveClearDelay();
 
-	[[nodiscard]] inline bool HasWaveDefinition(const int32 wave)
-	{
-		return InRange(wave, 1, GetWaveCount());
-	}
+	[[nodiscard]] double GetWaveBannerDuration();
 
-	[[nodiscard]] inline const WaveDefinition& GetWaveDefinition(const int32 wave)
-	{
-		return GetWaveConfig().waves[Clamp(wave, 1, GetWaveCount()) - 1];
-	}
+	void ReloadWaveDefinitionsFromDisk();
 
-	[[nodiscard]] inline double GetWaveStartDelay()
-	{
-		return GetWaveConfig().waveStartDelay;
-	}
-
-	[[nodiscard]] inline double GetWaveClearDelay()
-	{
-		return GetWaveConfig().waveClearDelay;
-	}
-
-	[[nodiscard]] inline double GetWaveBannerDuration()
-	{
-		return GetWaveConfig().waveBannerDuration;
-	}
-
-	inline void ReloadWaveDefinitionsFromDisk()
-	{
-		GetMutableWaveConfig() = LoadWaveConfig();
-	}
-
-	[[nodiscard]] inline bool SaveCurrentWaveDefinitionsToDisk()
-	{
-		return SaveWaveDefinitionsToDisk(GetWaveConfig());
-	}
+	[[nodiscard]] bool SaveCurrentWaveDefinitionsToDisk();
 }

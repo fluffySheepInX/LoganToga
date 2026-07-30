@@ -136,7 +136,7 @@ String UnitEditorScene::GetPendingActionMessage() const
 	switch (m_pendingAction)
 	{
 	case PendingAction::BackToFormation:
-        return getData().unitEditorReturnToWaveEditor ? U"Wave編集へ戻ります" : U"編成画面へ戻ります";
+		return m_navigationRequest.returnTarget == ff::UnitEditorReturnTarget::WaveEditor ? U"Wave編集へ戻ります" : U"編成画面へ戻ります";
 	case PendingAction::SwitchUnit:
 		return m_pendingUnitId ? U"{} に切り替えます"_fmt(ff::GetUnitDefinition(*m_pendingUnitId).label) : U"別ユニットへ切り替えます";
  case PendingAction::SwitchEnemy:

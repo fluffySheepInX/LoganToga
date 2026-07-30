@@ -1,14 +1,35 @@
 ﻿# pragma once
 # include "FormationState.h"
 
+namespace ff
+{
+	enum class UnitEditorDefinitionKind : uint8
+	{
+		Unit,
+		Enemy,
+	};
+
+	enum class UnitEditorReturnTarget : uint8
+	{
+		Formation,
+		WaveEditor,
+	};
+
+	struct UnitEditorNavigationRequest
+	{
+		UnitEditorDefinitionKind definitionKind = UnitEditorDefinitionKind::Unit;
+		UnitId unitId = UnitId::GuardPlayer;
+		EnemyKind enemyKind = EnemyKind::Normal;
+		UnitEditorReturnTarget returnTarget = UnitEditorReturnTarget::Formation;
+	};
+}
+
 struct AppData
 {
 	ff::FormationSlots formationSlots = ff::MakeEmptyFormationSlots();
 	Array<ff::FormationSlots> formationPresets = ff::MakeDefaultFormationPresets();
 	Optional<ff::UnitId> selectedFormationUnit = ff::UnitId::GuardPlayer;
-	Optional<ff::EnemyKind> selectedEnemyKind = ff::EnemyKind::Normal;
-	bool editEnemyDefinitions = false;
-	bool unitEditorReturnToWaveEditor = false;
+	Optional<ff::UnitEditorNavigationRequest> unitEditorNavigationRequest;
 	ff::SummonDiscountTraitConfig summonDiscountTraits = ff::MakeDefaultSummonDiscountTraitConfig();
 	ff::TimeOfDay timeOfDay = ff::TimeOfDay::Day;
 };

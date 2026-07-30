@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include "ConfigFilePaths.h"
 # include "TomlUtils.h"
 
 namespace ff
@@ -79,37 +80,22 @@ namespace ff
 		return none;
 	}
 
+	// 同梱敵定義の利用可能なパスを取得します。
 	[[nodiscard]] inline String GetBundledEnemyDefinitionsPath()
 	{
-		const String runtimeRelativePath = U"enemyDefinitions.toml";
-		if (FileSystem::Exists(runtimeRelativePath))
-		{
-			return runtimeRelativePath;
-		}
-
-		const String projectRelativePath = U"App/enemyDefinitions.toml";
-		if (FileSystem::Exists(projectRelativePath))
-		{
-			return projectRelativePath;
-		}
-
-		return runtimeRelativePath;
+		return ResolveBundledConfigPath({ U"enemyDefinitions.toml", U"App/enemyDefinitions.toml", U"save/enemyDefinitions.toml" });
 	}
 
+	// ユーザー編集用敵定義の保存先を取得します。
 	[[nodiscard]] inline String GetUserEnemyDefinitionsPath()
 	{
 		return U"save/enemyDefinitions.toml";
 	}
 
+	// ユーザー編集を優先した敵定義の読込先を取得します。
 	[[nodiscard]] inline String GetEnemyDefinitionsPath()
 	{
-		const String userPath = GetUserEnemyDefinitionsPath();
-		if (FileSystem::Exists(userPath))
-		{
-			return userPath;
-		}
-
-		return GetBundledEnemyDefinitionsPath();
+		return ResolveConfigPath({ U"enemyDefinitions.toml", U"App/enemyDefinitions.toml", GetUserEnemyDefinitionsPath() });
 	}
 
 	[[nodiscard]] inline std::array<EnemyDefinition, EnemyKindCount> MakeDefaultEnemyDefinitions()
@@ -210,21 +196,9 @@ namespace ff
 		return definitions;
 	}
 
-	[[nodiscard]] inline std::array<EnemyDefinition, EnemyKindCount>& GetMutableEnemyDefinitions()
-	{
-		static std::array<EnemyDefinition, EnemyKindCount> Definitions = LoadEnemyDefinitions();
-		return Definitions;
-	}
+	[[nodiscard]] const std::array<EnemyDefinition, EnemyKindCount>& GetEnemyDefinitions();
 
-	[[nodiscard]] inline const std::array<EnemyDefinition, EnemyKindCount>& GetEnemyDefinitions()
-	{
-		return GetMutableEnemyDefinitions();
-	}
-
-	[[nodiscard]] inline const EnemyDefinition& GetEnemyDefinition(const EnemyKind kind)
-	{
-		return GetEnemyDefinitions()[ToIndex(kind)];
-	}
+	[[nodiscard]] const EnemyDefinition& GetEnemyDefinition(EnemyKind kind);
 
 	[[nodiscard]] inline const EnemyDefinition& GetDefaultEnemyDefinition(const EnemyKind kind)
 	{
@@ -282,22 +256,11 @@ namespace ff
 		return true;
 	}
 
-	inline void SetEnemyDefinition(const EnemyDefinition& definition)
-	{
-		auto normalized = definition;
-		NormalizeEnemyDefinition(normalized, GetDefaultEnemyDefinition(normalized.kind));
-		GetMutableEnemyDefinitions()[ToIndex(normalized.kind)] = std::move(normalized);
-	}
+	void SetEnemyDefinition(const EnemyDefinition& definition);
 
-	[[nodiscard]] inline bool SaveCurrentEnemyDefinitionsToDisk()
-	{
-		return SaveEnemyDefinitionsToDisk(GetEnemyDefinitions());
-	}
+	[[nodiscard]] bool SaveCurrentEnemyDefinitionsToDisk();
 
-	inline void ReloadEnemyDefinitionsFromDisk()
-	{
-		GetMutableEnemyDefinitions() = LoadEnemyDefinitions();
-	}
+	void ReloadEnemyDefinitionsFromDisk();
 
 	inline double GetEnemyMaxHp(const EnemyKind kind)
 	{

@@ -1,4 +1,5 @@
 ﻿# pragma once
+# include "ConfigFilePaths.h"
 # include "WaveTypes.h"
 
 namespace ff
@@ -94,37 +95,22 @@ namespace ff
 		return (unitPos.distanceFrom(playerPos) <= PlayerCommandRadius);
 	}
 
+	// 同梱ユニット定義の利用可能なパスを取得します。
 	[[nodiscard]] inline String GetBundledUnitDefinitionsPath()
 	{
-		const String runtimeRelativePath = U"unitDefinitions.toml";
-		if (FileSystem::Exists(runtimeRelativePath))
-		{
-			return runtimeRelativePath;
-		}
-
-		const String projectRelativePath = U"App/unitDefinitions.toml";
-		if (FileSystem::Exists(projectRelativePath))
-		{
-			return projectRelativePath;
-		}
-
-		return runtimeRelativePath;
+		return ResolveBundledConfigPath({ U"unitDefinitions.toml", U"App/unitDefinitions.toml", U"save/unitDefinitions.toml" });
 	}
 
+	// ユーザー編集用ユニット定義の保存先を取得します。
 	[[nodiscard]] inline String GetUserUnitDefinitionsPath()
 	{
 		return U"save/unitDefinitions.toml";
 	}
 
+	// ユーザー編集を優先したユニット定義の読込先を取得します。
 	[[nodiscard]] inline String GetUnitDefinitionsPath()
 	{
-		const String userPath = GetUserUnitDefinitionsPath();
-		if (FileSystem::Exists(userPath))
-		{
-			return userPath;
-		}
-
-		return GetBundledUnitDefinitionsPath();
+		return ResolveConfigPath({ U"unitDefinitions.toml", U"App/unitDefinitions.toml", GetUserUnitDefinitionsPath() });
 	}
 
 	[[nodiscard]] inline std::array<UnitDefinition, AllyBehaviorCount> MakeDefaultUnitDefinitions()
@@ -221,21 +207,9 @@ namespace ff
 		return definitions;
 	}
 
-	[[nodiscard]] inline std::array<UnitDefinition, AllyBehaviorCount>& GetMutableUnitDefinitions()
-	{
-		static std::array<UnitDefinition, AllyBehaviorCount> Definitions = LoadUnitDefinitions();
-		return Definitions;
-	}
+	[[nodiscard]] const std::array<UnitDefinition, AllyBehaviorCount>& GetUnitDefinitions();
 
-	[[nodiscard]] inline const std::array<UnitDefinition, AllyBehaviorCount>& GetUnitDefinitions()
-	{
-		return GetMutableUnitDefinitions();
-	}
-
-	[[nodiscard]] inline const UnitDefinition& GetUnitDefinition(const UnitId unitId)
-	{
-		return GetUnitDefinitions()[ToIndex(unitId)];
-	}
+	[[nodiscard]] const UnitDefinition& GetUnitDefinition(UnitId unitId);
 
 	[[nodiscard]] inline const UnitDefinition& GetDefaultUnitDefinition(const UnitId unitId)
 	{
@@ -294,22 +268,11 @@ namespace ff
 		return true;
 	}
 
-	inline void ReloadUnitDefinitionsFromDisk()
-	{
-		GetMutableUnitDefinitions() = LoadUnitDefinitions();
-	}
+	void ReloadUnitDefinitionsFromDisk();
 
-	inline void SetUnitDefinition(UnitDefinition definition)
-	{
-		const UnitDefinition fallback = GetDefaultUnitDefinition(definition.id);
-		NormalizeUnitDefinition(definition, fallback);
-		GetMutableUnitDefinitions()[ToIndex(definition.id)] = std::move(definition);
-	}
+	void SetUnitDefinition(UnitDefinition definition);
 
-	[[nodiscard]] inline bool SaveCurrentUnitDefinitionsToDisk()
-	{
-		return SaveUnitDefinitionsToDisk(GetUnitDefinitions());
-	}
+	[[nodiscard]] bool SaveCurrentUnitDefinitionsToDisk();
 
 	inline SummonDiscountTraitConfig MakeDefaultSummonDiscountTraitConfig()
 	{

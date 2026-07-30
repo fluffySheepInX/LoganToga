@@ -37,6 +37,12 @@ namespace Pi3D
         // 水中後処理が必要かを返す
         [[nodiscard]] bool hasUnderwaterPostProcess() const;
 
+        // 水中表現の有効/無効をランタイムで切り替える
+        void setUnderwaterEnabled(const bool enabled);
+
+        // 水中表現が有効かを返す
+        [[nodiscard]] bool isUnderwaterEnabled() const;
+
         // 状態に応じて通常フォグまたは水中フォグを適用
         void applyAtmosphere(const Texture& source, const Texture& depthTexture) const;
 

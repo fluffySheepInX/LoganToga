@@ -3,6 +3,7 @@
 # include "Addons/Pi3D/Pi3D.hpp"
 # include "Application/CameraController.hpp"
 # include "Application/SceneAssets.hpp"
+# include "Application/SeaTerrain.hpp"
 # include "Application/EditorAddonHost.hpp"
 # include "Application/SceneAssetsEditorAddon.hpp"
 # include "Application/CameraWorkEditorAddon.hpp"
@@ -34,9 +35,10 @@ void Main()
     Pi3D::RegisterAddon();
 
     app::SceneAssets sceneAssets;
+    app::SeaTerrain seaTerrain;
     app::CameraController cameraController{ Scene::Size() };
     app::EditorAddonHost editorHost;
-    app::RenderPipeline renderPipeline{ sceneAssets, editorHost };
+    app::RenderPipeline renderPipeline{ sceneAssets, editorHost, seaTerrain };
 
     editorHost.registerAddon(std::make_unique<app::RoadEditorAddon>());
     editorHost.registerAddon(std::make_unique<app::TextureEditorAddon>());
@@ -103,6 +105,14 @@ void Main()
         }
 
         Graphics3D::SetCameraTransform(cameraController.camera());
+
+        {
+            const bool eyeUnderwater = seaTerrain.isUnderwater(cameraController.camera().getEyePosition());
+            if (eyeUnderwater != Pi3D::EnvironmentRef().isUnderwaterEnabled())
+            {
+                Pi3D::EnvironmentRef().setUnderwaterEnabled(eyeUnderwater);
+            }
+        }
 
 #pragma region Addon
         Pi3D::Update(cameraController.camera().getEyePosition(), cameraController.camera().getFocusPosition());

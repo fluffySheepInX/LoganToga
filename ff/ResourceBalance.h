@@ -1,5 +1,5 @@
 ﻿# pragma once
-# include <Siv3D.hpp>
+# include "ConfigFilePaths.h"
 
 namespace ff
 {
@@ -8,37 +8,22 @@ namespace ff
 		double passiveResourcePerSecond = 0.15;
 	};
 
+	// 同梱リソース設定の利用可能なパスを取得します。
 	[[nodiscard]] inline String GetBundledResourceBalancePath()
 	{
-		const String runtimeRelativePath = U"resourceBalance.toml";
-		if (FileSystem::Exists(runtimeRelativePath))
-		{
-			return runtimeRelativePath;
-		}
-
-		const String projectRelativePath = U"App/resourceBalance.toml";
-		if (FileSystem::Exists(projectRelativePath))
-		{
-			return projectRelativePath;
-		}
-
-		return runtimeRelativePath;
+		return ResolveBundledConfigPath({ U"resourceBalance.toml", U"App/resourceBalance.toml", U"save/resourceBalance.toml" });
 	}
 
+	// ユーザー編集用リソース設定の保存先を取得します。
 	[[nodiscard]] inline String GetUserResourceBalancePath()
 	{
 		return U"save/resourceBalance.toml";
 	}
 
+	// ユーザー編集を優先したリソース設定の読込先を取得します。
 	[[nodiscard]] inline String GetResourceBalancePath()
 	{
-		const String userPath = GetUserResourceBalancePath();
-		if (FileSystem::Exists(userPath))
-		{
-			return userPath;
-		}
-
-		return GetBundledResourceBalancePath();
+		return ResolveConfigPath({ U"resourceBalance.toml", U"App/resourceBalance.toml", GetUserResourceBalancePath() });
 	}
 
 	[[nodiscard]] inline ResourceBalanceConfig LoadResourceBalanceConfig()

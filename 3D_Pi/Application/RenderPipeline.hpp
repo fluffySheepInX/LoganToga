@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "SceneAssets.hpp"
 # include "EditorAddonHost.hpp"
+# include "SeaTerrain.hpp"
 # include "../Addons/Pi3D/Pi3D.hpp"
 
 namespace app
@@ -9,13 +10,14 @@ namespace app
     class RenderPipeline
     {
     public:
-        RenderPipeline(SceneAssets& sceneAssets, EditorAddonHost& editorHost)
+        RenderPipeline(SceneAssets& sceneAssets, EditorAddonHost& editorHost, const SeaTerrain& seaTerrain)
             : m_sceneAssets{ sceneAssets }
-            , m_editorHost{ editorHost } {}
+            , m_editorHost{ editorHost }
+            , m_seaTerrain{ seaTerrain } {}
 
         void draw(const BasicCamera3D& camera, const bool uiHidden)
         {
-            Pi3D::EnvironmentRef().drawGround(m_sceneAssets.groundPlane(), m_sceneAssets.groundTexture());
+            Pi3D::EnvironmentRef().drawGround(m_seaTerrain.terrainMesh(), m_sceneAssets.groundTexture());
 
             m_editorHost.draw3D({
                 .camera = camera,
@@ -30,10 +32,13 @@ namespace app
                 .intensity = kicker.intensity,
             });
             Pi3D::EnvironmentRef().draw3D();
+
+            m_seaTerrain.drawWaterSurface();
         }
 
     private:
         SceneAssets& m_sceneAssets;
         EditorAddonHost& m_editorHost;
+        const SeaTerrain& m_seaTerrain;
     };
 }

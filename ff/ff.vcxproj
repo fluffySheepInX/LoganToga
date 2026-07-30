@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClCompile Include="AppBootstrap.cpp" />
     <ClCompile Include="AppStatePersistence.cpp" />
+    <ClCompile Include="DefinitionRepository.cpp" />
     <ClCompile Include="FormationScene.cpp" />
     <ClCompile Include="FormationScene.Draw.cpp" />
     <ClCompile Include="FormationScene.Input.cpp" />
@@ -163,6 +164,9 @@
     <ClInclude Include="AppState.h" />
     <ClInclude Include="AppStatePersistence.h" />
     <ClInclude Include="BalanceConstants.h" />
+    <ClInclude Include="ConfigFilePaths.h" />
+    <ClInclude Include="DefinitionRepository.h" />
+    <ClInclude Include="EditorNumericAdjustment.h" />
     <ClInclude Include="EnemyTypes.h" />
     <ClInclude Include="FormationScene.h" />
     <ClInclude Include="FormationState.h" />

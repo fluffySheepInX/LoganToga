@@ -1,5 +1,6 @@
 ﻿# include "AppBootstrap.h"
 # include "AppState.h"
+# include "DefinitionRepository.h"
 # include "FormationScene.h"
 # include "GameScene.h"
 # include "TitleScene.h"
@@ -9,6 +10,9 @@
 void Main()
 {
 	ConfigureAddons();
+
+	ff::DefinitionRepository definitionRepository;
+	ff::RegisterDefinitionRepository(definitionRepository);
 
 	App manager;
   *manager.get() = LoadAppDataFromDisk();
@@ -30,4 +34,6 @@ void Main()
 			break;
 		}
 	}
+
+	ff::UnregisterDefinitionRepository(definitionRepository);
 }

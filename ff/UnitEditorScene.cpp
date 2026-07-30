@@ -5,14 +5,16 @@ UnitEditorScene::UnitEditorScene(const InitData& init)
 	, m_titleFont{ 38, Typeface::Heavy }
 	, m_buttonFont{ 22 }
 	, m_infoFont{ 18 }
- , m_editingEnemyDefinitions{ getData().editEnemyDefinitions }
-	, m_unitId{ getData().selectedFormationUnit.value_or(ff::UnitId::GuardPlayer) }
+	, m_navigationRequest{ getData().unitEditorNavigationRequest.value_or(ff::UnitEditorNavigationRequest{}) }
+	, m_editingEnemyDefinitions{ m_navigationRequest.definitionKind == ff::UnitEditorDefinitionKind::Enemy }
+	, m_unitId{ m_navigationRequest.unitId }
 	, m_editingDefinition{ ff::GetUnitDefinition(m_unitId) }
-   , m_enemyKind{ getData().selectedEnemyKind.value_or(ff::EnemyKind::Normal) }
+	, m_enemyKind{ m_navigationRequest.enemyKind }
 	, m_editingEnemyDefinition{ ff::GetEnemyDefinition(m_enemyKind.value_or(ff::EnemyKind::Normal)) }
 	, m_debugStatus{ U"F5 / 再読込 で unitDefinitions.toml を読み直せます" }
 {
 	Scene::SetBackground(ColorF{ 0.08, 0.11, 0.18 });
+	getData().unitEditorNavigationRequest.reset();
     if (m_editingEnemyDefinitions)
 	{
 		m_debugStatus = U"F5 / 再読込 で enemyDefinitions.toml を読み直せます";
@@ -84,7 +86,7 @@ void UnitEditorScene::CommitPendingAction()
 	switch (action)
 	{
 	case PendingAction::BackToFormation:
-      changeScene(getData().unitEditorReturnToWaveEditor ? U"WaveEditor" : U"Formation");
+		changeScene(m_navigationRequest.returnTarget == ff::UnitEditorReturnTarget::WaveEditor ? U"WaveEditor" : U"Formation");
 		break;
 
 	case PendingAction::SwitchUnit:
@@ -146,10 +148,9 @@ void UnitEditorScene::ClearPendingAction()
 
 void UnitEditorScene::LoadUnit(const ff::UnitId unitId)
 {
-  m_editingEnemyDefinitions = false;
+	m_editingEnemyDefinitions = false;
 	m_unitId = unitId;
 	getData().selectedFormationUnit = unitId;
-    getData().editEnemyDefinitions = false;
 	m_editingDefinition = ff::GetUnitDefinition(unitId);
 	SyncEditorsFromDefinition();
 	m_lastSaveSucceeded = true;
@@ -162,8 +163,6 @@ void UnitEditorScene::LoadEnemy(const ff::EnemyKind enemyKind)
 {
 	m_editingEnemyDefinitions = true;
 	m_enemyKind = enemyKind;
-	getData().selectedEnemyKind = enemyKind;
-	getData().editEnemyDefinitions = true;
 	m_editingEnemyDefinition = ff::GetEnemyDefinition(enemyKind);
 	SyncEditorsFromDefinition();
 	m_lastSaveSucceeded = true;
@@ -231,5 +230,5 @@ String UnitEditorScene::GetCurrentDisplayName() const
 
 String UnitEditorScene::GetBackButtonTooltipText() const
 {
-	return getData().unitEditorReturnToWaveEditor ? U"Wave編集へ戻る" : U"編成画面へ戻る";
+	return m_navigationRequest.returnTarget == ff::UnitEditorReturnTarget::WaveEditor ? U"Wave編集へ戻る" : U"編成画面へ戻る";
 }

@@ -1,4 +1,5 @@
 ﻿# include "WaveEditorScene.h"
+# include "EditorNumericAdjustment.h"
 
 namespace
 {
@@ -144,9 +145,12 @@ void WaveEditorScene::CommitPendingAction()
 		break;
 
 	case PendingAction::OpenEnemyEditor:
-		getData().editEnemyDefinitions = true;
-		getData().unitEditorReturnToWaveEditor = true;
-		getData().selectedEnemyKind = pendingEnemyKind.value_or(ff::EnemyKind::Normal);
+		getData().unitEditorNavigationRequest = ff::UnitEditorNavigationRequest{
+			ff::UnitEditorDefinitionKind::Enemy,
+			ff::UnitId::GuardPlayer,
+			pendingEnemyKind.value_or(ff::EnemyKind::Normal),
+			ff::UnitEditorReturnTarget::WaveEditor,
+		};
 		changeScene(U"UnitEditor");
 		break;
 
@@ -257,14 +261,14 @@ void WaveEditorScene::AdjustGlobalTiming(const size_t index, const double direct
 	switch (index)
 	{
 	case 0:
-		m_editingConfig.waveStartDelay = Max(0.05, (m_editingConfig.waveStartDelay + (0.1 * direction)));
+		ff::AdjustNumericValue(m_editingConfig.waveStartDelay, 0.05, 0.1, direction);
 		break;
 	case 1:
-		m_editingConfig.waveClearDelay = Max(0.05, (m_editingConfig.waveClearDelay + (0.1 * direction)));
+		ff::AdjustNumericValue(m_editingConfig.waveClearDelay, 0.05, 0.1, direction);
 		break;
 	case 2:
 	default:
-		m_editingConfig.waveBannerDuration = Max(0.05, (m_editingConfig.waveBannerDuration + (0.1 * direction)));
+		ff::AdjustNumericValue(m_editingConfig.waveBannerDuration, 0.05, 0.1, direction);
 		break;
 	}
 }
@@ -276,20 +280,20 @@ void WaveEditorScene::AdjustWaveNumeric(const size_t index, const double directi
 	switch (index)
 	{
 	case 0:
-		wave.spawnInterval = Max(0.05, (wave.spawnInterval + (0.05 * direction)));
+		ff::AdjustNumericValue(wave.spawnInterval, 0.05, 0.05, direction);
 		break;
 	case 1:
-		wave.enemyHpMultiplier = Max(0.10, (wave.enemyHpMultiplier + (0.05 * direction)));
+		ff::AdjustNumericValue(wave.enemyHpMultiplier, 0.10, 0.05, direction);
 		break;
 	case 2:
-		wave.enemySpeedMultiplier = Max(0.10, (wave.enemySpeedMultiplier + (0.05 * direction)));
+		ff::AdjustNumericValue(wave.enemySpeedMultiplier, 0.10, 0.05, direction);
 		break;
 	case 3:
-		wave.enemyAttackIntervalMultiplier = Max(0.10, (wave.enemyAttackIntervalMultiplier + (0.05 * direction)));
+		ff::AdjustNumericValue(wave.enemyAttackIntervalMultiplier, 0.10, 0.05, direction);
 		break;
 	case 4:
 	default:
-		wave.rewardBonusPerKill = Max(0, (wave.rewardBonusPerKill + static_cast<int32>(direction)));
+		ff::AdjustNumericValue(wave.rewardBonusPerKill, 0, 1, direction);
 		break;
 	}
 }

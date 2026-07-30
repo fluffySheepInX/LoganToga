@@ -1,4 +1,5 @@
 ﻿# include "AppStatePersistence.h"
+# include "TomlUtils.h"
 
 namespace
 {
@@ -24,30 +25,6 @@ namespace
 		default:
 			return none;
 		}
-	}
-
-	[[nodiscard]] String EscapeTomlString(const String& value)
-	{
-		String escaped;
-		escaped.reserve(value.size());
-
-		for (const auto ch : value)
-		{
-			if (ch == U'\\')
-			{
-				escaped += U"\\\\";
-			}
-			else if (ch == U'\"')
-			{
-				escaped += U"\\\"";
-			}
-			else
-			{
-				escaped.push_back(ch);
-			}
-		}
-
-		return escaped;
 	}
 
 	[[nodiscard]] String ToPersistentValue(const Optional<ff::UnitId>& unitId)
@@ -84,7 +61,7 @@ namespace
 				result += U", ";
 			}
 
-			result += U"\"{}\""_fmt(EscapeTomlString(values[index]));
+			result += U"\"{}\""_fmt(ff::EscapeTomlString(values[index]));
 		}
 
 		result += U"]";
@@ -315,7 +292,7 @@ bool SaveAppDataToDisk(const AppData& data)
 		content += U"preset{} = {}\n"_fmt(index + 1, BuildTomlStringArray(SerializeFormationSlots(data.formationPresets[index])));
 	}
 
-	content += U"selectedFormationUnit = \"{}\"\n"_fmt(EscapeTomlString(ToPersistentValue(data.selectedFormationUnit)));
+	content += U"selectedFormationUnit = \"{}\"\n"_fmt(ff::EscapeTomlString(ToPersistentValue(data.selectedFormationUnit)));
 
 	for (size_t index = 0; index < data.summonDiscountTraits.size(); ++index)
 	{

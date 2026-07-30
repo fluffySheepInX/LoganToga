@@ -1,4 +1,5 @@
 ﻿# include "UnitEditorScene.h"
+# include "EditorNumericAdjustment.h"
 
 void UnitEditorScene::AdjustValue(const size_t index, const double direction)
 {
@@ -7,24 +8,24 @@ void UnitEditorScene::AdjustValue(const size_t index, const double direction)
 		switch (index)
 		{
 		case 0:
-			m_editingEnemyDefinition.maxHp = Max(1.0, (m_editingEnemyDefinition.maxHp + direction));
+			ff::AdjustNumericValue(m_editingEnemyDefinition.maxHp, 1.0, 1.0, direction);
 			break;
 
 		case 1:
-			m_editingEnemyDefinition.speed = Max(0.1, (m_editingEnemyDefinition.speed + (0.1 * direction)));
+			ff::AdjustNumericValue(m_editingEnemyDefinition.speed, 0.1, 0.1, direction);
 			break;
 
 		case 2:
-			m_editingEnemyDefinition.attackRange = Max(0.1, (m_editingEnemyDefinition.attackRange + (0.1 * direction)));
+			ff::AdjustNumericValue(m_editingEnemyDefinition.attackRange, 0.1, 0.1, direction);
 			break;
 
 		case 3:
-			m_editingEnemyDefinition.attackInterval = Max(0.05, (m_editingEnemyDefinition.attackInterval + (0.05 * direction)));
+			ff::AdjustNumericValue(m_editingEnemyDefinition.attackInterval, 0.05, 0.05, direction);
 			break;
 
 		case 4:
 		default:
-			m_editingEnemyDefinition.attackDamage = Max(0.1, (m_editingEnemyDefinition.attackDamage + (0.25 * direction)));
+			ff::AdjustNumericValue(m_editingEnemyDefinition.attackDamage, 0.1, 0.25, direction);
 			break;
 		}
 
@@ -40,24 +41,24 @@ void UnitEditorScene::AdjustValue(const size_t index, const double direction)
 	switch (index)
 	{
 	case 0:
-		m_editingDefinition.summonCost = Max(1, (m_editingDefinition.summonCost + static_cast<int32>(direction)));
+		ff::AdjustNumericValue(m_editingDefinition.summonCost, 1, 1, direction);
 		break;
 
 	case 1:
-		m_editingDefinition.maxHp = Max(1.0, (m_editingDefinition.maxHp + direction));
+		ff::AdjustNumericValue(m_editingDefinition.maxHp, 1.0, 1.0, direction);
 		break;
 
 	case 2:
-		m_editingDefinition.attackRange = Max(0.1, (m_editingDefinition.attackRange + (0.1 * direction)));
+		ff::AdjustNumericValue(m_editingDefinition.attackRange, 0.1, 0.1, direction);
 		break;
 
 	case 3:
-		m_editingDefinition.attackInterval = Max(0.05, (m_editingDefinition.attackInterval + (0.05 * direction)));
+		ff::AdjustNumericValue(m_editingDefinition.attackInterval, 0.05, 0.05, direction);
 		break;
 
 	case 4:
 	default:
-		m_editingDefinition.attackDamage = Max(0.1, (m_editingDefinition.attackDamage + (0.25 * direction)));
+		ff::AdjustNumericValue(m_editingDefinition.attackDamage, 0.1, 0.25, direction);
 		break;
 	}
 
