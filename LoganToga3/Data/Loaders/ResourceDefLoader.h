@@ -100,13 +100,12 @@ namespace LT3
             ? toml[ResourceToml::KeyLegacyResources]
             : toml[ResourceToml::KeyResources];
 
-        HashSet<String> loadedTags;
         for (const auto resourceValue : resourcesValue.tableArrayView())
         {
             const String tag = resourceValue[ResourceToml::KeyTag].getOr<String>(
                 resourceValue[ResourceToml::KeyKind].getOr<String>(U""))
                 .lowercased();
-            if (tag.isEmpty() || loadedTags.contains(tag))
+            if (tag.isEmpty())
             {
                 continue;
             }
@@ -123,7 +122,6 @@ namespace LT3
                 Max(0, resourceValue[ResourceToml::KeyInitialAmount].getOr<int32>(DefaultInitialResourceAmount(kind))),
                 Max(0, resourceValue[ResourceToml::KeyPassiveIncomePerSec].getOr<int32>(DefaultPassiveIncomePerSec(kind))),
             });
-            loadedTags.insert(tag);
         }
     }
 }

@@ -12,6 +12,22 @@ namespace LT3
 {
 	inline constexpr double ResourceFlagRaiseDurationSec = 1.2;
 
+	// 既存のエディタ dirty フラグを安全な定義再ロード種別へ分類する。
+	inline DefinitionReloadKind ClassifyPendingDefinitionReload(const MapEditorState& editor)
+	{
+		if (editor.unitCatalogDirty || editor.skillDefsDirty)
+		{
+			return DefinitionReloadKind::Structural;
+		}
+
+		if (editor.buildLineIconsDirty)
+		{
+			return DefinitionReloadKind::AssetsOnly;
+		}
+
+		return DefinitionReloadKind::None;
+	}
+
 	inline void UpdateResourceFlagRuntimeState(AppRuntimeState& runtime)
 	{
 		SyncResourceFlagRuntimeState(runtime);
@@ -88,13 +104,17 @@ namespace LT3
 		const Vec2 worldMouse = ToWorldPos(screenMouse);
 		if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.defs, definitions.unitCatalog, screenMouse))
 		{
-			if (ui.mapEditor.unitCatalogDirty || ui.mapEditor.buildLineIconsDirty || ui.mapEditor.skillDefsDirty)
+			ui.mapEditor.pendingDefinitionReload = ClassifyPendingDefinitionReload(ui.mapEditor);
+			if (ui.mapEditor.pendingDefinitionReload != DefinitionReloadKind::None)
 			{
 				definitions.defs = CreateDefaultDefinitions(definitions.unitCatalog);
 				definitions.renderAssets = BuildBattleRenderAssets(definitions.unitCatalog, &definitions.defs);
 				ui.mapEditor.unitCatalogDirty = false;
 				ui.mapEditor.buildLineIconsDirty = false;
 				ui.mapEditor.skillDefsDirty = false;
+				ui.mapEditor.statusText = (ui.mapEditor.pendingDefinitionReload == DefinitionReloadKind::Structural)
+					? U"Definition changes will apply to the next battle."
+					: U"Definition assets will apply to the next battle.";
 			}
 			return;
 		}
@@ -102,8 +122,14 @@ namespace LT3
 		{
 			return;
 		}
+		if (runtime.world.definitionGeneration != runtime.battleDefinitionGeneration
+			|| !HasValidBattleDefinitionIds(runtime.world, runtime.battleDefinitions))
+		{
+			ui.mapEditor.statusText = U"Battle definition snapshot is invalid. Start a new battle.";
+			return;
+		}
 
-		HandleBattleInput(runtime.world, definitions.defs, ui.mapEditor, screenMouse, worldMouse);
+		HandleBattleInput(runtime.world, runtime.battleDefinitions, ui.mapEditor, screenMouse, worldMouse);
 	}
 
 	inline void UpdateDecalAmbientSound(AppRuntimeState& runtime, const AppUiState& ui)
@@ -172,16 +198,19 @@ namespace LT3
 		if (ui.debugNewGameRequest != DebugNewGameRequest::None)
 		{
 			const bool enemyAiStopped = (ui.debugNewGameRequest == DebugNewGameRequest::EnemyAiStopped);
-			ResetBattleRuntimeState(runtime, definitions.defs, enemyAiStopped);
-			SyncBattleWorldMapFromEditor(ui.mapEditor, runtime.world, definitions.defs);
+			PromoteBattleDefinitions(runtime, definitions);
+			ResetBattleRuntimeState(runtime, runtime.battleDefinitions, enemyAiStopped);
+			SyncBattleWorldMapFromEditor(ui.mapEditor, runtime.world, runtime.battleDefinitions);
 			SyncResourceFlagRuntimeState(runtime);
 			ui.debugNewGameRequest = DebugNewGameRequest::None;
 		}
 
 		ProcessInput(runtime, definitions, ui);
-		if (!ui.mapEditor.enabled)
+		if (!ui.mapEditor.enabled
+			&& runtime.world.definitionGeneration == runtime.battleDefinitionGeneration
+			&& HasValidBattleDefinitionIds(runtime.world, runtime.battleDefinitions))
 		{
-			UpdateBattleWorld(runtime.world, definitions.defs, Scene::DeltaTime(), &runtime.notifications);
+			UpdateBattleWorld(runtime.world, runtime.battleDefinitions, Scene::DeltaTime(), &runtime.notifications);
 		}
 
 		UpdateResourceFlagRuntimeState(runtime);

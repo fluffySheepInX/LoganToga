@@ -115,9 +115,14 @@ namespace LT3
 				continue;
 			}
 
-			if (const auto it = defs.skillByTag.find(skill.nextSkillTag); it != defs.skillByTag.end())
+			const String normalizedNextSkillTag = NormalizeDefinitionTag(skill.nextSkillTag);
+			if (const auto it = defs.skillByTag.find(normalizedNextSkillTag); it != defs.skillByTag.end())
 			{
 				skill.nextSkill = it->second;
+			}
+			else
+			{
+				defs.addLoadWarning(U"Unresolved next skill tag '{}' for skill '{}'"_fmt(skill.nextSkillTag, skill.tag));
 			}
 		}
 	}
@@ -141,22 +146,23 @@ namespace LT3
 			return;
 		}
 
-		HashSet<String> loadedTags;
 		for (const auto skillValue : toml[SkillToml::KeySkills].tableArrayView())
 		{
 			SkillDef skill = ReadSkillDefFromToml(skillValue);
-			if (skill.tag.isEmpty() || loadedTags.contains(skill.tag))
+			if (skill.tag.isEmpty())
 			{
 				continue;
 			}
 
-			defs.addSkill(skill);
+			if (defs.addSkill(skill) == InvalidSkillDefId)
+			{
+				continue;
+			}
 			const Array<String> warnings = ValidateSkillIconLayers(skill);
 			if (!warnings.isEmpty())
 			{
 				defs.skillIconWarningsByTag[skill.tag] = warnings;
 			}
-			loadedTags.insert(skill.tag);
 		}
 
 		if (defs.skills.isEmpty())

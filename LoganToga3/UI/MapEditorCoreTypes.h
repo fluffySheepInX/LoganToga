@@ -63,6 +63,13 @@ namespace LT3
 		UnitPicker,
 	};
 
+	enum class DefinitionReloadKind : uint8
+	{
+		None,
+		AssetsOnly,
+		Structural,
+	};
+
 	struct MapEditorAsset
 	{
 		FilePath path;
@@ -196,6 +203,7 @@ namespace LT3
 		String buildingEditorIconDiagUpRight;
 		String buildingEditorIconDiagUpLeft;
 		bool buildLineIconsDirty = false;
+		DefinitionReloadKind pendingDefinitionReload = DefinitionReloadKind::None;
 		double aiProfileListScroll = 0.0;
 		double aiProfileDetailScroll = 0.0;
 		int32 selectedAiProfileIndex = 0;

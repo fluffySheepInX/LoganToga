@@ -7,7 +7,11 @@ namespace LT3
 {
 	inline void DrawAppRuntime(const AppRuntimeState& runtime, const AppDefinitionState& definitions, const AppUiState& ui, const Font& uiFont, const Font& titleFont)
 	{
-		DrawBattleWorld(runtime.world, definitions.defs, definitions.renderAssets, runtime.resourceFlags, ui.mapEditor, ui.clickDebug, ui.mapEditor.showDebugInfo, uiFont, titleFont);
+		if (runtime.world.definitionGeneration == runtime.battleDefinitionGeneration
+			&& HasValidBattleDefinitionIds(runtime.world, runtime.battleDefinitions))
+		{
+			DrawBattleWorld(runtime.world, runtime.battleDefinitions, runtime.battleRenderAssets, runtime.resourceFlags, ui.mapEditor, ui.clickDebug, ui.mapEditor.showDebugInfo, uiFont, titleFont);
+		}
 		DrawBattleNotifications(runtime.notifications, uiFont);
 	}
 

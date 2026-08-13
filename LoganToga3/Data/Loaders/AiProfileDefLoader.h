@@ -229,12 +229,11 @@ namespace LT3
 			return;
 		}
 
-		HashSet<String> loadedTags;
 		for (const auto profileValue : toml[AiProfileToml::KeyProfiles].tableArrayView())
 		{
 			AiProfileDef def;
 			def.tag = profileValue[AiProfileToml::KeyTag].getOr<String>(U"").lowercased();
-			if (def.tag.isEmpty() || loadedTags.contains(def.tag))
+			if (def.tag.isEmpty())
 			{
 				continue;
 			}
@@ -263,7 +262,6 @@ namespace LT3
 			NormalizeAiProfile(def);
 
 			defs.addAiProfile(def);
-			loadedTags.insert(def.tag);
 		}
 
 		if (defs.aiProfiles.isEmpty())

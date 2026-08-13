@@ -154,10 +154,9 @@ void GaussianFSAddon::SetScene(const String lang)
 		{
 			if ((da2.size() >= 3) && (da2[0] == lang))
 			{
-				const Size baseSceneSize{ 1600, 900 };
 				const Size selectedSceneSize{ Parse<int32>(da2[1]), Parse<int32>(da2[2]) };
-				p->m_SCALE = p->CalculateScale(baseSceneSize, selectedSceneSize);
-				p->m_OFFSET = p->CalculateOffset(baseSceneSize, selectedSceneSize);
+				p->m_SCALE = 1.0;
+				p->m_OFFSET = Vec2{ 0.0, 0.0 };
 				p->SetWindSize(selectedSceneSize.x, selectedSceneSize.y);
 				break;
 			}
@@ -560,32 +559,15 @@ void GaussianFSAddon::ProcessSizeChange() const
 	m_font(m_lastSceneSize).drawAt(langBtnRect.movedBy(langBtnRect.w + 10, 0).center(), Palette::White);
 }
 
+/// @brief 固定論理解像度のシーンに対してウィンドウの物理ピクセル寸法を設定します。
 void GaussianFSAddon::SetWindSize(int32 w, int32 h)
 {
-	// ゲームのシーンサイズ
-	const Size sceneSize{ w, h };
-	// 必要なシーンサイズよりやや大きめの領域（タイトルバーやフレームを考慮）
-	const Size requiredAreadSize{ sceneSize + Size{ 60, 10 } };
-	// プレイヤーのワークエリア（画面サイズからタスクバーを除いた領域）のサイズ
-	const Size workAreaSize = System::GetCurrentMonitor().workArea.size;
-	// OS の UI のスケール（多くの場合 1.0～2.0）
-	const double uiScaling = Window::GetState().scaling;
-	// UI スケールを考慮したワークエリアサイズ
-	const Size availableWorkAreaSize = (SizeF{ workAreaSize } / uiScaling).asPoint();
-	// ゲームのシーンサイズがプレイヤーのワークエリア内に収まるか
-	const bool ok = (requiredAreadSize.x <= availableWorkAreaSize.x) && (requiredAreadSize.y <= availableWorkAreaSize.y);
+	const Size logicalSceneSize{ 1600, 900 };
+	const Size windowSize{ w, h };
 
-	if (ok)
-	{
-		Window::Resize(sceneSize);
-	}
-	else
-	{
-		// UI 倍率 1.0 相当でリサイズ
-		Scene::SetResizeMode(ResizeMode::Keep);
-		Scene::Resize(sceneSize);
-		Window::ResizeActual(sceneSize);
-	}
+	Scene::SetResizeMode(ResizeMode::Keep);
+	Scene::Resize(logicalSceneSize);
+	Window::ResizeActual(windowSize);
 }
 // オリジナルのシーンを何倍すればよいかを返す関数
 double GaussianFSAddon::CalculateScale(const Vec2& baseSize, const Vec2& currentSize)

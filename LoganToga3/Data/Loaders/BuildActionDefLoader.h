@@ -86,9 +86,14 @@ namespace LT3
                 action.spawnUnits.clear();
                 for (const auto& spawnTag : action.spawnTags)
                 {
-                    if (defs.unitByTag.contains(spawnTag))
+                    const String normalizedSpawnTag = NormalizeDefinitionTag(spawnTag);
+                    if (defs.unitByTag.contains(normalizedSpawnTag))
                     {
-                        action.spawnUnits << defs.unitByTag.at(spawnTag);
+                        action.spawnUnits << defs.unitByTag.at(normalizedSpawnTag);
+                    }
+                    else
+                    {
+                        defs.addLoadWarning(U"Unresolved unit tag '{}' for build action '{}'"_fmt(spawnTag, action.id));
                     }
                 }
 

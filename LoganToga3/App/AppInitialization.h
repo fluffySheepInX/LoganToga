@@ -31,7 +31,7 @@ namespace LT3
 		Scene::SetBackground(ColorF{ 0.08, 0.14, 0.11 });
 		InitializeAppUiState(app.ui, false);
 		InitializeAppRuntimeState(app.runtime, app.definitions);
-		SyncBattleWorldMapFromEditor(app.ui.mapEditor, app.runtime.world, app.definitions.defs);
+		SyncBattleWorldMapFromEditor(app.ui.mapEditor, app.runtime.world, app.runtime.battleDefinitions);
 	}
 
 	inline void InitializeAppSharedData(AppSharedData& data)

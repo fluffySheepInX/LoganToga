@@ -480,6 +480,7 @@ namespace LT3
 
 	struct BattleWorld
 	{
+		uint64 definitionGeneration = 0;
 		int32 mapWidth  = DefaultBattleMapWidth;
 		int32 mapHeight = DefaultBattleMapHeight;
 		UnitRuntimeStore  units;
@@ -501,4 +502,46 @@ namespace LT3
 		bool victory = false;
 		bool defeat  = false;
 	};
+
+	// BattleWorld が保持する定義 index が指定スナップショット内で有効か検証する。
+	inline bool HasValidBattleDefinitionIds(const BattleWorld& world, const DefinitionStores& defs)
+	{
+		const auto isUnit = [&](UnitDefId id) { return id < defs.units.size(); };
+		const auto isSkill = [&](SkillDefId id) { return id < defs.skills.size(); };
+		const auto isAction = [&](BuildActionDefId id) { return id < defs.buildActions.size(); };
+		const auto isResource = [&](ResourceDefId id) { return id < defs.resources.size(); };
+		const auto isProfile = [&](AiProfileDefId id) { return id < defs.aiProfiles.size(); };
+
+		for (const UnitDefId id : world.units.defId)
+		{
+			if (!isUnit(id)) return false;
+		}
+		for (const SkillDefId id : world.cooldowns.burstSkill)
+		{
+			if (id != InvalidSkillDefId && !isSkill(id)) return false;
+		}
+		for (const auto& queue : world.buildQueues.entries)
+		{
+			for (const auto& entry : queue)
+			{
+				if (!isAction(entry.actionId)) return false;
+			}
+		}
+		for (size_t i = 0; i < world.buildQueues.pendingEntry.size(); ++i)
+		{
+			if (world.buildQueues.hasPendingEntry[i] && !isAction(world.buildQueues.pendingEntry[i].actionId)) return false;
+		}
+		for (const SkillDefId id : world.projectiles.skill)
+		{
+			if (!isSkill(id)) return false;
+		}
+		for (const ResourceDefId id : world.resourceNodes.defId)
+		{
+			if (!isResource(id)) return false;
+		}
+		if (world.aiRuntime.profileId != InvalidAiProfileDefId && !isProfile(world.aiRuntime.profileId)) return false;
+		if (world.selection.actionId != InvalidBuildActionDefId && !isAction(world.selection.actionId)) return false;
+		if (world.selection.selectedSkill != InvalidSkillDefId && !isSkill(world.selection.selectedSkill)) return false;
+		return true;
+	}
 }

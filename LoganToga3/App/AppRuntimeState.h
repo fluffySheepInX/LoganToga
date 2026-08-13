@@ -23,11 +23,22 @@ namespace LT3
     struct AppRuntimeState
     {
         BattleWorld world;
+        DefinitionStores battleDefinitions;
+        BattleRenderAssets battleRenderAssets;
+        uint64 battleDefinitionGeneration = 0;
         ResourceFlagRuntimeState resourceFlags;
         BattleNotificationRuntimeState notifications;
         double decalAmbientCooldownSec = 0.0;
         HashTable<FilePath, Audio> decalAmbientAudioCache;
     };
+
+    // 戦闘が参照する定義と描画アセットを同一世代として更新する。
+    inline void PromoteBattleDefinitions(AppRuntimeState& runtime, const AppDefinitionState& definitions)
+    {
+        runtime.battleDefinitions = definitions.defs;
+        runtime.battleRenderAssets = definitions.renderAssets;
+        ++runtime.battleDefinitionGeneration;
+    }
 
     inline void ClearBattleNotifications(AppRuntimeState& runtime)
     {
@@ -67,6 +78,7 @@ namespace LT3
     {
         runtime.world = BattleWorld{};
         SpawnDefaultBattle(runtime.world, defs);
+        runtime.world.definitionGeneration = runtime.battleDefinitionGeneration;
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;
         ClearBattleNotifications(runtime);
         SyncResourceFlagRuntimeState(runtime);
@@ -76,6 +88,7 @@ namespace LT3
 
     inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions)
     {
-        ResetBattleRuntimeState(runtime, definitions.defs, false);
+        PromoteBattleDefinitions(runtime, definitions);
+        ResetBattleRuntimeState(runtime, runtime.battleDefinitions, false);
     }
 }

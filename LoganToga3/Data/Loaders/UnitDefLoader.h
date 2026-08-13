@@ -7,14 +7,20 @@ namespace LT3
 {
     inline SkillDefId ResolveCatalogSkill(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role);
 
+    inline String NormalizeCatalogSkillTag(const String& skillTag)
+    {
+        return NormalizeDefinitionTag(skillTag);
+    }
+
     inline Array<SkillDefId> ResolveCatalogSkills(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role)
     {
         Array<SkillDefId> skills;
         for (const auto& skillTag : entry.skills)
         {
-            if (defs.skillByTag.contains(skillTag))
+            const String normalizedSkillTag = NormalizeCatalogSkillTag(skillTag);
+            if (defs.skillByTag.contains(normalizedSkillTag))
             {
-                const SkillDefId skill = defs.skillByTag.at(skillTag);
+                const SkillDefId skill = defs.skillByTag.at(normalizedSkillTag);
                 if (!skills.contains(skill))
                 {
                     skills << skill;
@@ -36,13 +42,30 @@ namespace LT3
         return skills;
     }
 
+    inline void AppendUnresolvedCatalogSkillWarnings(DefinitionStores& defs, const UnitCatalogEntry& entry)
+    {
+        for (const auto& skillTag : entry.skills)
+        {
+            const String normalizedSkillTag = NormalizeCatalogSkillTag(skillTag);
+            if (!defs.skillByTag.contains(normalizedSkillTag))
+            {
+                const String warning = U"Unresolved skill tag '{}' for unit '{}'"_fmt(skillTag, entry.unit_id);
+                if (!defs.loadWarnings.contains(warning))
+                {
+                    defs.loadWarnings << warning;
+                }
+            }
+        }
+    }
+
     inline SkillDefId ResolveCatalogSkill(const DefinitionStores& defs, const UnitCatalogEntry& entry, UnitRole role)
     {
         for (const auto& skillTag : entry.skills)
         {
-            if (defs.skillByTag.contains(skillTag))
+            const String normalizedSkillTag = NormalizeCatalogSkillTag(skillTag);
+            if (defs.skillByTag.contains(normalizedSkillTag))
             {
-                return defs.skillByTag.at(skillTag);
+                return defs.skillByTag.at(normalizedSkillTag);
             }
         }
 
@@ -160,7 +183,7 @@ namespace LT3
 
         for (const auto& entry : unitCatalog.entries)
         {
-            if (entry.unit_id.isEmpty() || defs.unitByTag.contains(entry.unit_id))
+            if (entry.unit_id.isEmpty())
             {
                 continue;
             }
@@ -170,6 +193,7 @@ namespace LT3
             {
                 role = UnitRole::Barrier;
             }
+            AppendUnresolvedCatalogSkillWarnings(defs, entry);
             const Array<SkillDefId> skills = ResolveCatalogSkills(defs, entry, role);
             const SkillDefId skill = skills.isEmpty() ? InvalidSkillDefId : skills.front();
             const int32 hp = (role == UnitRole::Base && entry.buildingHp > 0) ? entry.buildingHp : Max(1, entry.hp);

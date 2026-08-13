@@ -770,9 +770,9 @@
       <Filter>Resource Files\engine\shader\glsl</Filter>
     </None>
     <None Include="Docs\DataOrientedDesign_LoganToga2.html" />
-    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitSample.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitCatalog.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoBuildMenu\BuildMenu.toml" />
-    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\skill.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\Skills.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoAI\AiProfiles.toml" />
     <None Include="App\LaunchBattleDirect.bat">
       <Filter>Source Files</Filter>

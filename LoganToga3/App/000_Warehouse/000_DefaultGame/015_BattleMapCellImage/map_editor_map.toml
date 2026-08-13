@@ -2,13 +2,13 @@
 
 map_editor_enabled = false
 
-unit_list = true
+unit_list = false
 
 building_editor = false
 
 command_editor = false
 
-skill_editor = false
+skill_editor = true
 
 ai_editor = false
 

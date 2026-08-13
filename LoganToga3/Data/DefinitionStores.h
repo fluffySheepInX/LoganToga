@@ -1,9 +1,15 @@
-﻿#pragma once
+#pragma once
 # include <Siv3D.hpp>
 # include "IdTypes.h"
 
 namespace LT3
 {
+    // 内部参照タグを比較用の不変な形式へ正規化する。
+    inline String NormalizeDefinitionTag(StringView tag)
+    {
+        return String{ tag }.lowercased();
+    }
+
     struct SkillResourceCostDef
     {
         String resourceTag;
@@ -203,6 +209,7 @@ namespace LT3
         Array<BuildActionDef> buildActions;
         Array<ResourceDef> resources;
         Array<AiProfileDef> aiProfiles;
+        Array<String> loadWarnings;
         HashTable<String, Array<String>> skillIconWarningsByTag;
         HashTable<String, SkillDefId> skillByTag;
         HashTable<String, UnitDefId> unitByTag;
@@ -210,43 +217,81 @@ namespace LT3
         HashTable<String, ResourceDefId> resourceByTag;
         HashTable<String, AiProfileDefId> aiProfileByTag;
 
+        void addLoadWarning(const String& warning)
+        {
+            if (!loadWarnings.contains(warning))
+            {
+                loadWarnings << warning;
+            }
+        }
+
         SkillDefId addSkill(const SkillDef& def)
         {
+            const String tag = NormalizeDefinitionTag(def.tag);
+            if (tag.isEmpty() || skillByTag.contains(tag))
+            {
+                addLoadWarning(U"Duplicate skill tag '{}'"_fmt(def.tag));
+                return InvalidSkillDefId;
+            }
             const SkillDefId id = static_cast<SkillDefId>(skills.size());
             skills << def;
-            skillByTag[def.tag] = id;
+            skillByTag[tag] = id;
             return id;
         }
 
         UnitDefId addUnit(const UnitDef& def)
         {
+            const String tag = NormalizeDefinitionTag(def.unit_id);
+            if (tag.isEmpty() || unitByTag.contains(tag))
+            {
+                addLoadWarning(U"Duplicate unit tag '{}'"_fmt(def.unit_id));
+                return InvalidUnitDefId;
+            }
             const UnitDefId id = static_cast<UnitDefId>(units.size());
             units << def;
-            unitByTag[def.unit_id] = id;
+            unitByTag[tag] = id;
             return id;
         }
 
         BuildActionDefId addBuildAction(const BuildActionDef& def)
         {
+            const String tag = NormalizeDefinitionTag(def.tag);
+            if (tag.isEmpty() || buildActionByTag.contains(tag))
+            {
+                addLoadWarning(U"Duplicate build action tag '{}'"_fmt(def.tag));
+                return InvalidBuildActionDefId;
+            }
             const BuildActionDefId id = static_cast<BuildActionDefId>(buildActions.size());
             buildActions << def;
-            buildActionByTag[def.tag] = id;
+            buildActionByTag[tag] = id;
             return id;
         }
 
         ResourceDefId addResource(const ResourceDef& def)
         {
+            const String tag = NormalizeDefinitionTag(def.tag);
+            if (tag.isEmpty() || resourceByTag.contains(tag))
+            {
+                addLoadWarning(U"Duplicate resource tag '{}'"_fmt(def.tag));
+                return InvalidResourceDefId;
+            }
             const ResourceDefId id = static_cast<ResourceDefId>(resources.size());
             resources << def;
-            resourceByTag[def.tag] = id;
+            resourceByTag[tag] = id;
             return id;
         }
 
         AiProfileDefId addAiProfile(const AiProfileDef& def)
         {
+            const String tag = NormalizeDefinitionTag(def.tag);
+            if (tag.isEmpty() || aiProfileByTag.contains(tag))
+            {
+                addLoadWarning(U"Duplicate AI profile tag '{}'"_fmt(def.tag));
+                return InvalidAiProfileDefId;
+            }
             const AiProfileDefId id = static_cast<AiProfileDefId>(aiProfiles.size());
             aiProfiles << def;
-            aiProfileByTag[def.tag] = id;
+            aiProfileByTag[tag] = id;
             return id;
         }
     };

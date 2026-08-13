@@ -1,5 +1,6 @@
 ﻿# include <Siv3D.hpp> // Siv3D v0.6.16
 #include "libs/AddonGaussian.h"
+#include <queue>
 
 struct GameData {
 
@@ -93,78 +94,325 @@ namespace map {
 			}
 		}
 	}
-	// 川を刻む：Perlin ノイズに基づく縦方向の蛇行する経路を描画して水色で上書きする
-	void carveRivers(Image& image, int riverCount = 2, double thickness = 3.0, double scale = 0.01)
+	struct RiverNetwork {
+		int32 width = 0;
+		int32 height = 0;
+		std::vector<uint8> land;
+		std::vector<int32> parent;
+		std::vector<int32> outlet;
+		std::vector<double> accumulation;
+		std::vector<int32> selectedOutlets;
+	};
+
+	struct RiverMouth {
+		int32 index = -1;
+		double drainageArea = 0.0;
+	};
+
+	// 外海へ必ず到達する排水木と集水量を構築する
+	RiverNetwork buildRiverNetwork(Image& image, const int32 riverCount)
 	{
-		//scaleを小さく（例 0.005）にすると蛇行が緩やかに、逆に大きくすると急に動く。球が出る原因がノイズの急変ならscaleを小さく
-		//smoothAlphaを小さく（例 0.05〜0.2）にすると中心のジャンプをさらに抑えられる（ただし川が平坦になる
-		//thicknessを大きくすると幅は広がる。radiusのwobbleの係数を下げると断面変化が滑らかに
+		const Color landColor{ U"#202d0a" };
+		const int32 width = static_cast<int32>(image.width());
+		const int32 height = static_cast<int32>(image.height());
+		const int32 cellCount = (width * height);
+		const double infinity = std::numeric_limits<double>::max();
+		static constexpr Point neighborOffsets[8] = {
+			Point{ -1, -1 }, Point{ 0, -1 }, Point{ 1, -1 }, Point{ -1, 0 },
+			Point{ 1, 0 }, Point{ -1, 1 }, Point{ 0, 1 }, Point{ 1, 1 }
+		};
+
+		RiverNetwork network;
+		network.width = width;
+		network.height = height;
+		network.land.resize(cellCount, 0);
+		network.parent.resize(cellCount, -1);
+		network.outlet.resize(cellCount, -1);
+		network.accumulation.resize(cellCount, 0.0);
+
+		for (int32 y = 0; y < height; ++y) {
+			for (int32 x = 0; x < width; ++x) {
+				network.land[y * width + x] = (image[y][x] == landColor);
+			}
+		}
+
+		std::vector<uint8> ocean(cellCount, 0);
+		std::queue<int32> oceanQueue;
+		const auto enqueueOcean = [&](const int32 x, const int32 y) {
+			const int32 index = (y * width + x);
+			if ((network.land[index] == 0) && (ocean[index] == 0)) {
+				ocean[index] = 1;
+				oceanQueue.push(index);
+			}
+		};
+
+		for (int32 x = 0; x < width; ++x) {
+			enqueueOcean(x, 0);
+			enqueueOcean(x, height - 1);
+		}
+		for (int32 y = 1; y < (height - 1); ++y) {
+			enqueueOcean(0, y);
+			enqueueOcean(width - 1, y);
+		}
+
+		while (not oceanQueue.empty()) {
+			const int32 index = oceanQueue.front();
+			oceanQueue.pop();
+			const int32 x = (index % width);
+			const int32 y = (index / width);
+
+			for (const Point& offset : neighborOffsets) {
+				const int32 nx = (x + offset.x);
+				const int32 ny = (y + offset.y);
+				if ((nx < 0) || (ny < 0) || (nx >= width) || (ny >= height)) {
+					continue;
+				}
+
+				const int32 neighbor = (ny * width + nx);
+				if ((network.land[neighbor] == 0) && (ocean[neighbor] == 0)) {
+					ocean[neighbor] = 1;
+					oceanQueue.push(neighbor);
+				}
+			}
+		}
+
+		for (int32 index = 0; index < cellCount; ++index) {
+			if ((network.land[index] == 0) && (ocean[index] == 0)) {
+				network.land[index] = 1;
+				image[index / width][index % width] = landColor;
+			}
+		}
+
+		std::vector<double> distanceToWater(cellCount, infinity);
+		for (int32 index = 0; index < cellCount; ++index) {
+			if (network.land[index] == 0) {
+				distanceToWater[index] = 0.0;
+			}
+		}
+
+		const double diagonalDistance = std::sqrt(2.0);
+		for (int32 y = 0; y < height; ++y) {
+			for (int32 x = 0; x < width; ++x) {
+				const int32 index = (y * width + x);
+				if (x > 0) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index - 1] + 1.0);
+				if (y > 0) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index - width] + 1.0);
+				if ((x > 0) && (y > 0)) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index - width - 1] + diagonalDistance);
+				if (((x + 1) < width) && (y > 0)) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index - width + 1] + diagonalDistance);
+			}
+		}
+		for (int32 y = (height - 1); y >= 0; --y) {
+			for (int32 x = (width - 1); x >= 0; --x) {
+				const int32 index = (y * width + x);
+				if ((x + 1) < width) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index + 1] + 1.0);
+				if ((y + 1) < height) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index + width] + 1.0);
+				if (((x + 1) < width) && ((y + 1) < height)) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index + width + 1] + diagonalDistance);
+				if ((x > 0) && ((y + 1) < height)) distanceToWater[index] = Min(distanceToWater[index], distanceToWater[index + width - 1] + diagonalDistance);
+			}
+		}
 
 		PerlinNoise perlin;
-		const int w = image.width();
-		const int h = image.height();
-
-		// パラメータ: 平滑化係数 (0.0..1.0, 小さいほど滑らか)
-		const double smoothAlpha = 0.20;
-		// 半径の平滑化係数
-		const double radiusSmoothAlpha = 0.35;
-
-		for (int r = 0; r < riverCount; ++r) {
-			const double seed = Random(0.0, 1000.0);
-
-			double prevCx = -1.0;
-			double prevRadius = Max(1.0, thickness);
-
-			for (int y = 0; y < h; ++y) {
-				// 中心 x を決める（ノイズ -> 0..1 -> 0..w-1）
-				double n = perlin.noise1D(seed + y * scale);
-				double nx = (n + 1.0) * 0.5;
-				double cxDouble = nx * (double)(w - 1);
-
-				// 中心を平滑化（EMA）
-				double smoothedCx = (prevCx < 0.0) ? cxDouble : (smoothAlpha * cxDouble + (1.0 - smoothAlpha) * prevCx);
-
-				// 半径（幅）のゆらぎを取り、平滑化
-				double wobble = (perlin.noise1D(seed * 0.5 + y * scale * 0.5) + 1.0) * 0.5;
-				double rawRadius = thickness + wobble * (thickness * 0.5); // 揺れ幅を控えめに
-				double radius = (y == 0) ? rawRadius : (radiusSmoothAlpha * rawRadius + (1.0 - radiusSmoothAlpha) * prevRadius);
-
-				// 中心間を補間して塗りつぶす（前の中心が無ければその行だけ塗る）
-				if (prevCx < 0.0) {
-					int cx = Clamp((int)std::lrint(smoothedCx), 0, w - 1);
-					int rint = Max(1, (int)std::lrint(radius));
-					int x0 = Max(0, cx - rint);
-					int x1 = Min(w - 1, cx + rint);
-					for (int xx = x0; xx <= x1; ++xx) {
-						image[y][xx] = Color(U"#1e90ff");
-					}
-				}
-				else {
-					// 補間ステップ数は中心差に応じて決定（至少1）
-					int steps = Max(1, (int)std::ceil(std::abs(smoothedCx - prevCx)));
-					for (int s = 0; s <= steps; ++s) {
-						double t = (double)s / (double)steps;
-						double interCx = prevCx + (smoothedCx - prevCx) * t;
-						double interR = prevRadius + (radius - prevRadius) * t;
-						int center = Clamp((int)std::lrint(interCx), 0, w - 1);
-						int rint = Max(1, (int)std::lrint(interR));
-
-						// 横スパンを塗る（各補間点で水平に塗ることで球のスタンプ感を消す）
-						int x0 = Max(0, center - rint);
-						int x1 = Min(w - 1, center + rint);
-						// 少し縦方向にも広げて連続性を向上
-						for (int yy = y - 1; yy <= y + 1; ++yy) {
-							if (yy < 0 || yy >= h) continue;
-							for (int xx = x0; xx <= x1; ++xx) {
-								image[yy][xx] = Color(U"#1e90ff");
-							}
-						}
-					}
+		const double seedX = Random(0.0, 1000.0);
+		const double seedY = Random(0.0, 1000.0);
+		std::vector<double> rawElevation(cellCount, 0.0);
+		for (int32 y = 0; y < height; ++y) {
+			for (int32 x = 0; x < width; ++x) {
+				const int32 index = (y * width + x);
+				if (network.land[index] == 0) {
+					continue;
 				}
 
-				prevCx = smoothedCx;
-				prevRadius = radius;
+				double noise = 0.0;
+				double amplitude = 1.0;
+				double frequency = 0.004;
+				double amplitudeSum = 0.0;
+				for (int32 octave = 0; octave < 4; ++octave) {
+					noise += perlin.noise2D(seedX + x * frequency, seedY + y * frequency) * amplitude;
+					amplitudeSum += amplitude;
+					amplitude *= 0.5;
+					frequency *= 2.0;
+				}
+				noise /= amplitudeSum;
+				rawElevation[index] = Max(0.01, distanceToWater[index] + noise * 10.0);
 			}
+		}
+
+		using QueueEntry = std::pair<double, int32>;
+		std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> floodQueue;
+		std::vector<uint8> discovered(cellCount, 0);
+		std::vector<double> filledElevation(cellCount, infinity);
+		std::vector<int32> floodOrder;
+		floodOrder.reserve(cellCount);
+
+		for (int32 index = 0; index < cellCount; ++index) {
+			if (ocean[index] != 0) {
+				discovered[index] = 1;
+				filledElevation[index] = 0.0;
+				floodQueue.emplace(0.0, index);
+			}
+		}
+
+		while (not floodQueue.empty()) {
+			const auto [elevation, index] = floodQueue.top();
+			floodQueue.pop();
+			floodOrder.push_back(index);
+			const int32 x = (index % width);
+			const int32 y = (index / width);
+
+			for (const Point& offset : neighborOffsets) {
+				const int32 nx = (x + offset.x);
+				const int32 ny = (y + offset.y);
+				if ((nx < 0) || (ny < 0) || (nx >= width) || (ny >= height)) {
+					continue;
+				}
+
+				const int32 neighbor = (ny * width + nx);
+				if (discovered[neighbor] != 0) {
+					continue;
+				}
+
+				discovered[neighbor] = 1;
+				network.parent[neighbor] = index;
+				filledElevation[neighbor] = Max(rawElevation[neighbor], elevation + 0.0001);
+				floodQueue.emplace(filledElevation[neighbor], neighbor);
+			}
+		}
+
+		for (int32 index = 0; index < cellCount; ++index) {
+			if (network.land[index] != 0) {
+				network.accumulation[index] = 1.0;
+			}
+		}
+		for (auto it = floodOrder.rbegin(); it != floodOrder.rend(); ++it) {
+			const int32 index = *it;
+			const int32 parent = network.parent[index];
+			if (parent >= 0) {
+				network.accumulation[parent] += network.accumulation[index];
+			}
+		}
+
+		std::vector<RiverMouth> mouths;
+		for (const int32 index : floodOrder) {
+			if (network.land[index] == 0) {
+				continue;
+			}
+
+			const int32 parent = network.parent[index];
+			if ((parent >= 0) && (ocean[parent] != 0)) {
+				network.outlet[index] = index;
+				mouths.push_back(RiverMouth{ index, network.accumulation[index] });
+			}
+			else if (parent >= 0) {
+				network.outlet[index] = network.outlet[parent];
+			}
+		}
+
+		std::sort(mouths.begin(), mouths.end(), [](const RiverMouth& a, const RiverMouth& b) {
+			return (a.drainageArea > b.drainageArea);
+		});
+
+		const double minimumMouthDistance = Max(32.0, Min(width, height) * 0.12);
+		const double minimumMouthDistanceSq = (minimumMouthDistance * minimumMouthDistance);
+		for (const RiverMouth& mouth : mouths) {
+			const Point position{ mouth.index % width, mouth.index / width };
+			bool sufficientlySeparated = true;
+			for (const int32 selected : network.selectedOutlets) {
+				const Point selectedPosition{ selected % width, selected / width };
+				if (position.distanceFromSq(selectedPosition) < minimumMouthDistanceSq) {
+					sufficientlySeparated = false;
+					break;
+				}
+			}
+
+			if (sufficientlySeparated) {
+				network.selectedOutlets.push_back(mouth.index);
+				if (network.selectedOutlets.size() >= static_cast<size_t>(Max(0, riverCount))) {
+					break;
+				}
+			}
+		}
+		for (const RiverMouth& mouth : mouths) {
+			if (network.selectedOutlets.size() >= static_cast<size_t>(Max(0, riverCount))) {
+				break;
+			}
+			if (std::find(network.selectedOutlets.begin(), network.selectedOutlets.end(), mouth.index) == network.selectedOutlets.end()) {
+				network.selectedOutlets.push_back(mouth.index);
+			}
+		}
+
+		return network;
+	}
+
+	// 親子画素間を集水量に応じた連続幅で塗りつぶす
+	void rasterizeRiverSegment(Image& image, const RiverNetwork& network, const int32 from, const int32 to,
+		const double fromRadius, const double toRadius)
+	{
+		const Vec2 start{ static_cast<double>(from % network.width), static_cast<double>(from / network.width) };
+		const Vec2 end{ static_cast<double>(to % network.width), static_cast<double>(to / network.width) };
+		const Vec2 segment = (end - start);
+		const double lengthSq = segment.lengthSq();
+		const double boundingRadius = Max(fromRadius, toRadius);
+		const int32 minX = Clamp(static_cast<int32>(std::floor(Min(start.x, end.x) - boundingRadius)), 0, network.width - 1);
+		const int32 maxX = Clamp(static_cast<int32>(std::ceil(Max(start.x, end.x) + boundingRadius)), 0, network.width - 1);
+		const int32 minY = Clamp(static_cast<int32>(std::floor(Min(start.y, end.y) - boundingRadius)), 0, network.height - 1);
+		const int32 maxY = Clamp(static_cast<int32>(std::ceil(Max(start.y, end.y) + boundingRadius)), 0, network.height - 1);
+		const Color riverColor{ U"#1e90ff" };
+
+		for (int32 y = minY; y <= maxY; ++y) {
+			for (int32 x = minX; x <= maxX; ++x) {
+				const int32 index = (y * network.width + x);
+				if (network.land[index] == 0) {
+					continue;
+				}
+
+				const Vec2 point{ static_cast<double>(x), static_cast<double>(y) };
+				const double t = (lengthSq > 0.0) ? Clamp((point - start).dot(segment) / lengthSq, 0.0, 1.0) : 0.0;
+				const Vec2 closest = (start + segment * t);
+				const double radius = Math::Lerp(fromRadius, toRadius, t);
+				if (point.distanceFromSq(closest) <= (radius * radius)) {
+					image[y][x] = riverColor;
+				}
+			}
+		}
+	}
+
+	// 擬似標高と集水量から主要流域の河川網を刻む
+	void carveRivers(Image& image, const int32 riverCount = 3, const double minimumRadius = 1.2, const double maximumRadius = 5.0)
+	{
+		const RiverNetwork network = buildRiverNetwork(image, riverCount);
+		const int32 cellCount = (network.width * network.height);
+		std::vector<double> riverThreshold(cellCount, std::numeric_limits<double>::max());
+		std::vector<double> outletArea(cellCount, 0.0);
+
+		for (const int32 outlet : network.selectedOutlets) {
+			const double area = network.accumulation[outlet];
+			outletArea[outlet] = area;
+			riverThreshold[outlet] = Max(40.0, area * 0.015);
+		}
+
+		for (int32 index = 0; index < cellCount; ++index) {
+			if (network.land[index] == 0) {
+				continue;
+			}
+
+			const int32 outlet = network.outlet[index];
+			if ((outlet < 0) || (outletArea[outlet] <= 0.0) || (network.accumulation[index] < riverThreshold[outlet])) {
+				continue;
+			}
+
+			const int32 parent = network.parent[index];
+			if (parent < 0) {
+				continue;
+			}
+
+			const double areaRatio = Clamp(network.accumulation[index] / outletArea[outlet], 0.0, 1.0);
+			const double fromRadius = Math::Lerp(minimumRadius, maximumRadius, std::pow(areaRatio, 0.4));
+			double toRadius = maximumRadius;
+			if ((network.land[parent] != 0) && (network.outlet[parent] == outlet)) {
+				const double parentAreaRatio = Clamp(network.accumulation[parent] / outletArea[outlet], 0.0, 1.0);
+				toRadius = Math::Lerp(minimumRadius, maximumRadius, std::pow(parentAreaRatio, 0.4));
+			}
+
+			rasterizeRiverSegment(image, network, index, parent, fromRadius, toRadius);
 		}
 	}
 	void forceOceanBorder(Image& image, int margin)
@@ -306,16 +554,15 @@ namespace map {
 			future.get();
 		}
 
-		// 外周を海にする（margin: 海岸から内側へ何ピクセルを海にするか）
-		// 例: 画面幅に応じて 20〜80 を試す。ここでは 40 をデフォルトに。
-		forceOceanBorder(image, 40);
-		// 川を刻む（例: 3本、幅3.0、スケール 0.01）
-		carveRivers(image, 3, 3.0, 0.01);
 		// shore ノイズで陸が裏返らないように確率を下げる
 		// 変更前: noiseShoreBoolAfter(image, 0.5);
 		noiseShoreBoolAfter(image, 0.4);
+		// 海岸確定後も外周から外海へ接続できるようにする
+		forceOceanBorder(image, 40);
+		// 擬似標高と集水量に基づく主要河川網を刻む
+		carveRivers(image, 3, 1.2, 5.0);
 
-		image.save(U"voronoi.png");
+		image.save(U"voronoi_hydrology_v1.png");
 	}
 }
 
@@ -324,7 +571,7 @@ class GameSceneBase : public App::Scene
 public:
 	GameSceneBase(const InitData& init) : IScene(init)
 	{
-		Image image(U"voronoi.png");
+		Image image(U"voronoi_hydrology_v1.png");
 
 		int32 gridSizeWidth = (int32)(GaussianFSAddon::GetWindowSize().x - (1 * 2) - 16);
 		int32 gridSizeHeight = GaussianFSAddon::GetWindowSize().y - 30 - (1 * 2) - 16;// -30は下のメニュー分、-1*2は枠線分
@@ -335,7 +582,7 @@ public:
 			map::SimpleVoronoiIsland<int32> diagram(grid, 400, 0.4);
 			map::noiseShorePoints(diagram.point, 20, 0.8);
 			map::createVoronoiDiagram(diagram.point, diagram.color, grid.width(), grid.height());
-			image = Image(U"voronoi.png");
+			image = Image(U"voronoi_hydrology_v1.png");
 		}
 
 		Texture mapTexture(image);
