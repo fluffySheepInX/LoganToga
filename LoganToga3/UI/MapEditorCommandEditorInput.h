@@ -70,7 +70,10 @@ namespace LT3
 
 		if (saveRect.leftClicked())
 		{
-			SaveBuildActionDefinitions(defs, editor.statusText);
+			if (SaveBuildActionDefinitions(defs, editor.statusText))
+			{
+				NotifyDefinitionChanged(editor, DefinitionChangeTarget::BuildActions);
+			}
 			editor.commandBindingsDirty = false;
 			consumed = true;
 		}

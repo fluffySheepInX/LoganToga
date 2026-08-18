@@ -18,7 +18,7 @@ namespace LT3
 		String status;
 		if (SaveSkillDefinitionsToml(defs.skills, &status))
 		{
-			editor.skillDefsDirty = true;
+			NotifyDefinitionChanged(editor, DefinitionChangeTarget::Skills);
 		}
 		editor.statusText = status;
 	}
@@ -92,7 +92,7 @@ namespace LT3
 		ReplaceSkillTagReferences(catalog, oldTag, normalized);
 		SaveSkillEditorDefinitions(editor, defs);
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Renamed skill tag: {} -> {}"_fmt(oldTag, normalized);
 		return true;
 	}

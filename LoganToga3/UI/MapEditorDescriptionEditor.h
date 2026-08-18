@@ -38,6 +38,7 @@ namespace LT3
 			{
 				defs.buildActions[index].description = editor.descriptionEditorText;
 				SaveBuildActionDefinitions(defs, editor.statusText);
+				NotifyDefinitionChanged(editor, DefinitionChangeTarget::BuildActions);
 				editor.commandBindingsDirty = false;
 				CloseDescriptionEditor(editor);
 				return true;
@@ -48,7 +49,7 @@ namespace LT3
 			{
 				catalog.entries[index].description = editor.descriptionEditorText;
 				SaveUnitCatalogToml(catalog, editor.statusText);
-				editor.unitCatalogDirty = true;
+				NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 				CloseDescriptionEditor(editor);
 				return true;
 			}

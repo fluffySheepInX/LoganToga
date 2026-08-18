@@ -9,7 +9,7 @@ namespace LT3
 		inline void CommitUnitCatalogChanges(MapEditorState& editor, UnitCatalog& catalog)
 		{
 			SaveUnitCatalogToml(catalog, editor.statusText);
-			editor.unitCatalogDirty = true;
+			NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		}
 
 	template <class Mutator, class Commit>
@@ -99,7 +99,7 @@ namespace LT3
 			return mutator(profile);
 		}, [&]()
 		{
-			editor.aiProfilesDirty = true;
+			NotifyDefinitionChanged(editor, DefinitionChangeTarget::AiProfiles);
 		});
 	}
 }

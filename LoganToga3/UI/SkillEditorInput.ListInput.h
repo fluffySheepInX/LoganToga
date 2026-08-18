@@ -219,7 +219,7 @@ namespace LT3
 			entry.skills.clear();
 			editor.statusText = U"Unlinked all skills -> {}"_fmt(entry.unit_id);
 			SaveUnitCatalogToml(catalog, editor.statusText);
-			editor.unitCatalogDirty = true;
+			NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 			return true;
 		}
 
@@ -236,7 +236,7 @@ namespace LT3
 				entry.skills << skillTag;
 				editor.statusText = U"Set only {} -> {}"_fmt(skillTag, entry.unit_id);
 				SaveUnitCatalogToml(catalog, editor.statusText);
-				editor.unitCatalogDirty = true;
+				NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 			}
 			return true;
 		}
@@ -301,7 +301,7 @@ namespace LT3
 					editor.statusText = U"Linked {} -> {}"_fmt(entry.unit_id, skillTag);
 				}
 				SaveUnitCatalogToml(catalog, editor.statusText);
-				editor.unitCatalogDirty = true;
+				NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 				return true;
 			}
 

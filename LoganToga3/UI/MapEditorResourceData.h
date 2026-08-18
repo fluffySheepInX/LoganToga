@@ -140,20 +140,59 @@ namespace LT3
         }
     }
 
+    // ノードに対応する編集状態を維持したまま、安定した保存順へ並べ替える。
     inline void SortMapEditorResourceNodes(MapEditorState& editor)
     {
-        editor.resourceNodes.sort_by([](const ResourceNodeEditData& a, const ResourceNodeEditData& b)
+        EnsureResourceCaptureTimeSteps(editor);
+
+        Array<size_t> sortedIndices(editor.resourceNodes.size());
+        std::iota(sortedIndices.begin(), sortedIndices.end(), size_t{ 0 });
+        sortedIndices.sort_by([&editor](size_t a, size_t b)
         {
-            if (a.cell.y != b.cell.y)
+            const ResourceNodeEditData& left = editor.resourceNodes[a];
+            const ResourceNodeEditData& right = editor.resourceNodes[b];
+            if (left.cell.y != right.cell.y)
             {
-                return a.cell.y < b.cell.y;
+                return left.cell.y < right.cell.y;
             }
-            if (a.cell.x != b.cell.x)
+            if (left.cell.x != right.cell.x)
             {
-                return a.cell.x < b.cell.x;
+                return left.cell.x < right.cell.x;
             }
-            return static_cast<int32>(a.kind) < static_cast<int32>(b.kind);
+            return static_cast<int32>(left.kind) < static_cast<int32>(right.kind);
         });
+
+        Array<ResourceNodeEditData> sortedNodes;
+        Array<double> sortedCaptureTimeSteps;
+        Array<int32> oldToNewIndex(editor.resourceNodes.size(), -1);
+        sortedNodes.reserve(editor.resourceNodes.size());
+        sortedCaptureTimeSteps.reserve(editor.resourceCaptureTimeSteps.size());
+        for (size_t newIndex = 0; newIndex < sortedIndices.size(); ++newIndex)
+        {
+            const size_t oldIndex = sortedIndices[newIndex];
+            sortedNodes << editor.resourceNodes[oldIndex];
+            sortedCaptureTimeSteps << editor.resourceCaptureTimeSteps[oldIndex];
+            oldToNewIndex[oldIndex] = static_cast<int32>(newIndex);
+        }
+
+        const auto remapIndex = [&oldToNewIndex](int32 index)
+        {
+            return (0 <= index && index < static_cast<int32>(oldToNewIndex.size()))
+                ? oldToNewIndex[index]
+                : -1;
+        };
+
+        editor.resourceNodes = std::move(sortedNodes);
+        editor.resourceCaptureTimeSteps = std::move(sortedCaptureTimeSteps);
+        editor.selectedResourceNodeIndex = remapIndex(editor.selectedResourceNodeIndex);
+        editor.resourceCaptureTimeEditingIndex = remapIndex(editor.resourceCaptureTimeEditingIndex);
+        if (editor.resourceCaptureTimeStepMenuIndex)
+        {
+            const int32 remappedMenuIndex = remapIndex(*editor.resourceCaptureTimeStepMenuIndex);
+            editor.resourceCaptureTimeStepMenuIndex = (remappedMenuIndex >= 0)
+                ? Optional<int32>{ remappedMenuIndex }
+                : none;
+        }
     }
 
     inline void LoadMapEditorResourceNodes(MapEditorState& editor)

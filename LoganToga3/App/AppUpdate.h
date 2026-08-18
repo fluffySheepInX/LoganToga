@@ -104,15 +104,15 @@ namespace LT3
 		const Vec2 worldMouse = ToWorldPos(screenMouse);
 		if (HandleEditorInput(ui.mapEditor, runtime.world, definitions.defs, definitions.unitCatalog, screenMouse))
 		{
-			ui.mapEditor.pendingDefinitionReload = ClassifyPendingDefinitionReload(ui.mapEditor);
-			if (ui.mapEditor.pendingDefinitionReload != DefinitionReloadKind::None)
+			const DefinitionReloadKind reloadKind = ClassifyPendingDefinitionReload(ui.mapEditor);
+			if (reloadKind != DefinitionReloadKind::None)
 			{
 				definitions.defs = CreateDefaultDefinitions(definitions.unitCatalog);
 				definitions.renderAssets = BuildBattleRenderAssets(definitions.unitCatalog, &definitions.defs);
 				ui.mapEditor.unitCatalogDirty = false;
 				ui.mapEditor.buildLineIconsDirty = false;
 				ui.mapEditor.skillDefsDirty = false;
-				ui.mapEditor.statusText = (ui.mapEditor.pendingDefinitionReload == DefinitionReloadKind::Structural)
+				ui.mapEditor.statusText = (reloadKind == DefinitionReloadKind::Structural)
 					? U"Definition changes will apply to the next battle."
 					: U"Definition assets will apply to the next battle.";
 			}
@@ -198,7 +198,7 @@ namespace LT3
 		if (ui.debugNewGameRequest != DebugNewGameRequest::None)
 		{
 			const bool enemyAiStopped = (ui.debugNewGameRequest == DebugNewGameRequest::EnemyAiStopped);
-			PromoteBattleDefinitions(runtime, definitions);
+			PromoteBattleDefinitions(runtime, definitions, ui.mapEditor.definitionRevision);
 			ResetBattleRuntimeState(runtime, runtime.battleDefinitions, enemyAiStopped);
 			SyncBattleWorldMapFromEditor(ui.mapEditor, runtime.world, runtime.battleDefinitions);
 			SyncResourceFlagRuntimeState(runtime);

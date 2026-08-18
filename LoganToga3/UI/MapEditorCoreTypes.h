@@ -70,6 +70,15 @@ namespace LT3
 		Structural,
 	};
 
+	enum class DefinitionChangeTarget : uint8
+	{
+		UnitCatalog,
+		Skills,
+		BuildActions,
+		BuildLineAssets,
+		AiProfiles,
+	};
+
 	struct MapEditorAsset
 	{
 		FilePath path;
@@ -203,7 +212,7 @@ namespace LT3
 		String buildingEditorIconDiagUpRight;
 		String buildingEditorIconDiagUpLeft;
 		bool buildLineIconsDirty = false;
-		DefinitionReloadKind pendingDefinitionReload = DefinitionReloadKind::None;
+		uint64 definitionRevision = 1;
 		double aiProfileListScroll = 0.0;
 		double aiProfileDetailScroll = 0.0;
 		int32 selectedAiProfileIndex = 0;
@@ -393,4 +402,38 @@ namespace LT3
 		String descriptionEditorTitle;
 		String descriptionEditorText;
 	};
+
+	// 編集側の定義 revision を進め、次回戦闘への反映を要求する。
+	inline void AdvanceDefinitionRevision(MapEditorState& editor)
+	{
+		++editor.definitionRevision;
+		if (editor.definitionRevision == 0)
+		{
+			editor.definitionRevision = 1;
+		}
+	}
+
+	// 定義変更の dirty 状態と revision を共通の通知経路で更新する。
+	inline void NotifyDefinitionChanged(MapEditorState& editor, DefinitionChangeTarget target)
+	{
+		switch (target)
+		{
+		case DefinitionChangeTarget::UnitCatalog:
+			editor.unitCatalogDirty = true;
+			break;
+		case DefinitionChangeTarget::Skills:
+			editor.skillDefsDirty = true;
+			break;
+		case DefinitionChangeTarget::BuildLineAssets:
+			editor.buildLineIconsDirty = true;
+			break;
+		case DefinitionChangeTarget::AiProfiles:
+			editor.aiProfilesDirty = true;
+			break;
+		case DefinitionChangeTarget::BuildActions:
+			break;
+		}
+
+		AdvanceDefinitionRevision(editor);
+	}
 }

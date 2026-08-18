@@ -15,7 +15,7 @@ namespace LT3
 		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
 		entry.visualScale = Math::Round(Clamp(entry.visualScale + delta, 0.25, 3.0) * 100.0) / 100.0;
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 	}
 
 	inline void ChangeSelectedUnitVisionRadius(MapEditorState& editor, UnitCatalog& catalog, int32 delta)
@@ -28,7 +28,7 @@ namespace LT3
 		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
 		entry.visionRadius = Clamp(entry.visionRadius + delta, 0, 40);
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 	}
 
 	inline void ChangeSelectedUnitMove(MapEditorState& editor, UnitCatalog& catalog, int32 delta)
@@ -41,7 +41,7 @@ namespace LT3
 		UnitCatalogEntry& entry = catalog.entries[editor.selectedUnitCatalogIndex];
 		entry.move = Clamp(entry.move + delta, 0, 2000);
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 	}
 
 	inline FilePath ResolveCatalogVisualDirectory(const String& kind)
@@ -120,7 +120,7 @@ namespace LT3
 		BuildingEditorTextureCache().erase(targetPath);
 		BuildingEditorTextureCache().erase(ResolveCatalogVisualPath(entry.kind, fileName));
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit image changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}
@@ -170,7 +170,7 @@ namespace LT3
 		BuildingEditorTextureCache().erase(targetPath);
 		BuildingEditorTextureCache().erase(ResolveUnitPortraitPath(fileName));
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit portrait changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}
@@ -217,7 +217,7 @@ namespace LT3
 
 		entry.spawnVoice = fileName;
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit voice changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
 	}

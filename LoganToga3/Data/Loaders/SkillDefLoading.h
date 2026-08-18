@@ -81,8 +81,8 @@ namespace LT3
 		def.orbitRadius = Max(1.0, skillValue[U"orbit_radius"].getOr<double>(def.orbitRadius));
 		def.orbitAngularSpeedDeg = skillValue[U"orbit_angular_speed_deg"].getOr<double>(def.orbitAngularSpeedDeg);
 		def.orbitDurationSec = Max(0.05, skillValue[U"orbit_duration_sec"].getOr<double>(def.orbitDurationSec));
-		def.projectileWidth = Max(1.0, skillValue[U"projectile_width"].getOr<double>(def.orbitRadius));
-		def.projectileHeight = Max(1.0, skillValue[U"projectile_height"].getOr<double>(def.arcHeight));
+		def.projectileWidth = Max(1.0, skillValue[U"projectile_width"].getOr<double>(def.projectileWidth));
+		def.projectileHeight = Max(1.0, skillValue[U"projectile_height"].getOr<double>(def.projectileHeight));
 		def.swingRadius = Max(0.0, skillValue[U"swing_radius"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? 0.0 : def.orbitRadius));
 		def.swingAngleDeg = skillValue[U"swing_angle_deg"].getOr<double>(def.projectileMotion == SkillProjectileMotion::Swing ? def.range : 90.0);
 		def.swingHitMode = ParseSkillSwingHitMode(skillValue[U"swing_hit_mode"].getOr<String>(U"stop"));

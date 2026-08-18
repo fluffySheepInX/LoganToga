@@ -161,7 +161,7 @@ namespace LT3
 					editor.buildingEditorIconDiagUpLeft,
 					editor.statusText))
 				{
-					editor.buildLineIconsDirty = true;
+					NotifyDefinitionChanged(editor, DefinitionChangeTarget::BuildLineAssets);
 				}
 			};
 

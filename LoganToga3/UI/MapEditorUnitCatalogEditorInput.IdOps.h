@@ -11,7 +11,7 @@ namespace LT3
 		}
 
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Renumbered unit ids from 0 in visible order";
 		return true;
 	}
@@ -24,7 +24,7 @@ namespace LT3
 		}
 
 		SaveUnitCatalogToml(catalog, editor.statusText);
-		editor.unitCatalogDirty = true;
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Stored ids into unit_id";
 		return true;
 	}

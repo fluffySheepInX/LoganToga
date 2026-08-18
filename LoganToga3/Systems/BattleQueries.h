@@ -384,23 +384,31 @@ namespace LT3
         return false;
     }
 
-    inline bool IsUniqueUnitQueuedOrPending(const BattleWorld& world, BuildActionDefId actionId, UnitDefId unitDef)
+    inline bool IsUniqueUnitQueuedOrPending(const BattleWorld& world, const DefinitionStores& defs, UnitDefId unitDef)
     {
         if (unitDef == InvalidUnitDefId)
         {
             return false;
         }
 
+        const auto createsUnitDef = [&defs, unitDef](BuildActionDefId queuedActionId)
+        {
+            return queuedActionId < defs.buildActions.size()
+                && ResolvePrimarySpawnUnitForQuery(defs.buildActions[queuedActionId], defs) == unitDef;
+        };
+
         for (UnitId builder = 0; builder < world.buildQueues.entries.size(); ++builder)
         {
-            if (builder < world.buildQueues.hasPendingEntry.size() && world.buildQueues.hasPendingEntry[builder] && world.buildQueues.pendingEntry[builder].actionId == actionId)
+            if (builder < world.buildQueues.hasPendingEntry.size()
+                && world.buildQueues.hasPendingEntry[builder]
+                && createsUnitDef(world.buildQueues.pendingEntry[builder].actionId))
             {
                 return true;
             }
 
             for (const auto& queued : world.buildQueues.entries[builder])
             {
-                if (queued.actionId == actionId)
+                if (createsUnitDef(queued.actionId))
                 {
                     return true;
                 }
@@ -429,7 +437,7 @@ namespace LT3
             return false;
         }
 
-        if (HasAliveUnitDefInBattle(world, unitDef) || IsUniqueUnitQueuedOrPending(world, actionId, unitDef))
+        if (HasAliveUnitDefInBattle(world, unitDef) || IsUniqueUnitQueuedOrPending(world, defs, unitDef))
         {
             return true;
         }

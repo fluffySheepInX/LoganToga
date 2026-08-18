@@ -26,6 +26,7 @@ namespace LT3
         DefinitionStores battleDefinitions;
         BattleRenderAssets battleRenderAssets;
         uint64 battleDefinitionGeneration = 0;
+        uint64 battleDefinitionRevision = 0;
         ResourceFlagRuntimeState resourceFlags;
         BattleNotificationRuntimeState notifications;
         double decalAmbientCooldownSec = 0.0;
@@ -33,11 +34,12 @@ namespace LT3
     };
 
     // 戦闘が参照する定義と描画アセットを同一世代として更新する。
-    inline void PromoteBattleDefinitions(AppRuntimeState& runtime, const AppDefinitionState& definitions)
+    inline void PromoteBattleDefinitions(AppRuntimeState& runtime, const AppDefinitionState& definitions, uint64 definitionRevision)
     {
         runtime.battleDefinitions = definitions.defs;
         runtime.battleRenderAssets = definitions.renderAssets;
         ++runtime.battleDefinitionGeneration;
+        runtime.battleDefinitionRevision = definitionRevision;
     }
 
     inline void ClearBattleNotifications(AppRuntimeState& runtime)
@@ -86,9 +88,9 @@ namespace LT3
         runtime.decalAmbientAudioCache.clear();
     }
 
-    inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions)
+    inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions, uint64 definitionRevision)
     {
-        PromoteBattleDefinitions(runtime, definitions);
+        PromoteBattleDefinitions(runtime, definitions, definitionRevision);
         ResetBattleRuntimeState(runtime, runtime.battleDefinitions, false);
     }
 }
