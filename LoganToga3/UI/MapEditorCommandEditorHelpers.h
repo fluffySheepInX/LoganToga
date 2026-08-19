@@ -66,6 +66,21 @@ namespace LT3
 		return false;
 	}
 
+	inline String BuildUniqueDuplicatedCommandId(const Array<BuildActionDef>& actions, StringView sourceId)
+	{
+		const String baseId = sourceId.isEmpty() ? U"command" : String{ sourceId };
+		for (int32 copyNumber = 1;; ++copyNumber)
+		{
+			const String candidate = (copyNumber == 1)
+				? U"{}_copy"_fmt(baseId)
+				: U"{}_copy{}"_fmt(baseId, copyNumber);
+			if (!HasBuildActionId(actions, candidate))
+			{
+				return candidate;
+			}
+		}
+	}
+
 	inline bool IsFacilityUnitCatalogEntry(const UnitCatalogEntry& entry)
 	{
 		const String kind = entry.kind.lowercased();
@@ -180,6 +195,7 @@ namespace LT3
 			return false;
 		}
 
+		defs.RebuildBuildActionByTag();
 		editor.commandBindingsDirty = true;
 		editor.statusText = U"Normalized command ids: {}"_fmt(updatedCount);
 		return true;

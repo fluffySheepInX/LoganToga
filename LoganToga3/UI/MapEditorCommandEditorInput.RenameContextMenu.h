@@ -53,6 +53,7 @@ namespace LT3
 				if (0 <= idx && idx < static_cast<int32>(defs.buildActions.size()))
 				{
 					defs.buildActions.remove_at(idx);
+					defs.RebuildBuildActionByTag();
 					if (editor.selectedCommandActionIndex >= static_cast<int32>(defs.buildActions.size()))
 					{
 						editor.selectedCommandActionIndex = static_cast<int32>(defs.buildActions.size()) - 1;
@@ -84,10 +85,11 @@ namespace LT3
 			if (0 <= srcIdx && srcIdx < static_cast<int32>(defs.buildActions.size()))
 			{
 				BuildActionDef duplicated = defs.buildActions[srcIdx];
-				duplicated.id = duplicated.id + U"_copy";
+				duplicated.id = BuildUniqueDuplicatedCommandId(defs.buildActions, duplicated.id);
 				duplicated.tag = U"{}:{}"_fmt(duplicated.ownerTag, duplicated.id);
 				duplicated.name += U" copy";
 				defs.buildActions << duplicated;
+				defs.RebuildBuildActionByTag();
 
 				const int32 newIdx = static_cast<int32>(defs.buildActions.size()) - 1;
 				editor.selectedCommandActionIndex = newIdx;

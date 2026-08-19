@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 # include <Siv3D.hpp>
 # include "IdTypes.h"
 
@@ -265,6 +265,29 @@ namespace LT3
             buildActions << def;
             buildActionByTag[tag] = id;
             return id;
+        }
+
+        // BuildAction 配列からタグ辞書を再構築する。
+        void RebuildBuildActionByTag()
+        {
+            buildActionByTag.clear();
+            for (BuildActionDefId id = 0; id < buildActions.size(); ++id)
+            {
+                const BuildActionDef& action = buildActions[id];
+                const String tag = NormalizeDefinitionTag(action.tag);
+                if (tag.isEmpty())
+                {
+                    addLoadWarning(U"Empty build action tag at index {}"_fmt(id));
+                    continue;
+                }
+                if (buildActionByTag.contains(tag))
+                {
+                    addLoadWarning(U"Duplicate build action tag '{}'"_fmt(action.tag));
+                    continue;
+                }
+
+                buildActionByTag[tag] = id;
+            }
         }
 
         ResourceDefId addResource(const ResourceDef& def)

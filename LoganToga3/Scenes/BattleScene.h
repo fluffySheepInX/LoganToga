@@ -18,7 +18,8 @@ namespace LT3
 		{
 			auto& data = getData();
 			InitializeAppUiState(m_ui, data.modMode);
-			InitializeAppRuntimeState(m_runtime, data.definitions, m_ui.mapEditor.definitionRevision);
+			PromoteBattleDefinitions(m_runtime, data.definitions, m_ui.mapEditor.definitionRevision);
+			ResetBattleRuntimeState(m_runtime, m_runtime.battleDefinitions, false, data.quickBattleRequest.valid ? &data.quickBattleRequest : nullptr);
 			SyncBattleWorldMapFromEditor(m_ui.mapEditor, m_runtime.world, m_runtime.battleDefinitions);
 			StopMusicPreview(data.musicEditor);
 			PlaySceneMusic(data, MusicSceneId::Battle);

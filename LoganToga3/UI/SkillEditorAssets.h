@@ -60,14 +60,8 @@ namespace LT3
 		const FilePath targetPath = targetDirectory + fileName;
 		if (FileSystem::FullPath(sourcePath) != FileSystem::FullPath(targetPath))
 		{
-			if (FileSystem::Exists(targetPath))
+			if (!ReplaceAssetFileSafely(sourcePath, targetPath, statusText))
 			{
-				FileSystem::Remove(targetPath);
-			}
-
-			if (!FileSystem::Copy(sourcePath, targetPath))
-			{
-				statusText = U"Skill image copy failed: {}"_fmt(targetPath);
 				return false;
 			}
 		}

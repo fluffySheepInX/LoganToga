@@ -221,6 +221,7 @@ namespace LT3
 		Array<UnitId> target;
 		Array<UnitId> owner;
 		Array<Faction> faction;
+		Array<int32> ownerAttack;
 		Array<SkillDefId> skill;
 		Array<SkillProjectileMotion> motion;
 		Array<double> lifeSec;
@@ -235,12 +236,7 @@ namespace LT3
 		Array<int32> chainDepth;
 		Array<Array<UnitId>> swingHitUnits;
 
-		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction ownerFaction, SkillDefId skillDef)
-		{
-			add(pos, vel, pos, pos + vel, targetUnit, InvalidUnitId, ownerFaction, skillDef, SkillProjectileMotion::Direct, 2.5, 0.0);
-		}
-
-		void add(const Vec2& pos, const Vec2& vel, const Vec2& start, const Vec2& end, UnitId targetUnit, UnitId ownerUnit, Faction ownerFaction, SkillDefId skillDef, SkillProjectileMotion projectileMotion, double maxLife, double initialAngleRad, const Vec2& firedTargetPos = Vec2{ 0.0, 0.0 }, bool imageAngleOverrideEnabled = false, double imageAngleOverride = 0.0, int32 nextChainDepth = 0)
+		void add(const Vec2& pos, const Vec2& vel, const Vec2& start, const Vec2& end, UnitId targetUnit, UnitId ownerUnit, Faction ownerFaction, int32 firedOwnerAttack, SkillDefId skillDef, SkillProjectileMotion projectileMotion, double maxLife, double initialAngleRad, const Vec2& firedTargetPos = Vec2{ 0.0, 0.0 }, bool imageAngleOverrideEnabled = false, double imageAngleOverride = 0.0, int32 nextChainDepth = 0)
 		{
 			position << pos;
 			velocity << vel;
@@ -249,6 +245,7 @@ namespace LT3
 			target << targetUnit;
 			owner << ownerUnit;
 			faction << ownerFaction;
+			ownerAttack << firedOwnerAttack;
 			skill << skillDef;
 			motion << projectileMotion;
 			lifeSec << maxLife;
@@ -264,6 +261,11 @@ namespace LT3
 			swingHitUnits << Array<UnitId>{};
 		}
 
+		void add(const Vec2& pos, const Vec2& vel, UnitId targetUnit, Faction ownerFaction, SkillDefId skillDef)
+		{
+			add(pos, vel, pos, pos + vel, targetUnit, InvalidUnitId, ownerFaction, 0, skillDef, SkillProjectileMotion::Direct, 2.5, 0.0);
+		}
+
 		void removeAt(size_t index)
 		{
 			const size_t last = position.size() - 1;
@@ -276,6 +278,7 @@ namespace LT3
 				target[index]        = target[last];
 				owner[index]         = owner[last];
 				faction[index]       = faction[last];
+				ownerAttack[index]   = ownerAttack[last];
 				skill[index]         = skill[last];
 				motion[index]        = motion[last];
 				lifeSec[index]       = lifeSec[last];
@@ -297,6 +300,7 @@ namespace LT3
 			target.pop_back();
 			owner.pop_back();
 			faction.pop_back();
+			ownerAttack.pop_back();
 			skill.pop_back();
 			motion.pop_back();
 			lifeSec.pop_back();

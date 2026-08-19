@@ -55,6 +55,45 @@ namespace LT3
 		}
 	}
 
+	// リネームされたスキルを指す next-chain 参照を同期更新する。
+	inline void ReplaceSkillNextTagReferences(DefinitionStores& defs, StringView beforeTag, StringView afterTag, SkillDefId afterSkillId)
+	{
+		for (auto& skill : defs.skills)
+		{
+			if (skill.nextSkillTag == beforeTag)
+			{
+				skill.nextSkillTag = String{ afterTag };
+				skill.nextSkill = afterSkillId;
+			}
+		}
+	}
+
+	// スキルタグ変更に伴う Skills と UnitCatalog の保存を一括で確定する。
+	inline bool SaveRenamedSkillTagTransaction(const DefinitionStores& defs, UnitCatalog& catalog, String& statusText)
+	{
+		const FilePath skillPath = ResolveSkillTomlPath();
+		const FilePath catalogPath = catalog.sourcePath;
+		const FilePath skillTemporaryPath = skillPath + U".tmp";
+		const FilePath catalogTemporaryPath = catalogPath + U".tmp";
+		FileSystem::Remove(skillTemporaryPath);
+		FileSystem::Remove(catalogTemporaryPath);
+
+		if (!SaveSkillDefinitionsToml(defs.skills, &statusText, skillTemporaryPath))
+		{
+			return false;
+		}
+		if (!SaveUnitCatalogToml(catalog, statusText, catalogTemporaryPath))
+		{
+			return false;
+		}
+
+		return SaveTomlFilesTransaction({
+			{ skillPath, skillTemporaryPath, skillPath + U".bak" },
+			{ catalogPath, catalogTemporaryPath, catalogPath + U".bak" },
+		}, statusText);
+	}
+
+	// スキルタグの変更と、それを参照する定義を保存する。
 	inline bool RenameSkillTag(MapEditorState& editor, DefinitionStores& defs, UnitCatalog& catalog, int32 skillIndex, StringView requestedTag)
 	{
 		if (skillIndex < 0 || skillIndex >= static_cast<int32>(defs.skills.size()))
@@ -90,8 +129,15 @@ namespace LT3
 		}
 
 		ReplaceSkillTagReferences(catalog, oldTag, normalized);
-		SaveSkillEditorDefinitions(editor, defs);
-		SaveUnitCatalogToml(catalog, editor.statusText);
+		ReplaceSkillNextTagReferences(defs, oldTag, normalized, skillIndex);
+
+		String status;
+		if (!SaveRenamedSkillTagTransaction(defs, catalog, status))
+		{
+			editor.statusText = status;
+			return false;
+		}
+		NotifyDefinitionChanged(editor, DefinitionChangeTarget::Skills);
 		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Renamed skill tag: {} -> {}"_fmt(oldTag, normalized);
 		return true;

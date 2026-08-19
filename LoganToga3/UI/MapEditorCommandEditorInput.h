@@ -73,8 +73,8 @@ namespace LT3
 			if (SaveBuildActionDefinitions(defs, editor.statusText))
 			{
 				NotifyDefinitionChanged(editor, DefinitionChangeTarget::BuildActions);
+				editor.commandBindingsDirty = false;
 			}
-			editor.commandBindingsDirty = false;
 			consumed = true;
 		}
 		if (closeRect.leftClicked())

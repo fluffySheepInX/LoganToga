@@ -784,6 +784,9 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\Resources.toml" />
+    <None Include="Docs\ModificationGuide_LoganToga3.html" />
+    <None Include="App\000_Warehouse\000_DefaultGame\mod.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\Skirmishes\default.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1447,6 +1450,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\AiEditorCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\ModContent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\ModDefinitionPaths.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

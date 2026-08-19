@@ -16,9 +16,9 @@ namespace LT3
     /// <summary>
     /// 攻撃者と対象、防御値から最終ダメージを計算します。
     /// </summary>
-    inline int32 ComputeSkillDamageAgainstUnit(const UnitDef& attackerDef, const UnitDef& targetDef, const SkillDef& skill)
+    inline int32 ComputeSkillDamageAgainstUnit(int32 attackerAttack, const UnitDef& targetDef, const SkillDef& skill)
     {
-        const double rawDamage = (static_cast<double>(attackerDef.attack) * skill.damage) - static_cast<double>(targetDef.defense);
+        const double rawDamage = (static_cast<double>(attackerAttack) * skill.damage) - static_cast<double>(targetDef.defense);
         return Max(1, static_cast<int32>(Math::Round(rawDamage)));
     }
 
@@ -32,7 +32,7 @@ namespace LT3
         world.units.hp[unit] -= damage;
         if (world.units.hp[unit] <= 0)
         {
-            SetUnitAlive(world, unit, false);
+            SetUnitDead(world, unit);
             ClearSelectionIfUnitSelected(world, unit);
         }
     }
@@ -54,16 +54,16 @@ namespace LT3
     /// <summary>
     /// Heal 系スキルの回復量を計算します。
     /// </summary>
-    inline int32 ComputeSkillHealAgainstUnit(const UnitDef& attackerDef, const SkillDef& skill)
+    inline int32 ComputeSkillHealAgainstUnit(int32 attackerAttack, const SkillDef& skill)
     {
-        const double rawHeal = static_cast<double>(attackerDef.attack) * Max(0.01, skill.damage);
+        const double rawHeal = static_cast<double>(attackerAttack) * Max(0.01, skill.damage);
         return Max(1, static_cast<int32>(Math::Round(rawHeal)));
     }
 
     /// <summary>
     /// 爆風対象に含めるべきユニットかを判定します。
     /// </summary>
-    inline bool ShouldApplyBomDamageToUnit(const BattleWorld& world, UnitId attacker, UnitId unit, bool friendlyFire)
+    inline bool ShouldApplyBomDamageToUnit(const BattleWorld& world, UnitId attacker, Faction attackerFaction, UnitId unit, bool friendlyFire)
     {
         if (!IsValidUnit(world, unit) || unit == attacker)
         {
@@ -75,19 +75,15 @@ namespace LT3
             return true;
         }
 
-        return world.units.faction[unit] != world.units.faction[attacker];
+        return world.units.faction[unit] != attackerFaction;
     }
 
     /// <summary>
     /// 爆風半径内の対象へ一定ダメージを適用します。
     /// </summary>
-    inline Array<ProjectileHitTargetInfo> ApplyBomDamage(BattleWorld& world, const DefinitionStores& defs, UnitId attacker, const SkillDef& skill, const Vec2& impactPos)
+    inline Array<ProjectileHitTargetInfo> ApplyBomDamage(BattleWorld& world, const DefinitionStores& defs, UnitId attacker, Faction attackerFaction, int32 attackerAttack, const SkillDef& skill, const Vec2& impactPos)
     {
         Array<ProjectileHitTargetInfo> hitTargets;
-        if (!IsValidUnit(world, attacker))
-        {
-            return hitTargets;
-        }
 
         world.bomVisualEffects.add(
             impactPos,
@@ -109,15 +105,14 @@ namespace LT3
             world.units.hp[unit] -= damage;
             if (world.units.hp[unit] <= 0)
             {
-                SetUnitAlive(world, unit, false);
+                SetUnitDead(world, unit);
                 ClearSelectionIfUnitSelected(world, unit);
             }
         };
 
-        const UnitDef& attackerDef = defs.units[world.units.defId[attacker]];
         for (UnitId unit = 0; unit < static_cast<UnitId>(world.units.position.size()); ++unit)
         {
-            if (!ShouldApplyBomDamageToUnit(world, attacker, unit, skill.bomFriendlyFire))
+            if (!ShouldApplyBomDamageToUnit(world, attacker, attackerFaction, unit, skill.bomFriendlyFire))
             {
                 continue;
             }
@@ -129,11 +124,14 @@ namespace LT3
 
             hitTargets << ProjectileHitTargetInfo{ unit, world.units.position[unit] };
             const UnitDef& targetDef = defs.units[world.units.defId[unit]];
-            applyDamage(unit, ComputeSkillDamageAgainstUnit(attackerDef, targetDef, skill));
+            applyDamage(unit, ComputeSkillDamageAgainstUnit(attackerAttack, targetDef, skill));
         }
 
-        const int32 bomSelfDamage = Max(0, static_cast<int32>(Math::Round(static_cast<double>(attackerDef.attack) * skill.damage * skill.bomSelfDamageScale)));
-        applyDamage(attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)) + bomSelfDamage);
+        if (IsValidUnit(world, attacker))
+        {
+            const int32 bomSelfDamage = Max(0, static_cast<int32>(Math::Round(static_cast<double>(attackerAttack) * skill.damage * skill.bomSelfDamageScale)));
+            applyDamage(attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)) + bomSelfDamage);
+        }
         return hitTargets;
     }
 
@@ -144,40 +142,45 @@ namespace LT3
     {
         Array<ProjectileHitTargetInfo> hitTargets;
         const UnitId attacker = world.projectiles.owner[projectileIndex];
-        if (!IsValidUnit(world, attacker))
-        {
-            return hitTargets;
-        }
-
-        const UnitDef& attackerDef = defs.units[world.units.defId[attacker]];
+        const Faction attackerFaction = world.projectiles.faction[projectileIndex];
+        const int32 attackerAttack = world.projectiles.ownerAttack[projectileIndex];
         const SkillDef& skill = defs.skills[world.projectiles.skill[projectileIndex]];
         if (skill.kind == SkillKind::Heal)
         {
             if (IsValidUnit(world, target))
             {
                 hitTargets << ProjectileHitTargetInfo{ target, world.units.position[target] };
-                ApplyDirectHealToUnit(world, defs, target, ComputeSkillHealAgainstUnit(attackerDef, skill));
+                ApplyDirectHealToUnit(world, defs, target, ComputeSkillHealAgainstUnit(attackerAttack, skill));
             }
-            ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+            if (IsValidUnit(world, attacker))
+            {
+                ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+            }
             return hitTargets;
         }
 
         if (skill.bom && skill.bomRadius > 0.0)
         {
-            return ApplyBomDamage(world, defs, attacker, skill, impactPos);
+            return ApplyBomDamage(world, defs, attacker, attackerFaction, attackerAttack, skill, impactPos);
         }
 
         if (!IsValidUnit(world, target))
         {
-            ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+            if (IsValidUnit(world, attacker))
+            {
+                ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+            }
             return hitTargets;
         }
 
         const UnitDef& targetDef = defs.units[world.units.defId[target]];
-        const int32 finalDamage = ComputeSkillDamageAgainstUnit(attackerDef, targetDef, skill);
+        const int32 finalDamage = ComputeSkillDamageAgainstUnit(attackerAttack, targetDef, skill);
         hitTargets << ProjectileHitTargetInfo{ target, world.units.position[target] };
         ApplyDirectDamageToUnit(world, target, finalDamage);
-        ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+        if (IsValidUnit(world, attacker))
+        {
+            ApplyDirectDamageToUnit(world, attacker, static_cast<int32>(Math::Round(skill.selfDamageOnHit)));
+        }
         return hitTargets;
     }
 }

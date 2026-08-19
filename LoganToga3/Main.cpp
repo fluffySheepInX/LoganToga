@@ -18,13 +18,18 @@ void Main()
 		if (arg == U"--mod")
 		{
 			shared->modMode = true;
+			if (((i + 1) < argc) && !String{ Unicode::Widen(argv[i + 1]) }.starts_with(U"--"))
+			{
+				shared->requestedModId = Unicode::Widen(argv[i + 1]);
+				++i;
+			}
 			continue;
 		}
 
 		if (arg == U"--quick-battle")
 		{
 			shared->quickBattleRequested = true;
-			if ((i + 1) < argc)
+			if (((i + 1) < argc) && !String{ Unicode::Widen(argv[i + 1]) }.starts_with(U"--"))
 			{
 				shared->quickBattleArgument = Unicode::Widen(argv[i + 1]);
 				++i;
@@ -33,7 +38,38 @@ void Main()
 		}
 	}
 
-	const bool skipTitleToBattle = shared->quickBattleRequested;
+	const String requestedModId = !shared->requestedModId.isEmpty()
+		? shared->requestedModId
+		: U"000-default-game";
+	if (!LT3::TryLoadModContext(requestedModId, shared->activeMod, shared->startupErrorText))
+	{
+		shared->quickBattleRequested = false;
+	}
+	else
+	{
+		shared->definitions = LT3::CreateAppDefinitionState(shared->activeMod);
+	}
+	if (shared->quickBattleRequested && shared->startupErrorText.isEmpty())
+	{
+		String quickBattleId = shared->quickBattleArgument;
+		if (quickBattleId.isEmpty() || (quickBattleId.lowercased() == U"skirmish"))
+		{
+			quickBattleId = U"skirmish/default";
+		}
+
+		const Array<String> parts = quickBattleId.split(U'/');
+		if ((parts.size() != 2) || (parts[0].lowercased() != U"skirmish"))
+		{
+			shared->startupErrorText = U"Unsupported quick battle target: {}"_fmt(quickBattleId);
+			shared->quickBattleRequested = false;
+		}
+		else if (!LT3::TryLoadSkirmishBattleRequest(shared->activeMod, parts[1], shared->quickBattleRequest, shared->startupErrorText))
+		{
+			shared->quickBattleRequested = false;
+		}
+	}
+
+	const bool skipTitleToBattle = shared->quickBattleRequested && shared->quickBattleRequest.valid;
 	Scene::SetBackground(ColorF{ 0.08, 0.14, 0.11 });
 	LT3::LoadMusicSettingsToml(shared->musicSettings, shared->musicEditor.statusText);
 	LT3::AppSceneManager manager{ shared };

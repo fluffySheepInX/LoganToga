@@ -216,12 +216,12 @@ namespace LT3
 		}
 	}
 
-	inline void LoadAiProfileDefinitions(DefinitionStores& defs)
+	inline void LoadAiProfileDefinitions(DefinitionStores& defs, FilePathView sourcePath = ResolveAiProfileTomlPath())
 	{
 		defs.aiProfiles.clear();
 		defs.aiProfileByTag.clear();
 
-		const FilePath aiProfilePath = ResolveAiProfileTomlPath();
+		const FilePath aiProfilePath{ String{ sourcePath } };
 		const TOMLReader toml{ aiProfilePath };
 		if (!toml)
 		{

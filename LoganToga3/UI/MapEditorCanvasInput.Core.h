@@ -57,8 +57,10 @@ namespace LT3
 		{
 			editor.draggingPlayerHome = false;
 			editor.draggingEnemyHome = false;
-			SaveMapEditorToml(editor, false);
-			editor.statusText = U"Home position updated";
+			if (SaveMapEditorToml(editor, false))
+			{
+				editor.statusText = U"Home position updated";
+			}
 			return true;
 		}
 

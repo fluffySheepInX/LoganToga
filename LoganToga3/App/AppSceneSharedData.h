@@ -116,8 +116,12 @@ namespace LT3
 		Font uiFont{ FontMethod::MSDF, 20, Typeface::Medium };
 		AppDefinitionState definitions = CreateAppDefinitionState();
 		bool modMode = false;
+		String requestedModId;
 		bool quickBattleRequested = false;
 		String quickBattleArgument;
+		ModContext activeMod;
+		BattleRequest quickBattleRequest;
+		String startupErrorText;
 		Texture titleImage{ U"000_Warehouse/000_DefaultGame/000_SystemImage/title.png" };
 		TitleUiLayout titleUiLayout = CreateDefaultTitleUiLayout();
 		TitleUiEditorState titleUiEditor;

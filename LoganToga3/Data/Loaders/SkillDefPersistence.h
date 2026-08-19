@@ -86,11 +86,11 @@ namespace LT3
 		return skills;
 	}
 
-	inline bool SaveSkillDefinitionsToml(const Array<SkillDef>& skills, String* statusText = nullptr)
+	inline bool SaveSkillDefinitionsToml(const Array<SkillDef>& skills, String* statusText = nullptr, FilePathView outputPath = U"")
 	{
-		const FilePath path = ResolveSkillTomlPath();
+		const FilePath path = outputPath.isEmpty() ? ResolveSkillTomlPath() : FilePath{ outputPath };
 		FileSystem::CreateDirectories(FileSystem::ParentPath(path));
-		TextWriter writer{ path };
+		TextWriter writer{ path, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
 		if (!writer)
 		{
 			if (statusText)

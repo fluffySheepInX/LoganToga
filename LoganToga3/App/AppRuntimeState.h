@@ -76,10 +76,10 @@ namespace LT3
         }
     }
 
-    inline void ResetBattleRuntimeState(AppRuntimeState& runtime, const DefinitionStores& defs, bool enemyDirectorPaused)
+    inline void ResetBattleRuntimeState(AppRuntimeState& runtime, const DefinitionStores& defs, bool enemyDirectorPaused, const BattleRequest* request = nullptr)
     {
         runtime.world = BattleWorld{};
-        SpawnDefaultBattle(runtime.world, defs);
+        SpawnDefaultBattle(runtime.world, defs, request);
         runtime.world.definitionGeneration = runtime.battleDefinitionGeneration;
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;
         ClearBattleNotifications(runtime);

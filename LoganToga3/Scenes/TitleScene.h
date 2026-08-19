@@ -47,7 +47,13 @@ namespace LT3
 			}
 			DrawTitleUiEditorHotspot(data);
 			DrawTitleUiEditor(data);
-				DrawMusicEditor(data);
+			DrawMusicEditor(data);
+			if (!data.startupErrorText.isEmpty())
+			{
+				const RectF errorRect{ 320.0, 760.0, 960.0, 54.0 };
+				errorRect.rounded(8.0).draw(ColorF{ 0.32, 0.06, 0.06, 0.92 }).drawFrame(2.0, ColorF{ 1.0, 0.35, 0.30, 0.95 });
+				data.uiFont(data.startupErrorText).drawAt(16, errorRect.center(), Palette::White);
+			}
 		}
 
 	private:

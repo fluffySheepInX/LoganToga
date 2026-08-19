@@ -293,10 +293,10 @@ namespace LT3
         return TOMLReader{ MemoryReader{ Blob{ std::move(bytes) } } };
     }
 
-    inline UnitCatalog LoadUnitCatalog()
+    inline UnitCatalog LoadUnitCatalog(FilePathView sourcePath = ResolveUnitCatalogTomlPath())
     {
         UnitCatalog catalog;
-        catalog.sourcePath = ResolveUnitCatalogTomlPath();
+        catalog.sourcePath = sourcePath;
 
         const TOMLReader toml = OpenUnitCatalogToml(catalog.sourcePath);
         if (!toml)
@@ -385,13 +385,14 @@ namespace LT3
         return catalog;
     }
 
-    inline bool SaveUnitCatalogToml(UnitCatalog& catalog, String& statusText)
+    inline bool SaveUnitCatalogToml(UnitCatalog& catalog, String& statusText, FilePathView outputPath = U"")
     {
-        FileSystem::CreateDirectories(FileSystem::ParentPath(catalog.sourcePath));
-        TextWriter writer{ catalog.sourcePath, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
+        const FilePath path = outputPath.isEmpty() ? catalog.sourcePath : FilePath{ outputPath };
+        FileSystem::CreateDirectories(FileSystem::ParentPath(path));
+        TextWriter writer{ path, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
         if (!writer)
         {
-            statusText = U"Unit catalog save failed: {}"_fmt(catalog.sourcePath);
+            statusText = U"Unit catalog save failed: {}"_fmt(path);
             return false;
         }
 

@@ -117,7 +117,11 @@ namespace LT3
 			CloseAiEditorUnitWeightMenu(editor);
 			ApplySelectedAiProfileTag(editor, defs);
 			String status;
-			SaveAiProfileDefinitions(defs, status);
+			if (!SaveAiProfileDefinitions(defs, status))
+			{
+				editor.statusText = status;
+				return true;
+			}
 			SaveMapEditorToml(editor, false);
 			editor.statusText = status;
 			editor.aiProfilesDirty = false;

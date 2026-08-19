@@ -290,13 +290,16 @@ namespace LT3
         return issues;
     }
 
-    inline void SaveMapEditorResourceNodes(const MapEditorState& editor)
+    // Resource Node の TOML を指定パスへ出力する。
+    inline bool SaveMapEditorResourceNodes(const MapEditorState& editor, FilePathView outputPath, String& statusText)
     {
-        FileSystem::CreateDirectories(FileSystem::ParentPath(editor.resourceNodeSavePath));
-        TextWriter resourceWriter{ editor.resourceNodeSavePath };
+        const FilePath path{ outputPath };
+        FileSystem::CreateDirectories(FileSystem::ParentPath(path));
+        TextWriter resourceWriter{ path, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
         if (!resourceWriter)
         {
-            return;
+            statusText = U"Resource node save failed: {}"_fmt(path);
+            return false;
         }
 
         for (const auto& resourceNode : editor.resourceNodes)
@@ -310,5 +313,7 @@ namespace LT3
             resourceWriter << U"income_per_sec = " << resourceNode.incomePerSec << U"\n";
             resourceWriter << U"capture_time_sec = " << resourceNode.captureTimeSec << U"\n\n";
         }
+
+        return true;
     }
 }

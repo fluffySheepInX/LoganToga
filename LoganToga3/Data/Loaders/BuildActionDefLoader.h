@@ -5,9 +5,9 @@
 
 namespace LT3
 {
-    inline void LoadBuildActionDefinitions(DefinitionStores& defs)
+    inline void LoadBuildActionDefinitions(DefinitionStores& defs, FilePathView sourcePath = ResolveBuildActionTomlPath())
     {
-        const FilePath buildActionPath = ResolveBuildActionTomlPath();
+        const FilePath buildActionPath{ String{ sourcePath } };
         const TOMLReader toml{ buildActionPath };
         if (!toml)
         {
@@ -111,8 +111,77 @@ namespace LT3
 
         ApplyBuildLineIconOverrides(defs.buildActions);
     }
+    inline bool ValidateBuildActionDefinitionsForSave(const DefinitionStores& defs, String& statusText)
+    {
+        HashSet<String> tags;
+        for (size_t index = 0; index < defs.buildActions.size(); ++index)
+        {
+            const BuildActionDef& action = defs.buildActions[index];
+            const String label = action.name.isEmpty() ? U"#{}"_fmt(index + 1) : action.name;
+            if (action.id.isEmpty())
+            {
+                statusText = U"Build action save failed: id not set ({})"_fmt(label);
+                return false;
+            }
+
+            const Array<String> ownerTags = action.ownerTags.isEmpty()
+                ? NormalizeOwnerTags(Array<String>{ action.ownerTag })
+                : NormalizeOwnerTags(action.ownerTags);
+            if (ownerTags.isEmpty())
+            {
+                statusText = U"Build action save failed: owner not set ({})"_fmt(label);
+                return false;
+            }
+
+            const String tag = NormalizeDefinitionTag(action.tag);
+            if (tag.isEmpty())
+            {
+                statusText = U"Build action save failed: tag not set ({})"_fmt(label);
+                return false;
+            }
+            if (tags.contains(tag))
+            {
+                statusText = U"Build action save failed: duplicate tag '{}'"_fmt(action.tag);
+                return false;
+            }
+            tags.insert(tag);
+
+            if (action.resultType != BuildActionResultType::Unit)
+            {
+                continue;
+            }
+
+            Array<String> spawnTags = NormalizeSpawnTags(action.spawnTags);
+            if (spawnTags.isEmpty() && !action.resultTag.isEmpty())
+            {
+                spawnTags << action.resultTag;
+            }
+            spawnTags = NormalizeSpawnTags(spawnTags);
+            if (spawnTags.isEmpty())
+            {
+                statusText = U"Build action save failed: unit spawn not set ({})"_fmt(label);
+                return false;
+            }
+            for (const String& spawnTag : spawnTags)
+            {
+                if (!defs.unitByTag.contains(NormalizeDefinitionTag(spawnTag)))
+                {
+                    statusText = U"Build action save failed: unresolved unit spawn '{}' ({})"_fmt(spawnTag, label);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     inline bool SaveBuildActionDefinitions(const DefinitionStores& defs, String& statusText)
     {
+        if (!ValidateBuildActionDefinitionsForSave(defs, statusText))
+        {
+            return false;
+        }
+
         const FilePath buildActionPath = ResolveBuildActionTomlPath();
         FileSystem::CreateDirectories(FileSystem::ParentPath(buildActionPath));
         TextWriter writer{ buildActionPath };

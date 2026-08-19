@@ -81,12 +81,12 @@ namespace LT3
         }
     }
 
-    inline void LoadResourceDefinitions(DefinitionStores& defs)
+    inline void LoadResourceDefinitions(DefinitionStores& defs, FilePathView sourcePath = ResolveResourceTomlPath())
     {
         defs.resources.clear();
         defs.resourceByTag.clear();
 
-        const FilePath resourcePath = ResolveResourceTomlPath();
+        const FilePath resourcePath{ String{ sourcePath } };
         const TOMLReader toml{ resourcePath };
         if (!toml)
         {

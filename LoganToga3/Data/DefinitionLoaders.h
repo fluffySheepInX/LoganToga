@@ -7,6 +7,7 @@
 # include "Loaders/ResourceDefLoader.h"
 # include "Loaders/BuildActionDefLoader.h"
 # include "Loaders/AiProfileDefLoader.h"
+# include "ModDefinitionPaths.h"
 
 namespace LT3
 {
@@ -68,5 +69,18 @@ namespace LT3
     inline DefinitionStores CreateDefaultDefinitions()
     {
         return CreateDefaultDefinitions(LoadUnitCatalog());
+    }
+
+    inline DefinitionStores CreateDefaultDefinitions(const UnitCatalog& unitCatalog, const ModContext& mod)
+    {
+        DefinitionStores defs;
+        defs.loadWarnings.clear();
+        LoadSkillDefinitions(defs, ResolveModDefinitionPath(mod, U"070_Scenario/InfoSkill/Skills.toml"));
+        LoadUnitDefinitions(defs, unitCatalog);
+        LoadResourceDefinitions(defs, ResolveModDefinitionPath(mod, U"070_Scenario/InfoResource/Resources.toml"));
+        LoadBuildActionDefinitions(defs, ResolveModDefinitionPath(mod, U"070_Scenario/InfoBuildMenu/BuildMenu.toml"));
+        LoadAiProfileDefinitions(defs, ResolveModDefinitionPath(mod, U"070_Scenario/InfoAI/AiProfiles.toml"));
+        ValidateDefinitionReferences(defs);
+        return defs;
     }
 }

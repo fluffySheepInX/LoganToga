@@ -285,17 +285,16 @@ namespace LT3
 		}
 	}
 
-	inline bool SaveMapEditorToml(MapEditorState& editor, bool updateStatus = true)
+	// マップ本体の TOML を指定パスへ出力する。
+	inline bool SaveMapEditorTomlFile(MapEditorState& editor, FilePathView outputPath, String& statusText)
 	{
 		SortMapEditorResourceNodes(editor);
-		FileSystem::CreateDirectories(FileSystem::ParentPath(editor.savePath));
-		TextWriter writer{ editor.savePath };
+		const FilePath path{ outputPath };
+		FileSystem::CreateDirectories(FileSystem::ParentPath(path));
+		TextWriter writer{ path, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
 		if (!writer)
 		{
-			if (updateStatus)
-			{
-				editor.statusText = U"Save failed: {}"_fmt(editor.savePath);
-			}
+			statusText = U"Map save failed: {}"_fmt(path);
 			return false;
 		}
 
@@ -385,15 +384,46 @@ namespace LT3
 			}
 		}
 
-		SaveMapEditorResourceNodes(editor);
+		return true;
+	}
+
+	// マップ本体と Resource Node を一括で保存する。
+	inline bool SaveMapEditorToml(MapEditorState& editor, bool updateStatus = true)
+	{
+		const FilePath mapTemporaryPath = editor.savePath + U".tmp";
+		const FilePath resourceTemporaryPath = editor.resourceNodeSavePath + U".tmp";
+		FileSystem::Remove(mapTemporaryPath);
+		FileSystem::Remove(resourceTemporaryPath);
+
+		String status;
+		if (!SaveMapEditorTomlFile(editor, mapTemporaryPath, status)
+			|| !SaveMapEditorResourceNodes(editor, resourceTemporaryPath, status))
+		{
+			if (updateStatus)
+			{
+				editor.statusText = status;
+			}
+			return false;
+		}
+
+		if (!SaveTomlFilesTransaction({
+			{ editor.savePath, mapTemporaryPath, editor.savePath + U".bak" },
+			{ editor.resourceNodeSavePath, resourceTemporaryPath, editor.resourceNodeSavePath + U".bak" },
+		}, status))
+		{
+			if (updateStatus)
+			{
+				editor.statusText = status;
+			}
+			return false;
+		}
 
 		const Array<String> resourceIssues = ValidateMapEditorResourceNodes(editor);
-
 		if (updateStatus)
 		{
 			editor.statusText = U"Saved TOML: {}, {}{}"_fmt(
 				editor.savePath,
-				editor.resourceNodeSavePath,
+			editor.resourceNodeSavePath,
 				resourceIssues.isEmpty() ? U"" : U"  validation:{}"_fmt(resourceIssues.size()));
 		}
 		return true;

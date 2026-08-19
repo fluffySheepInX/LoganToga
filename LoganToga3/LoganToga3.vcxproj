@@ -177,6 +177,8 @@
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoResource\Resources.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoSkill\Skills.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoUnit\UnitCatalog.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\mod.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\Skirmishes\default.toml" />
     <None Include="App\dll\soundtouch\SoundTouch_x64.dll" />
     <None Include="App\engine\font\fontawesome\fontawesome-brands.otf.zstdcmp" />
     <None Include="App\engine\font\fontawesome\fontawesome-solid.otf.zstdcmp" />
@@ -370,6 +372,8 @@
     <ClInclude Include="Data\Loaders\SkillDefPersistence.h" />
     <ClInclude Include="Data\Loaders\SkillDefValueParsing.h" />
     <ClInclude Include="Data\Loaders\UnitDefLoader.h" />
+    <ClInclude Include="Data\ModContent.h" />
+    <ClInclude Include="Data\ModDefinitionPaths.h" />
     <ClInclude Include="Data\MusicManager.h" />
     <ClInclude Include="Data\MusicPreview.h" />
     <ClInclude Include="Data\MusicSettings.h" />

@@ -216,7 +216,8 @@ namespace LT3
             spawnPos = targetPos;
         }
         PlayBattleSkillSoundIfRelevant(skill, spawnPos);
-        world.projectiles.add(spawnPos, velocity, start, targetPos, target, attacker, world.units.faction[attacker], skillId, skill.projectileMotion, maxLife, startAngleRad, targetPos, nextContext.imageAngleRad.has_value(), startAngleRad, nextContext.chainDepth);
+        const UnitDef& attackerDef = defs.units[world.units.defId[attacker]];
+        world.projectiles.add(spawnPos, velocity, start, targetPos, target, attacker, world.units.faction[attacker], attackerDef.attack, skillId, skill.projectileMotion, maxLife, startAngleRad, targetPos, nextContext.imageAngleRad.has_value(), startAngleRad, nextContext.chainDepth);
         if (skill.projectileMotion == SkillProjectileMotion::Drop && !world.projectiles.height.isEmpty())
         {
             world.projectiles.height.back() = (skill.projectileSpeed >= 0.0) ? Max(1.0, skill.arcHeight) : 0.0;
@@ -258,6 +259,7 @@ namespace LT3
         const UnitId attacker = world.projectiles.owner[projectileIndex];
         if (!IsValidUnit(world, attacker))
         {
+            // TODO: いずれエディターで術者死亡後も継続するかどうか変更出来るチェックボックスを追加する。
             return;
         }
 
@@ -353,6 +355,7 @@ namespace LT3
                 const UnitId owner = world.projectiles.owner[i];
                 if (!IsValidUnit(world, owner))
                 {
+                // TODO: いずれエディターで術者死亡後も継続するかどうか変更出来るチェックボックスを追加する。
                     world.projectiles.removeAt(i);
                     continue;
                 }
@@ -367,6 +370,7 @@ namespace LT3
                 const UnitId owner = world.projectiles.owner[i];
                 if (!IsValidUnit(world, owner))
                 {
+                // TODO: いずれエディターで術者死亡後も継続するかどうか変更出来るチェックボックスを追加する。
                     world.projectiles.removeAt(i);
                     continue;
                 }

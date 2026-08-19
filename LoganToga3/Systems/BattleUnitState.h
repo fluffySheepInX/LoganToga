@@ -152,6 +152,43 @@ namespace LT3
 		world.buildQueues.progressSec[unit] = 0.0;
 	}
 
+	// 生産者に紐づく未完了の生産・建築状態をすべて破棄する。
+	inline void ClearUnitBuildQueue(BattleWorld& world, UnitId unit)
+	{
+		if (!UnitSlotExists(world, unit))
+		{
+			return;
+		}
+
+		if (unit < world.buildQueues.entries.size())
+		{
+			world.buildQueues.entries[unit].clear();
+		}
+		if (unit < world.buildQueues.pendingEntry.size())
+		{
+			world.buildQueues.pendingEntry[unit] = QueuedBuildAction{};
+		}
+		if (unit < world.buildQueues.hasPendingEntry.size())
+		{
+			world.buildQueues.hasPendingEntry[unit] = false;
+		}
+
+		ResetBuildQueueProgress(world, unit);
+		SetBuildQueueLocked(world, unit, false);
+	}
+
+	// ユニット死亡時に生産キューを破棄してから生存状態を解除する。
+	inline void SetUnitDead(BattleWorld& world, UnitId unit)
+	{
+		if (!IsValidUnit(world, unit))
+		{
+			return;
+		}
+
+		ClearUnitBuildQueue(world, unit);
+		SetUnitAlive(world, unit, false);
+	}
+
 	inline void SetUnitIdle(BattleWorld& world, UnitId unit)
 	{
 		ClearUnitFormationFinalTarget(world, unit);

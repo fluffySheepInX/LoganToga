@@ -1,4 +1,4 @@
-﻿[toolbar]
+[toolbar]
 
 map_editor_enabled = false
 
@@ -8,7 +8,7 @@ building_editor = false
 
 command_editor = false
 
-skill_editor = true
+skill_editor = false
 
 ai_editor = false
 

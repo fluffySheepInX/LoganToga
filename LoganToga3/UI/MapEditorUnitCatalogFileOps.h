@@ -104,14 +104,8 @@ namespace LT3
 		const FilePath targetPath = targetDirectory + fileName;
 		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
 		{
-			if (FileSystem::Exists(targetPath))
+			if (!ReplaceAssetFileSafely(*sourcePath, targetPath, editor.statusText))
 			{
-				FileSystem::Remove(targetPath);
-			}
-
-			if (!FileSystem::Copy(*sourcePath, targetPath))
-			{
-				editor.statusText = U"Unit image copy failed: {}"_fmt(targetPath);
 				return true;
 			}
 		}
@@ -119,7 +113,10 @@ namespace LT3
 		entry.image = fileName;
 		BuildingEditorTextureCache().erase(targetPath);
 		BuildingEditorTextureCache().erase(ResolveCatalogVisualPath(entry.kind, fileName));
-		SaveUnitCatalogToml(catalog, editor.statusText);
+		if (!SaveUnitCatalogToml(catalog, editor.statusText))
+		{
+			return true;
+		}
 		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit image changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
@@ -153,14 +150,8 @@ namespace LT3
 		const FilePath targetPath = targetDirectory + fileName;
 		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
 		{
-			if (FileSystem::Exists(targetPath))
+			if (!ReplaceAssetFileSafely(*sourcePath, targetPath, editor.statusText))
 			{
-				FileSystem::Remove(targetPath);
-			}
-
-			if (!FileSystem::Copy(*sourcePath, targetPath))
-			{
-				editor.statusText = U"Unit portrait copy failed: {}"_fmt(targetPath);
 				return true;
 			}
 		}
@@ -169,7 +160,10 @@ namespace LT3
 		entry.unique = true;
 		BuildingEditorTextureCache().erase(targetPath);
 		BuildingEditorTextureCache().erase(ResolveUnitPortraitPath(fileName));
-		SaveUnitCatalogToml(catalog, editor.statusText);
+		if (!SaveUnitCatalogToml(catalog, editor.statusText))
+		{
+			return true;
+		}
 		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit portrait changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;
@@ -203,20 +197,17 @@ namespace LT3
 		const FilePath targetPath = targetDirectory + fileName;
 		if (FileSystem::FullPath(*sourcePath) != FileSystem::FullPath(targetPath))
 		{
-			if (FileSystem::Exists(targetPath))
+			if (!ReplaceAssetFileSafely(*sourcePath, targetPath, editor.statusText))
 			{
-				FileSystem::Remove(targetPath);
-			}
-
-			if (!FileSystem::Copy(*sourcePath, targetPath))
-			{
-				editor.statusText = U"Unit voice copy failed: {}"_fmt(targetPath);
 				return true;
 			}
 		}
 
 		entry.spawnVoice = fileName;
-		SaveUnitCatalogToml(catalog, editor.statusText);
+		if (!SaveUnitCatalogToml(catalog, editor.statusText))
+		{
+			return true;
+		}
 		NotifyDefinitionChanged(editor, DefinitionChangeTarget::UnitCatalog);
 		editor.statusText = U"Unit voice changed: {} -> {}"_fmt(entry.unit_id, fileName);
 		return true;

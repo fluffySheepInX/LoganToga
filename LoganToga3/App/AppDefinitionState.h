@@ -21,4 +21,13 @@ namespace LT3
         state.renderAssets = BuildBattleRenderAssets(state.unitCatalog, &state.defs);
         return state;
     }
+
+    inline AppDefinitionState CreateAppDefinitionState(const ModContext& mod)
+    {
+        AppDefinitionState state;
+        state.unitCatalog = LoadUnitCatalog(ResolveModDefinitionPath(mod, U"070_Scenario/InfoUnit/UnitCatalog.toml"));
+        state.defs = CreateDefaultDefinitions(state.unitCatalog, mod);
+        state.renderAssets = BuildBattleRenderAssets(state.unitCatalog, &state.defs);
+        return state;
+    }
 }

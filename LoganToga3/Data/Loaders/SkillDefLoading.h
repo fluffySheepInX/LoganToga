@@ -127,14 +127,17 @@ namespace LT3
 		}
 	}
 
-	inline void LoadSkillDefinitions(DefinitionStores& defs)
+	inline void LoadSkillDefinitions(DefinitionStores& defs, FilePathView sourcePath = ResolveSkillTomlPath())
 	{
 		defs.skills.clear();
 		defs.skillIconWarningsByTag.clear();
 		defs.skillByTag.clear();
 
-		EnsureSkillTomlExists();
-		const FilePath skillPath = ResolveSkillTomlPath();
+		if (sourcePath == ResolveSkillTomlPath())
+		{
+			EnsureSkillTomlExists();
+		}
+		const FilePath skillPath{ String{ sourcePath } };
 		const TOMLReader toml{ skillPath };
 		if (!toml)
 		{

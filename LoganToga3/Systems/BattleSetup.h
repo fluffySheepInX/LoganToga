@@ -1,15 +1,16 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
 # include "../Data/TomlTextUtils.h"
+# include "../Data/ModContent.h"
 # include "BattleQueries.h"
 
 namespace LT3
 {
     inline FilePath ResolveMapEditorTomlPath();
 
-    inline Size LoadBattleMapSizeFromMapEditorToml()
+    inline Size LoadBattleMapSizeFromToml(FilePathView path)
     {
-        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        const TOMLReader toml{ path };
         if (!toml)
         {
             return Size{ DefaultBattleMapWidth, DefaultBattleMapHeight };
@@ -26,9 +27,9 @@ namespace LT3
         return String{ fileName }.lowercased().starts_with(U"decal_");
     }
 
-    inline void ApplyDecalPassabilityFromMapEditorToml(BattleWorld& world)
+    inline void ApplyDecalPassabilityFromToml(BattleWorld& world, FilePathView path)
     {
-        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        const TOMLReader toml{ path };
         if (!toml)
         {
             return;
@@ -92,12 +93,22 @@ namespace LT3
         });
     }
 
-    inline std::pair<Vec2, Vec2> LoadHomePositionsFromMapEditorToml()
+    inline Size LoadBattleMapSizeFromMapEditorToml()
+    {
+        return LoadBattleMapSizeFromToml(ResolveMapEditorTomlPath());
+    }
+
+    inline void ApplyDecalPassabilityFromMapEditorToml(BattleWorld& world)
+    {
+        ApplyDecalPassabilityFromToml(world, ResolveMapEditorTomlPath());
+    }
+
+    inline std::pair<Vec2, Vec2> LoadHomePositionsFromToml(FilePathView path)
     {
         Vec2 playerHome{ 210.0, 450.0 };
         Vec2 enemyHome{ 1390.0, 450.0 };
 
-        const TOMLReader toml{ ResolveMapEditorTomlPath() };
+        const TOMLReader toml{ path };
         if (!toml)
         {
             return { playerHome, enemyHome };
@@ -108,6 +119,11 @@ namespace LT3
         enemyHome.x = toml[U"home.enemy_x"].getOr<double>(enemyHome.x);
         enemyHome.y = toml[U"home.enemy_y"].getOr<double>(enemyHome.y);
         return { playerHome, enemyHome };
+    }
+
+    inline std::pair<Vec2, Vec2> LoadHomePositionsFromMapEditorToml()
+    {
+        return LoadHomePositionsFromToml(ResolveMapEditorTomlPath());
     }
 
     inline FilePath ResolveResourceNodeTomlPath()
@@ -155,9 +171,12 @@ namespace LT3
         return ResolveDefaultAiProfileDefId(defs);
     }
 
-    inline void InitializeAiRuntime(BattleWorld& world, const DefinitionStores& defs)
+    inline void InitializeAiRuntime(BattleWorld& world, const DefinitionStores& defs, StringView requestedTag = U"")
     {
-        const AiProfileDefId profileId = ResolveSelectedAiProfileDefId(defs);
+        const String normalizedTag = String{ requestedTag }.lowercased();
+        const AiProfileDefId profileId = (!normalizedTag.isEmpty() && defs.aiProfileByTag.contains(normalizedTag))
+            ? defs.aiProfileByTag.at(normalizedTag)
+            : ResolveSelectedAiProfileDefId(defs);
         const String profileTag = (profileId != InvalidAiProfileDefId && profileId < defs.aiProfiles.size())
             ? defs.aiProfiles[profileId].tag
             : U"";
@@ -169,9 +188,9 @@ namespace LT3
         world.enemySpawnTimerSec = world.aiRuntime.spawnTimerSec;
     }
 
-    inline void LoadDefaultBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs)
+    inline void LoadBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs, FilePathView path)
     {
-        const TOMLReader toml{ ResolveResourceNodeTomlPath() };
+        const TOMLReader toml{ path };
         if (toml)
         {
             const TOMLValue resourceNodes = toml[U"resource_nodes"];
@@ -204,6 +223,7 @@ namespace LT3
                             positionValues << *coordinate;
                         }
                     }
+
                     if (positionValues.size() < 2)
                     {
                         continue;
@@ -224,26 +244,34 @@ namespace LT3
         }
     }
 
-    inline void SpawnDefaultBattle(BattleWorld& world, const DefinitionStores& defs)
+    inline void LoadDefaultBattleResourceNodes(BattleWorld& world, const DefinitionStores& defs)
     {
-        const Size mapSize = LoadBattleMapSizeFromMapEditorToml();
+        LoadBattleResourceNodes(world, defs, ResolveResourceNodeTomlPath());
+    }
+
+    inline void SpawnDefaultBattle(BattleWorld& world, const DefinitionStores& defs, const BattleRequest* request = nullptr)
+    {
+        const FilePath mapPath = (request && request->valid) ? request->mapPath : ResolveMapEditorTomlPath();
+        const FilePath resourcePath = (request && request->valid) ? request->resourceNodePath : ResolveResourceNodeTomlPath();
+        const String aiProfileTag = (request && request->valid) ? request->aiProfileTag : U"";
+        const Size mapSize = LoadBattleMapSizeFromToml(mapPath);
         world.mapWidth  = mapSize.x;
         world.mapHeight = mapSize.y;
 
         world.map.init(world.mapWidth, world.mapHeight);
-        ApplyDecalPassabilityFromMapEditorToml(world);
+        ApplyDecalPassabilityFromToml(world, mapPath);
 
         world.resources = MakeResourceRuntimeStore(defs);
-        InitializeAiRuntime(world, defs);
+        InitializeAiRuntime(world, defs, aiProfileTag);
 
         const UnitDefId home = ResolveCommandBaseUnitDefId(defs);
         if (home != InvalidUnitDefId)
         {
-            const auto homePositions = LoadHomePositionsFromMapEditorToml();
+            const auto homePositions = LoadHomePositionsFromToml(mapPath);
             AddUnitToBattleWorld(world, home, Faction::Player, homePositions.first, defs);
             AddUnitToBattleWorld(world, home, Faction::Enemy, homePositions.second, defs);
         }
 
-        LoadDefaultBattleResourceNodes(world, defs);
+        LoadBattleResourceNodes(world, defs, resourcePath);
     }
 }

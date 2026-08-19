@@ -4,6 +4,7 @@
 
 namespace LT3
 {
+    // 拠点の生存状況から排他的な勝敗状態を確定する。
     inline void UpdateWinLose(BattleWorld& world, const DefinitionStores& defs)
     {
         if (world.units.size() == 0)
@@ -32,6 +33,6 @@ namespace LT3
         }
 
         world.victory = !enemyBaseAlive;
-        world.defeat = !playerBaseAlive;
+        world.defeat = !world.victory && !playerBaseAlive;
     }
 }

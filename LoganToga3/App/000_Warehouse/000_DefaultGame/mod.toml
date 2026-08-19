@@ -1,0 +1,6 @@
+schema_version = 1
+id = "000-default-game"
+display_name = "Default Game"
+version = "0.1.0"
+inherit_default_game = false
+scenarios_root = "Scenarios"
