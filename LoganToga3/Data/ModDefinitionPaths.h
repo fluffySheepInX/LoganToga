@@ -7,31 +7,24 @@ namespace LT3
 	// 選択modの共有定義を互換配置から解決します。
 	inline FilePath ResolveModDefinitionPath(const ModContext& mod, StringView relativePath)
 	{
-		if (!IsSafeModRelativePath(relativePath))
+		if (const Optional<FilePath> modPath = ResolveCanonicalModRelativePath(mod.rootPath, relativePath))
 		{
-			return FilePath{};
-		}
-
-		const FilePath modPath = mod.rootPath + relativePath;
-		if (FileSystem::Exists(modPath))
-		{
-			return modPath;
+			return *modPath;
 		}
 
 		if (!mod.inheritDefaultGame || (mod.id == U"000-default-game"))
 		{
-			return modPath;
+			return FilePath{};
 		}
 
 		for (const FilePath& defaultRoot : Array<FilePath>{ U"000_Warehouse/000_DefaultGame/", U"App/000_Warehouse/000_DefaultGame/" })
 		{
-			const FilePath defaultPath = defaultRoot + relativePath;
-			if (FileSystem::Exists(defaultPath))
+			if (const Optional<FilePath> defaultPath = ResolveCanonicalModRelativePath(defaultRoot, relativePath))
 			{
-				return defaultPath;
+				return *defaultPath;
 			}
 		}
 
-		return modPath;
+		return FilePath{};
 	}
 }

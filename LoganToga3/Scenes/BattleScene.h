@@ -28,6 +28,10 @@ namespace LT3
 		void update() override
 		{
 			auto& data = getData();
+			if (HandleBattleEscapeCancel(m_runtime, m_ui))
+			{
+				return;
+			}
 			if (KeyEscape.down())
 			{
 				StopMusicPreview(data.musicEditor);

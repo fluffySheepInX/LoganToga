@@ -183,20 +183,12 @@ namespace LT3
 
 	inline UnitId AddUnitToBattleWorld(BattleWorld& world, UnitDefId unitDef, Faction faction, const Vec2& pos, const DefinitionStores& defs, const String& iconOverride = U"")
 	{
-		if (unitDef >= defs.units.size())
+		const UnitId id = world.addUnit(unitDef, faction, pos, defs, iconOverride);
+		if (id == InvalidUnitId)
 		{
 			return InvalidUnitId;
 		}
 
-		const UnitId id = world.units.add(unitDef, faction, pos, defs);
-		world.cooldowns.addUnit();
-		world.buildQueues.addUnit();
-		world.carriers.addUnit();
-		world.pathing.addUnit(pos);
-		if (id < world.units.iconOverride.size())
-		{
-			world.units.iconOverride[id] = iconOverride;
-		}
 		PlayUnitSpawnVoiceOnce(defs.units[unitDef], faction);
 		return id;
 	}

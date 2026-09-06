@@ -39,6 +39,7 @@ namespace LT3
 
     inline void UpdateBattleWorld(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
+      if (!HasValidBattleWorldState(world, defs)) return;
       if (IsBattleFinished(world)) return;
 
      AdvanceBattleClock(world, dt);

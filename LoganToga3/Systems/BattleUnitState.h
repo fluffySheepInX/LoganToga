@@ -41,7 +41,8 @@ namespace LT3
 
 	inline void SetUnitAttackTarget(BattleWorld& world, UnitId unit, UnitId target)
 	{
-		if (!UnitSlotExists(world, unit))
+		if (!UnitSlotExists(world, unit)
+			|| (target != InvalidUnitId && !HasLiveBattleWorldUnit(world, target)))
 		{
 			return;
 		}
@@ -160,33 +161,13 @@ namespace LT3
 			return;
 		}
 
-		if (unit < world.buildQueues.entries.size())
-		{
-			world.buildQueues.entries[unit].clear();
-		}
-		if (unit < world.buildQueues.pendingEntry.size())
-		{
-			world.buildQueues.pendingEntry[unit] = QueuedBuildAction{};
-		}
-		if (unit < world.buildQueues.hasPendingEntry.size())
-		{
-			world.buildQueues.hasPendingEntry[unit] = false;
-		}
-
-		ResetBuildQueueProgress(world, unit);
-		SetBuildQueueLocked(world, unit, false);
+		world.cancelBuildQueue(unit);
 	}
 
 	// ユニット死亡時に生産キューを破棄してから生存状態を解除する。
 	inline void SetUnitDead(BattleWorld& world, UnitId unit)
 	{
-		if (!IsValidUnit(world, unit))
-		{
-			return;
-		}
-
-		ClearUnitBuildQueue(world, unit);
-		SetUnitAlive(world, unit, false);
+		world.retireUnit(unit);
 	}
 
 	inline void SetUnitIdle(BattleWorld& world, UnitId unit)

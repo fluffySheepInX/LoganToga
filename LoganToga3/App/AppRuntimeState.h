@@ -78,7 +78,7 @@ namespace LT3
 
     inline void ResetBattleRuntimeState(AppRuntimeState& runtime, const DefinitionStores& defs, bool enemyDirectorPaused, const BattleRequest* request = nullptr)
     {
-        runtime.world = BattleWorld{};
+        runtime.world.reset();
         SpawnDefaultBattle(runtime.world, defs, request);
         runtime.world.definitionGeneration = runtime.battleDefinitionGeneration;
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;

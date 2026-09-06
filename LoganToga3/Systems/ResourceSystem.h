@@ -99,6 +99,7 @@ namespace LT3
             if (world.resourceNodes.amount[node] <= 0)
             {
                 world.resourceNodes.owner[node] = Faction::Neutral;
+                world.resourceNodes.capturingFaction[node] = Faction::Neutral;
                 world.resourceNodes.captureProgress[node] = 0.0;
                 continue;
             }
@@ -133,6 +134,7 @@ namespace LT3
 
             if (IsOneShotResourceNode(world, node) && IsCollectedResourceNode(world, node))
             {
+                world.resourceNodes.capturingFaction[node] = world.resourceNodes.owner[node];
                 world.resourceNodes.captureProgress[node] = 1.0;
                 continue;
             }
@@ -140,8 +142,15 @@ namespace LT3
             const Faction capturingFaction = (playerNearbyCount > enemyNearbyCount) ? Faction::Player : Faction::Enemy;
             if (world.resourceNodes.owner[node] == capturingFaction)
             {
+                world.resourceNodes.capturingFaction[node] = capturingFaction;
                 world.resourceNodes.captureProgress[node] = 1.0;
                 continue;
+            }
+
+            if (world.resourceNodes.capturingFaction[node] != capturingFaction)
+            {
+                world.resourceNodes.captureProgress[node] = 0.0;
+                world.resourceNodes.capturingFaction[node] = capturingFaction;
             }
 
             const double captureRatePerSec = 1.0 / GetResourceNodeCaptureTimeSec(world, node);
@@ -150,6 +159,7 @@ namespace LT3
             {
                 const Faction previousOwner = world.resourceNodes.owner[node];
                 world.resourceNodes.owner[node] = capturingFaction;
+                world.resourceNodes.capturingFaction[node] = capturingFaction;
                 world.resourceNodes.captureProgress[node] = 1.0;
                 if (IsOneShotResourceNode(world, node) && !IsCollectedResourceNode(world, node))
                 {

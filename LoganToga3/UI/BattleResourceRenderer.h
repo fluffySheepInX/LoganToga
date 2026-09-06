@@ -244,11 +244,11 @@ namespace LT3
             gaugeBack.draw(ColorF{ 0.04, 0.04, 0.04, 0.85 });
 
             ColorF gaugeColor{ 0.78, 0.78, 0.78 };
-            if (world.resourceNodes.owner[index] == Faction::Player)
+            if (world.resourceNodes.capturingFaction[index] == Faction::Player)
             {
                 gaugeColor = ColorF{ 0.30, 0.80, 1.0 };
             }
-            else if (world.resourceNodes.owner[index] == Faction::Enemy)
+            else if (world.resourceNodes.capturingFaction[index] == Faction::Enemy)
             {
                 gaugeColor = ColorF{ 1.0, 0.42, 0.42 };
             }

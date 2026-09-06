@@ -12,6 +12,195 @@ namespace LT3
 {
 	inline constexpr double ResourceFlagRaiseDurationSec = 1.2;
 
+	// テキスト編集とコンテキストメニューだけを破棄して Escape を消費します。
+	inline bool CancelEditorModalInput(MapEditorState& editor)
+	{
+		if (IsDescriptionEditorOpen(editor))
+		{
+			CloseDescriptionEditor(editor);
+			return true;
+		}
+		if (editor.commandRenameTargetIndex)
+		{
+			editor.commandRenameTargetIndex = none;
+			editor.commandRenameEditText.clear();
+			editor.commandRenameIsDuplicate = false;
+			return true;
+		}
+		if (editor.unitRenameTargetIndex)
+		{
+			editor.unitRenameTargetIndex = none;
+			editor.unitRenameEditText.clear();
+			editor.unitRenameIsDuplicate = false;
+			return true;
+		}
+		if (editor.skillRenameTargetIndex || editor.skillNameEditTargetIndex || editor.skillValueEditingRow >= 0
+			|| editor.skillNextTagEditing || editor.skillResourceCostEditingIndex >= 0)
+		{
+			editor.skillRenameTargetIndex = none;
+			editor.skillRenameEditText.clear();
+			editor.skillNameEditTargetIndex = none;
+			editor.skillNameEditText.clear();
+			editor.skillValueEditingRow = -1;
+			editor.skillValueEditingText.clear();
+			editor.skillNextTagEditing = false;
+			editor.skillNextTagEditingText.clear();
+			editor.skillResourceCostEditingIndex = -1;
+			editor.skillResourceCostEditingText.clear();
+			return true;
+		}
+		if (editor.unitParamEditingRow >= 0 || editor.uniqueEditorValueEditingRow >= 0
+			|| editor.uniqueSpeechEditingIndex >= 0 || editor.resourceCaptureTimeEditingIndex >= 0)
+		{
+			editor.unitParamEditingRow = -1;
+			editor.unitParamEditingText.clear();
+			editor.uniqueEditorValueEditingRow = -1;
+			editor.uniqueEditorValueEditingText.clear();
+			editor.uniqueSpeechEditingIndex = -1;
+			editor.uniqueSpeechEditingText.clear();
+			editor.resourceCaptureTimeEditingIndex = -1;
+			editor.resourceCaptureTimeEditingText.clear();
+			return true;
+		}
+		if (editor.skillContextMenuTargetIndex || editor.skillUnitContextMenuTargetIndex || editor.unitContextMenuTargetIndex || editor.commandContextMenuTargetIndex
+			|| editor.skillValueStepMenuRow || editor.skillResourceCostStepMenuIndex || editor.unitParamStepMenuRow
+			|| editor.uniqueEditorValueStepMenuRow || editor.resourceCaptureTimeStepMenuIndex || editor.aiUnitWeightMenuRow)
+		{
+			editor.skillContextMenuTargetIndex = none;
+			editor.skillUnitContextMenuTargetIndex = none;
+			editor.unitContextMenuTargetIndex = none;
+			editor.commandContextMenuTargetIndex = none;
+			editor.skillValueStepMenuRow = none;
+			editor.skillResourceCostStepMenuIndex = none;
+			editor.unitParamStepMenuRow = none;
+			editor.uniqueEditorValueStepMenuRow = none;
+			editor.resourceCaptureTimeStepMenuIndex = none;
+			editor.aiUnitWeightMenuRow = none;
+			editor.aiUnitWeightMenuKind = AiEditorUnitWeightMenuKind::None;
+			return true;
+		}
+
+		return false;
+	}
+
+	// 戦闘中の配置プレビュー、編隊指定、選択を一つだけ解除して Escape を消費します。
+	inline bool CancelBattleInteraction(BattleWorld& world)
+	{
+		if (world.selection.actionPlacementActive)
+		{
+			ResetActionPlacementPreview(world);
+			return true;
+		}
+		if (world.selection.formationPlacementActive)
+		{
+			world.selection.formationPlacementActive = false;
+			world.selection.formationUnits.clear();
+			return true;
+		}
+		if (world.selection.selected != InvalidUnitId || !world.selection.selectedUnits.isEmpty()
+			|| world.selection.selectedSkill != InvalidSkillDefId)
+		{
+			ClearSelection(world);
+			return true;
+		}
+
+		return false;
+	}
+
+	// エディターパネルまたは編集ツールを一つだけ閉じて Escape を消費します。
+	inline bool CancelEditorTool(MapEditorState& editor)
+	{
+		if (editor.showSkillEditor)
+		{
+			editor.showSkillEditor = false;
+			editor.showSkillSandboxPreview = false;
+			return true;
+		}
+		if (editor.showCommandEditor)
+		{
+			editor.showCommandEditor = false;
+			return true;
+		}
+		if (editor.showAiEditor)
+		{
+			editor.showAiEditor = false;
+			return true;
+		}
+		if (editor.showBuildingEditor || editor.showUniqueEditor || editor.showUnitParameterEditor)
+		{
+			editor.showBuildingEditor = false;
+			editor.showUniqueEditor = false;
+			editor.showUnitParameterEditor = false;
+			return true;
+		}
+		if (editor.showDecalEditor)
+		{
+			editor.showDecalEditor = false;
+			editor.decalEditorAssetIndex = InvalidMapEditorAsset;
+			return true;
+		}
+		if (editor.showPerlinNoisePanel)
+		{
+			editor.showPerlinNoisePanel = false;
+			return true;
+		}
+		if (editor.showFogPanel)
+		{
+			editor.showFogPanel = false;
+			return true;
+		}
+		if (editor.showStarToolMenu)
+		{
+			editor.showStarToolMenu = false;
+			return true;
+		}
+		if (editor.zOrderMode)
+		{
+			editor.zOrderMode = false;
+			editor.zOrderDragStartCell = none;
+			editor.zOrderSelectionRect = none;
+			return true;
+		}
+		if (editor.uiLayoutEditEnabled)
+		{
+			editor.uiLayoutEditEnabled = false;
+			editor.uiLayoutDraggingSelectedInfo = false;
+			editor.uiLayoutDraggingCommandPanel = false;
+			editor.uiLayoutDraggingResourcePanel = false;
+			editor.uiLayoutDraggingParamEditor = false;
+			editor.uiLayoutDraggingBuildingEditor = false;
+			editor.uiLayoutDraggingResourceNodeEditor = false;
+			editor.uiLayoutDraggingDecalEditor = false;
+			editor.uiLayoutDraggingPerlinNoisePanel = false;
+			editor.uiLayoutDraggingZOrderPanel = false;
+			return true;
+		}
+
+		return false;
+	}
+
+	// Escape を modal、editor、battle interaction の優先順で一度だけ消費します。
+	inline bool HandleBattleEscapeCancel(AppRuntimeState& runtime, AppUiState& ui)
+	{
+		if (!KeyEscape.down())
+		{
+			return false;
+		}
+		if (GaussianFSAddon::IsModalActive())
+		{
+			return true;
+		}
+		if (CancelEditorModalInput(ui.mapEditor))
+		{
+			return true;
+		}
+		if (CancelEditorTool(ui.mapEditor))
+		{
+			return true;
+		}
+		return CancelBattleInteraction(runtime.world);
+	}
+
 	// 既存のエディタ dirty フラグを安全な定義再ロード種別へ分類する。
 	inline DefinitionReloadKind ClassifyPendingDefinitionReload(const MapEditorState& editor)
 	{
@@ -205,10 +394,18 @@ namespace LT3
 			ui.debugNewGameRequest = DebugNewGameRequest::None;
 		}
 
+		const BattleWorldStoreInvariantResult storeInvariant = ValidateBattleWorldStoreInvariants(runtime.world);
+		if (!storeInvariant.valid)
+		{
+			ui.mapEditor.statusText = U"Battle runtime store is invalid: " + storeInvariant.store + U"." + storeInvariant.column
+				+ (storeInvariant.expectedCondition.isEmpty() ? U"" : U" (expected " + storeInvariant.expectedCondition + U")");
+			return;
+		}
+
 		ProcessInput(runtime, definitions, ui);
 		if (!ui.mapEditor.enabled
 			&& runtime.world.definitionGeneration == runtime.battleDefinitionGeneration
-			&& HasValidBattleDefinitionIds(runtime.world, runtime.battleDefinitions))
+			&& HasValidBattleWorldState(runtime.world, runtime.battleDefinitions))
 		{
 			UpdateBattleWorld(runtime.world, runtime.battleDefinitions, Scene::DeltaTime(), &runtime.notifications);
 		}

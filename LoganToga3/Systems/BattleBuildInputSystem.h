@@ -43,6 +43,12 @@ namespace LT3
 
 	inline void BeginActionPlacementPreview(BattleWorld& world, UnitId builder, BuildActionDefId actionId, const Vec2& worldMouse)
 	{
+		if (!IsValidUnit(world, builder))
+		{
+			ResetActionPlacementPreview(world);
+			return;
+		}
+
 		world.selection.actionPlacementActive = true;
 		world.selection.actionBuilder = builder;
 		world.selection.actionId = actionId;

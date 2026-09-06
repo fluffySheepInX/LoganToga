@@ -104,6 +104,7 @@ namespace LT3
             if (actionId >= defs.buildActions.size())
             {
                 queue.remove_at(0);
+                world.cancelQueuedBuildAction(unit, queuedAction);
                 ResetBuildQueueProgress(world, unit);
                 if (queue.isEmpty())
                 {
@@ -126,9 +127,10 @@ namespace LT3
                                 || defs.units[primarySpawnUnit].role == UnitRole::Barrier
                                 || defs.units[primarySpawnUnit].blocksTileMovement)));
                 if (requiresPlacementValidation
-                    && EvaluateBuildPlacementCell(world, defs, completionTarget) != BuildPlacementCellState::Allowed)
+                    && (world.releaseBuildCellReservation(unit, queuedAction), EvaluateBuildPlacementCell(world, defs, completionTarget) != BuildPlacementCellState::Allowed))
                 {
                     queue.remove_at(0);
+                    world.cancelQueuedBuildAction(unit, queuedAction);
                     ResetBuildQueueProgress(world, unit);
                     if (queue.isEmpty())
                     {
@@ -138,6 +140,7 @@ namespace LT3
                 }
 
                 queue.remove_at(0);
+                world.releaseBuildCellReservation(unit, queuedAction);
                 ResetBuildQueueProgress(world, unit);
 
                 if (action.resultType == BuildActionResultType::Unit && primarySpawnUnit != InvalidUnitDefId)

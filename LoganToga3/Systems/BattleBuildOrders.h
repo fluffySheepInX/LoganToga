@@ -34,6 +34,14 @@ namespace LT3
 			return BuildPlacementCellState::BlockedByOccupancy;
 		}
 
+		for (const BuildCellReservation& reservation : world.buildCellReservations)
+		{
+			if (reservation.cell == cell)
+			{
+				return BuildPlacementCellState::BlockedByOccupancy;
+			}
+		}
+
 		for (UnitId unit = 0; unit < world.units.size(); ++unit)
 		{
 			if (!IsValidUnit(world, unit))
@@ -205,6 +213,28 @@ namespace LT3
 		return false;
 	}
 
+	inline QueuedBuildAction CreatePaidQueuedBuildAction(const BattleWorld& world, const DefinitionStores& defs, BuildActionDefId actionId, const BuildActionDef& action, Faction faction, const Vec2& targetPosition, bool hasTargetPosition, const String& iconOverride = U"")
+	{
+		QueuedBuildAction entry;
+		entry.actionId = actionId;
+		entry.targetPosition = targetPosition;
+		entry.hasTargetPosition = hasTargetPosition;
+		entry.iconOverride = iconOverride;
+		entry.costFaction = faction;
+		entry.paidGoldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
+		entry.paidTrustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
+		entry.paidFoodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+		entry.paidGold = action.costGold;
+		entry.paidTrust = action.costTrust;
+		entry.paidFood = action.costFood;
+		if (hasTargetPosition && IsBuildingStyleBuildAction(defs, action))
+		{
+			entry.reservedCell = WorldToBattleCell(world, targetPosition);
+			entry.hasReservedCell = true;
+		}
+		return entry;
+	}
+
 	inline String ResolveLinePlacementIconByDelta(const BuildActionDef& action, const Point& delta)
 	{
 		const int32 screenDx = (delta.x - delta.y);
@@ -309,8 +339,13 @@ namespace LT3
 				return false;
 			}
 
+			const Array<Point> reservedCells{ WorldToBattleCell(world, *resolvedTargetPosition) };
+			if (!world.reserveBuildCells(builder, actionId, reservedCells))
+			{
+				return false;
+			}
 			ConsumeBuildActionCostForFaction(world, defs, action, faction);
-			world.buildQueues.pendingEntry[builder] = QueuedBuildAction{ actionId, *resolvedTargetPosition, true };
+			world.buildQueues.pendingEntry[builder] = CreatePaidQueuedBuildAction(world, defs, actionId, action, faction, *resolvedTargetPosition, true);
 			world.buildQueues.hasPendingEntry[builder] = true;
 			SetBuildQueueLocked(world, builder, true);
 			ResetBuildQueueProgress(world, builder);
@@ -322,7 +357,7 @@ namespace LT3
 		ConsumeBuildActionCostForFaction(world, defs, action, faction);
 		Array<QueuedBuildAction>& queue = world.buildQueues.entries[builder];
 		const bool wasEmpty = queue.isEmpty();
-		queue << QueuedBuildAction{ actionId, resolvedTargetPosition.value_or(Vec2{ 0, 0 }), resolvedTargetPosition.has_value() };
+		queue << CreatePaidQueuedBuildAction(world, defs, actionId, action, faction, resolvedTargetPosition.value_or(Vec2{ 0, 0 }), resolvedTargetPosition.has_value());
 		SetBuildQueueLocked(world, builder, true);
 		if (wasEmpty)
 		{
@@ -375,14 +410,22 @@ namespace LT3
 		}
 
 		Array<Vec2> validTargets;
+		Array<Point> reservedCells;
+		HashSet<Point> uniqueCells;
 		validTargets.reserve(targetPositions.size());
+		reservedCells.reserve(targetPositions.size());
 		for (const Vec2& target : targetPositions)
 		{
 			const Vec2 snappedTarget = SnapWorldToBattleCellCenter(world, target);
-			if (EvaluateBuildPlacementCell(world, defs, snappedTarget) == BuildPlacementCellState::Allowed)
+			const Point cell = WorldToBattleCell(world, snappedTarget);
+			if (uniqueCells.contains(cell)
+				|| EvaluateBuildPlacementCell(world, defs, snappedTarget) != BuildPlacementCellState::Allowed)
 			{
-				validTargets << snappedTarget;
+				return false;
 			}
+			uniqueCells.insert(cell);
+			validTargets << snappedTarget;
+			reservedCells << cell;
 		}
 
 		if (validTargets.isEmpty())
@@ -395,6 +438,10 @@ namespace LT3
 			return false;
 		}
 
+		if (!world.reserveBuildCells(builder, actionId, reservedCells))
+		{
+			return false;
+		}
 		ConsumeBuildActionCostForFaction(world, defs, action, faction, static_cast<int32>(validTargets.size()));
 
 		const Vec2 firstTarget = validTargets.front();
@@ -406,24 +453,14 @@ namespace LT3
 			fallbackDirection = Point{ secondCell.x - firstCell.x, secondCell.y - firstCell.y };
 		}
 
-		world.buildQueues.pendingEntry[builder] = QueuedBuildAction{
-			actionId,
-			firstTarget,
-			true,
-			ResolveLinePlacementIconAt(world, action, validTargets, 0, fallbackDirection)
-		};
+		world.buildQueues.pendingEntry[builder] = CreatePaidQueuedBuildAction(world, defs, actionId, action, faction, firstTarget, true, ResolveLinePlacementIconAt(world, action, validTargets, 0, fallbackDirection));
 		world.buildQueues.hasPendingEntry[builder] = true;
 
 		Array<QueuedBuildAction>& queue = world.buildQueues.entries[builder];
 		const bool wasEmpty = queue.isEmpty();
 		for (size_t i = 1; i < validTargets.size(); ++i)
 		{
-			queue << QueuedBuildAction{
-				actionId,
-				validTargets[i],
-				true,
-				ResolveLinePlacementIconAt(world, action, validTargets, i, fallbackDirection)
-			};
+			queue << CreatePaidQueuedBuildAction(world, defs, actionId, action, faction, validTargets[i], true, ResolveLinePlacementIconAt(world, action, validTargets, i, fallbackDirection));
 		}
 
 		SetBuildQueueLocked(world, builder, true);

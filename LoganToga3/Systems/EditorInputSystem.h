@@ -26,6 +26,7 @@ namespace LT3
         world.resourceNodes.collected.clear();
         world.resourceNodes.captureTimeSec.clear();
         world.resourceNodes.owner.clear();
+        world.resourceNodes.capturingFaction.clear();
         world.resourceNodes.captureProgress.clear();
 
         for (const auto& node : mapEditor.resourceNodes)
