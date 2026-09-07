@@ -356,7 +356,9 @@
     <ClInclude Include="BattleWorld\BattleWorldMap.h" />
     <ClInclude Include="BattleWorld\BattleWorldOps.h" />
     <ClInclude Include="BattleWorld\BattleWorldStores.h" />
+    <ClInclude Include="Data\AudioAssetCache.h" />
     <ClInclude Include="Data\BattleAssetPaths.h" />
+    <ClInclude Include="Data\BattleOutcome.h" />
     <ClInclude Include="Data\BuildLineIconOverrides.h" />
     <ClInclude Include="Data\DefinitionLoaders.h" />
     <ClInclude Include="Data\DefinitionStores.h" />

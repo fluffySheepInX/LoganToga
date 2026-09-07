@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../Data/AudioAssetCache.h"
 # include "AppDefinitionState.h"
 # include "BattleNotificationState.h"
 # include "../Systems/BattleSystems.h"
@@ -30,7 +31,8 @@ namespace LT3
         ResourceFlagRuntimeState resourceFlags;
         BattleNotificationRuntimeState notifications;
         double decalAmbientCooldownSec = 0.0;
-        HashTable<FilePath, Audio> decalAmbientAudioCache;
+        AudioAssetCache audioAssets;
+        ModContext activeMod;
     };
 
     // 戦闘が参照する定義と描画アセットを同一世代として更新する。
@@ -40,6 +42,16 @@ namespace LT3
         runtime.battleRenderAssets = definitions.renderAssets;
         ++runtime.battleDefinitionGeneration;
         runtime.battleDefinitionRevision = definitionRevision;
+    }
+
+    // Mod 切替時に旧コンテキストの音声アセットを停止・破棄する。
+    inline void SetRuntimeActiveMod(AppRuntimeState& runtime, const ModContext& mod)
+    {
+        if (runtime.activeMod.rootPath != mod.rootPath)
+        {
+            runtime.audioAssets.clear();
+        }
+        runtime.activeMod = mod;
     }
 
     inline void ClearBattleNotifications(AppRuntimeState& runtime)
@@ -78,6 +90,8 @@ namespace LT3
 
     inline void ResetBattleRuntimeState(AppRuntimeState& runtime, const DefinitionStores& defs, bool enemyDirectorPaused, const BattleRequest* request = nullptr)
     {
+        runtime.world.audioAssets = &runtime.audioAssets;
+        runtime.world.audioMod = &runtime.activeMod;
         runtime.world.reset();
         SpawnDefaultBattle(runtime.world, defs, request);
         runtime.world.definitionGeneration = runtime.battleDefinitionGeneration;
@@ -85,7 +99,7 @@ namespace LT3
         ClearBattleNotifications(runtime);
         SyncResourceFlagRuntimeState(runtime);
         runtime.decalAmbientCooldownSec = 0.0;
-        runtime.decalAmbientAudioCache.clear();
+        runtime.audioAssets.clear();
     }
 
     inline void InitializeAppRuntimeState(AppRuntimeState& runtime, const AppDefinitionState& definitions, uint64 definitionRevision)

@@ -29,13 +29,9 @@ namespace LT3
 
 	inline void DrawBuildingUnitClickDebugOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleDebugCursorState& cursor)
 	{
-		for (int32 i = static_cast<int32>(world.units.size()) - 1; i >= 0; --i)
+		for (int32 i = static_cast<int32>(GetLiveBattleWorldUnits(world).size()) - 1; i >= 0; --i)
 		{
-			const UnitId unit = static_cast<UnitId>(i);
-			if (!IsValidUnit(world, unit))
-			{
-				continue;
-			}
+			const UnitId unit = GetLiveBattleWorldUnits(world)[i];
 
 			const UnitDef& def = defs.units[world.units.defId[unit]];
 			if (!IsBuildingUnitForClickDebug(def))

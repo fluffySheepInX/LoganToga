@@ -32,7 +32,7 @@ namespace LT3
 		const double radiusSq = Square(Max(0.0, storeRadiusPx));
 		int32 storedCount = 0;
 
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (storedCount >= capacityLeft)
 			{
@@ -63,7 +63,7 @@ namespace LT3
 
 			RemoveStoredUnitFromAllCarriers(world, unit);
 			stored << unit;
-			SetUnitAlive(world, unit, false);
+			world.deactivateUnit(unit);
 			SetUnitIdle(world, unit);
 			SetUnitTargetPosition(world, unit, carrierPos);
 			ClearUnitAttackTarget(world, unit);
@@ -103,7 +103,7 @@ namespace LT3
 			const double angle = Random(0.0, Math::TwoPi);
 			const double distance = Random(24.0, radius);
 			const Vec2 offset = Circular{ distance, angle };
-			SetUnitAlive(world, unit, true);
+			world.activateUnit(unit);
 			world.units.position[unit] = carrierPos + offset;
 			SetUnitTargetPosition(world, unit, carrierPos + offset);
 			SetUnitIdle(world, unit);

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "MapEditorMapLayersDraw.h"
+# include "../Data/ModContent.h"
 # include "QuarterView.h"
 
 namespace LT3
@@ -12,7 +13,7 @@ namespace LT3
 		double weight = 1.0;
 	};
 
-	inline Array<DecalAmbientSoundCandidate> CollectDecalAmbientSoundCandidates(const MapEditorState& editor, const Vec2& worldAnchor, double radius)
+	inline Array<DecalAmbientSoundCandidate> CollectDecalAmbientSoundCandidates(const MapEditorState& editor, const Vec2& worldAnchor, double radius, const ModContext* mod = nullptr)
 	{
 		Array<DecalAmbientSoundCandidate> candidates;
 		if (editor.cells.isEmpty() || radius <= 0.0)
@@ -51,7 +52,7 @@ namespace LT3
 						continue;
 					}
 
-					const FilePath path = ResolveDecalAmbientSoundPath(asset.decalAmbientSound);
+					const FilePath path = ResolveDecalAmbientSoundPath(mod, asset.decalAmbientSound);
 					if (path.isEmpty() || !FileSystem::Exists(path))
 					{
 						continue;
@@ -67,13 +68,13 @@ namespace LT3
 		return candidates;
 	}
 
-	inline Array<DecalAmbientSoundCandidate> CollectDecalAmbientSoundCandidatesNearMouseOrCenter(const MapEditorState& editor)
+	inline Array<DecalAmbientSoundCandidate> CollectDecalAmbientSoundCandidatesNearMouseOrCenter(const MapEditorState& editor, const ModContext* mod = nullptr)
 	{
 		constexpr double MouseRadius = 180.0;
 		constexpr double CenterRadius = 240.0;
 
-		Array<DecalAmbientSoundCandidate> merged = CollectDecalAmbientSoundCandidates(editor, ToQuarterWorld(Cursor::PosF()), MouseRadius);
-		const Array<DecalAmbientSoundCandidate> center = CollectDecalAmbientSoundCandidates(editor, ToQuarterWorld(Scene::Center()), CenterRadius);
+		Array<DecalAmbientSoundCandidate> merged = CollectDecalAmbientSoundCandidates(editor, ToQuarterWorld(Cursor::PosF()), MouseRadius, mod);
+		const Array<DecalAmbientSoundCandidate> center = CollectDecalAmbientSoundCandidates(editor, ToQuarterWorld(Scene::Center()), CenterRadius, mod);
 		merged.insert(merged.end(), center.begin(), center.end());
 		return merged;
 	}

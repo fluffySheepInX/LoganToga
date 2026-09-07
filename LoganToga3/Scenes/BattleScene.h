@@ -18,6 +18,7 @@ namespace LT3
 		{
 			auto& data = getData();
 			InitializeAppUiState(m_ui, data.modMode);
+			SetRuntimeActiveMod(m_runtime, data.activeMod);
 			PromoteBattleDefinitions(m_runtime, data.definitions, m_ui.mapEditor.definitionRevision);
 			ResetBattleRuntimeState(m_runtime, m_runtime.battleDefinitions, false, data.quickBattleRequest.valid ? &data.quickBattleRequest : nullptr);
 			SyncBattleWorldMapFromEditor(m_ui.mapEditor, m_runtime.world, m_runtime.battleDefinitions);

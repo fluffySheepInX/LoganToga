@@ -6,6 +6,30 @@
 
 namespace LT3
 {
+    inline bool ProcessMapEditorUiLayoutInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, const Vec2& screenMouse);
+
+    inline bool IsMapEditorUiLayoutDragging(const MapEditorState& editor)
+    {
+        return editor.uiLayoutDraggingSelectedInfo
+            || editor.uiLayoutDraggingCommandPanel
+            || editor.uiLayoutDraggingResourcePanel
+            || editor.uiLayoutDraggingResourceNodeEditor
+            || editor.uiLayoutDraggingDecalEditor
+            || editor.uiLayoutDraggingPerlinNoisePanel
+            || editor.uiLayoutDraggingZOrderPanel;
+    }
+
+    inline bool ProcessMapEditorUiLayoutDragInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, const Vec2& screenMouse)
+    {
+        if (!editor.uiLayoutEditEnabled || !IsMapEditorUiLayoutDragging(editor))
+        {
+            return false;
+        }
+
+        ProcessMapEditorUiLayoutInput(editor, world, defs, screenMouse);
+        return true;
+    }
+
     inline bool ProcessMapEditorUiLayoutInput(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, const Vec2& screenMouse)
     {
         if (!editor.uiLayoutEditEnabled)
@@ -58,13 +82,7 @@ namespace LT3
         const RectF infoTopAnchorRect = UiLayoutTopAnchorToggleRect(infoHandle);
         const RectF commandTopAnchorRect = UiLayoutTopAnchorToggleRect(commandHandle);
         const RectF resourceTopAnchorRect = UiLayoutTopAnchorToggleRect(resourceHandle);
-        const bool draggingAny = editor.uiLayoutDraggingSelectedInfo
-            || editor.uiLayoutDraggingCommandPanel
-            || editor.uiLayoutDraggingResourcePanel
-            || editor.uiLayoutDraggingResourceNodeEditor
-            || editor.uiLayoutDraggingDecalEditor
-            || editor.uiLayoutDraggingPerlinNoisePanel
-            || editor.uiLayoutDraggingZOrderPanel;
+        const bool draggingAny = IsMapEditorUiLayoutDragging(editor);
 
         if (infoTopAnchorRect.leftClicked())
         {

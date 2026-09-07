@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include <filesystem>
+# include "BattleOutcome.h"
 
 namespace LT3
 {
@@ -23,6 +24,7 @@ namespace LT3
 		FilePath mapPath;
 		FilePath resourceNodePath;
 		String aiProfileTag;
+		BattleOutcomeRules outcomeRules;
 		bool valid = false;
 	};
 
@@ -32,6 +34,17 @@ namespace LT3
 		FilePath rootPath;
 		FilePath manifestPath;
 	};
+
+	// schema v1 の従来勝敗規則を互換用の実行時ルールへ変換する。
+	inline BattleOutcomeRules MakeLegacySkirmishOutcomeRules()
+	{
+		BattleOutcomeRules rules;
+		rules.victoryCondition = BattleEndCondition::DestroyEnemyBases;
+		rules.defeatCondition = BattleEndCondition::DestroyEnemyBases;
+		rules.timeLimitSec = -1.0;
+		rules.timeoutOutcome = BattleOutcome::Defeat;
+		return rules;
+	}
 
 	// ASCII 安定 ID を小文字へ正規化します。
 	inline Optional<String> NormalizeContentId(StringView value)
@@ -275,7 +288,8 @@ namespace LT3
 			return false;
 		}
 
-		if (toml[U"schema_version"].getOr<int32>(0) != 1)
+		const int32 schemaVersion = toml[U"schema_version"].getOr<int32>(0);
+		if (schemaVersion != 1 && schemaVersion != 2)
 		{
 			statusText = U"Unsupported skirmish manifest version: {}"_fmt(battlePath);
 			return false;
@@ -298,6 +312,25 @@ namespace LT3
 			return false;
 		}
 
+		BattleOutcomeRules outcomeRules = MakeLegacySkirmishOutcomeRules();
+		if (schemaVersion == 2)
+		{
+			const Optional<BattleEndCondition> victoryCondition = ParseBattleEndCondition(toml[U"victory_condition"].getOr<String>(U""));
+			const Optional<BattleEndCondition> defeatCondition = ParseBattleEndCondition(toml[U"defeat_condition"].getOr<String>(U""));
+			const Optional<double> timeLimitSec = toml[U"time_limit_sec"].getOpt<double>();
+			const Optional<BattleOutcome> timeoutOutcome = ParseTimeoutBattleOutcome(toml[U"timeout_outcome"].getOr<String>(U""));
+			if (!victoryCondition || !defeatCondition || !timeLimitSec || *timeLimitSec < 0.0 || !timeoutOutcome)
+			{
+				statusText = U"Invalid skirmish outcome rules: {}"_fmt(battlePath);
+				return false;
+			}
+
+			outcomeRules.victoryCondition = *victoryCondition;
+			outcomeRules.defeatCondition = *defeatCondition;
+			outcomeRules.timeLimitSec = *timeLimitSec;
+			outcomeRules.timeoutOutcome = *timeoutOutcome;
+		}
+
 		request.mod = mod;
 		request.scenarioId = U"";
 		request.battleId = *battleId;
@@ -305,6 +338,7 @@ namespace LT3
 		request.mapPath = *mapPath;
 		request.resourceNodePath = *resourcePath;
 		request.aiProfileTag = toml[U"ai_profile"].getOr<String>(U"").lowercased();
+		request.outcomeRules = outcomeRules;
 		request.valid = true;
 		return true;
 	}

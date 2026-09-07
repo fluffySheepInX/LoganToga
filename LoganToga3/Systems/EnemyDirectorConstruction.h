@@ -81,7 +81,7 @@ namespace LT3
 	inline int32 CountAliveEnemyUnitsByDef(const BattleWorld& world, UnitDefId defId)
 	{
 		int32 count = 0;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (IsValidUnit(world, unit) && world.units.faction[unit] == Faction::Enemy && world.units.defId[unit] == defId)
 			{
@@ -94,7 +94,7 @@ namespace LT3
 	inline int32 CountPendingEnemyAiBuildAction(const BattleWorld& world, BuildActionDefId actionId)
 	{
 		int32 count = 0;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
 			{
@@ -172,9 +172,9 @@ namespace LT3
 
 	inline double ResolveEnemyAiConstructionCostPenalty(const BattleWorld& world, const DefinitionStores& defs, const BuildActionDef& action)
 	{
-		const ResourceDefId goldResource = FindResourceDefByKind(defs, ResourceKind::Gold);
-		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
-		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
+		const ResourceDefId goldResource = defs.findResourceByKind(ResourceKind::Gold);
+		const ResourceDefId trustResource = defs.findResourceByKind(ResourceKind::Trust);
+		const ResourceDefId foodResource = defs.findResourceByKind(ResourceKind::Food);
 		const double goldStock = static_cast<double>(GetFactionResourceAmount(world, Faction::Enemy, goldResource));
 		const double trustStock = static_cast<double>(GetFactionResourceAmount(world, Faction::Enemy, trustResource));
 		const double foodStock = static_cast<double>(GetFactionResourceAmount(world, Faction::Enemy, foodResource));
@@ -240,7 +240,7 @@ namespace LT3
 		}
 
 		const BuildActionDef& action = defs.buildActions[actionId];
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || IsBuilderBusyWithBuildQueue(world, unit))
 			{
@@ -271,7 +271,7 @@ namespace LT3
 
 	inline Vec2 ResolveEnemyAiHomeConstructionAnchor(const BattleWorld& world, const DefinitionStores& defs)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy || world.units.defId[unit] >= defs.units.size())
 			{

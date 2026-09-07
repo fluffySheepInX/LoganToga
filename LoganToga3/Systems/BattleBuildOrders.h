@@ -42,13 +42,8 @@ namespace LT3
 			}
 		}
 
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
-			if (!IsValidUnit(world, unit))
-			{
-				continue;
-			}
-
 			if (world.units.defId[unit] >= defs.units.size())
 			{
 				continue;
@@ -381,15 +376,18 @@ namespace LT3
 		const ResourceDefId trustResource = FindResourceDefByKind(defs, ResourceKind::Trust);
 		const ResourceDefId foodResource = FindResourceDefByKind(defs, ResourceKind::Food);
 
-		if (goldResource != InvalidResourceDefId && (goldResource >= amounts.size() || amounts[goldResource] < action.costGold * count))
+		if ((action.costGold > 0 && goldResource == InvalidResourceDefId)
+			|| (goldResource != InvalidResourceDefId && (goldResource >= amounts.size() || amounts[goldResource] < action.costGold * count)))
 		{
 			return false;
 		}
-		if (trustResource != InvalidResourceDefId && (trustResource >= amounts.size() || amounts[trustResource] < action.costTrust * count))
+		if ((action.costTrust > 0 && trustResource == InvalidResourceDefId)
+			|| (trustResource != InvalidResourceDefId && (trustResource >= amounts.size() || amounts[trustResource] < action.costTrust * count)))
 		{
 			return false;
 		}
-		if (foodResource != InvalidResourceDefId && (foodResource >= amounts.size() || amounts[foodResource] < action.costFood * count))
+		if ((action.costFood > 0 && foodResource == InvalidResourceDefId)
+			|| (foodResource != InvalidResourceDefId && (foodResource >= amounts.size() || amounts[foodResource] < action.costFood * count)))
 		{
 			return false;
 		}

@@ -85,6 +85,7 @@ namespace LT3
     {
         defs.resources.clear();
         defs.resourceByTag.clear();
+        defs.ResetResourceKindIndex();
 
         const FilePath resourcePath{ String{ sourcePath } };
         const TOMLReader toml{ resourcePath };

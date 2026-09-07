@@ -2,7 +2,6 @@
 # include <Siv3D.hpp>
 # include "../Systems/BattleSystems.h"
 # include "../Systems/SelectionSystem.h"
-# include "../Data/BattleAssetPaths.h"
 # include "BattleResourceRenderer.h"
 # include "QuarterView.h"
 
@@ -54,38 +53,20 @@ namespace LT3
 	}
 
 	// スキルアイコンを描画し、何か描けたかを返す。
-	inline bool DrawBattleSkillIcon(const SkillDef& skill, const BattleRenderAssets& assets, const Vec2& center, double size)
+	inline bool DrawBattleSkillIcon(SkillDefId skillId, const BattleRenderAssets& assets, const Vec2& center, double size)
 	{
-		Array<FilePath> iconPaths;
-		for (const auto& icon : skill.iconLayers)
+		if (skillId >= assets.skillIconTextures.size())
 		{
-			if (!icon.isEmpty())
-			{
-				iconPaths << ResolveBuildIconPath(icon);
-			}
-		}
-		if (iconPaths.isEmpty() && !skill.icon.isEmpty())
-		{
-			iconPaths << ResolveBuildIconPath(skill.icon);
+			return false;
 		}
 
-		bool drewAny = false;
-		for (const auto& iconPath : iconPaths)
+		const Array<Texture>& textures = assets.skillIconTextures[skillId];
+		for (const Texture& texture : textures)
 		{
-			if (iconPath.isEmpty() || !FileSystem::Exists(iconPath))
-			{
-				continue;
-			}
-
-			if (!assets.iconTextureCache.contains(iconPath))
-			{
-				assets.iconTextureCache.emplace(iconPath, Texture{ iconPath });
-			}
-			assets.iconTextureCache.at(iconPath).resized(size, size).drawAt(center);
-			drewAny = true;
+			texture.resized(size, size).drawAt(center);
 		}
 
-		return drewAny;
+		return !textures.isEmpty();
 	}
 
 	// 現在のフィルターで可視なスキル一覧を収集する。
@@ -162,7 +143,7 @@ namespace LT3
 			iconRect.draw(selectedSkill ? ColorF{ 0.20, 0.18, 0.08, 0.98 } : ColorF{ 0.08, 0.08, 0.10, 0.94 })
 				.drawFrame(2.0, 0.0, selectedSkill ? ColorF{ 1.0, 0.84, 0.0, 0.92 } : (affordable ? ColorF{ 1.0, 1.0, 1.0, 0.18 } : ColorF{ 1.0, 0.28, 0.28, 0.75 }));
 
-			if (!DrawBattleSkillIcon(skill, assets, iconRect.center().movedBy(0.0, -2.0), 34.0))
+			if (!DrawBattleSkillIcon(skillId, assets, iconRect.center().movedBy(0.0, -2.0), 34.0))
 			{
 				uiFont(U"S{}"_fmt(skillId)).drawAt(12, iconRect.center().movedBy(0.0, -2.0), Palette::White);
 			}

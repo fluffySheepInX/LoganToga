@@ -18,7 +18,7 @@ namespace LT3
 
 	inline Optional<EnemyAiAttackWaveTarget> ResolveEnemyAiPlayerBaseAttackWaveTarget(const BattleWorld& world, const DefinitionStores& defs)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Player)
 			{
@@ -36,7 +36,7 @@ namespace LT3
 			}
 		}
 
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Player)
 			{
@@ -79,7 +79,7 @@ namespace LT3
 
 	inline Optional<EnemyAiAttackWaveTarget> ResolveEnemyAiPlayerUnitAttackWaveTarget(const BattleWorld& world, const DefinitionStores& defs)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Player)
 			{

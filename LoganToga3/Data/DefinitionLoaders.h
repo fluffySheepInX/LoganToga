@@ -14,6 +14,8 @@ namespace LT3
     // ロード済みの定義間参照を検証し、未解決参照を警告へ追加する。
     inline void ValidateDefinitionReferences(DefinitionStores& defs)
     {
+        defs.ValidateResourceKindIndex();
+
         for (const auto& skill : defs.skills)
         {
             for (const auto& cost : skill.resourceCosts)

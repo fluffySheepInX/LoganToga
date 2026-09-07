@@ -41,9 +41,9 @@ namespace LT3
 		Array<bool> visible;
 		visible.assign(static_cast<size_t>(width * height), false);
 
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
-			if (!world.units.alive[unit] || world.units.faction[unit] != Faction::Player)
+			if (world.units.faction[unit] != Faction::Player)
 			{
 				continue;
 			}

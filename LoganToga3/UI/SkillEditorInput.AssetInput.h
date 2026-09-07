@@ -24,15 +24,11 @@ namespace LT3
 		const Vec2 center{ QuarterLogicalSceneWidth() * 0.5, QuarterLogicalSceneHeight() * 0.5 };
 		Array<std::pair<UnitId, String>> nearCursor;
 		Array<std::pair<UnitId, String>> nearCenter;
-		nearCursor.reserve(world.units.size());
-		nearCenter.reserve(world.units.size());
+		nearCursor.reserve(GetLiveBattleWorldUnits(world).size());
+		nearCenter.reserve(GetLiveBattleWorldUnits(world).size());
 
-		for (UnitId unit = 0; unit < static_cast<UnitId>(world.units.size()); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
-			if (unit >= static_cast<UnitId>(world.units.alive.size()) || !world.units.alive[unit])
-			{
-				continue;
-			}
 			if (unit >= static_cast<UnitId>(world.units.defId.size()))
 			{
 				continue;
@@ -97,7 +93,7 @@ namespace LT3
 		return extension == U"wav" || extension == U"mp3" || extension == U"ogg" || extension == U"flac" || extension == U"aac" || extension == U"m4a";
 	}
 
-	inline bool PlaySkillEditorSoundEffectPreview(MapEditorState& editor, const BattleWorld& world, const DefinitionStores& defs, SkillDefId skillId, const SkillDef& skill)
+	inline bool PlaySkillEditorSoundEffectPreview(MapEditorState& editor, BattleWorld& world, const DefinitionStores& defs, SkillDefId skillId, const SkillDef& skill)
 	{
 		if (skill.soundEffect.isEmpty())
 		{
@@ -106,29 +102,23 @@ namespace LT3
 			return true;
 		}
 
-		const FilePath soundPath = ResolveSkillSoundEffectPath(skill.soundEffect);
-		if (soundPath.isEmpty() || !FileSystem::Exists(soundPath))
+		const FilePath soundPath = ResolveSkillSoundEffectPath(world.audioMod, skill.soundEffect);
+		if (!world.audioAssets || soundPath.isEmpty())
 		{
 			editor.statusText = U"Skill SE not found: {}"_fmt(skill.soundEffect);
 			editor.skillSoundPreviewUnitHint = U"";
 			return true;
 		}
 
-		static HashTable<FilePath, Audio> s_audioCache;
-		auto cacheIt = s_audioCache.find(soundPath);
-		if (cacheIt == s_audioCache.end())
-		{
-			cacheIt = s_audioCache.emplace(soundPath, Audio{ soundPath }).first;
-		}
-
-		if (!cacheIt->second)
+		Audio* const audio = world.audioAssets->findOrLoad(soundPath);
+		if (!audio)
 		{
 			editor.statusText = U"Skill SE load failed: {}"_fmt(skill.soundEffect);
 			editor.skillSoundPreviewUnitHint = U"";
 			return true;
 		}
 
-		cacheIt->second.playOneShot(Clamp(skill.soundEffectVolume, 0.0, 1.0));
+		audio->playOneShot(Clamp(skill.soundEffectVolume, 0.0, 1.0));
 		String hintText;
 		const bool usedNearbyCandidate = TryFindSkillSoundPreviewCandidateHint(world, defs, skillId, hintText);
 		editor.statusText = usedNearbyCandidate
@@ -141,7 +131,7 @@ namespace LT3
 	/// <summary>
 	/// スキルアイコンおよび弾画像入力を処理します。
 	/// </summary>
-	inline bool ProcessSkillEditorAssetInput(MapEditorState& editor, const BattleWorld& world, DefinitionStores& defs, double scroll)
+	inline bool ProcessSkillEditorAssetInput(MapEditorState& editor, BattleWorld& world, DefinitionStores& defs, double scroll)
 	{
 		if (HandleRectButtonClick(SkillEditorIconBrowseRect(scroll)))
 		{

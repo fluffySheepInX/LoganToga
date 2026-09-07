@@ -118,18 +118,6 @@ namespace LT3
             return false;
         }
 
-        auto findResourceDefByKind = [&](const ResourceKind kind) -> ResourceDefId
-        {
-            for (ResourceDefId id = 0; id < defs.resources.size(); ++id)
-            {
-                if (defs.resources[id].kind == kind)
-                {
-                    return id;
-                }
-            }
-            return InvalidResourceDefId;
-        };
-
         auto getResourceAmount = [&](const ResourceDefId resourceId) -> int32
         {
             if (resourceId == InvalidResourceDefId || resourceId >= amounts.size())
@@ -139,19 +127,22 @@ namespace LT3
             return amounts[resourceId];
         };
 
-        const ResourceDefId goldResource = findResourceDefByKind(ResourceKind::Gold);
-        const ResourceDefId trustResource = findResourceDefByKind(ResourceKind::Trust);
-        const ResourceDefId foodResource = findResourceDefByKind(ResourceKind::Food);
+        const ResourceDefId goldResource = defs.findResourceByKind(ResourceKind::Gold);
+        const ResourceDefId trustResource = defs.findResourceByKind(ResourceKind::Trust);
+        const ResourceDefId foodResource = defs.findResourceByKind(ResourceKind::Food);
 
-        if (goldResource != InvalidResourceDefId && getResourceAmount(goldResource) < action.costGold)
+        if ((action.costGold > 0 && goldResource == InvalidResourceDefId)
+            || getResourceAmount(goldResource) < action.costGold)
         {
             return false;
         }
-        if (trustResource != InvalidResourceDefId && getResourceAmount(trustResource) < action.costTrust)
+        if ((action.costTrust > 0 && trustResource == InvalidResourceDefId)
+            || getResourceAmount(trustResource) < action.costTrust)
         {
             return false;
         }
-        if (foodResource != InvalidResourceDefId && getResourceAmount(foodResource) < action.costFood)
+        if ((action.costFood > 0 && foodResource == InvalidResourceDefId)
+            || getResourceAmount(foodResource) < action.costFood)
         {
             return false;
         }
@@ -166,15 +157,7 @@ namespace LT3
 
     inline ResourceDefId FindResourceDefByKind(const DefinitionStores& defs, ResourceKind kind)
     {
-        for (ResourceDefId id = 0; id < defs.resources.size(); ++id)
-        {
-            if (defs.resources[id].kind == kind)
-            {
-                return id;
-            }
-        }
-
-        return InvalidResourceDefId;
+        return defs.findResourceByKind(kind);
     }
 
     inline int32 GetFactionResourceAmount(const BattleWorld& world, Faction faction, ResourceDefId resourceId)
@@ -355,7 +338,7 @@ namespace LT3
             return false;
         }
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        for (const UnitId unit : GetLiveBattleWorldUnits(world))
         {
             if (unit < world.units.defId.size() && world.units.defId[unit] == unitDef)
             {
@@ -373,9 +356,9 @@ namespace LT3
             return false;
         }
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        for (const UnitId unit : GetLiveBattleWorldUnits(world))
         {
-            if (IsValidUnit(world, unit) && unit < world.units.defId.size() && world.units.defId[unit] == unitDef)
+            if (unit < world.units.defId.size() && world.units.defId[unit] == unitDef)
             {
                 return true;
             }
@@ -484,7 +467,7 @@ namespace LT3
         UnitId best = InvalidUnitId;
         double bestDistanceSq = range * range;
 
-        for (UnitId other = 0; other < world.units.size(); ++other)
+        for (const UnitId other : GetLiveBattleWorldUnits(world))
         {
             if (!IsValidUnit(world, other)) continue;
             if (!IsEnemy(faction, world.units.faction[other])) continue;

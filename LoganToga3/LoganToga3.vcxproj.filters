@@ -1458,5 +1458,11 @@
     <ClInclude Include="Data\ModDefinitionPaths.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Data\BattleOutcome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\AudioAssetCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

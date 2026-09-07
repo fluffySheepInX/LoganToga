@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "ModDefinitionPaths.h"
 
 namespace LT3
 {
@@ -112,6 +113,21 @@ namespace LT3
         return ResolveAssetPath(
             U"000_Warehouse/000_DefaultGame/046_AmbientSound/" + fileName,
             U"App/000_Warehouse/000_DefaultGame/046_AmbientSound/" + fileName);
+    }
+
+    inline FilePath ResolveUnitVoicePath(const ModContext* mod, const String& fileName)
+    {
+        return fileName.isEmpty() ? FilePath{} : ResolveModAssetPath(mod, U"045_Voice/" + fileName);
+    }
+
+    inline FilePath ResolveSkillSoundEffectPath(const ModContext* mod, const String& fileName)
+    {
+        return fileName.isEmpty() ? FilePath{} : ResolveModAssetPath(mod, U"047_SkillSe/" + fileName);
+    }
+
+    inline FilePath ResolveDecalAmbientSoundPath(const ModContext* mod, const String& fileName)
+    {
+        return fileName.isEmpty() ? FilePath{} : ResolveModAssetPath(mod, U"046_AmbientSound/" + fileName);
     }
 
     inline FilePath ResolveSystemImagePath(const String& imageName)

@@ -9,18 +9,30 @@ namespace LT3
 	// 戦闘結果オーバーレイを描画する。
 	inline void DrawResultOverlay(const BattleWorld& world, const Font& uiFont, const Font& titleFont)
 	{
-		if (!(world.victory || world.defeat))
+		if (!IsTerminalBattleOutcome(world.outcome))
 		{
 			return;
 		}
 
 		Rect{ 0, 0, 1600, 900 }.draw(ColorF{ 0, 0, 0, 0.58 });
-		String resultText = U"DEFEAT";
-		ColorF resultColor{ 1.0, 0.25, 0.20 };
-		if (world.victory)
+		String resultText = U"DRAW";
+		ColorF resultColor{ 0.75, 0.80, 0.90 };
+		switch (world.outcome)
 		{
+		case BattleOutcome::Victory:
 			resultText = U"VICTORY";
 			resultColor = ColorF{ 1.0, 0.84, 0.0 };
+			break;
+		case BattleOutcome::Defeat:
+			resultText = U"DEFEAT";
+			resultColor = ColorF{ 1.0, 0.25, 0.20 };
+			break;
+		case BattleOutcome::Aborted:
+			resultText = U"ABORTED";
+			resultColor = ColorF{ 0.85, 0.70, 0.45 };
+			break;
+		default:
+			break;
 		}
 		titleFont(resultText).drawAt(90, Vec2{ 800, 410 }, resultColor);
 		uiFont(U"Press ESC or close from the Gaussian menu.").drawAt(800, 500, Palette::White);
@@ -38,12 +50,12 @@ namespace LT3
 	// 戦闘制限時間オーバーレイを描画する。
 	inline void DrawBattleTimerOverlay(const BattleWorld& world, const Font& uiFont)
 	{
-		if (world.aiRuntime.battleTimeLimitSec <= 0.0)
+		if (world.outcomeRules.timeLimitSec <= 0.0)
 		{
 			return;
 		}
 
-		const double remainingSec = Max(0.0, world.aiRuntime.battleTimeLimitSec - world.elapsedSec);
+		const double remainingSec = Max(0.0, world.outcomeRules.timeLimitSec - world.elapsedSec);
 		const bool urgent = remainingSec <= 60.0;
 		ColorF timerColor{ 1.0, 1.0, 1.0 };
 		ColorF frameColor{ 1.0, 0.84, 0.0, 0.60 };

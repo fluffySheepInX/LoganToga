@@ -12,7 +12,7 @@ namespace LT3
 	inline Array<UnitId> CollectEnemyNonWaveCombatUnits(const BattleWorld& world, const DefinitionStores& defs)
 	{
 		Array<UnitId> units;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsEnemyAttackWaveCandidate(world, defs, unit) || IsEnemyAttackWaveUnit(world, unit))
 			{
@@ -181,13 +181,13 @@ namespace LT3
 		return none;
 	}
 
-	inline void UpdateEnemyAiTactics(BattleWorld& world, const DefinitionStores& defs, const AiProfileDef* aiProfile, UnitId unitCount)
+	inline void UpdateEnemyAiTactics(BattleWorld& world, const DefinitionStores& defs, const AiProfileDef* aiProfile)
 	{
 		const bool forceRebalance = (world.aiRuntime.nonWaveRoleReassignmentTimerSec >= ResolveEnemyAiNonWaveRoleReassignmentIntervalSec(aiProfile));
 		RefreshEnemyAiNonWaveRoles(world, defs, aiProfile, forceRebalance);
 		const double targetSearchRange = ResolveAiTargetSearchRange(aiProfile);
 		const double moveRangeRate = ResolveAiMoveRangeRate(aiProfile);
-		for (UnitId unit = 0; unit < unitCount; ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit)) continue;
 			if (world.units.faction[unit] != Faction::Enemy) continue;
@@ -248,13 +248,12 @@ namespace LT3
 
 	inline void UpdateEnemyDirector(BattleWorld& world, const DefinitionStores& defs, double dt)
 	{
-		const UnitId unitCount = static_cast<UnitId>(world.units.size());
 		const AiProfileDef* aiProfile = GetActiveEnemyAiProfile(world, defs);
 
 		AdvanceEnemyAiRuntimeClock(world, dt);
 		UpdateEnemyAiSpawning(world, defs, aiProfile);
 		UpdateEnemyAiConstruction(world, defs, aiProfile);
 		UpdateEnemyAiAttackWave(world, defs, aiProfile);
-		UpdateEnemyAiTactics(world, defs, aiProfile, unitCount);
+		UpdateEnemyAiTactics(world, defs, aiProfile);
 	}
 }

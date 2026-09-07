@@ -10,7 +10,6 @@ namespace LT3
 			return false;
 		}
 
-		bool consumed = false;
 		MapEditorAsset& asset = editor.assets[editor.decalEditorAssetIndex];
 		const Vec2 panelOffset = editor.uiDecalEditorPos - EditorDecalEditorPanelRect().pos;
 		const auto decalRect = [&](const RectF& rect)
@@ -121,25 +120,25 @@ namespace LT3
 		{
 			asset.decalOpacity = Clamp(asset.decalOpacity - 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
-			consumed = true;
+			return true;
 		}
 		if (decalRect(EditorDecalOpacityIncRect(scroll)).leftClicked())
 		{
 			asset.decalOpacity = Clamp(asset.decalOpacity + 0.05, 0.0, 1.0);
 			editor.statusText = U"Decal opacity: {:.2f}"_fmt(asset.decalOpacity);
-			consumed = true;
+			return true;
 		}
 		if (decalRect(EditorDecalScaleDecRect(scroll)).leftClicked())
 		{
 			asset.decalScale = Clamp(asset.decalScale - 0.05, 0.1, 4.0);
 			editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
-			consumed = true;
+			return true;
 		}
 		if (decalRect(EditorDecalScaleIncRect(scroll)).leftClicked())
 		{
 			asset.decalScale = Clamp(asset.decalScale + 0.05, 0.1, 4.0);
 			editor.statusText = U"Decal scale: {:.2f}"_fmt(asset.decalScale);
-			consumed = true;
+			return true;
 		}
 		for (int32 kindIndex = 0; kindIndex < 3; ++kindIndex)
 		{
@@ -147,20 +146,20 @@ namespace LT3
 			{
 				asset.decalRenderKind = static_cast<DecalRenderKind>(kindIndex);
 				editor.statusText = U"Decal render kind: {}"_fmt(DecalRenderKindToTomlValue(asset.decalRenderKind));
-				consumed = true;
+				return true;
 			}
 		}
 		if (decalRect(EditorDecalOpacityRandomToggleRect(scroll)).leftClicked())
 		{
 			asset.useRandomDecalOpacity = !asset.useRandomDecalOpacity;
 			editor.statusText = asset.useRandomDecalOpacity ? U"Random opacity ON" : U"Random opacity OFF";
-			consumed = true;
+			return true;
 		}
 		if (decalRect(EditorDecalScaleRandomToggleRect(scroll)).leftClicked())
 		{
 			asset.useRandomDecalScale = !asset.useRandomDecalScale;
 			editor.statusText = asset.useRandomDecalScale ? U"Random scale ON" : U"Random scale OFF";
-			consumed = true;
+			return true;
 		}
 		if (decalRect(EditorDecalAmbientSoundBrowseRect(scroll)).leftClicked())
 		{
@@ -211,20 +210,19 @@ namespace LT3
 			return true;
 		};
 
-		consumed = stepRange(decalRect(EditorDecalOpacityMinDecRect(scroll)), asset.decalOpacityMin, -0.05, 0.0, 1.0, U"Opacity min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMinIncRect(scroll)), asset.decalOpacityMin, 0.05, 0.0, 1.0, U"Opacity min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMaxDecRect(scroll)), asset.decalOpacityMax, -0.05, 0.0, 1.0, U"Opacity max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalOpacityMaxIncRect(scroll)), asset.decalOpacityMax, 0.05, 0.0, 1.0, U"Opacity max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMinDecRect(scroll)), asset.decalScaleMin, -0.05, 0.1, 4.0, U"Scale min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMinIncRect(scroll)), asset.decalScaleMin, 0.05, 0.1, 4.0, U"Scale min") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMaxDecRect(scroll)), asset.decalScaleMax, -0.05, 0.1, 4.0, U"Scale max") || consumed;
-		consumed = stepRange(decalRect(EditorDecalScaleMaxIncRect(scroll)), asset.decalScaleMax, 0.05, 0.1, 4.0, U"Scale max") || consumed;
-
-		if (consumed)
+		if (stepRange(decalRect(EditorDecalOpacityMinDecRect(scroll)), asset.decalOpacityMin, -0.05, 0.0, 1.0, U"Opacity min")
+			|| stepRange(decalRect(EditorDecalOpacityMinIncRect(scroll)), asset.decalOpacityMin, 0.05, 0.0, 1.0, U"Opacity min")
+			|| stepRange(decalRect(EditorDecalOpacityMaxDecRect(scroll)), asset.decalOpacityMax, -0.05, 0.0, 1.0, U"Opacity max")
+			|| stepRange(decalRect(EditorDecalOpacityMaxIncRect(scroll)), asset.decalOpacityMax, 0.05, 0.0, 1.0, U"Opacity max")
+			|| stepRange(decalRect(EditorDecalScaleMinDecRect(scroll)), asset.decalScaleMin, -0.05, 0.1, 4.0, U"Scale min")
+			|| stepRange(decalRect(EditorDecalScaleMinIncRect(scroll)), asset.decalScaleMin, 0.05, 0.1, 4.0, U"Scale min")
+			|| stepRange(decalRect(EditorDecalScaleMaxDecRect(scroll)), asset.decalScaleMax, -0.05, 0.1, 4.0, U"Scale max")
+			|| stepRange(decalRect(EditorDecalScaleMaxIncRect(scroll)), asset.decalScaleMax, 0.05, 0.1, 4.0, U"Scale max"))
 		{
 			NormalizeDecalSettings(asset);
+			return true;
 		}
 
-		return consumed || panelRect.mouseOver();
+		return panelRect.mouseOver();
 	}
 }

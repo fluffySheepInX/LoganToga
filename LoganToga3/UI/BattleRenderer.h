@@ -71,7 +71,7 @@ namespace LT3
         Array<BattleWorldDepthRenderEntry> renderList;
         int32 insertionOrder = 0;
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        for (const UnitId unit : GetLiveBattleWorldUnits(world))
         {
             if (!IsUnitVisibleForRender(world, unit, visibleMask, maskWidth, maskHeight))
             {

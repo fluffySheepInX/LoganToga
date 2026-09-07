@@ -10,7 +10,7 @@ namespace LT3
 	/// <summary>
 	/// SkillEditor 全体の入力ディスパッチを処理します。
 	/// </summary>
-	inline bool ProcessSkillEditorInput(MapEditorState& editor, const BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog)
+	inline bool ProcessSkillEditorInput(MapEditorState& editor, BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog)
 	{
 		if (!editor.showSkillEditor)
 		{

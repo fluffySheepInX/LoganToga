@@ -5,6 +5,8 @@
 
 namespace LT3
 {
+	struct AudioAssetCache;
+	struct ModContext;
 	struct BattleWorld;
 	struct UnitRuntimeStore;
 	struct CooldownStore;
@@ -80,6 +82,33 @@ namespace LT3
 		friend struct BuildQueueStore;
 		friend struct PathRuntimeStore;
 		friend struct CarrierStore;
+	};
+
+	struct UnitSpatialIndexStore
+	{
+		int32 width = 0;
+		int32 height = 0;
+		Array<Array<UnitId>> unitsByCell;
+
+		// マップのセル寸法に合わせて生存ユニット用バケットを初期化する。
+		void init(int32 mapWidth, int32 mapHeight)
+		{
+			width = Max(0, mapWidth);
+			height = Max(0, mapHeight);
+			unitsByCell.assign(static_cast<size_t>(width * height), Array<UnitId>{});
+		}
+
+		// 指定セルに対応する生存ユニットバケットを返す。
+		const Array<UnitId>& get(int32 row, int32 col) const
+		{
+			static const Array<UnitId> empty;
+			if (row < 0 || col < 0 || row >= height || col >= width)
+			{
+				return empty;
+			}
+
+			return unitsByCell[static_cast<size_t>(row * width + col)];
+		}
 	};
 
 	struct BuildCellReservation
@@ -666,17 +695,27 @@ namespace LT3
 		AiRuntimeStore aiRuntime;
 		SelectionStore    selection;
 		BattleMapStore    map;
+		Array<UnitId> liveUnits;
+		UnitSpatialIndexStore unitSpatialIndex;
+		BattleOutcomeRules outcomeRules;
+		AudioAssetCache* audioAssets = nullptr;
+		const ModContext* audioMod = nullptr;
 		bool enemyDirectorPaused = false;
 		double enemySpawnTimerSec = 0.0;
 		double elapsedSec         = 0.0;
-		bool victory = false;
-		bool defeat  = false;
+		BattleOutcome outcome = BattleOutcome::InProgress;
 
 		// 全ユニット対応ストアへ1行を同時に追加し、追加された安定IDを返す。
 		UnitId addUnit(UnitDefId unitDef, Faction faction, const Vec2& position, const DefinitionStores& defs, const String& iconOverride = U"");
 
 		// ユニット対応列を縮めずに、指定ユニットと関連する一時状態を終了する。
 		bool retireUnit(UnitId unit);
+
+		// ユニットを生存対象の索引から外し、非生存状態へ遷移する。
+		bool deactivateUnit(UnitId unit);
+
+		// 非生存スロットを生存対象の索引へ復帰させる。
+		bool activateUnit(UnitId unit);
 
 		// 建築予定セルを全件確保できた場合にのみ予約する。
 		bool reserveBuildCells(UnitId builder, BuildActionDefId actionId, const Array<Point>& cells);
@@ -716,6 +755,64 @@ namespace LT3
 	inline bool HasLiveBattleWorldUnit(const BattleWorld& world, UnitId unit)
 	{
 		return HasBattleWorldUnitSlot(world, unit) && world.units.alive[unit];
+	}
+
+	// 生存対象の安定UnitId索引を返す。
+	inline const Array<UnitId>& GetLiveBattleWorldUnits(const BattleWorld& world)
+	{
+		return world.liveUnits;
+	}
+
+	inline constexpr double BattleWorldSpatialIndexCellStep = 120.0;
+	inline constexpr Vec2 BattleWorldSpatialIndexMapOrigin{ 200.0, 90.0 };
+
+	// ワールド座標を共有空間索引用のマップセルへ変換する。
+	inline Point BattleWorldPositionToSpatialIndexCell(const BattleWorld& world, const Vec2& position)
+	{
+		const Vec2 local = position - BattleWorldSpatialIndexMapOrigin;
+		const int32 col = Clamp(static_cast<int32>(Math::Round(local.x / BattleWorldSpatialIndexCellStep)), 0, Max(0, world.mapWidth - 1));
+		const int32 row = Clamp(static_cast<int32>(Math::Round(local.y / BattleWorldSpatialIndexCellStep)), 0, Max(0, world.mapHeight - 1));
+		return Point{ col, row };
+	}
+
+	// 生存ユニットの現在位置からセル別空間索引を再構築する。
+	inline void RebuildBattleWorldUnitSpatialIndex(BattleWorld& world)
+	{
+		world.unitSpatialIndex.init(world.mapWidth, world.mapHeight);
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
+		{
+			if (!HasLiveBattleWorldUnit(world, unit))
+			{
+				continue;
+			}
+
+			const Point cell = BattleWorldPositionToSpatialIndexCell(world, world.units.position[unit]);
+			world.unitSpatialIndex.unitsByCell[static_cast<size_t>(cell.y * world.unitSpatialIndex.width + cell.x)] << unit;
+		}
+	}
+
+	// 中心位置と半径に交差し得るセル内の生存ユニットを列挙する。
+	template <class Func>
+	inline void ForEachBattleWorldUnitNearPosition(const BattleWorld& world, const Vec2& center, double radius, Func&& func)
+	{
+		if (world.unitSpatialIndex.width != world.mapWidth
+			|| world.unitSpatialIndex.height != world.mapHeight)
+		{
+			return;
+		}
+
+		const Point centerCell = BattleWorldPositionToSpatialIndexCell(world, center);
+		const int32 cellRadius = Max(0, static_cast<int32>(Math::Ceil(Max(0.0, radius) / BattleWorldSpatialIndexCellStep)) + 1);
+		for (int32 row = centerCell.y - cellRadius; row <= centerCell.y + cellRadius; ++row)
+		{
+			for (int32 col = centerCell.x - cellRadius; col <= centerCell.x + cellRadius; ++col)
+			{
+				for (const UnitId unit : world.unitSpatialIndex.get(row, col))
+				{
+					func(unit);
+				}
+			}
+		}
 	}
 
 	// ユニット対応SoA列と経路ワークキューの参照先が整合しているか検証する。
@@ -885,6 +982,33 @@ namespace LT3
 		{
 			return BattleWorldStoreInvariantResult{ false, U"selection", U"actionBuilder", 0, 0, 0, world.selection.actionBuilder, U"InvalidUnitId when action placement is inactive" };
 		}
+
+		Array<bool> liveUnitIndexed(expectedSize, false);
+		for (size_t i = 0; i < world.liveUnits.size(); ++i)
+		{
+			const UnitId unit = world.liveUnits[i];
+			if (!HasLiveBattleWorldUnit(world, unit))
+			{
+				return BattleWorldStoreInvariantResult{ false, U"liveUnits", U"unit", 0, 0, i, unit, U"live unit" };
+			}
+			if (liveUnitIndexed[unit])
+			{
+				return BattleWorldStoreInvariantResult{ false, U"liveUnits", U"unit", 0, 0, i, unit, U"unique unit" };
+			}
+			if (i > 0 && world.liveUnits[i - 1] >= unit)
+			{
+				return BattleWorldStoreInvariantResult{ false, U"liveUnits", U"unit", 0, 0, i, unit, U"strict ascending UnitId order" };
+			}
+			liveUnitIndexed[unit] = true;
+		}
+		for (size_t unit = 0; unit < expectedSize; ++unit)
+		{
+			if (world.units.alive[unit] != liveUnitIndexed[unit])
+			{
+				return BattleWorldStoreInvariantResult{ false, U"liveUnits", U"unit", 0, 0, unit, static_cast<UnitId>(unit), U"exactly all live units in UnitId order" };
+			}
+		}
+
 		for (size_t i = 0; i < expectedSize; ++i)
 		{
 			const UnitId attackTarget = world.units.attackTarget[i];
@@ -1012,6 +1136,7 @@ namespace LT3
 			carriers.addUnit();
 			pathing.addUnit(position);
 			units.iconOverride[id] = iconOverride;
+			liveUnits << id;
 
 			if (ValidateBattleWorldStoreInvariants(*this).valid)
 			{
@@ -1027,7 +1152,33 @@ namespace LT3
 		buildQueues.truncate(originalSize);
 		carriers.truncate(originalSize);
 		pathing.truncate(originalSize);
+		liveUnits.remove_if([originalSize](const UnitId unit) { return unit >= originalSize; });
 		return InvalidUnitId;
+	}
+
+	inline bool BattleWorld::deactivateUnit(UnitId unit)
+	{
+		if (!HasLiveBattleWorldUnit(*this, unit))
+		{
+			return false;
+		}
+
+		units.alive[unit] = false;
+		liveUnits.remove(unit);
+		return true;
+	}
+
+	inline bool BattleWorld::activateUnit(UnitId unit)
+	{
+		if (!HasBattleWorldUnitSlot(*this, unit) || units.alive[unit] || liveUnits.contains(unit))
+		{
+			return false;
+		}
+
+		units.alive[unit] = true;
+		liveUnits << unit;
+		liveUnits.sort();
+		return true;
 	}
 
 	inline bool BattleWorld::retireUnit(UnitId unit)
@@ -1038,7 +1189,7 @@ namespace LT3
 		}
 
 		cancelBuildQueue(unit);
-		units.alive[unit] = false;
+		deactivateUnit(unit);
 		units.task[unit] = UnitTask::Idle;
 		units.targetPosition[unit] = units.position[unit];
 		units.attackTarget[unit] = InvalidUnitId;
@@ -1199,7 +1350,11 @@ namespace LT3
 
 	inline void BattleWorld::reset()
 	{
+		AudioAssetCache* const retainedAudioAssets = audioAssets;
+		const ModContext* const retainedAudioMod = audioMod;
 		*this = BattleWorld{};
+		audioAssets = retainedAudioAssets;
+		audioMod = retainedAudioMod;
 	}
 
 	// BattleWorld が保持する定義 index が指定スナップショット内で有効か検証する。

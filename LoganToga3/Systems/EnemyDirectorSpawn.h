@@ -26,7 +26,7 @@ namespace LT3
 	inline int32 CountAliveEnemySpawnUnitsByDef(const BattleWorld& world, UnitDefId unitDefId)
 	{
 		int32 count = 0;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (IsValidUnit(world, unit) && world.units.faction[unit] == Faction::Enemy && world.units.defId[unit] == unitDefId)
 			{

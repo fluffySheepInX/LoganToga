@@ -289,7 +289,7 @@ namespace LT3
 
 	inline void DrawUnitHealthBarsOverlay(const BattleWorld& world, const DefinitionStores& defs, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsUnitVisibleForRender(world, unit, visibleMask, maskWidth, maskHeight))
 			{
@@ -302,7 +302,7 @@ namespace LT3
 
 	inline void DrawUnits(const BattleWorld& world, const DefinitionStores& defs, const Font& uiFont, const BattleRenderAssets* assets = nullptr, const Array<bool>* visibleMask = nullptr, int32 maskWidth = 0, int32 maskHeight = 0, bool showEnemyMoveMarkers = false)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsUnitVisibleForRender(world, unit, visibleMask, maskWidth, maskHeight))
 			{

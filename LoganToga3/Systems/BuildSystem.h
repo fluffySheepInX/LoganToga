@@ -54,11 +54,9 @@ namespace LT3
 
     inline void UpdateBuildQueues(BattleWorld& world, const DefinitionStores& defs, double dt, BattleNotificationRuntimeState* notifications = nullptr)
     {
-        const UnitId unitCount = static_cast<UnitId>(world.units.size());
-        for (UnitId unit = 0; unit < unitCount; ++unit)
+        const Array<UnitId> liveUnits = GetLiveBattleWorldUnits(world);
+        for (const UnitId unit : liveUnits)
         {
-            if (!IsValidUnit(world, unit)) continue;
-
             if (unit < world.buildQueues.hasPendingEntry.size() && world.buildQueues.hasPendingEntry[unit])
             {
                 const Vec2 pendingTarget = world.buildQueues.pendingEntry[unit].targetPosition;

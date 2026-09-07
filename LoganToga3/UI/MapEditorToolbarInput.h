@@ -96,13 +96,11 @@ namespace LT3
             return false;
         }
 
-        bool consumed = false;
-
         const MapEditorToolbarButtonSpec previewHideSpec = MapEditorToolbarPreviewHideButtonSpec();
         if (HandleRectButtonClick(MapEditorToolbarButtonRect(editor, previewHideSpec)))
         {
             ExecuteMapEditorToolbarAction(editor, previewHideSpec.action);
-            consumed = true;
+            return true;
         }
 
         for (const auto& spec : MapEditorToolbarButtonSpecs())
@@ -115,14 +113,14 @@ namespace LT3
             if (HandleRectButtonClick(MapEditorToolbarButtonRect(editor, spec)))
             {
                 ExecuteMapEditorToolbarAction(editor, spec.action);
-                consumed = true;
+                return true;
             }
         }
         if (EditorToolbarRect().mouseOver())
         {
-            consumed = true;
+            return true;
         }
 
-        return consumed;
+        return false;
     }
 }

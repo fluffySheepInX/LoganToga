@@ -14,7 +14,7 @@ namespace LT3
 {
   inline bool IsBattleFinished(const BattleWorld& world)
     {
-        return world.victory || world.defeat;
+        return IsTerminalBattleOutcome(world.outcome);
     }
 
     inline void AdvanceBattleClock(BattleWorld& world, double dt)
@@ -30,6 +30,7 @@ namespace LT3
         }
         UpdatePathfinding(world, defs, dt);
         UpdateMovement(world, defs, dt);
+        RebuildBattleWorldUnitSpatialIndex(world);
         UpdateGathering(world, defs, dt, notifications);
         UpdateCombat(world, defs, dt);
         UpdateProjectiles(world, defs, dt);

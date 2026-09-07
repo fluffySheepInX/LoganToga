@@ -100,7 +100,8 @@ namespace LT3
 
     inline void UpdateCombat(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        const Array<UnitId> liveUnits = GetLiveBattleWorldUnits(world);
+        for (const UnitId unit : liveUnits)
         {
             if (!IsValidUnit(world, unit)) continue;
             if (IsBuildQueueLocked(world, unit)) continue;
@@ -251,11 +252,11 @@ namespace LT3
             world.cooldowns.attackLeftSec[unit] = skill.cooldownSec;
         }
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        for (const UnitId unit : GetLiveBattleWorldUnits(world))
         {
             if (unit >= world.cooldowns.skillCastFailureDisplayLeftSec.size())
             {
-                break;
+                continue;
             }
             world.cooldowns.skillCastFailureDisplayLeftSec[unit] = Max(0.0, world.cooldowns.skillCastFailureDisplayLeftSec[unit] - dt);
         }

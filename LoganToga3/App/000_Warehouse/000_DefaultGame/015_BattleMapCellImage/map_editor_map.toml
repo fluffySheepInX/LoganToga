@@ -42,9 +42,9 @@ preview_vision = false
 
 [home]
 
-player_x = 440
+player_x = 560
 
-player_y = 330
+player_y = 450
 
 enemy_x = 4520
 

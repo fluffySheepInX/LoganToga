@@ -82,7 +82,8 @@ namespace LT3
 
     inline void UpdateMovement(BattleWorld& world, const DefinitionStores& defs, double dt)
     {
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        const Array<UnitId> liveUnits = GetLiveBattleWorldUnits(world);
+        for (const UnitId unit : liveUnits)
         {
             if (!IsValidUnit(world, unit)) continue;
             if (world.units.task[unit] != UnitTask::Moving && world.units.task[unit] != UnitTask::Gathering) continue;

@@ -115,12 +115,14 @@ namespace LT3
 
 	inline void SetUnitAlive(BattleWorld& world, UnitId unit, bool alive)
 	{
-		if (!UnitSlotExists(world, unit))
+		if (alive)
 		{
-			return;
+			world.activateUnit(unit);
 		}
-
-		world.units.alive[unit] = alive;
+		else
+		{
+			world.deactivateUnit(unit);
+		}
 	}
 
 	inline void ClearUnitPath(BattleWorld& world, UnitId unit)

@@ -50,87 +50,86 @@ namespace LT3
         return false;
     }
 
-    inline bool ProcessMapEditorInput(MapEditorState& editor, const BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
+    inline bool ProcessMapEditorInput(MapEditorState& editor, BattleWorld& world, DefinitionStores& defs, UnitCatalog& catalog, const Vec2& screenMouse)
     {
-        bool consumed = false;
         if (ProcessDescriptionEditorInput(editor, catalog, defs))
+        {
+            return true;
+        }
+
+        if (ProcessMapEditorUiLayoutDragInput(editor, world, defs, screenMouse))
+        {
+            return true;
+        }
+
+        if (ProcessMapEditorZOrderPanelInput(editor))
+        {
+            return true;
+        }
+
+        if (ProcessMapEditorDecalEditorInput(editor))
+        {
+            return true;
+        }
+
+        if (editor.showResourcePanels && ProcessResourceNodeEditorPanelInput(editor))
+        {
+            return true;
+        }
+
+        if (ProcessBuildingEditorInput(editor, catalog, defs))
+        {
+            return true;
+        }
+
+        if (ProcessAiEditorInput(editor, defs))
+        {
+            return true;
+        }
+
+        if (ProcessSkillEditorInput(editor, world, defs, catalog))
+        {
+            return true;
+        }
+
+        if (ProcessCommandEditorInput(editor, catalog, defs))
+        {
+            return true;
+        }
+
+        if (ProcessUnitCatalogEditorInput(editor, catalog))
         {
             return true;
         }
 
         if (HandleUnitBuildingEditorTabBar(editor))
         {
-            consumed = true;
-        }
-
-        if (ProcessMapEditorToolbarInput(editor))
-        {
-            consumed = true;
-        }
-
-        if (ProcessStarToolMenuInput(editor))
-        {
-            consumed = true;
-        }
-
-        if (ProcessPerlinNoisePanelInput(editor))
-        {
-            consumed = true;
+            return true;
         }
 
         if (ProcessFogPanelInput(editor))
         {
-            consumed = true;
+            return true;
         }
 
-        if (ProcessUnitCatalogEditorInput(editor, catalog))
+        if (ProcessPerlinNoisePanelInput(editor))
         {
-            consumed = true;
+            return true;
         }
 
-        if (ProcessCommandEditorInput(editor, catalog, defs))
+        if (ProcessStarToolMenuInput(editor))
         {
-            consumed = true;
-        }
-
-        if (ProcessSkillEditorInput(editor, world, defs, catalog))
-        {
-            consumed = true;
-        }
-
-        if (ProcessAiEditorInput(editor, defs))
-        {
-            consumed = true;
-        }
-
-        if (ProcessBuildingEditorInput(editor, catalog, defs))
-        {
-            consumed = true;
+            return true;
         }
 
         if (editor.showResourcePanels && ProcessResourcePaletteInput(editor))
         {
-            consumed = true;
+            return true;
         }
 
         if (editor.showResourcePanels && ProcessResourceNodeListInput(editor))
         {
-            consumed = true;
-        }
-
-        if (editor.showResourcePanels && ProcessResourceNodeEditorPanelInput(editor))
-        {
-            consumed = true;
-        }
-
-        if (ProcessMapEditorDecalEditorInput(editor))
-        {
-            consumed = true;
-        }
-
-        if (ProcessMapEditorZOrderPanelInput(editor))
-        {
-            consumed = true;
+            return true;
         }
 
         if (editor.enabled && editor.showResourcePanels && editor.resourcePlacementDragKind && MouseL.up())
@@ -149,20 +148,20 @@ namespace LT3
 
         if (ProcessMapEditorUiLayoutInput(editor, world, defs, screenMouse))
         {
-            consumed = true;
+            return true;
+        }
+
+        if (ProcessMapEditorToolbarInput(editor))
+        {
+            return true;
         }
 
         if (!editor.enabled)
         {
-            return consumed;
+            return false;
         }
 
         if (ProcessMapEditorPaletteInput(editor))
-        {
-            consumed = true;
-        }
-
-        if (consumed)
         {
             return true;
         }

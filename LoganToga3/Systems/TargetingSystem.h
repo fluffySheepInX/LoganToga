@@ -123,7 +123,7 @@ namespace LT3
         const double maxRange = ResolveEffectiveAttackRange(casterDef, skill);
         const double maxRangeSq = maxRange * maxRange;
         const Vec2 casterPos = world.units.position[caster];
-        for (UnitId other = 0; other < world.units.size(); ++other)
+        for (const UnitId other : GetLiveBattleWorldUnits(world))
         {
             if (!IsSkillTargetFactionMatch(world, caster, other, skill))
             {
@@ -158,7 +158,7 @@ namespace LT3
         const Vec2 casterPos = world.units.position[caster];
         UnitId best = InvalidUnitId;
         double bestDistanceSq = Math::Inf;
-        for (UnitId other = 0; other < world.units.size(); ++other)
+        for (const UnitId other : GetLiveBattleWorldUnits(world))
         {
             if (!IsValidSkillTarget(world, defs, caster, other, skill))
             {

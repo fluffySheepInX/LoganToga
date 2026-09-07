@@ -182,7 +182,6 @@ namespace LT3
             return false;
         }
 
-        bool consumed = false;
         ResourceNodeEditData& node = editor.resourceNodes[editor.selectedResourceNodeIndex];
         EnsureResourceCaptureTimeSteps(editor);
 
@@ -252,7 +251,7 @@ namespace LT3
             {
                 node.kind = static_cast<ResourceKind>(i);
                 editor.statusText = U"Resource kind: {}"_fmt(ResourceKindLabel(node.kind));
-                consumed = true;
+                return true;
             }
         }
 
@@ -260,32 +259,32 @@ namespace LT3
         {
             node.amount = Max(0, node.amount - 100);
             editor.statusText = U"Resource amount: {}"_fmt(node.amount);
-            consumed = true;
+            return true;
         }
         if (EditorResourceNodeAmountIncRect(editor).leftClicked())
         {
             node.amount += 100;
             editor.statusText = U"Resource amount: {}"_fmt(node.amount);
-            consumed = true;
+            return true;
         }
         if (EditorResourceNodeIncomeDecRect(editor).leftClicked())
         {
             node.incomePerSec = Max(0, node.incomePerSec - 1);
             editor.statusText = U"Resource income: {}"_fmt(node.incomePerSec);
-            consumed = true;
+            return true;
         }
         if (EditorResourceNodeIncomeIncRect(editor).leftClicked())
         {
             node.incomePerSec += 1;
             editor.statusText = U"Resource income: {}"_fmt(node.incomePerSec);
-            consumed = true;
+            return true;
         }
 
         if (EditorResourceNodeOneShotRect(editor).leftClicked())
         {
             node.oneShot = !node.oneShot;
             editor.statusText = node.oneShot ? U"Resource mode: one-shot" : U"Resource mode: income";
-            consumed = true;
+            return true;
         }
 
         const RectNumberStepperRects captureTimeStepper = EditorResourceNodeCaptureTimeStepperRects(editor);
@@ -348,10 +347,10 @@ namespace LT3
 
         if (EditorResourceNodePanelRect(editor).mouseOver())
         {
-            consumed = true;
+            return true;
         }
 
-        return consumed;
+        return false;
     }
 
     inline bool ProcessResourceNodeListInput(MapEditorState& editor)

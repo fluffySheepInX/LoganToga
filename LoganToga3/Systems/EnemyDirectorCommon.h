@@ -55,7 +55,7 @@ namespace LT3
 
 	inline Vec2 ResolveEnemySpawnOrigin(const BattleWorld& world, const DefinitionStores& defs)
 	{
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
 			{
@@ -73,7 +73,7 @@ namespace LT3
 			}
 		}
 
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
 			{
@@ -169,7 +169,7 @@ namespace LT3
 	inline int32 CountAliveEnemyCombatUnits(const BattleWorld& world, const DefinitionStores& defs)
 	{
 		int32 count = 0;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != Faction::Enemy)
 			{
@@ -207,7 +207,7 @@ namespace LT3
 	inline Array<UnitId> CollectEnemyAttackWaveCandidates(const BattleWorld& world, const DefinitionStores& defs)
 	{
 		Array<UnitId> candidates;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (IsEnemyAttackWaveCandidate(world, defs, unit))
 			{

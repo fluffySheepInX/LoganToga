@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "BattleWorldStores.h"
+# include "../Data/AudioAssetCache.h"
 # include "../Data/BattleAssetPaths.h"
 # include "../UI/QuarterView.h"
 
@@ -74,7 +75,7 @@ namespace LT3
 		return nearCursor || nearCenter;
 	}
 
-	inline void PlayBattleSkillSoundIfRelevant(const SkillDef& skill, const Vec2& worldPos)
+	inline void PlayBattleSkillSoundIfRelevant(BattleWorld& world, const SkillDef& skill, const Vec2& worldPos)
 	{
 		PruneActiveBattleSoundEffects();
 
@@ -93,21 +94,15 @@ namespace LT3
 			return;
 		}
 
-		const FilePath soundPath = ResolveSkillSoundEffectPath(skill.soundEffect);
-		if (soundPath.isEmpty() || !FileSystem::Exists(soundPath))
+		if (!world.audioAssets)
 		{
 			return;
 		}
 
-		static HashTable<FilePath, Audio> s_audioCache;
 		static HashTable<FilePath, double> s_lastPlayTimeSec;
-
-		auto cacheIt = s_audioCache.find(soundPath);
-		if (cacheIt == s_audioCache.end())
-		{
-			cacheIt = s_audioCache.emplace(soundPath, Audio{ soundPath }).first;
-		}
-		if (!cacheIt->second)
+		const FilePath soundPath = ResolveSkillSoundEffectPath(world.audioMod, skill.soundEffect);
+		Audio* const audio = world.audioAssets->findOrLoad(soundPath);
+		if (!audio)
 		{
 			return;
 		}
@@ -122,12 +117,12 @@ namespace LT3
 			}
 		}
 
-		cacheIt->second.playOneShot(Clamp(skill.soundEffectVolume, 0.0, 1.0));
+		audio->playOneShot(Clamp(skill.soundEffectVolume, 0.0, 1.0));
 		s_lastPlayTimeSec[soundPath] = nowSec;
-		RegisterActiveBattleSoundEffect(skill.soundEffect, cacheIt->second.lengthSec());
+		RegisterActiveBattleSoundEffect(skill.soundEffect, audio->lengthSec());
 	}
 
-	inline void PlayUnitSpawnVoiceOnce(const UnitDef& def, Faction faction)
+	inline void PlayUnitSpawnVoiceOnce(BattleWorld& world, const UnitDef& def, Faction faction)
 	{
 		if (def.spawnVoice.isEmpty())
 		{
@@ -138,14 +133,13 @@ namespace LT3
 			return;
 		}
 
-		const FilePath voicePath = ResolveUnitVoicePath(def.spawnVoice);
-		if (voicePath.isEmpty() || !FileSystem::Exists(voicePath))
+		if (!world.audioAssets)
 		{
 			return;
 		}
 
-		static HashTable<FilePath, Audio> s_audioCache;
 		static HashTable<FilePath, double> s_lastPlayTimeSec;
+		const FilePath voicePath = ResolveUnitVoicePath(world.audioMod, def.spawnVoice);
 
 		const double nowSec = Scene::Time();
 		const double cooldownSec = Max(0.0, def.spawnVoiceCooldownSec);
@@ -157,18 +151,13 @@ namespace LT3
 			}
 		}
 
-		auto cacheIt = s_audioCache.find(voicePath);
-		if (cacheIt == s_audioCache.end())
-		{
-			cacheIt = s_audioCache.emplace(voicePath, Audio{ voicePath }).first;
-		}
-
-		if (!cacheIt->second)
+		Audio* const audio = world.audioAssets->findOrLoad(voicePath);
+		if (!audio)
 		{
 			return;
 		}
 
-		cacheIt->second.playOneShot(Clamp(def.spawnVoiceVolume, 0.0, 1.0));
+		audio->playOneShot(Clamp(def.spawnVoiceVolume, 0.0, 1.0));
 		s_lastPlayTimeSec[voicePath] = nowSec;
 	}
 
@@ -189,7 +178,7 @@ namespace LT3
 			return InvalidUnitId;
 		}
 
-		PlayUnitSpawnVoiceOnce(defs.units[unitDef], faction);
+		PlayUnitSpawnVoiceOnce(world, defs.units[unitDef], faction);
 		return id;
 	}
 

@@ -11,7 +11,7 @@ namespace LT3
 	inline Array<UnitId> PickUnitsInScreenRect(const BattleWorld& world, const DefinitionStores& defs, const RectF& screenRect, Faction faction)
 	{
 		Array<UnitId> units;
-		for (UnitId unit = 0; unit < world.units.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
 			if (!IsValidUnit(world, unit) || world.units.faction[unit] != faction)
 			{

@@ -4,6 +4,19 @@
 
 namespace LT3
 {
+    inline constexpr size_t ResourceKindCount = 3;
+
+    inline constexpr Optional<size_t> ToResourceKindIndex(const ResourceKind kind)
+    {
+        const size_t index = static_cast<size_t>(kind);
+        if (index >= ResourceKindCount)
+        {
+            return none;
+        }
+
+        return index;
+    }
+
     // 内部参照タグを比較用の不変な形式へ正規化する。
     inline String NormalizeDefinitionTag(StringView tag)
     {
@@ -216,12 +229,57 @@ namespace LT3
         HashTable<String, BuildActionDefId> buildActionByTag;
         HashTable<String, ResourceDefId> resourceByTag;
         HashTable<String, AiProfileDefId> aiProfileByTag;
+        std::array<ResourceDefId, ResourceKindCount> resourceByKind{};
+        std::array<bool, ResourceKindCount> duplicateResourceKind{};
+
+        DefinitionStores()
+        {
+            ResetResourceKindIndex();
+        }
 
         void addLoadWarning(const String& warning)
         {
             if (!loadWarnings.contains(warning))
             {
                 loadWarnings << warning;
+            }
+        }
+
+        // ResourceKind 索引を初期状態へ戻す。
+        void ResetResourceKindIndex()
+        {
+            resourceByKind.fill(InvalidResourceDefId);
+            duplicateResourceKind.fill(false);
+        }
+
+        // ResourceKind に対応する一意な資源定義IDを返す。
+        ResourceDefId findResourceByKind(const ResourceKind kind) const
+        {
+            const Optional<size_t> index = ToResourceKindIndex(kind);
+            if (!index || duplicateResourceKind[*index])
+            {
+                return InvalidResourceDefId;
+            }
+
+            return resourceByKind[*index];
+        }
+
+        // ResourceKind 索引と資源配列の対応を検証する。
+        void ValidateResourceKindIndex()
+        {
+            for (size_t index = 0; index < ResourceKindCount; ++index)
+            {
+                const ResourceDefId id = resourceByKind[index];
+                if (duplicateResourceKind[index] || id == InvalidResourceDefId)
+                {
+                    continue;
+                }
+
+                if (id >= resources.size() || static_cast<size_t>(resources[id].kind) != index)
+                {
+                    addLoadWarning(U"Invalid resource kind index {}"_fmt(index));
+                    resourceByKind[index] = InvalidResourceDefId;
+                }
             }
         }
 
@@ -301,6 +359,28 @@ namespace LT3
             const ResourceDefId id = static_cast<ResourceDefId>(resources.size());
             resources << def;
             resourceByTag[tag] = id;
+            const Optional<size_t> kindIndex = ToResourceKindIndex(def.kind);
+            if (!kindIndex)
+            {
+                addLoadWarning(U"Invalid resource kind for resource '{}'"_fmt(def.tag));
+                return id;
+            }
+
+            if (duplicateResourceKind[*kindIndex])
+            {
+                return id;
+            }
+
+            if (resourceByKind[*kindIndex] != InvalidResourceDefId)
+            {
+                const ResourceDefId existingId = resourceByKind[*kindIndex];
+                addLoadWarning(U"Duplicate resource kind for '{}' and '{}'"_fmt(resources[existingId].tag, def.tag));
+                resourceByKind[*kindIndex] = InvalidResourceDefId;
+                duplicateResourceKind[*kindIndex] = true;
+                return id;
+            }
+
+            resourceByKind[*kindIndex] = id;
             return id;
         }
 

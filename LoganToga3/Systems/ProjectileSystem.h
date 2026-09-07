@@ -27,7 +27,7 @@ namespace LT3
         const double minRange = ResolveEffectiveAttackRangeMin(casterDef, skill);
         UnitId best = InvalidUnitId;
         double bestDistanceSq = Math::Inf;
-        for (UnitId other = 0; other < world.units.size(); ++other)
+        for (const UnitId other : GetLiveBattleWorldUnits(world))
         {
             if (!IsSkillTargetFactionMatch(world, caster, other, skill))
             {
@@ -111,7 +111,7 @@ namespace LT3
             return targets;
         }
 
-        for (UnitId other = 0; other < world.units.size(); ++other)
+        for (const UnitId other : GetLiveBattleWorldUnits(world))
         {
             if (!IsSkillTargetFactionMatch(world, owner, other, skill))
             {
@@ -215,7 +215,7 @@ namespace LT3
         {
             spawnPos = targetPos;
         }
-        PlayBattleSkillSoundIfRelevant(skill, spawnPos);
+        PlayBattleSkillSoundIfRelevant(world, skill, spawnPos);
         const UnitDef& attackerDef = defs.units[world.units.defId[attacker]];
         world.projectiles.add(spawnPos, velocity, start, targetPos, target, attacker, world.units.faction[attacker], attackerDef.attack, skillId, skill.projectileMotion, maxLife, startAngleRad, targetPos, nextContext.imageAngleRad.has_value(), startAngleRad, nextContext.chainDepth);
         if (skill.projectileMotion == SkillProjectileMotion::Drop && !world.projectiles.height.isEmpty())

@@ -50,6 +50,7 @@ namespace LT3
 		mutable HashTable<String, Texture> portraitTextureCache;
 		mutable HashTable<String, Texture> iconTextureCache;
 		mutable HashTable<String, Texture> resourceTextureCache;
+		Array<Array<Texture>> skillIconTextures;
 	};
 
 	inline BattleRenderAssets BuildBattleRenderAssets(const UnitCatalog& catalog, const DefinitionStores* defs = nullptr)
@@ -103,6 +104,36 @@ namespace LT3
 				}
 
 				assets.unitVisualByTag[entry.unit_id] = info;
+			}
+		}
+		if (defs)
+		{
+			assets.skillIconTextures.resize(defs->skills.size());
+			for (SkillDefId skillId = 0; skillId < defs->skills.size(); ++skillId)
+			{
+				const SkillDef& skill = defs->skills[skillId];
+				Array<String> iconNames;
+				for (const String& icon : skill.iconLayers)
+				{
+					if (!icon.isEmpty())
+					{
+						iconNames << icon;
+					}
+				}
+				if (iconNames.isEmpty() && !skill.icon.isEmpty())
+				{
+					iconNames << skill.icon;
+				}
+
+				Array<Texture>& textures = assets.skillIconTextures[skillId];
+				for (const String& iconName : iconNames)
+				{
+					const FilePath iconPath = ResolveBuildIconPath(iconName);
+					if (!iconPath.isEmpty() && FileSystem::Exists(iconPath))
+					{
+						textures << Texture{ iconPath };
+					}
+				}
 			}
 		}
 		return assets;

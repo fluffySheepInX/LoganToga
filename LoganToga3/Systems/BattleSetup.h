@@ -263,6 +263,11 @@ namespace LT3
 
         world.resources = MakeResourceRuntimeStore(defs);
         InitializeAiRuntime(world, defs, aiProfileTag);
+        world.outcomeRules = request ? request->outcomeRules : BattleOutcomeRules{};
+        if (!request || world.outcomeRules.timeLimitSec < 0.0)
+        {
+            world.outcomeRules.timeLimitSec = world.aiRuntime.battleTimeLimitSec;
+        }
 
         const UnitDefId home = ResolveCommandBaseUnitDefId(defs);
         if (home != InvalidUnitDefId)

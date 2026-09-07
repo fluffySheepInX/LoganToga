@@ -106,26 +106,27 @@ namespace LT3
 
             int32 playerNearbyCount = 0;
             int32 enemyNearbyCount = 0;
-            for (UnitId unit = 0; unit < world.units.size(); ++unit)
-            {
-                if (!IsValidUnit(world, unit))
+            ForEachBattleWorldUnitNearPosition(world, world.resourceNodes.position[node], captureRadius,
+                [&](const UnitId unit)
                 {
-                    continue;
-                }
-                if (world.units.position[unit].distanceFromSq(world.resourceNodes.position[node]) > Square(captureRadius))
-                {
-                    continue;
-                }
+                    if (!IsValidUnit(world, unit))
+                    {
+                        return;
+                    }
+                    if (world.units.position[unit].distanceFromSq(world.resourceNodes.position[node]) > Square(captureRadius))
+                    {
+                        return;
+                    }
 
-                if (world.units.faction[unit] == Faction::Player)
-                {
-                    ++playerNearbyCount;
-                }
-                else if (world.units.faction[unit] == Faction::Enemy)
-                {
-                    ++enemyNearbyCount;
-                }
-            }
+                    if (world.units.faction[unit] == Faction::Player)
+                    {
+                        ++playerNearbyCount;
+                    }
+                    else if (world.units.faction[unit] == Faction::Enemy)
+                    {
+                        ++enemyNearbyCount;
+                    }
+                });
 
             if (playerNearbyCount == enemyNearbyCount)
             {
@@ -245,7 +246,8 @@ namespace LT3
         UpdateResourceNodeControl(world, defs, dt, notifications);
         UpdateResourceIncome(world, defs, dt);
 
-        for (UnitId unit = 0; unit < world.units.size(); ++unit)
+        const Array<UnitId> liveUnits = GetLiveBattleWorldUnits(world);
+        for (const UnitId unit : liveUnits)
         {
             if (!IsValidUnit(world, unit)) continue;
             if (IsBuildQueueLocked(world, unit)) continue;

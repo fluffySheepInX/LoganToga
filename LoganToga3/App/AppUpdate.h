@@ -335,7 +335,7 @@ namespace LT3
 			return;
 		}
 
-		const Array<DecalAmbientSoundCandidate> candidates = CollectDecalAmbientSoundCandidatesNearMouseOrCenter(ui.mapEditor);
+		const Array<DecalAmbientSoundCandidate> candidates = CollectDecalAmbientSoundCandidatesNearMouseOrCenter(ui.mapEditor, &runtime.activeMod);
 		if (candidates.isEmpty())
 		{
 			runtime.decalAmbientCooldownSec = 0.8;
@@ -369,14 +369,9 @@ namespace LT3
 			selected = &candidates.back();
 		}
 
-		auto cacheIt = runtime.decalAmbientAudioCache.find(selected->path);
-		if (cacheIt == runtime.decalAmbientAudioCache.end())
+		if (Audio* audio = runtime.audioAssets.findOrLoad(selected->path))
 		{
-			cacheIt = runtime.decalAmbientAudioCache.emplace(selected->path, Audio{ selected->path }).first;
-		}
-		if (cacheIt->second)
-		{
-			cacheIt->second.playOneShot(Clamp(selected->volume, 0.0, 1.0));
+			audio->playOneShot(Clamp(selected->volume, 0.0, 1.0));
 		}
 
 		runtime.decalAmbientCooldownSec = Random(1.2, 2.6);

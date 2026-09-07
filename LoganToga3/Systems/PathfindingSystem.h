@@ -387,9 +387,12 @@ namespace LT3
 
 	inline void UpdatePathfinding(BattleWorld& world, const DefinitionStores&, double dt)
 	{
-		for (UnitId unit = 0; unit < world.units.size() && unit < world.pathing.repathCooldownSec.size(); ++unit)
+		for (const UnitId unit : GetLiveBattleWorldUnits(world))
 		{
-			world.pathing.repathCooldownSec[unit] = Max(0.0, world.pathing.repathCooldownSec[unit] - dt);
+			if (unit < world.pathing.repathCooldownSec.size())
+			{
+				world.pathing.repathCooldownSec[unit] = Max(0.0, world.pathing.repathCooldownSec[unit] - dt);
+			}
 		}
 
 		if (world.pathing.requests.isEmpty())
