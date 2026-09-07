@@ -1464,5 +1464,20 @@
     <ClInclude Include="Data\AudioAssetCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Data\MusicTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\TitleLayoutEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\MusicSettingsService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MusicEditorController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\MusicEditorDraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

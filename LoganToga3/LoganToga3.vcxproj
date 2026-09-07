@@ -379,6 +379,8 @@
     <ClInclude Include="Data\MusicManager.h" />
     <ClInclude Include="Data\MusicPreview.h" />
     <ClInclude Include="Data\MusicSettings.h" />
+    <ClInclude Include="Data\MusicSettingsService.h" />
+    <ClInclude Include="Data\MusicTypes.h" />
     <ClInclude Include="Data\TomlTextUtils.h" />
     <ClInclude Include="Data\UnitCatalog.h" />
     <ClInclude Include="libs\AddonGaussian.h" />
@@ -518,6 +520,8 @@
     <ClInclude Include="UI\MapEditorUnitLayoutRects.h" />
     <ClInclude Include="UI\MapEditorUnitListLayoutRects.h" />
     <ClInclude Include="UI\MapEditorUnitParamEditorCommon.h" />
+    <ClInclude Include="UI\MusicEditorController.h" />
+    <ClInclude Include="UI\MusicEditorDraw.h" />
     <ClInclude Include="UI\QuarterView.h" />
     <ClInclude Include="UI\RectLayoutPrimitives.h" />
     <ClInclude Include="UI\RectNumberStepperTypes.h" />
@@ -550,6 +554,7 @@
     <ClInclude Include="UI\SkillEditorState.Metadata.h" />
     <ClInclude Include="UI\SkillEditorState.ResourceCosts.h" />
     <ClInclude Include="UI\SkillEditorState.Values.h" />
+    <ClInclude Include="UI\TitleLayoutEditor.h" />
     <ClInclude Include="UI\TitleUiLayout.h" />
   </ItemGroup>
   <ItemGroup>

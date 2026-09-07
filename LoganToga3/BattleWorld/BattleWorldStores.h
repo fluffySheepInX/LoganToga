@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../Data/BattleOutcome.h"
 # include "../Data/DefinitionStores.h"
 # include "BattleWorldMap.h"
 
