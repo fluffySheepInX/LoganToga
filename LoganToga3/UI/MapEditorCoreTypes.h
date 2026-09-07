@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../Data/ModContent.h"
 # include "../Data/UnitCatalog.h"
 # include "../Data/DefinitionStores.h"
 # include "QuarterView.h"
@@ -330,6 +331,7 @@ namespace LT3
 		bool uiLayoutDraggingResourceNodeEditor = false;
 		Vec2 uiDecalEditorPos{ 680.0, 260.0 };
 		bool uiLayoutDraggingDecalEditor = false;
+		ModContext mod;
 		FilePath assetDirectory;
 		FilePath savePath;
 		FilePath uiLayoutPath;

@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include "../libs/AddonGaussian.h"
+# include "../Data/TomlTextUtils.h"
 
 namespace LT3
 {
@@ -94,13 +95,6 @@ namespace LT3
 		TitleUiLayout layout = sourceLayout;
 		RepairTitleUiLayout(layout);
 		const FilePath path = ResolveTitleUiLayoutTomlPath();
-		FileSystem::CreateDirectories(FileSystem::ParentPath(path));
-		TextWriter writer{ path };
-		if (!writer)
-		{
-			return false;
-		}
-
 		String tomlText;
 		tomlText += U"[layout]\n";
 		tomlText += U"grid = {}\n\n"_fmt(layout.gridSize);
@@ -114,8 +108,17 @@ namespace LT3
 		tomlText += U"y = {}\n"_fmt(layout.musicEditorToggleRect.y);
 		tomlText += U"w = {}\n"_fmt(layout.musicEditorToggleRect.w);
 		tomlText += U"h = {}\n"_fmt(layout.musicEditorToggleRect.h);
-		writer.write(tomlText);
-		return true;
+
+		const FilePath temporaryPath = path + U".tmp";
+		const FilePath backupPath = path + U".bak";
+		FileSystem::Remove(temporaryPath);
+		String statusText;
+		if (!WriteUtf8TextFile(temporaryPath, tomlText, statusText))
+		{
+			return false;
+		}
+
+		return SaveTomlFilesTransaction({ TomlTransactionFile{ path, temporaryPath, backupPath } }, statusText);
 	}
 
 	inline bool LoadTitleUiLayoutToml(TitleUiLayout& layout)

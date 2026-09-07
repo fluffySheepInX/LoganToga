@@ -17,7 +17,7 @@ namespace LT3
 			: AppSceneManager::Scene(init)
 		{
 			auto& data = getData();
-			InitializeAppUiState(m_ui, data.modMode);
+			InitializeAppUiState(m_ui, data.modMode, &data.activeMod);
 			SetRuntimeActiveMod(m_runtime, data.activeMod);
 			PromoteBattleDefinitions(m_runtime, data.definitions, m_ui.mapEditor.definitionRevision);
 			ResetBattleRuntimeState(m_runtime, m_runtime.battleDefinitions, false, data.quickBattleRequest.valid ? &data.quickBattleRequest : nullptr);

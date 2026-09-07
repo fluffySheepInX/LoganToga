@@ -216,16 +216,32 @@ namespace LT3
 			const RectF panelRect = TitleUiEditorPanelRect();
 			if (SimpleButton(TitleUiEditorGridDownRect(panelRect), U"-", data.uiFont))
 			{
+				const TitleUiLayout layoutBeforeSave = data.titleUiLayout;
 				data.titleUiLayout.gridSize = Clamp(data.titleUiLayout.gridSize - 8, 8, 160);
-				SaveTitleUiLayoutToml(data.titleUiLayout);
-				editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				if (SaveTitleUiLayoutToml(data.titleUiLayout))
+				{
+					editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				}
+				else
+				{
+					data.titleUiLayout = layoutBeforeSave;
+					editor.statusText = U"Title UI layout save failed; grid change reverted";
+				}
 				return;
 			}
 			if (SimpleButton(TitleUiEditorGridUpRect(panelRect), U"+", data.uiFont))
 			{
+				const TitleUiLayout layoutBeforeSave = data.titleUiLayout;
 				data.titleUiLayout.gridSize = Clamp(data.titleUiLayout.gridSize + 8, 8, 160);
-				SaveTitleUiLayoutToml(data.titleUiLayout);
-				editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				if (SaveTitleUiLayoutToml(data.titleUiLayout))
+				{
+					editor.statusText = U"Grid: {}"_fmt(data.titleUiLayout.gridSize);
+				}
+				else
+				{
+					data.titleUiLayout = layoutBeforeSave;
+					editor.statusText = U"Title UI layout save failed; grid change reverted";
+				}
 				return;
 			}
 
@@ -250,6 +266,7 @@ namespace LT3
 			const RectF resizeHandleRect = TitleUiEditorResizeHandleRect(targetRect);
 			if (!editor.dragOffset && !editor.resizing && MouseL.down() && resizeHandleRect.mouseOver())
 			{
+				editor.layoutBeforePointerEdit = data.titleUiLayout;
 				editor.resizing = true;
 				editor.resizeAnchorLeft = targetRect.x;
 				editor.resizeAnchorY = targetRect.y;
@@ -257,6 +274,7 @@ namespace LT3
 			}
 			if (!editor.resizing && !editor.dragOffset && MouseL.down() && targetRect.mouseOver())
 			{
+				editor.layoutBeforePointerEdit = data.titleUiLayout;
 				editor.dragOffset = Cursor::PosF() - targetRect.pos;
 				return;
 			}
@@ -264,7 +282,6 @@ namespace LT3
 			if (editor.resizing && MouseL.pressed())
 			{
 				targetRect.w = Max(TitleUiEditorMinButtonWidth, SnapTitleUiScalar(Cursor::PosF().x - editor.resizeAnchorLeft, data.titleUiLayout.gridSize));
-				SaveTitleUiLayoutToml(data.titleUiLayout);
 				editor.statusText = U"Resized: {}"_fmt(EditableTitleLabel(*editor.selectedElement));
 			}
 			else if (editor.dragOffset && MouseL.pressed())
@@ -273,7 +290,6 @@ namespace LT3
 				const Vec2 snapped = SnapTitleUiPosition(Cursor::PosF() - *editor.dragOffset, data.titleUiLayout.gridSize);
 				targetRect.x = Clamp(snapped.x, 0.0, Max(0.0, logicalSceneSize.x - targetRect.w));
 				targetRect.y = Clamp(snapped.y, 0.0, Max(0.0, logicalSceneSize.y - TitleUnderBarHeight - targetRect.h));
-				SaveTitleUiLayoutToml(data.titleUiLayout);
 				editor.statusText = U"Moved: {}"_fmt(EditableTitleLabel(*editor.selectedElement));
 			}
 
@@ -282,10 +298,19 @@ namespace LT3
 				if (editor.dragOffset || editor.resizing)
 				{
 					RepairTitleUiLayout(data.titleUiLayout);
-					SaveTitleUiLayoutToml(data.titleUiLayout);
+					if (SaveTitleUiLayoutToml(data.titleUiLayout))
+					{
+						editor.statusText = U"Title UI layout saved";
+					}
+					else if (editor.layoutBeforePointerEdit)
+					{
+						data.titleUiLayout = *editor.layoutBeforePointerEdit;
+						editor.statusText = U"Title UI layout save failed; changes reverted";
+					}
 				}
 				editor.dragOffset.reset();
 				editor.resizing = false;
+				editor.layoutBeforePointerEdit.reset();
 			}
 		}
 

@@ -68,6 +68,7 @@ namespace LT3
 		bool resizing = false;
 		double resizeAnchorLeft = 0.0;
 		double resizeAnchorY = 0.0;
+		Optional<TitleUiLayout> layoutBeforePointerEdit;
 		String statusText = U"Title UI Editor ready";
 	};
 

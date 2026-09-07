@@ -69,10 +69,30 @@ namespace LT3
 		return DecalRenderKind::Ground;
 	}
 
-	inline void LoadMapEditorAssets(MapEditorState& editor)
+	inline void LoadMapEditorAssets(MapEditorState& editor, const ModContext* mod = nullptr)
 	{
-		editor.assetDirectory = ResolveMapEditorAssetDirectory();
+		if (mod)
+		{
+			editor.mod = *mod;
+		}
+		editor.assetDirectory = ResolveModMapEditorAssetDirectory(editor.mod.rootPath.isEmpty() ? nullptr : &editor.mod);
+		if (editor.assetDirectory.isEmpty())
+		{
+			editor.assetDirectory = ResolveMapEditorAssetDirectory();
+		}
 		editor.savePath = editor.assetDirectory + U"map_editor_map.toml";
+		const TOMLReader initialToml{ editor.savePath };
+		if (initialToml)
+		{
+			const String relativeAssetDirectory = initialToml[U"map.asset_directory"].getOr<String>(U"");
+			const FilePath resolvedAssetDirectory = ResolveModAssetPath(
+				editor.mod.rootPath.isEmpty() ? nullptr : &editor.mod,
+				relativeAssetDirectory);
+			if (!relativeAssetDirectory.isEmpty() && FileSystem::IsDirectory(resolvedAssetDirectory))
+			{
+				editor.assetDirectory = resolvedAssetDirectory + U"/";
+			}
+		}
 		editor.uiLayoutPath = ResolveBattleUiLayoutTomlPath();
 		editor.resourceNodeSavePath = ResolveResourceNodeTomlPath();
 		editor.assets.clear();
@@ -333,7 +353,15 @@ namespace LT3
 		writer << U"width = " << editor.mapWidth << U"\n";
 		writer << U"height = " << editor.mapHeight << U"\n";
 		writer << U"tile_step = " << QuarterTileStep << U"\n";
-		writer << U"asset_directory = \"" << TomlEscape(editor.assetDirectory) << U"\"\n\n";
+		const Optional<FilePath> relativeAssetDirectory = MakeCanonicalAssetRelativePath(
+			editor.mod.rootPath.isEmpty() ? nullptr : &editor.mod,
+			editor.assetDirectory);
+		if (!relativeAssetDirectory)
+		{
+			statusText = U"Map asset directory is outside the active mod root";
+			return false;
+		}
+		writer << U"asset_directory = \"" << TomlEscape(*relativeAssetDirectory) << U"\"\n\n";
 
 		for (int32 y = 0; y < editor.mapHeight; ++y)
 		{
