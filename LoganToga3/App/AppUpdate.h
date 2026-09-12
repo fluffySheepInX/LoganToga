@@ -318,7 +318,11 @@ namespace LT3
 			return;
 		}
 
-		HandleBattleInput(runtime.world, runtime.battleDefinitions, ui.mapEditor, screenMouse, worldMouse);
+		BattleInputIntent intent = HandleBattleInput(runtime.world, runtime.battleDefinitions, ui.mapEditor, screenMouse, worldMouse);
+		if (!intent.commands.isEmpty())
+		{
+			runtime.pendingBattleInput << std::move(intent);
+		}
 	}
 
 	inline void UpdateDecalAmbientSound(AppRuntimeState& runtime, const AppUiState& ui)
@@ -402,7 +406,21 @@ namespace LT3
 			&& runtime.world.definitionGeneration == runtime.battleDefinitionGeneration
 			&& HasValidBattleWorldState(runtime.world, runtime.battleDefinitions))
 		{
-			UpdateBattleWorld(runtime.world, runtime.battleDefinitions, Scene::DeltaTime(), &runtime.notifications);
+			constexpr double fixedBattleTickSec = 1.0 / 60.0;
+			constexpr double maxAccumulatedBattleTimeSec = 0.25;
+			constexpr int32 maxTicksPerFrame = 8;
+			runtime.battleTickAccumulatorSec = Min(maxAccumulatedBattleTimeSec, runtime.battleTickAccumulatorSec + Scene::DeltaTime());
+			for (int32 tick = 0; tick < maxTicksPerFrame && runtime.battleTickAccumulatorSec >= fixedBattleTickSec; ++tick)
+			{
+				for (const BattleInputIntent& intent : runtime.pendingBattleInput)
+				{
+					ApplyBattleInputIntent(runtime.world, runtime.battleDefinitions, intent);
+				}
+				runtime.pendingBattleInput.clear();
+				UpdateBattleWorld(runtime.world, runtime.battleDefinitions, fixedBattleTickSec, &runtime.notifications);
+				++runtime.world.simulationTick;
+				runtime.battleTickAccumulatorSec -= fixedBattleTickSec;
+			}
 		}
 
 		UpdateResourceFlagRuntimeState(runtime);

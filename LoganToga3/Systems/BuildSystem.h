@@ -157,7 +157,7 @@ namespace LT3
                     {
                         for (int32 count = 0; count < action.createCount; ++count)
                         {
-                            const Vec2 rally = spawnOrigin + Vec2{ 74 + count * 18.0, Random(-48.0, 48.0) };
+                            const Vec2 rally = spawnOrigin + Vec2{ 74 + count * 18.0, BattleRandomDouble(world, -48.0, 48.0) };
                             AddUnitToBattleWorld(world, primarySpawnUnit, world.units.faction[unit], rally, defs, queuedAction.iconOverride);
                         }
                     }

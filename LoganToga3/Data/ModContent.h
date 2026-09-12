@@ -25,6 +25,7 @@ namespace LT3
 		FilePath mapPath;
 		FilePath resourceNodePath;
 		String aiProfileTag;
+		uint64 simulationSeed = 1;
 		BattleOutcomeRules outcomeRules;
 		bool valid = false;
 	};
@@ -308,6 +309,7 @@ namespace LT3
 		request.mapPath = *mapPath;
 		request.resourceNodePath = *resourcePath;
 		request.aiProfileTag = toml[U"ai_profile"].getOr<String>(U"").lowercased();
+		request.simulationSeed = Max<uint64>(1, toml[U"simulation_seed"].getOr<uint64>(request.simulationSeed));
 		request.outcomeRules = outcomeRules;
 		request.valid = true;
 		return true;

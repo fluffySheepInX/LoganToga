@@ -156,7 +156,7 @@ namespace LT3
 			|| world.aiRuntime.phase == AiRuntimePhase::AttackWave;
 	}
 
-	inline Optional<Vec2> ResolveEnemyAiRoleMoveDestination(const BattleWorld& world, const DefinitionStores& defs, const AiProfileDef* aiProfile, UnitId unit)
+	inline Optional<Vec2> ResolveEnemyAiRoleMoveDestination(BattleWorld& world, const DefinitionStores& defs, const AiProfileDef* aiProfile, UnitId unit)
 	{
 		if (IsEnemyResourceReclaimUnit(world, unit) && world.aiRuntime.hasResourceTargetPosition)
 		{
@@ -164,7 +164,7 @@ namespace LT3
 		}
 		if (IsEnemyGuardUnit(world, unit) && world.aiRuntime.hasGuardAnchorPosition)
 		{
-			return world.aiRuntime.guardAnchorPosition + Vec2{ Random(-48.0, 48.0), Random(-36.0, 36.0) };
+			return world.aiRuntime.guardAnchorPosition + Vec2{ BattleRandomDouble(world, -48.0, 48.0), BattleRandomDouble(world, -36.0, 36.0) };
 		}
 		if (IsEnemySkirmishUnit(world, unit) && world.aiRuntime.hasSkirmishAnchorPosition)
 		{
@@ -175,7 +175,7 @@ namespace LT3
 			{
 				return anchor;
 			}
-			return anchor + Vec2{ Random(-leash * 0.35, leash * 0.35), Random(-leash * 0.22, leash * 0.22) };
+			return anchor + Vec2{ BattleRandomDouble(world, -leash * 0.35, leash * 0.35), BattleRandomDouble(world, -leash * 0.22, leash * 0.22) };
 		}
 
 		return none;

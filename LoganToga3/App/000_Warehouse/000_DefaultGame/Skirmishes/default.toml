@@ -4,6 +4,7 @@ display_name = "Default Skirmish"
 map = "015_BattleMapCellImage/map_editor_map.toml"
 resource_nodes = "070_Scenario/InfoResource/Map001.ResourceNodes.toml"
 ai_profile = ""
+simulation_seed = 1
 victory_condition = "destroy_enemy_bases"
 defeat_condition = "destroy_enemy_bases"
 time_limit_sec = 1500

@@ -120,13 +120,18 @@ namespace LT3
 		{
 		 if (hoveredResourceNode && !GetSelectedUnits(world).isEmpty())
 			{
-				for (const UnitId unit : GetSelectedUnits(world))
-				{
-					if (!IsBuildQueueLocked(world, unit) && CanIssueMoveOrder(world, defs, unit))
-					{
-						IssueMoveToResourceNode(world, unit, *hoveredResourceNode);
-					}
-				}
+				const Vec2 resourcePosition = world.resourceNodes.position[*hoveredResourceNode];
+				intent.commands << BattleInputCommand{
+					BattleInputCommandType::MoveUnit,
+					GetSelectedUnits(world).front(),
+					GetSelectedUnits(world),
+					resourcePosition,
+					Vec2{ 0, 0 },
+					InvalidBuildActionDefId,
+					{},
+					false,
+					false
+				};
 				return intent;
 			}
 
@@ -214,11 +219,11 @@ namespace LT3
 					}
 				}
 
-				inline void HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& screenMouse, const Vec2& worldMouse)
+				inline BattleInputIntent HandleBattleInput(BattleWorld& world, const DefinitionStores& defs, const MapEditorState& mapEditor, const Vec2& screenMouse, const Vec2& worldMouse)
 				{
 					BattleInputIntent intent = ReadBattleInput(world, defs, mapEditor, screenMouse, worldMouse);
 					UpdateAreaSelectionDrag(world, defs, mapEditor, screenMouse, intent);
 					UpdateFormationPlacementPreview(world, defs, mapEditor, screenMouse, worldMouse, intent);
-					ApplyBattleInputIntent(world, defs, intent);
+					return intent;
 				}
 			}

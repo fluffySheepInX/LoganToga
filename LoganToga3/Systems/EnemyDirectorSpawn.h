@@ -137,7 +137,7 @@ namespace LT3
 		return candidates;
 	}
 
-	inline UnitDefId ChooseEnemySpawnUnitByProfile(const BattleWorld& world, const DefinitionStores& defs, const Array<UnitDefId>& candidates, const AiProfileDef* aiProfile)
+	inline UnitDefId ChooseEnemySpawnUnitByProfile(BattleWorld& world, const DefinitionStores& defs, const Array<UnitDefId>& candidates, const AiProfileDef* aiProfile)
 	{
 		if (candidates.isEmpty())
 		{
@@ -159,7 +159,7 @@ namespace LT3
 			return InvalidUnitDefId;
 		}
 
-		double roll = Random(0.0, totalWeight);
+		double roll = BattleRandomDouble(world, 0.0, totalWeight);
 		for (size_t i = 0; i < candidates.size(); ++i)
 		{
 			roll -= weights[i];
@@ -219,6 +219,6 @@ namespace LT3
 		}
 
 		const Vec2 enemySpawnOrigin = ResolveEnemySpawnOrigin(world, defs);
-		AddUnitToBattleWorld(world, spawn, Faction::Enemy, enemySpawnOrigin + Vec2{ 0.0, Random(-100.0, 100.0) }, defs);
+		AddUnitToBattleWorld(world, spawn, Faction::Enemy, enemySpawnOrigin + Vec2{ 0.0, BattleRandomDouble(world, -100.0, 100.0) }, defs);
 	}
 }

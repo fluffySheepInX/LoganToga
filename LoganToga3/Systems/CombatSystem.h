@@ -193,7 +193,7 @@ namespace LT3
                 }
                 if (skill.burstOrderMode == SkillBurstOrderMode::Random)
                 {
-                    order.shuffle();
+                    ShuffleBattleOrder(world, order);
                 }
             }
             if (skill.burstFireMode == SkillBurstFireMode::Simultaneous)

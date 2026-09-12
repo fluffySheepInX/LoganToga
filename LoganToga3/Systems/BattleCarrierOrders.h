@@ -100,8 +100,8 @@ namespace LT3
 				continue;
 			}
 
-			const double angle = Random(0.0, Math::TwoPi);
-			const double distance = Random(24.0, radius);
+			const double angle = BattleRandomDouble(world, 0.0, Math::TwoPi);
+			const double distance = BattleRandomDouble(world, 24.0, radius);
 			const Vec2 offset = Circular{ distance, angle };
 			world.activateUnit(unit);
 			world.units.position[unit] = carrierPos + offset;

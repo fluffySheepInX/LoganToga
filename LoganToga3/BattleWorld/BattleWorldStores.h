@@ -294,9 +294,9 @@ namespace LT3
 	private:
 		friend struct BattleWorld;
 
-		void addUnit()
+		void addUnit(double initialAttackCooldownSec)
 		{
-			attackLeftSec.append(Random(0.0, 0.25));
+			attackLeftSec.append(initialAttackCooldownSec);
 			burstShotsLeft.append(0);
 			burstShotTimerSec.append(0.0);
 			burstTarget.append(InvalidUnitId);
@@ -702,6 +702,9 @@ namespace LT3
 		AudioAssetCache* audioAssets = nullptr;
 		const ModContext* audioMod = nullptr;
 		bool enemyDirectorPaused = false;
+		uint64 simulationSeed = 0;
+		uint64 randomState = 1;
+		uint64 simulationTick = 0;
 		double enemySpawnTimerSec = 0.0;
 		double elapsedSec         = 0.0;
 		BattleOutcome outcome = BattleOutcome::InProgress;
@@ -733,6 +736,34 @@ namespace LT3
 		// BattleWorld全体を初期状態へ戻す。
 		void reset();
 	};
+
+	// 戦闘専用の決定的乱数値を生成します。
+	inline uint64 NextBattleRandom(BattleWorld& world)
+	{
+		uint64 value = world.randomState;
+		value ^= value << 13;
+		value ^= value >> 7;
+		value ^= value << 17;
+		world.randomState = value;
+		return value;
+	}
+
+	// 戦闘専用の一様実数乱数を生成します。
+	inline double BattleRandomDouble(BattleWorld& world, double minValue, double maxValue)
+	{
+		const double unitValue = static_cast<double>(NextBattleRandom(world) >> 11) * (1.0 / 9007199254740992.0);
+		return minValue + (maxValue - minValue) * unitValue;
+	}
+
+	// 戦闘専用の決定的な配列シャッフルを実行します。
+	inline void ShuffleBattleOrder(BattleWorld& world, Array<int32>& values)
+	{
+		for (size_t i = values.size(); i > 1; --i)
+		{
+			const size_t swapIndex = static_cast<size_t>(NextBattleRandom(world) % i);
+			std::swap(values[i - 1], values[swapIndex]);
+		}
+	}
 
 	struct BattleWorldStoreInvariantResult
 	{
@@ -1132,7 +1163,7 @@ namespace LT3
 		try
 		{
 			const UnitId id = units.add(unitDef, faction, position, defs);
-			cooldowns.addUnit();
+			cooldowns.addUnit(BattleRandomDouble(*this, 0.0, 0.25));
 			buildQueues.addUnit();
 			carriers.addUnit();
 			pathing.addUnit(position);

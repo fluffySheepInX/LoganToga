@@ -4,6 +4,7 @@
 # include "AppDefinitionState.h"
 # include "BattleNotificationState.h"
 # include "../Systems/BattleSystems.h"
+# include "../Systems/BattleInputTypes.h"
 
 namespace LT3
 {
@@ -33,6 +34,8 @@ namespace LT3
         double decalAmbientCooldownSec = 0.0;
         AudioAssetCache audioAssets;
         ModContext activeMod;
+        Array<BattleInputIntent> pendingBattleInput;
+        double battleTickAccumulatorSec = 0.0;
     };
 
     // 戦闘が参照する定義と描画アセットを同一世代として更新する。
@@ -93,12 +96,16 @@ namespace LT3
         runtime.world.audioAssets = &runtime.audioAssets;
         runtime.world.audioMod = &runtime.activeMod;
         runtime.world.reset();
+        runtime.world.simulationSeed = request ? request->simulationSeed : 1;
+        runtime.world.randomState = runtime.world.simulationSeed;
         SpawnDefaultBattle(runtime.world, defs, request);
         runtime.world.definitionGeneration = runtime.battleDefinitionGeneration;
         runtime.world.enemyDirectorPaused = enemyDirectorPaused;
         ClearBattleNotifications(runtime);
         SyncResourceFlagRuntimeState(runtime);
         runtime.decalAmbientCooldownSec = 0.0;
+        runtime.battleTickAccumulatorSec = 0.0;
+        runtime.pendingBattleInput.clear();
         runtime.audioAssets.clear();
     }
 
