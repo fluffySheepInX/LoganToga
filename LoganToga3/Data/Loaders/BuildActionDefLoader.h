@@ -183,14 +183,6 @@ namespace LT3
         }
 
         const FilePath buildActionPath = ResolveBuildActionTomlPath();
-        FileSystem::CreateDirectories(FileSystem::ParentPath(buildActionPath));
-        TextWriter writer{ buildActionPath };
-        if (!writer)
-        {
-            statusText = U"Build action save failed: {}"_fmt(buildActionPath);
-            return false;
-        }
-
         String tomlText;
         bool firstCommand = true;
 
@@ -278,7 +270,10 @@ namespace LT3
         }
 
         // TOML への保存では、行ごとに自動で改行コードが付与される書き方を使わず、必要な改行だけを文字列側で明示する。
-        writer.write(tomlText);
+        if (!SaveTomlTextFileSafely(buildActionPath, tomlText, statusText))
+        {
+            return false;
+        }
 
         statusText = U"Saved build actions: {}"_fmt(buildActionPath);
         return true;

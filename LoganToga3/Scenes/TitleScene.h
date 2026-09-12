@@ -32,7 +32,7 @@ namespace LT3
 			}
 
 			UpdateMusicEditor(data);
-			if (SimpleButton(BattleButtonRect(data), U"スカーミッシュ", data.uiFont))
+			if (SimpleButton(BattleButtonRect(data), LocalizedText(data.localizedTexts, data.defaultTexts, U"title.skirmish"), data.uiFont))
 			{
 				StopMusicPreview(data.musicEditor);
 				changeScene(AppSceneState::Battle, 0.4s);

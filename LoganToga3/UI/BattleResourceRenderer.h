@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "../Systems/BattleSystems.h"
 # include "../Data/BattleAssetPaths.h"
+# include "../Data/Localization.h"
 # include "BattleUnitRenderer.h"
 # include "QuarterView.h"
 # include "MapEditorTypes.h"
@@ -194,7 +195,7 @@ namespace LT3
         flagTexture->resized(flagWidth, flagHeight).drawAt(flagCenter);
     }
 
-    inline void DrawResourceNodeOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, size_t index, const ResourceFlagRuntimeState* resourceFlags = nullptr)
+    inline void DrawResourceNodeOverlay(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const LocalizationCatalog& localizedTexts, const LocalizationCatalog& defaultTexts, const Font& uiFont, size_t index, const ResourceFlagRuntimeState* resourceFlags = nullptr)
     {
         const Vec2 pos = QuarterTileFaceCenterScreen(world.resourceNodes.position[index]);
         const bool depleted = world.resourceNodes.amount[index] <= 0;
@@ -260,7 +261,7 @@ namespace LT3
                 ? Max(0.1, world.resourceNodes.captureTimeSec[index])
                 : 1.5;
             const double remainSec = Max(0.0, (1.0 - captureRate) * captureTimeSec);
-            uiFont(U"{:.1f}s"_fmt(remainSec)).drawAt(11, pos + Vec2{ 0, -44 }, Palette::White);
+            uiFont(FormatLocalizedText(localizedTexts, defaultTexts, U"battle.capture_remaining_seconds", U"{:.1f}"_fmt(remainSec))).drawAt(11, pos + Vec2{ 0, -44 }, Palette::White);
         }
 
         const String amountText = oneShot ? U"+{}"_fmt(world.resourceNodes.amount[index]) : U"{}"_fmt(world.resourceNodes.amount[index]);
@@ -293,11 +294,11 @@ namespace LT3
         }
     }
 
-    inline void DrawResourceNodeOverlays(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const Font& uiFont, const ResourceFlagRuntimeState* resourceFlags = nullptr)
+    inline void DrawResourceNodeOverlays(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const LocalizationCatalog& localizedTexts, const LocalizationCatalog& defaultTexts, const Font& uiFont, const ResourceFlagRuntimeState* resourceFlags = nullptr)
     {
         for (size_t i = 0; i < world.resourceNodes.position.size(); ++i)
         {
-            DrawResourceNodeOverlay(world, defs, assets, uiFont, i, resourceFlags);
+            DrawResourceNodeOverlay(world, defs, assets, localizedTexts, defaultTexts, uiFont, i, resourceFlags);
         }
     }
 

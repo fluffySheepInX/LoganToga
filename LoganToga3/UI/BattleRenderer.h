@@ -122,7 +122,7 @@ namespace LT3
         }
     }
 
-    inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const ResourceFlagRuntimeState& resourceFlags, const MapEditorState& mapEditor, const ClickDebugState& debugState, bool showDebugInfo, const Font& uiFont, const Font& titleFont)
+    inline void DrawBattleWorld(const BattleWorld& world, const DefinitionStores& defs, const BattleRenderAssets& assets, const ResourceFlagRuntimeState& resourceFlags, const MapEditorState& mapEditor, const ClickDebugState& debugState, bool showDebugInfo, const LocalizationCatalog& localizedTexts, const LocalizationCatalog& defaultTexts, const Font& uiFont, const Font& titleFont)
     {
         Rect{ 0, 0, 1600, 900 }.draw(ColorF{ 0.06, 0.10, 0.09 });
         const Array<bool> fogVisibleMask = BuildFogVisibleCellMask(world, defs);
@@ -165,7 +165,7 @@ namespace LT3
                 }
             }
             DrawUnitHealthBarsOverlay(world, defs, visibleMask, world.mapWidth, world.mapHeight);
-            DrawResourceNodeOverlays(world, defs, assets, uiFont, &resourceFlags);
+            DrawResourceNodeOverlays(world, defs, assets, localizedTexts, defaultTexts, uiFont, &resourceFlags);
             if (showDebugInfo)
             {
                 DrawBuildingUnitClickDebugOverlay(world, defs, debugCursor);
@@ -184,8 +184,8 @@ namespace LT3
             DrawClickDebugOverlay(debugState, uiFont);
             DrawSelectionDebugOverlay(world, defs, assets, uiFont);
         }
-        DrawBattleTimerOverlay(world, uiFont);
+        DrawBattleTimerOverlay(world, localizedTexts, defaultTexts, uiFont);
         DrawSelectedUnitPanel(world, defs, mapEditor, uiFont, showDebugInfo);
-        DrawResultOverlay(world, uiFont, titleFont);
+        DrawResultOverlay(world, localizedTexts, defaultTexts, uiFont, titleFont);
     }
 }

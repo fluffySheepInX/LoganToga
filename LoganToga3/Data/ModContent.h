@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include <filesystem>
 # include "BattleOutcome.h"
+# include "ModPolicy.h"
 
 namespace LT3
 {
@@ -46,32 +47,20 @@ namespace LT3
 		return rules;
 	}
 
+	// Siv3D文字列をPure Policy入力へ変換します。
+	inline ModPolicy::TextView ToModPolicyTextView(const StringView value)
+	{
+		return ModPolicy::TextView{ value.data(), value.size() };
+	}
+
 	// ASCII 安定 ID を小文字へ正規化します。
 	inline Optional<String> NormalizeContentId(StringView value)
 	{
-		if (value.isEmpty())
-		{
-			return none;
-		}
-
 		String normalized;
-		for (const char32 ch : value)
-		{
-			if ((U'A' <= ch) && (ch <= U'Z'))
-			{
-				normalized += (ch - U'A' + U'a');
-			}
-			else if (((U'a' <= ch) && (ch <= U'z')) || ((U'0' <= ch) && (ch <= U'9') || (ch == U'-')))
-			{
-				normalized += ch;
-			}
-			else
-			{
-				return none;
-			}
-		}
-
-		return normalized;
+		normalized.resize(value.size());
+		return ModPolicy::TryNormalizeAsciiStableId(ToModPolicyTextView(value), normalized.data(), normalized.size())
+			? Optional<String>{ normalized }
+			: none;
 	}
 
 	// 正規化済みの候補パスが正規化済み root の厳密な配下かを判定します。
@@ -93,26 +82,7 @@ namespace LT3
 	// 存在しない将来用ディレクトリを含め、相対パスの字句上の root 逸脱を検証します。
 	inline bool IsLexicallySafeModRelativePath(StringView relativePath)
 	{
-		if (relativePath.isEmpty())
-		{
-			return false;
-		}
-
-		const std::filesystem::path inputPath{ String{ relativePath }.toWstr() };
-		if (!inputPath.is_relative() || inputPath.has_root_name() || inputPath.has_root_directory())
-		{
-			return false;
-		}
-
-		for (const auto& part : inputPath.lexically_normal())
-		{
-			if (part == L"..")
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return ModPolicy::IsLexicallySafeRelativePath(ToModPolicyTextView(relativePath));
 	}
 
 	// manifest からの相対パスを解決し、実体が root の外部を参照しない場合だけ返します。

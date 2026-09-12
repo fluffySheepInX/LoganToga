@@ -1,5 +1,6 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
+# include "../Data/Localization.h"
 # include "../Systems/BattleSystems.h"
 # include "MapEditor.h"
 # include "BattleUiPanels.Build.h"
@@ -7,7 +8,7 @@
 namespace LT3
 {
 	// 戦闘結果オーバーレイを描画する。
-	inline void DrawResultOverlay(const BattleWorld& world, const Font& uiFont, const Font& titleFont)
+	inline void DrawResultOverlay(const BattleWorld& world, const LocalizationCatalog& localizedTexts, const LocalizationCatalog& defaultTexts, const Font& uiFont, const Font& titleFont)
 	{
 		if (!IsTerminalBattleOutcome(world.outcome))
 		{
@@ -15,27 +16,27 @@ namespace LT3
 		}
 
 		Rect{ 0, 0, 1600, 900 }.draw(ColorF{ 0, 0, 0, 0.58 });
-		String resultText = U"DRAW";
+		String resultText = LocalizedText(localizedTexts, defaultTexts, U"battle.result.draw");
 		ColorF resultColor{ 0.75, 0.80, 0.90 };
 		switch (world.outcome)
 		{
 		case BattleOutcome::Victory:
-			resultText = U"VICTORY";
+			resultText = LocalizedText(localizedTexts, defaultTexts, U"battle.result.victory");
 			resultColor = ColorF{ 1.0, 0.84, 0.0 };
 			break;
 		case BattleOutcome::Defeat:
-			resultText = U"DEFEAT";
+			resultText = LocalizedText(localizedTexts, defaultTexts, U"battle.result.defeat");
 			resultColor = ColorF{ 1.0, 0.25, 0.20 };
 			break;
 		case BattleOutcome::Aborted:
-			resultText = U"ABORTED";
+			resultText = LocalizedText(localizedTexts, defaultTexts, U"battle.result.aborted");
 			resultColor = ColorF{ 0.85, 0.70, 0.45 };
 			break;
 		default:
 			break;
 		}
 		titleFont(resultText).drawAt(90, Vec2{ 800, 410 }, resultColor);
-		uiFont(U"Press ESC or close from the Gaussian menu.").drawAt(800, 500, Palette::White);
+		uiFont(LocalizedText(localizedTexts, defaultTexts, U"battle.result.exit_hint")).drawAt(800, 500, Palette::White);
 	}
 
 	// 残り時間を mm:ss 形式へ整形する。
@@ -48,7 +49,7 @@ namespace LT3
 	}
 
 	// 戦闘制限時間オーバーレイを描画する。
-	inline void DrawBattleTimerOverlay(const BattleWorld& world, const Font& uiFont)
+	inline void DrawBattleTimerOverlay(const BattleWorld& world, const LocalizationCatalog& localizedTexts, const LocalizationCatalog& defaultTexts, const Font& uiFont)
 	{
 		if (world.outcomeRules.timeLimitSec <= 0.0)
 		{
@@ -66,7 +67,7 @@ namespace LT3
 		}
 		const RectF panel{ 636.0, 18.0, 328.0, 54.0 };
 		panel.draw(ColorF{ 0.02, 0.03, 0.045, 0.82 }).drawFrame(2.0, 0.0, frameColor);
-		uiFont(U"Time Limit").drawAt(13, panel.center().movedBy(0.0, -12.0), ColorF{ 0.0, 1.0, 1.0 });
+		uiFont(LocalizedText(localizedTexts, defaultTexts, U"battle.time_limit")).drawAt(13, panel.center().movedBy(0.0, -12.0), ColorF{ 0.0, 1.0, 1.0 });
 		uiFont(FormatBattleTimerText(remainingSec)).drawAt(26, panel.center().movedBy(0.0, 10.0), timerColor);
 	}
 }

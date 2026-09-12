@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "App/AppDefinitionState.h"
 # include "App/AppSceneTypes.h"
+# include "../Data/Localization.h"
 # include "../Data/MusicTypes.h"
 # include "../UI/TitleUiLayout.h"
 
@@ -37,6 +38,8 @@ namespace LT3
 		ModContext activeMod;
 		BattleRequest quickBattleRequest;
 		String startupErrorText;
+		LocalizationCatalog localizedTexts;
+		LocalizationCatalog defaultTexts;
 		Texture titleImage{ U"000_Warehouse/000_DefaultGame/000_SystemImage/title.png" };
 		TitleUiLayout titleUiLayout = CreateDefaultTitleUiLayout();
 		TitleUiEditorState titleUiEditor;

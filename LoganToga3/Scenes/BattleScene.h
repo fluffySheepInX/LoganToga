@@ -47,7 +47,7 @@ namespace LT3
 		void draw() const override
 		{
 			auto& data = getData();
-			DrawAppRuntime(m_runtime, data.definitions, m_ui, data.uiFont, data.titleFont);
+			DrawAppRuntime(m_runtime, data.definitions, m_ui, data.localizedTexts, data.defaultTexts, data.uiFont, data.titleFont);
 			DrawAppUi(data.definitions, m_ui, data.uiFont);
 		}
 

@@ -1,6 +1,6 @@
 ﻿# pragma once
 # include <Siv3D.hpp>
-# include <queue>
+# include "../Pathfinding/PathfindingCore.h"
 # include "BattleQueries.h"
 # include "BattleUnitState.h"
 # include "../UI/QuarterView.h"
@@ -72,197 +72,59 @@ namespace LT3
 
 	inline bool IsPathCellPassable(const PathMapSnapshot& snapshot, const Point& cell)
 	{
-		return snapshot.isPassable(cell.y, cell.x);
+		return PathfindingCore::IsPassable(
+			PathfindingCore::GridView{ snapshot.width, snapshot.height, snapshot.blocked.data() },
+			PathfindingCore::Cell{ cell.x, cell.y });
+	}
+
+	// Pathfinding Coreのセルを既存のSiv3D座標へ変換する。
+	inline Point ToPathfindingSystemPoint(const PathfindingCore::Cell& cell)
+	{
+		return Point{ cell.x, cell.y };
 	}
 
 	inline Optional<Point> FindNearestPassablePathCell(const PathMapSnapshot& snapshot, const Point& center)
 	{
-		if (IsPathCellPassable(snapshot, center))
-		{
-			return center;
-		}
-
-		if (!snapshot.inBounds(center.y, center.x))
-		{
-			return none;
-		}
-
-		const size_t total = static_cast<size_t>(snapshot.width * snapshot.height);
-		Array<bool> visited(total, false);
-		Array<Point> queue;
-		queue << center;
-		visited[snapshot.index(center.y, center.x)] = true;
-
-		const Point offsets[4] = {
-			Point{ 1, 0 },
-			Point{ -1, 0 },
-			Point{ 0, 1 },
-			Point{ 0, -1 }
-		};
-
-		size_t head = 0;
-		while (head < queue.size())
-		{
-			const Point cell = queue[head++];
-			for (const Point& offset : offsets)
-			{
-				const Point next = cell + offset;
-				if (!snapshot.inBounds(next.y, next.x))
-				{
-					continue;
-				}
-
-				const TileIndex index = snapshot.index(next.y, next.x);
-				if (visited[index])
-				{
-					continue;
-				}
-
-				visited[index] = true;
-				if (IsPathCellPassable(snapshot, next))
-				{
-					return next;
-				}
-
-				queue << next;
-			}
-		}
-
-		return none;
+		PathfindingCore::Cell result;
+		const bool found = PathfindingCore::TryFindNearestPassableCell(
+			PathfindingCore::GridView{ snapshot.width, snapshot.height, snapshot.blocked.data() },
+			PathfindingCore::Cell{ center.x, center.y },
+			result);
+		return found ? Optional<Point>{ ToPathfindingSystemPoint(result) } : none;
 	}
 
 	inline Array<Point> BuildPathCellsByAStar(const PathMapSnapshot& snapshot, const Point& start, const Point& goal)
 	{
 		Array<Point> empty;
-		if (!snapshot.inBounds(start.y, start.x) || !snapshot.inBounds(goal.y, goal.x))
+		const PathfindingCore::GridView grid{ snapshot.width, snapshot.height, snapshot.blocked.data() };
+		uint32 coreCellCount = 0;
+		if (!PathfindingCore::TryGetCellCount(grid, coreCellCount))
 		{
 			return empty;
 		}
 
-		if (start == goal)
-		{
-			return Array<Point>{ start };
-		}
-
-		struct OpenEntry
-		{
-			int32 fScore = 0;
-			TileIndex index = 0;
-
-			bool operator<(const OpenEntry& rhs) const
-			{
-				return fScore > rhs.fScore;
-			}
-		};
-
-		const size_t total = static_cast<size_t>(snapshot.width * snapshot.height);
-		Array<int32> gScore(total, INT32_MAX);
-		Array<TileIndex> cameFrom(total, static_cast<TileIndex>(UINT32_MAX));
-		Array<bool> closed(total, false);
-
-		const TileIndex startIndex = snapshot.index(start.y, start.x);
-		const TileIndex goalIndex = snapshot.index(goal.y, goal.x);
-
-		const auto heuristic = [](const Point& a, const Point& b)
-		{
-			return (Abs(a.x - b.x) + Abs(a.y - b.y)) * 10;
-		};
-
-		const auto indexToPoint = [&snapshot](TileIndex index)
-		{
-			const int32 row = static_cast<int32>(index) / snapshot.width;
-			const int32 col = static_cast<int32>(index) % snapshot.width;
-			return Point{ col, row };
-		};
-
-		std::priority_queue<OpenEntry> open;
-		gScore[startIndex] = 0;
-		open.push(OpenEntry{ heuristic(start, goal), startIndex });
-
-		const Point offsets[4] = {
-			Point{ 1, 0 },
-			Point{ -1, 0 },
-			Point{ 0, 1 },
-			Point{ 0, -1 }
-		};
-
-		bool found = false;
-		while (!open.empty())
-		{
-			const OpenEntry currentEntry = open.top();
-			open.pop();
-
-			const TileIndex current = currentEntry.index;
-			if (closed[current])
-			{
-				continue;
-			}
-
-			if (current == goalIndex)
-			{
-				found = true;
-				break;
-			}
-
-			closed[current] = true;
-			const Point currentPoint = indexToPoint(current);
-			for (const Point& offset : offsets)
-			{
-				const Point nextPoint = currentPoint + offset;
-				if (!snapshot.inBounds(nextPoint.y, nextPoint.x))
-				{
-					continue;
-				}
-
-				if (!IsPathCellPassable(snapshot, nextPoint) && nextPoint != goal)
-				{
-					continue;
-				}
-
-				const TileIndex next = snapshot.index(nextPoint.y, nextPoint.x);
-				if (closed[next])
-				{
-					continue;
-				}
-
-				const int32 nextG = gScore[current] + 10;
-				if (nextG >= gScore[next])
-				{
-					continue;
-				}
-
-				cameFrom[next] = current;
-				gScore[next] = nextG;
-				const int32 nextF = nextG + heuristic(nextPoint, goal);
-				open.push(OpenEntry{ nextF, next });
-			}
-		}
-
-		if (!found)
+		Array<PathfindingCore::Cell> corePath(coreCellCount);
+		uint32 corePathCount = 0;
+		const PathfindingCore::PathSearchStatus status = PathfindingCore::FindPathByAStar(
+			grid,
+			PathfindingCore::Cell{ start.x, start.y },
+			PathfindingCore::Cell{ goal.x, goal.y },
+			corePath.data(),
+			coreCellCount,
+			corePathCount);
+		if (status != PathfindingCore::PathSearchStatus::Found)
 		{
 			return empty;
 		}
 
-		Array<Point> reversed;
-		TileIndex current = goalIndex;
-		while (true)
+		Array<Point> path;
+		path.reserve(corePathCount);
+		for (uint32 i = 0; i < corePathCount; ++i)
 		{
-			reversed << indexToPoint(current);
-			if (current == startIndex)
-			{
-				break;
-			}
-
-			const TileIndex parent = cameFrom[current];
-			if (parent == static_cast<TileIndex>(UINT32_MAX))
-			{
-				return empty;
-			}
-			current = parent;
+			path << ToPathfindingSystemPoint(corePath[i]);
 		}
 
-		reversed.reverse();
-		return reversed;
+		return path;
 	}
 
 	inline PathResult BuildPathResult(const BattleWorld& world, const PathMapSnapshot& snapshot, const PathRequest& request)

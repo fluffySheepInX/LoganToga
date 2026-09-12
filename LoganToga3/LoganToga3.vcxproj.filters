@@ -787,6 +787,9 @@
     <None Include="Docs\ModificationGuide_LoganToga3.html" />
     <None Include="App\000_Warehouse\000_DefaultGame\mod.toml" />
     <None Include="App\000_Warehouse\000_DefaultGame\Skirmishes\default.toml" />
+    <None Include="Docs\LoganToga3_Modularization_Roadmap.html" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoLocalization\ja-JP.toml" />
+    <None Include="App\000_Warehouse\000_DefaultGame\070_Scenario\InfoLocalization\en-US.toml" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="App\example\test.mp3">
@@ -1477,6 +1480,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\MusicEditorDraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pathfinding\PathfindingCore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\ModPolicy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Localization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

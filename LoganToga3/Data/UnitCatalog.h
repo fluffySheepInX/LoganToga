@@ -388,15 +388,7 @@ namespace LT3
     inline bool SaveUnitCatalogToml(UnitCatalog& catalog, String& statusText, FilePathView outputPath = U"")
     {
         const FilePath path = outputPath.isEmpty() ? catalog.sourcePath : FilePath{ outputPath };
-        FileSystem::CreateDirectories(FileSystem::ParentPath(path));
-        TextWriter writer{ path, OpenMode::Trunc, TextEncoding::UTF8_NO_BOM };
-        if (!writer)
-        {
-            statusText = U"Unit catalog save failed: {}"_fmt(path);
-            return false;
-        }
-
-        writer << UnitCatalogToml::KeySchemaVersion << U" = " << UnitCatalogToml::SchemaVersion << U"\n\n";
+        String tomlText = U"{} = {}\n\n"_fmt(UnitCatalogToml::KeySchemaVersion, UnitCatalogToml::SchemaVersion);
 
         for (const auto& entry : catalog.entries)
         {
@@ -454,9 +446,15 @@ namespace LT3
             block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyLineIconHorizontalOffset, entry.lineIconHorizontalOffset.x, entry.lineIconHorizontalOffset.y);
             block += U"{} = [{}, {}]\n"_fmt(UnitCatalogToml::KeyLineIconDiagUpRightOffset, entry.lineIconDiagUpRightOffset.x, entry.lineIconDiagUpRightOffset.y);
             block += U"{} = [{}, {}]\n\n"_fmt(UnitCatalogToml::KeyLineIconDiagUpLeftOffset, entry.lineIconDiagUpLeftOffset.x, entry.lineIconDiagUpLeftOffset.y);
-            writer.write(block);
+            tomlText += block;
         }
 
+        if (!SaveTomlTextFileSafely(path, tomlText, statusText))
+        {
+            return false;
+        }
+
+        catalog.sourcePath = path;
         catalog.statusText = U"Saved unit catalog: {}"_fmt(catalog.sourcePath);
         statusText = catalog.statusText;
         return true;

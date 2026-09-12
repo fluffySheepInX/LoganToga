@@ -273,14 +273,6 @@ namespace LT3
 	inline bool SaveAiProfileDefinitions(const DefinitionStores& defs, String& statusText)
 	{
 		const FilePath aiProfilePath = ResolveAiProfileTomlPath();
-		FileSystem::CreateDirectories(FileSystem::ParentPath(aiProfilePath));
-		TextWriter writer{ aiProfilePath };
-		if (!writer)
-		{
-			statusText = U"AI profile save failed: {}"_fmt(aiProfilePath);
-			return false;
-		}
-
 		String tomlText;
 		bool firstProfile = true;
 		for (auto profile : defs.aiProfiles)
@@ -344,7 +336,10 @@ namespace LT3
 			}
 		}
 
-		writer.write(tomlText);
+		if (!SaveTomlTextFileSafely(aiProfilePath, tomlText, statusText))
+		{
+			return false;
+		}
 		statusText = U"Saved AI profiles: {}"_fmt(aiProfilePath);
 		return true;
 	}

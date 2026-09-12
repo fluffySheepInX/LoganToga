@@ -2,7 +2,9 @@
 # include "App/AppFrameEnd.h"
 # include "App/AppInitialization.h"
 # include "App/AppSceneSharedData.h"
+# include "Data/Localization.h"
 # include "Data/MusicSettings.h"
+# include "Data/ModPolicy.h"
 # include "Scenes/TitleScene.h"
 # include "Scenes/BattleScene.h"
 
@@ -51,19 +53,15 @@ void Main()
 	}
 	if (shared->quickBattleRequested && shared->startupErrorText.isEmpty())
 	{
-		String quickBattleId = shared->quickBattleArgument;
-		if (quickBattleId.isEmpty() || (quickBattleId.lowercased() == U"skirmish"))
+		const LT3::ModPolicy::QuickBattleTarget target = LT3::ModPolicy::ParseQuickBattleTarget(
+			LT3::ModPolicy::TextView{ shared->quickBattleArgument.data(), shared->quickBattleArgument.size() });
+		if (target.kind != LT3::ModPolicy::QuickBattleTargetKind::Skirmish)
 		{
-			quickBattleId = U"skirmish/default";
-		}
-
-		const Array<String> parts = quickBattleId.split(U'/');
-		if ((parts.size() != 2) || (parts[0].lowercased() != U"skirmish"))
-		{
-			shared->startupErrorText = U"Unsupported quick battle target: {}"_fmt(quickBattleId);
+			shared->startupErrorText = U"Unsupported quick battle target: {}"_fmt(shared->quickBattleArgument);
 			shared->quickBattleRequested = false;
 		}
-		else if (!LT3::TryLoadSkirmishBattleRequest(shared->activeMod, parts[1], shared->quickBattleRequest, shared->startupErrorText))
+		else if (!LT3::TryLoadSkirmishBattleRequest(shared->activeMod,
+			String{ target.battleId.data, target.battleId.size }, shared->quickBattleRequest, shared->startupErrorText))
 		{
 			shared->quickBattleRequested = false;
 		}
@@ -71,6 +69,7 @@ void Main()
 
 	const bool skipTitleToBattle = shared->quickBattleRequested && shared->quickBattleRequest.valid;
 	Scene::SetBackground(ColorF{ 0.08, 0.14, 0.11 });
+	LT3::LoadLocalizationCatalogs(LT3::DefaultLocale, shared->localizedTexts, shared->defaultTexts);
 	LT3::LoadMusicSettingsToml(shared->musicSettings, shared->musicEditor.statusText);
 	LT3::AppSceneManager manager{ shared };
 	manager.add<LT3::TitleScene>(LT3::AppSceneState::Title);

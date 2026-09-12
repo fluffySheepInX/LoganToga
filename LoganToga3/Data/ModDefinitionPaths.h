@@ -34,7 +34,7 @@ namespace LT3
 			return *modPath;
 		}
 
-		if (!mod.inheritDefaultGame || (mod.id == U"000-default-game"))
+		if (!ModPolicy::CanInheritDefaultGame(mod.inheritDefaultGame, ToModPolicyTextView(mod.id)))
 		{
 			return FilePath{};
 		}
@@ -63,7 +63,7 @@ namespace LT3
 					return *modDirectory + U"/";
 				}
 			}
-			if (!mod->inheritDefaultGame || mod->id == U"000-default-game")
+			if (!ModPolicy::CanInheritDefaultGame(mod->inheritDefaultGame, ToModPolicyTextView(mod->id)))
 			{
 				return FilePath{};
 			}
@@ -117,7 +117,7 @@ namespace LT3
 			{
 				return relativePath;
 			}
-			if (!mod->inheritDefaultGame || mod->id == U"000-default-game")
+			if (!ModPolicy::CanInheritDefaultGame(mod->inheritDefaultGame, ToModPolicyTextView(mod->id)))
 			{
 				return none;
 			}

@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LoganToga3を安全にモジュール化し、変更影響に基づく限定チェックへ移行するためのアーキテクチャロードマップ">
+    <title>LoganToga3 モジュール化ロードマップ</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f3f6f8;
+            --panel: #ffffff;
+            --ink: #17212b;
+            --muted: #5d6b78;
+            --line: #d7e0e7;
+            --navy: #16324f;
+            --blue: #2563eb;
+            --blue-soft: #eaf2ff;
+            --teal: #0f766e;
+            --teal-soft: #e8f7f4;
+            --amber: #a16207;
+            --amber-soft: #fff8df;
+            --red: #b42318;
+            --red-soft: #fff0ee;
+            --green: #18794e;
+            --green-soft: #eaf8f0;
+            --violet: #6d28d9;
+            --violet-soft: #f3edff;
+            --code-bg: #101820;
+            --code-ink: #e6edf3;
+            --shadow: 0 12px 30px rgba(20, 42, 61, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+            line-height: 1.72;
+        }
+
+        header {
+            color: #fff;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(45, 212, 191, 0.35), transparent 28%),
+                linear-gradient(135deg, #0f2338 0%, #174c74 58%, #0f766e 100%);
+            padding: 52px 28px 46px;
+        }
+
+        header .wrap,
+        main,
+        footer .wrap {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        h1 {
+            max-width: 920px;
+            margin: 0 0 14px;
+            font-size: clamp(2.1rem, 5vw, 3.65rem);
+            line-height: 1.12;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            margin: 0 0 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--line);
+            color: var(--navy);
+            font-size: clamp(1.45rem, 3vw, 2rem);
+        }
+
+        h3 {
+            margin: 24px 0 10px;
+            color: #174c74;
+        }
+
+        h4 {
+            margin: 18px 0 8px;
+            color: var(--navy);
+        }
+
+        p {
+            margin: 0 0 14px;
+        }
+
+        a {
+            color: var(--blue);
+        }
+
+        code {
+            border-radius: 5px;
+            background: #edf2f7;
+            color: #283593;
+            padding: 1px 5px;
+            font-family: Consolas, "Cascadia Mono", monospace;
+        }
+
+        pre {
+            margin: 12px 0;
+            border: 1px solid #2b3d4f;
+            border-radius: 13px;
+            background: var(--code-bg);
+            color: var(--code-ink);
+            padding: 18px;
+            overflow: auto;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            line-height: 1.55;
+        }
+
+        pre code {
+            padding: 0;
+            background: transparent;
+            color: inherit;
+        }
+
+        ul,
+        ol {
+            padding-left: 1.4rem;
+        }
+
+        li + li {
+            margin-top: 6px;
+        }
+
+        main {
+            padding: 28px 0 54px;
+        }
+
+        section {
+            margin-bottom: 24px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--panel);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .subtitle {
+            max-width: 900px;
+            color: #dceeff;
+            font-size: 1.12rem;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-top: 20px;
+        }
+
+        .pill,
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+
+        .pill {
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            padding: 6px 11px;
+        }
+
+        .tag {
+            margin: 2px 4px 2px 0;
+            padding: 3px 9px;
+            background: var(--blue-soft);
+            color: #1d4ed8;
+        }
+
+        .tag.good {
+            background: var(--green-soft);
+            color: var(--green);
+        }
+
+        .tag.warn {
+            background: var(--amber-soft);
+            color: var(--amber);
+        }
+
+        .tag.later {
+            background: var(--violet-soft);
+            color: var(--violet);
+        }
+
+        .toc {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        .toc a {
+            display: block;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 10px 12px;
+            text-decoration: none;
+            font-weight: 650;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: #fbfdff;
+            padding: 17px;
+        }
+
+        .card h3,
+        .card h4 {
+            margin-top: 0;
+        }
+
+        .callout {
+            margin: 16px 0;
+            border-left: 5px solid var(--blue);
+            border-radius: 10px;
+            background: var(--blue-soft);
+            padding: 14px 16px;
+        }
+
+        .callout.good {
+            border-left-color: var(--green);
+            background: var(--green-soft);
+        }
+
+        .callout.warning {
+            border-left-color: var(--amber);
+            background: var(--amber-soft);
+        }
+
+        .callout.danger {
+            border-left-color: var(--red);
+            background: var(--red-soft);
+        }
+
+        .architecture {
+            display: grid;
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .layer {
+            position: relative;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 15px 18px;
+            background: #f8fafc;
+        }
+
+        .layer + .layer::before {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            content: "↓";
+            color: var(--teal);
+            font-weight: 900;
+        }
+
+        .layer strong {
+            display: block;
+            color: var(--navy);
+            font-size: 1.04rem;
+        }
+
+        .phase {
+            margin: 20px 0;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .phase-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(90deg, #eef6ff, #f5fbfa);
+            padding: 15px 18px;
+        }
+
+        .phase-number {
+            min-width: 84px;
+            border-radius: 999px;
+            background: var(--navy);
+            color: #fff;
+            padding: 5px 10px;
+            text-align: center;
+            font-size: 0.86rem;
+            font-weight: 800;
+        }
+
+        .phase-head h3 {
+            margin: 0;
+            color: var(--navy);
+        }
+
+        .phase-body {
+            padding: 18px;
+        }
+
+        .gate {
+            border-left: 4px solid var(--green);
+            background: var(--green-soft);
+            padding: 11px 14px;
+        }
+
+        .stop {
+            border-left: 4px solid var(--red);
+            background: var(--red-soft);
+            padding: 11px 14px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            margin: 12px 0 4px;
+            border: 1px solid var(--line);
+            border-collapse: collapse;
+            font-size: 0.94rem;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid var(--line);
+            padding: 11px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #edf5fb;
+            color: var(--navy);
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .prompt-title {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .prompt-title small {
+            color: var(--muted);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 1.7rem;
+        }
+
+        .checklist li::before {
+            position: absolute;
+            left: 0;
+            content: "□";
+            color: var(--teal);
+            font-weight: 900;
+        }
+
+        footer {
+            border-top: 1px solid var(--line);
+            background: #eaf0f4;
+            color: var(--muted);
+            padding: 24px 0 34px;
+        }
+
+        @media (max-width: 640px) {
+            header {
+                padding: 38px 18px 34px;
+            }
+
+            section {
+                padding: 18px;
+            }
+
+            .grid.two,
+            .grid.three {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+
+            header {
+                background: #16324f;
+            }
+
+            section,
+            .phase {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            pre {
+                white-space: pre-wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <h1>LoganToga3<br>モジュール化ロードマップ</h1>
+        <p class="subtitle">DLLを「見なくてよい箱」にするのではなく、契約・証拠・変更履歴によって再確認範囲を合理的に限定できる構造へ移行する。</p>
+        <div class="meta">
+            <span class="pill">対象: LoganToga3</span>
+            <span class="pill">Siv3D 0.6.16 / C++</span>
+            <span class="pill">段階移行</span>
+            <span class="pill">AI実行プロンプト付属</span>
+            <span class="pill">外部依存なしHTML</span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section id="summary">
+        <h2>0. エグゼクティブサマリー</h2>
+        <div class="callout good">
+            <strong>推奨方針:</strong> 「責務分離 → 契約テスト → ソース境界 → 静的ライブラリ → 必要な箇所だけDLL → 差分チェック」の順で進める。DLL化は最終目的ではなく、安定した境界が実証されたモジュールにだけ適用する。
+        </div>
+        <div class="grid three">
+            <div class="card">
+                <h3>最初に切り出す</h3>
+                <p><span class="tag good">Pathfinding Core</span><span class="tag good">Content Path</span><span class="tag good">TOML / Validation</span></p>
+                <p>入力と出力を小さくでき、UIやSceneから分離しやすい領域を試行対象とする。</p>
+            </div>
+            <div class="card">
+                <h3>後から境界化する</h3>
+                <p><span class="tag later">Simulation Core</span><span class="tag later">DLL Gateway</span></p>
+                <p>振る舞いとデータ所有権が安定し、契約テストが揃ってから扱う。</p>
+            </div>
+            <div class="card">
+                <h3>当面は統合層に残す</h3>
+                <p><span class="tag warn">App</span><span class="tag warn">Scenes</span><span class="tag warn">UI / Editors</span></p>
+                <p>変更頻度とSiv3D依存が高い領域は、無理にABI境界へ固定しない。</p>
+            </div>
+        </div>
+        <p><strong>期待効果:</strong> 変更されていない内部実装の再読を減らし、通常確認を「変更モジュール、直接依存先、公開契約、統合スモークテスト」へ絞る。電力・水資源の削減量は計測なしに断定せず、ビルド時間、解析対象ファイル数、テスト時間、キャッシュヒット率を代理指標として測定する。</p>
+    </section>
+
+    <section id="toc">
+        <h2>目次</h2>
+        <nav class="toc" aria-label="目次">
+            <a href="#principles">1. 原則と非目標</a>
+            <a href="#current">2. 現状診断</a>
+            <a href="#target">3. 目標アーキテクチャ</a>
+            <a href="#candidates">4. 分離候補</a>
+            <a href="#api">5. API / ABI方針</a>
+            <a href="#future-api">6. 将来API</a>
+            <a href="#phases">7. 導入フェーズ</a>
+            <a href="#verification">8. 限定チェック</a>
+            <a href="#prompts">9. AI向けプロンプト</a>
+            <a href="#done">10. 完了条件</a>
+        </nav>
+    </section>
+
+    <section id="principles">
+        <h2>1. 原則と非目標</h2>
+        <div class="grid two">
+            <div class="card">
+                <h3>設計原則</h3>
+                <ol>
+                    <li><strong>証拠による省略:</strong> DLLだから省略するのではなく、同一ハッシュ・同一契約・通過済みテストを根拠に内部再確認を省略する。</li>
+                    <li><strong>一方向依存:</strong> 上位層だけが下位層を知り、FoundationやDomainからUI、Scene、Appを参照しない。</li>
+                    <li><strong>所有権の単純化:</strong> 生成したモジュールが破棄する。DLL境界を跨いで任意のヒープオブジェクトを解放しない。</li>
+                    <li><strong>小さな契約:</strong> 巨大な共有状態ではなく、処理に必要なスナップショット・コマンド・結果だけを渡す。</li>
+                    <li><strong>可逆的移行:</strong> 1フェーズ1境界とし、切り戻せる差分サイズを保つ。</li>
+                    <li><strong>計測して判断:</strong> ビルド、テスト、解析の所要時間を前後比較し、効果がない分割は増やさない。</li>
+                </ol>
+            </div>
+            <div class="card">
+                <h3>非目標</h3>
+                <ul>
+                    <li>すべてをDLLへ移すこと。</li>
+                    <li>未変更DLLを永久に無監査とすること。</li>
+                    <li>現在の巨大な共有構造体をそのままDLLへ隠すこと。</li>
+                    <li>仕様未確定の将来関数を大量に固定すること。</li>
+                    <li>モジュール化と同時にゲーム仕様やUIを大規模変更すること。</li>
+                    <li>測定せずに環境負荷削減量を主張すること。</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="current">
+        <h2>2. 現状診断</h2>
+        <p>調査時点では <code>LoganToga3.vcxproj</code> が単一の <code>Application</code> プロジェクトであり、Debug/Release x64、Siv3D 0.6.16、<code>/MTd</code>・<code>/MT</code> を使用する。実装の多くはヘッダー内の <code>inline</code> 関数で、プロジェクト登録上は専用テストプロジェクトが確認できない。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>領域</th><th>現状の役割</th><th>主な結合</th><th>判断</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Main.cpp</code></td>
+                        <td>引数解釈、Mod読込、定義生成、音楽設定、Scene起動</td>
+                        <td>起動手順と具象サービスを直接呼出し</td>
+                        <td>最終的なComposition Root。DLLにはしない。</td>
+                    </tr>
+                    <tr>
+                        <td><code>App/AppSceneSharedData.h</code></td>
+                        <td>Scene間共有状態</td>
+                        <td>Font、Texture、UI、Mod、定義、音楽を同居</td>
+                        <td>分割対象だが、初期のバイナリ境界にはしない。</td>
+                    </tr>
+                    <tr>
+                        <td><code>App/AppRuntimeState.h</code></td>
+                        <td>戦闘実行時の統合状態</td>
+                        <td>BattleWorld、定義、描画、音声、通知、Modを束ねる</td>
+                        <td>Application Facade導入後に縮小する。</td>
+                    </tr>
+                    <tr>
+                        <td><code>BattleWorld/BattleWorldStores.h</code></td>
+                        <td>データ指向の戦闘状態</td>
+                        <td>Siv3D型、DefinitionStores、音声・Modポインターを保持</td>
+                        <td>Simulation候補。ただし外部資源ポインターを先に排除する。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Systems/PathfindingSystem.h</code></td>
+                        <td>スナップショット生成、A*、座標変換、経路更新</td>
+                        <td>純粋計算とBattleWorld、UI/QuarterView依存が混在</td>
+                        <td>最初の分離パイロットに適する。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Data/ModContent.h</code></td>
+                        <td>ID正規化、安全なパス、倉庫探索、manifest読込</td>
+                        <td>filesystem、Siv3D、TOML、探索方針が混在</td>
+                        <td>Pure PolicyとI/O Adapterへ分ける。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Data/DefinitionLoaders.h</code></td>
+                        <td>定義ロードと参照整合性検証</td>
+                        <td>具象TOMLローダーとStoreへ直結</td>
+                        <td>検証を純粋化し、読込はAdapterへ残す。</td>
+                    </tr>
+                    <tr>
+                        <td><code>Data/MusicSettingsService.h</code></td>
+                        <td>TOML設定の読書きと安全な置換</td>
+                        <td>Siv3D FilePath/TOML、状態文言</td>
+                        <td>永続化パターンの契約化候補。音楽UIとは分ける。</td>
+                    </tr>
+                    <tr>
+                        <td><code>UI/*</code> / <code>Scenes/*</code></td>
+                        <td>入力、描画、Editor、Scene制御</td>
+                        <td>Siv3Dと共有状態への強い依存</td>
+                        <td>Host側に残し、Port経由でCoreを利用する。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="callout warning">
+            <strong>最重要の構造課題:</strong> ディレクトリは既に責務別に見えるが、コンパイル境界と依存規則はまだ弱い。特に <code>PathfindingSystem.h</code> から <code>UI/QuarterView.h</code> を参照するような「Domain/System → UI」の依存を先に解消しなければ、ライブラリ化しても横断調査は減らない。
+        </div>
+    </section>
+
+    <section id="target">
+        <h2>3. 目標アーキテクチャ</h2>
+        <div class="architecture" aria-label="目標依存方向">
+            <div class="layer"><strong>Host / Presentation</strong><code>Main</code>、<code>App</code>、<code>Scenes</code>、<code>UI</code>、Siv3D描画・入力・Audio</div>
+            <div class="layer"><strong>Application / Ports</strong>ユースケース、Facade、Command、Snapshot、外部機能の抽象Port、DTO変換</div>
+            <div class="layer"><strong>Domain / Simulation</strong>戦闘規則、経路探索、定義整合性、ID・値オブジェクト。描画・ファイル・音声を知らない。</div>
+            <div class="layer"><strong>Foundation</strong>結果型、診断型、固定幅の基本型、バージョン・capability、最小限のアルゴリズム補助</div>
+        </div>
+        <div class="grid two">
+            <div class="card">
+                <h3>許可する依存</h3>
+                <ul>
+                    <li>Host → Application → Domain → Foundation</li>
+                    <li>Infrastructure Adapter → Application Port / Domain DTO</li>
+                    <li>テスト → 対象モジュールの公開契約</li>
+                    <li>同一層内は明示した小さな依存だけ</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>禁止する依存</h3>
+                <ul>
+                    <li>Domain / Foundation → Siv3D UI、Scene、Audio、FileSystem</li>
+                    <li>Core → <code>AppSharedData</code> / <code>AppRuntimeState</code></li>
+                    <li>DLL公開ヘッダー → <code>Siv3D.hpp</code> または内部Store</li>
+                    <li>モジュール間で可変グローバル状態を共有</li>
+                </ul>
+            </div>
+        </div>
+        <h3>候補となる論理プロジェクト</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>候補名</th><th>初期形態</th><th>責務</th><th>Siv3D依存</th></tr></thead>
+                <tbody>
+                    <tr><td><code>LT3.Foundation</code></td><td>Static Library</td><td>Result、Diagnostic、Version、Capability、基本DTO</td><td>なし</td></tr>
+                    <tr><td><code>LT3.Pathfinding</code></td><td>Static Library</td><td>グリッド探索の純粋計算</td><td>なし</td></tr>
+                    <tr><td><code>LT3.Content</code></td><td>Static Library</td><td>ID、manifestモデル、安全な相対パス方針、継承解決</td><td>なしを目標</td></tr>
+                    <tr><td><code>LT3.Persistence</code></td><td>Static Library / Adapter</td><td>TOML読書き、transaction、schema診断</td><td>Host Adapterのみ許容</td></tr>
+                    <tr><td><code>LT3.Simulation</code></td><td>Static Library</td><td>BattleWorldの所有、コマンド適用、tick、snapshot</td><td>公開契約ではなし</td></tr>
+                    <tr><td><code>LT3.ModuleGateway</code></td><td>任意のDLL</td><td>安定したC ABI、capability、opaque handle</td><td>公開面ではなし</td></tr>
+                    <tr><td><code>LoganToga3</code></td><td>Application</td><td>Siv3D統合、Scene、UI、Editor、Composition Root</td><td>あり</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="muted">名称は設計上の候補であり、既存コードへ直ちに追加する確定仕様ではない。各フェーズの調査で責務とビルド効果を確認してから確定する。</p>
+    </section>
+
+    <section id="candidates">
+        <h2>4. 分離候補と優先順位</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>順位</th><th>候補</th><th>先に行う分離</th><th>利点</th><th>主な危険</th><th>DLL判断</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>1</td><td>Pathfinding Core</td>
+                        <td>A*と近傍探索を、整数座標・blocked配列の入出力に限定。QuarterView変換とBattleWorld snapshot生成をAdapterへ移す。</td>
+                        <td>純粋関数化しやすく、決定的テストを作りやすい。</td>
+                        <td>移動挙動の微差、座標系の混同。</td>
+                        <td>まず静的。高頻度呼出しなのでDLL境界コストも測る。</td>
+                    </tr>
+                    <tr>
+                        <td>2</td><td>Content ID / Safe Path</td>
+                        <td>ID正規化、相対パス検証、継承解決の方針とfilesystem探索を分離。</td>
+                        <td>セキュリティ境界が明確になり、Mod仕様を一元化できる。</td>
+                        <td>canonical化、symlink、存在しない将来パス、Windows大小文字。</td>
+                        <td>静的が基本。外部ツール共有の需要が生じたらDLL候補。</td>
+                    </tr>
+                    <tr>
+                        <td>3</td><td>TOML / Definition Validation</td>
+                        <td>構文読込、schema変換、参照検証、診断を分割。TOML全文を構築して最小改行で保存。</td>
+                        <td>データ品質を単体確認できる。Modツールとの共有余地がある。</td>
+                        <td>警告順序、既存互換、保存時改行、Siv3D TOML型の漏出。</td>
+                        <td>外部Editor/検証CLIと共有する時点でDLLまたはCLIを比較。</td>
+                    </tr>
+                    <tr>
+                        <td>4</td><td>Safe Persistence</td>
+                        <td>一時ファイル、backup、置換、復旧、エラー診断をPort化。</td>
+                        <td>設定やEditor保存の原子性を共通化できる。</td>
+                        <td>Windowsファイルロック、部分失敗、保存先規約。</td>
+                        <td>原則静的。別プロセス共有がなければDLL不要。</td>
+                    </tr>
+                    <tr>
+                        <td>5</td><td>Simulation Core</td>
+                        <td>AudioAssetCache/ModContextポインターをEvent/Portへ置換し、Command/Tick/Snapshotで囲う。</td>
+                        <td>戦闘規則をUIなしでテスト可能。再確認範囲を大きく減らせる。</td>
+                        <td>最大の挙動回帰、コピー量、巨大API化。</td>
+                        <td>静的で長期安定を確認後、必要性がある場合のみDLL。</td>
+                    </tr>
+                    <tr>
+                        <td>保留</td><td>UI / Editors / Scenes</td>
+                        <td>Core利用をPortへ寄せるが、自身はHostに残す。</td>
+                        <td>開発速度とSiv3D統合の単純さを維持。</td>
+                        <td>共有状態への抜け道が残る。</td>
+                        <td>DLL化しない。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="api">
+        <h2>5. API / ABI設計方針</h2>
+        <div class="grid two">
+            <div class="card">
+                <h3>ソース・静的ライブラリ境界</h3>
+                <ul>
+                    <li>公開 <code>include/</code> と内部 <code>src/</code> を分離する。</li>
+                    <li>公開ヘッダーから上位層のヘッダーをincludeしない。</li>
+                    <li>入力は不変Viewまたは値、出力はResultと診断一覧にする。</li>
+                    <li>例外を契約にせず、エラー分類を戻り値で表現する。</li>
+                    <li>公開型は「変更理由が同じデータ」だけを束ねる。</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>DLL境界で追加する制約</h3>
+                <ul>
+                    <li>原則としてC ABIを使用し、opaque handleで状態を隠す。</li>
+                    <li><code>Siv3D::String</code>、<code>Array</code>、STLコンテナ、例外、RTTI型を公開しない。</li>
+                    <li><code>uint32_t</code> 等の固定幅型、UTF-8バイト列、明示サイズを使う。</li>
+                    <li>構造体に <code>struct_size</code> と予約領域を持たせる。</li>
+                    <li>生成・破棄関数を対にし、確保側モジュールで解放する。</li>
+                    <li>API version、ABI version、build identityを取得可能にする。</li>
+                    <li>Debug/ReleaseやRuntime Libraryの混在を前提にしない。</li>
+                </ul>
+            </div>
+        </div>
+        <h3>契約に必ず記録する項目</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>項目</th><th>記録内容</th></tr></thead>
+                <tbody>
+                    <tr><td>責務</td><td>何を保証し、何を担当しないか。</td></tr>
+                    <tr><td>入力</td><td>有効範囲、文字コード、単位、null可否、順序、最大サイズ。</td></tr>
+                    <tr><td>出力</td><td>所有権、寿命、決定性、順序保証、部分結果の有無。</td></tr>
+                    <tr><td>失敗</td><td>エラーコード、再試行可否、状態変更の有無、診断取得方法。</td></tr>
+                    <tr><td>並行性</td><td>thread-safeか、handle単位か、呼出しスレッド制約。</td></tr>
+                    <tr><td>互換性</td><td>SemVer方針、破壊的変更の条件、旧版サポート期間。</td></tr>
+                    <tr><td>検証証拠</td><td>ソースrevision、公開契約hash、テスト結果、ツールチェーン。</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="future-api">
+        <h2>6. 将来APIと未実装機能の窓口</h2>
+        <div class="callout">
+            将来性は「未実装関数を大量に並べること」ではなく、<strong>機能を安全に発見し、対応版だけを取得できる拡張機構</strong>で確保する。
+        </div>
+        <h3>推奨する最小Gateway</h3>
+        <pre><code>概念上の公開機能:
+- lt3_get_api_version()          : API/ABIバージョンを返す
+- lt3_get_build_identity()       : ビルド識別子と契約ハッシュを返す
+- lt3_query_capability(id)       : Unsupported / Planned / Experimental / Stable
+- lt3_get_extension(id, version) : 対応時だけversioned function tableを返す
+- lt3_get_last_diagnostic(...)   : 呼出し単位の構造化診断を取得する
+
+共通結果:
+Ok / InvalidArgument / Unsupported / NotImplemented /
+VersionMismatch / InvalidState / BufferTooSmall / InternalError</code></pre>
+        <div class="grid two">
+            <div class="card">
+                <h3>未実装呼出しの保証</h3>
+                <ul>
+                    <li><code>NotImplemented</code> または <code>Unsupported</code> を明示的に返す。</li>
+                    <li>成功値・空の成功結果へ偽装しない。</li>
+                    <li>外部から観測可能な状態を変更しない。</li>
+                    <li>機能ID、API版、呼出し元文脈を構造化診断へ残す。</li>
+                    <li>同一警告を「機能ID × セッション」単位で抑制し、毎フレーム出力しない。</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>公開しない将来仕様</h3>
+                <ul>
+                    <li>引数・所有権・失敗条件が未確定の具体的関数。</li>
+                    <li>UIやScene構造を前提にした拡張。</li>
+                    <li>内部のBattleWorldやDefinitionStoresを直接返すAPI。</li>
+                    <li>呼出し順序だけで成立する暗黙プロトコル。</li>
+                </ul>
+            </div>
+        </div>
+        <p><strong>Planned</strong> は「存在予約」であり呼出し可能を意味しない。<strong>Experimental</strong> は互換性保証範囲を別namespace/extension IDで隔離し、Stableへ昇格するまで通常の互換保証対象から外す。</p>
+    </section>
+
+    <section id="phases">
+        <h2>7. 段階導入ロードマップ</h2>
+        <p>期間ではなく品質ゲートで進行する。各フェーズは独立した変更として完了させ、次のフェーズを同一PRへ混在させない。</p>
+
+        <article class="phase" id="phase-0">
+            <div class="phase-head"><span class="phase-number">Phase 0</span><h3>基準線と変更台帳</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> 「速くなった」「確認不要」の判断を感覚ではなく比較可能にする。</p>
+                <div class="grid two">
+                    <div>
+                        <h4>成果物</h4>
+                        <ul>
+                            <li>Debug/Releaseのclean・incremental build時間。</li>
+                            <li>主要起動経路のスモーク手順: title、通常battle、<code>--mod</code>、<code>--quick-battle</code>。</li>
+                            <li>モジュール台帳: owner、責務、依存、公開契約、source hash、再確認条件。</li>
+                            <li>現行挙動のcharacterization test候補一覧。</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>変更制約</h4>
+                        <ul>
+                            <li>ゲーム挙動を変更しない。</li>
+                            <li>推測の環境削減量を記載しない。</li>
+                            <li>計測コマンドと環境を再現可能に記録する。</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="gate"><strong>進む条件:</strong> 基準値、スモーク経路、台帳形式、再確認トリガーがレビュー済み。</p>
+                <p class="stop"><strong>停止条件:</strong> clean buildまたは主要起動経路が既に不安定。先に既存不具合を分類する。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-1">
+            <div class="phase-head"><span class="phase-number">Phase 1</span><h3>契約・テスト・依存ルールの基盤</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> ファイル配置ではなく、機械的に守れる境界を作る。</p>
+                <ul>
+                    <li>最小のテスト用プロジェクトまたはテスト実行可能ファイルを追加する。</li>
+                    <li>Result、Diagnostic、Capability、Versionの共通契約を設計する。</li>
+                    <li>禁止includeルールと依存方向を文書化し、可能ならCIで検査する。</li>
+                    <li>App/Scene/UIをHostと定義し、Coreからの参照を禁止する。</li>
+                    <li>既存APIを変えず、Adapterを挟めるseamを追加する。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> 空の境界プロジェクトが全構成でbuildでき、最低1本の契約テストと禁止依存検査が動作する。</p>
+                <p class="stop"><strong>停止条件:</strong> テスト導入が本体起動やSiv3Dリンクへ不要な依存を持ち込む。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-2">
+            <div class="phase-head"><span class="phase-number">Phase 2</span><h3>Pathfindingを分離パイロットにする</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> 小さく決定的な機能で、抽出手順と検証方法を実証する。</p>
+                <ul>
+                    <li><code>PathMapSnapshot</code>、整数座標、経路結果をSiv3D非依存の型へ置換または変換する。</li>
+                    <li>A*・近傍探索をPure Coreへ、BattleWorld snapshotとQuarterView座標変換をHost Adapterへ分離する。</li>
+                    <li>到達可否、境界、予約セル、同一点、決定的tie-break、空mapをテストする。</li>
+                    <li>旧実装とのgolden comparisonを固定seed/fixtureで行う。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> 既存の経路結果と許容差内で一致し、Core公開ヘッダーがSiv3D・UI・BattleWorldをincludeしない。</p>
+                <p class="stop"><strong>停止条件:</strong> hot pathで測定可能な退行、または座標変換の責務が曖昧なまま。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-3">
+            <div class="phase-head"><span class="phase-number">Phase 3</span><h3>Mod / Content PathをPolicyとI/Oへ分離</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> Modの安全性・継承規則・ID規則を単一の契約にする。</p>
+                <ul>
+                    <li>case-insensitive ASCII stable IDの正規化と検証をPure Policyへ移す。</li>
+                    <li>1 Modのみ有効、<code>mod.toml</code> の明示継承、scenario/skirmish、<code>--quick-battle</code> の規則を契約化する。</li>
+                    <li>filesystem canonical化、symlink、Warehouse探索をI/O Adapterに閉じ込める。</li>
+                    <li>実ファイルが未作成の将来パスと既存パスの安全性を別APIとして区別する。</li>
+                    <li>プロジェクト登録だけで欠落判定せず、実ファイル、Git追跡、ignore、runtime解決を診断対象に含める。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> traversal、絶対パス、重複ID、大小文字、継承有無、symlink逸脱のテストが通り、既存Modが読める。</p>
+                <p class="stop"><strong>停止条件:</strong> security checkを弱める互換回避が必要になる。仕様を先に明文化する。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-4">
+            <div class="phase-head"><span class="phase-number">Phase 4</span><h3>TOML永続化とDefinition検証を分離</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> TOML I/O、schema変換、参照整合性、ゲーム内Storeを別々に確認可能にする。</p>
+                <ul>
+                    <li>Skill、Unit、Resource、BuildAction、AI Profileのparse結果と診断を共通形式へ寄せる。</li>
+                    <li>参照整合性検証をファイルI/Oなしで実行可能にする。</li>
+                    <li>保存は全文を先に構築し、行ごとの自動改行追加を使わず、必要最小限の改行だけを明示する。</li>
+                    <li>temporary → backup → replace → recoveryの失敗点をテストする。</li>
+                    <li>未知キー、schema version、重複tag、未解決参照の方針を契約化する。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> 既定ゲームと代表Modの読込結果が同等で、保存golden fileと失敗復旧テストが通る。</p>
+                <p class="stop"><strong>停止条件:</strong> Parser都合の型がDomain全体へ漏れる、または保存結果が不要な改行差分を生む。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-5">
+            <div class="phase-head"><span class="phase-number">Phase 5</span><h3>Simulation CoreをFacadeで囲う</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> BattleWorld内部を直接操作せず、コマンド入力とスナップショット出力で戦闘を扱う。</p>
+                <ul>
+                    <li><code>AudioAssetCache*</code> と <code>ModContext*</code> をBattleWorldから除き、音声要求EventをHostへ返す。</li>
+                    <li>初期化、tick、order、query、snapshot、event drainのFacadeを定義する。</li>
+                    <li>UI/Editor用の直接可変アクセスはApplication Adapterに限定し、移行期間を明示する。</li>
+                    <li>固定seed、固定delta、同一Command列で決定性を検証する。</li>
+                    <li>BattleWorld invariant検査をテストとDebug診断へ組み込む。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> title/通常battle/mod/quick-battleの統合スモークが通り、主要戦闘fixtureのsnapshotが同等。</p>
+                <p class="stop"><strong>停止条件:</strong> FacadeがBattleWorld全体を返す、UI型を受ける、または1フレームごとに大量コピーする。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-6">
+            <div class="phase-head"><span class="phase-number">Phase 6</span><h3>限定的なDLL Gatewayを評価・導入</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> 独立配布、外部ツール共有、差し替えなど、DLL固有の利益がある境界だけをバイナリ化する。</p>
+                <ul>
+                    <li>候補ごとに「静的ライブラリでは達成できない要求」を記録する。</li>
+                    <li>C ABI、opaque handle、versioned function table、capability queryを実装する。</li>
+                    <li>ABI互換テスト、旧DLLロード、version mismatch、欠落DLL、未実装APIをテストする。</li>
+                    <li>DLL配置、署名/hash、探索順、ロード失敗時のユーザー向け診断を定義する。</li>
+                    <li>未実装呼出しは明示エラー、無変更、抑制ログを保証する。</li>
+                </ul>
+                <p class="gate"><strong>進む条件:</strong> DLL化の便益が測定で確認でき、静的版と同じ契約suiteを通過し、HostがABI内部型へ依存しない。</p>
+                <p class="stop"><strong>停止条件:</strong> 目的が「AIに読ませないためだけ」、またはSiv3D/STL/BattleWorldをABIへ露出する必要がある。</p>
+            </div>
+        </article>
+
+        <article class="phase" id="phase-7">
+            <div class="phase-head"><span class="phase-number">Phase 7</span><h3>変更影響ベースの限定チェック運用</h3></div>
+            <div class="phase-body">
+                <p><strong>目的:</strong> 省略可能範囲を自動判定し、必要時だけ深い確認へ昇格する。</p>
+                <ul>
+                    <li>モジュールごとにsource hash、public contract hash、dependency lock、test evidenceを保存する。</li>
+                    <li>変更ファイルから依存グラフを辿り、対象テストとレビュー範囲を選ぶ。</li>
+                    <li>公開契約、toolchain、runtime、共有schema変更時は全体確認へ昇格する。</li>
+                    <li>定期的な全体確認はカレンダー固定だけでなく、リスクと変更量をトリガーにする。</li>
+                    <li>省略理由を機械可読な台帳とレビュー結果へ残す。</li>
+                </ul>
+                <p class="gate"><strong>完了条件:</strong> 限定チェックと全体チェックの結果差を一定期間監視し、見逃しがないこと、時間削減が再現することを確認する。</p>
+                <p class="stop"><strong>停止条件:</strong> 依存グラフ外の暗黙参照、生成物不一致、限定チェックでのみ再現する見逃しが発生する。</p>
+            </div>
+        </article>
+    </section>
+
+    <section id="verification">
+        <h2>8. チェック戦略と再確認トリガー</h2>
+        <h3>検証ピラミッド</h3>
+        <div class="grid three">
+            <div class="card"><h4>契約テスト</h4><p>全モジュールで常時実行。入力、出力、失敗、所有権、version、capabilityを検証する。</p></div>
+            <div class="card"><h4>統合スモーク</h4><p>Hostとの接続変更時に、title、battle、mod、quick-battle、主要Editor起動を確認する。</p></div>
+            <div class="card"><h4>全体回帰</h4><p>公開契約、toolchain、Siv3D、schema、共有状態、DLL loader変更時に実行する。</p></div>
+        </div>
+        <h3>変更時チェック行列</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>変更</th><th>必須チェック</th><th>内部再調査</th><th>全体確認</th></tr></thead>
+                <tbody>
+                    <tr><td>実装のみ、公開契約hash不変</td><td>対象単体・契約・直接依存</td><td>変更モジュールのみ</td><td>原則不要</td></tr>
+                    <tr><td>公開ヘッダー / ABI変更</td><td>全契約・全consumer・互換テスト</td><td>対象と全直接依存</td><td>必要</td></tr>
+                    <tr><td>TOML schema / Mod規則変更</td><td>golden、migration、既定game、代表Mod</td><td>Content/Persistence/consumer</td><td>必要</td></tr>
+                    <tr><td>Siv3D / toolset / Runtime Library変更</td><td>clean build、ABI、起動、負荷</td><td>全バイナリ境界</td><td>必要</td></tr>
+                    <tr><td>UI / Sceneのみ</td><td>対象UI、統合スモーク</td><td>Core内部は契約不変なら不要</td><td>原則不要</td></tr>
+                    <tr><td>module hash不一致・証拠欠落</td><td>契約suite再実行</td><td>対象内部</td><td>影響不明なら必要</td></tr>
+                    <tr><td>security関連のPath/Loader変更</td><td>攻撃ケース、権限、逸脱、fuzz候補</td><td>対象とI/O Adapter</td><td>強く推奨</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <h3>モジュール台帳の推奨項目</h3>
+        <p>LoganToga3のデータ方針に合わせ、機械可読部分はTOMLを推奨する。</p>
+        <pre><code>[module]
+id = "lt3.pathfinding"
+owner = "LoganToga3"
+source_revision = "&lt;git-commit&gt;"
+source_hash = "&lt;hash&gt;"
+public_contract_hash = "&lt;hash&gt;"
+api_version = "1.0"
+abi_version = 0
+
+[verification]
+toolchain = "MSVC v145"
+configuration = ["Debug-x64", "Release-x64"]
+contract_suite = "&lt;suite-id&gt;"
+last_verified_revision = "&lt;git-commit&gt;"
+
+[policy]
+reinspect_on = ["source_hash", "contract_hash", "toolchain", "dependency", "security_rule"]
+full_check_on = ["abi_version", "schema_version", "runtime_library"]</code></pre>
+        <div class="callout warning">
+            「DLLを除外してチェックせよ」ではなく、次のように指示する。<br>
+            <strong>前回検証済みでsource hash・公開契約hash・toolchain・依存lockが一致するモジュール内部は再読を省略してよい。ただし、呼出し側の契約遵守、境界入力、version/capability、統合結果は必ず確認する。不一致または証拠欠落時は内部調査へ昇格する。</strong>
+        </div>
+    </section>
+
+    <section id="prompts">
+        <h2>9. AIへ指示するためのプロンプト</h2>
+        <div class="callout danger">
+            各プロンプトは<strong>1フェーズずつ</strong>使用する。複数フェーズをまとめて実装させない。AIには現物調査、計画、最小変更、検証、証拠記録までを同じフェーズ内で完了させる。
+        </div>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>共通プレフィックス</h3><small>すべてのフェーズ用プロンプトの先頭へ付ける</small></div>
+            <div class="phase-body">
+                <pre><code>あなたはProject LoganToga3のアーキテクト兼実装担当です。
+この依頼では「DLL化」自体を目的にせず、変更影響に基づいて安全に確認範囲を限定できる境界を作ってください。
+
+必須原則:
+1. Think and Plan as a Mathematician. 先に現状、依存、入力、出力、不変条件、失敗条件を調査し、仮定を明記する。
+2. 実ファイルを確認し、Visual Studioのプロジェクト登録一覧だけで欠落を断定しない。Git追跡、ignore、runtime解決パスも必要に応じて確認する。
+3. 現在のSiv3D 0.6.16、MSVC、Debug/Release x64設定と既存挙動を維持する。
+4. 変更は今回指定した1フェーズだけに限定する。ゲーム仕様、UI、Editorの無関係な整理を混在させない。
+5. 既存のコメント規約に従い、メソッド名の上へ必要な説明コメントを置く。
+6. CoreからApp、Scenes、UI、Siv3D描画・入力・音声・ファイルI/Oへの新規依存を作らない。
+7. DLL公開境界にはSiv3D型、STLコンテナ、例外、BattleWorld、DefinitionStoresを露出しない。
+8. 将来APIの未実装呼出しは明示的なUnsupported/NotImplementedを返し、状態を変更せず、同一警告を毎フレーム出さない。
+9. TOML出力は全文を先に構築し、行単位または末尾へ自動的に改行を付加するAPI/パターンを使わず、必要最小限の改行だけを明示する。
+10. 変更前に関連テストを特定する。なければcharacterization testを先に追加し、変更後は対象テスト、ビルド、必要な統合スモークを実行する。
+11. 推測で既存挙動を変えない。判断不能な設計選択は選択肢と影響を示して質問する。
+12. 完了報告には変更ファイル、契約変更、検証結果、残存リスク、次フェーズへ進めるかを記載する。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 0: 基準線と台帳</h3><small>Phase 0</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 0だけを実施してください。
+
+目的:
+LoganToga3のモジュール化前基準を作り、以後の限定チェックに必要な証拠形式を定義する。
+
+実施内容:
+- ソリューション、vcxproj、実ファイル、主要include依存を調査する。
+- Main、App、Scenes、UI、Systems、BattleWorld、Dataの責務と依存方向を一覧化する。
+- Debug/Releaseのclean buildと、可能なら代表的incremental buildの時間を同一条件で測る。
+- title、通常battle、--mod、--quick-battleのスモーク確認手順を文書化する。
+- TOML形式のモジュール台帳schema案を作る。source hash、public contract hash、toolchain、dependency、test evidence、再確認トリガーを含める。
+- 既存挙動を変えるコード修正は行わない。
+
+受入条件:
+基準値が再現可能で、依存図、スモーク手順、台帳schema、既知の未検証領域が記録されていること。
+実測できない項目は推測値を入れず「未測定」と理由を記載すること。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 1: 契約・テスト基盤</h3><small>Phase 1</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 1だけを実施してください。Phase 0の成果物を先に確認してください。
+
+目的:
+モジュール境界を機械的に検証できる最小基盤を追加する。
+
+実施内容:
+- 現在のsolution構成に適合する最小テストprojectまたはテスト実行形式を提案し、選定根拠を示す。
+- FoundationのResult、Diagnostic、Version、Capability契約を、まずソース/静的境界として設計する。
+- Host(App/Scenes/UI) → Application → Domain → Foundationの許可依存と禁止includeを文書化する。
+- 最低1本の契約テストと、CoreからUI/Sceneを参照しないことを検査する仕組みを追加する。
+- DLL projectはまだ作らない。
+
+受入条件:
+Debug/Release x64で本体とテストがbuildでき、契約テストと依存検査が失敗を正しく検出すること。
+本体の起動経路とデータ形式を変更しないこと。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 2: Pathfindingパイロット</h3><small>Phase 2</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 2だけを実施してください。Phase 1の品質ゲート通過を確認してください。
+
+対象:
+Systems/PathfindingSystem.h と、その直接依存・呼出し元。
+
+目的:
+A*と近傍探索をSiv3D、BattleWorld、UI/QuarterViewから独立したPure Coreへ抽出する。
+
+実施内容:
+- 先に全呼出し元と既存の座標規則、tie-break、不変条件を調査する。
+- Path map生成、座標変換、純粋探索、BattleWorldへの経路反映を別責務へ分ける。
+- Pure Coreの公開型は固定幅整数と独自の小さなDTOを使う。
+- 境界、到達不能、同一点、予約セル、決定性、空入力のテストを追加する。
+- 固定fixtureで旧実装と結果比較し、差があれば勝手に仕様化せず報告する。
+- 最初はStatic Libraryまたは明確なソース境界とし、DLL化しない。
+
+受入条件:
+Core公開ヘッダーにSiv3D、UI、BattleWorld依存がなく、既存挙動と性能が許容範囲内であること。
+性能は必ず同条件で前後測定し、未測定なら未測定と記載すること。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 3: Mod / Content Path</h3><small>Phase 3</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 3だけを実施してください。
+
+対象:
+Data/ModContent.h、Data/ModDefinitionPaths.h、Main.cppのMod/quick-battle起動処理と直接利用箇所。
+
+目的:
+Mod ID・継承・安全な相対パスのPolicyを、filesystem探索とTOML I/Oから分離する。
+
+守る仕様:
+- 同時に有効なModは1つ。
+- ModはApp/000_Warehouse/000_DefaultGameと並ぶフォルダー配置で導入できる。
+- 標準game assetの継承はmod.tomlで明示する。
+- Mod IDとScenario IDはcase-insensitive ASCII stable ID。
+- ScenarioとSkirmishを区別し、--quick-battleは指定battleへ直接遷移できる。
+- 古いJSON/CSV形式は導入しない。
+
+検証:
+path traversal、絶対パス、symlink逸脱、重複ID、大小文字、継承有無、存在しない将来パスをテストする。
+実データ欠落を判断する際は実ファイル、Git、ignore、runtime解決順を確認する。
+
+受入条件:
+既存の既定gameと代表Modの解決結果を保ち、security checkを弱めず、Pure PolicyがSiv3D/FileSystem/TOMLに依存しないこと。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 4: TOML / Definitions / Persistence</h3><small>Phase 4</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 4だけを実施してください。
+
+対象:
+Data/DefinitionLoaders.h、Data/Loaders/*、Data/TomlTextUtils.h、Data/MusicSettingsService.h、および直接利用箇所。
+
+目的:
+TOML I/O、schema変換、参照検証、安全な保存を別々にテスト可能にする。
+
+実施内容:
+- parse/read、domain conversion、cross-reference validation、write/transactionを分離する。
+- Skill、Unit、Resource、BuildAction、AI Profileの診断形式を揃える。
+- 未知キー、schema version、重複tag、未解決参照、部分失敗の契約を明文化する。
+- 既定gameと代表Modからgolden fixtureを作る。
+- temporary、backup、replace、recoveryの各失敗をテストする。
+- TOMLは全文を構築後に書き、行単位/末尾への自動改行追加を避ける。
+
+受入条件:
+既存読込結果が同等で、保存結果に不要な改行差分がなく、失敗時に元ファイルが保護されること。
+Parser固有型をDomain公開契約へ漏らさないこと。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 5: Simulation Facade</h3><small>Phase 5</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 5だけを実施してください。これは高リスク変更なので、実装前に詳細計画と移行順を提示してください。
+
+対象:
+BattleWorld/*、Systems/*、App/AppRuntimeState.h、および直接利用するBattle UI。
+
+目的:
+BattleWorldをCommand、Tick、Query/Snapshot、Event DrainのFacadeで囲い、Siv3Dの描画・音声・入力から分離する。
+
+実施内容:
+- BattleWorldの全直接アクセス、AudioAssetCache*、ModContext*、UI/System間依存を列挙する。
+- 音声再生はCoreから実行せず、値だけのEventとしてHostへ返す。
+- BattleWorld全体を公開・返却しない。必要な読取Snapshotを用途別に設計する。
+- 固定seed、固定delta、固定Command列のcharacterization testを追加する。
+- 既存のBattleWorld invariant検査を品質ゲートに利用する。
+- Editor互換の移行Adapterを設ける場合は、削除条件と期限を台帳へ記録する。
+- DLL化はまだ行わない。
+
+受入条件:
+title、通常battle、--mod、--quick-battleが動作し、主要fixtureの結果が同等で、CoreからUI/Audio/FileSystemへの依存がないこと。
+Snapshotコピー量とtick時間を測定し、退行時は進行を停止すること。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 6: DLL Gateway評価</h3><small>Phase 6</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 6の評価から開始してください。DLL固有の便益が証明できない場合は実装せず、Static Library維持を結論にしてください。
+
+目的:
+安定済みモジュールのうち、独立配布・外部ツール共有・差し替えが必要なものだけへDLL Gatewayを導入する。
+
+評価項目:
+- DLL化しない場合に満たせない要求。
+- ABI安定性、呼出し頻度、データ転送量、ロード失敗影響、更新単位。
+- MSVC toolset、/MTd・/MT、Debug/Release、依存DLL配置。
+
+実装する場合の必須条件:
+- C ABI、明示calling convention、opaque handle、固定幅型、UTF-8+length。
+- create/destroyを同一moduleに置き、STL/Siv3D/例外/内部Storeを公開しない。
+- API/ABI version、build identity、capability query、versioned extension tableを提供する。
+- 未実装APIはNotImplemented、状態無変更、構造化診断、警告抑制を保証する。
+- 欠落DLL、不正version、旧DLL、buffer不足、二重破棄、不正handleをテストする。
+
+受入条件:
+Static版と同じ契約suiteを通り、計測上の便益があり、配布・復旧手順まで文書化されていること。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>Prompt 7: 限定チェック運用</h3><small>Phase 7</small></div>
+            <div class="phase-body">
+                <pre><code>共通プレフィックスに従い、Phase 7だけを実施してください。
+
+目的:
+検証済み証拠と依存グラフから、変更ごとの最小安全チェック集合を選択できるようにする。
+
+実施内容:
+- 各moduleのsource hash、public contract hash、toolchain、dependency lock、test evidenceをTOML台帳へ記録する。
+- 変更ファイルから直接・推移依存を解決し、必要なbuild/test/reviewを選ぶ手順を作る。
+- API/ABI、schema、toolchain、Siv3D、Runtime Library、security policy変更を全体確認トリガーにする。
+- 証拠欠落、不一致、依存不明は安全側へ倒して内部再調査または全体確認へ昇格する。
+- 限定チェックと全体チェックを一定期間併走し、時間、対象数、見逃しを比較する。
+
+AIへの通常チェック指示文:
+「前回検証済みでsource hash・公開契約hash・toolchain・依存lockが一致するmodule内部は再読を省略してよい。ただし、呼出し側の契約遵守、境界入力、version/capability、統合結果は必ず確認する。不一致または証拠欠落時は内部調査へ昇格する。」
+
+受入条件:
+省略理由が追跡可能で、意図的に依存変更したfixtureが正しいチェック集合を選び、併走期間に結果差がないこと。</code></pre>
+            </div>
+        </article>
+
+        <article class="phase">
+            <div class="phase-head prompt-title"><h3>レビュー専用プロンプト</h3><small>実装を変更せず監査する</small></div>
+            <div class="phase-body">
+                <pre><code>Project LoganToga3のモジュール境界をレビューしてください。コード変更は行わないでください。
+
+確認順:
+1. 対象moduleの台帳、source hash、public contract hash、toolchain、test evidenceを確認する。
+2. 証拠が一致する内部実装は原則再読せず、公開契約とconsumer側の利用を確認する。
+3. 入力検証、所有権、寿命、thread制約、error handling、version/capabilityを確認する。
+4. CoreからApp/Scenes/UI/Siv3D I/Oへの逆依存がないか確認する。
+5. 不一致、証拠欠落、暗黙共有状態、ABI/schema/security変更を発見した場合だけ内部調査へ拡大する。
+6. 「確認した範囲」「省略した範囲と根拠」「昇格した範囲と理由」「残存リスク」を分けて報告する。
+
+DLLであること自体を省略根拠にしないでください。ログだけで未実装APIの失敗を表現していないか、成功に見える既定値を返していないかも確認してください。</code></pre>
+            </div>
+        </article>
+    </section>
+
+    <section id="done">
+        <h2>10. ロードマップ全体の完了条件</h2>
+        <ul class="checklist">
+            <li>Host → Application → Domain → Foundationの依存方向が文書と自動検査で一致する。</li>
+            <li>Core公開契約からSiv3D、UI、Scene、App共有状態が排除されている。</li>
+            <li>Pathfinding、Content Policy、Definition ValidationがI/Oなしでテストできる。</li>
+            <li>SimulationがCommand/Tick/Snapshot/Eventの境界で利用できる。</li>
+            <li>DLL化した場合、C ABI、opaque handle、version、capability、所有権が契約化されている。</li>
+            <li>未実装APIが明示エラーを返し、状態を変更せず、警告が抑制される。</li>
+            <li>各モジュールにsource/contract hashと検証証拠がある。</li>
+            <li>限定チェックが依存変更を検出し、必要時に全体確認へ昇格する。</li>
+            <li>既定game、Mod、Skirmish、Scenario、quick-battleの既存経路が維持される。</li>
+            <li>clean/incremental build、テスト、解析対象量の改善が同条件の実測で確認される。</li>
+        </ul>
+        <div class="callout good">
+            <strong>最終判断:</strong> 静的ライブラリと契約台帳だけで目的を達成できるモジュールは、DLL化しないことも成功である。DLLは配布・差替え・外部利用という追加価値がある場合にのみ採用する。
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="wrap">
+        <p><strong>LoganToga3 モジュール化ロードマップ</strong></p>
+        <p>この文書は実装順と判断基準を定める設計資料であり、各候補名やABIはフェーズごとの調査・計測・レビューを経て確定する。</p>
+    </div>
+</footer>
+</body>
+</html>

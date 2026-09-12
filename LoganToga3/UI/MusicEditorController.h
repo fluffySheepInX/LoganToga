@@ -26,7 +26,7 @@ namespace LT3
 
 	inline void UpdateMusicEditor(AppSharedData& data)
 	{
-		if (HandleMusicEditorButton(MusicEditorToggleRect(data), data.musicEditor.open ? U"Hide Music Editor" : U"Show Music Editor", data.uiFont))
+		if (HandleMusicEditorButton(MusicEditorToggleRect(data), LocalizedText(data.localizedTexts, data.defaultTexts, data.musicEditor.open ? U"music_editor.hide" : U"music_editor.show"), data.uiFont))
 		{
 			const bool previousOpen = data.musicEditor.open;
 			data.musicEditor.open = !previousOpen;
@@ -47,35 +47,35 @@ namespace LT3
 		{
 			const RectF row{ panel.x + 20, panel.y + 54 + i * 44.0, 160, 36 };
 			if (row.mouseOver()) Cursor::RequestStyle(CursorStyle::Hand);
-			if (row.leftClicked()) { data.musicEditor.selectedScene = sceneIds[i]; data.musicEditor.statusText = U"Selected music scene: {}"_fmt(ToMusicSceneLabel(sceneIds[i])); return; }
+			if (row.leftClicked()) { data.musicEditor.selectedScene = sceneIds[i]; data.musicEditor.statusText = FormatLocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.status_selected_scene", ToMusicSceneLabel(sceneIds[i])); return; }
 		}
 
 		MusicTrackSetting& track = GetMusicTrackSetting(data.musicSettings, data.musicEditor.selectedScene);
-		if (HandleMusicEditorButton(RectF{ panel.x + 204, panel.y + 98, 116, 34 }, U"Browse", data.uiFont))
+		if (HandleMusicEditorButton(RectF{ panel.x + 204, panel.y + 98, 116, 34 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.browse"), data.uiFont))
 		{
 			const Optional<FilePath> path = Dialog::OpenFile({ FileFilter::AllAudioFiles(), FileFilter::AllFiles() });
-			if (path) { track.path = *path; data.musicEditor.dirty = true; data.musicEditor.statusText = U"Music assigned: {} -> {}"_fmt(ToMusicSceneLabel(data.musicEditor.selectedScene), FileSystem::FileName(*path)); }
+			if (path) { track.path = *path; data.musicEditor.dirty = true; data.musicEditor.statusText = FormatLocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.status_assigned", ToMusicSceneLabel(data.musicEditor.selectedScene), FileSystem::FileName(*path)); }
 			return;
 		}
-		if (HandleMusicEditorButton(RectF{ panel.x + 330, panel.y + 98, 116, 34 }, U"Preview", data.uiFont)) { PlayMusicPreview(data, track); return; }
-		if (HandleMusicEditorButton(RectF{ panel.x + 456, panel.y + 98, 92, 34 }, U"Stop", data.uiFont)) { StopMusicPreview(data.musicEditor); data.musicEditor.statusText = U"Preview stopped"; return; }
-		if (HandleMusicEditorButton(RectF{ panel.x + 456, panel.y + 146, 92, 34 }, U"Clear", data.uiFont))
+		if (HandleMusicEditorButton(RectF{ panel.x + 330, panel.y + 98, 116, 34 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.preview"), data.uiFont)) { PlayMusicPreview(data, track); return; }
+		if (HandleMusicEditorButton(RectF{ panel.x + 456, panel.y + 98, 92, 34 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.stop"), data.uiFont)) { StopMusicPreview(data.musicEditor); data.musicEditor.statusText = LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.status_preview_stopped"); return; }
+		if (HandleMusicEditorButton(RectF{ panel.x + 456, panel.y + 146, 92, 34 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.clear"), data.uiFont))
 		{
 			track.path.clear(); data.musicEditor.dirty = true;
 			if (data.musicPlayback.activeScene && *data.musicPlayback.activeScene == data.musicEditor.selectedScene) StopSceneMusic(data);
 			if (!data.musicEditor.previewPath.isEmpty()) StopMusicPreview(data.musicEditor);
-			data.musicEditor.statusText = U"Music cleared: {}"_fmt(ToMusicSceneLabel(data.musicEditor.selectedScene)); return;
+			data.musicEditor.statusText = FormatLocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.status_cleared", ToMusicSceneLabel(data.musicEditor.selectedScene)); return;
 		}
 		const auto adjustVolume = [&](double delta)
 		{
 			track.volume = Clamp(Math::Round((track.volume + delta) * 100.0) / 100.0, 0.0, 1.0);
 			data.musicEditor.dirty = true;
 			if (IsMusicPreviewPlaying(data.musicEditor)) data.musicEditor.previewAudio.setVolume(track.volume);
-			data.musicEditor.statusText = U"Music volume: {} = {:.2f}"_fmt(ToMusicSceneLabel(data.musicEditor.selectedScene), track.volume);
+			data.musicEditor.statusText = FormatLocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.status_volume", ToMusicSceneLabel(data.musicEditor.selectedScene), U"{:.2f}"_fmt(track.volume));
 		};
 		if (HandleMusicEditorButton(RectF{ panel.x + 204, panel.y + 210, 42, 34 }, U"-", data.uiFont)) { adjustVolume(-0.05); return; }
 		if (HandleMusicEditorButton(RectF{ panel.x + 390, panel.y + 210, 42, 34 }, U"+", data.uiFont)) { adjustVolume(0.05); return; }
-		if (HandleMusicEditorButton(RectF{ panel.x + 204, panel.y + 318, 140, 38 }, U"Save Settings", data.uiFont)) { if (SaveMusicSettingsToml(data.musicSettings, data.musicEditor.statusText)) data.musicEditor.dirty = false; return; }
-		if (HandleMusicEditorButton(RectF{ panel.x + 354, panel.y + 318, 140, 38 }, U"Reload", data.uiFont)) { StopMusicPreview(data.musicEditor); if (LoadMusicSettingsToml(data.musicSettings, data.musicEditor.statusText)) data.musicEditor.dirty = false; return; }
+		if (HandleMusicEditorButton(RectF{ panel.x + 204, panel.y + 318, 140, 38 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.save_settings"), data.uiFont)) { if (SaveMusicSettingsToml(data.musicSettings, data.musicEditor.statusText)) data.musicEditor.dirty = false; return; }
+		if (HandleMusicEditorButton(RectF{ panel.x + 354, panel.y + 318, 140, 38 }, LocalizedText(data.localizedTexts, data.defaultTexts, U"music_editor.reload"), data.uiFont)) { StopMusicPreview(data.musicEditor); if (LoadMusicSettingsToml(data.musicSettings, data.musicEditor.statusText)) data.musicEditor.dirty = false; return; }
 	}
 }

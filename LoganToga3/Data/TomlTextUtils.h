@@ -195,6 +195,20 @@ namespace LT3
 		return true;
 	}
 
+	// 全文を一時ファイルへ書き込んでから安全に置換します。
+	inline bool SaveTomlTextFileSafely(FilePathView path, StringView text, String& statusText)
+	{
+		const FilePath targetPath{ path };
+		const FilePath temporaryPath = targetPath + U".tmp";
+		FileSystem::Remove(temporaryPath);
+		if (!WriteUtf8TextFile(temporaryPath, text, statusText))
+		{
+			return false;
+		}
+
+		return SaveTomlFilesTransaction({ TomlTransactionFile{ targetPath, temporaryPath, targetPath + U".bak" } }, statusText);
+	}
+
 	// 一時ファイルへのコピー成功後に既存資産を置換し、失敗時は旧資産を復元する。
 	inline bool ReplaceAssetFileSafely(FilePathView sourcePath, FilePathView targetPath, String& statusText)
 	{
