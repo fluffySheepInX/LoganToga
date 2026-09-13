@@ -285,6 +285,7 @@
     <ClInclude Include="Data\MusicTypes.h" />
     <ClInclude Include="Data\TomlTextUtils.h" />
     <ClInclude Include="Data\UnitCatalog.h" />
+    <ClInclude Include="Data\UserDataPaths.h" />
     <ClInclude Include="libs\AddonGaussian.h" />
     <ClInclude Include="Pathfinding\PathfindingCore.h" />
     <ClInclude Include="Scenes\BattleScene.h" />

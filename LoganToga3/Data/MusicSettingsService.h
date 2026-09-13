@@ -2,12 +2,19 @@
 # include <Siv3D.hpp>
 # include "MusicSettings.h"
 # include "TomlTextUtils.h"
+# include "UserDataPaths.h"
 
 namespace LT3
 {
 	inline FilePath ResolveMusicSettingsTomlPath()
 	{
-		return ResolveFirstExistingPath({ U"music_settings.toml", U"App/music_settings.toml", U"LoganToga3/App/music_settings.toml" });
+		return ResolveUserSettingsPath(U"music_settings.toml");
+	}
+
+	// 旧カレントディレクトリ配置の音楽設定候補を返します。
+	inline Array<FilePath> LegacyMusicSettingsTomlPaths()
+	{
+		return { U"music_settings.toml", U"App/music_settings.toml", U"LoganToga3/App/music_settings.toml" };
 	}
 
 	inline void EnsureMusicSettingsDefaults(MusicSettings& settings)
@@ -29,6 +36,10 @@ namespace LT3
 	{
 		settings = CreateDefaultMusicSettings();
 		settings.sourcePath = ResolveMusicSettingsTomlPath();
+		if (!MigrateLegacyUserSettingsFile(LegacyMusicSettingsTomlPaths(), settings.sourcePath, statusText))
+		{
+			return false;
+		}
 		const TOMLReader toml{ settings.sourcePath };
 		if (!toml)
 		{

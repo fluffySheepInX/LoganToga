@@ -2,24 +2,13 @@
 # include <Siv3D.hpp>
 # include "MapEditorTypes.h"
 # include "../libs/AddonGaussian.h"
+# include "../Data/UserDataPaths.h"
 
 namespace LT3
 {
     inline FilePath ResolveBattleUiLayoutTomlPath()
     {
-        const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/BattleUiLayout.toml";
-        if (FileSystem::Exists(fromApp))
-        {
-            return fromApp;
-        }
-
-        const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/BattleUiLayout.toml";
-        if (FileSystem::Exists(fromRepo))
-        {
-            return fromRepo;
-        }
-
-        return fromApp;
+        return ResolveUserSettingsPath(U"battle_ui_layout.toml");
     }
 
     inline RectF BattleInfoPanelCompactRect(const MapEditorState& editor)

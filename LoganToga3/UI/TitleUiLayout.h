@@ -2,6 +2,7 @@
 # include <Siv3D.hpp>
 # include "../libs/AddonGaussian.h"
 # include "../Data/TomlTextUtils.h"
+# include "../Data/UserDataPaths.h"
 
 namespace LT3
 {
@@ -38,19 +39,7 @@ namespace LT3
 
 	inline FilePath ResolveTitleUiLayoutTomlPath()
 	{
-		const FilePath fromApp = U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/TitleUiLayout.toml";
-		if (FileSystem::Exists(fromApp))
-		{
-			return fromApp;
-		}
-
-		const FilePath fromRepo = U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/TitleUiLayout.toml";
-		if (FileSystem::Exists(fromRepo))
-		{
-			return fromRepo;
-		}
-
-		return fromApp;
+		return ResolveUserSettingsPath(U"title_ui_layout.toml");
 	}
 
 	inline TitleUiLayout CreateDefaultTitleUiLayout()
@@ -124,7 +113,13 @@ namespace LT3
 	inline bool LoadTitleUiLayoutToml(TitleUiLayout& layout)
 	{
 		layout = CreateDefaultTitleUiLayout();
-		const TOMLReader toml{ ResolveTitleUiLayoutTomlPath() };
+		const FilePath path = ResolveTitleUiLayoutTomlPath();
+		String ignoredStatusText;
+		MigrateLegacyUserSettingsFile({
+			U"000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/TitleUiLayout.toml",
+			U"App/000_Warehouse/000_DefaultGame/070_Scenario/InfoUI/TitleUiLayout.toml"
+		}, path, ignoredStatusText);
+		const TOMLReader toml{ path };
 		if (!toml)
 		{
 			RepairTitleUiLayout(layout);
